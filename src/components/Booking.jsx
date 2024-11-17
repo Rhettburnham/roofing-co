@@ -1,14 +1,103 @@
-// Import Axios and other dependencies as before
+import React, { useState } from "react";
+import { logoImg } from "../utils"; // Import the logo image
 import axios from "axios";
-// ...
+import {
+  FaBinoculars,
+  FaBolt,
+  FaWater,
+  FaWind,
+  FaLeaf,
+  FaHome,
+} from "react-icons/fa";
 
 const Booking = () => {
-  // ... existing state and functions
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    service: "",
+    message: "",
+  });
+
+  // State to control the modal visibility
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // State to control form visibility on small screens
+  const [isFormVisible, setIsFormVisible] = useState(false);
+
+  // Utility function to toggle form visibility
+  const toggleFormVisibility = () => {
+    setIsFormVisible(!isFormVisible);
+  };
+
+  // Define the services
+  const inspectionSteps = [
+    {
+      icon: <FaBinoculars />,
+      title: "Exterior Inspection",
+      description: "Checking for missing shingles, sagging, and debris buildup.",
+    },
+    {
+      icon: <FaBolt />,
+      title: "Flashing and Seals",
+      description:
+        "Inspecting flashing around vents, chimneys, and skylights for damage or gaps.",
+    },
+    {
+      icon: <FaWater />,
+      title: "Gutter Inspection",
+      description: "Ensuring gutters are clear of blockages and drain properly.",
+    },
+    {
+      icon: <FaWind />,
+      title: "Roof Ventilation",
+      description: "Checking attic ventilation to prevent moisture buildup.",
+    },
+    {
+      icon: <FaLeaf />,
+      title: "Signs of Water Damage",
+      description:
+        "Looking for water stains, mold, or dark spots inside the attic.",
+    },
+    {
+      icon: <FaHome />,
+      title: "Structural Integrity",
+      description: "Inspecting the overall structure for sagging or instability.",
+    },
+  ];
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  };
+
+  const handleServiceSelect = (serviceTitle) => {
+    setFormData({
+      ...formData,
+      service: serviceTitle,
+    });
+    setIsModalOpen(false);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // ... existing validation
+    if (
+      !formData.firstName ||
+      !formData.lastName ||
+      !formData.email ||
+      !formData.phone ||
+      !formData.service ||
+      !formData.message
+    ) {
+      alert("Please fill in all required fields.");
+      return;
+    }
 
     try {
       const data = { ...formData };
@@ -16,6 +105,7 @@ const Booking = () => {
       // Debug: Log the data being sent
       console.log("Data being sent:", data);
 
+      // Send the form data to the backend
       // Define API base URL from environment variables
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
@@ -24,6 +114,7 @@ const Booking = () => {
         `${API_BASE_URL}/submit-booking`,
         data
       );
+
 
       // Show success message
       alert(response.data.message);
