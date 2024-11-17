@@ -106,10 +106,15 @@ const Booking = () => {
       console.log("Data being sent:", data);
 
       // Send the form data to the backend
+      // Define API base URL from environment variables
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
+
+      // Send the form data to the backend
       const response = await axios.post(
-        "http://localhost:5001/submit-booking",
-        data
+        `${API_BASE_URL}/submit-booking`,
+        bookingData
       );
+
 
       // Show success message
       alert(response.data.message);
