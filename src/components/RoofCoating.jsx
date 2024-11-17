@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import Tilt from "react-parallax-tilt";
 import { motion } from "framer-motion";
@@ -101,6 +101,9 @@ const Packages = () => {
   // State for Hero section shrinking effect
   const [isShrunk, setIsShrunk] = useState(false);
 
+  // Ref for background video to control playback if needed
+  const bgVideoRef = useRef(null);
+
   // Scroll to top when component mounts
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -115,8 +118,18 @@ const Packages = () => {
     return () => clearTimeout(timer); // Clean up the timer on unmount
   }, []);
 
+  // Optionally, handle autoplay for background video with proper attributes
+  useEffect(() => {
+    if (bgVideoRef.current) {
+      bgVideoRef.current.play().catch((error) => {
+        // Handle autoplay errors, possibly due to browser restrictions
+        console.error("Background video autoplay failed:", error);
+      });
+    }
+  }, []);
+
   return (
-    <div className="w-full ">
+    <div className="w-full">
       {/* Hero Section with Shrinking Effect */}
       <motion.section
         className="relative overflow-hidden"
@@ -131,7 +144,7 @@ const Packages = () => {
             backgroundAttachment: "fixed",
           }}
         ></div>
-        <div className="absolute inset-0 dark-below-header "></div>
+        <div className="absolute inset-0 dark-below-header"></div>
 
         {/* Flexbox for centering text vertically */}
         <div className="relative z-10 h-full flex items-center justify-center">
@@ -147,18 +160,18 @@ const Packages = () => {
       </motion.section>
 
       {/* Roof Coatings Selection Section */}
-      <section className="my-4 ">
+      <section className="my-4 px-4 md:px-16">
         <h2 className={sectionTitleClass}>Types of Roof Coatings</h2>
 
         {/* Coating Selection Buttons */}
-        <div className="flex flex-wrap justify-center ">
+        <div className="flex flex-wrap justify-center">
           {roofCoatings.map((coating, index) => (
             <button
               key={index}
               onClick={() => setSelectedCoatingIndex(index)}
               className={`m-2 px-4 py-2 rounded-full shadow-lg transition-colors duration-300 ${
                 selectedCoatingIndex === index
-                  ? "dark_button  text-white"
+                  ? "dark_button text-white"
                   : "bg-white text-gray-800 hover:bg-gray-600 hover:text-white"
               }`}
             >
@@ -170,7 +183,9 @@ const Packages = () => {
         {/* Display Selected Coating Details */}
         <motion.div
           key={selectedCoatingIndex}
-          className="flex flex-col items-start bg-white rounded-2xl shadow-lg p-6 transition-all duration-500 mx-16"
+          className="flex flex-col items-start bg-white rounded-2xl shadow-lg p-6 transition-all duration-500 mx-4 md:mx-16 mt-4"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
           {/* Coating Description */}
@@ -202,17 +217,26 @@ const Packages = () => {
       </section>
 
       {/* Call to Action */}
-      <section className="mb-10 relative overflow-hidden faint-color mx-16">
-        <div className="absolute inset-0 rounded-[40px]">
-          <video
-            autoPlay
-            loop
-            muted
-            className="w-full h-full object-cover"
-            src="/assets/videos/roof_coating.mp4"
-          ></video>
-          <div className="absolute inset-0 bg-black opacity-50"></div>
-        </div>
+      <section className="mb-10 relative overflow-hidden faint-color mx-4 md:mx-16 rounded-[40px]">
+        {/* Background Video */}
+        <video
+          ref={bgVideoRef}
+          autoPlay
+          loop
+          muted
+          playsInline
+          tabIndex={-1}
+          className="w-full h-full object-cover"
+          src="/assets/videos/roof_coating.mp4"
+          style={{
+            pointerEvents: "none", // Prevents video from capturing interactions
+          }}
+        ></video>
+
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-black opacity-50 rounded-[40px]"></div>
+
+        {/* Content */}
         <div className="relative z-10 text-center py-24 px-4">
           <motion.h2
             initial={{ scale: 0.8, opacity: 0 }}

@@ -1,29 +1,29 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from "react";
 import { Link } from "react-router-dom"; // Import Link for routing
 import { HashLink } from "react-router-hash-link"; // Import HashLink for in-page anchors
 
 const Process = () => {
   // Define the process steps with corresponding links
   const processSteps = [
-    { 
-      title: 'Booking', 
-      videoSrc: '/assets/videos/our_process_videos/booking.mp4',
-      href: '/#book' // In-page link
+    {
+      title: "Booking",
+      videoSrc: "/assets/videos/our_process_videos/booking.mp4",
+      href: "/#book", // In-page link
     },
-    { 
-      title: 'Inspection', 
-      videoSrc: '/assets/videos/our_process_videos/magnify.mp4',
-      href: '/inspection' // Separate route
+    {
+      title: "Inspection",
+      videoSrc: "/assets/videos/our_process_videos/magnify.mp4",
+      href: "/inspection", // Separate route
     },
-    { 
-      title: 'Repair', 
-      videoSrc: '/assets/videos/our_process_videos/repair.mp4',
-      href: '/#packages' // Separate route
+    {
+      title: "Repair",
+      videoSrc: "/assets/videos/our_process_videos/repair.mp4",
+      href: "/#packages", // Separate route
     },
-    { 
-      title: 'Final Review', 
-      videoSrc: '/assets/videos/our_process_videos/approval.mp4',
-      href: '/#testimonials' // In-page link
+    {
+      title: "Final Review",
+      videoSrc: "/assets/videos/our_process_videos/approval.mp4",
+      href: "/#testimonials", // In-page link
     },
   ];
 
@@ -32,7 +32,10 @@ const Process = () => {
   useEffect(() => {
     videoRefs.current.forEach((video) => {
       if (video) {
-        video.play();
+        video.play().catch((error) => {
+          // Handle autoplay errors, possibly due to browser restrictions
+          console.error("Video autoplay failed:", error);
+        });
       }
     });
   }, []);
@@ -48,15 +51,15 @@ const Process = () => {
       <div className="flex justify-center items-center flex-wrap md:gap-4 ">
         {processSteps.map((step, index) => {
           // Determine if the link is an in-page anchor
-          const isHashLink = step.href.startsWith('/#');
+          const isHashLink = step.href.startsWith("/#");
           // Choose the appropriate Link component
           const LinkComponent = isHashLink ? HashLink : Link;
 
           return (
             <div key={index} className="flex items-center">
               {/* Clickable Card */}
-              <LinkComponent 
-                to={step.href} 
+              <LinkComponent
+                to={step.href}
                 className="flex flex-col items-center cursor-pointer transform hover:scale-105 hover:custom-circle-shadow transition-transform duration-300"
               >
                 {/* Circle with Video */}
@@ -67,20 +70,44 @@ const Process = () => {
                     className="object-cover"
                     style={{
                       width:
-                        step.title === 'Inspection'
-                          ? '80%'
-                          : step.title === 'Booking' || step.title === 'Final Review'
-                          ? '60%'
-                          : '80%',
+                        step.title === "Inspection"
+                          ? "80%"
+                          : step.title === "Booking" ||
+                              step.title === "Final Review"
+                            ? "60%"
+                            : "80%",
                       height:
-                        step.title === 'Inspection'
-                          ? '80%'
-                          : step.title === 'Booking' || step.title === 'Final Review'
-                          ? '60%'
-                          : '80%',
+                        step.title === "Inspection"
+                          ? "80%"
+                          : step.title === "Booking" ||
+                              step.title === "Final Review"
+                            ? "60%"
+                            : "80%",
                     }}
                     muted
                     loop
+                    playsInline
+                    // Disable pointer events to prevent video from capturing clicks/taps
+                    style={{
+                      pointerEvents: "none",
+                      ...{
+                        width:
+                          step.title === "Inspection"
+                            ? "80%"
+                            : step.title === "Booking" ||
+                                step.title === "Final Review"
+                              ? "60%"
+                              : "80%",
+                        height:
+                          step.title === "Inspection"
+                            ? "80%"
+                            : step.title === "Booking" ||
+                                step.title === "Final Review"
+                              ? "60%"
+                              : "80%",
+                      },
+                    }}
+                    tabIndex={-1}
                   />
                 </div>
                 {/* Step Title */}
