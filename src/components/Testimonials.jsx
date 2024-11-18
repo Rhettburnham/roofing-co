@@ -122,7 +122,7 @@ const Testimonials = () => {
       {/* Centered "Testimonials" Heading with Icon Button for Rhett's Roofing */}
       <div className="flex items-center justify-center my-6">
         <h2
-          className="text-5xl font-serif mr-4"
+          className="text-[8vh] md:text-5xl font-serif mr-4"
           style={{ fontFamily: "Times New Roman, Times, serif" }}
         >
           Testimonials
