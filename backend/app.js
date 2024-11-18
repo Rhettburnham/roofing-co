@@ -1,21 +1,18 @@
+// app.js
+
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+// const xlsx = require("xlsx");
+// const fs = require("fs");
+// const path = require("path");
 require("dotenv").config(); // Load environment variables
 const { google } = require("googleapis");
 
 const app = express();
 
-// CORS Configuration
-const corsOptions = {
-  origin: process.env.FRONTEND_URL || "http://localhost:5173",
-  optionsSuccessStatus: 200, // Some legacy browsers choke on 204
-};
-app.use(cors(corsOptions));
-
-// Middleware
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+// Use cors and body-parser
+app.use(cors({ origin: "http://localhost:5173" })); // Update with your frontend's origin if different
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
