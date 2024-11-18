@@ -240,12 +240,12 @@ const About = () => {
                     <img
                       src={member.image}
                       alt={member.name}
-                      className="flex w-full h-full object-cover text-center"
+                      className="flex w-full h-full object-cover "
                       title={`${member.name} - ${member.role}`}
                     />
                   </div>
-                  <h3 className="text-xl font-semibold">{member.name}</h3>
-                  <p className="text-gray-600">{member.role}</p>
+                  <h3 className="text-xl font-semibold text-center">{member.name}</h3>
+                  <p className="text-gray-600 text-center">{member.role}</p>
                 </div>
               ))}
             </div>
@@ -339,7 +339,7 @@ const About = () => {
         </section>
 
         {/* Service Cards with Flip Effect */}
-        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 px-6 py-10 bg-faint-color rounded-lg mx-10 h-[120vh] md:h-[65vh]">
+        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-2 md:gap-6 px-6 py-10 bg-faint-color rounded-lg mx-10 h-[120vh] md:h-[65vh]">
           {cards.map((card, index) => (
             <div
               key={index}
