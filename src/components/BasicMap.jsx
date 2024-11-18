@@ -32,7 +32,7 @@ const DropMarker = ({ position, icon }) => {
 
 const BasicMap = () => {
   const mapRef = useRef();
-  const [center] = useState({ lat: 33.800762207, lng: -84.308343 }); 
+  const [center] = useState({ lat: 33.800762207, lng: -84.308343 });
   const [showLocations, setShowLocations] = useState(false); // Toggle between Service Hours and Service Locations
 
   const ZOOM_LEVEL = 16;
@@ -146,11 +146,33 @@ const BasicMap = () => {
     );
   };
 
+  // New state to control content visibility based on screen size
+  const [isContentVisible, setIsContentVisible] = useState(false);
+  const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const smallScreen = window.innerWidth <= 768;
+      setIsSmallScreen(smallScreen);
+      if (!smallScreen) {
+        setIsContentVisible(true);
+      }
+    };
+
+    // Set initial content visibility based on initial screen size
+    if (!isSmallScreen) {
+      setIsContentVisible(true);
+    }
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [isSmallScreen]);
+
   return (
     <div className="">
       {/* Call to Action Component at the top */}
       {/* Text */}
-      <div className="flex justify-center  md:justify-start md:ml-16 items-center">
+      <div className="flex justify-center md:justify-start md:ml-16 items-center">
         <h1 className="text-[3vh] md:text-[2vw] font-bold text-black text-center">
           Are we in your area?
         </h1>
@@ -195,59 +217,71 @@ const BasicMap = () => {
           {/* Tabs for Service Hours and Service Locations */}
           <div className="flex w-full justify-between mb-[1vh] border-2 border-white">
             <button
-              onClick={() => setShowLocations(false)}
-              className={`w-1/2 py-[1.5vh] text-center  ${
-                !showLocations ? "highlight-box text-white font-bold" : "dark_button text-white hover:bg-gray-600"
+              onClick={() => {
+                setShowLocations(false);
+                setIsContentVisible(true);
+              }}
+              className={`w-1/2 py-[1.5vh] text-center ${
+                isContentVisible && !showLocations
+                  ? "highlight-box text-white font-bold"
+                  : "dark_button text-white hover:bg-gray-600"
               } rounded-l-xl`}
             >
               Service Hours
             </button>
             <button
-              onClick={() => setShowLocations(true)}
-              className={`w-1/2 py-[1.5vh] text-center  ${
-                showLocations ? "highlight-box text-white font-bold" : "dark_button text-white hover:bg-gray-600"
+              onClick={() => {
+                setShowLocations(true);
+                setIsContentVisible(true);
+              }}
+              className={`w-1/2 py-[1.5vh] text-center ${
+                isContentVisible && showLocations
+                  ? "highlight-box text-white font-bold"
+                  : "dark_button text-white hover:bg-gray-600"
               } rounded-r-xl`}
             >
               Service Locations
             </button>
           </div>
 
-          {/* Table Rendering */}
-          <div className="flex-1 flex flex-col">
-            <div className="h-auto md:h-[43vh] overflow-hidden rounded-xl">
-              {showLocations ? (
-                // For Service Locations, enable scrolling within the fixed height
-                <div
-                  className="relative h-full overflow-y-auto"
-                  onScroll={handleScroll}
-                  ref={scrollContainerRef}
-                >
-                  {renderServiceLocationsTable()}
-                  {showScrollArrow && (
-                    <div className="absolute bottom-2 left-0 w-full flex justify-center pointer-events-none">
-                      <div ref={arrowRef}>
-                        {/* Arrow SVG */}
-                        <svg
-                          className="w-10 h-10 text-gray-200"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M5.292 7.292a1 1 0 011.415 0L10 10.585l3.293-3.293a1 1 0 011.415 1.415l-4 4a1 1 0 01-1.415 0l-4-4a1 1 0 010-1.415z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
+          {/* Conditionally render the content based on isContentVisible */}
+          {isContentVisible && (
+            <div className="flex-1 flex flex-col">
+              <div className="h-auto md:h-[43vh] overflow-hidden rounded-xl">
+                {showLocations ? (
+                  // For Service Locations, enable scrolling within the fixed height
+                  <div
+                    className="relative h-full overflow-y-auto"
+                    onScroll={handleScroll}
+                    ref={scrollContainerRef}
+                  >
+                    {renderServiceLocationsTable()}
+                    {showScrollArrow && (
+                      <div className="absolute bottom-2 left-0 w-full flex justify-center pointer-events-none">
+                        <div ref={arrowRef}>
+                          {/* Arrow SVG */}
+                          <svg
+                            className="w-10 h-10 text-gray-200"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M5.292 7.292a1 1 0 011.415 0L10 10.585l3.293-3.293a1 1 0 011.415 1.415l-4 4a1 1 0 01-1.415 0l-4-4a1 1 0 010-1.415z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                // For Service Hours, adjust height to ensure all days are visible
-                <div className="h-full overflow-hidden">{renderServiceHoursTable()}</div>
-              )}
+                    )}
+                  </div>
+                ) : (
+                  // For Service Hours, adjust height to ensure all days are visible
+                  <div className="h-full overflow-hidden">{renderServiceHoursTable()}</div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
