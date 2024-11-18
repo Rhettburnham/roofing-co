@@ -207,7 +207,9 @@ const BasicMap = () => {
             {/* Bottom Bar with Address and Phone Number */}
             <div className="absolute bottom-0 w-full dark-below-header text-white text-center py-2">
               <div className="font-bold">1575 Clairmont Rd, Decatur, GA 30033</div>
-              <div className="font-bold">📞 (442)236-3783</div>
+              <div className="font-bold">
+                <a href="tel:4422363783">📞 (442)236-3783</a>
+              </div>
             </div>
           </div>
         </div>
