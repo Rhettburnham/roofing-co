@@ -10,9 +10,7 @@ import {
 } from "react-icons/fa";
 
 // Common class names
-const iconClass = "mb-4 drop-shadow";
-const sectionTitleClass =
-  "flex justify-center text-[3.5vh] font-semibold mb-1 text-center";
+const iconClass = "mb-2 drop-shadow";
 
 // Combined data array with individual colors
 const services = [
@@ -63,7 +61,7 @@ const Packages = () => {
           <h2 className="flex justify-center text-[3.5vh] font-semibold mb-1 text-center my-6">
             Our Services
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-2 md:mt-4 px-12 items-stretch">
+          <div className="grid grid-cols-4 gap-2 mt-2 md:mt-4 px-12 items-stretch">
             {services.map((service, index) => (
               <motion.div
                 key={index}
@@ -84,9 +82,9 @@ const Packages = () => {
                       <div className="flex flex-col items-center justify-center flex-grow">
                         {React.createElement(service.icon, {
                           color: service.color,
-                          className: `${iconClass} text-5xl text-white mb-2`,
+                          className: `${iconClass} text-[8vw] md:text-5xl text-white mb-2`,
                         })}
-                        <h3 className="text-sm md:text-xl font-semibold text-white text-center mt-2">
+                        <h3 className="text-[2.5vw] md:text-xl font-semibold text-white text-center mt-2">
                           {service.title}
                         </h3>
                       </div>
