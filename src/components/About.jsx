@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import BasicMap from "./BasicMap"; // Import the Map component
 import Process from "./Process"; // Import the Map component
+import { HashLink } from "react-router-hash-link";
 
 import {
   FaCheckCircle,
@@ -225,7 +226,7 @@ const About = () => {
       {/* Main Content */}
       <div className=" mx-full pb-8">
         {/* Our Story */}
-        <section id="our-story" className="relative w-full  bg-white z-30  ">
+        <section id="our-story" className="relative w-full  bg-white z-30">
           {/* Background Text */}
           <div className="flex flex-col items-center justify-center  px-4 ">
             <h2 className="text-xl md:text-3xl font-bold my-2">Our Team</h2>
@@ -249,7 +250,7 @@ const About = () => {
               ))}
             </div>
           </div>
-          <p className="flex flex-col mb-8 text-[4vw] md:text-[2vh] justify-center text-center px-10 md:px-[20vw] mt-4">
+          <p className="flex flex-col mb-8 text-[3vw] md:text-[2vh] justify-center text-center px-10 md:px-[20vw] mt-4">
             Meet the dedicated professionals who make Rhett's Roofing one of the
             most trusted names in the roofing industry. Our team's commitment to
             excellence ensures top-notch service for every project. Above is the
@@ -262,13 +263,13 @@ const About = () => {
         <BasicMap />
         <section>
           <Process />
-          <div className="flex justify-center py-6 ">
-            <a
-              href="#repair-packages"
-              className="px-8 py-4 dark_button text-white font-semibold rounded-full hover:bg-white hover:text-black transition duration-300"
-            >
-              Explore Packages
-            </a>
+          <div className="flex justify-center">
+          <HashLink
+            to="/#packages"
+            className="px-8 py-4 dark_button text-white font-semibold rounded-full hover:bg-white hover:text-black transition duration-300"
+          >
+            Explore Packages
+          </HashLink>
           </div>
         </section>
 
