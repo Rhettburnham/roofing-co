@@ -41,7 +41,7 @@ const Process = () => {
   }, []);
 
   return (
-    <section className="px-4 md:px-8 mb-6">
+    <section className=" md:px-8 mb-6 overflow-hidden"> W
       {/* Section Title */}
       <div className="text-center text-[8vw] md:text-[4vh]">
         <h1>Our Process</h1>
@@ -63,7 +63,7 @@ const Process = () => {
                 className="flex flex-col items-center cursor-pointer transform hover:scale-105 hover:custom-circle-shadow transition-transform duration-300"
               >
                 {/* Circle with Video */}
-                <div className="rounded-full overflow-hidden flex items-center justify-center shadow-md md:w-[20vh] md:h-[20vh] w-[8vh] h-[8vh] bg-white">
+                <div className="rounded-full overflow-hidden flex items-center justify-center shadow-md md:w-[20vh] md:h-[20vh] w-[7vh] h-[7vh] bg-white">
                   <video
                     ref={(el) => (videoRefs.current[index] = el)}
                     src={step.videoSrc}
@@ -121,7 +121,7 @@ const Process = () => {
                 <div className="flex items-center mx-2">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className="relative w-6 h-6 md:w-12 md:h-12 md:mx-2"
+                    className="relative w-4 h-4 md:w-12 md:h-12 md:mx-2"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
