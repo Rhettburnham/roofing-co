@@ -41,7 +41,7 @@ const Process = () => {
   }, []);
 
   return (
-    <section className=" md:px-8 mb-6 overflow-hidden"> W
+    <section className=" md:px-8 mb-6 overflow-hidden"> 
       {/* Section Title */}
       <div className="text-center text-[8vw] md:text-[4vh]">
         <h1>Our Process</h1>
