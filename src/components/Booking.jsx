@@ -142,7 +142,7 @@ const Booking = () => {
 
   return (
     <div
-      className="flex flex-col items-center p-6 faint-color w-full"
+      className="flex flex-col items-center pt-3 faint-color w-full"
       id="booking"
     >
       {/* Header Section */}
@@ -153,9 +153,9 @@ const Booking = () => {
             <h2 className="text-2xl md:text-3xl font-bold text-black">
               Contact Us!
             </h2>
-            <p className="text-base md:text-lg text-gray-700 mt-1">
-              📞 (770) 330-2349
-            </p>
+            <div className="font-bold text-base md:text-lg text-gray-700 mt-1">
+              <a href="tel:4422363783">📞 (442)236-3783</a>
+            </div>
           </div>
         </div>
       </div>

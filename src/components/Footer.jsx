@@ -56,7 +56,9 @@ const Footer = () => {
             1575 Clairmont Rd<br />
             Decatur, GA 30033
             </p>
-            <p className="text-gray-400 mt-2">Phone: (442) 236-3783</p>
+            <div className=" text-gray-400 mt-2">
+                <a href="tel:4422363783">Phone: (442)236-3783</a>
+            </div>
             <p className="text-gray-400">Email: Rhett.Burnham@emory.edu</p>
           </div>
         </div>

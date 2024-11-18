@@ -57,7 +57,7 @@ const Packages = () => {
   return (
     <div className="w-full md:px-9">
       <div className="relative overflow-hidden">
-        <section className="my-6">
+        <section className="mb-2 md:my-6">
           <h2 className="flex justify-center text-[3.5vh] font-semibold mb-1 text-center my-6">
             Our Services
           </h2>

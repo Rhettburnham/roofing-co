@@ -120,7 +120,7 @@ const Testimonials = () => {
   return (
     <section id="testimonials" className="relative bg-gradient-to-t from-faint-color to-white">
       {/* Centered "Testimonials" Heading with Icon Button for Rhett's Roofing */}
-      <div className="flex items-center justify-center my-6 px-6 md:px-0">
+      <div className="flex items-center justify-center md:mb-3 px-6 md:px-0">
         <h2
           className="text-[6vh] md:text-5xl font-serif mr-4 "
           style={{ fontFamily: "Times New Roman, Times, serif" }}
@@ -129,13 +129,13 @@ const Testimonials = () => {
         </h2>
         <button
           onClick={handleSwap}
-          className="bg-white p-3 rounded-full drop-shadow-lg hover:shadow-xl transition-shadow duration-300"
+          className="bg-white p-2 rounded-full drop-shadow-lg hover:shadow-xl transition-shadow duration-300"
           aria-label="Switch Testimonials Data Set"
         >
           <img
             src={activeSet === 1 ? yelpIcon : googleIcon}
             alt="Icon"
-            className="w-8 h-8"
+            className="w-6 h-6 md:w-8 md:h-8"
           />
         </button>
       </div>

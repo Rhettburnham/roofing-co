@@ -215,7 +215,7 @@ const BasicMap = () => {
         </div>
 
         {/* Content Container */}
-        <div className="w-full md:w-2/5 flex flex-col md:h-full mb-5 md:mb-0">
+        <div className="w-full md:w-2/5 flex flex-col md:h-full  md:mb-0">
           {/* Tabs for Service Hours and Service Locations */}
           <div className="flex w-full justify-between mb-[1vh] border-2 border-white">
             <button
