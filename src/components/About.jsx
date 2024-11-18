@@ -232,25 +232,7 @@ const About = () => {
             <h2 className="text-xl md:text-3xl font-bold my-2">Our Team</h2>
           </div>
           {/* Team Members */}
-          <div className="container mx-auto px-4">
-            <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-8">
-              {teamMembers.map((member, index) => (
-                <div key={index} className="flex flex-col items-center">
-                  <div className="w-32 h-32 mb-4 rounded-full overflow-hidden">
-                    <img
-                      src={member.image}
-                      alt={member.name}
-                      className="flex w-full h-full object-cover "
-                      title={`${member.name} - ${member.role}`}
-                    />
-                  </div>
-                  <h3 className="text-xl font-semibold text-center">{member.name}</h3>
-                  <p className="text-gray-600 text-center">{member.role}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-          <p className="flex flex-col mb-8 text-[3vw] md:text-[2vh] justify-center text-center px-10 md:px-[20vw] mt-4">
+          <p className="flex flex-col mb-4 text-[3vw] md:text-[2vh] justify-center text-center px-10 md:px-[20vw]">
             Meet the dedicated professionals who make Rhett's Roofing one of the
             most trusted names in the roofing industry. Our team's commitment to
             excellence ensures top-notch service for every project. Above is the
@@ -258,6 +240,24 @@ const About = () => {
             meet your roofing needs give us a call at (442) 236-3783, or
             schedule a booking.
           </p>
+          <div className="container mx-auto px-4 mb-4">
+            <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-2 ">
+              {teamMembers.map((member, index) => (
+                <div key={index} className="flex flex-col items-center">
+                  <div className="w-24 h-24 md:w-32 md:h-32 md:mb-4 rounded-full overflow-hidden">
+                    <img
+                      src={member.image}
+                      alt={member.name}
+                      className="flex w-full h-full object-cover "
+                      title={`${member.name} - ${member.role}`}
+                    />
+                  </div>
+                  <h3 className="text-[3vw] md:text-xl font-semibold text-center">{member.name}</h3>
+                  <p className="text-[3vw] text-gray-600 text-center">{member.role}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </section>
 
         <BasicMap />

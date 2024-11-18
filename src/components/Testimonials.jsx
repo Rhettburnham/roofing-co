@@ -118,7 +118,7 @@ const Testimonials = () => {
     activeSet === 1 ? testimonialsDataSet1 : testimonialsDataSet2;
 
   return (
-    <section id="testimonials" className="relative bg-gradient-to-t from-faint-color to-white">
+    <section id="testimonials" className="relative bg-gradient-to-t from-faint-color to-white px-1">
       {/* Centered "Testimonials" Heading with Icon Button for Rhett's Roofing */}
       <div className="flex items-center justify-center md:mb-3 px-6 md:px-0">
         <h2
