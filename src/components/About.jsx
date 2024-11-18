@@ -249,7 +249,7 @@ const About = () => {
               ))}
             </div>
           </div>
-          <p className="flex flex-col mb-8 text-[2vh] justify-center text-center px-[20vw] mt-4">
+          <p className="flex flex-col mb-8 text-[4vw] md:text-[2vh] justify-center text-center px-10 md:px-[20vw] mt-4">
             Meet the dedicated professionals who make Rhett's Roofing one of the
             most trusted names in the roofing industry. Our team's commitment to
             excellence ensures top-notch service for every project. Above is the
@@ -351,10 +351,10 @@ const About = () => {
               >
                 {/* Front Side */}
                 <div className="card-front flex flex-col items-center justify-center dark_button hover:bg-gray-600 text-white rounded-lg p-2 text-center transition duration-250 shadow-2xl">
-                  <div className="text-blue-600 text-[5vh] mb-4">
+                  <div className=" text-[8vw] md:text-[5vh] mb-4">
                     {card.icon}
                   </div>
-                  <h3 className="text-[2vh] font-semibold mb-2">
+                  <h3 className="text-[4vw] md:text-[2vh] font-semibold mb-2">
                     {card.title}
                   </h3>
                 </div>

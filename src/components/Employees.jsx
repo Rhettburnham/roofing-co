@@ -73,7 +73,7 @@ const Employees = () => {
   }, [currentIndex, employees.length, transitionDuration]);
 
   return (
-    <div className="relative employee-section flex flex-col items-center justify-center gap-2 px-6 mb-6 bg-gradient-to-b from-faint-color to-white">
+    <div className="relative employee-section flex flex-col items-center justify-center gap-2 px-6 mb-6 bg-gradient-to-b from-faint-color to-white overflow-hidden">
 
       <div className="w-full max-w-screen-lg mt-2">
         <div

@@ -1,36 +1,35 @@
 import React, { useState } from "react";
 import StarRating from "./StarRating";
 
-// Import the image icons
+// Import the image icons for Rhett's Roofing
 import yelpIcon from "/assets/images/yelp.png";
 import googleIcon from "/assets/images/googleimage.png";
 
-// Testimonials data (same as before)
-// Testimonials data
+// Testimonials data for Rhett's Roofing
 const testimonialsDataSet1 = [
   {
     name: "Katy O'Neil",
     stars: 5,
     date: "",
-    text: "Professionalism and courtesy at the highest level. Deluxe's crew arrived promptly both days and efficiently completed our total roof replacement. Their preparation included totally covering our deck and upon completion they set up my rocking chairs with the seat cushions in place! Not a single piece of trash, nail, or old shingle remained after the job was done. I will recommend Deluxe to anyone needing a quality roof at a reasonable rate. Bravo to your great crew.",
+    text: "Professionalism and courtesy at the highest level. Rhett's crew arrived promptly both days and efficiently completed our total roof replacement. Their preparation included totally covering our deck and upon completion they set up my rocking chairs with the seat cushions in place! Not a single piece of trash, nail, or old shingle remained after the job was done. I will recommend Rhett's Roofing to anyone needing a quality roof at a reasonable rate. Bravo to your great crew.",
     logo: googleIcon,
-    link: "https://www.google.com/maps/place/Deluxe+Roofing/",
+    link: "https://www.google.com/maps/place/Rhetts+Roofing/",
   },
   {
     name: "Anthony Yates",
     stars: 5,
     date: "",
-    text: "I hired deluxe roofing to install a new roof on my house. Garrett came out the day as I called and showed me my options. A few days later his crew arrived on schedule, respected me and my home and did a professional job. They were in and out in just a day. They did everything they said they were going to do. They came, installed and cleaned up like they were never there. Garrett was a real pleasure to work with and has earned my business in the future. I would recommend him to anyone.",
+    text: "I hired Rhett's Roofing to install a new roof on my house. Rhett came out the day I called and showed me my options. A few days later his crew arrived on schedule, respected me and my home and did a professional job. They were in and out in just a day. They did everything they said they were going to do. They came, installed, and cleaned up like they were never there. Rhett was a real pleasure to work with and has earned my business in the future. I would recommend him to anyone.",
     logo: googleIcon,
-    link: "https://www.google.com/maps/place/Deluxe+Roofing/",
+    link: "https://www.google.com/maps/place/Rhetts+Roofing/",
   },
   {
     name: "Aimee Cantrell",
     stars: 5,
     date: "",
-    text: "I hired deluxe roofing to install a new roof on my house. Garrett came out the day as I called and showed me my options. A few days later his crew arrived on schedule, respected me and my home and did a professional job. They were in and out in just a day. They did everything they said they were going to do. They came, installed and cleaned up like they were never there. Garrett was a real pleasure to work with and has earned my business in the future. I would recommend him to anyone.",
+    text: "I hired Rhett's Roofing to install a new roof on my house. Rhett came out the day I called and showed me my options. A few days later his crew arrived on schedule, respected me and my home and did a professional job. They were in and out in just a day. They did everything they said they were going to do. They came, installed, and cleaned up like they were never there. Rhett was a real pleasure to work with and has earned my business in the future. I would recommend him to anyone.",
     logo: googleIcon,
-    link: "https://www.google.com/maps/place/Deluxe+Roofing/",
+    link: "https://www.google.com/maps/place/Rhetts+Roofing/",
   },
 ];
 
@@ -39,25 +38,25 @@ const testimonialsDataSet2 = [
     name: "Shantericka G.",
     stars: 5,
     date: "Aug 12, 2024",
-    text: "Duane & Sons replaced our roof after weather damage, and the experience was seamless. They communicated every step of the way, arrived on time, and finished ahead of schedule. The professionalism and quality of work exceeded my expectations. Highly recommend!",
+    text: "Rhett & Sons replaced our roof after weather damage, and the experience was seamless. They communicated every step of the way, arrived on time, and finished ahead of schedule. The professionalism and quality of work exceeded my expectations. Highly recommend!",
     logo: yelpIcon,
-    link: "https://www.yelp.com/biz/duane-and-sons-roofing-and-remodeling",
+    link: "https://www.yelp.com/biz/rhetts-roofing",
   },
   {
     name: "Echoing Review",
     stars: 5,
     date: "Sep 4, 2024",
-    text: "The team at Duane & Sons did a fantastic job installing our new gutters, even with snow on the ground! They were communicative and professional throughout. The installation was perfect, and our neighbors are impressed too.",
+    text: "The team at Rhett's Roofing did a fantastic job installing our new gutters, even with snow on the ground! They were communicative and professional throughout. The installation was perfect, and our neighbors are impressed too.",
     logo: yelpIcon,
-    link: "https://www.yelp.com/biz/duane-and-sons-roofing-and-remodeling",
+    link: "https://www.yelp.com/biz/rhetts-roofing",
   },
   {
     name: "Mary P.",
     stars: 5,
     date: "Jul 18, 2024",
-    text: "Duane & Sons Roofing was quick and efficient. They replaced our roof in one day, and the results were fantastic. Darrell and Joseph led a hardworking team, and I appreciated how seamless the entire process was. Would definitely recommend them.",
+    text: "Rhett's Roofing was quick and efficient. They replaced our roof in one day, and the results were fantastic. Rhett led a hardworking team, and I appreciated how seamless the entire process was. Would definitely recommend them.",
     logo: yelpIcon,
-    link: "https://www.yelp.com/biz/duane-and-sons-roofing-and-remodeling",
+    link: "https://www.yelp.com/biz/rhetts-roofing",
   },
 ];
 
@@ -74,7 +73,7 @@ const TestimonialItem = ({ testimonial }) => {
       className="p-4 bg-white rounded-lg custom-circle-shadow relative cursor-pointer"
       onClick={handleExpandClick}
     >
-      {/* Logo in the top right */}
+      {/* Logo in the top right for Rhett's Roofing */}
       <a
         href={testimonial.link}
         target="_blank"
@@ -88,7 +87,7 @@ const TestimonialItem = ({ testimonial }) => {
           className="w-full h-full object-cover"
         />
       </a>
-      {/* Testimonial Content */}
+      {/* Testimonial Content for Rhett's Roofing */}
       <div className="flex flex-col items-start mb-2">
         <p className="text-sm font-semibold text-black">{testimonial.name}</p>
         <StarRating rating={testimonial.stars} />
@@ -120,7 +119,7 @@ const Testimonials = () => {
 
   return (
     <section id="testimonials" className="relative bg-gradient-to-t from-faint-color to-white">
-      {/* Centered "Testimonials" Heading with Icon Button */}
+      {/* Centered "Testimonials" Heading with Icon Button for Rhett's Roofing */}
       <div className="flex items-center justify-center my-6">
         <h2
           className="text-5xl font-serif mr-4"
@@ -141,7 +140,7 @@ const Testimonials = () => {
         </button>
       </div>
 
-      {/* Testimonials Grid */}
+      {/* Testimonials Grid for Rhett's Roofing */}
       <div className="container mx-auto px-4">
         <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
           {currentTestimonials.map((testimonial, index) => (
@@ -150,7 +149,7 @@ const Testimonials = () => {
         </div>
       </div>
 
-      {/* Leave a Review Section (same as before) */}
+      {/* Leave a Review Section for Rhett's Roofing */}
       <div className=" mt-3 text-center px-3">
         <h3 className="text-xl font-bold mb-1">Leave a Review</h3>
         <p className="text-sm mb-3">
@@ -159,7 +158,7 @@ const Testimonials = () => {
         </p>
         <div className="flex justify-center space-x-6">
           <a
-            href="https://www.google.com/maps/place/Deluxe+Roofing"
+            href="https://www.google.com/maps/place/Rhetts+Roofing"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center px-4 py-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition duration-300 text-sm"
@@ -168,7 +167,7 @@ const Testimonials = () => {
             <span>Review us on Google</span>
           </a>
           <a
-            href="https://www.yelp.com/biz/duane-and-sons-roofing-and-remodeling"
+            href="https://www.yelp.com/biz/rhetts-roofing"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center px-4 py-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition duration-300 text-sm"
