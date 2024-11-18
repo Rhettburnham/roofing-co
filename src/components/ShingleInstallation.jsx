@@ -152,7 +152,7 @@ const ShingleInstallation = () => {
           Our Roof Shingle Installation Process
         </h2>
         <motion.ol
-          className="grid space-y-8 grid-cols-2"
+          className="grid  grid-cols-2"
           initial="hidden"
           animate="visible"
           variants={listVariants}

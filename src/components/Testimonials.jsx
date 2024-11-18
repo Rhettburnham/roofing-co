@@ -120,7 +120,7 @@ const Testimonials = () => {
   return (
     <section id="testimonials" className="relative bg-gradient-to-t from-faint-color to-white">
       {/* Centered "Testimonials" Heading with Icon Button for Rhett's Roofing */}
-      <div className="flex items-center justify-center my-6 px-10 md:px-0">
+      <div className="flex items-center justify-center my-6 px-6 md:px-0">
         <h2
           className="text-[6vh] md:text-5xl font-serif mr-4 "
           style={{ fontFamily: "Times New Roman, Times, serif" }}

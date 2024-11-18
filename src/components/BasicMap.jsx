@@ -182,7 +182,7 @@ const BasicMap = () => {
 
       <div className="relative flex flex-col md:flex-row md:gap-4 md:p-5 h-auto md:h-[55vh] bg-white z-30 px-8 md:px-16">
         {/* Map Container */}
-        <div className="relative w-full md:w-3/5 mb-4 md:mb-0 z-10 h-[50vh] md:h-full">
+        <div className="relative w-full md:w-3/5 mb-4 md:mb-0 z-10 h-[35vh] md:h-[50vh] md:h-full">
           <div className="w-full h-full rounded-xl overflow-hidden shadow-lg border border-gray-300 z-10 relative">
             <div className="relative w-full h-full">
               <MapContainer
