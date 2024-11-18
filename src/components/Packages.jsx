@@ -7,7 +7,6 @@ import {
   FaFan,
   FaPaintRoller,
   FaTint,
-  
 } from "react-icons/fa";
 
 // Common class names
@@ -41,24 +40,6 @@ const services = [
     link: "/gutterrelated",
     color: "#ffffff",
   },
-  // {
-  //   icon: GiMushrooms,
-  //   title: "Mold & Algae",
-  //   link: "/moldalgaegrowth",
-  //   color: "#98c15a",
-  // },
-  // {
-  //   icon: GiCrackedGlass,
-  //   title: "Deterioration",
-  //   link: "/roofingmaterialdeterioration",
-  //   color: "#a3914d",
-  // },
-  // {
-  //   icon: MdWaterDamage,
-  //   title: "Water Damage",
-  //   link: "/leakswaterdamage",
-  //   color: "#2980B9",
-  // },
 ];
 
 const Packages = () => {
@@ -76,12 +57,13 @@ const Packages = () => {
   };
 
   return (
-  <div className="w-full md:px-9 ">
-
+    <div className="w-full md:px-9">
       <div className="relative overflow-hidden">
         <section className="my-6">
-          <h2 className={sectionTitleClass}>Our Services</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-4 px-12 ">
+          <h2 className="flex justify-center text-[3.5vh] font-semibold mb-1 text-center my-6">
+            Our Services
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-2 md:mt-4 px-12 items-stretch">
             {services.map((service, index) => (
               <motion.div
                 key={index}
@@ -89,27 +71,24 @@ const Packages = () => {
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, amount: 0.2 }}
+                className="flex"
               >
                 <Tilt
-                  className="transform transition-transform duration-500 hover:custom-circle-shadow"
+                  className="transform transition-transform duration-500 hover:custom-circle-shadow h-full w-full flex flex-col"
                   tiltMaxAngleX={15}
                   tiltMaxAngleY={15}
                   scale={1.05}
                 >
-                  <div className="dark_button hover:bg-gray-600 backdrop-filter backdrop-blur-lg rounded-2xl custom-circle-shadow overflow-hidden  transition duration-300">
-                    <Link to={service.link}>
-                      {/* Set fixed width and height for the card */}
-                      <div className=" h-[17vh] flex items-center justify-center">
-                        <div className="flex flex-col items-center justify-center">
-                          {/* Render the icon with specific color */}
-                          {React.createElement(service.icon, {
-                            color: service.color,
-                            className: `${iconClass} text-5xl text-white`,
-                          })}
-                          <h3 className="text-sm md:text-xl font-semibold text-white  text-center ">
-                            {service.title}
-                          </h3>
-                        </div>
+                  <div className="dark_button hover:bg-gray-600 backdrop-filter backdrop-blur-lg rounded-2xl custom-circle-shadow overflow-hidden transition duration-300 p-4 md:p-6 flex flex-col h-full">
+                    <Link to={service.link} className="flex flex-col h-full">
+                      <div className="flex flex-col items-center justify-center flex-grow">
+                        {React.createElement(service.icon, {
+                          color: service.color,
+                          className: `${iconClass} text-5xl text-white mb-2`,
+                        })}
+                        <h3 className="text-sm md:text-xl font-semibold text-white text-center mt-2">
+                          {service.title}
+                        </h3>
                       </div>
                     </Link>
                   </div>

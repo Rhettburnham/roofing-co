@@ -150,7 +150,7 @@ const Testimonials = () => {
       </div>
 
       {/* Leave a Review Section for Rhett's Roofing */}
-      <div className=" mt-3 text-center px-3">
+      <div className=" py-3 text-center px-3">
         <h3 className="text-xl font-bold mb-1">Leave a Review</h3>
         <p className="text-sm mb-3">
           We value your feedback! Please take a moment to share your experience

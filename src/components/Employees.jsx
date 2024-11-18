@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import ServiceButton from './ServiceButton';
 
-// Import images (adjust paths based on your project structure)
+// Import images (ensure paths are correct)
 import rooferImage from '/assets/images/roofer.png';
 import estimatorImage from '/assets/images/estimator.png';
 import foremanImage from '/assets/images/foreman.png';
@@ -48,7 +48,7 @@ const Employees = () => {
   const slideInterval = 2500;
   const transitionDuration = 0.5;
 
-  const extendedEmployees = React.useMemo(() => {
+  const extendedEmployees = useMemo(() => {
     return employees.concat(employees.slice(0, itemsToShow));
   }, [itemsToShow]);
 
@@ -74,7 +74,6 @@ const Employees = () => {
 
   return (
     <div className="relative employee-section flex flex-col items-center justify-center gap-2 px-6 mb-6 bg-gradient-to-b from-faint-color to-white overflow-hidden">
-
       <div className="w-full max-w-screen-lg mt-2">
         <div
           className="flex transition-transform"
@@ -88,27 +87,29 @@ const Employees = () => {
           {extendedEmployees.map((employee, i) => (
             <div
               key={i}
-              className="flex-shrink-0 flex flex-col items-center justify-start"
+              className="flex-shrink-0 flex flex-col items-center justify-start px-2"
               style={{ width: `${100 / itemsToShow}%` }}
             >
               <div className="relative mb-4">
-                <div className="bg-white  w-32 h-32 md:w-46 md:h-46 rounded-full overflow-hidden flex items-center justify-center custom-circle-shadow">
+                {/* Corrected width and height classes */}
+                <div className="bg-white w-28 h-28 md:w-40 md:h-40 rounded-full overflow-hidden flex items-center justify-center custom-circle-shadow">
                   <img
                     src={employee.image}
                     alt={employee.name}
-                    className=" h-auto object-cover"
+                    className="w-full h-full object-cover"
                   />
                 </div>
+                {/* Centered Text */}
                 <div className="flex flex-col items-center mt-2">
-                  <p className="text-lg text-black font-semibold">{employee.name}</p>
-                  <p className="text-sm font-semibold text-black">{employee.role}</p>
+                  <p className="text-lg text-black font-semibold text-center">{employee.name}</p>
+                  <p className="text-sm font-semibold text-black text-center">{employee.role}</p>
                 </div>
               </div>
             </div>
           ))}
         </div>
-        <div className="w-full flex z-30 justify-center ">
-        <ServiceButton />
+        <div className="w-full flex z-30 justify-center">
+          <ServiceButton />
         </div>
       </div>
     </div>
