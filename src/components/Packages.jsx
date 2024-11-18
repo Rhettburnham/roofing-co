@@ -58,7 +58,7 @@ const Packages = () => {
     <div className="w-full md:px-9">
       <div className="relative overflow-hidden">
         <section className="mb-2 md:my-6">
-          <h2 className="flex justify-center text-[3.5vh] font-semibold mb-1 text-center my-6">
+          <h2 className="flex justify-center text-[3.5vh] font-semibold mb-1 text-center mb-6">
             Our Services
           </h2>
           <div className="grid grid-cols-4 gap-2 mt-2 md:mt-4 px-12 items-stretch">

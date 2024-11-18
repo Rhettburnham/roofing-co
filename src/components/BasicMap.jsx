@@ -101,7 +101,10 @@ const BasicMap = () => {
       <table className="w-full rounded-2xl border-2 border-white bg-white text-center">
         <tbody>
           {serviceHours.map((item, index) => (
-            <tr key={index} className={`${index % 2 === 0 ? "faint-color" : ""}`}>
+            <tr
+              key={index}
+              className={`${index % 2 === 0 ? "faint-color" : ""}`}
+            >
               <td className="py-3 border border-white">{item.day}</td>
               <td className="py-3 border border-white">{item.time}</td>
             </tr>
@@ -206,8 +209,10 @@ const BasicMap = () => {
             </div>
             {/* Bottom Bar with Address and Phone Number */}
             <div className="absolute bottom-0 w-full dark-below-header text-white text-center py-2">
-              <div className="font-bold">1575 Clairmont Rd, Decatur, GA 30033</div>
-              <div className="font-bold">
+              <div className="font-bold text-[3.5vw] md:text-[3vh]">
+                1575 Clairmont Rd, Decatur, GA 30033
+              </div>
+              <div className="font-bold text-[3.5vw] md:text-[3vh]">
                 <a href="tel:4422363783">📞 (442)236-3783</a>
               </div>
             </div>
@@ -279,7 +284,9 @@ const BasicMap = () => {
                   </div>
                 ) : (
                   // For Service Hours, adjust height to ensure all days are visible
-                  <div className="h-full overflow-hidden">{renderServiceHoursTable()}</div>
+                  <div className="h-full overflow-hidden">
+                    {renderServiceHoursTable()}
+                  </div>
                 )}
               </div>
             </div>

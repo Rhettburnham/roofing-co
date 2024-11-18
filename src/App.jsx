@@ -33,6 +33,7 @@ import Services from './components/Services';
 import Packages from './components/Packages';
 import Aboutbutton from './components/About_button';
 import Process from "./components/Process"; 
+import MainImg from './components/MainImg';
 
 const App = () => {
   return (
@@ -60,6 +61,9 @@ const App = () => {
                 </section>
                 <section id="book">
                   <Booking />
+                </section>
+                <section id="">
+                  <MainImg />
                 </section>
                 <section id="packages">
                   <Packages />
