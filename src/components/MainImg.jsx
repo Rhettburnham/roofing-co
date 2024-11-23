@@ -32,4 +32,3 @@ const MainImg = () => {
 };
 
 export default MainImg;
-

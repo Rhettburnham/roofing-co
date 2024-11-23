@@ -4,7 +4,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        'faint-color': '#E0F7FA',
+        "faint-color": "#E0F7FA",
         blue: "#2997FF",
         gray: {
           DEFAULT: "#86868b",
@@ -16,5 +16,27 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    function ({ addUtilities }) {
+      addUtilities({
+        ".clip-bottom-triangle": {
+          "clip-path":
+            "polygon(0 0, 100% 0, 100% calc(100% - var(--triangle-height)), 50% 100%, 0 calc(100% - var(--triangle-height)))",
+        },
+        ".triangle-height-sm": {
+          "--triangle-height": "30px",
+        },
+        ".md\\:triangle-height-md": {
+          "@screen md": {
+            "--triangle-height": "50px",
+          },
+        },
+        ".lg\\:triangle-height-lg": {
+          "@screen lg": {
+            "--triangle-height": "70px",
+          },
+        },
+      });
+    },
+  ],
 };
