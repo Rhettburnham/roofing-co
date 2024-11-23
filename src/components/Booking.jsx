@@ -1,5 +1,7 @@
+// booking.jsx
+
 import React, { useState } from "react";
-import { logoImg } from "../utils"; // Import the logo image
+import { logoImg } from "../utils"; // Ensure this path is correct
 import axios from "axios";
 import {
   FaBinoculars,
@@ -106,15 +108,15 @@ const Booking = () => {
       console.log("Data being sent:", data);
 
       // Send the form data to the backend
-      // Define API base URL from environment variables
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
+      const API_BASE_URL =
+        import.meta.env.VITE_API_BASE_URL ||
+        "https://roofingco-backend-c97d8dc44f5b.herokuapp.com"; // Fallback to backend URL
 
       // Send the form data to the backend
       const response = await axios.post(
         `${API_BASE_URL}/submit-booking`,
         data
       );
-
 
       // Show success message
       alert(response.data.message);
@@ -130,7 +132,11 @@ const Booking = () => {
       });
     } catch (error) {
       console.error("Error submitting booking:", error);
-      if (error.response && error.response.data && error.response.data.message) {
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
         alert(`Error: ${error.response.data.message}`);
       } else if (error.message) {
         alert(`Error: ${error.message}`);
