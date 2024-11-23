@@ -197,7 +197,7 @@ const About = () => {
     <div className="w-full ">
       <motion.section
         className="relative overflow-hidden"
-        initial={{ height: "100vh" }} // Initial state (full height)
+        initial={{ height: "100vh" }} // Initial state (full height) testing update
         animate={{ height: isShrunk ? "20vh" : "100vh" }} // Transition to 20vh after the delay
         transition={{ duration: 1 }} // Animation duration
       >
