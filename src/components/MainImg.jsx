@@ -2,7 +2,7 @@ import React from 'react';
 
 const MainImg = () => {
   return (
-    <div className="relative w-full min-w-screen-lg ">
+    <div className="relative w-full min-w-screen-lg md:h-40[vh]">
       {/* Square Image */}
       <div className="relative w-full">
         <img
