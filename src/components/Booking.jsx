@@ -110,7 +110,7 @@ const Booking = () => {
       // Send the form data to the backend
       const API_BASE_URL =
         import.meta.env.VITE_API_BASE_URL ||
-        "https://roofingco-backend-c97d8dc44f5b.herokuapp.com"; // Fallback to backend URL
+        "https://roofingco-backend.herokuapp.com"; // Fallback to backend URL
 
       // Send the form data to the backend
       const response = await axios.post(
