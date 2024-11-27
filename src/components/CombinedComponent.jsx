@@ -17,9 +17,9 @@ const CombinedComponent = () => {
       </div>
       {/* Text Overlay */}
       <div
-        className="absolute w-full h-full flex items-center justify-center font-bold z-10 text-white text-[13vw] md:text-[9vw] "
+        className="absolute w-full h-full flex items-center justify-center text-center font-bold z-10 text-white text-[13vw] md:text-[9vw] "
       >
-        <span className="custom-text-shadow">Rhett's Roofing</span>
+        <span className="custom-text-shadow">Duane & Sons Roofing</span>
       </div>
     </div>
   );

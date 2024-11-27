@@ -14,7 +14,7 @@ const MainImg = () => {
 
       {/* Bottom Triangle (White) */}
       <div
-        className="absolute bottom-0 left-0 w-full h-[15vh] md:h-[20vh] bg-white"
+        className="absolute bottom-0 left-0 w-full h-[10vh] md:h-[20vh] bg-white"
         style={{
           clipPath: 'polygon(50% 0%, 0 100%, 100% 100%)',
         }}

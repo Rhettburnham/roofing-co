@@ -57,11 +57,11 @@ const Packages = () => {
   return (
     <div className="w-full md:px-9">
       <div className="relative overflow-hidden">
-        <section className="mb-2 md:my-6">
-          <h2 className="flex justify-center text-[3.5vh] font-semibold mb-1 text-center mb-6">
-            Our Services
+        <section className=" md:my-6">
+          <h2 className="flex justify-center text-[6.5vw] font-semibold text-center">
+            Services
           </h2>
-          <div className="grid grid-cols-4 gap-2 mt-2 md:mt-4 px-12 items-stretch">
+          <div className="mb-2 grid grid-cols-4 gap-2 mt-2 md:mt-4 px-12 items-stretch">
             {services.map((service, index) => (
               <motion.div
                 key={index}

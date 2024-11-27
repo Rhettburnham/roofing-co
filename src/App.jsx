@@ -62,11 +62,11 @@ const App = () => {
                 <section id="book">
                   <Booking />
                 </section>
-                <section id="">
-                  <MainImg />
-                </section>
                 <section id="packages">
                   <Packages />
+                </section>
+                <section id="">
+                  <MainImg />
                 </section>
                 <section id="testimonials">
                   <Testimonials />

@@ -120,9 +120,9 @@ const Testimonials = () => {
   return (
     <section id="testimonials" className="relative bg-gradient-to-t from-faint-color to-white px-1">
       {/* Centered "Testimonials" Heading with Icon Button for Rhett's Roofing */}
-      <div className="flex items-center justify-center md:mb-3 px-6 md:px-0">
+      <div className="flex items-center justify-center md:mb-3 px-12 md:px-0">
         <h2
-          className="text-[6vh] md:text-5xl font-serif mr-4 "
+          className="text-[7.5vw] md:text-[6vh] md:text-5xl font-serif mr-4 my-3 "
           style={{ fontFamily: "Times New Roman, Times, serif" }}
         >
           Testimonials
@@ -135,7 +135,7 @@ const Testimonials = () => {
           <img
             src={activeSet === 1 ? yelpIcon : googleIcon}
             alt="Icon"
-            className="w-6 h-6 md:w-8 md:h-8"
+            className="w-5 h-5 md:w-8 md:h-8"
           />
         </button>
       </div>
