@@ -1,15 +1,12 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
-
 import useScrollRestoration from './components/usescrollrestoration'; // Import the custom hook
-
 import Testimonials from './components/Testimonials';
 import BasicMap from './components/BasicMap'; // Import the Map component
 import Booking from './components/Booking';
 import Footer from './components/Footer';
 import Employees from './components/Employees';
-
 import About from './components/About'; // Import your new About component
 import Diagnose from './components/Diagnose';
 import RoofRepair from './components/RoofRepair';
@@ -27,13 +24,13 @@ import Guttering from './components/Guttering';
 import ShingleInstallation from './components/ShingleInstallation';
 import RoofVentilationInstallation from './components/RoofVentilationInstallation';
 import CombinedComponent from './components/CombinedComponent';
-// import Aboutbutton from './components/About_button';
 import ServiceIssue from './components/ServiceIssue';
 import Services from './components/Services';
 import Packages from './components/Packages';
 import Aboutbutton from './components/About_button';
 import Process from "./components/Process"; 
 import MainImg from './components/MainImg';
+import BeforeAfter from "./components/BeforeAfter";
 
 const App = () => {
   return (
@@ -53,10 +50,10 @@ const App = () => {
                 <section id="map">
                   <BasicMap />
                 </section>
-                <section id="">
+                <section id="process">
                   <Process />
                 </section>
-                <section>
+                <section id="about">
                   <Aboutbutton />
                 </section>
                 <section id="book">
@@ -65,13 +62,16 @@ const App = () => {
                 <section id="packages">
                   <Packages />
                 </section>
-                <section id="">
+                <section id="main-image">
                   <MainImg />
+                </section>
+                <section id="">
+                  <BeforeAfter />
                 </section>
                 <section id="testimonials">
                   <Testimonials />
                 </section>
-                <section>
+                <section id="employees">
                   <Employees />
                 </section>
                 {/* <section id ="">
@@ -80,7 +80,7 @@ const App = () => {
               </>
             }
           />
-          {/* About page route */}
+          {/* Other routes */}
           <Route path="/about" element={<About />} />
           <Route path="/booking" element={<Booking />} />
           <Route path="/diagnose" element={<Diagnose />} />
@@ -119,6 +119,6 @@ export default App;
 
 // Create a component to use the custom hook inside Router
 function ScrollRestoration() {
-  useScrollRestoration();
-  return null; // This component doesn't render anything
+  // useScrollRestoration();
+  // return null; // This component doesn't render anything
 }

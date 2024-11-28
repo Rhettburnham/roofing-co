@@ -4,12 +4,10 @@ import React, { useState } from "react";
 import { logoImg } from "../utils"; // Ensure this path is correct
 import axios from "axios";
 import {
-  FaBinoculars,
-  FaBolt,
-  FaWater,
-  FaWind,
-  FaLeaf,
-  FaHome,
+  FaTools,
+  FaFan,
+  FaPaintRoller,
+  FaTint,
 } from "react-icons/fa";
 
 const Booking = () => {
@@ -36,36 +34,28 @@ const Booking = () => {
   // Define the services
   const inspectionSteps = [
     {
-      icon: <FaBinoculars />,
-      title: "Exterior Inspection",
-      description: "Checking for missing shingles, sagging, and debris buildup.",
+      icon: FaTools,
+      title: "Shingle Installation",
+      link: "/shingleinstallation",
+      color: "#ffffff",
     },
     {
-      icon: <FaBolt />,
-      title: "Flashing and Seals",
-      description:
-        "Inspecting flashing around vents, chimneys, and skylights for damage or gaps.",
+      icon: FaFan,
+      title: "Ventilation",
+      link: "/ventilation",
+      color: "#ffffff",
     },
     {
-      icon: <FaWater />,
-      title: "Gutter Inspection",
-      description: "Ensuring gutters are clear of blockages and drain properly.",
+      icon: FaPaintRoller,
+      title: "Roof Coating",
+      link: "/roofcoating",
+      color: "#ffffff",
     },
     {
-      icon: <FaWind />,
-      title: "Roof Ventilation",
-      description: "Checking attic ventilation to prevent moisture buildup.",
-    },
-    {
-      icon: <FaLeaf />,
-      title: "Signs of Water Damage",
-      description:
-        "Looking for water stains, mold, or dark spots inside the attic.",
-    },
-    {
-      icon: <FaHome />,
-      title: "Structural Integrity",
-      description: "Inspecting the overall structure for sagging or instability.",
+      icon: FaTint,
+      title: "Gutter Options",
+      link: "/gutterrelated",
+      color: "#ffffff",
     },
   ];
 

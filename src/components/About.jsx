@@ -253,7 +253,7 @@ const About = () => {
                     />
                   </div>
                   <h3 className="text-[3vw] md:text-xl font-semibold text-center">{member.name}</h3>
-                  <p className="text-[3vw] text-gray-600 text-center">{member.role}</p>
+                  <p className="text-[3vw] md:text-lg text-gray-600 text-center">{member.role}</p>
                 </div>
               ))}
             </div>
