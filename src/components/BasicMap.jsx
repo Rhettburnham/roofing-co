@@ -1,43 +1,121 @@
 import React, { useRef, useState, useEffect } from "react";
-import { MapContainer, TileLayer, Marker } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Circle, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { gsap } from "gsap";
+import { FaUsers, FaCalendarAlt, FaHandshake, FaHome, FaMapMarkerAlt } from "react-icons/fa";
 
-// Custom icon for a blue pin using an image URL
 const CustomMarkerIcon = L.icon({
-  iconUrl: "https://maps.gstatic.com/mapfiles/ms2/micons/blue.png", // URL for a simple blue pin
-  iconSize: [32, 32], // Adjust size as needed
-  iconAnchor: [16, 32], // Anchor point of the marker
-  popupAnchor: [0, -32], // Popup will appear above the marker
+  iconUrl: "https://maps.gstatic.com/mapfiles/ms2/micons/blue.png",
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+  popupAnchor: [0, -32],
 });
 
-// GSAP drop animation for the marker
 const DropMarker = ({ position, icon }) => {
   const markerRef = useRef(null);
 
   useEffect(() => {
     if (markerRef.current) {
       gsap.from(markerRef.current.getElement(), {
-        y: -100, // Drop from above
-        opacity: 0,
+        y: -100,
         duration: 0.6,
         ease: "bounce.out",
       });
     }
   }, []);
 
-  return <Marker position={position} icon={icon} ref={markerRef}></Marker>;
+  return <Marker position={position} icon={icon} ref={markerRef} />;
+};
+
+const StatsPanel = ({ isSmallScreen }) => {
+  const statsData = [
+    { title: "Employees", value: 25, icon: <FaUsers className="w-full h-full" /> },
+    { title: "Years of Service", value: 10, icon: <FaCalendarAlt className="w-full h-full" /> },
+    { title: "Customers Served", value: 500, icon: <FaHandshake className="w-full h-full" /> },
+    { title: "Roofs Repaired", value: 300, icon: <FaHome className="w-full h-full" /> },
+  ];
+
+  const containerClasses = `
+    grid gap-6 p-4
+    ${isSmallScreen ? "text-xs" : "text-base"}
+    grid-cols-2
+  `;
+
+  return (
+    <div className={containerClasses}>
+      {statsData.map((item, idx) => (
+        <StatItem key={idx} icon={item.icon} title={item.title} value={item.value} />
+      ))}
+    </div>
+  );
+};
+
+const StatItem = ({ icon, title, value }) => {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let startValue = 0;
+    let startTime = Date.now();
+    const duration = 2000;
+
+    const tick = () => {
+      const now = Date.now();
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const currentValue = Math.floor(progress * (value - startValue) + startValue);
+
+      setCount(currentValue);
+      if (progress < 1) requestAnimationFrame(tick);
+    };
+
+    requestAnimationFrame(tick);
+  }, [value]);
+
+  return (
+    <div className="flex items-center space-x-3 pt-5">
+      <div className="text-[6.5vh] text-dark_button flex-shrink-0 text-faint-color">
+        {icon}
+      </div>
+      <div>
+        <p className="text-xl font-semibold text-red-200 md:text-red-200">{count}</p>
+        <p className="text-sm font-semibold text-white md:text-white">{title}</p>
+      </div>
+    </div>
+  );
+};
+
+const MapInteractionHandler = ({ mapActive }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!mapActive) {
+      map.dragging.disable();
+      map.touchZoom.disable();
+      map.doubleClickZoom.disable();
+      map.scrollWheelZoom.disable();
+      map.boxZoom.disable();
+      map.keyboard.disable();
+      if (map.tap) map.tap.disable();
+    } else {
+      map.dragging.enable();
+      map.touchZoom.enable();
+      map.doubleClickZoom.enable();
+      map.scrollWheelZoom.enable();
+      map.boxZoom.enable();
+      map.keyboard.enable();
+      if (map.tap) map.tap.enable();
+    }
+  }, [mapActive, map]);
+
+  return null;
 };
 
 const BasicMap = () => {
   const mapRef = useRef();
   const [center] = useState({ lat: 33.800762207, lng: -84.308343 });
-  const [showLocations, setShowLocations] = useState(false); // Toggle between Service Hours and Service Locations
+  const ZOOM_LEVEL = 12;
 
-  const ZOOM_LEVEL = 16;
-
-  // List of service hours
   const serviceHours = [
     { day: "Mon", time: "08:00 AM - 6:00 PM" },
     { day: "Tue", time: "08:00 AM - 6:00 PM" },
@@ -48,252 +126,287 @@ const BasicMap = () => {
     { day: "Sun", time: "CLOSED" },
   ];
 
-  // List of cities in Georgia
-  const serviceLocations = [
-    "Marietta",
-    "Smyrna",
-    "Kennesaw",
-    "Acworth",
-    "Woodstock",
-    "Canton",
-    "Alpharetta",
-    "Roswell",
-    "Norcross",
-    "Duluth",
-    "Cumming",
-    "Buford",
-    "Lawrenceville",
-    "Sandy Springs",
-    "Johns Creek",
-    // Add more locations if needed
-  ];
-
-  // State and refs for scroll arrow
-  const [showScrollArrow, setShowScrollArrow] = useState(true);
-  const scrollContainerRef = useRef(null);
-  const arrowRef = useRef(null);
-
-  const handleScroll = () => {
-    if (showScrollArrow) {
-      setShowScrollArrow(false);
-    }
-  };
-
-  useEffect(() => {
-    if (arrowRef.current && showScrollArrow) {
-      gsap.fromTo(
-        arrowRef.current,
-        { y: 0 },
-        { y: 10, duration: 1, repeat: -1, yoyo: true, ease: "power1.inOut" }
-      );
-    }
-  }, [showScrollArrow]);
-
-  useEffect(() => {
-    if (showLocations) {
-      setShowScrollArrow(true);
-    }
-  }, [showLocations]);
-
-  // Function to render the Service Hours table
-  const renderServiceHoursTable = () => {
-    return (
-      <table className="w-full rounded-2xl border-2 border-white bg-white text-center">
-        <tbody>
-          {serviceHours.map((item, index) => (
-            <tr
-              key={index}
-              className={`${index % 2 === 0 ? "faint-color" : ""}`}
-            >
-              <td className="py-3 border border-white">{item.day}</td>
-              <td className="py-3 border border-white">{item.time}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    );
-  };
-
-  // Function to render the Service Locations table with two columns
-  const renderServiceLocationsTable = () => {
-    // Split the locations into two columns
-    const half = Math.ceil(serviceLocations.length / 2);
-    const firstColumn = serviceLocations.slice(0, half);
-    const secondColumn = serviceLocations.slice(half);
-
-    return (
-      <div className="w-full border-2 border-white bg-white text-center rounded-xl">
-        <div className="grid grid-cols-2">
-          <div className="border-r-2 border-white">
-            {firstColumn.map((location, index) => (
-              <div
-                key={index}
-                className={`py-3 border-b border-white ${index % 2 === 0 ? "faint-color" : ""}`}
-              >
-                {location}
-              </div>
-            ))}
-          </div>
-          <div>
-            {secondColumn.map((location, index) => (
-              <div
-                key={index}
-                className={`py-3 border-b border-white ${index % 2 === 0 ? "faint-color" : ""}`}
-              >
-                {location}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // New state to control content visibility based on screen size
-  const [isContentVisible, setIsContentVisible] = useState(false);
+  const [isServiceHoursVisible, setIsServiceHoursVisible] = useState(false);
+  const [isTableVisibleMd, setIsTableVisibleMd] = useState(false);
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth <= 768);
+  const [mapActive, setMapActive] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
       const smallScreen = window.innerWidth <= 768;
       setIsSmallScreen(smallScreen);
+
       if (!smallScreen) {
-        setIsContentVisible(true);
+        // Reset states if switching to large screen
+        setIsServiceHoursVisible(false);
+        setIsTableVisibleMd(false);
       }
     };
 
-    // Set initial content visibility based on initial screen size
-    if (!isSmallScreen) {
-      setIsContentVisible(true);
-    }
-
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [isSmallScreen]);
+  }, []);
+
+  const renderServiceHoursTable = () => (
+    <table
+      className={`w-full h-full rounded-xl border border-gray-300 bg-white text-center ${
+        isSmallScreen ? "text-xs" : "text-sm"
+      }`}
+    >
+      <tbody>
+        {serviceHours.map((item, idx) => (
+          <tr key={idx} className={idx % 2 === 0 ? "faint-color" : ""}>
+            <td className="py-2 px-2 border border-gray-300">{item.day}</td>
+            <td className="py-2 px-2 border border-gray-300">{item.time}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
 
   return (
-    <div className="">
-      {/* Call to Action Component at the top */}
-      {/* Text */}
-      <div className="flex justify-center md:justify-start md:ml-16 items-center">
-        <h1 className="text-[3vh] md:text-[2vw] font-bold text-black text-center">
-          Are we in your area?
-        </h1>
-      </div>
-      {/* The thinner colored bar */}
-      <div className="w-150% hover-color  opacity-50 mb-1 h-[1vh]"></div>
-
-      <div className="relative flex flex-col md:flex-row md:gap-4 md:p-5 h-auto md:h-[55vh] bg-white z-30 px-8 md:px-16">
-        {/* Map Container */}
-        <div className="relative w-full md:w-3/5 mb-4 md:mb-0 z-10 h-[35vh] md:h-[50vh] md:h-full">
-          <div className="w-full h-full rounded-xl overflow-hidden shadow-lg border border-gray-300 z-10 relative">
-            <div className="relative w-full h-full">
-              <MapContainer
-                center={center}
-                zoom={ZOOM_LEVEL}
-                ref={mapRef}
-                style={{ height: "100%", width: "100%" }}
-                className="rounded-xl z-0"
-                scrollWheelZoom={true}
-                dragging={true}
-                doubleClickZoom={true}
-                touchZoom={true}
-                zoomControl={true}
-              >
-                <TileLayer
-                  url="https://api.maptiler.com/maps/basic-v2/{z}/{x}/{y}.png?key=cN6b03TNjAiJuVEdoMNh"
-                  attribution='&copy; <a href="https://www.maptiler.com/copyright/">MapTiler'
-                />
-                <DropMarker position={center} icon={CustomMarkerIcon} />
-              </MapContainer>
-            </div>
-            {/* Bottom Bar with Address and Phone Number */}
-            <div className="absolute bottom-0 w-full dark-below-header text-white text-center py-2">
-              <div className="font-bold text-[3.5vw] md:text-[3vh]">
-                1575 Clairmont Rd, Decatur, GA 30033
-              </div>
-              <div className="font-bold text-[3.5vw] md:text-[3vh]">
-                <a href="tel:4422363783">📞 (442)236-3783</a>
-              </div>
-            </div>
+    <section className="bg-gradient-to-b from-faint-color to-white">
+      <div className="py-4">
+        {/* Title for SMALL screens */}
+        {isSmallScreen && (
+          <div className="flex justify-center mb-2">
+            <h1 className="text-[3vh] font-bold text-black text-center">
+              Are we in your area?
+            </h1>
           </div>
-        </div>
+        )}
 
-        {/* Content Container */}
-        <div className="w-full md:w-2/5 flex flex-col md:h-full  md:mb-0">
-          {/* Tabs for Service Hours and Service Locations */}
-          <div className="flex w-full justify-between mb-[1vh] border-2 border-white">
-            <button
-              onClick={() => {
-                setShowLocations(false);
-                setIsContentVisible(true);
+        <div className="relative flex flex-col md:flex-row md:gap-4 px-[4vw] md:px-8 pb-2">
+          {/* Left Column: Map */}
+          <div className="flex flex-col">
+            <div
+              className="relative w-full z-10 mb-2 md:mb-0 transition-all duration-300"
+              style={{
+                width: isSmallScreen ? "100%" : "calc(60vw - 32px)",
+                height: isSmallScreen ? "40vh" : "50vh",
               }}
-              className={`w-1/2 py-[1.5vh] text-center ${
-                isContentVisible && !showLocations
-                  ? "highlight-box text-white font-bold"
-                  : "dark_button text-white hover:bg-gray-600"
-              } rounded-l-xl`}
             >
-              Service Hours
-            </button>
-            <button
-              onClick={() => {
-                setShowLocations(true);
-                setIsContentVisible(true);
-              }}
-              className={`w-1/2 py-[1.5vh] text-center ${
-                isContentVisible && showLocations
-                  ? "highlight-box text-white font-bold"
-                  : "dark_button text-white hover:bg-gray-600"
-              } rounded-r-xl`}
-            >
-              Service Locations
-            </button>
-          </div>
+              <div className="w-full h-full rounded-xl overflow-hidden shadow-lg border border-gray-300 relative drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]">
+                <MapContainer
+                  center={center}
+                  zoom={ZOOM_LEVEL}
+                  ref={mapRef}
+                  style={{ height: "100%", width: "100%" }}
+                  className="z-0"
+                  scrollWheelZoom={mapActive}
+                >
+                  <TileLayer
+                    url="https://api.maptiler.com/maps/basic-v2/{z}/{x}/{y}.png?key=cN6b03TNjAiJuVEdoMNh"
+                    attribution="&copy; MapTiler"
+                  />
+                  <Circle
+                    center={center}
+                    radius={4047}
+                    pathOptions={{
+                      color: "black",
+                      weight: 1,
+                      fillColor: "blue",
+                      fillOpacity: 0.2,
+                    }}
+                  />
+                  <DropMarker position={center} icon={CustomMarkerIcon} />
+                  <MapInteractionHandler mapActive={mapActive} />
+                </MapContainer>
 
-          {/* Conditionally render the content based on isContentVisible */}
-          {isContentVisible && (
-            <div className="flex-1 flex flex-col">
-              <div className="h-auto md:h-[43vh] overflow-hidden rounded-xl">
-                {showLocations ? (
-                  // For Service Locations, enable scrolling within the fixed height
+                {/* Overlay to enable map interaction */}
+                {!mapActive && (
                   <div
-                    className="relative h-full overflow-y-auto"
-                    onScroll={handleScroll}
-                    ref={scrollContainerRef}
+                    className="absolute inset-0 bg-black bg-opacity-20 flex flex-col items-center justify-center cursor-pointer"
+                    onClick={() => setMapActive(true)}
+                    title="Click to interact with the map"
                   >
-                    {renderServiceLocationsTable()}
-                    {showScrollArrow && (
-                      <div className="absolute bottom-2 left-0 w-full flex justify-center pointer-events-none">
-                        <div ref={arrowRef}>
-                          {/* Arrow SVG */}
-                          <svg
-                            className="w-10 h-10 text-gray-200"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M5.292 7.292a1 1 0 011.415 0L10 10.585l3.293-3.293a1 1 0 011.415 1.415l-4 4a1 1 0 01-1.415 0l-4-4a1 1 0 010-1.415z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  // For Service Hours, adjust height to ensure all days are visible
-                  <div className="h-full overflow-hidden">
-                    {renderServiceHoursTable()}
+                    <FaMapMarkerAlt className="text-white opacity-75" size={40} />
+                    <p className="mt-2 text-white text-sm">
+                      Click to interact with the map
+                    </p>
                   </div>
                 )}
+
+                {/* Bottom address/phone overlay */}
+                <div className="absolute bottom-0 w-full dark-below-header text-white text-center py-1 z-10">
+                  <div className="font-semibold text-[3vw] md:text-[2.5vh]">
+                    1575 Clairmont Rd, Decatur, GA 30033
+                  </div>
+                  <div className="font-bold text-[3vw] md:text-[2vh]">
+                    <a href="tel:4422363783">📞 (442)236-3783</a>
+                  </div>
+                </div>
               </div>
             </div>
-          )}
+
+            {/* Title for LARGE screens */}
+            {!isSmallScreen && (
+              <div className="flex justify-center mt-4">
+                <h1 className="text-[2vw] font-bold text-black">Are we in your area?</h1>
+              </div>
+            )}
+          </div>
+
+          {/* Right Column: Stats + Service Hours */}
+          <div className="flex flex-col">
+            {/* SMALL SCREENS */}
+            {isSmallScreen ? (
+              <>
+                {/* Toggle button above the stats/table container */}
+                <button
+                  onClick={() => setIsServiceHoursVisible(!isServiceHoursVisible)}
+                  className="
+                    block 
+                    w-full
+                    md:hidden 
+                    dark_button 
+                    rounded-t-xl
+                    items-center 
+                    justify-center 
+                    text-white 
+                    text-2xl 
+                    transition-all 
+                    duration-300 
+                    drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]
+                    
+                  "
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.boxShadow =
+                      "inset 0 0 25px 8px rgba(0,0,0,0.8)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
+                >
+                  {isServiceHoursVisible ? "Hide Hours" : "Show Hours"}
+                </button>
+
+                {/* Container that holds BOTH Stats & Service Hours, same size, stacked */}
+                <div
+                  className="relative w-full rounded-b-xl overflow-hidden"
+                  style={{
+                    // Adjust this height as needed so both stats + table are fully visible
+                    height: "40vh",
+                  }}
+                >
+                  {/* Stats background & StatsPanel (z-10) */}
+                  <div className="absolute inset-0 z-10">
+                    {/* Background image */}
+                    <div className="absolute inset-0">
+                      <img
+                        src="/assets/images/stats_background.jpg"
+                        alt="Stats Background"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black opacity-20"></div>
+                    </div>
+
+                    {/* Stats content */}
+                    <div className="relative w-full h-full  drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]">
+                      <StatsPanel isSmallScreen={true} />
+                    </div>
+                  </div>
+
+                  {/* Service Hours Table (z-20) sliding over the stats */}
+                  <div
+                    className={`
+                      absolute inset-0 
+                      z-20 
+                      bg-white 
+                      border-t border-gray-300
+                      drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]
+                      transition-transform 
+                      duration-300 
+                      ease-in-out
+                      ${isServiceHoursVisible ? "translate-y-0" : "translate-y-full"}
+                    `}
+                  >
+                    {renderServiceHoursTable()}
+                  </div>
+                </div>
+              </>
+            ) : (
+              /* LARGE SCREENS */
+              <div
+                className="relative w-full h-full flex items-center justify-center rounded-xl overflow-hidden"
+                style={{
+                  width: "calc(40vw - 32px)",
+                  height: "50vh",
+                }}
+              >
+                {/* Stats background + Panel */}
+                <div className="absolute inset-0">
+                  <img
+                    src="/assets/images/stats_background.jpg"
+                    alt="Stats Background"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black opacity-20"></div>
+                </div>
+
+                <div className="w-full h-full absolute inset-0 z-10 flex items-center justify-center overflow-auto drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]">
+                  <StatsPanel isSmallScreen={false} />
+                </div>
+
+                {/* Slide-out table from right */}
+                <div
+                  className={`
+                    absolute inset-y-0 right-0 
+                    z-20 
+                    bg-white 
+                    w-full 
+                    border-l
+                    shadow-xl
+                    rounded-xl
+                    transition-transform 
+                    duration-300 
+                    ease-in-out
+                    drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]
+                    ${isTableVisibleMd ? "translate-x-0" : "translate-x-full"}
+                  `}
+                >
+                  {renderServiceHoursTable()}
+                </div>
+              </div>
+            )}
+
+            {/* Toggle button for LARGE screens */}
+            {!isSmallScreen && (
+              <div className="flex justify-center mt-4">
+                <button
+                  onClick={() => setIsTableVisibleMd(!isTableVisibleMd)}
+                  className="
+                    dark_button
+                    rounded-lg
+                    flex
+                    items-center
+                    justify-center
+                    text-white
+                    text-2xl
+                    transition-all
+                    duration-300
+                    drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]
+                    px-3
+                    py-2
+                    min-w-[160px]
+                    min-h-[56px]
+                  "
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.boxShadow =
+                      "inset 0 0 25px 8px rgba(0,0,0,0.8)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
+                >
+                  {isTableVisibleMd ? "Hide Hours" : "Show Hours"}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 };
 

@@ -1,21 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/all";
-// Removed useNavigate import since it's no longer needed
-// import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 gsap.registerPlugin(ScrollTrigger);
 
 const Aboutbutton = () => {
+  const navigate = useNavigate();
   const imageRef = useRef([]);
   const [image, setImage] = useState({ imageId: 0 });
-  // Removed navigate since we're not navigating in this component
-  // const navigate = useNavigate();
-
   const { imageId } = image;
   const slideDuration = 3.5;
 
-  // Images for the slideshow
   const slides = [
     "assets/images/roof_slideshow/i1.jpeg",
     "assets/images/roof_slideshow/i2.jpeg",
@@ -31,7 +27,6 @@ const Aboutbutton = () => {
     "assets/images/roof_slideshow/i12.webp",
   ];
 
-  // Duplicate the slides to enable an infinite loop
   const duplicatedSlides = [...slides, ...slides];
 
   useEffect(() => {
@@ -60,23 +55,20 @@ const Aboutbutton = () => {
   }, []);
 
   const handleClick = () => {
-    // Scroll smoothly to the #packages section
-    const packagesSection = document.getElementById("packages");
-    if (packagesSection) {
-      packagesSection.scrollIntoView({ behavior: "smooth" });
-    }
+    // Navigate to the "/about" route
+    navigate("/about");
   };
 
   return (
-    <div className="bg-white z-40 ">
+    <div className="bg-white z-40">
       <div className="relative overflow-hidden z-30">
         {/* Fixed Centered Button */}
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-auto z-10">
           <button
-            className="text-white text-4xl font-semibold px-8 py-4 rounded-lg shadow-lg dark_button hover:bg-gray-600"
-            onClick={handleClick} // Scroll to #packages
+            className="text-white text-xl md:text-3xl font-semibold px-4 py-2 md:px-8 md:py-4 rounded-lg shadow-lg dark_button hover:bg-gray-600"
+            onClick={handleClick} // Navigate to /about
           >
-            <div className="">Services</div>
+            <div>About Us</div>
           </button>
         </div>
 

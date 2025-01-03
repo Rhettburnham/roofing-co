@@ -8,6 +8,26 @@
 /* About */
 /* Flip card container */
 
+.image {
+  position: relative;
+  cursor: pointer;
+  transition: width 0.5s ease;
+}
+
+.image img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.services {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  color: white;
+  /* Additional styling */
+}
 
 /* Inner container */
 .card-inner {
@@ -40,9 +60,19 @@
 }
 
 /* end about */
+/* Custom styles for diagonal separator */
+.diagonal-separator {
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 85%);
+}
+
+@media (min-width: 768px) {
+  .diagonal-separator {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 90%);
+  }
+}
 
 :root {
-  --dark-below-header-color: #d1b390;
+  --dark-below-header-color: #400a15;
   /* Dark blue */
   --dark-button-color: #5a76c1;
   /* Another dark blue */
@@ -53,7 +83,6 @@
   --dark-color: #ffffff;
   /* Basic map serivce highlight */
   --highlight-box: #80aff5;
-
 }
 
 .highlight-box {
@@ -64,22 +93,26 @@
 }
 
 .dark-below-header-gradient {
-  background: linear-gradient(to bottom,
-      var(--dark-below-header-color) 0%,
-      rgba(65, 179, 149, 0) 70%);
+  background: linear-gradient(
+    to bottom,
+    var(--dark-below-header-color) 0%,
+    rgba(65, 179, 149, 0) 70%
+  );
 }
 
 .bright-gradient {
-  background: linear-gradient(to bottom,
-      var(--faint-color) 0%,
-      rgba(65, 179, 149, 0) 20%);
+  background: linear-gradient(
+    to bottom,
+    var(--faint-color) 0%,
+    rgba(65, 179, 149, 0) 20%
+  );
 }
 
 .dark_button {
   background-color: var(--dark-button-color);
 }
 
-.dark-color{
+.dark-color {
   background-color: var(--dark-color);
 }
 .faint-color {
@@ -90,41 +123,33 @@
   background-color: var(--hover-color);
 }
 
-
-
 .button_gradient {
   background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0));
 }
 
 .custom-text-shadow {
-  text-shadow: 2px 2px 5px var(--dark-button-color);
-  }
+  text-shadow: 2px 2px 3px var(--dark-button-color);
+}
 
 .custom-circle-shadow {
-    box-shadow: 3px 3px 5px var(--hover-color); /* Adding the blur radius */
-  }
+  box-shadow: 3px 3px 5px var(--hover-color) !important; /* Adding the blur radius */
+}
 
+/* Add these to your CSS file */
+.dynamic-shadow {
+  filter: drop-shadow(5px 5px 1px var(--hover-color));
+}
 
+.text-dynamic-shadow {
+  text-shadow: 2px 3px 3px var(--hover-color);
+}
 .inner-shadow {
-      box-shadow: inset 2px 2px 2px var(--dark-color); 
-  }
+  box-shadow: inset 2px 2px 2px var(--dark-color);
+}
 
 .custom-text-shadow-mini {
   text-shadow: -1px 1px 2px var(--faint-color);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 .perspective {
   perspective: 1000px;
@@ -138,7 +163,7 @@
   backface-visibility: hidden;
 }
 
-.group-hover\\:rotateY-180:hover {
+.group-hover\\:rotatey-180:hover {
   transform: rotateY(180deg);
 }
 
@@ -157,9 +182,6 @@
     transform: translateX(-100%);
   }
 }
-
-
-
 
 * {
   margin: 0;
@@ -194,10 +216,6 @@ canvas {
   font-weight: 400;
   font-style: normal;
 }
-
-
-
-
 
 .overlap-control label {
   color: black;
@@ -241,11 +259,7 @@ canvas {
   object-fit: cover; /* Makes the content cover the container while maintaining aspect ratio */
 }
 
-
-
 /* Existing styles */
-
-
 
 .custom-marker-icon {
   position: relative;
@@ -283,9 +297,6 @@ canvas {
   border-radius: 50%;
 }
 
-
-
-
 .logo-img {
   width: 100%;
   height: auto;
@@ -293,15 +304,12 @@ canvas {
   filter: brightness(0) invert(1);
 }
 
-
-
 .social-icon {
   width: 3.2rem;
   height: 2rem;
   filter: brightness(0) invert(1);
   /* Makes the SVG white */
 }
-
 
 .testimonials-text {
   color: #ffffff;
@@ -311,17 +319,22 @@ canvas {
 }
 
 .testimonial-box {
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 255, 0.2);
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.1),
+    0 2px 4px rgba(0, 0, 255, 0.2);
   /* Add custom blue shadow */
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .testimonial-box:hover {
   transform: translateY(-10px);
-  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 255, 0.4);
+  box-shadow:
+    0 8px 12px rgba(0, 0, 0, 0.1),
+    0 4px 8px rgba(0, 0, 255, 0.4);
   /* Increase shadow on hover */
 }
-
 
 .testimonial-box .triangle {
   width: 0;
@@ -333,10 +346,6 @@ canvas {
   bottom: -10px;
   right: 20px;
 }
-
-
-
-
 
 @layer utilities {
   .flex-center {

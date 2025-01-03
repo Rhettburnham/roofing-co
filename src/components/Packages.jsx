@@ -10,13 +10,13 @@ import {
 } from "react-icons/fa";
 
 // Common class names
-const iconClass = "mb-2 drop-shadow";
+const iconClass = "drop-shadow";
 
 // Combined data array with individual colors
 const services = [
   {
     icon: FaTools,
-    title: "Shingle Installation",
+    title: "Shingling",
     link: "/shingleinstallation",
     color: "#ffffff",
   },
@@ -28,13 +28,13 @@ const services = [
   },
   {
     icon: FaPaintRoller,
-    title: "Roof Coating",
+    title: "Coating",
     link: "/roofcoating",
     color: "#ffffff",
   },
   {
     icon: FaTint,
-    title: "Gutter Options",
+    title: "Guttering",
     link: "/gutterrelated",
     color: "#ffffff",
   },
@@ -57,11 +57,11 @@ const Packages = () => {
   return (
     <div className="w-full md:px-9">
       <div className="relative overflow-hidden">
-        <section className=" md:my-6">
-          <h2 className="flex justify-center text-[6.5vw] font-semibold text-center">
+        <section className=" md:mb-5">
+          <h2 className="flex justify-center text-[5vw] font-semibold text-center">
             Services
           </h2>
-          <div className="mb-2 grid grid-cols-4 gap-2 mt-2 md:mt-4 px-12 items-stretch">
+          <div className="mb-2 grid grid-cols-4 gap-2 mt-2 px-4 items-stretch">
             {services.map((service, index) => (
               <motion.div
                 key={index}
@@ -82,7 +82,7 @@ const Packages = () => {
                       <div className="flex flex-col items-center justify-center flex-grow">
                         {React.createElement(service.icon, {
                           color: service.color,
-                          className: `${iconClass} text-[8vw] md:text-5xl text-white mb-2`,
+                          className: `${iconClass} text-[8vw] md:text-5xl text-white `,
                         })}
                         <h3 className="text-[2.5vw] md:text-xl font-semibold text-white text-center mt-2">
                           {service.title}

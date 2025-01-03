@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { HashLink } from 'react-router-hash-link'; // Import HashLink for in-page anchors
+import { Facebook, Instagram, Linkedin, Twitter } from 'lucide-react';
 
 const Footer = () => {
   // Quick Links array
@@ -53,14 +54,14 @@ const Footer = () => {
           <div>
             <h5 className="text-xl font-semibold text-white mb-4">Contact Us</h5>
             <p className="text-gray-400">
-            1575 Clairmont Rd<br />
-            Decatur, GA 30033
+              1575 Clairmont Rd<br />
+              Decatur, GA 30033
             </p>
-            <div className=" text-gray-400">
-                <a href="tel:4422363783">Phone: (442)236-3783</a>
+            <div className="text-gray-400">
+              <a href="tel:4422363783">Phone: (442)236-3783</a>
             </div>
-            <div className=" text-gray-400 ">
-                <a href="email:Rhett.Burnham@emory.edu">Email: Rhett.Burnham@emory.edu</a>
+            <div className="text-gray-400">
+              <a href="email:Rhett.Burnham@emory.edu">Email: Rhett.Burnham@emory.edu</a>
             </div>
           </div>
         </div>
@@ -81,40 +82,40 @@ const Footer = () => {
               className="text-gray-400 hover:text-white transition duration-300"
               aria-label="Facebook"
             >
-              {/* SVG icon */}
+              <Facebook size={24} />
             </a>
 
             {/* Instagram Icon */}
             <a
-              href="https://www.instagram.com"
+              href="https://www.instagram.com/rhettsroofing"
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-400 hover:text-white transition duration-300"
               aria-label="Instagram"
             >
-              {/* SVG icon */}
+              <Instagram size={24} />
             </a>
 
             {/* LinkedIn Icon */}
             <a
-              href="https://www.linkedin.com"
+              href="https://www.linkedin.com/company/rhetts-roofing"
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-400 hover:text-white transition duration-300"
               aria-label="LinkedIn"
             >
-              {/* SVG icon */}
+              <Linkedin size={24} />
             </a>
 
             {/* Twitter Icon */}
             <a
-              href="https://www.twitter.com"
+              href="https://twitter.com/rhettsroofing"
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-400 hover:text-white transition duration-300"
               aria-label="X (formerly Twitter)"
             >
-              {/* SVG icon */}
+              <Twitter size={24} />
             </a>
           </div>
         </div>

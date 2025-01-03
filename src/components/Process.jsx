@@ -1,29 +1,32 @@
 import React, { useEffect, useRef } from "react";
-import { Link } from "react-router-dom"; // Import Link for routing
-import { HashLink } from "react-router-hash-link"; // Import HashLink for in-page anchors
+import { Link } from "react-router-dom";
+import { HashLink } from "react-router-hash-link";
 
 const Process = () => {
-  // Define the process steps with corresponding links
   const processSteps = [
     {
-      title: "Booking",
+      title: "Book",
       videoSrc: "/assets/videos/our_process_videos/booking.mp4",
-      href: "/#book", // In-page link
+      href: "/#book",
+      scale: 0.8  // 20% down
     },
     {
       title: "Inspection",
       videoSrc: "/assets/videos/our_process_videos/magnify.mp4",
-      href: "/inspection", // Separate route
+      href: "/inspection",
+      scale: 1.25  // 30% up
     },
     {
-      title: "Repair",
+      title: "Service",
       videoSrc: "/assets/videos/our_process_videos/repair.mp4",
-      href: "/#packages", // Separate route
+      href: "/#packages",
+      scale: 1.1
     },
     {
-      title: "Final Review",
+      title: "Review",
       videoSrc: "/assets/videos/our_process_videos/approval.mp4",
-      href: "/#testimonials", // In-page link
+      href: "/#testimonials",
+      scale: .9
     },
   ];
 
@@ -33,7 +36,6 @@ const Process = () => {
     videoRefs.current.forEach((video) => {
       if (video) {
         video.play().catch((error) => {
-          // Handle autoplay errors, possibly due to browser restrictions
           console.error("Video autoplay failed:", error);
         });
       }
@@ -41,82 +43,39 @@ const Process = () => {
   }, []);
 
   return (
-    <section className=" md:px-8 mb-6 overflow-hidden"> 
-      {/* Section Title */}
-      <div className="text-center text-[8vw] md:text-[4vh]">
-        <h1>Our Process</h1>
-      </div>
-
-      {/* Process Steps */}
-      <div className="flex justify-center items-center flex-wrap md:gap-4 ">
+    <section className="md:px-8 pt-4 mb-4 overflow-hidden">
+      <div className="flex justify-center items-center flex-wrap md:gap-4">
         {processSteps.map((step, index) => {
-          // Determine if the link is an in-page anchor
           const isHashLink = step.href.startsWith("/#");
-          // Choose the appropriate Link component
           const LinkComponent = isHashLink ? HashLink : Link;
 
           return (
-            <div key={index} className="flex items-center">
-              {/* Clickable Card */}
+            <div key={index} className="flex items-center pt-1 md:pt-2">
               <LinkComponent
                 to={step.href}
-                className="flex flex-col items-center cursor-pointer transform hover:scale-105 hover:custom-circle-shadow transition-transform duration-300"
+                className="flex flex-col items-center cursor-pointer transform hover:scale-105 transition-transform duration-300"
               >
-                {/* Circle with Video */}
-                <div className="rounded-full overflow-hidden flex items-center justify-center shadow-md md:w-[20vh] md:h-[20vh] w-[7vh] h-[7vh] bg-white">
+                <div className="rounded-full overflow-hidden flex items-center justify-center drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,3)] md:w-[18vh] md:h-[18vh] w-[8.5vh] h-[8.5vh] bg-white">
                   <video
                     ref={(el) => (videoRefs.current[index] = el)}
                     src={step.videoSrc}
                     className="object-cover"
-                    style={{
-                      width:
-                        step.title === "Inspection"
-                          ? "80%"
-                          : step.title === "Booking" ||
-                              step.title === "Final Review"
-                            ? "60%"
-                            : "80%",
-                      height:
-                        step.title === "Inspection"
-                          ? "80%"
-                          : step.title === "Booking" ||
-                              step.title === "Final Review"
-                            ? "60%"
-                            : "80%",
-                    }}
                     muted
                     loop
                     playsInline
-                    // Disable pointer events to prevent video from capturing clicks/taps
                     style={{
                       pointerEvents: "none",
-                      ...{
-                        width:
-                          step.title === "Inspection"
-                            ? "80%"
-                            : step.title === "Booking" ||
-                                step.title === "Final Review"
-                              ? "60%"
-                              : "80%",
-                        height:
-                          step.title === "Inspection"
-                            ? "80%"
-                            : step.title === "Booking" ||
-                                step.title === "Final Review"
-                              ? "60%"
-                              : "80%",
-                      },
+                      width: `${80 * step.scale}%`,
+                      height: `${80 * step.scale}%`
                     }}
                     tabIndex={-1}
                   />
                 </div>
-                {/* Step Title */}
                 <p className="mt-2 text-center text-[3vw] md:text-lg font-semibold text-gray-700">
                   {step.title}
                 </p>
               </LinkComponent>
 
-              {/* Arrow Between Steps */}
               {index < processSteps.length - 1 && (
                 <div className="flex items-center mx-2">
                   <svg

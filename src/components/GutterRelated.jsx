@@ -157,12 +157,12 @@ const GutterRelated = () => {
 
   return (
     <div className="w-full">
-      {/* Hero Section with Shrinking Effect */}
+      {/* Main Hero Section */}
       <motion.section
         className="relative overflow-hidden"
-        initial={{ height: '100vh' }} // Initial state (full height)
-        animate={{ height: isShrunk ? '20vh' : '100vh' }} // Transition to 20vh after the delay
-        transition={{ duration: 1 }} // Animation duration
+        initial={{ height: '100vh' }}
+        animate={{ height: isShrunk ? '20vh' : '100vh' }}
+        transition={{ duration: 1 }}
       >
         <div
           className="absolute inset-0 bg-cover bg-center"
@@ -171,24 +171,22 @@ const GutterRelated = () => {
             backgroundAttachment: 'fixed',
           }}
         ></div>
-        <div className="absolute inset-0 dark-below-header"></div> {/* Replaced 'dark-below-header' with standard classes */}
+        <div className="absolute inset-0 dark-below-header"></div>
   
-        {/* Flexbox for centering text vertically */}
         <div className="relative z-10 h-full flex items-center justify-center">
           <motion.h1
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 1 }}
-            className="text-center text-6xl font-extrabold text-white tracking-wider"
-            // Removed 'custom-text-shadow-mini' or ensure it's defined in your CSS
+            className="text-center text-[8vw] md:text-[8vh] font-extrabold text-white tracking-wider"
           >
-            Gutter Options
+            Guttering
           </motion.h1>
         </div>
       </motion.section>
 
       {/* Call to Action */}
-      <div className="flex justify-center mt-6">
+      <div className="flex justify-center mt-6 mb-6">
         <HashLink
           to="/#book"
           className="px-8 py-4 dark_button text-white font-semibold rounded-full hover:bg-white hover:text-black transition duration-300"
@@ -197,46 +195,69 @@ const GutterRelated = () => {
         </HashLink>
       </div>
 
-      {/* Gutter Options Section */}
-      <div className="container mx-auto px-6 mt-6 faint-color py-4"> {/* Changed 'bg-faint_color' to 'bg-gray-100' */}
-        <section className="mb-12">
-          <h2 className="text-3xl font-semibold mb-4">Types of Guttering Systems</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {gutterOptions.map((gutter, index) => (
-              <div
-                key={index}
-                className="relative flex items-center space-x-4 p-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 bg-gray-50 overflow-hidden group"
-              >
-                <img
-                  src={gutter.image}
-                  alt={gutter.alt}
-                  className={`w-24 h-24 rounded-lg ${
-                    gutter.title === 'Steel Gutters' ? 'transform -scale-x-100' : ''
-                  }`}
-                />
-                <div>
-                  <h3 className="text-xl font-bold">{gutter.title}</h3>
-                  <p>{gutter.description}</p>
-                </div>
-                {/* Overlay for rate on hover */}
-                <div
-                  className="absolute inset-y-0 left-full w-1/2 bg-white transform group-hover:-translate-x-full transition-transform duration-300 ease-in-out flex items-center justify-center"
-                >
-                  <div className="text-center px-4">
-                    <p className="text-2xl font-bold text-black">{gutter.rate}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
+      {/* Gutter Options Header */}
+      <div className="relative h-16 mb-6">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage: "url('/assets/images/growth/hero_growth.jpg')",
+            backgroundAttachment: 'fixed',
+          }}
+        ></div>
+        <div className="absolute inset-0 dark-below-header"></div>
+        <div className="relative z-10 h-full flex items-center justify-center">
+          <h2 className="text-2xl font-semibold text-white">Gutter Options</h2>
+        </div>
       </div>
 
-      {/* Common Gutter Issues Section */}
-      <div className="container mx-auto px-4 py-2">
-        <h1 className="text-4xl font-bold text-gray-800 mb-6 text-center">
-          Common Gutter Issues and Diagnosis Methods
-        </h1>
+      {/* Gutter Options Content */}
+      <div className="container mx-auto px-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {gutterOptions.map((gutter, index) => (
+            <div
+              key={index}
+              className="relative flex items-center space-x-4 p-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 bg-gray-50 overflow-hidden group"
+            >
+              <img
+                src={gutter.image}
+                alt={gutter.alt}
+                className={`w-24 h-24 rounded-lg ${
+                  gutter.title === 'Steel Gutters' ? 'transform -scale-x-100' : ''
+                }`}
+              />
+              <div>
+                <h3 className="text-xl font-bold">{gutter.title}</h3>
+                <p>{gutter.description}</p>
+              </div>
+              <div
+                className="absolute inset-y-0 left-full w-1/2 bg-white transform group-hover:-translate-x-full transition-transform duration-300 ease-in-out flex items-center justify-center"
+              >
+                <div className="text-center px-4">
+                  <p className="text-2xl font-bold text-black">{gutter.rate}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Issues and Diagnosis Header */}
+      <div className="relative h-16 mb-6">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage: "url('/assets/images/growth/hero_growth.jpg')",
+            backgroundAttachment: 'fixed',
+          }}
+        ></div>
+        <div className="absolute inset-0 dark-below-header"></div>
+        <div className="relative z-10 h-full flex items-center justify-center">
+          <h2 className="text-2xl font-semibold text-white">Issues and Diagnosis</h2>
+        </div>
+      </div>
+
+      {/* Issues Content */}
+      <div className="container mx-auto w-full px-4 pb-12">
         <div className="space-y-4">
           {issuesData.map((item, index) => (
             <div key={index} className="border rounded-lg overflow-hidden shadow-lg">
@@ -255,7 +276,7 @@ const GutterRelated = () => {
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
-                    aria-hidden="true" // Accessibility improvement
+                    aria-hidden="true"
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
@@ -271,13 +292,6 @@ const GutterRelated = () => {
                     transition={{ duration: 0.3 }}
                   >
                     <div className="px-6 py-4 bg-white">
-                      {/* Removed the image tag since 'item.image' is undefined */}
-                      {/* If you have images, add an 'image' property to each issue and uncomment the img tag */}
-                      {/* <img
-                        src={item.image}
-                        alt={item.title}
-                        className="w-full h-48 object-cover rounded-md mb-4"
-                      /> */}
                       <p className="mt-2 text-gray-700">
                         <strong>Causes:</strong> {item.causes}
                       </p>
@@ -302,9 +316,6 @@ const GutterRelated = () => {
           ))}
         </div>
       </div>
-
-      {/* Icons Section */}
-      
     </div>
   );
 };

@@ -49,7 +49,8 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 w-full h-16 flex items-center justify-center relative dark-color px-5 md:px-10 ">
+      <nav className="sticky top-0 z-50 w-full h-16 flex items-center justify-center bg-white px-5 md:px-10 ">
+        
         <div className="flex items-center absolute left-5">
           <Link to="/" className="flex items-center">
             <img

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import Tilt from "react-parallax-tilt";
 import { motion } from "framer-motion";
-import { FaTools, FaFan, FaPaintRoller, FaTint } from "react-icons/fa";
+import { FaTools, FaFan, FaPaintRoller, FaTint, FaCheckCircle } from "react-icons/fa";
 import { HashLink } from "react-router-hash-link";
 
 // Common class names
@@ -39,49 +39,93 @@ const services = [
   // Additional services can be added here
 ];
 
-// Data for Roof Coatings with updated information and no images
+// Updated data for Roof Coatings
 const roofCoatings = [
   {
-    name: "Acrylic Roof Coating",
+    name: "Cool Roofing",
     description:
-      "Enhance your roof's longevity with our eco-friendly, water-based acrylic coating. Ideal for sloped roofs, it offers superior UV protection, high reflectivity, and cost-effective performance, keeping your property cooler and energy-efficient.",
-    base: "Water-based.",
-    features: "Highly reflective, UV-resistant, and cost-effective.",
-    uses: "Best for sloped roofs and areas with mild weather.",
-    limitations: "Not ideal for areas with ponding water.",
+      "Cool roofing solutions are designed to reflect more sunlight and absorb less heat, thereby enhancing building energy efficiency and reducing cooling costs. They can help mitigate the urban heat island effect and provide a more comfortable indoor environment. Cool roofing coatings are available in various colors, typically light shades, to maximize reflectivity.",
+    advantages: [
+      "Reduced cooling costs by reflecting sunlight and heat",
+      "Lower rooftop temperatures, mitigating urban heat island effects",
+      "Quick and straightforward installation for most roof sizes",
+    ],
+    colorPossibilities: "Generally light or white shades for maximum reflectivity.",
+    installationTime:
+      "Installation time varies by roof size and condition but is generally fast.",
   },
   {
-    name: "Silicone Roof Coating",
+    name: "Acrylic Coatings",
     description:
-      "Say goodbye to leaks with our durable silicone coating. Perfect for flat roofs, it excels in waterproofing and UV resistance, making it the best choice for areas with ponding water or extreme weather conditions.",
-    base: "Solvent-based.",
-    features: "Highly water-resistant and excellent UV stability.",
-    uses: "Ideal for flat roofs in rainy or extreme climates.",
-    limitations: "Can accumulate dirt, reducing reflectivity over time.",
+      "Acrylic coatings are water-based and cost-effective, known for their reflectivity and UV resistance. They are suitable for a variety of climates but may not perform as well in areas with ponding water.",
+    advantages: [
+      "Cost-Effective: Generally more affordable than other options",
+      "Reflectivity: Good reflective properties to help reduce heat absorption",
+      "Ease of Application: Easy to apply and quick drying time",
+      "Versatility: Adheres to metal, asphalt, single-ply membranes, etc.",
+      "UV Resistance: Helps prevent premature degradation from sun exposure",
+    ],
+    colorPossibilities: "Available in various colors, with light colors enhancing reflectivity.",
+    installationTime:
+      "Quick drying times allow for efficient application (weather permitting).",
   },
   {
-    name: "Polyurethane Roof Coating",
+    name: "Silicone Coatings",
     description:
-      "Protect your roof from heavy wear and tear with our impact-resistant polyurethane coating. Designed for durability, it’s ideal for high-traffic areas or metal roofs that face harsh weather.",
-    base: "Solvent-based (aromatic or aliphatic).",
-    features: "High durability and resistance to impacts and foot traffic.",
-    uses: "Great for flat roofs and metal roofs.",
-    limitations: "Higher cost compared to other coatings.",
+      "Silicone coatings are highly reflective and excellent for roofs with ponding water issues, offering superior UV stability and weather resistance. They are particularly effective in extreme temperatures and are resistant to mold and mildew.",
+    advantages: [
+      "Exceptional Water Resistance: Ideal for flat roofs with ponding water",
+      "UV Stability: Prevents degradation from continuous sun exposure",
+      "Durability: Withstand extreme temperatures and resist mold & mildew",
+    ],
+    colorPossibilities: "Typically white or light colors to maximize reflectivity.",
+    installationTime:
+      "Straightforward application; curing times vary with humidity and temperature.",
   },
   {
-    name: "Asphaltic Roof Coating",
+    name: "Polyurethane Coatings",
     description:
-      "Revitalize your aging roof with our asphalt-based coating. Affordable and reliable, it provides excellent repair and protection for built-up roofs (BUR) and modified bitumen systems.",
-    base: "Asphalt or bitumen, sometimes with aluminum additives for reflectivity.",
-    features:
-      "Affordable, durable, and effective for asphalt-based roofing systems.",
-    uses: "Best for older BUR and modified bitumen systems.",
-    limitations:
-      "Less reflective and less environmentally friendly compared to other options.",
+      "Polyurethane coatings are known for their durability and resistance to impact and foot traffic, suitable for areas with high mechanical stress. They come in aromatic (less UV stable) and aliphatic (more UV stable) formulations.",
+    advantages: [
+      "High Durability: Resistant to impact and mechanical damage",
+      "Flexibility: Adaptable to temperature fluctuations without cracking",
+      "Chemical Resistance: Suitable for industrial applications",
+    ],
+    colorPossibilities: "A wide range available; aliphatic versions retain color better.",
+    installationTime:
+      "Requires careful application; curing depends on formulation and environment.",
+  },
+  {
+    name: "Elastomeric Coatings",
+    description:
+      "Elastomeric coatings are flexible and can expand and contract with the roof surface, providing a durable, weather-resistant seal. They are often used to extend the life of existing roofs and are an excellent choice for variable climates.",
+    advantages: [
+      "Flexibility: Accommodates structural movement without cracking",
+      "Weather Resistance: Protects against a range of environmental conditions",
+      "Longevity: Extends the lifespan of existing roofing systems",
+    ],
+    colorPossibilities:
+      "Typically available in white and pastel colors to enhance reflectivity.",
+    installationTime:
+      "Relatively quick application; sufficient drying time is needed for optimal performance.",
+  },
+  {
+    name: "Commercial Foam Roofing (SPF)",
+    description:
+      "Commercial Foam Roofing (Spray Polyurethane Foam - SPF) involves spraying a foam material that expands into a solid, seamless layer across an existing roof. This provides excellent insulation and waterproofing.",
+    advantages: [
+      "Seamless Application: Minimizes the likelihood of leaks",
+      "High Insulation: Superior R-value per inch for enhanced energy efficiency",
+      "Lightweight: Adds minimal weight to existing structures",
+    ],
+    colorPossibilities:
+      "Foam is typically covered with a protective coating in various colors for UV resistance and aesthetics.",
+    installationTime:
+      "Rapid installation, but foam and protective coatings require proper curing.",
   },
 ];
 
-const Packages = () => {
+const RoofCoating = () => {
   // Animation variants for services
   const itemVariants = {
     hidden: { scale: 0.7, opacity: 0 },
@@ -130,12 +174,12 @@ const Packages = () => {
 
   return (
     <div className="w-full">
-      {/* Hero Section with Shrinking Effect */}
+      {/* HERO SECTION */}
       <motion.section
         className="relative overflow-hidden"
-        initial={{ height: "100vh" }} // Initial state (full height)
-        animate={{ height: isShrunk ? "20vh" : "100vh" }} // Transition to 20vh after the delay
-        transition={{ duration: 1 }} // Animation duration
+        initial={{ height: "40vh" }}
+        animate={{ height: isShrunk ? "20vh" : "40vh" }}
+        transition={{ duration: 1 }}
       >
         <div
           className="absolute inset-0 bg-cover bg-center"
@@ -146,13 +190,12 @@ const Packages = () => {
         ></div>
         <div className="absolute inset-0 dark-below-header"></div>
 
-        {/* Flexbox for centering text vertically */}
-        <div className="relative z-10 h-full flex items-center justify-center">
+        <div className="relative z-10 h-full flex items-center justify-center custom-circle-shadow">
           <motion.h1
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 1 }}
-            className="text-center text-6xl font-extrabold text-white tracking-wider custom-text-shadow-mini"
+            className="text-center text-[8vw] md:text-[8vh] font-extrabold text-white tracking-wider"
           >
             Roof Coating
           </motion.h1>
@@ -183,7 +226,7 @@ const Packages = () => {
         {/* Display Selected Coating Details */}
         <motion.div
           key={selectedCoatingIndex}
-          className="flex flex-col items-start bg-white rounded-2xl shadow-lg p-6 transition-all duration-500 mx-4 md:mx-16 mt-4"
+          className="flex flex-col items-start bg-white rounded-2xl shadow-lg p-6 transition-all duration-500 px-4 md:px-16 mt-4"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -196,71 +239,90 @@ const Packages = () => {
             <p className="text-gray-700">
               {roofCoatings[selectedCoatingIndex].description}
             </p>
-            <ul className="mt-4 text-gray-700 list-disc list-inside">
-              <li>
-                <strong>Base:</strong> {roofCoatings[selectedCoatingIndex].base}
-              </li>
-              <li>
-                <strong>Features:</strong>{" "}
-                {roofCoatings[selectedCoatingIndex].features}
-              </li>
-              <li>
-                <strong>Uses:</strong> {roofCoatings[selectedCoatingIndex].uses}
-              </li>
-              <li>
-                <strong>Limitations:</strong>{" "}
-                {roofCoatings[selectedCoatingIndex].limitations}
-              </li>
-            </ul>
+
+            {/* Advantages List */}
+            <div className="mt-4">
+              <h4 className="text-xl font-semibold mb-2 text-gray-800">
+                Advantages:
+              </h4>
+              <ul className="list-none space-y-2 pl-0">
+                {roofCoatings[selectedCoatingIndex].advantages.map(
+                  (advantage, i) => (
+                    <li key={i} className="flex items-start text-gray-700">
+                      <FaCheckCircle className="text-green-600 mr-2 mt-[4px]" />
+                      <span>{advantage}</span>
+                    </li>
+                  )
+                )}
+              </ul>
+            </div>
+
+            {/* Additional Info */}
+            <div className="mt-4">
+              {roofCoatings[selectedCoatingIndex].colorPossibilities && (
+                <p className="text-gray-700 mb-2">
+                  <strong>Color Possibilities: </strong>
+                  {roofCoatings[selectedCoatingIndex].colorPossibilities}
+                </p>
+              )}
+              {roofCoatings[selectedCoatingIndex].installationTime && (
+                <p className="text-gray-700">
+                  <strong>Installation Time: </strong>
+                  {roofCoatings[selectedCoatingIndex].installationTime}
+                </p>
+              )}
+            </div>
           </div>
         </motion.div>
       </section>
 
       {/* Call to Action */}
       <section className="mb-10 relative overflow-hidden faint-color mx-4 md:mx-16 rounded-[40px]">
-        {/* Background Video */}
-        <video
-          ref={bgVideoRef}
-          autoPlay
-          loop
-          muted
-          playsInline
-          tabIndex={-1}
-          className="w-full h-full object-cover"
-          src="/assets/videos/roof_coating.mp4"
-          style={{
-            pointerEvents: "none", // Prevents video from capturing interactions
-          }}
-        ></video>
+        {/* Video Container with responsive height */}
+        <div className="relative w-full h-[30vh] md:h-[40vh] lg:h-[50vh]">
+          {/* Background Video with object-fit cover */}
+          <video
+            ref={bgVideoRef}
+            autoPlay
+            loop
+            muted
+            playsInline
+            tabIndex={-1}
+            className="absolute top-0 left-0 w-full h-full object-cover rounded-[40px]"
+            src="/assets/videos/roof_coating.mp4"
+            style={{
+              pointerEvents: "none",
+            }}
+          ></video>
 
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-black opacity-50 rounded-[40px]"></div>
+          {/* Overlay */}
+          <div className="absolute inset-0 bg-black opacity-50 rounded-[40px]"></div>
 
-        {/* Content */}
-        <div className="relative z-10 text-center py-24 px-4">
-          <motion.h2
-            initial={{ scale: 0.8, opacity: 0 }}
-            whileInView={{ scale: 1, opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 1 }}
-            className="text-3xl md:text-5xl font-bold text-white mb-6"
-          >
-            Ready to Get Started?
-          </motion.h2>
-          <p className="text-lg md:text-xl mb-8 text-white">
-            Contact us today for a free roof inspection and personalized repair
-            plan.
-          </p>
-          <HashLink
-            to="/#book"
-            className="px-8 py-4 dark_button text-white font-semibold rounded-full hover:bg-white hover:text-black transition duration-300"
-          >
-            Schedule an Inspection
-          </HashLink>
+          {/* Content */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
+            <motion.h2
+              initial={{ scale: 0.8, opacity: 0 }}
+              whileInView={{ scale: 1, opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 1 }}
+              className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 md:mb-6"
+            >
+              Ready to Get Started?
+            </motion.h2>
+            <p className="text-base sm:text-lg md:text-xl mb-6 md:mb-8 text-white">
+              Contact us today for a free roof inspection and personalized repair plan.
+            </p>
+            <HashLink
+              to="/#book"
+              className="px-6 py-3 md:px-8 md:py-4 dark_button text-white font-semibold rounded-full hover:bg-white hover:text-black transition duration-300"
+            >
+              Schedule an Inspection
+            </HashLink>
+          </div>
         </div>
       </section>
     </div>
   );
 };
 
-export default Packages;
+export default RoofCoating;

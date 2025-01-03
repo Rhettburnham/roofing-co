@@ -1,14 +1,8 @@
 // booking.jsx
-
 import React, { useState } from "react";
 import { logoImg } from "../utils"; // Ensure this path is correct
 import axios from "axios";
-import {
-  FaTools,
-  FaFan,
-  FaPaintRoller,
-  FaTint,
-} from "react-icons/fa";
+import { FaTools, FaFan, FaPaintRoller, FaTint } from "react-icons/fa";
 
 const Booking = () => {
   const [formData, setFormData] = useState({
@@ -25,11 +19,6 @@ const Booking = () => {
 
   // State to control form visibility on small screens
   const [isFormVisible, setIsFormVisible] = useState(false);
-
-  // Utility function to toggle form visibility
-  const toggleFormVisibility = () => {
-    setIsFormVisible(!isFormVisible);
-  };
 
   // Define the services
   const inspectionSteps = [
@@ -59,26 +48,26 @@ const Booking = () => {
     },
   ];
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+  // Toggle form (small screens)
+  const toggleFormVisibility = () => {
+    setIsFormVisible(!isFormVisible);
   };
 
+  // Handle input changes
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prevData) => ({ ...prevData, [name]: value }));
+  };
+
+  // Select a service
   const handleServiceSelect = (serviceTitle) => {
-    setFormData({
-      ...formData,
-      service: serviceTitle,
-    });
+    setFormData((prevData) => ({ ...prevData, service: serviceTitle }));
     setIsModalOpen(false);
   };
 
+  // Submit form
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (
       !formData.firstName ||
       !formData.lastName ||
@@ -94,24 +83,17 @@ const Booking = () => {
     try {
       const data = { ...formData };
 
-      // Debug: Log the data being sent
+      // Debug
       console.log("Data being sent:", data);
 
-      // Send the form data to the backend
       const API_BASE_URL =
         import.meta.env.VITE_API_BASE_URL ||
-        "https://roofingco-backend.herokuapp.com"; // Fallback to backend URL
+        "https://roofingco-backend.herokuapp.com"; // fallback URL
 
-      // Send the form data to the backend
-      const response = await axios.post(
-        `${API_BASE_URL}/submit-booking`,
-        data
-      );
-
-      // Show success message
+      const response = await axios.post(`${API_BASE_URL}/submit-booking`, data);
       alert(response.data.message);
 
-      // Reset form fields
+      // Reset form
       setFormData({
         firstName: "",
         lastName: "",
@@ -122,11 +104,7 @@ const Booking = () => {
       });
     } catch (error) {
       console.error("Error submitting booking:", error);
-      if (
-        error.response &&
-        error.response.data &&
-        error.response.data.message
-      ) {
+      if (error.response?.data?.message) {
         alert(`Error: ${error.response.data.message}`);
       } else if (error.message) {
         alert(`Error: ${error.message}`);
@@ -138,25 +116,42 @@ const Booking = () => {
 
   return (
     <div
-      className="flex flex-col items-center pt-3 faint-color w-full"
+      className="flex flex-col items-center bg-gradient-to-t from-faint-color to-white w-full"
       id="booking"
     >
-      {/* Header Section */}
-      <div className="w-full max-w-3xl mb-4">
-        <div className="flex flex-row items-center justify-center">
+      {/* ─────────────────────────────────────────────────────────────────
+          HEADER SECTION WITH FULL-WIDTH RIBBON
+         ───────────────────────────────────────────────────────────────── */}
+      <div className="relative w-full overflow-visible mb-6">
+        {/* 
+          The 'ribbon' background: absolutely positioned, fills entire parent. 
+          'dark_button' is your custom BG color class.
+        */}
+        <div className="absolute inset-0 dark_button opacity-65" />
+
+        {/* 
+          Actual content on top of the ribbon.
+          We add some top/bottom padding to ensure the ribbon is visible behind the text.
+        */}
+        <div className="relative z-10 max-w-3xl mx-auto py-4 px-4 flex flex-row items-center justify-center">
+          {/* Logo */}
           <img src={logoImg} alt="logo" className="w-20 h-auto mr-6" />
+
+          {/* "Contact Us!" Heading */}
           <div className="text-center">
-            <h2 className="text-2xl md:text-3xl font-bold text-black">
+            <h2 className="text-2xl md:text-3xl font-bold text-white">
               Contact Us!
             </h2>
-            <div className="font-bold text-base md:text-lg text-gray-700 mt-1">
+            <div className="font-bold text-base md:text-lg text-white mt-1">
               <a href="tel:4422363783">📞 (442)236-3783</a>
             </div>
           </div>
         </div>
       </div>
 
-      {/* "Book" Button for Small Screens */}
+      {/* ─────────────────────────────────────────────────────────────────
+          "BOOK" BUTTON (SMALL SCREENS)
+         ───────────────────────────────────────────────────────────────── */}
       <button
         onClick={toggleFormVisibility}
         className="block md:hidden p-3 mb-4 dark_button text-white text-md font-semibold rounded-md hover:bg-gray-600 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300 shadow-xl"
@@ -164,9 +159,14 @@ const Booking = () => {
         {isFormVisible ? "..." : "Book"}
       </button>
 
-      {/* Form Section */}
+      {/* ─────────────────────────────────────────────────────────────────
+          FORM SECTION
+         ───────────────────────────────────────────────────────────────── */}
       <div className={`${isFormVisible ? "block" : "hidden"} md:block w-full`}>
-        <form onSubmit={handleSubmit} className="w-full max-w-screen-md mx-auto">
+        <form
+          onSubmit={handleSubmit}
+          className="w-full max-w-screen-md mx-auto mb-3"
+        >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* First Name */}
             <div>
@@ -180,6 +180,7 @@ const Booking = () => {
                 className="w-full p-4 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600"
               />
             </div>
+
             {/* Last Name */}
             <div>
               <input
@@ -192,6 +193,7 @@ const Booking = () => {
                 className="w-full p-4 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600"
               />
             </div>
+
             {/* Email */}
             <div>
               <input
@@ -204,6 +206,7 @@ const Booking = () => {
                 className="w-full p-4 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600"
               />
             </div>
+
             {/* Phone */}
             <div>
               <input
@@ -216,9 +219,9 @@ const Booking = () => {
                 className="w-full p-4 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600"
               />
             </div>
+
             {/* Service Selection */}
             <div>
-              {/* Display the selected service or placeholder */}
               <div
                 onClick={() => setIsModalOpen(true)}
                 className="w-full p-4 bg-transparent border-b border-gray-400 cursor-pointer focus:outline-none focus:border-blue-600 placeholder-gray-600"
@@ -230,8 +233,10 @@ const Booking = () => {
                 )}
               </div>
             </div>
-            {/* Empty div to maintain grid structure */}
-            <div></div>
+
+            {/* Spacing placeholder */}
+            <div />
+
             {/* Message (span both columns) */}
             <div className="col-span-1 md:col-span-2">
               <textarea
@@ -240,11 +245,12 @@ const Booking = () => {
                 onChange={handleChange}
                 placeholder="Your Message"
                 required
-                className="w-full h-full p-4 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600 resize-none"
-                rows="4"
+                rows="1"
+                className="w-full p-4 bg-transparent border-b border-gray-400 cursor-pointer focus:outline-none focus:border-blue-600 placeholder-gray-600"
               ></textarea>
             </div>
           </div>
+
           {/* Submit Button */}
           <button
             type="submit"
@@ -255,7 +261,9 @@ const Booking = () => {
         </form>
       </div>
 
-      {/* Modal Popup */}
+      {/* ─────────────────────────────────────────────────────────────────
+          MODAL POPUP
+         ───────────────────────────────────────────────────────────────── */}
       {isModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
@@ -292,7 +300,7 @@ const Booking = () => {
                   onClick={() => handleServiceSelect(item.title)}
                 >
                   <div className="text-2xl text-dark-below-header mr-3">
-                    {item.icon}
+                    {<item.icon />}
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold">{item.title}</h3>
