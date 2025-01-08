@@ -160,8 +160,8 @@ const GutterRelated = () => {
       {/* Main Hero Section */}
       <motion.section
         className="relative overflow-hidden"
-        initial={{ height: '100vh' }}
-        animate={{ height: isShrunk ? '20vh' : '100vh' }}
+        initial={{ height: '40vh' }}
+        animate={{ height: isShrunk ? '20vh' : '40vh' }}
         transition={{ duration: 1 }}
       >
         <div
@@ -189,7 +189,14 @@ const GutterRelated = () => {
       <div className="flex justify-center mt-6 mb-6">
         <HashLink
           to="/#book"
-          className="px-8 py-4 dark_button text-white font-semibold rounded-full hover:bg-white hover:text-black transition duration-300"
+          className="px-8 py-4 dark_button text-white font-semibold rounded-full hover:bg-white hover:text-black transition "
+          onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow =
+              "inset 0 0 15px 1px rgba(0,0,0,0.8)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
+          }}
         >
           Schedule an Inspection
         </HashLink>
@@ -211,29 +218,29 @@ const GutterRelated = () => {
       </div>
 
       {/* Gutter Options Content */}
-      <div className="container mx-auto px-6 mb-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="container mx-auto px-10 mb-4 md:mb-8">
+        <div className="grid grid-cols-2 gap-4 md:gap-6">
           {gutterOptions.map((gutter, index) => (
             <div
               key={index}
-              className="relative flex items-center space-x-4 p-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 bg-gray-50 overflow-hidden group"
+              className="relative flex flex-col md:flex-row items-center md:space-x-4 p-2 md:p-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 bg-gray-50 overflow-hidden group"
             >
               <img
                 src={gutter.image}
                 alt={gutter.alt}
-                className={`w-24 h-24 rounded-lg ${
+                className={`md:w-32 md:h-32 rounded-lg ${
                   gutter.title === 'Steel Gutters' ? 'transform -scale-x-100' : ''
                 }`}
               />
               <div>
-                <h3 className="text-xl font-bold">{gutter.title}</h3>
-                <p>{gutter.description}</p>
+                <h3 className="text-[3.3vw] md:text-lg font-bold">{gutter.title}</h3>
+                <p className='text-[2.5vw] md:text-base'>{gutter.description}</p>
               </div>
               <div
-                className="absolute inset-y-0 left-full w-1/2 bg-white transform group-hover:-translate-x-full transition-transform duration-300 ease-in-out flex items-center justify-center"
+                className="absolute inset-y-0 left-full h-1/4 md:h-1/2 rounded-xl faint-color shadow-lg w-3/4 md:w-1/2 bg-white transform group-hover:-translate-x-full transition-transform duration-300 ease-in-out flex items-center justify-center"
               >
-                <div className="text-center px-4">
-                  <p className="text-2xl font-bold text-black">{gutter.rate}</p>
+                <div className="md:text-center px-4">
+                  <p className="text-[3vw] md:text-lg font-bold text-black">{gutter.rate}</p>
                 </div>
               </div>
             </div>
@@ -257,28 +264,37 @@ const GutterRelated = () => {
       </div>
 
       {/* Issues Content */}
-      <div className="container mx-auto w-full px-4 pb-12">
-        <div className="space-y-4">
+      <div className="container mx-auto w-full px-4 pb-4 md:pb-8">
+        <div className="space-y-2 md:space-y-3">
           {issuesData.map((item, index) => (
             <div key={index} className="border rounded-lg overflow-hidden shadow-lg">
               <button
                 onClick={() => toggleItem(index)}
-                className="w-full text-left px-6 py-4 dark_button hover:bg-gray-600 focus:outline-none"
+                className="w-full text-left px-3 py-2 md:px-6 md:py-4 dark_button group hover:bg-white transition-all duration-300 focus:outline-none"
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.boxShadow =
+                    "inset 0 0 15px 1px rgba(0,0,0,0.8)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.boxShadow = "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
+                }}
                 aria-expanded={openItems.includes(index)}
                 aria-controls={`section-${index}`}
               >
                 <div className="flex justify-between items-center">
-                  <h2 className="text-2xl font-semibold text-white">{item.title}</h2>
+                  <h2 className="text-base md:text-2xl font-semibold text-white group-hover:text-black transition-colors duration-300">
+                    {item.title}
+                  </h2>
                   <svg
-                    className={`w-6 h-6 transform transition-transform duration-200 ${
-                      openItems.includes(index) ? 'rotate-180' : ''
+                    className={`w-6 h-6 md:w-10vh md:h-10vh transform text-white group-hover:text-black transition-colors duration-300 ${
+                      openItems.includes(index) ? 'rotate-180' : '-rotate-90'
                     }`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
                     aria-hidden="true"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
                   </svg>
                 </div>
               </button>
@@ -291,16 +307,16 @@ const GutterRelated = () => {
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <div className="px-6 py-4 bg-white">
-                      <p className="mt-2 text-gray-700">
-                        <strong>Causes:</strong> {item.causes}
+                    <div className="px-4 md:px-6 py-2 md:py-4 bg-white">
+                      <p className="text-[3vw] md:text-base text-gray-700">
+                        <strong className="text-base md:text-lg" >Causes:</strong> {item.causes}
                       </p>
-                      <p className="mt-2 text-gray-700">
-                        <strong>Impact:</strong> {item.impact}
+                      <p className="text-[3vw] md:text-base mt-2 text-gray-700">
+                        <strong className="text-base md:text-lg">Impact:</strong> {item.impact}
                       </p>
-                      <div className="mt-4">
-                        <strong className="text-gray-700">Diagnosis:</strong>
-                        <ul className="list-disc list-inside mt-2 text-gray-700">
+                      <div className="mt-2">
+                        <strong className="text-base md:text-lg text-gray-700">Diagnosis:</strong>
+                        <ul className="text-[3vw] md:text-base list-disc list-inside mt-2 text-gray-700">
                           {item.diagnosis.map((step, stepIndex) => (
                             <li key={stepIndex} className="mt-1">
                               {step}

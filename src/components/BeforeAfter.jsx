@@ -233,7 +233,7 @@ const BeforeAfter = () => {
 
   return (
     <>
-      <section className="relative w-full overflow-visible">
+      <section className="relative w-full overflow-visible bg-gradient-to-b from-black to-white">
         <div
           ref={headerRef}
           className="relative flex items-center py-8 pb-14 w-full overflow-hidden"
@@ -256,7 +256,7 @@ const BeforeAfter = () => {
           </div>
 
           <div ref={textRef} className="absolute left-1/2 z-10">
-            <h2 className="text-[8vw] md:text-[6vh] font-bold mt-2 py-3 z-30">
+            <h2 className="text-[8vw] text-white md:text-[6vh] font-normal font-condensed font-rye mt-2 py-3 z-30">
               GALLERY
             </h2>
           </div>

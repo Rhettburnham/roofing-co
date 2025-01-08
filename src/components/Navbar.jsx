@@ -1,26 +1,33 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom"; // Import useLocation
+import { Link, useLocation } from "react-router-dom";
 import { HashLink } from "react-router-hash-link";
 import gsap from "gsap";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+
+  // Refs for GSAP burger-menu animation
   const topBarRef = useRef(null);
   const middleBarRef = useRef(null);
   const bottomBarRef = useRef(null);
-  const logoRef = useRef(null); // Create ref for the logo
-  const timelineRef = useRef(null);
+  const timelineRef = useRef(null); // Make sure to define this
 
-  const location = useLocation(); // Hook to get current location
+  // Refs for logos
+  const cowboyRef = useRef(null); // Cowboy logo (home page only)
+  const logoRef = useRef(null);   // Main logo (all other pages)
 
+  const location = useLocation();
+
+  // 1) Set up the GSAP timeline for the hamburger menu
   useEffect(() => {
     const tl = gsap.timeline({ paused: true });
     tl.to(topBarRef.current, { y: 10, rotate: -45, duration: 0.3 })
-      .to(middleBarRef.current, { opacity: 0, duration: 0.3 }, "-=0.3")
-      .to(bottomBarRef.current, { y: -10, rotate: 45, duration: 0.3 }, "-=0.3");
+      .to(middleBarRef.current, { opacity: 0, duration: 0.3 }, "<") // "<" means start at same time as previous
+      .to(bottomBarRef.current, { y: -10, rotate: 45, duration: 0.3 }, "<");
     timelineRef.current = tl;
   }, []);
 
+  // 2) Play / reverse the GSAP timeline based on `isOpen`
   useEffect(() => {
     if (isOpen) {
       timelineRef.current.play();
@@ -29,51 +36,69 @@ const Navbar = () => {
     }
   }, [isOpen]);
 
-  // Effect to handle logo rotation on route change
+  // 3) Show cowboyRef on home page, show logoRef on other pages
   useEffect(() => {
     if (location.pathname === "/") {
-      // Rotate logo back to original position when on home page
-      gsap.to(logoRef.current, { rotation: 0, duration: 1 });
+      // Home Page
+      gsap.to(cowboyRef.current, { opacity: 1, duration: 1 });
+      gsap.to(logoRef.current, { opacity: 0, duration: 1 });
     } else {
-      // Rotate logo 90 degrees counterclockwise on other pages
-      gsap.to(logoRef.current, { rotation: -90, duration: 1 });
+      // Other Pages
+      gsap.to(cowboyRef.current, { opacity: 0, duration: 1 });
+      gsap.to(logoRef.current, { opacity: 1, duration: 1 });
     }
   }, [location]);
 
   const navLinks = [
     { name: "About", href: "/about" },
-    // { name: "Roof Repair", href: "/roofrepair" },
     { name: "Booking", href: "/#book" },
     { name: "Packages", href: "/#packages" },
   ];
 
   return (
     <>
-      <nav className="sticky top-0 z-50 w-full h-16 flex items-center justify-center bg-white px-5 md:px-10 ">
-        
-        <div className="flex items-center absolute left-5">
+      <nav className="sticky top-0 z-50 w-full h-16 md::-h-[8vh] flex items-center justify-center bg-dark-below-header px-5 md:px-10 ">
+        {/* Cowboy Logo (Home page only) */}
+        <div className="absolute left-8 flex items-center">
           <Link to="/" className="flex items-center">
             <img
-              ref={logoRef} // Attach ref to the logo image
-              src="/assets/images/logo.svg"
-              alt="Paramount Roofing & Construction Logo"
-              className="h-12"
+              ref={cowboyRef}
+              src="/assets/images/clipped-cowboy.png"
+              alt="Cowboy Logo"
+              className="h-12 opacity-0 transition-opacity duration-500"
+              style={{ filter: "invert(0)" }}
             />
           </Link>
         </div>
-        {/* space between */}
-        <div className="hidden md:flex space-x-[6vw]  z-10">
+
+        {/* Main Logo (Other pages) */}
+        <div className="absolute left-8 flex items-center">
+          <Link to="/" className="flex items-center">
+            <img
+              ref={logoRef}
+              src="/assets/images/logo.svg"
+              alt="Paramount Roofing Logo"
+              className="h-12 opacity-0 transition-opacity duration-500"
+              
+            />
+          </Link>
+        </div>
+
+        {/* Navigation Links (Desktop) */}
+        <div className="hidden md:flex space-x-[6vw] z-10">
           {navLinks.map((nav) => (
             <HashLink
               key={nav.name}
               smooth
               to={nav.href}
-              className="text-lg cursor-pointer text-black hover:text-gray-300 font-bold transition-all "
+              className="text-2xl text-white font-normal font-ultra-condensed font-serif hover:text-gray-300"
             >
               {nav.name}
             </HashLink>
           ))}
         </div>
+
+        {/* Hamburger Menu (Mobile) */}
         <div className="flex items-center md:hidden absolute right-5">
           <button
             onClick={() => setIsOpen(!isOpen)}
@@ -96,15 +121,17 @@ const Navbar = () => {
           </button>
         </div>
       </nav>
+
+      {/* Mobile Menu */}
       {isOpen && (
-        <div className="md:hidden flex flex-col items-center dark-below-header w-full fixed top-16 left-0 z-50 shadow-lg">
+        <div className="md:hidden flex flex-col items-center w-full fixed top-16 left-0 z-50 bg-dark-below-header shadow-lg">
           {navLinks.map((nav) => (
             <HashLink
               key={nav.name}
               smooth
               to={nav.href}
-              className="px-5 py-3 text-sm cursor-pointer text-white hover:text-dark-below-header transition-all"
               onClick={() => setIsOpen(false)}
+              className="px-5 py-3 text-sm text-white hover:text-dark-below-header transition-all"
             >
               {nav.name}
             </HashLink>

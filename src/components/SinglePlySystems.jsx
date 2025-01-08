@@ -51,48 +51,45 @@ const SinglePlySystems = () => {
       description:
         "TPO is a single-ply reflective roofing membrane made from polypropylene and ethylene-propylene rubber polymerized together. It stands out for its energy efficiency, UV and heat resistance, and durability—helping reduce cooling costs in hot climates.",
       base: "Composition: Polypropylene & ethylene-propylene rubber.",
-      features: `
-        • Energy Efficiency: The white reflective surface reduces heat absorption. 
-        • UV & Heat Resistance: Resists degradation from intense sunlight & high temps. 
-        • Durability: Resistant to punctures, tears, and impact damage. 
-        • Color: Usually white, gray, or tan; some manufacturers offer custom colors. 
-        • Installation Time: Can be installed relatively quickly, depending on roof size & complexity.
-      `,
+      features: `• Energy Efficiency: The white reflective surface reduces heat absorption.
+• UV & Heat Resistance: Resists degradation from intense sunlight & high temps.
+• Durability: Resistant to punctures, tears, and impact damage.
+• Color: Usually white, gray, or tan; some manufacturers offer custom colors.
+• Installation Time: Can be installed relatively quickly, depending on roof size & complexity.`,
       uses: "Well-suited for commercial buildings requiring a reflective, energy-efficient system.",
       limitations:
         "Proper installation is crucial; can accumulate dirt affecting reflectivity over time.",
+      image: "/assets/images/ply/Tpo.jpg",
     },
     {
       name: "Thermoplastic PVC (Polyvinyl Chloride)",
       description:
         "PVC is a durable single-ply roofing material known for its resistance to chemicals, fire, and environmental factors. It is especially favored for roofs exposed to grease or other chemicals.",
       base: "Composition: Polyvinyl chloride with plasticizers.",
-      features: `
-        • Chemical Resistance: Withstands exposure to oils & industrial byproducts. 
-        • Fire Resistance: Inherently fire-resistant composition. 
-        • Durability: Provides excellent tensile strength & longevity. 
-        • Color: Often white or light-colored, enhancing reflective properties. 
-        • Installation Time: Installed at a pace similar to TPO, depending on roof conditions.
-      `,
+      features: `• Chemical Resistance: Withstands exposure to oils & industrial byproducts.
+• Fire Resistance: Inherently fire-resistant composition.
+• Durability: Provides excellent tensile strength & longevity.
+• Color: Often white or light-colored, enhancing reflective properties.
+• Installation Time: Installed at a pace similar to TPO, depending on roof conditions.`,
       uses: "Ideal for commercial roofs with potential chemical exposure or high-heat zones.",
       limitations:
         "Generally more expensive than EPDM; may require specialized installation methods.",
+      image: "/assets/images/ply/pvc.jpg",
     },
     {
       name: "EPDM (Ethylene Propylene Diene Monomer)",
       description:
         "EPDM is a synthetic rubber membrane revered for its durability, flexibility, and resistance to extreme weather conditions. It remains flexible in cold temperatures and can last up to 30 years or more with proper maintenance.",
       base: "Composition: Synthetic rubber.",
-      features: `
-        • Weather Resistance: Performs well in both extreme heat & cold. 
-        • Flexibility: Adapts to building movement without cracking. 
-        • Longevity: Potential lifespan of 30+ years with proper care. 
-        • Color: Typically black, but white variants are available for greater reflectivity. 
-        • Installation Time: Straightforward to install, reducing labor costs.
-      `,
+      features: `• Weather Resistance: Performs well in both extreme heat & cold.
+• Flexibility: Adapts to building movement without cracking.
+• Longevity: Potential lifespan of 30+ years with proper care.
+• Color: Typically black, but white variants are available for greater reflectivity.
+• Installation Time: Straightforward to install, reducing labor costs.`,
       uses: "Common in commercial and industrial settings demanding proven, long-term performance.",
       limitations:
         "Black variants can absorb heat; white EPDM can cost more but offers reflectivity benefits.",
+      image: "/assets/images/ply/epdm.jpg",
     },
   ];
 
@@ -132,9 +129,8 @@ const SinglePlySystems = () => {
         </div>
       </motion.section>
 
-
       {/* Membrane Selection Section */}
-      <section className="mb-8 px-4 md:px-16">
+      <section className="my-4 px-4 md:px-16">
         <h2 className={sectionTitleClass}>Explore Our Single-Ply Membranes</h2>
 
         {/* Selection Buttons */}
@@ -143,11 +139,19 @@ const SinglePlySystems = () => {
             <button
               key={index}
               onClick={() => setSelectedIndex(index)}
-              className={`m-2 px-5 py-2 rounded-full shadow-lg transition-colors duration-300 border-2 ${
+              className={`m-2 px-4 py-2 rounded-full font-semibold shadow-lg ${
                 selectedIndex === index
-                  ? "bg-blue-600 border-blue-600 text-white"
-                  : "bg-white border-gray-300 text-gray-800 hover:bg-blue-500 hover:text-white hover:border-blue-500"
+                  ? "dark_button text-white font-semibold shadow-2xl"
+                  : "text-black"
               }`}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow =
+                  "inset 0 0 15px 1px rgba(0,0,0,0.8)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow =
+                  "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
+              }}
             >
               {membrane.name.split("(")[0].trim()}
             </button>
@@ -157,36 +161,37 @@ const SinglePlySystems = () => {
         {/* Selected Membrane Details */}
         <motion.div
           key={selectedIndex}
-          className="flex flex-col items-start bg-white rounded-2xl shadow-lg p-8 mt-4 max-w-5xl mx-auto"
+          className="flex flex-col items-start bg-white rounded-2xl shadow-lg p-4 md:p-6 max-w-5xl mx-auto"
           variants={infoVariants}
           initial="initial"
           animate="animate"
           exit="initial"
         >
           {/* Membrane Description */}
-          <h3 className="text-2xl font-semibold mb-3 text-gray-800">
+          <h3 className="text-[3.3vw] md:text-2xl font-semibold mb-1 md:mb-2 text-gray-800">
             {singlePlyMembranes[selectedIndex].name}
           </h3>
-          <p className="text-gray-700 mb-4 leading-relaxed">
+          <p className="text-[2.6vw] md:text-lg text-gray-700 mb-2 leading-relaxed">
             {singlePlyMembranes[selectedIndex].description}
           </p>
+
 
           <div className="grid md:grid-cols-2 gap-4 w-full">
             {/* Left column (Base, Features) */}
             <div className="p-4 bg-gray-50 rounded-lg border border-gray-100 shadow-sm">
-              <h4 className="text-xl font-semibold text-gray-800 mb-2">
+              <h4 className="text-[3.5vw] md:text-xl font-semibold text-gray-800 mb-2">
                 Technical Details
               </h4>
               <div>
-                <p className="text-gray-700 mb-2">
+                <p className="text-[3vw] md:text-lg text-gray-700 mb-1 md:mb-2">
                   <strong>Base:</strong>{" "}
                   {singlePlyMembranes[selectedIndex].base}
                 </p>
-                <p className="text-gray-700 mb-2">
+                <p className="text-[3vw] md:text-lg text-gray-700 mb-1 md:mb-2">
                   <strong>Features:</strong>
                 </p>
                 {/* Transform bullet features into a nicer list */}
-                <ul className="list-disc list-inside text-gray-700 pl-4 space-y-1">
+                <ul className="list-disc list-inside text-gray-700  space-y-1">
                   {singlePlyMembranes[selectedIndex].features
                     .split("•")
                     .filter(Boolean)
@@ -199,6 +204,15 @@ const SinglePlySystems = () => {
 
             {/* Right column (Uses, Limitations) */}
             <div className="p-4 bg-gray-50 rounded-lg border border-gray-100 shadow-sm">
+
+              {/* Membrane Image */}
+              <div className="w-full flex justify-center mb-6">
+                <img
+                  src={singlePlyMembranes[selectedIndex].image}
+                  alt={singlePlyMembranes[selectedIndex].name}
+                  className="max-w-md w-full h-auto rounded-lg shadow-md"
+                />
+              </div>
               <h4 className="text-xl font-semibold text-gray-800 mb-2">
                 Practical Application
               </h4>
@@ -213,8 +227,8 @@ const SinglePlySystems = () => {
           </div>
         </motion.div>
       </section>
-            {/* Intro / Advantages Section */}
-            <section className="my-8 px-4 md:px-16">
+      {/* Intro / Advantages Section */}
+      <section className="my-8 px-4 md:px-16">
         <h2 className="text-3xl md:text-4xl font-bold text-center text-gray-800 mb-6">
           Overview & Advantages
         </h2>

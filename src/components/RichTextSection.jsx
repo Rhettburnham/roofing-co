@@ -19,15 +19,17 @@ const AnimatedFeatureCard = ({ icon: Icon, title, desc, index }) => {
         if (entry.isIntersecting) {
           // Add staggered delay based on column position
           const delay = index * 0.2;
-          entry.target.style.setProperty('--delay', `${delay}s`);
+          entry.target.style.setProperty("--delay", `${delay}s`);
           entry.target.classList.add("animate-card-fall");
-          
+
           // Set the overlay fade delay to match the card animation
           if (overlayRef.current) {
-            overlayRef.current.style.setProperty('--overlay-delay', `${delay + 0.8}s`);
+            overlayRef.current.style.setProperty(
+              "--overlay-delay",
+              `${delay + 0.8}s`
+            );
           }
-          
-          
+
           observer.unobserve(entry.target);
         }
       },
@@ -51,7 +53,10 @@ const AnimatedFeatureCard = ({ icon: Icon, title, desc, index }) => {
       return () => {
         if (cardRef.current) {
           observer.unobserve(cardRef.current);
-          cardRef.current.removeEventListener("animationend", handleAnimationEnd);
+          cardRef.current.removeEventListener(
+            "animationend",
+            handleAnimationEnd
+          );
         }
       };
     }
@@ -60,42 +65,46 @@ const AnimatedFeatureCard = ({ icon: Icon, title, desc, index }) => {
   return (
     <div
       ref={cardRef}
-      className="relative items-center bg-white p-2 h-[40vw] md:h-[25vh] aspect-square rounded-lg  overflow-hidden"
+      className="relative items-center bg-white p-1 md:p-2 h-[20vw] md:h-[20vh] aspect-square rounded-lg  drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] overflow-hidden"
+      style={{
+        transform: "translateX(-100%) rotate3d(0, 0, 1, -90deg)",
+        transformOrigin: "right center",
+        opacity: "0",
+        willChange: "transform, opacity",
+      }}
+    >
+      {/* Top-right corner overlay (static image) */}
+      <div
+        className="absolute top-0 right-0 w-8 md:w-16 h-8 md:h-16 z-20"
         style={{
-          transform: "translateX(-100%) rotate3d(0, 0, 1, -90deg)",
-          transformOrigin: "right center",
-          opacity: "0",
-          willChange: "transform, opacity",
+          backgroundImage: `url(${overlayImages[index % overlayImages.length]})`,
+          backgroundPosition: "top right",
+          backgroundRepeat: "no-repeat",
+          backgroundSize: "auto",
+          clipPath: "polygon(0 0, 100% 0, 100% 100%)",
         }}
-      >
-        <div
-          className="absolute top-0 right-0 w-12 md:w-16 h-12 md:h-16 z-20"
-          style={{
-            backgroundImage: `url(${overlayImages[index % overlayImages.length]})`,
-            backgroundPosition: "top right",
-            backgroundRepeat: "no-repeat",
-            backgroundSize: "auto",
-            clipPath: "polygon(0 0, 100% 0, 100% 100%)",
-          }}
-        />
+      />
 
-        <div
-          ref={overlayRef}
-          className="absolute inset-0 bg-center bg-cover z-30"
-          style={{ backgroundImage: `url(${overlayImages[index % overlayImages.length]})` }}
-        />
+      {/* Full overlay that fades out after card anim */}
+      <div
+        ref={overlayRef}
+        className="absolute inset-0 bg-center bg-cover z-30"
+        style={{
+          backgroundImage: `url(${overlayImages[index % overlayImages.length]})`,
+        }}
+      />
 
-        <Icon className="w-6 h-6 md:w-12 md:h-12 mb-3 md:mb-4 z-10" />
+      {/* Icon + Title + Description */}
+      <Icon className="w-4 h-4 md:w-12 md:h-12 mb-1 md:mb-2 z-10" />
 
-        <h3 className="text-[3.5vw] md:text-lg font-semibold text-gray-900 mb-1 md:mb-2 relative z-10">
-          {title}
-        </h3>
+      <h3 className="text-[2vw] md:text-sm font-semibold text-gray-900 md:mb-1 relative z-10">
+        {title}
+      </h3>
 
-        <p className="text-[3vw] md:text-sm text-gray-600 relative z-10">
-          {desc}
-        </p>
-      </div>
-
+      <p className="text-[1.8vw] md:text-xs text-gray-600 relative z-10">
+        {desc}
+      </p>
+    </div>
   );
 };
 
@@ -109,7 +118,7 @@ const RichTextSection = () => {
   ];
 
   return (
-    <section className="mx-auto pt-12 bg-gradient-to-t from-faint-color to-white">
+    <section className=" bg-white">
       <style>
         {`
           @keyframes cardFall {
@@ -143,24 +152,66 @@ const RichTextSection = () => {
         `}
       </style>
 
-      <div className="max-w-4xl mx-auto text-center mb-3 md:mb-6 -mt-16">
-        <h2 className="text-[6vw] md:text-[7vh] font-bold text-gray-900">
-          Protecting Your Home Since 1955
-        </h2>
-      </div>
+      {/* 
+        Wrap EVERYTHING (text, slideshow, and 4 cards) in a responsive grid.
+        - 1 column by default (mobile)
+        - 3 columns at md+ breakpoints
+      */}
+      <div className="flex flex-col items-start  justify-around md:flex-row px-6 gap-4 md:px-[5vw] py-4 md:py-8 -mt-[10vh] relative bg-gradient-to-b from-white from-60% to-black">
+        {/* 
+          Column for the FIRST TWO CARDS (left side for md+).
+          Mobile: show it AFTER the text/slideshow to keep original flow.
+        */}
+        <div className="order-3 md:order-1 flex flex-col items-center justify-center gap-4 z-30 ">
+          {/* Card 0 */}
+          <AnimatedFeatureCard
+            icon={Shield}
+            title="Guaranteed Quality"
+            desc="50-year material warranty on all installations"
+            index={0}
+          />
+          {/* Card 1 */}
+          <AnimatedFeatureCard
+            icon={Clock}
+            title="24/7 Support"
+            desc="Emergency repairs available anytime"
+            index={1}
+          />
+        </div>
 
-      <div className="flex flex-col lg:flex-row gap-4 md:gap-8 max-w-7xl mx-auto px-6 md:px-[5vw] space-x-4">
-        <div className="w-full">
-          <div className="relative rounded-xl h-[35vh] overflow-hidden shadow-2xl">
+        {/* 
+          MIDDLE COLUMN with the heading, paragraph, and image slideshow 
+          (order-1 on mobile so text + slideshow appear first).
+        */}
+        <div className="order-1 md:order-2 flex flex-row   gap-4">
+          {/* The gradient overlay on top */}
+          <div className="h-[20.5vh] absolute -top-[8vh] right-0 left-0 bg-gradient-to-t from-white from-60% to-transparent z-20" />
+
+          {/* The Rich text block */}
+          <div className="relative text-left text-black z-40 md:w-[40vw] ">
+            <h3 className="text-[5vw] md:text-3xl text-left font-semibold mb-1 md:mb-3 font-serif ">
+              Commitment to Stability
+            </h3>
+            <p className="text-[3vw] md:text-lg leading-relaxed w-full font-serif">
+              At Summit Ridge Roofing, we prioritize stability in every project.
+              Our reliable roofing solutions ensure that your home remains
+              secure and protected through all seasons. With decades of
+              experience, we deliver consistent quality and dependable service
+              you can trust.
+            </p>
+          </div>
+
+          {/* The Slideshow */}
+          <div className="relative rounded-xl  overflow-hidden shadow-2xl z-30 h-[40vw] w-[80vw] md:h-[35vh] md:w-[30vw]">
             <img
               src={images[currentImage]}
               alt="Professional roofers at work"
-              className="w-full object-cover"
+              className=" "
             />
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-6">
               <div className="flex justify-between items-end">
                 <div className="text-white">
-                  <p className="font-bold text-[2vw] md:text-2xl">25+</p>
+                  <p className="font-bold text-[3.5vw] md:text-2xl">25+</p>
                   <p className="text-sm">Years of Excellence</p>
                 </div>
                 <div className="flex space-x-2">
@@ -182,55 +233,41 @@ const RichTextSection = () => {
           </div>
         </div>
 
-        <div className="w-full flex flex-col justify-center">
-          <div className="text-black">
-            <h3 className="text-[4vw] md:text-3xl font-semibold mb-1 md:mb-3">
-              Commitment to Stability
-            </h3>
-            <p className="text-[3vw] md:text-lg leading-relaxed">
-              At Summit Ridge Roofing, we prioritize stability in every project.
-              Our reliable roofing solutions ensure that your home remains secure
-              and protected through all seasons. With decades of experience, we
-              deliver consistent quality and dependable service you can trust.
-            </p>
-          </div>
+        {/* 
+          Column for the LAST TWO CARDS (right side for md+). 
+          Mobile: show it AFTER the top text/slideshow as originally.
+        */}
+        <div className="order-4 md:order-3 flex flex-col items-center justify-center gap-4 z-30">
+          {/* Card 2 */}
+          <AnimatedFeatureCard
+            icon={Home}
+            title="Local Expertise"
+            desc="Deep understanding of local weather patterns and codes"
+            index={2}
+          />
+          {/* Card 3 */}
+          <AnimatedFeatureCard
+            icon={Award}
+            title="Award-Winning"
+            desc="A+ BBB rating and multiple industry awards"
+            index={3}
+          />
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 items-center justify-items-center gap-3 md:gap-12 mx-auto px-8 py-4 md:px-16">
-        {[
-          {
-            icon: Shield,
-            title: "Guaranteed Quality",
-            desc: "50-year material warranty on all installations",
-          },
-          {
-            icon: Clock,
-            title: "24/7 Support",
-            desc: "Emergency repairs available anytime",
-          },
-          {
-            icon: Home,
-            title: "Local Expertise",
-            desc: "Deep understanding of local weather patterns and codes",
-          },
-          {
-            icon: Award,
-            title: "Award-Winning",
-            desc: "A+ BBB rating and multiple industry awards",
-          },
-        ].map((item, index) => (
-          <AnimatedFeatureCard
-            key={index}
-            icon={item.icon}
-            title={item.title}
-            desc={item.desc}
-            index={index}
-          />
-        ))}
+      {/* The existing About button at the bottom, same for all screens */}
+      <div className="flex flex-col  relative  h-[28vh] w-full">
+        <div className=" relative  bg-hover-color h-[2vh] z-30 w-full">
+          <div className="absolute bottom-0 right-0 left-0 h-[.75vh] bg-gradient-to-b from-transparent to-90% to-orange-600"> </div>
+
+        </div>
+        <Aboutbutton />
+        <div className="  relative  bottom-0 right-0 left-0 bg-hover-color h-[2vh] z-30 w-full">
+          <div className="absolute top-0 right-0 left-0 h-[.75vh] bg-gradient-to-t from-transparent to-90% to-orange-700"> </div>
+
+        </div>
       </div>
 
-      <Aboutbutton />
     </section>
   );
 };

@@ -213,18 +213,25 @@ const TestimonialItem = ({ testimonial }) => {
       </a>
 
       {/* Name, rating, date */}
-      <div className="flex flex-col items-start mb-2">
-        <p className="text-sm font-semibold text-black">{testimonial.name}</p>
-        <StarRating rating={testimonial.stars} />
-        <p className="text-gray-500 text-xs mt-1">{testimonial.date}</p>
+      <div className="flex flex-col">
+        <p className="text-[4vw] md:text-sm font-semibold text-black">
+          {testimonial.name}
+        </p>
+        <div className="flex items-center justify-between">
+          <StarRating rating={testimonial.stars} />
+          <p className="text-gray-500 text-xs mt-1">
+            {testimonial.date}
+          </p>
+        </div>
       </div>
 
+
       {/* Text */}
-      <p className="text-gray-800 text-sm mt-2">
-        <span className="block md:hidden">
+      <p className="text-gray-800 text-sm mt-1">
+        <span className="text-[3vw] block md:hidden">
           {isExpanded ? testimonial.text : truncated}
         </span>
-        <span className="hidden md:block">{testimonial.text}</span>
+        <span className=" md:text-xs hidden md:block">{testimonial.text}</span>
       </p>
     </div>
   );
@@ -308,49 +315,18 @@ const CombinedPage = () => {
   /* --------------------------
      SERVICES (Conditional)
   ---------------------------*/
-  const currentServices = isCommercial ? commercialServices : residentialServices;
+  const currentServices = isCommercial
+    ? commercialServices
+    : residentialServices;
   const handleResidentialClick = () => setIsCommercial(false);
   const handleCommercialClick = () => setIsCommercial(true);
 
   return (
-    <div className="w-full">
+    <div className="w-full bg-black">
       {/* ──────────────────────────────────────────────────────────
           SMALL SCREEN SECTION
       ────────────────────────────────────────────────────────── */}
       <div className="block md:hidden relative w-full ">
-        {/* (1) The two toggle buttons ABOVE the image */}
-        <div className="flex justify-center gap-2 py-4 faint-color">
-          {/* RESIDENTIAL button */}
-          <button
-            onClick={handleResidentialClick}
-            className={`flex items-center px-3 py-2 rounded-full border-2 z-30
-              ${
-                !isCommercial
-                  ? "bg-gray-800 text-white border-gray-800"
-                  : "border-gray-400 text-gray-600"
-              } 
-              transition-colors duration-300`}
-          >
-            <Home className="mr-2" size={18} />
-            Residential
-          </button>
-
-          {/* COMMERCIAL button */}
-          <button
-            onClick={handleCommercialClick}
-            className={`flex items-center px-3 py-2 rounded-full border-2 z-30
-              ${
-                isCommercial
-                  ? "bg-gray-800 text-white border-gray-800"
-                  : "border-gray-400 text-gray-600"
-              }
-              transition-colors duration-300`}
-          >
-            <Building2 className="mr-2" size={18} />
-            Commercial
-          </button>
-        </div>
-
         {/* (2) Two images side-by-side, animate x for swap */}
         <div className="overflow-hidden w-full relative">
           <motion.div
@@ -375,17 +351,72 @@ const CombinedPage = () => {
 
         {/* (3) White triangle at bottom, no pointer events */}
         <div
-          className="absolute bottom-0 left-0 w-full h-[9.5vh] bg-white z-0 pointer-events-none"
+          className="absolute bottom-0 left-0 w-full h-[9.5vh] bg-black z-0 pointer-events-none"
           style={{ clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)" }}
         />
-
+        <h2
+          className="absolute top-[0vh] left-1/2 transform -translate-x-1/2
+                        text-white text-[10vw] font-normal font-ultra-condensed font-rye drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)]"
+        >
+          Services
+        </h2>
         {/* (4) SERVICES Buttons (staggered exit/enter) */}
+        <div className="absolute bottom-[12vh] left-1/2 transform -translate-x-1/2 z-30">
+          <div className=" flex flex-row ">
+            <button
+              onClick={handleResidentialClick}
+              className={`flex items-center px-4 py-2 rounded-full border-1 mx-2 text-md
+                ${
+                  !isCommercial
+                    ? "bg-dark-below-header text-gray-50 border-gray-800 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
+                    : "bg-gray-500 text-white hover:bg-white hover:text-black"
+                }
+                transition-colors duration-300`}
+              onMouseEnter={(e) => {
+                if (isCommercial) {
+                  e.currentTarget.style.boxShadow =
+                    "inset 0 0 15px 1px rgba(0,0,0,0.8)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow =
+                  "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
+              }}
+            >
+              <Home className="mr-2" size={25} />
+              Residential
+            </button>
+            <button
+              onClick={handleCommercialClick}
+              className={`flex items-center px-4 py-2 text-lg rounded-full border-1 mx-2 
+                ${
+                  isCommercial
+                    ? "bg-dark-below-header text-gray-50 border-gray-800 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
+                    : "bg-gray-500 hover:bg-white hover:text-black text-white "
+                }
+                transition-colors duration-300`}
+              onMouseEnter={(e) => {
+                if (!isCommercial) {
+                  e.currentTarget.style.boxShadow =
+                    "inset 0 0 15px 1px rgba(0,0,0,0.8)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow =
+                  "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
+              }}
+            >
+              <Building2 className="mr-2" size={25} />
+              Commercial
+            </button>
+          </div>
+        </div>
         <div className="absolute inset-0 flex flex-col items-center justify-start pt-[15vh]">
           <AnimatePresence mode="wait">
             {/* We use a different key depending on isCommercial to force re-mount */}
             <motion.div
               key={isCommercial ? "commercial" : "residential"}
-              className="flex flex-row gap-4 mt-4"
+              className="flex flex-row gap-4"
               variants={containerVariants}
               initial="initial"
               animate="enter"
@@ -396,28 +427,28 @@ const CombinedPage = () => {
                 <motion.div
                   key={service.title}
                   variants={itemVariants}
-                  className="flex flex-col items-center"
+                  className="flex flex-col items-center -mt-[2vh]"
                 >
                   <Link to={service.link}>
                     <div
-                      className="dark_button w-14 h-14 rounded-full 
-                                 flex items-center justify-center
-                                 text-white text-2xl 
-                                 transition-all duration-300 drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"
+                      className="flex-col dark_button w-24 h-24 rounded-full 
+                      flex items-center justify-center
+                       text-white text-[8vw]
+                       hover:text-black hover:bg-gray-200 transition drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"
                       onMouseEnter={(e) => {
                         e.currentTarget.style.boxShadow =
-                          "inset 0 0 25px 8px rgba(0,0,0,0.8)";
+                          "inset 0 0 30px 10px rgba(0,0,0,0.8)";
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.boxShadow = "none";
                       }}
                     >
-                      {React.createElement(service.icon, { color: "#ffffff" })}
+                      {React.createElement(service.icon)}
+                      <h3 className="mt-1 text-white text-sm font-bold drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
+                        {service.title}
+                      </h3>
                     </div>
                   </Link>
-                  <h3 className="mt-1 text-white text-sm font-bold drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
-                    {service.title}
-                  </h3>
                 </motion.div>
               ))}
             </motion.div>
@@ -430,7 +461,7 @@ const CombinedPage = () => {
         {/* Overlapping heading + toggle */}
         <div className="flex items-center justify-center px-4">
           <h2
-            className="text-[7.5vw] md:text-[6vh] md:text-5xl font-serif mr-2"
+            className="text-[7.5vw] text-white md:text-[6vh] md:text-5xl font-serif mr-2"
             style={{ fontFamily: "Times New Roman, Times, serif" }}
           >
             Testimonials
@@ -477,7 +508,7 @@ const CombinedPage = () => {
               className="absolute left-0 top-1/2 transform -translate-y-1/2
                          bg-white text-gray-700 rounded-full w-6 h-6
                          flex items-center justify-center
-                         shadow-md hover:shadow-2xl z-10 ml-2"
+                         drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)] hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10 ml-2"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -496,7 +527,7 @@ const CombinedPage = () => {
             </button>
           )}
 
-          <div className="grid grid-cols-1 gap-3">
+          <div className="grid grid-cols-1 gap-3 px-6">
             {visibleReviews.map((t, idx) => (
               <TestimonialItem key={idx} testimonial={t} />
             ))}
@@ -509,7 +540,7 @@ const CombinedPage = () => {
               className="absolute right-0 top-1/2 transform -translate-y-1/2
                          bg-white text-gray-700 rounded-full w-6 h-6
                          flex items-center justify-center
-                         shadow-md hover:shadow-2xl z-10 mr-2"
+                         drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)] hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10 mr-2"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -530,7 +561,7 @@ const CombinedPage = () => {
         </div>
 
         {/* "Leave a Review" */}
-        <div className="py-2 text-center">
+        <div className=" text-center">
           <div className="flex justify-center space-x-4">
             <a
               href="https://www.google.com/maps/place/Rhetts+Roofing"
@@ -557,39 +588,20 @@ const CombinedPage = () => {
       {/* ──────────────────────────────────────────────────────────
           LARGE SCREENS
       ────────────────────────────────────────────────────────── */}
-      <div className="hidden md:block">
+      <div className="hidden md:block overflow-hidden">
         {/* (1) Two toggle buttons ABOVE the main image */}
-        <div className="w-full flex justify-center py-4">
-          <button
-            onClick={handleResidentialClick}
-            className={`flex items-center px-4 py-2 rounded-full border-2 mx-2
-              ${
-                !isCommercial
-                  ? "bg-gray-800 text-white border-gray-800"
-                  : "border-gray-400 text-gray-700"
-              }
-              transition-colors duration-300`}
+        {/* <div className="w-full flex justify-center py-4 bg-gradient-to-b from-faint-color to-dark-button">
+          <h2
+            className="relative z-40
+                       text-white text-[6vh] font-bold drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)]"
           >
-            <Home className="mr-2" size={20} />
-            Residential
-          </button>
-          <button
-            onClick={handleCommercialClick}
-            className={`flex items-center px-4 py-2 rounded-full border-2 mx-2
-              ${
-                isCommercial
-                  ? "bg-gray-800 text-white border-gray-800"
-                  : "border-gray-400 text-gray-700"
-              }
-              transition-colors duration-300`}
-          >
-            <Building2 className="mr-2" size={20} />
-            Commercial
-          </button>
-        </div>
+            Services
+          </h2>
+          
+        </div> */}
 
         {/* (2) Large images side-by-side, animate x for swap */}
-        <div className="relative w-full h-[50vh] overflow-hidden">
+        <div className="relative w-full h-[60vh] ">
           <motion.div
             animate={{ x: isCommercial ? "-100vw" : "0%" }}
             transition={{ duration: 1 }}
@@ -599,30 +611,83 @@ const CombinedPage = () => {
             <img
               src="/assets/images/main_image_expanded.jpg"
               alt="Residential Services"
-              className="w-full h-full object-cover"
+              className="w-[100vw] h-full object-cover"
             />
             {/* Commercial image */}
             <img
               src="/assets/images/commercialservices.jpg"
               alt="Commercial Services"
-              className="w-full h-full object-cover"
+              className="w-[100vw] h-full object-cover"
             />
           </motion.div>
 
+          <div className="absolute top-0 w-full flex justify-center ">
+            <h2
+              className="relative z-40
+                          text-white text-[11.5vh] font-serif  font-semibold tracking-wider font-condensed drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,1.8)]"
+            >
+              Services
+            </h2>
+          </div>
+
           {/* "Services" text near top */}
-          <h2
-            className="absolute top-5 left-1/2 transform -translate-x-1/2
-                       text-white text-[6vh] font-bold drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)]"
-          >
-            Services
-          </h2>
+          <div className="absolute bottom-[6vh] left-1/2 transform -translate-x-1/2 z-30">
+            <div className="flex flex-row">
+              <button
+                onClick={handleResidentialClick}
+                className={`flex items-center px-4 py-2 rounded-full border-1 mx-2 text-lg
+                  ${
+                    !isCommercial
+                      ? "bg-dark-below-header text-gray-50 border-gray-800 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
+                      : "bg-gray-500 text-white hover:bg-white hover:text-black"
+                  }
+                  transition-colors duration-300`}
+                onMouseEnter={(e) => {
+                  if (isCommercial) {
+                    e.currentTarget.style.boxShadow =
+                      "inset 0 0 15px 1px rgba(0,0,0,0.8)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.boxShadow =
+                    "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
+                }}
+              >
+                <Home className="mr-2" size={30} />
+                Residential
+              </button>
+              <button
+                onClick={handleCommercialClick}
+                className={`flex items-center px-4 py-2 text-lg rounded-full border-1 mx-2 
+                  ${
+                    isCommercial
+                      ? "bg-dark-below-header text-gray-50 border-gray-800 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
+                      : "bg-gray-500 hover:bg-white hover:text-black text-white "
+                  }
+                  transition-colors duration-300`}
+                onMouseEnter={(e) => {
+                  if (!isCommercial) {
+                    e.currentTarget.style.boxShadow =
+                      "inset 0 0 15px 1px rgba(0,0,0,0.8)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.boxShadow =
+                    "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
+                }}
+              >
+                <Building2 className="mr-2" size={30} />
+                Commercial
+              </button>
+            </div>
+          </div>
 
           {/* (3) Services (buttons) in the center with staggered exit/enter */}
-          <div className="absolute inset-0 flex items-center justify-center">
+          <div className="absolute inset-0 flex items-end justify-center mb-[18vh]">
             <AnimatePresence mode="wait">
               <motion.div
                 key={isCommercial ? "commercial-lg" : "residential-lg"}
-                className="grid grid-cols-4 gap-[5.5vw]"
+                className="grid grid-cols-4 gap-[5.5vw] group-hover:text-black "
                 variants={containerVariants}
                 initial="initial"
                 animate="enter"
@@ -632,14 +697,14 @@ const CombinedPage = () => {
                   <motion.div
                     key={service.title}
                     variants={itemVariants}
-                    className="flex flex-col items-center"
+                    className="flex flex-col items-center group-hover:text-black"
                   >
                     <Link to={service.link}>
                       <div
-                        className="dark_button w-32 h-32 rounded-full 
+                        className="dark_button flex-col w-28 h-28 rounded-full 
                                    flex items-center justify-center
-                                   text-white text-[6vh]
-                                   transition-all duration-300 drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"
+                                    text-white text-[6vh]
+                                    hover:text-black hover:bg-gray-200  transition drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"
                         onMouseEnter={(e) => {
                           e.currentTarget.style.boxShadow =
                             "inset 0 0 30px 10px rgba(0,0,0,0.8)";
@@ -648,12 +713,12 @@ const CombinedPage = () => {
                           e.currentTarget.style.boxShadow = "none";
                         }}
                       >
-                        {React.createElement(service.icon, { color: "#ffffff" })}
+                        {React.createElement(service.icon)}
+                        <h3 className="mt-1 text-white  text-lg font-semibold drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
+                          {service.title}
+                        </h3>
                       </div>
                     </Link>
-                    <h3 className="mt-1 text-white text-2xl font-bold drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
-                      {service.title}
-                    </h3>
                   </motion.div>
                 ))}
               </motion.div>
@@ -664,11 +729,11 @@ const CombinedPage = () => {
         {/* (4) TESTIMONIALS SECTION (LARGE) */}
         <section
           id="testimonials"
-          className="relative bg-gradient-to-b from-faint-color to-white px-3 pt-5"
+          className="relative bg-black px-3 pt-5"
         >
           <div className="flex items-center justify-center mb-3">
             <h2
-              className="text-5xl font-serif mr-4 my-3"
+              className="text-5xl text-white text-font-serif mr-4 my-3"
               style={{ fontFamily: "Times New Roman, Times, serif" }}
             >
               Testimonials
@@ -710,10 +775,10 @@ const CombinedPage = () => {
               {currentIndex > 0 && (
                 <button
                   onClick={handlePrev}
-                  className="absolute left-0 top-1/2 transform -translate-y-1/2
+                  className="absolute -left-4 top-1/2 transform -translate-y-1/2
                              bg-white text-gray-700 rounded-full w-8 h-8
                              flex items-center justify-center
-                             shadow-md hover:shadow-lg z-10"
+                             drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)] hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -739,10 +804,10 @@ const CombinedPage = () => {
               {currentIndex + chunkSize < totalReviews && (
                 <button
                   onClick={handleNext}
-                  className="absolute right-0 top-1/2 transform -translate-y-1/2
+                  className="absolute -right-4 top-1/2 transform -translate-y-1/2
                              bg-white text-gray-700 rounded-full w-8 h-8
                              flex items-center justify-center
-                             shadow-md hover:shadow-lg z-10"
+                             drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)] hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"

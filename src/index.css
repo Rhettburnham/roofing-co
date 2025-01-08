@@ -2,11 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Other global styles */
+
 /* color scheme */
 /* styles.css or your main CSS file */
 /* experimentation for the deteroration */
 /* About */
 /* Flip card container */
+
+/* fonts */
+
+@font-face {
+  font-family: "Frontiersman";
+  src:
+    url("../assets/fonts/Frontiersman-Bold.woff2") format("woff2"),
+    url("../assets/fonts/Frontiersman-Bold.woff") format("woff");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Add more weights/styles as needed */
 
 .image {
   position: relative;
@@ -72,15 +88,16 @@
 }
 
 :root {
-  --dark-below-header-color: #400a15;
+  --dark-below-header-color: rgb(255, 30, 0);
+  --dark-below-header-color-rgba: rgba(255, 30, 0, 0.5);
   /* Dark blue */
-  --dark-button-color: #5a76c1;
+  --dark-button-color: rgb(96, 10, 39);
   /* Another dark blue */
-  --faint-color: #c1dce0;
+  --faint-color: #ff2600;
   /* Light blue */
   --hover-color: #39466f;
   /* Specified light teal/blue-green */
-  --dark-color: #ffffff;
+  --dark-color: #434358;
   /* Basic map serivce highlight */
   --highlight-box: #80aff5;
 }
@@ -101,14 +118,14 @@
 }
 
 .bright-gradient {
-  background: linear-gradient(
-    to bottom,
-    var(--faint-color) 0%,
-    rgba(65, 179, 149, 0) 20%
-  );
+  background: linear-gradient(to bottom, var(--faint-color) 0%);
 }
 
 .dark_button {
+  background-color: var(--dark-button-color);
+}
+
+.dark-button {
   background-color: var(--dark-button-color);
 }
 
@@ -124,7 +141,11 @@
 }
 
 .button_gradient {
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0));
+  background: linear-gradient(
+    to top,
+    rgba(255, 255, 255, 0.7),
+    rgba(0, 0, 0, 0)
+  );
 }
 
 .custom-text-shadow {

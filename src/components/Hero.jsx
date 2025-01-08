@@ -4,11 +4,18 @@ import {
   Home,
   Building2,
   X,
-  Wrench,
-  Package,
-  Shield,
-  Leaf,
+  // These icons remain the same
+  // Wrench, // remove old references you no longer need
+  // Package,
+  // Shield,
+  // Leaf,
 } from "lucide-react";
+
+// ADDED:
+import { Link } from "react-router-dom";
+
+// Example new icons (optional) or reuse from above
+// import { Tool, Factory, etc. } from "lucide-react";
 
 const Hero = () => {
   const [activeSection, setActiveSection] = useState("neutral");
@@ -31,187 +38,174 @@ const Hero = () => {
     setSelectedService(null);
   };
 
+  /**
+   * =========================================================
+   * UPDATED SERVICE DETAILS
+   * =========================================================
+   */
   const serviceDetails = {
     residential: {
-      "Installation": {
-        icon: <Package className="w-6 h-6 lg:w-10 lg:h-10" />,
-        image: "/assets/images/hero_modal/installation.jpg",
+      // 1. Roof
+      Roof: {
+        icon: (
+          <img
+            src="/assets/icons/roof-icon.png"
+            alt="Roof"
+            className="w-8 h-8 md:w-10 md:h-10"
+          />
+        ),
+        image: "/assets/images/hero_modal/residentialnight.jpg",
         description:
-          "Complete roofing installation and replacement services for residential properties.",
+          "Our Residential Roof services include new shingle installation and full replacements, ensuring your home is protected with high-quality, long-lasting materials.",
         subServices: [
           {
-            title: "New Roof Installation",
+            title: "Shingle Installation",
             description:
-              "Expert installation of new roofs for new constructions, using premium materials and following strict quality standards.",
-          },
-          {
-            title: "Roof Replacement",
-            description:
-              "Full roof replacement services including removal of old materials and installation of new roofing systems.",
+              "Expert shingle roofing—from asphalt and metal to tile—tailored to your budget and style.",
           },
         ],
       },
-      "Maintenance": {
-        icon: <Wrench className="w-6 h-6 lg:w-10 lg:h-10" />,
-        image: "/assets/images/hero_modal/repair.jpg",
+
+      // 2. Accessories
+      Accessories: {
+        icon: (
+          <img
+            src="/assets/icons/tools-icon.png"
+            alt="Accessories"
+            className="w-8 h-8 md:w-10 md:h-10"
+          />
+        ),
+        image: "/assets/images/hero_modal/residential_accessories.jpg",
         description:
-          "Comprehensive repair and maintenance services to keep your roof in top condition.",
+          "Enhance and protect your home with our accessories—from ventilation solutions for a cooler attic to gutter systems that prevent water damage.",
         subServices: [
           {
-            title: "Roof Repairs",
+            title: "Ventilation",
             description:
-              "Professional repair services for leaks, missing shingles, damaged flashing, and other roofing issues.",
+              "Proper attic ventilation reduces energy costs and prolongs roof life.",
           },
           {
-            title: "Regular Inspections",
+            title: "Gutter",
             description:
-              "Thorough roof inspections to identify potential problems before they become major issues.",
-          },
-          {
-            title: "Emergency Services",
-            description:
-              "24/7 emergency repair services for unexpected damage from storms or accidents.",
+              "Gutter installation & maintenance to direct rainwater away from your foundation.",
           },
         ],
       },
-      "Accessories": {
-        icon: <Shield className="w-6 h-6 lg:w-10 lg:h-10" />,
-        image: "/assets/images/hero_modal/enhancements.jpg",
+
+      // 3. Siding
+      Siding: {
+        icon: (
+          <img
+            src="/assets/icons/wall-icon.png"
+            alt="Siding"
+            className="w-8 h-8 md:w-10 md:h-10"
+          />
+        ),
+        image: "/assets/images/hero_modal/residential_siding.jpg",
         description:
-          "Additional services to improve your roof's functionality and appearance.",
+          "Improve your home’s curb appeal and energy efficiency with our diverse siding options including vinyl, wood, metal, and more.",
         subServices: [
           {
-            title: "Gutter Services",
+            title: "Siding",
             description:
-              "Complete gutter solutions including installation, repair, and maintenance of gutters, downspouts, soffits, and fascia.",
-          },
-          {
-            title: "Skylight Installation",
-            description:
-              "Professional installation and repair of skylights to enhance natural lighting.",
-          },
-          {
-            title: "Ventilation Services",
-            description:
-              "Installation and maintenance of proper roof ventilation systems to prevent moisture buildup and regulate temperature.",
-          },
-        ],
-      },
-      "Repair": {
-        icon: <Leaf className="w-6 h-6 lg:w-10 lg:h-10" />,
-        image: "/assets/images/hero_modal/materials.jpg",
-        description:
-          "Expert services for various roofing materials to match your specific needs.",
-        subServices: [
-          {
-            title: "Asphalt Shingle Roofing",
-            description:
-              "Installation and maintenance of cost-effective and reliable asphalt shingle roofs.",
-          },
-          {
-            title: "Metal Roofing",
-            description:
-              "Specialized installation and maintenance of durable metal roofing systems.",
-          },
-          {
-            title: "Tile & Slate Roofing",
-            description:
-              "Expert handling of premium tile and slate roofing materials for lasting beauty and protection.",
+              "Full siding installation and replacement services to revamp your home's exterior.",
           },
         ],
       },
     },
+
     commercial: {
-      "Installation": {
-        icon: <Package className="w-6 h-6 lg:w-10 lg:h-10" />,
-        image: "/assets/images/hero_modal/commercial-install.jpg",
+      // 1. Roof
+      Roof: {
+        icon: (
+          <img
+            src="/assets/icons/factory-icon.png"
+            alt="Commercial Roof"
+            className="w-8 h-8 md:w-10 md:h-10"
+          />
+        ),
+        image: "/assets/images/hero_modal/commercialnight.jpg",
         description:
-          "Professional installation services for commercial roofing systems.",
+          "Comprehensive roof solutions for commercial properties—from metal roofs and coatings to single-ply membranes and built-up systems.",
         subServices: [
           {
-            title: "Commercial Installation",
+            title: "Metal Roof",
             description:
-              "Complete installation services for new commercial constructions using various roofing systems.",
+              "Durable metal roofing systems for long-term protection and energy savings.",
           },
           {
-            title: "System Replacement",
+            title: "Coating",
             description:
-              "Full replacement of commercial roofing systems including TPO, EPDM, and modified bitumen.",
+              "Extend roof lifespan, increase reflectivity, and reduce energy costs with roof coatings.",
+          },
+          {
+            title: "Single Ply",
+            description:
+              "Efficient and versatile single-ply systems (TPO, PVC, EPDM) for a variety of commercial needs.",
+          },
+          {
+            title: "Built Up",
+            description:
+              "Traditional multiple-layer systems (BUR) for excellent waterproofing and durability.",
           },
         ],
       },
-      "Maintenance": {
-        icon: <Wrench className="w-6 h-6 lg:w-10 lg:h-10" />,
-        image: "/assets/images/hero_modal/commercial-repair.jpg",
+
+      // 2. Accessories
+      Accessories: {
+        icon: (
+          <img
+            src="/assets/icons/gear-icon.png"
+            alt="Accessories"
+            className="w-8 h-8 md:w-10 md:h-10"
+          />
+        ),
+        image: "/assets/images/hero_modal/commercial_accessories.jpg",
         description:
-          "Comprehensive maintenance and repair services for commercial properties.",
+          "Safeguard and optimize your commercial roof with the right accessories—from ventilation setups to comprehensive guttering.",
         subServices: [
           {
-            title: "Scheduled Maintenance",
+            title: "Ventilation",
             description:
-              "Regular maintenance programs including cleaning, inspection, and preventive repairs.",
+              "Prevent heat buildup and moisture issues with custom commercial ventilation systems.",
           },
           {
-            title: "Emergency Services",
+            title: "Gutter",
             description:
-              "Rapid response repair services for unexpected damage or leaks.",
-          },
-          {
-            title: "Roof Coatings",
-            description:
-              "Application of protective coatings to extend roof life and improve energy efficiency.",
+              "Seamless gutter installations designed for large-scale water management.",
           },
         ],
       },
-      "Accesories": {
-        icon: <Shield className="w-6 h-6 lg:w-10 lg:h-10" />,
-        image: "/assets/images/hero_modal/specialized.png",
+
+      // 3. Energy
+      Energy: {
+        icon: (
+          <img
+            src="/assets/icons/lightning-icon.png"
+            alt="Energy"
+            className="w-8 h-8 md:w-10 md:h-10"
+          />
+        ),
+        image: "/assets/images/hero_modal/commercial_energy.jpg",
         description:
-          "Advanced roofing solutions for specific commercial needs.",
+          "Cut operating costs and meet green initiatives with our energy-focused solutions, including specialized coatings and advanced ventilation.",
         subServices: [
           {
-            title: "Green Roofing",
+            title: "Coating",
             description:
-              "Installation of environmentally friendly roofing systems including vegetative roofs.",
+              "Protect, seal, and reflect heat with a range of commercial-grade coatings.",
           },
           {
-            title: "Equipment Installation",
+            title: "Ventilation",
             description:
-              "Professional installation of rooftop equipment while maintaining roof integrity.",
-          },
-          {
-            title: "Safety Features",
-            description:
-              "Installation of safety systems including walkways, guardrails, and fall protection.",
-          },
-        ],
-      },
-      "Repair": {
-        icon: <Leaf className="w-6 h-6 lg:w-10 lg:h-10" />,
-        image: "/assets/images/hero_modal/technical.jpg",
-        description:
-          "Advanced technical services for commercial roofing systems.",
-        subServices: [
-          {
-            title: "Thermal Imaging",
-            description:
-              "Advanced infrared scanning to detect moisture intrusion and insulation issues.",
-          },
-          {
-            title: "Asset Management",
-            description:
-              "Comprehensive roof monitoring and maintenance planning services.",
-          },
-          {
-            title: "Compliance Services",
-            description:
-              "Documentation and certification services to meet building codes and standards.",
+              "Reduce internal building temperatures and save on cooling with targeted ventilation strategies.",
           },
         ],
       },
     },
   };
 
+  // List & item animations remain the same
   const listVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -221,12 +215,12 @@ const Hero = () => {
       },
     },
   };
-
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 },
   };
 
+  // Resting animation remains the same
   const restingAnimation = {
     x: [10, 30, 10],
     transition: {
@@ -237,28 +231,56 @@ const Hero = () => {
   };
 
   return (
-    <section>
-      {/* Logo Section */}
-      <div className="relative w-full h-[12.5vh]">
-        <div className="absolute inset-0 flex items-center justify-center  text-center font-bold z-10 text-[11vw] md:text-[9vw]">
-          <span className="text-black">Rhett's Roofing</span>
+    <section className="h-[60vh] md:h-[75.5vh] overflow-hidden">
+      <div className="h-[30vh] md:h-[35vh] absolute top-0 left-0 right-0 bg-gradient-to-b from-dark-below-header from-60% to-transparent z-10"></div>
+      {/* The top logo and hero split remains unchanged */}
+      <div className="relative w-full h-[7.5vh] z-20">
+        <div className="relative flex flex-row items-center justify-center ">
+          <img
+            src="assets/images/clipped-cowboy.png"
+            alt="logo"
+            className="w-[20vw] md:w-[17vh] h-auto mr-5 md:mr-10 "
+            style={{ filter: "invert(0)" }}
+          />
+          <div className="relative flex flex-col items-center justify-center  z-10 -space-y-[3vh] md:-space-y-[5vh]">
+            <span
+              className="
+                text-[9vw] 
+                md:text-[12vh] 
+                text-white 
+                text-center 
+                drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]
+                [ -webkit-text-stroke:6px_black ] font-rye  font-normal font-ultra-condensed
+              "
+            >
+              CowBoys
+            </span>
+            <span
+              className="
+                text-[4vw] 
+                md:text-[3.5vh] 
+              
+
+                mr-[15vw] 
+                text-left 
+                drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]
+                [ -webkit-text-stroke:1px_black ]
+                text-gray-500
+                font-serif
+                
+              "
+            >
+              CONSTRUCTION
+            </span>
+          </div>
         </div>
       </div>
 
       <div className="relative w-full">
-        {/* Content Section with Mirrored Gradient */}
-        <div
-          className="relative h-[35vh] md:h-[54vh] w-full"
-          style={{
-            maskImage:
-              "linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.3) 10%, white 20%, white 80%, rgba(255, 255, 255, 0.3) 90%, transparent 100%)",
-            WebkitMaskImage:
-              "linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.3) 10%, white 20%, white 80%, rgba(255, 255, 255, 0.3) 90%, transparent 100%)",
-          }}
-        >
+        <div className="relative h-[35vh] mt-[5vh] md:h-[65vh] w-full bg-red-600">
           {/* Residential Section */}
           <motion.div
-            className="absolute left-0 h-[35vh] md:h-[65vh] w-1/2 cursor-pointer"
+            className="absolute left-0 h-[65vw] md:h-[65vh] w-1/2 cursor-pointer"
             initial={{ x: 0 }}
             animate={{
               x:
@@ -279,12 +301,11 @@ const Hero = () => {
           >
             <div className="relative w-full h-full">
               <div
-                className="absolute top-0 right-0 w-[150%] h-full"
+                className="absolute top-0 right-0 w-[100vw] h-full"
                 style={{
                   background:
-                    "url('/assets/images/residentialroofing.jpg') no-repeat center center",
+                    "url('/assets/images/residentialnight.jpg') no-repeat center center",
                   backgroundSize: "cover",
-                  transform: "skew(0deg)",
                   transformOrigin: "top right",
                 }}
               />
@@ -295,7 +316,7 @@ const Hero = () => {
                       variants={listVariants}
                       initial="hidden"
                       animate="visible"
-                      className="text-white text-right space-y-1 md:space-y-3 text-[2.5vw] md:text-[3.8vh] font-bold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,3)]"
+                      className="text-white font-serif relative ml-[0vh] md:ml-[6vw] text-right space-y-1 md:space-y-2 text-[3.5vw] md:text-[3.8vh] font-semibold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,3)]"
                     >
                       {Object.keys(serviceDetails.residential).map(
                         (service) => (
@@ -312,7 +333,7 @@ const Hero = () => {
                                   name: service,
                                 });
                               }}
-                              className="text-white -mx-[20vw] pr-[20vw] md:pr-[24vw] py-1 rounded"
+                              className="text-white font-serif -mx-[20vw] pr-[20vw] md:pr-[24vw] py-1 rounded"
                             >
                               {service} ←
                             </button>
@@ -321,13 +342,9 @@ const Hero = () => {
                       )}
                     </motion.ul>
                   )}
-                  <div className="flex flex-col items-center mr-[8vh] md:mr-[13.2vh] group opacity-70 hover:opacity-100">
-                    <Home
-                      className={`h-[10vw] w-[10vw] md:w-[10.5vh] md:h-[10.5vh]  drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,3)] transition-colors duration-300 text-white hover:text-white`}
-                    />
-                    <h2
-                      className={`text-[5vw] md:text-[4.2vh] font-bold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,3)] transition-colors duration-300 text-white`}
-                    >
+                  <div className="flex flex-col -space-y-2 items-center mt-[12vh] mr-[8vh] md:mr-[13.2vw] group ">
+                    <Home className="w-[8.5vw] h-[8.5vw] md:w-[10.5vh] md:h-[10.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)]   text-white " />
+                    <h2 className="text-[4.5vw] md:text-[4.2vh] font-bold drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,3)] text-white font-serif duration-300">
                       Residential
                     </h2>
                   </div>
@@ -338,7 +355,7 @@ const Hero = () => {
 
           {/* Commercial Section */}
           <motion.div
-            className="absolute right-0 h-[35vh] md:h-[65vh] w-1/2 cursor-pointer"
+            className="absolute right-0 h-[65vw] md:h-[65vh] w-1/2 cursor-pointer"
             initial={{ x: 0 }}
             animate={{
               x:
@@ -359,24 +376,20 @@ const Hero = () => {
           >
             <div className="relative w-full h-full">
               <div
-                className="absolute top-0 left-0 w-[150%] h-full"
+                className="absolute top-0 left-0 w-[100vw] h-full"
                 style={{
                   background:
-                    "url('/assets/images/commercialroofing.jpg') no-repeat center center",
+                    "url('/assets/images/commercialnight.jpg') no-repeat center center",
                   backgroundSize: "cover",
                   transformOrigin: "top left",
                   transform: "skew(-15deg)",
                 }}
               />
-              <div className="absolute top-0 right-0 w-full h-full">
-                <div className="absolute left-0 top-[40%] -translate-y-1/2 flex items-center gap-4 md:gap-8">
-                  <div className="flex flex-col items-center ml-[0vh] md:ml-[6vh] group opacity-70 hover:opacity-100">
-                    <Building2
-                      className={`w-[10vw] h-[10vw] md:w-[10.5vh] md:h-[10.5vh] drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,3)] transition-colors duration-300 text-white hover:text-white`}
-                    />
-                    <h2
-                      className={`text-[5vw] md:text-[4.2vh] font-bold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,3)] transition-colors duration-300 text-white `}
-                    >
+              <div className="absolute top-0 right-0 w-full h-full " >
+                <div className="absolute left-0 top-[40%] -translate-y-1/2 flex items-center gap-4 md:gap-8 ">
+                  <div className="flex flex-col items-center -space-y-2 group ml-[0vh] md:ml-[6vw] ">
+                    <Building2 className="w-[8.5vw] h-[8.5vw] md:w-[10.5vh] md:h-[10.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)]   text-white mt-[12vh]" />
+                    <h2 className="text-[4.5vw] md:text-[4.2vh]  font-semibold drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,3)] text-white font-serif ">
                       Commercial
                     </h2>
                   </div>
@@ -385,13 +398,13 @@ const Hero = () => {
                       variants={listVariants}
                       initial="hidden"
                       animate="visible"
-                      className="text-white text-left space-y-1 md:space-y-3 text-[2.5vw] md:text-[3.8vh] font-bold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,3)]"
+                      className="text-white ml-[0vh] md:ml-[6vw] w-[100vw] text-left space-y-1 md:space-y-2 text-[3.5vw] md:text-[3.8vh] font-bold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,3)]"
                     >
                       {Object.keys(serviceDetails.commercial).map((service) => (
                         <motion.li
                           key={service}
                           variants={itemVariants}
-                          className="gap-2 "
+                          className="gap-2"
                         >
                           <button
                             onClick={(e) => {
@@ -401,7 +414,7 @@ const Hero = () => {
                                 name: service,
                               });
                             }}
-                            className="opacity-100 md:pl-[4vw] py-1 rounded "
+                            className="opacity-100 md:pl-[4vw] py-1 rounded"
                           >
                             → {service}
                           </button>
@@ -419,7 +432,7 @@ const Hero = () => {
       {/* Modal */}
       {showModal && selectedService && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 overflow-y-auto p-4">
-          <div className="relative w-[90vw] max-w-4xl h-[60vh] bg-white rounded-lg p-6">
+          <div className="relative w-[90vw] max-w-4xl bg-white rounded-lg p-6">
             <button
               onClick={closeModal}
               className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
@@ -427,50 +440,261 @@ const Hero = () => {
               <X className="w-6 h-6" />
             </button>
 
-            <div className="space-y-6">
-              <div className="flex items-center gap-3">
-                {
-                  serviceDetails[selectedService.type][selectedService.name]
-                    .icon
-                }
-                <h2 className="text-3xl font-bold text-gray-900">
-                  {selectedService.name}
-                </h2>
+            {/* Header Row: Icon & Title */}
+            <div className="flex items-center gap-3 mb-4">
+              {serviceDetails[selectedService.type][selectedService.name].icon}
+              <h2 className="text-3xl font-bold text-gray-900">
+                {selectedService.name}
+              </h2>
+            </div>
+
+            {/* Image */}
+            <img
+              src={
+                serviceDetails[selectedService.type][selectedService.name].image
+              }
+              alt={selectedService.name}
+              className="w-full h-60 object-cover rounded-lg mb-4"
+            />
+
+            {/* Description */}
+            <p className="text-gray-700 text-lg mb-6">
+              {
+                serviceDetails[selectedService.type][selectedService.name]
+                  .description
+              }
+            </p>
+
+            {/* Subservices + Buttons */}
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold text-gray-900 font-serif">
+                Our Services Include:
+              </h3>
+
+              {/* SubServices list */}
+              <div className="grid md:grid-cols-2 gap-4">
+                {serviceDetails[selectedService.type][
+                  selectedService.name
+                ].subServices.map((subService, idx) => (
+                  <div key={idx} className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-semibold text-gray-900 mb-2 font-serif">
+                      {subService.title}
+                    </h4>
+                    <p className="text-gray-600 font-serif">{subService.description}</p>
+                  </div>
+                ))}
               </div>
 
-              <img
-                src={
-                  serviceDetails[selectedService.type][selectedService.name]
-                    .image
-                }
-                alt={selectedService.name}
-                className="w-full h-64 object-cover rounded-lg"
-              />
+              {/* 
+                =============================================
+                Buttons at the bottom of the modal
+                Mimic your CTA style with hover effect, color
+                =============================================
+              */}
+              <div className="flex flex-wrap justify-end gap-3 mt-4">
+                {/* ---------------------- RESIDENTIAL ROUTES ---------------------- */}
+                {selectedService.type === "residential" &&
+                  selectedService.name === "Roof" && (
+                    <Link
+                      to="/shingleinstallation"
+                      className="px-6 py-2 dark_button font-serif text-white font-semibold rounded-full hover:bg-white hover:text-black transition duration-300"
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.boxShadow =
+                          "inset 0 0 15px 1px rgba(0,0,0,0.8)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.boxShadow =
+                          "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
+                      }}
+                    >
+                      Go to Shingle Installation
+                    </Link>
+                  )}
 
-              <p className="text-lg text-gray-700">
-                {
-                  serviceDetails[selectedService.type][selectedService.name]
-                    .description
-                }
-              </p>
+                {selectedService.type === "residential" &&
+                  selectedService.name === "Accessories" && (
+                    <>
+                      <Link
+                        to="/roofventilation"
+                        className="px-6 py-2 dark_button text-white font-semibold rounded-full hover:bg-white hover:text-black transition duration-300"
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.boxShadow =
+                            "inset 0 0 15px 1px rgba(0,0,0,0.8)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.boxShadow =
+                            "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
+                        }}
+                      >
+                        Roof Ventilation
+                      </Link>
+                      <Link
+                        to="/gutterrelated"
+                        className="px-6 py-2 dark_button text-white font-semibold rounded-full hover:bg-white hover:text-black transition duration-300"
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.boxShadow =
+                            "inset 0 0 15px 1px rgba(0,0,0,0.8)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.boxShadow =
+                            "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
+                        }}
+                      >
+                        Guttering
+                      </Link>
+                    </>
+                  )}
 
-              <div className="space-y-6">
-                <h3 className="text-xl font-semibold text-gray-900">
-                  Our Services Include:
-                </h3>
-                <div className="grid md:grid-cols-2 gap-4">
-                  {serviceDetails[selectedService.type][
-                    selectedService.name
-                  ].subServices.map((subService, index) => (
-                    <div key={index} className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="font-semibold text-gray-900 mb-2">
-                        {subService.title}
-                      </h4>
-                      <p className="text-gray-600">{subService.description}</p>
-                    </div>
-                  ))}
-                </div>
+                {selectedService.type === "residential" &&
+                  selectedService.name === "Siding" && (
+                    <Link
+                      to="/siding"
+                      className="px-6 py-2 dark_button text-white font-semibold rounded-full hover:bg-white hover:text-black transition duration-300"
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.boxShadow =
+                          "inset 0 0 15px 1px rgba(0,0,0,0.8)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.boxShadow =
+                          "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
+                      }}
+                    >
+                      Explore Siding
+                    </Link>
+                  )}
+
+                {/* ---------------------- COMMERCIAL ROUTES ---------------------- */}
+                {selectedService.type === "commercial" &&
+                  selectedService.name === "Roof" && (
+                    <>
+                      <Link
+                        to="/metalroofs"
+                        className="px-6 py-2 dark_button text-white font-semibold rounded-full hover:bg-white hover:text-black transition duration-300"
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.boxShadow =
+                            "inset 0 0 15px 1px rgba(0,0,0,0.8)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.boxShadow =
+                            "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
+                        }}
+                      >
+                        Metal Roof
+                      </Link>
+                      <Link
+                        to="/roofcoating"
+                        className="px-6 py-2 dark_button text-white font-semibold rounded-full hover:bg-white hover:text-black transition duration-300"
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.boxShadow =
+                            "inset 0 0 15px 1px rgba(0,0,0,0.8)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.boxShadow =
+                            "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
+                        }}
+                      >
+                        Roof Coating
+                      </Link>
+                      <Link
+                        to="/singleplysystems"
+                        className="px-6 py-2 dark_button text-white font-semibold rounded-full hover:bg-white hover:text-black transition duration-300"
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.boxShadow =
+                            "inset 0 0 15px 1px rgba(0,0,0,0.8)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.boxShadow =
+                            "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
+                        }}
+                      >
+                        Single Ply
+                      </Link>
+                      <Link
+                        to="/builtuproofing"
+                        className="px-6 py-2 dark_button text-white font-semibold rounded-full hover:bg-white hover:text-black transition duration-300"
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.boxShadow =
+                            "inset 0 0 15px 1px rgba(0,0,0,0.8)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.boxShadow =
+                            "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
+                        }}
+                      >
+                        Built Up
+                      </Link>
+                    </>
+                  )}
+
+                {selectedService.type === "commercial" &&
+                  selectedService.name === "Accessories" && (
+                    <>
+                      <Link
+                        to="/roofventilation"
+                        className="px-6 py-2 dark_button text-white font-semibold rounded-full hover:bg-white hover:text-black transition duration-300"
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.boxShadow =
+                            "inset 0 0 15px 1px rgba(0,0,0,0.8)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.boxShadow =
+                            "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
+                        }}
+                      >
+                        Ventilation
+                      </Link>
+                      <Link
+                        to="/gutterrelated"
+                        className="px-6 py-2 dark_button text-white font-semibold rounded-full hover:bg-white hover:text-black transition duration-300"
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.boxShadow =
+                            "inset 0 0 15px 1px rgba(0,0,0,0.8)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.boxShadow =
+                            "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
+                        }}
+                      >
+                        Guttering
+                      </Link>
+                    </>
+                  )}
+
+                {selectedService.type === "commercial" &&
+                  selectedService.name === "Energy" && (
+                    <>
+                      <Link
+                        to="/roofcoating"
+                        className="px-6 py-2 dark_button text-white font-semibold rounded-full hover:bg-white hover:text-black transition duration-300"
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.boxShadow =
+                            "inset 0 0 15px 1px rgba(0,0,0,0.8)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.boxShadow =
+                            "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
+                        }}
+                      >
+                        Coating
+                      </Link>
+                      <Link
+                        to="/roofventilation"
+                        className="px-6 py-2 dark_button text-white font-semibold rounded-full hover:bg-white hover:text-black transition duration-300"
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.boxShadow =
+                            "inset 0 0 15px 1px rgba(0,0,0,0.8)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.boxShadow =
+                            "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
+                        }}
+                      >
+                        Ventilation
+                      </Link>
+                    </>
+                  )}
               </div>
+              {/* End of CTA-like buttons */}
             </div>
           </div>
         </div>

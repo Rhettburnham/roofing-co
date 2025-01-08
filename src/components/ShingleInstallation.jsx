@@ -53,7 +53,7 @@ const ShingleInstallation = () => {
     },
   ];
 
-  // Steps with icons and images
+  // Steps with icons and updated image paths
   const steps = [
     {
       number: '1',
@@ -61,7 +61,7 @@ const ShingleInstallation = () => {
       description:
         "Before installation, we perform a comprehensive roof inspection to ensure the structure is sound and free from damage. If necessary, we'll repair or replace any damaged areas to provide a solid foundation for your new shingles.",
       icon: <Wrench className="text-blue-600 w-8 h-8" />,
-      image: '/assets/images/step1.jpg', // Replace with your actual image paths
+      image: 'assets/images/shingleinstallation/inspection.jpg',
     },
     {
       number: '2',
@@ -69,7 +69,7 @@ const ShingleInstallation = () => {
       description:
         "We install a high-quality underlayment as the first layer of protection against moisture, wind, and other environmental factors. This helps keep your roof watertight and durable.",
       icon: <Layers className="text-blue-600 w-8 h-8" />,
-      image: '/assets/images/step2.jpg', // Replace with your actual image paths
+      image: 'assets/images/shingleinstallation/underlayment.jpg',
     },
     {
       number: '3',
@@ -77,15 +77,15 @@ const ShingleInstallation = () => {
       description:
         "Our expert roofing technicians carefully place and secure the shingles, ensuring each one is properly aligned and fastened. We follow manufacturer guidelines to guarantee the best possible performance and longevity.",
       icon: <ClipboardCheck className="text-blue-600 w-8 h-8" />,
-      image: '/assets/images/step3.jpg', // Replace with your actual image paths
+      image: 'assets/images/shingleinstallation/placement.jpg',
     },
     {
       number: '4',
       title: 'Final Inspection & Cleanup',
       description:
         "After the installation is complete, we conduct a final inspection to ensure everything is in perfect condition. We also perform a thorough cleanup, leaving your property spotless.",
-      icon: <Trash2 className="text-blue-600 w-8 h-8" />, // Replaced Broom with Trash2
-      image: '/assets/images/step4.jpg', // Replace with your actual image paths
+      icon: <Trash2 className="text-blue-600 w-8 h-8" />,
+      image: 'assets/images/shingleinstallation/finalinspection.jpg',
     },
   ];
 
@@ -95,7 +95,6 @@ const ShingleInstallation = () => {
     visible: {
       opacity: 1,
       transition: {
-        // Stagger each child step by 0.2s
         staggerChildren: 0.2,
       },
     },
@@ -141,24 +140,31 @@ const ShingleInstallation = () => {
         </div>
       </motion.section>
 
-      <div className="px-[6vw] md:px-[10vw]">
+      <div className=" bg-gradient-to-t from-faint-color to-white ">
         {/* SHINGLE OPTIONS SECTION */}
-        <section className="my-4">
+        <section className="my-4 px-[6vw] md:px-[10vw] ">
           <h2 className="text-3xl font-bold text-center text-gray-800 pb-2">
             Explore Our Shingle Options
           </h2>
 
           {/* Shingle Selection Buttons */}
-          <div className="flex flex-wrap justify-center mb-4">
+          <div className="flex flex-wrap justify-center">
             {shingleOptions.map((option, index) => (
               <button
                 key={index}
                 onClick={() => setSelectedShingleIndex(index)}
-                className={`m-2 px-4 py-2 rounded-full shadow-lg transition-colors duration-300 ${
+                className={`mx-2 my-1 md:px-4 px-2 py-1 md:py-2 text-[3vw] md:text-[2vh] rounded-full font-semibold shadow-lg ${
                   selectedShingleIndex === index
-                    ? 'dark_button text-white'
-                    : 'bg-white text-gray-800 hover:bg-gray-600 hover:text-white'
+                    ? 'dark_button text-white font-semibold shadow-2xl'
+                    : 'text-black'
                 }`}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.boxShadow =
+                    "inset 0 0 15px 1px rgba(0,0,0,0.8)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.boxShadow = "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
+                }}
               >
                 {option.title}
               </button>
@@ -173,16 +179,16 @@ const ShingleInstallation = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <h3 className="text-2xl font-semibold text-gray-800 mb-4">
+            <h3 className="text-[5vw] md:text-2xl font-semibold text-gray-800 mb-4">
               {shingleOptions[selectedShingleIndex].title}
             </h3>
-            <div className="mt-6">
+            <div className=" mt-2 md:mt-6">
               {shingleOptions[selectedShingleIndex].component}
             </div>
-            <p className="text-gray-600 mt-4">
+            <p className="text-[3.5vw] md:text-base text-gray-600 mt-2 md:mt-4">
               {shingleOptions[selectedShingleIndex].description}
             </p>
-            <p className="mt-4 text-blue-500 font-semibold">
+            <p className="text-[3.5vw] md:text-base mt-2 md:mt-4 text-blue-500 font-semibold">
               {shingleOptions[selectedShingleIndex].benefit}
             </p>
           </motion.div>
@@ -192,21 +198,38 @@ const ShingleInstallation = () => {
         <div className="flex justify-center m-6">
           <HashLink
             to="/#book"
-            className="px-8 py-4 dark_button text-white font-semibold rounded-full hover:bg-white hover:text-black transition duration-300"
+            className="px-4 md:px-8 py-2 md:py-4 dark_button text-white font-semibold rounded-full hover:bg-white hover:text-black transition duration-300"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.boxShadow =
+                "inset 0 0 15px 1px rgba(0,0,0,0.8)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.boxShadow = "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
+            }}
           >
             Schedule an Inspection
           </HashLink>
         </div>
 
         {/* STEPS SECTION WITH POP-IN ANIMATION & HORIZONTAL LAYOUT */}
-        <section className="mb-12">
-          <h2 className="text-4xl font-bold text-gray-800 mb-8">
-            Our Roof Shingle Installation Process
-          </h2>
+        <section className="pb-6">
+          <div className="relative h-16 ">
+            <div
+              className="absolute inset-0 bg-cover bg-center "
+              style={{
+                backgroundImage: "url('/assets/images/growth/hero_growth.jpg')",
+                backgroundAttachment: 'fixed',
+              }}
+            ></div>
+            <div className="absolute inset-0 dark-below-header opacity-70"></div>
+            <div className="relative z-10 h-full flex items-center justify-center">
+              <h2 className="text-2xl font-semibold text-white">Our Installation Process</h2>
+            </div>
+          </div>
 
           {/* Container for steps (staggered pop-in) */}
           <motion.div
-            className="space-y-8" // vertical spacing between steps
+            className="space-y-8 px-[10vw] md:px-[10vw] pt-6"
             initial="hidden"
             animate="visible"
             variants={listVariants}
@@ -214,30 +237,31 @@ const ShingleInstallation = () => {
             {steps.map((step, index) => (
               <motion.div
                 key={index}
-                className="flex flex-col md:flex-row items-center md:items-start md:space-x-6"
+                className="flex flex-col md:flex-row items-center md:items-start md:space-x-10 "
                 variants={itemVariants}
               >
                 {/* Step Image */}
                 <img
                   src={step.image}
                   alt={step.title}
-                  className="w-full md:w-1/3 h-auto object-cover rounded-md shadow-md mb-4 md:mb-0"
+                  className="w-full  object-cover rounded-md shadow-md mb-2 md:mb-0 h-[22vh]"
                 />
 
                 {/* Step Text & Icon */}
                 <div className="md:w-2/3">
                   <div className="flex items-center space-x-2 mb-2">
                     {/* Step Number */}
-                    <div className="text-2xl font-bold text-blue-600">
+                    <div className="text-lg md:text-2xl font-bold text-gray-700">
                       {step.number}
                     </div>
                     {/* Step Icon */}
-                    {step.icon}
+                    {/* {step.icon} */}
+                    <h3 className="text-lg md:text-2xl font-semibold text-gray-700 ">
+                      {step.title}
+                    </h3>
                   </div>
-                  <h3 className="text-2xl font-semibold text-gray-700 mb-2">
-                    {step.title}
-                  </h3>
-                  <p className="text-gray-600">{step.description}</p>
+
+                  <p className="text-sm md:text-base text-gray-600">{step.description}</p>
                 </div>
               </motion.div>
             ))}

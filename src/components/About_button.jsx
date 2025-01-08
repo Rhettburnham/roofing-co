@@ -65,8 +65,16 @@ const Aboutbutton = () => {
         {/* Fixed Centered Button */}
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-auto z-10">
           <button
-            className="text-white text-xl md:text-3xl font-semibold px-4 py-2 md:px-8 md:py-4 rounded-lg shadow-lg dark_button hover:bg-gray-600"
+            className="text-white hover:text-black hover:bg-white font-rye text-xl md:text-3xl font-semibold px-4 py-2 md:px-8 md:py-4 rounded-lg shadow-lg dark_button"
             onClick={handleClick} // Navigate to /about
+            onMouseEnter={(e) => {
+              e.currentTarget.style.boxShadow =
+                "inset 0 0 15px 1px rgba(0,0,0,0.8)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.boxShadow =
+                "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
+            }}
           >
             <div>About Us</div>
           </button>
@@ -76,7 +84,7 @@ const Aboutbutton = () => {
         <div className="flex" id="slider">
           {duplicatedSlides.map((src, i) => (
             <div key={i} className="flex-shrink-0">
-              <div className="relative sm:w-[70vw] w-[88vw] md:h-[20vh] sm:h-[20vh] h-[15vh]">
+              <div className="relative sm:w-[70vw] w-[88vw] md:h-[24vh] sm:h-[20vh] h-[15vh]">
                 <div className="flex items-center justify-center overflow-hidden w-full h-full relative">
                   <img
                     src={src}

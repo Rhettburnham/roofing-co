@@ -1,4 +1,3 @@
-// booking.jsx
 import React, { useState } from "react";
 import { logoImg } from "../utils"; // Ensure this path is correct
 import axios from "axios";
@@ -116,34 +115,24 @@ const Booking = () => {
 
   return (
     <div
-      className="flex flex-col items-center bg-gradient-to-t from-faint-color to-white w-full"
+      className="flex flex-col items-center bg-white"
       id="booking"
     >
       {/* ─────────────────────────────────────────────────────────────────
           HEADER SECTION WITH FULL-WIDTH RIBBON
          ───────────────────────────────────────────────────────────────── */}
-      <div className="relative w-full overflow-visible mb-6">
-        {/* 
-          The 'ribbon' background: absolutely positioned, fills entire parent. 
-          'dark_button' is your custom BG color class.
-        */}
-        <div className="absolute inset-0 dark_button opacity-65" />
+      <div className="relative w-full ">
+        <div className="absolute inset-0 bg-hover-color opacity-100" />
 
-        {/* 
-          Actual content on top of the ribbon.
-          We add some top/bottom padding to ensure the ribbon is visible behind the text.
-        */}
-        <div className="relative z-10 max-w-3xl mx-auto py-4 px-4 flex flex-row items-center justify-center">
-          {/* Logo */}
-          <img src={logoImg} alt="logo" className="w-20 h-auto mr-6" />
+        <div className="relative z-10 py-4 px-4 flex flex-row items-center justify-center">
+          <img src="assets/images/clipped-cowboy.png" alt="logo" className="w-20 h-auto mr-6" style={{ filter: 'invert(1)' }} />
 
-          {/* "Contact Us!" Heading */}
-          <div className="text-center">
+          <div className="text-left">
             <h2 className="text-2xl md:text-3xl font-bold text-white">
               Contact Us!
             </h2>
-            <div className="font-bold text-base md:text-lg text-white mt-1">
-              <a href="tel:4422363783">📞 (442)236-3783</a>
+            <div className="font-bold md:text-lg text-white mt-1">
+              <a href="tel:4422363783"> (442)236-3783</a>
             </div>
           </div>
         </div>
@@ -154,7 +143,15 @@ const Booking = () => {
          ───────────────────────────────────────────────────────────────── */}
       <button
         onClick={toggleFormVisibility}
-        className="block md:hidden p-3 mb-4 dark_button text-white text-md font-semibold rounded-md hover:bg-gray-600 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300 shadow-xl"
+        className="block md:hidden p-2 my-4 dark_button text-white text-md font-semibold rounded-md hover:bg-white hover:text-black shadow-xl"
+        onMouseEnter={(e) => {
+          e.currentTarget.style.boxShadow =
+            "inset 0 0 15px 1px rgba(0,0,0,0.8)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.boxShadow =
+            "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
+        }}
       >
         {isFormVisible ? "..." : "Book"}
       </button>
@@ -162,12 +159,9 @@ const Booking = () => {
       {/* ─────────────────────────────────────────────────────────────────
           FORM SECTION
          ───────────────────────────────────────────────────────────────── */}
-      <div className={`${isFormVisible ? "block" : "hidden"} md:block w-full`}>
-        <form
-          onSubmit={handleSubmit}
-          className="w-full max-w-screen-md mx-auto mb-3"
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className={`${isFormVisible ? "block" : "hidden"} md:block `}>
+        <form onSubmit={handleSubmit} className="w-full mb-1">
+          <div className="grid grid-cols-1 gap-4">
             {/* First Name */}
             <div>
               <input
@@ -177,7 +171,7 @@ const Booking = () => {
                 onChange={handleChange}
                 placeholder="First Name"
                 required
-                className="w-full p-4 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600"
+                className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600"
               />
             </div>
 
@@ -190,7 +184,7 @@ const Booking = () => {
                 onChange={handleChange}
                 placeholder="Last Name"
                 required
-                className="w-full p-4 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600"
+                className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600"
               />
             </div>
 
@@ -203,7 +197,7 @@ const Booking = () => {
                 onChange={handleChange}
                 placeholder="Your Email"
                 required
-                className="w-full p-4 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600"
+                className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600"
               />
             </div>
 
@@ -216,7 +210,7 @@ const Booking = () => {
                 onChange={handleChange}
                 placeholder="Your Phone"
                 required
-                className="w-full p-4 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600"
+                className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600"
               />
             </div>
 
@@ -224,7 +218,7 @@ const Booking = () => {
             <div>
               <div
                 onClick={() => setIsModalOpen(true)}
-                className="w-full p-4 bg-transparent border-b border-gray-400 cursor-pointer focus:outline-none focus:border-blue-600 placeholder-gray-600"
+                className="w-full p-2 bg-transparent border-b border-gray-400 cursor-pointer focus:outline-none focus:border-blue-600 placeholder-gray-600"
               >
                 {formData.service ? (
                   <span className="text-gray-800">{formData.service}</span>
@@ -245,19 +239,29 @@ const Booking = () => {
                 onChange={handleChange}
                 placeholder="Your Message"
                 required
-                rows="1"
-                className="w-full p-4 bg-transparent border-b border-gray-400 cursor-pointer focus:outline-none focus:border-blue-600 placeholder-gray-600"
+                rows="3"
+                className="w-full p-2 bg-transparent border-b border-gray-400 cursor-pointer focus:outline-none focus:border-blue-600 placeholder-gray-600"
               ></textarea>
             </div>
           </div>
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            className="w-full p-4 mt-8 hover:bg-gray-600 text-white text-lg font-semibold rounded-md dark_button active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
-          >
-            Submit
-          </button>
+          {/* Centered Submit Button */}
+          <div className="flex justify-center relative w-full ">
+            <button
+              type="submit"
+              className="p-4 text-white text-lg md:px-[25vw] md:my-5 font-semibold rounded-md dark_button hover:bg-white hover:text-black"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow =
+                  "inset 0 0 15px 1px rgba(0,0,0,0.8)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow =
+                  "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
+              }}
+            >
+              Submit
+            </button>
+          </div>
         </form>
       </div>
 
@@ -270,7 +274,7 @@ const Booking = () => {
           onClick={() => setIsModalOpen(false)}
         >
           <div
-            className="bg-white rounded-lg p-4 md:p-6 max-w-md w-11/12 md:w-2/3 relative"
+            className="bg-white rounded-lg p-4 md:p-6 relative"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close Button */}

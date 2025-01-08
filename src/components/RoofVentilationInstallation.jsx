@@ -72,8 +72,8 @@ const RoofVentilation = () => {
       {/* Hero Section with Shrinking Effect */}
       <motion.section
         className="relative overflow-hidden"
-        initial={{ height: "100vh" }}
-        animate={{ height: isShrunk ? "20vh" : "100vh" }}
+        initial={{ height: "40vh" }}
+        animate={{ height: isShrunk ? "20vh" : "40vh" }}
         transition={{ duration: 1 }}
       >
         <div
@@ -96,10 +96,28 @@ const RoofVentilation = () => {
           </motion.h1>
         </div>
       </motion.section>
+            {/* Call to Action */}
+            <div className="flex justify-center my-4">
+        <HashLink
+          to="/#book"
+          className="px-4 md:px-8 py-2 md:py-4 dark_button text-white font-semibold rounded-full hover:bg-white hover:text-black transition duration-500"
+          onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow =
+              "inset 0 0 15px 1px rgba(0,0,0,0.8)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
+          }}
+        >
+          <p className="text-lg md:text-xl">
+          Schedule an Inspection
+          </p>
+        </HashLink>
+      </div>
 
       {/* Our Roof Ventilation Solutions */}
-      <section className="w-full py-8">
-        <div className="relative h-16 w-full mb-6">
+      <section className="w-full ">
+        <div className="relative h-12 md:h-16 w-full mb-2 ">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
@@ -107,27 +125,27 @@ const RoofVentilation = () => {
               backgroundAttachment: 'fixed',
             }}
           ></div>
-          <div className="absolute inset-0 dark-below-header"></div>
+          <div className="absolute inset-0 dark-below-header opacity-70"></div>
           <div className="relative z-10 h-full flex items-center justify-center">
-            <h2 className="text-4xl font-bold text-white">Our Roof Ventilation Solutions</h2>
+            <h2 className="text-lg md:text-3xl font-bold text-white">Our Roof Ventilation Solutions</h2>
           </div>
         </div>
         
-        <div className="container mx-auto px-6">
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+        <div className="container mx-auto px-10 md:px-6 py-4 md:py-8">
+          <div className="grid gap-4 md:gap-8 grid-cols-2 md:grid-cols-4 h-[60vh] md:h-auto">
             {ventilationSolutions.map((vent, index) => (
               <div
                 key={index}
-                className="bg-white overflow-hidden transition-shadow duration-300"
+                className="bg-white overflow-hidden shadow-md"
               >
                 <img
                   src={vent.image}
                   alt={vent.alt}
-                  className="w-full h-48 object-cover"
+                  className="w-full h-[12vh] md:h-48 object-cover"
                 />
-                <div className="p-6">
-                  <h3 className="text-2xl font-semibold mb-2">{vent.title}</h3>
-                  <p className="text-gray-700">{vent.description}</p>
+                <div className="p-2 md:p-6">
+                  <h3 className="text-[3vw] md:text-xl font-semibold md:mb-2">{vent.title}</h3>
+                  <p className="text-[2.5vw] md:text-sm text-gray-700">{vent.description}</p>
                 </div>
               </div>
             ))}
@@ -136,8 +154,8 @@ const RoofVentilation = () => {
       </section>
 
       {/* Ventilation for Different Roofing Materials */}
-      <section className="w-full py-8 faint-color">
-        <div className="relative h-16 w-full mb-6">
+      <section className="w-full  bg-gradient-to-t from-faint-color to-white">
+        <div className="relative h-16 w-full mb-3 md:mb-6">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
@@ -145,19 +163,19 @@ const RoofVentilation = () => {
               backgroundAttachment: 'fixed',
             }}
           ></div>
-          <div className="absolute inset-0 dark-below-header"></div>
+          <div className="absolute inset-0 dark-below-header opacity-70"></div>
           <div className="relative z-10 h-full flex items-center justify-center">
-            <h2 className="text-4xl font-bold text-white">Tailored Ventilation for Every Roof Type</h2>
+            <h2 className="text-lg md:text-3xl font-bold text-white">Tailored Ventilation for Every Roof Type</h2>
           </div>
         </div>
 
-        <div className="container mx-auto px-4">
-          <p className="text-xl text-center max-w-4xl mx-auto text-gray-700 mb-12">
+        <div className="container mx-auto px-6 md:px-10">
+          <p className="text-sm md:text-lg text-left  mx-auto text-gray-700 mb-4">
             Whether your roof is made of shingles, metal, or tiles, our expert
             team provides customized ventilation solutions that seamlessly
             integrate with your roof's aesthetic and structural integrity.
           </p>
-          <div className="grid gap-8 md:grid-cols-3">
+          <div className="grid gap-8 grid-cols-3">
             {roofTypes.map((roof, index) => (
               <div
                 key={index}
@@ -166,16 +184,23 @@ const RoofVentilation = () => {
                 <img
                   src={roof.image}
                   alt={roof.alt}
-                  className="w-full h-48 object-cover shadow-md"
+                  className="w-full h-32 md:h-48 object-cover shadow-md"
                 />
-                <h3 className="text-2xl font-semibold mt-6">{roof.title}</h3>
+                <h3 className="text-md md:text-xl font-semibold mt-3 md:mt-6">{roof.title}</h3>
               </div>
             ))}
           </div>
-          <div className="flex justify-center mt-6">
+          <div className="flex justify-center py-3 md:py-6">
             <Link
               to="/shingleinstallation"
-              className="px-8 py-4 dark_button text-white font-semibold rounded-full hover:bg-white hover:text-black transition duration-300"
+              className="px-4 md:px-8 py-2 md:py-4 dark_button text-white font-semibold rounded-lg hover:bg-white hover:text-black transition duration-500"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow =
+                  "inset 0 0 15px 1px rgba(0,0,0,0.8)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
+              }}
             >
               View Shingle Selection
             </Link>
@@ -184,52 +209,65 @@ const RoofVentilation = () => {
       </section>
 
       {/* Energy Efficiency Benefits */}
-      <section className="w-full pt-6 pb-8">
-        <div className="relative h-16 w-full mb-6">
+      <section className=" w-full  bg-gradient-to-b from-faint-color to-white">
+        <div className="relative h-16 w-full ">
           <div
-            className="absolute inset-0 bg-cover bg-center"
+            className="absolute inset-0 bg-cover"
             style={{
               backgroundImage: "url('/assets/images/growth/hero_growth.jpg')",
               backgroundAttachment: 'fixed',
             }}
           ></div>
-          <div className="absolute inset-0 dark-below-header"></div>
+          <div className="absolute inset-0 dark-below-header opacity-70 "></div>
           <div className="relative z-10 h-full flex items-center justify-center">
-            <h2 className="text-4xl font-bold text-white">Boost Your Home's Energy Efficiency</h2>
+            <h2 className="text-lg md:text-3xl font-bold text-white">Boost Your Home's Energy Efficiency</h2>
           </div>
         </div>
 
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center relative">
-            <div className="md:w-1/2 md:pr-12">
-              <p className="text-xl text-gray-700 mb-4">
-                Proper roof ventilation is essential for reducing your home's
-                cooling costs. According to the U.S. Department of Energy,
-                effective ventilation can lower cooling expenses by up to 10% by
-                allowing trapped hot air to escape, thereby decreasing the
-                reliance on air conditioning systems (
-                <a href="https://www.energy.gov/energysaver/ventilation">
-                  Energy.gov
-                </a>
-                ).
-              </p>
-              <p className="text-xl text-gray-700">
-                Implementing adequate roof ventilation not only creates a more
-                comfortable living environment but also contributes to lower
-                energy bills and extends the lifespan of your roofing materials.
-                The National Roofing Contractors Association highlights that
-                proper ventilation helps prevent heat-related damage, which can
-                extend roof longevity by several years (
-                <a href="https://www.nrca.net/">NRCA</a>).
-              </p>
-            </div>
-            <div className="md:w-1/2 mt-8 md:mt-0 relative z-10">
+        <div className="px-10 md:px-[15vw] md:py-6 ">
+          <div className="flex flex-row relative -py-2 mt-6 md:mt-0 md:justify-between items-center faint-color rounded-t-xl md:rounded-xl ">
+            <div className="w-[35vw] md:h-auto aspect-square md:w-[40vh] ml-3 md:ml-16 relative z-10 py-2 md:py-3">
               <img
                 src="/assets/images/ventilation/roof_installation.webp"
                 alt="Energy Efficiency"
                 className="rounded-lg shadow-lg"
               />
             </div>
+            <div className="w-2/5 md:w-1/2 md:pl-12 ml-4 md:mr-10">
+              <p className="text-[2.1vw] md:text-sm text-gray-700 mb-4">
+                Proper roof ventilation is essential for reducing your home's
+                cooling costs. According to the U.S. Department of Energy,
+                effective ventilation can lower cooling expenses by up to 10% by
+                allowing trapped hot air to escape, thereby decreasing the
+                reliance on air conditioning systems (
+                <a href="https://www.energy.gov/energysaver/ventilation"
+                  className="text-blue">
+                  Energy.gov
+                </a>
+                ).
+              </p>
+              <p className=" hidden md:block md:w-full text-[2.1vw] md:text-sm text-gray-700 md:mr-10">
+                Implementing adequate roof ventilation not only creates a more
+                comfortable living environment but also contributes to lower
+                energy bills and extends the lifespan of your roofing materials.
+                The National Roofing Contractors Association highlights that
+                proper ventilation helps prevent heat-related damage, which can
+                extend roof longevity by several years (
+                <a href="https://www.nrca.net/" className="text-blue" >NRCA</a>).
+              </p>  
+            </div>
+            
+          </div>
+          <div className=" faint-color rounded-b-xl">
+            <p className="text-[2.1vw] md:text-sm text-gray-700 md:hidden mb-3">
+                  Implementing adequate roof ventilation not only creates a more
+                  comfortable living environment but also contributes to lower
+                  energy bills and extends the lifespan of your roofing materials.
+                  The National Roofing Contractors Association highlights that
+                  proper ventilation helps prevent heat-related damage, which can
+                  extend roof longevity by several years (
+                  <a href="https://www.nrca.net/" className="text-blue" >NRCA</a>).
+            </p>
           </div>
         </div>
       </section>

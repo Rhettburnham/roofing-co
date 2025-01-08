@@ -242,7 +242,7 @@ const Testimonials = () => {
   return (
     <section
       id="testimonials"
-      className="relative bg-gradient-to-t from-faint-color to-white min-h-screen py-8"
+      className="relative bg-black min-h-screen py-8"
     >
       {/* Header Section */}
       <div className="flex items-center justify-center md:mb-6 mx-6 sm:mx-12">

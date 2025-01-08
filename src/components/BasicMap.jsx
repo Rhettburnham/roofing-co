@@ -3,7 +3,13 @@ import { MapContainer, TileLayer, Marker, Circle, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { gsap } from "gsap";
-import { FaUsers, FaCalendarAlt, FaHandshake, FaHome, FaMapMarkerAlt } from "react-icons/fa";
+import {
+  FaUsers,
+  FaCalendarAlt,
+  FaHandshake,
+  FaHome,
+  FaMapMarkerAlt,
+} from "react-icons/fa";
 
 const CustomMarkerIcon = L.icon({
   iconUrl: "https://maps.gstatic.com/mapfiles/ms2/micons/blue.png",
@@ -30,10 +36,26 @@ const DropMarker = ({ position, icon }) => {
 
 const StatsPanel = ({ isSmallScreen }) => {
   const statsData = [
-    { title: "Employees", value: 25, icon: <FaUsers className="w-full h-full" /> },
-    { title: "Years of Service", value: 10, icon: <FaCalendarAlt className="w-full h-full" /> },
-    { title: "Customers Served", value: 500, icon: <FaHandshake className="w-full h-full" /> },
-    { title: "Roofs Repaired", value: 300, icon: <FaHome className="w-full h-full" /> },
+    {
+      title: "Employees",
+      value: 25,
+      icon: <FaUsers className="w-full h-full" />,
+    },
+    {
+      title: "Years of Service",
+      value: 10,
+      icon: <FaCalendarAlt className="w-full h-full" />,
+    },
+    {
+      title: "Customers Served",
+      value: 500,
+      icon: <FaHandshake className="w-full h-full" />,
+    },
+    {
+      title: "Roofs Repaired",
+      value: 300,
+      icon: <FaHome className="w-full h-full" />,
+    },
   ];
 
   const containerClasses = `
@@ -45,7 +67,12 @@ const StatsPanel = ({ isSmallScreen }) => {
   return (
     <div className={containerClasses}>
       {statsData.map((item, idx) => (
-        <StatItem key={idx} icon={item.icon} title={item.title} value={item.value} />
+        <StatItem
+          key={idx}
+          icon={item.icon}
+          title={item.title}
+          value={item.value}
+        />
       ))}
     </div>
   );
@@ -63,7 +90,9 @@ const StatItem = ({ icon, title, value }) => {
       const now = Date.now();
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      const currentValue = Math.floor(progress * (value - startValue) + startValue);
+      const currentValue = Math.floor(
+        progress * (value - startValue) + startValue
+      );
 
       setCount(currentValue);
       if (progress < 1) requestAnimationFrame(tick);
@@ -74,12 +103,16 @@ const StatItem = ({ icon, title, value }) => {
 
   return (
     <div className="flex items-center space-x-3 pt-5">
-      <div className="text-[6.5vh] text-dark_button flex-shrink-0 text-faint-color">
+      <div className="text-[8.5vh] text-dark_button flex-shrink-0  text-hover-color/90 ">
         {icon}
       </div>
       <div>
-        <p className="text-xl font-semibold text-red-200 md:text-red-200">{count}</p>
-        <p className="text-sm font-semibold text-white md:text-white">{title}</p>
+        <p className="text-xl font-semibold text-yellow-600">
+          {count}
+        </p>
+        <p className="text-sm font-semibold text-white">
+          {title}
+        </p>
       </div>
     </div>
   );
@@ -165,26 +198,21 @@ const BasicMap = () => {
   );
 
   return (
-    <section className="bg-gradient-to-b from-faint-color to-white">
-      <div className="py-4">
-        {/* Title for SMALL screens */}
-        {isSmallScreen && (
-          <div className="flex justify-center mb-2">
-            <h1 className="text-[3vh] font-bold text-black text-center">
+    <section className=" bg-gradient-to-t from-white from-50% to-black pb-2">
+      <div className="pb-2">
+
+          <div className="flex justify-start pl-11 ">
+            <h1 className="text-[3vh] md:text-[5vh] font-normal text-gray-200/50 text-center font-serif bg-gradient-to-t from-transparent to-90% to-red-700">
               Are we in your area?
             </h1>
           </div>
-        )}
 
-        <div className="relative flex flex-col md:flex-row md:gap-4 px-[4vw] md:px-8 pb-2">
+
+        <div className="relative flex flex-col md:flex-row gap-4 px-10 md:px-8 h-[80vh] md:h-[45vh]">
           {/* Left Column: Map */}
           <div className="flex flex-col">
             <div
-              className="relative w-full z-10 mb-2 md:mb-0 transition-all duration-300"
-              style={{
-                width: isSmallScreen ? "100%" : "calc(60vw - 32px)",
-                height: isSmallScreen ? "40vh" : "50vh",
-              }}
+              className="relative h-[40vh] md:h-full w-full md:w-[60vw] z-10 "
             >
               <div className="w-full h-full rounded-xl overflow-hidden shadow-lg border border-gray-300 relative drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]">
                 <MapContainer
@@ -216,58 +244,55 @@ const BasicMap = () => {
                 {/* Overlay to enable map interaction */}
                 {!mapActive && (
                   <div
-                    className="absolute inset-0 bg-black bg-opacity-20 flex flex-col items-center justify-center cursor-pointer"
+                    className="absolute inset-0 bg-black bg-opacity-20 flex flex-row items-start justify-center cursor-pointer pt-4"
                     onClick={() => setMapActive(true)}
                     title="Click to interact with the map"
                   >
-                    <FaMapMarkerAlt className="text-white opacity-75" size={40} />
-                    <p className="mt-2 text-white text-sm">
+                    <FaMapMarkerAlt
+                      className="text-white opacity-75"
+                      size={30}
+                    />
+                    <p className="mt-2 text-white text-sm font-serif">
                       Click to interact with the map
                     </p>
                   </div>
                 )}
 
                 {/* Bottom address/phone overlay */}
-                <div className="absolute bottom-0 w-full dark-below-header text-white text-center py-1 z-10">
-                  <div className="font-semibold text-[3vw] md:text-[2.5vh]">
+                <div className="absolute bottom-0 w-full bg-hover-color text-center text-gray-200 py-1 z-10">
+                  <div className="font-bold  text-[3vw] md:text-[2.5vh] font-serif">
                     1575 Clairmont Rd, Decatur, GA 30033
                   </div>
-                  <div className="font-bold text-[3vw] md:text-[2vh]">
+                  <div className=" text-[3vw] text-gray-200 font-bold md:text-[2vh] font-serif">
                     <a href="tel:4422363783">📞 (442)236-3783</a>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Title for LARGE screens */}
-            {!isSmallScreen && (
-              <div className="flex justify-center mt-4">
-                <h1 className="text-[2vw] font-bold text-black">Are we in your area?</h1>
-              </div>
-            )}
           </div>
 
           {/* Right Column: Stats + Service Hours */}
-          <div className="flex flex-col">
-            {/* SMALL SCREENS */}
-            {isSmallScreen ? (
+          <div className="flex flex-col  ">
               <>
-                {/* Toggle button above the stats/table container */}
                 <button
-                  onClick={() => setIsServiceHoursVisible(!isServiceHoursVisible)}
+                  onClick={() =>
+                    setIsServiceHoursVisible(!isServiceHoursVisible)
+                  }
                   className="
-                    block 
                     w-full
-                    md:hidden 
                     dark_button 
                     rounded-t-xl
+                    md:py-2
                     items-center 
                     justify-center 
                     text-white 
                     text-2xl 
+                    md:text-[5vh]
                     transition-all 
                     duration-300 
                     drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]
+                    font-serif
                     
                   "
                   onMouseEnter={(e) => {
@@ -283,11 +308,7 @@ const BasicMap = () => {
 
                 {/* Container that holds BOTH Stats & Service Hours, same size, stacked */}
                 <div
-                  className="relative w-full rounded-b-xl overflow-hidden"
-                  style={{
-                    // Adjust this height as needed so both stats + table are fully visible
-                    height: "40vh",
-                  }}
+                  className="relative h-[30vh] md:h-[50vh] md:w-[35vw] w-full rounded-b-xl overflow-hidden"
                 >
                   {/* Stats background & StatsPanel (z-10) */}
                   <div className="absolute inset-0 z-10">
@@ -302,7 +323,7 @@ const BasicMap = () => {
                     </div>
 
                     {/* Stats content */}
-                    <div className="relative w-full h-full  drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]">
+                    <div className="relative w-full h-full flex items-center justify-center  drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]">
                       <StatsPanel isSmallScreen={true} />
                     </div>
                   </div>
@@ -325,84 +346,9 @@ const BasicMap = () => {
                   </div>
                 </div>
               </>
-            ) : (
-              /* LARGE SCREENS */
-              <div
-                className="relative w-full h-full flex items-center justify-center rounded-xl overflow-hidden"
-                style={{
-                  width: "calc(40vw - 32px)",
-                  height: "50vh",
-                }}
-              >
-                {/* Stats background + Panel */}
-                <div className="absolute inset-0">
-                  <img
-                    src="/assets/images/stats_background.jpg"
-                    alt="Stats Background"
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black opacity-20"></div>
-                </div>
-
-                <div className="w-full h-full absolute inset-0 z-10 flex items-center justify-center overflow-auto drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]">
-                  <StatsPanel isSmallScreen={false} />
-                </div>
-
-                {/* Slide-out table from right */}
-                <div
-                  className={`
-                    absolute inset-y-0 right-0 
-                    z-20 
-                    bg-white 
-                    w-full 
-                    border-l
-                    shadow-xl
-                    rounded-xl
-                    transition-transform 
-                    duration-300 
-                    ease-in-out
-                    drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]
-                    ${isTableVisibleMd ? "translate-x-0" : "translate-x-full"}
-                  `}
-                >
-                  {renderServiceHoursTable()}
-                </div>
-              </div>
-            )}
 
             {/* Toggle button for LARGE screens */}
-            {!isSmallScreen && (
-              <div className="flex justify-center mt-4">
-                <button
-                  onClick={() => setIsTableVisibleMd(!isTableVisibleMd)}
-                  className="
-                    dark_button
-                    rounded-lg
-                    flex
-                    items-center
-                    justify-center
-                    text-white
-                    text-2xl
-                    transition-all
-                    duration-300
-                    drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]
-                    px-3
-                    py-2
-                    min-w-[160px]
-                    min-h-[56px]
-                  "
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.boxShadow =
-                      "inset 0 0 25px 8px rgba(0,0,0,0.8)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.boxShadow = "none";
-                  }}
-                >
-                  {isTableVisibleMd ? "Hide Hours" : "Show Hours"}
-                </button>
-              </div>
-            )}
+
           </div>
         </div>
       </div>

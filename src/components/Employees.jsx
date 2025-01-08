@@ -128,7 +128,7 @@ masterTimeline
   }, []);
 
   return (
-    <div>
+    <div className="">
       {/* Header: includes the nail + text */}
       <div
         ref={headerRef}
@@ -154,7 +154,7 @@ masterTimeline
 
         {/* The TEXT (OUR TEAM, from the left) */}
         <div ref={textRef} className="absolute left-1/2 z-30">
-          <h2 className="text-[7vw] md:text-[6vh] font-bold pt-3">
+          <h2 className="text-[7vw] md:text-[6vh] font-normal font-ultra-condensed font-rye pt-3">
             OUR TEAM
           </h2>
         </div>
