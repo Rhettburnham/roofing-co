@@ -117,7 +117,7 @@ const BuiltUpRoofing = () => {
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 1 }}
-            className="text-center text-6xl md:text-7xl font-extrabold text-white tracking-wider"
+            className="text-center text-[8vw] md:text-[8vh] font-extrabold text-white tracking-wider"
           >
             Built-Up Roofing
           </motion.h1>

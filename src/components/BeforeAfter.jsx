@@ -298,10 +298,10 @@ const BeforeAfter = () => {
 
                   <div className="overlay-text absolute bottom-0 left-0 px-3 py-2 md:px-4 md:py-3 opacity-0">
                     <div className="flex flex-col text-faint-color text-left leading-tight">
-                      <span className="font-bold text-sm md:text-base drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,.8)]">
+                      <span className="font-bold text-[3vw] md:text-base drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,.8)]">
                         {img.shingle}
                       </span>
-                      <span className="font-semibold text-sm md:text-base text-bold text-faint-color drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,.8)]">
+                      <span className="font-semibold text-[3vw] md:text-base text-bold text-faint-color drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,.8)]">
                         {img.sqft}
                       </span>
                     </div>
