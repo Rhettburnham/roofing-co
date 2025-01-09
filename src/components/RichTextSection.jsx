@@ -34,7 +34,7 @@ const AnimatedFeatureCard = ({ icon: Icon, title, desc, index }) => {
         }
       },
       {
-        threshold: 0.8,
+        threshold: 0.2,
         rootMargin: "0px 0px 0% 0px",
       }
     );
@@ -292,7 +292,7 @@ const RichTextSection = () => {
       </div>
 
       {/* The existing About button at the bottom, same for all screens */}
-      <div className="flex flex-col relative h-[28vh] w-full">
+      <div className="flex flex-col relative  w-full">
         <div className="relative bg-hover-color h-[2vh] z-30 w-full">
           <div className="absolute bottom-0 right-0 left-0 h-[.75vh] bg-gradient-to-b from-transparent to-90% to-orange-600" />
         </div>
