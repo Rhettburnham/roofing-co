@@ -178,7 +178,7 @@ const GutterRelated = () => {
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 1 }}
-            className="text-center text-[8vw] md:text-[8vh] font-extrabold text-white tracking-wider"
+            className="text-center text-[10vw] md:text-[8vh] font-extrabold text-white tracking-wider"
           >
             Guttering
           </motion.h1>
@@ -189,7 +189,7 @@ const GutterRelated = () => {
       <div className="flex justify-center mt-6 mb-6">
         <HashLink
           to="/#book"
-          className="px-8 py-4 dark_button text-white font-semibold rounded-full hover:bg-white hover:text-black transition "
+          className="px-4 py-2 md:px-8 md:py-4 dark_button text-white font-semibold rounded-full hover:bg-white hover:text-black transition "
           onMouseEnter={(e) => {
             e.currentTarget.style.boxShadow =
               "inset 0 0 15px 1px rgba(0,0,0,0.8)";
@@ -236,13 +236,13 @@ const GutterRelated = () => {
                 <h3 className="text-[3.3vw] md:text-lg font-bold">{gutter.title}</h3>
                 <p className='text-[2.5vw] md:text-base'>{gutter.description}</p>
               </div>
-              <div
+              {/* <div
                 className="absolute inset-y-0 left-full h-1/4 md:h-1/2 rounded-xl faint-color shadow-lg w-3/4 md:w-1/2 bg-white transform group-hover:-translate-x-full transition-transform duration-300 ease-in-out flex items-center justify-center"
               >
                 <div className="md:text-center px-4">
                   <p className="text-[3vw] md:text-lg font-bold text-black">{gutter.rate}</p>
                 </div>
-              </div>
+              </div> */}
             </div>
           ))}
         </div>

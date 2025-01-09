@@ -117,7 +117,7 @@ const BuiltUpRoofing = () => {
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 1 }}
-            className="text-center text-[8vw] md:text-[8vh] font-extrabold text-white tracking-wider"
+            className="text-center text-[10vw] md:text-[8vh] font-extrabold text-white tracking-wider"
           >
             Built-Up Roofing
           </motion.h1>
@@ -221,22 +221,22 @@ const BuiltUpRoofing = () => {
 
       {/* Call to Action Section */}
       <section className="mb-10 mx-4 md:mx-16 rounded-3xl bg-gradient-to-r from-gray-800 to-gray-900 overflow-hidden">
-        <div className="py-16 px-16 text-center text-white">
+        <div className="p-8 md:py-16 md:px-16 text-center text-white">
           <motion.h2
             initial={{ scale: 0.8, opacity: 0 }}
             whileInView={{ scale: 1, opacity: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 1 }}
-            className="text-3xl md:text-5xl font-bold mb-6"
+            className="text-[4vw] md:text-3xl font-bold mb-6"
           >
             Ready to Upgrade Your Flat Roof?
           </motion.h2>
-          <p className="text-lg md:text-xl mb-8">
+          <p className="text-[3.5vw] md:text-xl mb-8">
             Get in touch for a free consultation. Let us help you choose the best flat roofing solution for your property.
           </p>
           <HashLink
             to="/#contact"
-            className="inline-block px-8 py-4 bg-white text-gray-900 font-semibold rounded-full hover:bg-gray-100 transition duration-300"
+            className="inline-block text-[3.5vw] md:text-xl px-8 py-4 bg-white text-gray-900 font-semibold rounded-full hover:bg-gray-100 transition duration-300"
           >
             Schedule a Consultation
           </HashLink>

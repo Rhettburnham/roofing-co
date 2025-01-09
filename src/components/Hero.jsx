@@ -341,7 +341,7 @@ const Hero = () => {
                       )}
                     </motion.ul>
                   )}
-                  <div className="flex flex-col -space-y-2 items-center mt-[8vh] md:mt-[12vh] mr-[8vh] md:mr-[13.2vw] group ">
+                  <div className="flex flex-col -space-y-1 md:-space-y-2 items-center mt-[8vh] md:mt-[12vh] mr-[8vh] md:mr-[13.2vw] group ">
                     <Home className="w-[8.5vw] h-[8.5vw] md:w-[10.5vh] md:h-[10.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)]   text-white " />
                     <h2 className="text-[4.5vw] md:text-[4.2vh] font-bold drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,3)] text-white font-serif duration-300">
                       Residential
@@ -386,7 +386,7 @@ const Hero = () => {
               />
               <div className="absolute top-0 right-0 w-full h-full " >
                 <div className="absolute left-0 top-[40%] -translate-y-1/2 flex items-center gap-4 md:gap-8 ">
-                  <div className="flex flex-col items-center -space-y-2 group ml-[0vh] md:ml-[6vw] ">
+                  <div className="flex flex-col items-center -space-y-1 md:-space-y-2 group ml-[0vh] md:ml-[6vw] ">
                     <Building2 className="w-[8.5vw] h-[8.5vw] md:w-[10.5vh] md:h-[10.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)]   text-white mt-[8vh] md:mt-[12vh]" />
                     <h2 className="text-[4.5vw] md:text-[4.2vh]  font-semibold drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,3)] text-white font-serif ">
                       Commercial

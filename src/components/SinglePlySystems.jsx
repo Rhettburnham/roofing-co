@@ -5,8 +5,8 @@ import { CheckCircle, ArrowRightCircle } from "lucide-react";
 
 // Tailwind classes that can be reused or modified
 const sectionTitleClass =
-  "flex justify-center text-3xl md:text-4xl font-bold mt-2 mb-4 text-gray-800";
-const subTitleClass = "text-gray-600 text-center mx-auto max-w-3xl mb-6";
+  "flex justify-center text-[4vw] md:text-3xl md:text-4xl font-bold mt-2 mb-4 text-gray-800";
+const subTitleClass = "text-gray-600 text-center mx-auto max-w-3xl text-[3vw] md:text-lg mb-2 md:mb-4 ";
 const baseListClass = "list-none space-y-2 mt-4";
 const listItemClass = "flex items-start space-x-2";
 
@@ -122,7 +122,7 @@ const SinglePlySystems = () => {
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 1 }}
-            className="text-center text-[8vw] md:text-[8vh] font-extrabold text-white tracking-wider"
+            className="text-center text-[10vw] md:text-[8vh] font-extrabold text-white tracking-wider"
           >
             Single Ply
           </motion.h1>
@@ -130,7 +130,7 @@ const SinglePlySystems = () => {
       </motion.section>
 
       {/* Membrane Selection Section */}
-      <section className="my-4 px-4 md:px-16">
+      <section className="my-2 md:my-4 px-4 md:px-16">
         <h2 className={sectionTitleClass}>Explore Our Single-Ply Membranes</h2>
 
         {/* Selection Buttons */}
@@ -139,9 +139,9 @@ const SinglePlySystems = () => {
             <button
               key={index}
               onClick={() => setSelectedIndex(index)}
-              className={`m-2 px-4 py-2 rounded-full font-semibold shadow-lg ${
+              className={`m-2 px-2 py-1 md:px-4 md:py-2 rounded-full font-semibold shadow-lg text-[3vw] md:text-xl ${
                 selectedIndex === index
-                  ? "dark_button text-white font-semibold shadow-2xl"
+                  ? "dark_button text-white  font-semibold shadow-2xl"
                   : "text-black"
               }`}
               onMouseEnter={(e) => {
@@ -168,10 +168,10 @@ const SinglePlySystems = () => {
           exit="initial"
         >
           {/* Membrane Description */}
-          <h3 className="text-[3.3vw] md:text-2xl font-semibold mb-1 md:mb-2 text-gray-800">
+          <h3 className="text-[4vw] md:text-2xl  mb-1 font-bold md:mb-2 text-gray-800">
             {singlePlyMembranes[selectedIndex].name}
           </h3>
-          <p className="text-[2.6vw] md:text-lg text-gray-700 mb-2 leading-relaxed">
+          <p className="text-[3vw] md:text-lg text-gray-700 mb-2 leading-relaxed">
             {singlePlyMembranes[selectedIndex].description}
           </p>
 
@@ -183,15 +183,15 @@ const SinglePlySystems = () => {
                 Technical Details
               </h4>
               <div>
-                <p className="text-[3vw] md:text-lg text-gray-700 mb-1 md:mb-2">
+                <p className="text-[3.3vw] md:text-lg text-gray-700 mb-1 md:mb-2">
                   <strong>Base:</strong>{" "}
                   {singlePlyMembranes[selectedIndex].base}
                 </p>
-                <p className="text-[3vw] md:text-lg text-gray-700 mb-1 md:mb-2">
+                <p className="text-[3.3vw] md:text-lg text-gray-700 mb-1 md:mb-2">
                   <strong>Features:</strong>
                 </p>
                 {/* Transform bullet features into a nicer list */}
-                <ul className="list-disc list-inside text-gray-700  space-y-1">
+                <ul className="text-[2.5vw] md:text-base list-disc list-inside text-gray-700  space-y-1">
                   {singlePlyMembranes[selectedIndex].features
                     .split("•")
                     .filter(Boolean)
@@ -210,16 +210,16 @@ const SinglePlySystems = () => {
                 <img
                   src={singlePlyMembranes[selectedIndex].image}
                   alt={singlePlyMembranes[selectedIndex].name}
-                  className="max-w-md w-full h-auto rounded-lg shadow-md"
+                  className="max-w-md w-full h-[50vw] md:max-h-[50vh] rounded-lg shadow-md"
                 />
               </div>
-              <h4 className="text-xl font-semibold text-gray-800 mb-2">
+              <h4 className="text-[3.5vw] md:text-lg font-semibold text-gray-800 mb-2">
                 Practical Application
               </h4>
-              <p className="text-gray-700 mb-2">
+              <p className="text-[3.3vw] md:text-lg text-gray-700 mb-2">
                 <strong>Uses:</strong> {singlePlyMembranes[selectedIndex].uses}
               </p>
-              <p className="text-gray-700 mb-2">
+              <p className="text-[3.3vw] md:text-lg text-gray-700 mb-2">
                 <strong>Limitations:</strong>{" "}
                 {singlePlyMembranes[selectedIndex].limitations}
               </p>
@@ -228,8 +228,8 @@ const SinglePlySystems = () => {
         </motion.div>
       </section>
       {/* Intro / Advantages Section */}
-      <section className="my-8 px-4 md:px-16">
-        <h2 className="text-3xl md:text-4xl font-bold text-center text-gray-800 mb-6">
+      <section className="my-3 md:my-8 px-4 md:px-16">
+        <h2 className="text-[5vw] md:text-4xl font-bold text-center text-gray-800 mb-1 md:mb-4">
           Overview & Advantages
         </h2>
 
@@ -267,18 +267,18 @@ const SinglePlySystems = () => {
               key={i}
               className="flex bg-white shadow-md rounded-lg p-4 border-l-4 border-blue-500"
             >
-              <CheckCircle className="text-blue-500 w-8 h-8 mr-3" />
+              <CheckCircle className="text-blue-500 w-4 h-4 md:w-8 md:h-8 mr-3" />
               <div>
-                <h4 className="font-semibold text-gray-800 text-lg">
+                <h4 className="font-semibold text-gray-800 text-[3.5vw] md:text-lg">
                   {adv.title}
                 </h4>
-                <p className="text-gray-600">{adv.desc}</p>
+                <p className="text-gray-600 text-[3vw] md:text-base">{adv.desc}</p>
               </div>
             </li>
           ))}
         </ul>
 
-        <p className="text-center text-gray-600 mt-6 max-w-3xl mx-auto">
+        <p className="text-center text-[3vw] md:text-base text-gray-600 mt-6 max-w-3xl mx-auto">
           Depending on roof size, complexity, and weather, installation can
           typically be completed in just a few days—often faster than
           traditional, multi-layered systems.
@@ -314,11 +314,11 @@ const SinglePlySystems = () => {
               whileInView={{ scale: 1, opacity: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 1 }}
-              className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 md:mb-6"
+              className="text-[4vw]  md:text-4xl font-bold text-white mb-4 md:mb-6"
             >
               Ready to Get Started?
             </motion.h2>
-            <p className="text-base sm:text-lg md:text-xl mb-6 md:mb-8 text-white max-w-2xl mx-auto leading-relaxed">
+            <p className="text-xs sm:text-lg md:text-xl mb-6 md:mb-8 text-white max-w-2xl mx-auto leading-relaxed">
               Contact us today for a free roof inspection and a personalized plan
               for your commercial property.
             </p>
@@ -326,8 +326,9 @@ const SinglePlySystems = () => {
               to="/#book"
               className="px-6 py-3 md:px-8 md:py-4 bg-white text-blue-700 font-semibold rounded-full hover:bg-blue-50 transition duration-300 inline-flex items-center"
             >
-              Schedule an Inspection
-              <ArrowRightCircle className="w-5 h-5 ml-2" />
+              <p className="text-[4vw]  md:text-2xl">
+                Schedule an Inspection
+              </p>
             </HashLink>
           </div>
         </div>

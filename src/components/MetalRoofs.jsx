@@ -67,7 +67,7 @@ const MetalRoofs = () => {
   const steps = [
     {
       number: '1',
-      title: 'Initial Roof Inspection & Measurements',
+      title: 'Inspection & Measurements',
       description:
         'We begin by inspecting your roof’s structural integrity, measuring for precise panel lengths, and identifying any areas that need repair before installation.',
       icon: <Wrench className="text-blue-600 w-8 h-8" />,
@@ -150,7 +150,7 @@ const MetalRoofs = () => {
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 1 }}
-            className="text-center text-[8vw] md:text-[8vh] font-extrabold text-white tracking-wider"
+            className="text-center text-[10vw] md:text-[8vh] font-extrabold text-white tracking-wider"
           >
             Metal Roof
           </motion.h1>
@@ -159,7 +159,7 @@ const MetalRoofs = () => {
 
       {/* Metal Roofing Types (Scrollable) */}
       <section className="my-4 px-[6vw] md:px-[10vw]">
-        <h2 className="text-3xl font-bold text-center text-gray-800 mb-4">
+        <h2 className="text-[4vw] md:text-3xl font-bold text-center text-gray-800 mb-4">
           Explore Our Metal Roofing Options
         </h2>
         <div className="relative m-5">
@@ -216,7 +216,7 @@ const MetalRoofs = () => {
       <div className="flex justify-center m-6">
         <HashLink
           to="/#book"
-          className="px-8 py-4 dark_button text-white font-semibold rounded-full hover:bg-white hover:text-black transition duration-300"
+          className="px=4 py-2 md:px-8 md:py-4 dark_button text-white font-semibold rounded-full hover:bg-white hover:text-black transition duration-300"
         >
           Schedule an Inspection
         </HashLink>
@@ -224,7 +224,7 @@ const MetalRoofs = () => {
 
       {/* Steps Section */}
       <section className="mb-12 px-[6vw] md:px-[10vw]">
-        <h2 className="text-4xl font-bold text-gray-800 mb-8">
+        <h2 className="text-[4vw] md:text-4xl font-bold text-gray-800 mb-8">
           Our Metal Roof Installation Process
         </h2>
 
@@ -252,16 +252,14 @@ const MetalRoofs = () => {
               <div className="md:w-2/3">
                 <div className="flex items-center space-x-2 mb-2">
                   {/* Step Number */}
-                  <div className="text-2xl font-bold text-blue-600">
+                  <div className="text[6vw] md:text-2xl font-bold text-blue-600">
                     {step.number}
-                  </div>
-                  {/* Step Icon */}
-                  {step.icon}
                 </div>
-                <h3 className="text-2xl font-semibold text-gray-700 mb-2">
+                <p className="text[2vw] md:text-2xl font-semibold text-gray-700 ">
                   {step.title}
-                </h3>
-                <p className="text-gray-600">{step.description}</p>
+                </p>
+              </div>
+                <p className="md:text-base text-sm text-gray-600">{step.description}</p>
               </div>
             </motion.div>
           ))}

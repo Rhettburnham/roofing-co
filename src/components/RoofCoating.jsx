@@ -146,7 +146,7 @@ const RoofCoating = () => {
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 1 }}
-            className="text-center text-[8vw] md:text-[8vh] font-extrabold text-white tracking-wider"
+            className="text-center text-[10vw] md:text-[8vh] font-extrabold text-white tracking-wider"
           >
             Roof Coating
           </motion.h1>
@@ -154,11 +154,11 @@ const RoofCoating = () => {
       </motion.section>
 
       {/* TYPES OF ROOF COATINGS SECTION */}
-      <section className="my-8 px-4 md:px-16">
+      <section className="my-4 md:my-8 px-4 md:px-16">
         <h2 className={sectionTitleClass}>Types of Roof Coatings</h2>
 
         {/* Coating Selection Buttons */}
-        <div className="flex flex-wrap justify-center gap-1 mb-3 md:mb-6">
+        <div className="flex flex-wrap justify-center gap-1 mb-1 md:mb-3">
           {roofCoatings.map((coating, index) => (
             <button
               key={index}
@@ -185,7 +185,7 @@ const RoofCoating = () => {
         {/* Selected Coating Details */}
         <motion.div
           key={selectedCoatingIndex}
-          className="bg-white rounded-2xl shadow-lg p-8"
+          className="bg-white rounded-2xl shadow-lg p-4 md:p-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -225,9 +225,9 @@ const RoofCoating = () => {
               </div>
 
               {/* Additional Info */}
-              <div className="flex flex-col space-y-4 mt-4">
+              <div className="flex flex-col space-y-2 md:space-y-4 mt-4">
                 <div>
-                  <h4 className="text-sm md:text-lg font-semibold text-gray-800">
+                  <h4 className="text-xs md:text-lg font-semibold text-gray-800">
                     Color Possibilities:
                   </h4>
                   <p className="text-gray-700 text-[2.7vw] md:text-lg">
@@ -236,7 +236,7 @@ const RoofCoating = () => {
                 </div>
 
                 <div>
-                  <h4 className="text-sm md:text-lg font-semibold text-gray-800">
+                  <h4 className="text-xs md:text-lg font-semibold text-gray-800">
                     Installation Time:
                   </h4>
                   <p className="text-gray-700 text-[2.7vw] md:text-lg">
@@ -290,18 +290,20 @@ const RoofCoating = () => {
               whileInView={{ scale: 1, opacity: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 1 }}
-              className="text-lg sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 md:mb-6"
+              className="text-[4vw] sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 md:mb-6"
             >
               Ready to Get Started?
             </motion.h2>
-            <p className="text-base md:text-xl mb-8 text-white">
+            <p className="text-[3.5vw] md:text-xl mb-8 text-white">
               Contact us today for a free roof inspection and personalized repair plan.
             </p>
             <HashLink
               to="/#contact"
               className="inline-block px-4 py-2 md:px-8 md:py-4 bg-white text-gray-900 font-semibold rounded-full hover:bg-gray-100 transition duration-300"
             >
-              Schedule an Inspection
+              <p className="text-[3.5vw] md:text-xl">
+                Schedule an Inspection
+              </p>
             </HashLink>
           </div>
         </div>

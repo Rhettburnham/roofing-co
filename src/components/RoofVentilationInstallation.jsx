@@ -90,7 +90,7 @@ const RoofVentilation = () => {
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 1 }}
-            className="text-center text-[8vw] md:text-[8vh] font-extrabold text-white tracking-wider custom-text-shadow-mini"
+            className="text-center text-[10vw] md:text-[8vh] font-extrabold text-white tracking-wider custom-text-shadow-mini"
           >
             <h1>Ventilation</h1>
           </motion.h1>
@@ -109,7 +109,7 @@ const RoofVentilation = () => {
             e.currentTarget.style.boxShadow = "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
           }}
         >
-          <p className="text-lg md:text-xl">
+          <p className="text-base md:text-xl">
           Schedule an Inspection
           </p>
         </HashLink>
@@ -125,9 +125,9 @@ const RoofVentilation = () => {
               backgroundAttachment: 'fixed',
             }}
           ></div>
-          <div className="absolute inset-0 dark-below-header opacity-70"></div>
+          <div className="absolute inset-0 faint-color opacity-70"></div>
           <div className="relative z-10 h-full flex items-center justify-center">
-            <h2 className="text-lg md:text-3xl font-bold text-white">Our Roof Ventilation Solutions</h2>
+            <h2 className="text-base md:text-3xl font-bold text-white">Our Roof Ventilation Solutions</h2>
           </div>
         </div>
         
@@ -165,17 +165,17 @@ const RoofVentilation = () => {
           ></div>
           <div className="absolute inset-0 dark-below-header opacity-70"></div>
           <div className="relative z-10 h-full flex items-center justify-center">
-            <h2 className="text-lg md:text-3xl font-bold text-white">Tailored Ventilation for Every Roof Type</h2>
+            <h2 className="text-base md:text-3xl font-bold text-white">Tailored Ventilation for Every Roof Type</h2>
           </div>
         </div>
 
-        <div className="container mx-auto px-6 md:px-10">
-          <p className="text-sm md:text-lg text-left  mx-auto text-gray-700 mb-4">
+        <div className="container mx-auto ">
+          <p className="text-xs md:text-lg text-center  mx-auto text-gray-700 mb-4 px-6 md:px-10">
             Whether your roof is made of shingles, metal, or tiles, our expert
             team provides customized ventilation solutions that seamlessly
             integrate with your roof's aesthetic and structural integrity.
           </p>
-          <div className="grid gap-8 grid-cols-3">
+          <div className="grid gap-8 grid-cols-3 px-2 md:px-10">
             {roofTypes.map((roof, index) => (
               <div
                 key={index}
@@ -184,7 +184,7 @@ const RoofVentilation = () => {
                 <img
                   src={roof.image}
                   alt={roof.alt}
-                  className="w-full h-32 md:h-48 object-cover shadow-md"
+                  className="w-full h-[15vh] md:h-48 object-cover shadow-md"
                 />
                 <h3 className="text-md md:text-xl font-semibold mt-3 md:mt-6">{roof.title}</h3>
               </div>
@@ -225,28 +225,28 @@ const RoofVentilation = () => {
         </div>
 
         <div className="px-10 md:px-[15vw] md:py-6 ">
-          <div className="flex flex-row relative -py-2 mt-6 md:mt-0 md:justify-between items-center faint-color rounded-t-xl md:rounded-xl ">
-            <div className="w-[35vw] md:h-auto aspect-square md:w-[40vh] ml-3 md:ml-16 relative z-10 py-2 md:py-3">
+          <div className="flex flex-row relative -py-2 mt-6 md:mt-0 md:justify-between items-center bg-dark-below-header bg-opacity-20 rounded-t-xl md:rounded-xl ">
+            <div className="w-[35vw] md:h-auto aspect-square md:w-[40vh] ml-3 md:ml-16 relative z-10 md:py-3">
               <img
                 src="/assets/images/ventilation/roof_installation.webp"
                 alt="Energy Efficiency"
                 className="rounded-lg shadow-lg"
               />
             </div>
-            <div className="w-2/5 md:w-1/2 md:pl-12 ml-4 md:mr-10">
-              <p className="text-[2.1vw] md:text-sm text-gray-700 mb-4">
+            <div className="w-2/5 md:w-1/2 md:pl-12 ml-4 md:mr-10 px-1 pt-3 md:pt-0">
+              <p className="text-[2vw] md:text-sm text-gray-700 md:mb-4 opacity-100">
                 Proper roof ventilation is essential for reducing your home's
                 cooling costs. According to the U.S. Department of Energy,
                 effective ventilation can lower cooling expenses by up to 10% by
                 allowing trapped hot air to escape, thereby decreasing the
                 reliance on air conditioning systems (
-                <a href="https://www.energy.gov/energysaver/ventilation"
+                <a href="https://www.energy.gov/energysaver/ventilation opacity-100"
                   className="text-blue">
                   Energy.gov
                 </a>
                 ).
               </p>
-              <p className=" hidden md:block md:w-full text-[2.1vw] md:text-sm text-gray-700 md:mr-10">
+              <p className=" hidden md:block md:w-full text-[2vw] md:text-sm text-gray-700 md:mr-10">
                 Implementing adequate roof ventilation not only creates a more
                 comfortable living environment but also contributes to lower
                 energy bills and extends the lifespan of your roofing materials.
@@ -258,8 +258,8 @@ const RoofVentilation = () => {
             </div>
             
           </div>
-          <div className=" faint-color rounded-b-xl">
-            <p className="text-[2.1vw] md:text-sm text-gray-700 md:hidden mb-3">
+          <div className=" bg-dark-below-header bg-opacity-20 rounded-b-xl px-1 ">
+            <p className="text-[2vw] md:text-sm text-gray-700 opacity-100 md:hidden mb-3">
                   Implementing adequate roof ventilation not only creates a more
                   comfortable living environment but also contributes to lower
                   energy bills and extends the lifespan of your roofing materials.

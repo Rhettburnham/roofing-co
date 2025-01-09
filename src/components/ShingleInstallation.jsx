@@ -143,7 +143,7 @@ const ShingleInstallation = () => {
       <div className=" bg-gradient-to-t from-faint-color to-white ">
         {/* SHINGLE OPTIONS SECTION */}
         <section className="my-4 px-[6vw] md:px-[10vw] ">
-          <h2 className="text-3xl font-bold text-center text-gray-800 pb-2">
+          <h2 className="text-[4vw] md:text-3xl font-bold text-center text-gray-800 pb-2">
             Explore Our Shingle Options
           </h2>
 

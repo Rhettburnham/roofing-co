@@ -176,7 +176,7 @@ const SidingShowcase = () => {
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 1 }}
-            className="text-center text-[8vw] md:text-[8vh] font-extrabold text-white tracking-wider"
+            className="text-center text-[10gvw] md:text-[8vh] font-extrabold text-white tracking-wider"
           >
             Siding Options
           </motion.h1>
