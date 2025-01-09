@@ -202,7 +202,7 @@ const BasicMap = () => {
       <div className="pb-2">
 
           <div className="flex justify-start pl-11 ">
-            <h1 className="text-[3vh] md:text-[5vh] font-normal text-gray-200/50 text-center font-serif bg-gradient-to-t from-transparent to-90% to-red-700">
+            <h1 className="text-[3vh] md:text-[5vh] font-normal text-gray-200/50 text-center font-serif ">
               Are we in your area?
             </h1>
           </div>
