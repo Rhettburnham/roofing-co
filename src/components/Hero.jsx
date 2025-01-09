@@ -231,10 +231,10 @@ const Hero = () => {
   };
 
   return (
-    <section className="h-[60vh] md:h-[75.5vh] overflow-hidden">
+    <section className="h-[48vh] md:h-[75.5vh] overflow-hidden">
       <div className="h-[30vh] md:h-[35vh] absolute top-0 left-0 right-0 bg-gradient-to-b from-dark-below-header from-60% to-transparent z-10"></div>
       {/* The top logo and hero split remains unchanged */}
-      <div className="relative w-full h-[7.5vh] z-20">
+      <div className="relative w-full h-[2.5vh] md:h-[7.5vh] z-20">
         <div className="relative flex flex-row items-center justify-center ">
           <img
             src="assets/images/clipped-cowboy.png"
@@ -242,7 +242,7 @@ const Hero = () => {
             className="w-[20vw] md:w-[17vh] h-auto mr-5 md:mr-10 "
             style={{ filter: "invert(0)" }}
           />
-          <div className="relative flex flex-col items-center justify-center  z-10 -space-y-[3vh] md:-space-y-[5vh]">
+          <div className="relative flex flex-col items-center justify-center  z-10 -space-y-[1vh] md:-space-y-[5vh]">
             <span
               className="
                 text-[9vw] 
@@ -258,10 +258,9 @@ const Hero = () => {
             <span
               className="
                 text-[4vw] 
-                md:text-[3.5vh] 
-              
-
-                mr-[15vw] 
+                md:text-[3.5vh]
+                mr-[10vw]
+                md:mr-[15vw] 
                 text-left 
                 drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]
                 [ -webkit-text-stroke:1px_black ]

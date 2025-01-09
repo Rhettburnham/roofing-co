@@ -102,15 +102,15 @@ const StatItem = ({ icon, title, value }) => {
   }, [value]);
 
   return (
-    <div className="flex items-center space-x-3 pt-5">
-      <div className="text-[8.5vh] text-dark_button flex-shrink-0  text-hover-color/90 ">
+    <div className="flex items-center space-x-3 ">
+      <div className=" text-[5.5vh] md:text-[8.5vh] text-dark_button flex-shrink-0  text-gray-200/90 ">
         {icon}
       </div>
       <div>
-        <p className="text-xl font-semibold text-yellow-600">
+        <p className="text-base md:text-xl font-semibold text-yellow-600">
           {count}
         </p>
-        <p className="text-sm font-semibold text-white">
+        <p className="text-[3vw] md:text-sm font-semibold text-white">
           {title}
         </p>
       </div>
@@ -208,7 +208,7 @@ const BasicMap = () => {
           </div>
 
 
-        <div className="relative flex flex-col md:flex-row gap-4 px-10 md:px-8 h-[80vh] md:h-[45vh]">
+        <div className="relative flex flex-col md:flex-row gap-4 px-4 md:px-8 h-[80vh] md:h-[45vh]">
           {/* Left Column: Map */}
           <div className="flex flex-col">
             <div

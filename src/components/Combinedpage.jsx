@@ -361,11 +361,11 @@ const CombinedPage = () => {
           Services
         </h2>
         {/* (4) SERVICES Buttons (staggered exit/enter) */}
-        <div className="absolute bottom-[12vh] left-1/2 transform -translate-x-1/2 z-30">
+        <div className="absolute bottom-[10vh] left-1/2 transform -translate-x-1/2 z-30">
           <div className=" flex flex-row ">
             <button
               onClick={handleResidentialClick}
-              className={`flex items-center px-4 py-2 rounded-full border-1 mx-2 text-md
+              className={`flex items-center px-2 md:px-4  md:py-2 rounded-full border-1 mx-2 text-md
                 ${
                   !isCommercial
                     ? "bg-dark-below-header text-gray-50 border-gray-800 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
@@ -383,12 +383,14 @@ const CombinedPage = () => {
                   "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
               }}
             >
-              <Home className="mr-2" size={25} />
-              Residential
+              <Home className="mr-2 "  size={16}/>
+               <p className=" text-[3vw]">
+                Residential
+              </p>
             </button>
             <button
               onClick={handleCommercialClick}
-              className={`flex items-center px-4 py-2 text-lg rounded-full border-1 mx-2 
+              className={`flex items-center px-2 md:px-4 py-1 md:py-2 text-lg rounded-full border-1 mx-2 
                 ${
                   isCommercial
                     ? "bg-dark-below-header text-gray-50 border-gray-800 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
@@ -406,8 +408,10 @@ const CombinedPage = () => {
                   "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
               }}
             >
-              <Building2 className="mr-2" size={25} />
-              Commercial
+              <Building2 className="mr-2 " size={16}  />
+                <p className=" text-[3vw]">
+                  Commercial
+                </p>
             </button>
           </div>
         </div>
@@ -427,13 +431,13 @@ const CombinedPage = () => {
                 <motion.div
                   key={service.title}
                   variants={itemVariants}
-                  className="flex flex-col items-center -mt-[2vh]"
+                  className="flex flex-col items-center -mt-[7vh] md:-mt-[2vh]"
                 >
                   <Link to={service.link}>
                     <div
-                      className="flex-col dark_button w-24 h-24 rounded-full 
+                      className="flex-col dark_button w-16 h-16 md:w-24 md:h-24 rounded-full 
                       flex items-center justify-center
-                       text-white text-[8vw]
+                       text-white text-[5vw]
                        hover:text-black hover:bg-gray-200 transition drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"
                       onMouseEnter={(e) => {
                         e.currentTarget.style.boxShadow =
@@ -444,7 +448,7 @@ const CombinedPage = () => {
                       }}
                     >
                       {React.createElement(service.icon)}
-                      <h3 className="mt-1 text-white text-sm font-bold drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
+                      <h3 className="mt-1 text-white text-[3vw] md:text-sm font-bold drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
                         {service.title}
                       </h3>
                     </div>

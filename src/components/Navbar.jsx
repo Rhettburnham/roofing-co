@@ -14,7 +14,7 @@ const Navbar = () => {
 
   // Refs for logos
   const cowboyRef = useRef(null); // Cowboy logo (home page only)
-  const logoRef = useRef(null);   // Main logo (all other pages)
+  const logoRef = useRef(null); // Main logo (all other pages)
 
   const location = useLocation();
 
@@ -40,12 +40,12 @@ const Navbar = () => {
   useEffect(() => {
     if (location.pathname === "/") {
       // Home Page
-      gsap.to(cowboyRef.current, { opacity: 1, duration: 1 });
-      gsap.to(logoRef.current, { opacity: 0, duration: 1 });
+      gsap.to(cowboyRef.current, { opacity: 1, duration: 0 });
+      gsap.to(logoRef.current, { opacity: 0, duration: 0.5 });
     } else {
       // Other Pages
       gsap.to(cowboyRef.current, { opacity: 0, duration: 1 });
-      gsap.to(logoRef.current, { opacity: 1, duration: 1 });
+      gsap.to(logoRef.current, { opacity: 1, duration: 0.5 });
     }
   }, [location]);
 
@@ -57,9 +57,9 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 w-full h-16 md::-h-[8vh] flex items-center justify-center bg-dark-below-header px-5 md:px-10 ">
+      <nav className="sticky top-0 z-50 w-full h-16 flex items-center justify-center bg-dark-below-header px-5 md:px-10 ">
         {/* Cowboy Logo (Home page only) */}
-        <div className="absolute left-8 flex items-center">
+        <div className="absolute left-4 md:left-8 flex items-center">
           <Link to="/" className="flex items-center">
             <img
               ref={cowboyRef}
@@ -72,14 +72,13 @@ const Navbar = () => {
         </div>
 
         {/* Main Logo (Other pages) */}
-        <div className="absolute left-8 flex items-center">
+        <div className="absolute left-4 md:left-8 flex items-center">
           <Link to="/" className="flex items-center">
             <img
               ref={logoRef}
               src="/assets/images/logo.svg"
               alt="Paramount Roofing Logo"
               className="h-12 opacity-0 transition-opacity duration-500"
-              
             />
           </Link>
         </div>

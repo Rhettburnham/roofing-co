@@ -193,10 +193,10 @@ const RoofCoating = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             {/* Left Column: Description and Advantages */}
             <div className="space-y-2 md:space-y-3">
-              <h3 className="text-[5vw] md:text-2xl font-semibold text-gray-800">
+              <h3 className="text-[5vw] md:text-xl font-semibold text-gray-800">
                 {roofCoatings[selectedCoatingIndex].name}
               </h3>
-              <p className="z-10 text-[3vw] md:text-md text-gray-700">
+              <p className="z-10 text-[3vw] md:text-base text-gray-700">
                 {roofCoatings[selectedCoatingIndex].description}
               </p>
 
@@ -251,7 +251,7 @@ const RoofCoating = () => {
               <img
                 src={roofCoatings[selectedCoatingIndex].image.src}
                 alt={roofCoatings[selectedCoatingIndex].image.alt}
-                className="w-full h-96 object-cover rounded-lg shadow-lg"
+                className="w-full h-[30vh] md:h-96 object-cover rounded-lg shadow-lg"
               />
               <p className="text-sm text-gray-600 text-center">
                 {roofCoatings[selectedCoatingIndex].image.caption}
@@ -290,16 +290,16 @@ const RoofCoating = () => {
               whileInView={{ scale: 1, opacity: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 1 }}
-              className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 md:mb-6"
+              className="text-lg sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 md:mb-6"
             >
               Ready to Get Started?
             </motion.h2>
-            <p className="text-lg md:text-xl mb-8 text-white">
+            <p className="text-base md:text-xl mb-8 text-white">
               Contact us today for a free roof inspection and personalized repair plan.
             </p>
             <HashLink
               to="/#contact"
-              className="inline-block px-8 py-4 bg-white text-gray-900 font-semibold rounded-full hover:bg-gray-100 transition duration-300"
+              className="inline-block px-4 py-2 md:px-8 md:py-4 bg-white text-gray-900 font-semibold rounded-full hover:bg-gray-100 transition duration-300"
             >
               Schedule an Inspection
             </HashLink>
