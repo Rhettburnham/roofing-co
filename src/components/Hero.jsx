@@ -253,7 +253,7 @@ const Hero = () => {
                 [ -webkit-text-stroke:6px_black ] font-rye  font-normal font-ultra-condensed
               "
             >
-              CowBoys
+              COWBOYS
             </span>
             <span
               className="

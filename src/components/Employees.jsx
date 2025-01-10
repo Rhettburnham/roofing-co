@@ -162,7 +162,7 @@ masterTimeline
 
       {/* Employees carousel */}
       <div className="relative employee-section flex flex-col items-center justify-center px-6 overflow-hidden">
-        <div className="w-full max-w-screen-lg mt-2">
+        <div className="w-full max-w-screen-lg ">
           <div
             className="flex transition-transform"
             style={{

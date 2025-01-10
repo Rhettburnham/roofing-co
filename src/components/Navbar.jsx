@@ -40,12 +40,12 @@ const Navbar = () => {
   useEffect(() => {
     if (location.pathname === "/") {
       // Home Page
-      gsap.to(cowboyRef.current, { opacity: 1, duration: 0 });
+      gsap.to(cowboyRef.current, { opacity: 1, duration: .5, delay: .5 });
       gsap.to(logoRef.current, { opacity: 0, duration: 0.5 });
     } else {
       // Other Pages
-      gsap.to(cowboyRef.current, { opacity: 0, duration: 1 });
-      gsap.to(logoRef.current, { opacity: 1, duration: 0.5 });
+      gsap.to(cowboyRef.current, { opacity: 0, duration: 0.5 });
+      gsap.to(logoRef.current, { opacity: 1, duration: 0.5,  delay: .5 });
     }
   }, [location]);
 

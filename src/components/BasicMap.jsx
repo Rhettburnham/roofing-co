@@ -146,8 +146,8 @@ const MapInteractionHandler = ({ mapActive }) => {
 
 const BasicMap = () => {
   const mapRef = useRef();
-  const [center] = useState({ lat: 33.800762207, lng: -84.308343 });
-  const ZOOM_LEVEL = 12;
+  const [center] = useState({ lat: 33.422676, lng: -84.640974 });
+  const ZOOM_LEVEL = 11;
 
   const serviceHours = [
     { day: "Mon", time: "08:00 AM - 6:00 PM" },
@@ -229,7 +229,7 @@ const BasicMap = () => {
                   />
                   <Circle
                     center={center}
-                    radius={4047}
+                    radius={6047}
                     pathOptions={{
                       color: "black",
                       weight: 1,
@@ -260,11 +260,11 @@ const BasicMap = () => {
 
                 {/* Bottom address/phone overlay */}
                 <div className="absolute bottom-0 w-full bg-hover-color text-center text-gray-200 py-1 z-10">
-                  <div className="font-bold  text-[3vw] md:text-[2.5vh] font-serif">
-                    1575 Clairmont Rd, Decatur, GA 30033
+                  <div className="font-semibold  text-[4vw] md:text-[2.5vh] font-serif">
+                    40 Tipperary Trail, Sharpsburg, GA 30277
                   </div>
                   <div className=" text-[3vw] text-gray-200 font-bold md:text-[2vh] font-serif">
-                    <a href="tel:4422363783">📞 (442)236-3783</a>
+                    <a href="tel:4422363783">📞 (770) 880 1319 </a>
                   </div>
                 </div>
               </div>
@@ -287,7 +287,7 @@ const BasicMap = () => {
                     items-center 
                     justify-center 
                     text-white 
-                    text-2xl 
+                    text-[6vw] 
                     md:text-[5vh]
                     transition-all 
                     duration-300 

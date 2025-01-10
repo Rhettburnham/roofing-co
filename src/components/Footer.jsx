@@ -13,62 +13,63 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="bg-gray-800 py-8">
+    <footer className="bg-gray-800 py-2 md:py-8">
       <div className="container mx-auto px-4">
         {/* Top Section: Company Info, Quick Links, Contact Info */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-8">
           {/* Company Information */}
           <div>
-            <h5 className="text-xl font-semibold text-white mb-4">Rhett's Roofing</h5>
-            <p className="text-gray-400">
-              Rhett's Roofing is committed to providing quality roofing services.
+            <h5 className="text-base md:text-xl font-semibold text-white mb-1 md:mb-2">Cowboys Construction</h5>
+            <p className="text-gray-400 text-xs md:text-base">
+              Committed to providing quality roofing services.
               We specialize in residential and commercial roofing solutions.
             </p>
           </div>
 
           {/* Quick Links */}
-          <div>
-            <h5 className="text-xl font-semibold text-white mb-4">Quick Links</h5>
-            <ul className="text-gray-400 space-y-2">
-              {quickLinks.map((link, index) => {
-                // Determine if the link is an in-page anchor
-                const isHashLink = link.href.startsWith('/#');
-                // Choose the appropriate Link component
-                const LinkComponent = isHashLink ? HashLink : Link;
 
-                return (
-                  <li key={index}>
-                    <LinkComponent
-                      to={link.href}
-                      className="hover:text-white transition duration-300"
-                    >
-                      {link.label}
-                    </LinkComponent>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
+            <div>
+              <h5 className="text-base md:text-xl font-semibold text-white ">Quick Links</h5>
+              <ul className="text-gray-400  md:space-y-1">
+                {quickLinks.map((link, index) => {
+                  // Determine if the link is an in-page anchor
+                  const isHashLink = link.href.startsWith('/#');
+                  // Choose the appropriate Link component
+                  const LinkComponent = isHashLink ? HashLink : Link;
+
+                  return (
+                    <li key={index}>
+                      <LinkComponent
+                        to={link.href}
+                        className="hover:text-white transition duration-300 text-xs md:text-base"
+                      >
+                        {link.label}
+                      </LinkComponent>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
 
           {/* Contact Information */}
           <div>
-            <h5 className="text-xl font-semibold text-white mb-4">Contact Us</h5>
-            <p className="text-gray-400">
+            <h5 className="text-base md:text-xl font-semibold text-white ">Contact Us</h5>
+            <p className="text-xs md:text-base text-gray-400">
               1575 Clairmont Rd<br />
               Decatur, GA 30033
             </p>
-            <div className="text-gray-400">
+            <div className="text-gray-400 text-xs md:text-base">
               <a href="tel:4422363783">Phone: (442)236-3783</a>
             </div>
-            <div className="text-gray-400">
+            <div className="text-xs md:text-base text-gray-400">
               <a href="email:Rhett.Burnham@emory.edu">Email: Rhett.Burnham@emory.edu</a>
             </div>
           </div>
         </div>
 
         {/* Bottom Section: Social Media Buttons and Copyright */}
-        <div className="flex flex-col md:flex-row justify-between items-center mt-8">
-          <div className="text-gray-400 text-center md:text-left">
+        <div className="flex flex-col md:flex-row justify-between items-center mt-2 md:mt-4">
+          <div className="text-gray-400 text-xs md:text-base text-center md:text-left">
             <p>&copy; 2024 Rhett's Roofing. All Rights Reserved.</p>
           </div>
 
