@@ -1,16 +1,47 @@
 /** @type {import('tailwindcss').Config} */
-export default {
+
+const fs = require("fs");
+const path = require("path");
+
+// Attempt to read your color_extractor output JSON:
+let customColors = {
+  "faint-color": "#E0F7FA",
+  "hover-color": "#434358",
+  "dark-below-header": "#6a0202",
+}; // defaults
+
+const jsonPath = path.join(__dirname, "public", "data", "colors_output.json");
+try {
+  const raw = fs.readFileSync(jsonPath, "utf-8");
+  const parsed = JSON.parse(raw);
+  // Expecting an object with keys "faint-color", "hover-color", "dark-below-header"
+  if (
+    typeof parsed === "object" &&
+    parsed["faint-color"] &&
+    parsed["hover-color"] &&
+    parsed["dark-below-header"]
+  ) {
+    customColors = parsed;
+    console.log("[INFO] Using colors from colors_output.json:", customColors);
+  } else {
+    console.log(
+      "[WARN] colors_output.json missing required keys. Using defaults."
+    );
+  }
+} catch (err) {
+  console.log("[WARN] Could not read colors_output.json. Using defaults.", err);
+}
+
+module.exports = {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
       fontFamily: {
         rye: ["Rye", "serif"],
       },
-      
       colors: {
-        "faint-color": "#E0F7FA",
-        "hover-color": "#434358",
-        "dark-below-header": "#6a0202",
+        // Just use the 3 custom keys from the JSON
+        ...customColors,
         blue: "#2997FF",
         gray: {
           DEFAULT: "#86868b",
@@ -46,47 +77,20 @@ export default {
       });
 
       // Custom Font Stretch Utilities
-      addUtilities({
-        // Ultra Condensed
-        ".font-ultra-condensed": {
-          "font-stretch": "ultra-condensed",
+      addUtilities(
+        {
+          ".font-ultra-condensed": { "font-stretch": "ultra-condensed" },
+          ".font-extra-condensed": { "font-stretch": "extra-condensed" },
+          ".font-condensed": { "font-stretch": "condensed" },
+          ".font-semi-condensed": { "font-stretch": "semi-condensed" },
+          ".font-normal-stretch": { "font-stretch": "normal" },
+          ".font-semi-expanded": { "font-stretch": "semi-expanded" },
+          ".font-expanded": { "font-stretch": "expanded" },
+          ".font-extra-expanded": { "font-stretch": "extra-expanded" },
+          ".font-ultra-expanded": { "font-stretch": "ultra-expanded" },
         },
-        // Extra Condensed
-        ".font-extra-condensed": {
-          "font-stretch": "extra-condensed",
-        },
-        // Condensed
-        ".font-condensed": {
-          "font-stretch": "condensed",
-        },
-        // Semi Condensed
-        ".font-semi-condensed": {
-          "font-stretch": "semi-condensed",
-        },
-        // Normal
-        ".font-normal-stretch": {
-          "font-stretch": "normal",
-        },
-        // Semi Expanded
-        ".font-semi-expanded": {
-          "font-stretch": "semi-expanded",
-        },
-        // Expanded
-        ".font-expanded": {
-          "font-stretch": "expanded",
-        },
-        // Extra Expanded
-        ".font-extra-expanded": {
-          "font-stretch": "extra-expanded",
-        },
-        // Ultra Expanded
-        ".font-ultra-expanded": {
-          "font-stretch": "ultra-expanded",
-        },
-      }, {
-        // Specify the variants you want to generate (responsive, hover, etc.)
-        variants: ['responsive'],
-      });
+        { variants: ["responsive"] }
+      );
     },
   ],
 };

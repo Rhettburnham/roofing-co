@@ -14,40 +14,22 @@ const BeforeAfter = () => {
 
   const boxes = [
     {
-      before: "/assets/images/before1ex.png",
-      after: "/assets/images/after1ex.png",
+      before: "/assets/images/beforeafter/a1.jpeg",
+      after: "/assets/images/beforeafter/b1.JPG",
       shingle: "Asphalt Shingle",
       sqft: "2000 sqft",
     },
     {
-      before: "/assets/images/before2ex.png",
-      after: "/assets/images/after2ex.png",
+      before: "/assets/images/beforeafter/b2.jpeg",
+      after: "/assets/images/beforeafter/a2.jpeg",
       shingle: "Metal Roofing",
       sqft: "1800 sqft",
     },
     {
-      before: "/assets/images/before3ex.png",
-      after: "/assets/images/after3ex.png",
+      before: "/assets/images/beforeafter/b3.jpeg",
+      after: "/assets/images/beforeafter/a3.jpeg",
       shingle: "Composite Shingle",
       sqft: "2200 sqft",
-    },
-    {
-      before: "/assets/images/before4ex.png",
-      after: "/assets/images/after4ex.png",
-      shingle: "Slate Shingle",
-      sqft: "2500 sqft",
-    },
-    {
-      before: "/assets/images/before4ex.png",
-      after: "/assets/images/after4ex.png",
-      shingle: "Wood Shingle",
-      sqft: "2100 sqft",
-    },
-    {
-      before: "/assets/images/before4ex.png",
-      after: "/assets/images/after4ex.png",
-      shingle: "Tile Shingle",
-      sqft: "2300 sqft",
     },
   ];
 
@@ -71,7 +53,7 @@ const BeforeAfter = () => {
         trigger: headerRef.current,
         start: "bottom 95%",
         toggleActions: "play none none none",
-        markers: false
+        markers: false,
       },
     });
 
@@ -172,48 +154,53 @@ const BeforeAfter = () => {
       // Set initial states with proper 3D transforms
       gsap.set(cardElement, {
         perspective: 1000,
-        transformStyle: "preserve-3d"
+        transformStyle: "preserve-3d",
       });
 
       gsap.set([beforeImage, afterImage], {
         backfaceVisibility: "hidden",
         position: "absolute",
         width: "100%",
-        height: "100%"
+        height: "100%",
       });
 
       // Initial positions
       gsap.set(beforeImage, {
         rotationY: 0,
-        zIndex: 2
+        zIndex: 2,
       });
 
       gsap.set(afterImage, {
         rotationY: 180,
-        zIndex: 1
+        zIndex: 1,
       });
 
       // Create the flip timeline
-      gsap.timeline({
-        scrollTrigger: {
-          trigger: box,
-          start: "top center",
-          end: "bottom center",
-          scrub: 0.5,
-          toggleActions: "restart pause reverse pause",
-          markers: false
-        }
-      })
-      .to(beforeImage, {
-        rotationY: -180,
-        duration: 1,
-        ease: "none"
-      })
-      .to(afterImage, {
-        rotationY: 0,
-        duration: 1,
-        ease: "none"
-      }, 0); // Start at same time as before image
+      gsap
+        .timeline({
+          scrollTrigger: {
+            trigger: box,
+            start: "top 60%",
+            end: "top 40%",
+            scrub: 0.5,
+            toggleActions: "restart pause reverse pause",
+            markers: false,
+          },
+        })
+        .to(beforeImage, {
+          rotationY: -180,
+          duration: 1,
+          ease: "none",
+        })
+        .to(
+          afterImage,
+          {
+            rotationY: 0,
+            duration: 1,
+            ease: "none",
+          },
+          0
+        ); // Start at same time as before image
     });
 
     return () => {
@@ -277,9 +264,9 @@ const BeforeAfter = () => {
                 >
                   <div
                     className="card w-[40vw] md:w-[25vw] aspect-[4/3]"
-                    style={{ 
+                    style={{
                       transformStyle: "preserve-3d",
-                      position: "relative"
+                      position: "relative",
                     }}
                   >
                     <img

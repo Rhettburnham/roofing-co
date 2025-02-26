@@ -40,12 +40,12 @@ const Navbar = () => {
   useEffect(() => {
     if (location.pathname === "/") {
       // Home Page
-      gsap.to(cowboyRef.current, { opacity: 1, duration: .5, delay: .5 });
+      gsap.to(cowboyRef.current, { opacity: 1, duration: 0.5, delay: 0.5 });
       gsap.to(logoRef.current, { opacity: 0, duration: 0.5 });
     } else {
       // Other Pages
       gsap.to(cowboyRef.current, { opacity: 0, duration: 0.5 });
-      gsap.to(logoRef.current, { opacity: 1, duration: 0.5,  delay: .5 });
+      gsap.to(logoRef.current, { opacity: 1, duration: 0.5, delay: 0.5 });
     }
   }, [location]);
 
@@ -57,34 +57,32 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 w-full h-16 flex items-center justify-center bg-dark-below-header px-5 md:px-10 ">
-        {/* Cowboy Logo (Home page only) */}
-        <div className="absolute left-4 md:left-8 flex items-center">
+      <nav className="sticky top-0 z-50 w-full h-16 flex items-center justify-between bg-dark-below-header px-5 md:px-10">
+        {/* Left: Logo */}
+        <div className="flex items-center">
           <Link to="/" className="flex items-center">
-            <img
-              ref={cowboyRef}
-              src="/assets/images/clipped-cowboy.png"
-              alt="Cowboy Logo"
-              className="h-12 opacity-0 transition-opacity duration-500"
-              style={{ filter: "invert(0)" }}
-            />
+            {location.pathname === "/" ? (
+              <img
+                ref={cowboyRef}
+                src="/assets/images/clipped-cowboy.png"
+                alt="Cowboy Logo"
+                className="h-8 md:h-12 opacity-0 transition-opacity duration-500"
+                style={{ filter: "invert(1)" }}
+              />
+            ) : (
+              <img
+                ref={logoRef}
+                src="/assets/images/logo.svg"
+                alt="Paramount Roofing Logo"
+                className="h-8 md:h-12 opacity-0 transition-opacity duration-500"
+                style={{ filter: "invert(1)" }}
+              />
+            )}
           </Link>
         </div>
 
-        {/* Main Logo (Other pages) */}
-        <div className="absolute left-4 md:left-8 flex items-center">
-          <Link to="/" className="flex items-center">
-            <img
-              ref={logoRef}
-              src="/assets/images/logo.svg"
-              alt="Paramount Roofing Logo"
-              className="h-12 opacity-0 transition-opacity duration-500"
-            />
-          </Link>
-        </div>
-
-        {/* Navigation Links (Desktop) */}
-        <div className="hidden md:flex space-x-[6vw] z-10">
+        {/* Center: Navigation Links (Desktop) */}
+        <div className="hidden md:flex absolute  left-1/2  -translate-x-1/2 space-x-[6vw] z-10">
           {navLinks.map((nav) => (
             <HashLink
               key={nav.name}
@@ -97,8 +95,8 @@ const Navbar = () => {
           ))}
         </div>
 
-        {/* Hamburger Menu (Mobile) */}
-        <div className="flex items-center md:hidden absolute right-5">
+        {/* Right: Hamburger Menu (Mobile) */}
+        <div className="flex items-center md:hidden">
           <button
             onClick={() => setIsOpen(!isOpen)}
             className="focus:outline-none"
@@ -123,14 +121,14 @@ const Navbar = () => {
 
       {/* Mobile Menu */}
       {isOpen && (
-        <div className="md:hidden flex flex-col items-center w-full fixed top-16 left-0 z-50 bg-dark-below-header shadow-lg">
+        <div className="md:hidden flex flex-col items-center justify-center w-full fixed top-16 left-0 z-50 bg-dark-below-header shadow-lg">
           {navLinks.map((nav) => (
             <HashLink
               key={nav.name}
               smooth
               to={nav.href}
               onClick={() => setIsOpen(false)}
-              className="px-5 py-3 text-sm text-white hover:text-dark-below-header transition-all"
+              className="px-5 py-3 text-sm text-white hover:text-gray-300 transition-all"
             >
               {nav.name}
             </HashLink>

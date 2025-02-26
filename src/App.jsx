@@ -1,126 +1,238 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+// App.jsx
+import React, { useState, useEffect } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useLocation, // NEW: Import useLocation
+} from "react-router-dom";
+
 import Navbar from "./components/Navbar";
-import BasicMap from "./components/BasicMap"; // Import the Map component
-import Booking from "./components/Booking";
 import Footer from "./components/Footer";
-import Employees from "./components/Employees";
-import About from "./components/About"; // Import your new About component
-import Diagnose from "./components/Diagnose";
-import RoofRepair from "./components/RoofRepair";
+import About from "./components/About";
 import Inspection from "./components/Inspection";
-import RoofMaintenance from "./components/RoofMaintenance";
-import AsphaltShingleInstallation from "./components/AsphaltShingleInstallation";
 import RoofCoating from "./components/RoofCoating";
-import SaggingRoofLine from "./components/SaggingRoofLine";
-import LeaksWaterDamage from "./components/LeaksWaterDamage";
-import RoofingMaterialDeterioration from "./components/RoofingMaterialDeterioration";
-import MoldAlgaeGrowth from "./components/MoldAlgaeGrowth";
 import GutterRelated from "./components/GutterRelated";
-import PoorInstallation from "./components/PoorInstallation";
-import Guttering from "./components/Guttering";
 import ShingleInstallation from "./components/ShingleInstallation";
 import RoofVentilationInstallation from "./components/RoofVentilationInstallation";
-import ServiceIssue from "./components/ServiceIssue";
-import Services from "./components/Services";
-import BeforeAfter from "./components/BeforeAfter";
-import CombinedPage from "./components/Combinedpage";
-import Hero from "./components/Hero";
-import RichTextSection from "./components/RichTextSection";
-import BuiltUpRoofing from "./components/BuiltUpRoofing";
-import SidingShowcase from "./components/SidingShowcase";
-import MetalRoofs from "./components/MetalRoofs";
-import SinglePlySystems from "./components/SinglePlySystems";
+import MergedRoofingInfoPage from "./components/MergedRoofingInfoPage";
+
+// --- Main Page Blocks ---
+import HeroBlock from "./components/MainPageBlocks/HeroBlock";
+import RichTextBlock from "./components/MainPageBlocks/RichTextBlock";
+import ButtonBlock from "./components/MainPageBlocks/ButtonBlock";
+import BasicMapBlock from "./components/MainPageBlocks/BasicMapBlock";
+import BookingBlock from "./components/MainPageBlocks/BookingBlock";
+import CombinedPageBlock from "./components/MainPageBlocks/CombinedPageBlock";
+import BeforeAfterBlock from "./components/MainPageBlocks/BeforeAfterBlock";
+import EmployeesBlock from "./components/MainPageBlocks/EmployeesBlock";
+
+import ChimneyCapsService from "./components/ChimneyCapsService";
+import ConcreteWorkService from "./components/ConcreteWorkService";
+import DecksService from "./components/DecksService";
+import UnderDeckWaterproofService from "./components/UnderDeckWaterproofService";
+import ExteriorPaintService from "./components/ExteriorPaintService";
+
+import ServicePage from "./components/ServicePage";
+import OneForm from "./components/OneForm";
+
+// --- Forms & Editors ---
+import ParentForm from "./components/ParentForm";
+import ServiceEditPage from "./components/ServiceEditPage"; // Import the new one-page editor
+
+import Residential_service_1 from "./components/Services/residential/residential_service_1";
+import Residential_service_2 from "./components/Services/residential/Residential_service_2";
+import Residential_service_3 from "./components/Services/residential/Residential_service_3";
+import Residential_service_4 from "./components/Services/residential/Residential_service_4";
+import CommercialService1 from "./components/Services/commercial/commercial_service_1";
+import CommercialService2 from "./components/Services/commercial/commercial_service_2";
+import CommercialService3 from "./components/Services/commercial/commercial_service_3";
+import CommercialService4 from "./components/Services/commercial/commercial_service_4";
+
+import Hero from "./components/Test";
+import LoadingScreen from "./components/LoadingScreen";
 import useScrollRestoration from "./components/usescrollrestoration";
 
+function ScrollRestoration() {
+  useScrollRestoration();
+  return null;
+}
+
+// NEW: Create AppRoutes to wrap Routes with loader logic
+const AppRoutes = ({
+  heroConfig,
+  richTextConfig,
+  buttonconfig,
+  mapConfig,
+  bookingConfig,
+  combinedPageCfg,
+  beforeAfterConfig,
+  employeesConfig,
+}) => {
+  const location = useLocation();
+  const [showLoader, setShowLoader] = useState(false);
+
+  useEffect(() => {
+    setShowLoader(true);
+    const timer = setTimeout(() => setShowLoader(false), 600); // Adjust duration as needed
+    return () => clearTimeout(timer);
+  }, [location]);
+
+  return (
+    <>
+      {showLoader && <LoadingScreen />}
+      <Routes location={location} key={location.pathname}>
+        {/* Home page (read-only blocks) */}
+        <Route
+          path="/"
+          element={
+            <>
+              <section id="hero">
+                <HeroBlock heroconfig={heroConfig} readOnly />
+              </section>
+              <section>
+                <RichTextBlock richTextData={richTextConfig} readOnly />
+              </section>
+              <section>
+                <ButtonBlock buttonconfig={buttonconfig} readOnly/>
+              </section>
+              <section id="map">
+                <BasicMapBlock mapData={mapConfig} readOnly />
+              </section>
+              <section id="booking">
+                <BookingBlock bookingData={bookingConfig} readOnly />
+              </section>
+              <section id="services">
+                <CombinedPageBlock config={combinedPageCfg} readOnly />
+              </section>
+              <section>
+                <BeforeAfterBlock beforeAfterData={beforeAfterConfig} readOnly />
+              </section>
+              <section>
+                <EmployeesBlock employeesData={employeesConfig} readOnly />
+              </section>
+            </>
+          }
+        />
+
+        {/* Other routes */}
+        <Route path="/about" element={<About />} />
+        <Route
+          path="/Residential_service_1"
+          element={<Residential_service_1 />}
+        />
+        <Route
+          path="/Residential_service_2"
+          element={<Residential_service_2 />}
+        />
+        <Route
+          path="/Residential_service_3"
+          element={<Residential_service_3 />}
+        />
+        <Route
+          path="/Residential_service_4"
+          element={<Residential_service_4 />}
+        />
+        <Route path="/CommercialService1" element={<CommercialService1 />} />
+        <Route path="/CommercialService2" element={<CommercialService2 />} />
+        <Route path="/CommercialService3" element={<CommercialService3 />} />
+        <Route path="/CommercialService4" element={<CommercialService4 />} />
+        <Route path="/inspection" element={<Inspection />} />
+        <Route path="/roofcoating" element={<RoofCoating />} />
+        <Route path="/oneform" element={<OneForm />} />
+        <Route path="/gutterrelated" element={<GutterRelated />} />
+        <Route path="/shingleinstallation" element={<ShingleInstallation />} />
+        <Route
+          path="/ventilation"
+          element={<RoofVentilationInstallation />}
+        />
+        <Route
+          path="/mergedroofinginfopage"
+          element={<MergedRoofingInfoPage />}
+        />
+        <Route path="/chimney-caps" element={<ChimneyCapsService />} />
+        <Route path="/concrete-work" element={<ConcreteWorkService />} />
+        <Route path="/decks" element={<DecksService />} />
+        <Route
+          path="/underdeck"
+          element={<UnderDeckWaterproofService />}
+        />
+        <Route path="/exterior-paint" element={<ExteriorPaintService />} />
+        <Route path="/service/:category/:id" element={<ServicePage />} />
+        <Route path="/update-form" element={<ParentForm />} />
+        <Route path="/admin/service/edit" element={<ServiceEditPage />} />
+      </Routes>
+    </>
+  );
+};
+
 const App = () => {
+  // We now only fetch from combined_data.json
+  const dataUrl = "/data/combined_data.json";
+
+  const [pageData, setPageData] = useState(null);
+  const [error, setError] = useState(null);
+
+  // Fetch the JSON on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await fetch(dataUrl);
+        if (!res.ok) {
+          throw new Error(`Failed to load ${dataUrl}`);
+        }
+        const data = await res.json();
+        setPageData(data);
+      } catch (err) {
+        console.error(err);
+        setError(err.message);
+      }
+    };
+    fetchData();
+  }, [dataUrl]);
+
+  if (!pageData && !error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Loading main page data...</p>
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-red-600">Error: {error}</p>
+      </div>
+    );
+  }
+
+  // Extract blocks from pageData
+  const heroConfig        = pageData.hero         || {};
+  const richTextConfig    = pageData.richText     || {};
+  const buttonconfig      = pageData.button       || {};
+  const mapConfig         = pageData.map          || {};
+  const bookingConfig     = pageData.booking      || {};
+  const combinedPageCfg   = pageData.combinedPage || {};
+  const beforeAfterConfig = pageData.beforeAfter  || {};
+  const employeesConfig   = pageData.employees    || {};
+
   return (
     <Router>
-      <ScrollRestoration /> {/* Use the custom hook inside a component */}
+      <ScrollRestoration />
+      <Navbar />
       <main className="bg-white">
-        <Navbar /> {/* Navbar stays visible on all pages */}
-        <Routes>
-          {/* Main home page route */}
-          <Route
-            path="/"
-            element={
-              <>
-                <section id="hero">
-                  <Hero />
-                </section>
-                <section id="">
-                  <RichTextSection />
-                </section>
-                <section id="map">
-                  <BasicMap />
-                </section>
-                <section id="book">
-                  <Booking />
-                </section>
-                <section>
-                  <CombinedPage />
-                </section>
-                <section id="">
-                  <BeforeAfter />
-                </section>
-                <section id="employees">
-                  <Employees />
-                </section>
-                {/* <section id ="">
-                  <ServiceIssue />
-                </section> */}
-              </>
-            }
-          />
-          {/* Other routes */}
-          <Route path="/about" element={<About />} />
-          <Route path="/booking" element={<Booking />} />
-          <Route path="/diagnose" element={<Diagnose />} />
-          <Route path="/inspection" element={<Inspection />} />
-          <Route path="/roofmaintenance" element={<RoofMaintenance />} />
-          <Route path="/roofrepair" element={<RoofRepair />} />
-          <Route
-            path="/asphaltshingleinstallation"
-            element={<AsphaltShingleInstallation />}
-          />
-          <Route path="/roofcoating" element={<RoofCoating />} />
-          <Route path="/saggingroofline" element={<SaggingRoofLine />} />
-          <Route path="/leakswaterdamage" element={<LeaksWaterDamage />} />
-          <Route
-            path="/roofingmaterialdeterioration"
-            element={<RoofingMaterialDeterioration />}
-          />
-          <Route path="/moldalgaegrowth" element={<MoldAlgaeGrowth />} />
-          <Route path="/gutterrelated" element={<GutterRelated />} />
-          <Route path="/poorinstallation" element={<PoorInstallation />} />
-          <Route path="/guttering" element={<Guttering />} />
-          <Route
-            path="/shingleinstallation"
-            element={<ShingleInstallation />}
-          />
-          <Route
-            path="/singleplysystems"
-            element={<SinglePlySystems />}
-          />
-                    <Route
-            path="/metalroofs"
-            element={<MetalRoofs />}
-          />
-                    <Route
-            path="/sidingshowcase"
-            element={<SidingShowcase />}
-          />
-                    <Route
-            path="/builtuproofing"
-            element={<BuiltUpRoofing />}
-          />
-                    <Route
-            path="/ventilation"
-            element={<RoofVentilationInstallation />}
-          />
-          <Route path="/services" element={<Services />} />
-          <Route path="/packages" element={<ServiceIssue />} />
-        </Routes>
+        {/* Replace your inline Routes with AppRoutes */}
+        <AppRoutes
+          heroConfig={heroConfig}
+          richTextConfig={richTextConfig}
+          buttonconfig={buttonconfig}
+          mapConfig={mapConfig}
+          bookingConfig={bookingConfig}
+          combinedPageCfg={combinedPageCfg}
+          beforeAfterConfig={beforeAfterConfig}
+          employeesConfig={employeesConfig}
+        />
       </main>
       <section id="footer">
         <Footer />
@@ -130,8 +242,3 @@ const App = () => {
 };
 
 export default App;
-// Create a component to use the custom hook inside Router
-function ScrollRestoration() {
-  useScrollRestoration();
-  return null; // This component doesn't render anything
-}

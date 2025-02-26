@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaExclamationCircle, FaTools } from "react-icons/fa";
-import Ourwork from "./OurWork";
-import Whywork from "./Whywork";
+import Ourwork from "./trash/OurWork";
+import Whywork from "./trash/Whywork";
 
 const ServiceIssue = () => {
   // Set "services" as the default active component

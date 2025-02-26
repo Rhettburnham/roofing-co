@@ -1,135 +1,103 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { HashLink } from 'react-router-hash-link';
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { FaCheckCircle } from "react-icons/fa";
+import { HashLink } from "react-router-hash-link";
 
-// Import icons from lucide-react (replace or remove as needed)
-import { Wrench, ClipboardCheck, Layers, Trash2 } from "lucide-react";
+const sectionTitleClass = "flex justify-center text-[5vw] md:text-[3.5vh] font-semibold mb-0.5 text-center";
 
-const MetalRoofs = () => {
-  /* --------------------
-    State & Lifecycle
-  -------------------- */
+const roofingOptions = [
+  {
+    name: "Built-Up Roofing (BUR)",
+    description: "BUR is a traditional roofing system made of multiple layers of bitumen and reinforcing fabrics. The resulting membrane is known for excellent waterproofing and durability, making it a popular choice for flat or low-slope roofs.",
+    advantages: [
+      "Durability: Lifespans of 15–30+ years with proper maintenance",
+      "Waterproofing: Multi-layer design effectively prevents leaks",
+      "UV Resistance: Top layer (gravel/mineral) protects against sun damage",
+      "Low Maintenance: Requires minimal upkeep over time",
+    ],
+    colorPossibilities: [
+      "Typically gravel or mineral-surfaced finish in neutral tones. Reflective coatings can be applied for enhanced energy efficiency",
+    ],
+    installationTime: "Can be labor-intensive, taking several days to weeks depending on roof size and complexity",
+    images: [
+      {
+        src: "/assets/images/builtup/builtupdemo.avif",
+        alt: "BUR Installation Process",
+        caption: "Step-by-step BUR installation showing multiple layers",
+        additionalInfo: {
+          title: "Color Possibilities:",
+          content: "Typically gravel or mineral-surfaced finish in neutral tones. Reflective coatings can be applied for enhanced energy efficiency",
+        },
+      },
+      {
+        src: "/assets/images/builtup/builtuproofing2.jpg",
+        alt: "Completed BUR System",
+        caption: "Finished BUR system with gravel surface",
+        additionalInfo: {
+          title: "Installation Time:",
+          content: "Can be labor-intensive, taking several days to weeks depending on roof size and complexity",
+        },
+      },
+    ],
+  },
+  {
+    name: "Modified Bitumen Roofing",
+    description: "Modified Bitumen improves upon the BUR concept by adding polymers to bitumen, increasing elasticity, weather resistance, and lifespan. Often installed in rolled sheets, it can be torch-applied, cold-adhesive, or self-adhering.",
+    advantages: [
+      "Enhanced Durability: Polymers protect against extreme weather and punctures",
+      "Flexibility: Adapts to temperature changes without cracking",
+      "Ease of Installation: Quicker than BUR, with various application methods",
+      "Energy Efficiency: Some membranes feature reflective coatings",
+    ],
+    colorPossibilities: [
+      "Available in multiple colors and finishes (including shingle-like options)",
+      "Reflective coatings can help lower cooling costs",
+    ],
+    installationTime: "Usually installed in 1–3 days, depending on roof size and chosen application method",
+    images: [
+      {
+        src: "/assets/images/builtup/modified1.jpg",
+        alt: "Modified Bitumen Installation",
+        caption: "Torch-down application of modified bitumen",
+        additionalInfo: {
+          title: "Color Possibilities:",
+          content: "Available in multiple colors and finishes (including shingle-like options)",
+        },
+      },
+      {
+        src: "/assets/images/builtup/modified2.avif",
+        alt: "Modified Bitumen Finish",
+        caption: "Completed modified bitumen roof with reflective coating",
+        additionalInfo: {
+          title: "Installation Time:",
+          content: "Usually installed in 1–3 days, depending on roof size and chosen application method",
+        },
+      },
+    ],
+  },
+];
+
+
+const BuiltUpRoofing = () => {
+  const [selectedRoofIndex, setSelectedRoofIndex] = useState(0);
   const [isShrunk, setIsShrunk] = useState(false);
 
   useEffect(() => {
-    // Scroll to top on mount
     window.scrollTo(0, 0);
   }, []);
 
   useEffect(() => {
-    // After 1.5s, shrink the hero section
     const timer = setTimeout(() => {
       setIsShrunk(true);
-    }, 1500);
+    }, 1000);
     return () => clearTimeout(timer);
   }, []);
 
-  /* --------------------
-    Scrollable Metal Types
-  -------------------- */
-  const containerRef = useRef(null);
+  const selectedRoof = roofingOptions[selectedRoofIndex];
 
-  // Example images/types (Replace with your actual metal roofing images & labels)
-  const metalBoxes = [
-    { img: "/assets/images/metal_roof/m1.png", type: "Galvanized Steel" },
-    { img: "/assets/images/metal_roof/m2.png", type: "Aluminum" },
-    { img: "/assets/images/metal_roof/m3.png", type: "Copper" },
-    { img: "/assets/images/metal_roof/m4.png", type: "Standing Seam" },
-    { img: "/assets/images/metal_roof/m5.png", type: "Metal Type 5" },
-    { img: "/assets/images/metal_roof/m6.png", type: "Metal Type 6" },
-    { img: "/assets/images/metal_roof/m7.png", type: "Metal Type 7" },
-    { img: "/assets/images/metal_roof/m8.png", type: "Metal Type 8" },
-    { img: "/assets/images/metal_roof/m9.png", type: "Metal Type 9" },
-    { img: "/assets/images/metal_roof/m10.png", type: "Metal Type 10" },
-  ];
-
-  const scrollLeft = () => {
-    if (containerRef.current) {
-      containerRef.current.scrollBy({
-        left: -containerRef.current.clientWidth / 2,
-        behavior: 'smooth',
-      });
-    }
-  };
-
-  const scrollRight = () => {
-    if (containerRef.current) {
-      containerRef.current.scrollBy({
-        left: containerRef.current.clientWidth / 2,
-        behavior: 'smooth',
-      });
-    }
-  };
-
-  /* --------------------
-    Steps Data
-  -------------------- */
-  const steps = [
-    {
-      number: '1',
-      title: 'Inspection & Measurements',
-      description:
-        'We begin by inspecting your roof’s structural integrity, measuring for precise panel lengths, and identifying any areas that need repair before installation.',
-      icon: <Wrench className="text-blue-600 w-8 h-8" />,
-      image: '/assets/images/metal_roof/step1.jpg',
-    },
-    {
-      number: '2',
-      title: 'Underlayment & Prep Work',
-      description:
-        'A high-quality underlayment is crucial for metal roofs. We ensure the surface is smooth and free of debris, then install the underlayment to protect against moisture.',
-      icon: <Layers className="text-blue-600 w-8 h-8" />,
-      image: '/assets/images/metal_roof/step2.jpg',
-    },
-    {
-      number: '3',
-      title: 'Panel Installation & Seaming',
-      description:
-        'Next, we carefully place and fasten metal panels, ensuring tight seams and proper flashing around edges and penetrations for a watertight seal.',
-      icon: <ClipboardCheck className="text-blue-600 w-8 h-8" />,
-      image: '/assets/images/metal_roof/step3.jpg',
-    },
-    {
-      number: '4',
-      title: 'Final Inspection & Cleanup',
-      description:
-        'Once installation is complete, we conduct a thorough inspection, check for any loose fasteners or gaps, and perform a full cleanup so your property looks immaculate.',
-      icon: <Trash2 className="text-blue-600 w-8 h-8" />,
-      image: '/assets/images/metal_roof/step4.jpg',
-    },
-  ];
-
-  /* --------------------
-    Framer Motion Variants
-  -------------------- */
-  // Container & item variants for the pop-in animation
-  const listVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        // Stagger each child step by 0.2s
-        staggerChildren: 0.2,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 40, scale: 0.95 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      scale: 1,
-      transition: { duration: 0.6, ease: 'easeOut' },
-    },
-  };
-
-  /* --------------------
-    Render
-  -------------------- */
   return (
     <div className="w-full">
-      {/* HERO SECTION */}
+      {/* Header Section */}
       <motion.section
         className="relative overflow-hidden"
         initial={{ height: "40vh" }}
@@ -139,134 +107,143 @@ const MetalRoofs = () => {
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: "url('/assets/images/growth/hero_growth.jpg')",
+            backgroundImage: "", // Add your background image URL here if needed
             backgroundAttachment: "fixed",
           }}
-        ></div>
-        <div className="absolute inset-0 dark-below-header"></div>
-
-        <div className="relative z-10 h-full flex items-center justify-center custom-circle-shadow">
+        />
+        <div className="absolute inset-0 dark-below-header" />
+        <div className="relative z-10 h-full flex items-center justify-center">
           <motion.h1
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 1 }}
             className="text-center text-[10vw] md:text-[8vh] font-extrabold text-white tracking-wider"
           >
-            Metal Roof
+            Built-Up Roofing
           </motion.h1>
         </div>
       </motion.section>
 
-      {/* Metal Roofing Types (Scrollable) */}
-      <section className="my-4 px-[6vw] md:px-[10vw]">
-        <h2 className="text-[4vw] md:text-3xl font-bold text-center text-gray-800 mb-4">
-          Explore Our Metal Roofing Options
-        </h2>
-        <div className="relative m-5">
-          <button
-            onClick={scrollLeft}
-            className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-gray-900 text-white px-4 py-2 rounded-full z-10"
-            aria-label="Scroll Left"
-          >
-            &lt;
-          </button>
-          <button
-            onClick={scrollRight}
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-gray-900 text-white px-4 py-2 rounded-full z-10"
-            aria-label="Scroll Right"
-          >
-            &gt;
-          </button>
+      {/* Main Content Section */}
+      <section className="py-6 px-[6vw] md:px-[10vw]">
+        <h2 className={sectionTitleClass}>Choose Your Flat Roofing Option</h2>
 
-          <div
-            className="overflow-hidden whitespace-nowrap"
-            ref={containerRef}
-            style={{ position: 'relative' }}
-          >
-            {metalBoxes.map((box, index) => (
-              <div key={index} className="inline-block relative m-2 sm:m-4">
-                <img
-                  src={box.img}
-                  alt={`Metal Roof ${index + 1}`}
-                  className="metal-img"
-                />
-                <p className="absolute bottom-2 right-2 text-xs text-white bg-black bg-opacity-50 px-2 py-1 rounded">
-                  {box.type}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          {/* Hide scrollbar (optional) */}
-          <style jsx>{`
-            .scrollbar-thin::-webkit-scrollbar {
-              height: 0; /* Hide scrollbar */
-            }
-            .metal-img {
-              width: 200px; /* Adjust as needed */
-              height: 120px; /* Adjust as needed */
-              object-fit: cover;
-              border-radius: 8px;
-            }
-          `}</style>
+        {/* Roofing Options Buttons */}
+        <div className="flex flex-wrap justify-center gap-2 ">
+          {roofingOptions.map((roof, index) => (
+            <button
+              key={index}
+              onClick={() => setSelectedRoofIndex(index)}
+              className={`mx-2 my-1 md:px-4 px-2 py-1 md:py-2 text-[3vw] md:text-[2vh] rounded-full font-semibold shadow-lg ${
+                selectedRoofIndex === index
+                  ? "dark_button text-white font-semibold shadow-2xl"
+                  : "text-black"
+              }`}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow =
+                  "inset 0 0 15px 1px rgba(0,0,0,0.8)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow =
+                  "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
+              }}
+            >
+              {roof.name}
+            </button>
+          ))}
         </div>
+
+        {/* Selected Roofing Option Details */}
+        <motion.div
+          key={selectedRoofIndex}
+          className="bg-white rounded-2xl shadow-lg p-3 md:p-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="grid grid-cols-1">
+            {/* Roofing Option Description */}
+            <div className="space-y-1 md:space-y-2">
+              <h3 className="text-[5.5vw] md:text-2xl font-semibold text-gray-800 mb-1">
+                {selectedRoof.name}
+              </h3>
+              <p className="text-[2.9vw] md:text-xl text-center  text-gray-700">
+                {selectedRoof.description}
+              </p>
+
+              {/* Advantages List */}
+              <div>
+                <h4 className="text-[3.5vw] md:text-2xl font-semibold  text-gray-800">
+                  Advantages:
+                </h4>
+                <ul className="space-y-2">
+                  {selectedRoof.advantages.map((advantage, i) => (
+                    <li key={i} className="flex items-start text-[2.6vw] md:text-lg">
+                      <FaCheckCircle className="text-green-600 mt-1 mr-3 flex-shrink-0" />
+                      <span className="text-gray-700">{advantage}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* Images with Additional Captions */}
+            <div className="flex flex-row justify-around mt-3 flex-wrap">
+              {selectedRoof.images.map((image, index) => (
+                <div key={index} className="space-y-2 w-1/2 px-2">
+                  {/* Additional Caption */}
+                  <div className="  rounded-lg">
+                    <h4 className="w-full text-left text-[3.5vw] md:text-xl font-semibold text-gray-800">
+                      {image.additionalInfo.title}
+                    </h4>
+                    <p className="text-black text-[2.7vw] md:text-xl">
+                      {image.additionalInfo.content}
+                    </p>
+                  </div>
+
+                  {/* Image */}
+                  <img
+                    src={image.src}
+                    alt={image.alt}
+                    className=" w-full h-[30vw] md:h-[35vh] object-cover rounded-lg shadow-md mt-2 relative justify-center"
+                  />
+
+                  {/* Image Caption */}
+                  <p className="text-[2vw] md:text-sm text-gray-600 text-left">
+                    {image.caption}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
       </section>
 
-      {/* CTA BUTTON */}
-      <div className="flex justify-center m-6">
-        <HashLink
-          to="/#book"
-          className="px=4 py-2 md:px-8 md:py-4 dark_button text-white font-semibold rounded-full hover:bg-white hover:text-black transition duration-300"
-        >
-          Schedule an Inspection
-        </HashLink>
-      </div>
-
-      {/* Steps Section */}
-      <section className="mb-12 px-[6vw] md:px-[10vw]">
-        <h2 className="text-[4vw] md:text-4xl font-bold text-gray-800 mb-8">
-          Our Metal Roof Installation Process
-        </h2>
-
-        {/* Container for steps (staggered pop-in) */}
-        <motion.div
-          className="space-y-8"
-          initial="hidden"
-          animate="visible"
-          variants={listVariants}
-        >
-          {steps.map((step, index) => (
-            <motion.div
-              key={index}
-              className="flex flex-col md:flex-row items-center md:items-start md:space-x-6"
-              variants={itemVariants}
-            >
-              {/* Step Image */}
-              <img
-                src={step.image}
-                alt={step.title}
-                className="w-full md:w-1/3 h-auto object-cover rounded-md shadow-md mb-4 md:mb-0"
-              />
-
-              {/* Step Text & Icon */}
-              <div className="md:w-2/3">
-                <div className="flex items-center space-x-2 mb-2">
-                  {/* Step Number */}
-                  <div className="text[6vw] md:text-2xl font-bold text-blue-600">
-                    {step.number}
-                </div>
-                <p className="text[2vw] md:text-2xl font-semibold text-gray-700 ">
-                  {step.title}
-                </p>
-              </div>
-                <p className="md:text-base text-sm text-gray-600">{step.description}</p>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
+      {/* Call to Action Section */}
+      <section className="mb-10 mx-4 md:mx-16 rounded-3xl bg-gradient-to-r from-gray-800 to-gray-900 overflow-hidden">
+        <div className="p-8 md:py-16 md:px-16 text-center text-white">
+          <motion.h2
+            initial={{ scale: 0.8, opacity: 0 }}
+            whileInView={{ scale: 1, opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1 }}
+            className="text-[4vw] md:text-3xl font-bold mb-6"
+          >
+            Ready to Upgrade Your Flat Roof?
+          </motion.h2>
+          <p className="text-[3.5vw] md:text-xl mb-8">
+            Get in touch for a free consultation. Let us help you choose the best flat roofing solution for your property.
+          </p>
+          <HashLink
+            to="/#contact"
+            className="inline-block text-[3.5vw] md:text-xl px-8 py-4 bg-white text-gray-900 font-semibold rounded-full hover:bg-gray-100 transition duration-300"
+          >
+            Schedule a Consultation
+          </HashLink>
+        </div>
       </section>
     </div>
   );
 };
 
-export default MetalRoofs;
+export default BuiltUpRoofing;

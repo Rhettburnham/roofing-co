@@ -1,0 +1,107 @@
+{
+    "topLogoSrc": "/assets/images/clipped-cowboy.png",
+    "mainTitle": "COWBOYS",
+    "subTitle": "CONSTRUCTION",
+  
+    "residentialBg": "/assets/images/residentialnight.jpg",
+    "commercialBg": "/assets/images/commercialnight.jpg",
+  
+    "serviceDetails": {
+      "residential": {
+        "Roof": {
+          "icon": "/assets/icons/roof-icon.png",
+          "image": "/assets/images/hero_modal/residentialnight.jpg",
+          "description": "Our Residential Roof services include new shingle installation ...",
+          "subServices": [
+            {
+              "title": "Shingle Installation",
+              "description": "Expert shingle roofing—from asphalt and metal to tile..."
+            }
+          ]
+        },
+        "Accessories": {
+          "icon": "/assets/icons/tools-icon.png",
+          "image": "/assets/images/hero_modal/residential_accessories.jpg",
+          "description": "Enhance and protect your home with ventilation & gutter systems...",
+          "subServices": [
+            {
+              "title": "Ventilation",
+              "description": "Proper attic ventilation reduces energy costs..."
+            },
+            {
+              "title": "Gutter",
+              "description": "Gutter installation & maintenance to direct rainwater away..."
+            }
+          ]
+        },
+        "Siding": {
+          "icon": "/assets/icons/wall-icon.png",
+          "image": "/assets/images/hero_modal/residential_siding.jpg",
+          "description": "Improve your home’s curb appeal with vinyl, wood, metal siding ...",
+          "subServices": [
+            {
+              "title": "Siding",
+              "description": "Full siding installation and replacement services..."
+            }
+          ]
+        }
+      },
+  
+      "commercial": {
+        "Roof": {
+          "icon": "/assets/icons/factory-icon.png",
+          "image": "/assets/images/hero_modal/commercialnight.jpg",
+          "description": "Comprehensive roof solutions for commercial properties...",
+          "subServices": [
+            {
+              "title": "Metal Roof",
+              "description": "Durable metal roofing systems for long-term protection..."
+            },
+            {
+              "title": "Coating",
+              "description": "Extend roof lifespan & reduce energy costs with roof coatings."
+            },
+            {
+              "title": "Single Ply",
+              "description": "Efficient TPO, PVC, or EPDM membranes for commercial needs."
+            },
+            {
+              "title": "Built Up",
+              "description": "Traditional multiple-layer (BUR) for excellent waterproofing."
+            }
+          ]
+        },
+        "Accessories": {
+          "icon": "/assets/icons/gear-icon.png",
+          "image": "/assets/images/hero_modal/commercial_accessories.jpg",
+          "description": "Safeguard & optimize commercial roofs with ventilation & guttering.",
+          "subServices": [
+            {
+              "title": "Ventilation",
+              "description": "Prevent heat buildup & moisture with custom ventilation."
+            },
+            {
+              "title": "Gutter",
+              "description": "Seamless gutter installations for large-scale water management."
+            }
+          ]
+        },
+        "Energy": {
+          "icon": "/assets/icons/lightning-icon.png",
+          "image": "/assets/images/hero_modal/commercial_energy.jpg",
+          "description": "Cut operating costs with energy-focused solutions, including coatings...",
+          "subServices": [
+            {
+              "title": "Coating",
+              "description": "Protect, seal, and reflect heat with advanced coatings."
+            },
+            {
+              "title": "Ventilation",
+              "description": "Reduce internal temps, save on cooling via targeted ventilation."
+            }
+          ]
+        }
+      }
+    }
+  }
+  

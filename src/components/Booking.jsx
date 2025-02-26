@@ -1,9 +1,9 @@
-import React, { useState } from "react";
-import { logoImg } from "../utils"; // Ensure this path is correct
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaTools, FaFan, FaPaintRoller, FaTint } from "react-icons/fa";
 
 const Booking = () => {
+  // Form fields
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -13,39 +13,44 @@ const Booking = () => {
     message: "",
   });
 
-  // State to control the modal visibility
+  // Modal & Form visibility
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  // State to control form visibility on small screens
   const [isFormVisible, setIsFormVisible] = useState(false);
 
-  // Define the services
-  const inspectionSteps = [
-    {
-      icon: FaTools,
-      title: "Shingle Installation",
-      link: "/shingleinstallation",
-      color: "#ffffff",
-    },
-    {
-      icon: FaFan,
-      title: "Ventilation",
-      link: "/ventilation",
-      color: "#ffffff",
-    },
-    {
-      icon: FaPaintRoller,
-      title: "Roof Coating",
-      link: "/roofcoating",
-      color: "#ffffff",
-    },
-    {
-      icon: FaTint,
-      title: "Gutter Options",
-      link: "/gutterrelated",
-      color: "#ffffff",
-    },
-  ];
+  // bbbData state: store logo_url, logo_filename, website, telephone, services
+  const [bbbData, setBbbData] = useState({
+    logo_url: "",
+    logo_filename: "",
+    website: "",
+    telephone: "",
+    services: [],
+  });
+
+  // Fetch bbb_profile_data.json once on mount
+  useEffect(() => {
+    fetch("/data/bbb_profile_data.json")
+      .then((res) => res.json())
+      .then((data) => {
+        setBbbData({
+          logo_url: data.logo_url || "",
+          logo_filename: data.logo_filename || "",
+          website: data.website || "",
+          telephone: data.telephone || "",
+          services: data.services || [],
+        });
+      })
+      .catch((err) => {
+        console.error("Error fetching bbb_profile_data.json:", err);
+      });
+  }, []);
+
+  // Helper to decide which logo source to use
+  const getLogoSrc = () => {
+    // 1) If we have a logo_url, use that
+    if (bbbData.logo_url) return `../data/clipped.png`;
+    // 3) Otherwise, fallback to your original "clipped-cowboy"
+    return "assets/images/clipped-cowboy.png";
+  };
 
   // Toggle form (small screens)
   const toggleFormVisibility = () => {
@@ -58,7 +63,7 @@ const Booking = () => {
     setFormData((prevData) => ({ ...prevData, [name]: value }));
   };
 
-  // Select a service
+  // Select a service from the modal
   const handleServiceSelect = (serviceTitle) => {
     setFormData((prevData) => ({ ...prevData, service: serviceTitle }));
     setIsModalOpen(false);
@@ -82,7 +87,6 @@ const Booking = () => {
     try {
       const data = { ...formData };
 
-      // Debug
       console.log("Data being sent:", data);
 
       const API_BASE_URL =
@@ -113,26 +117,44 @@ const Booking = () => {
     }
   };
 
+  // 1) We'll parse the first item in bbbData.services if it exists
+  //    e.g. "Roof Leak Specialist.Chimney Leak Specialist.Roof Replacement"...
+  // 2) Then split it on '.' to get individual service lines
+  const modalServices = (() => {
+    if (bbbData.services.length > 0) {
+      // e.g. bbbData.services[0] => "Roof Leak Specialist.Chimney Leak..."
+      return bbbData.services[0]
+        .split(".")
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+    }
+    return [];
+  })();
+
   return (
-    <div
-      className="flex flex-col items-center bg-white"
-      id="booking"
-    >
+    <div className="flex flex-col items-center bg-white" id="booking">
       {/* ─────────────────────────────────────────────────────────────────
           HEADER SECTION WITH FULL-WIDTH RIBBON
          ───────────────────────────────────────────────────────────────── */}
-      <div className="relative w-full ">
+      <div className="relative w-full">
         <div className="absolute inset-0 bg-hover-color opacity-100" />
 
         <div className="relative z-10 py-4 px-4 flex flex-row items-center justify-center">
-          <img src="assets/images/clipped-cowboy.png" alt="logo" className="w-20 h-auto mr-6" style={{ filter: 'invert(1)' }} />
+          <img
+            src={getLogoSrc()}
+            alt="logo"
+            className="w-20 h-auto mr-6"
+            style={{ filter: "invert(1)" }}
+          />
 
           <div className="text-left">
             <h2 className="text-2xl md:text-3xl font-bold text-white">
               Contact Us!
             </h2>
             <div className="font-bold md:text-lg text-white mt-1">
-              <a href="tel:4422363783"> (442)236-3783</a>
+              <a href={`tel:${bbbData.telephone || "4422363783"}`}>
+                {bbbData.telephone || "(442)236-3783"}
+              </a>
             </div>
           </div>
         </div>
@@ -145,8 +167,7 @@ const Booking = () => {
         onClick={toggleFormVisibility}
         className="block md:hidden p-2 my-4 dark_button text-white text-md font-semibold rounded-md hover:bg-white hover:text-black shadow-xl"
         onMouseEnter={(e) => {
-          e.currentTarget.style.boxShadow =
-            "inset 0 0 15px 1px rgba(0,0,0,0.8)";
+          e.currentTarget.style.boxShadow = "inset 0 0 15px 1px rgba(0,0,0,0.8)";
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.boxShadow =
@@ -296,24 +317,29 @@ const Booking = () => {
             <h2 className="text-2xl font-bold mb-4 text-center">
               Select a Service
             </h2>
+
             <ul className="space-y-4 max-h-80 overflow-y-auto">
-              {inspectionSteps.map((item, index) => (
-                <li
-                  key={index}
-                  className="flex items-start cursor-pointer p-2 hover:bg-gray-100 rounded"
-                  onClick={() => handleServiceSelect(item.title)}
-                >
-                  <div className="text-2xl text-dark-below-header mr-3">
-                    {<item.icon />}
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold">{item.title}</h3>
-                    <p className="text-gray-700 mt-1 text-sm">
-                      {item.description}
-                    </p>
-                  </div>
+              {modalServices.length > 0 ? (
+                modalServices.map((title, idx) => (
+                  <li
+                    key={idx}
+                    className="flex items-start cursor-pointer p-2 hover:bg-gray-100 rounded"
+                    onClick={() => handleServiceSelect(title)}
+                  >
+                    {/* For now, keep the same icons e.g. FaTools */}
+                    <div className="text-2xl text-dark-below-header mr-3">
+                      <FaTools />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold">{title}</h3>
+                    </div>
+                  </li>
+                ))
+              ) : (
+                <li className="text-center text-gray-600">
+                  No services found in bbb_profile_data.json
                 </li>
-              ))}
+              )}
             </ul>
           </div>
         </div>

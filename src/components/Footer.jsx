@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { HashLink } from 'react-router-hash-link'; // Import HashLink for in-page anchors
 import { Facebook, Instagram, Linkedin, Twitter } from 'lucide-react';
 
 const Footer = () => {
-  // Quick Links array
+  // Quick Links array (unchanged)
   const quickLinks = [
     { href: '/', label: 'Home' },
     { href: '/about', label: 'About Us' },
@@ -12,65 +12,146 @@ const Footer = () => {
     { href: '/#book', label: 'Contact Us' },
   ];
 
+  // Info Links array pointing to MergedRoofingInfoPage
+  const infoLinks = [
+    { href: '/mergedroofinginfopage#asphalt-shingle-installation', label: 'Asphalt Shingle Installation' },
+    { href: '/mergedroofinginfopage#diagnose-roof', label: 'Diagnosing Your Roof' },
+    { href: '/mergedroofinginfopage#leaks-water-damage', label: 'Water Damage and Leaks' },
+    { href: '/mergedroofinginfopage#mold-algae-rot', label: 'Mold, Algae, & Rot' },
+    { href: '/mergedroofinginfopage#poor-installation', label: 'Poor Installation' },
+    { href: '/mergedroofinginfopage#roof-material-deterioration', label: 'Roof Material Deterioration' },
+    { href: '/mergedroofinginfopage#roof-maintenance', label: 'Roof Maintenance' },
+    { href: '/mergedroofinginfopage#shingle-damage', label: 'Shingle Damage' },
+  ];
+
+  // State to store the BBB data
+  const [bbbData, setBbbData] = useState({
+    business_email: '',
+    telephone: '',
+    email: '',
+    business_name: '',
+    address: '',
+  });
+
+  // Fetch bbb_profile_data.json
+  useEffect(() => {
+    fetch('/data/bbb_profile_data.json')
+      .then((res) => res.json())
+      .then((data) => {
+        setBbbData({
+          business_email: data.business_email || '',
+          telephone: data.telephone || '',
+          email: data.email || '',
+          business_name: data.business_name || '',
+          address: data.address || '',
+        });
+      })
+      .catch((err) => {
+        console.error('Error fetching bbb_profile_data.json:', err);
+      });
+  }, []);
+
   return (
-    <footer className="bg-gray-800 py-2 md:py-8">
+    <footer className="bg-gray-800 py-8">
       <div className="container mx-auto px-4">
-        {/* Top Section: Company Info, Quick Links, Contact Info */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-8">
+        {/* Top Section: Company Info, Quick Links, Contact Info, Info Links */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company Information */}
           <div>
-            <h5 className="text-base md:text-xl font-semibold text-white mb-1 md:mb-2">Cowboys Construction</h5>
-            <p className="text-gray-400 text-xs md:text-base">
-              Committed to providing quality roofing services.
-              We specialize in residential and commercial roofing solutions.
+            {/* Display Business Name if available */}
+            {bbbData.business_name && (
+              <h5 className="text-xl font-semibold text-white mb-2">
+                {bbbData.business_name}
+              </h5>
+            )}
+
+            {/* Tagline or Disclaimer */}
+            <p className="text-gray-400 text-sm">
+              Committed to providing quality roofing services. We specialize in
+              residential and commercial roofing solutions.
             </p>
+
+            {/* Display Address if available */}
+            {bbbData.address && (
+              <p className="text-gray-400 text-sm mt-2">
+                {bbbData.address}
+              </p>
+            )}
           </div>
 
           {/* Quick Links */}
+          <div>
+            <h5 className="text-xl font-semibold text-white mb-2">
+              Quick Links
+            </h5>
+            <ul className="text-gray-400 space-y-1">
+              {quickLinks.map((link, index) => {
+                const isHashLink = link.href.startsWith('/#');
+                const LinkComponent = isHashLink ? HashLink : Link;
 
-            <div>
-              <h5 className="text-base md:text-xl font-semibold text-white ">Quick Links</h5>
-              <ul className="text-gray-400  md:space-y-1">
-                {quickLinks.map((link, index) => {
-                  // Determine if the link is an in-page anchor
-                  const isHashLink = link.href.startsWith('/#');
-                  // Choose the appropriate Link component
-                  const LinkComponent = isHashLink ? HashLink : Link;
-
-                  return (
-                    <li key={index}>
-                      <LinkComponent
-                        to={link.href}
-                        className="hover:text-white transition duration-300 text-xs md:text-base"
-                      >
-                        {link.label}
-                      </LinkComponent>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
+                return (
+                  <li key={index}>
+                    <LinkComponent
+                      to={link.href}
+                      className="hover:text-white transition duration-300 text-sm"
+                    >
+                      {link.label}
+                    </LinkComponent>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
 
           {/* Contact Information */}
           <div>
-            <h5 className="text-base md:text-xl font-semibold text-white ">Contact Us</h5>
-            <p className="text-xs md:text-base text-gray-400">
-              1575 Clairmont Rd<br />
-              Decatur, GA 30033
-            </p>
-            <div className="text-gray-400 text-xs md:text-base">
-              <a href="tel:4422363783">Phone: (442)236-3783</a>
-            </div>
-            <div className="text-xs md:text-base text-gray-400">
-              <a href="email:Rhett.Burnham@emory.edu">Email: Rhett.Burnham@emory.edu</a>
-            </div>
+            <h5 className="text-xl font-semibold text-white mb-2">
+              Contact Us
+            </h5>
+
+            {/* Telephone Link */}
+            {bbbData.telephone && (
+              <div className="text-gray-400 text-sm">
+                <a href={`tel:${bbbData.telephone}`} className="hover:text-white transition duration-300">
+                  Phone: {bbbData.telephone}
+                </a>
+              </div>
+            )}
+
+            {/* Email Link */}
+            {bbbData.business_email && bbbData.email && (
+              <div className="text-sm text-gray-400 mt-1">
+                <a href={`mailto:${bbbData.business_email}`} className="hover:text-white transition duration-300">
+                  Email: {bbbData.email}
+                </a>
+              </div>
+            )}
+          </div>
+
+          {/* Info Links */}
+          <div>
+            <h5 className="text-xl font-semibold text-white mb-2">
+              Info
+            </h5>
+            <ul className="space-y-1">
+              {infoLinks.map((link, index) => (
+                <li key={index}>
+                  <HashLink
+                    to={link.href}
+                    className="block bg-blue-600 text-white text-sm px-3 py-1 rounded hover:bg-blue-700 transition duration-300"
+                  >
+                    {link.label}
+                  </HashLink>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
 
         {/* Bottom Section: Social Media Buttons and Copyright */}
-        <div className="flex flex-col md:flex-row justify-between items-center mt-2 md:mt-4">
-          <div className="text-gray-400 text-xs md:text-base text-center md:text-left">
-            <p>&copy; 2024 Rhett's Roofing. All Rights Reserved.</p>
+        <div className="flex flex-col md:flex-row justify-between items-center mt-8">
+          <div className="text-gray-400 text-sm text-center md:text-left">
+            <p>&copy; 2024 Castle Roofing. All Rights Reserved.</p>
           </div>
 
           {/* Social Media Buttons */}

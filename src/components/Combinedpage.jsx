@@ -1,110 +1,38 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import StarRating from "./StarRating";
+
 // Icons for Services (existing ones)
 import { FaTools, FaFan, FaPaintRoller, FaTint } from "react-icons/fa";
+
 // Icons for Testimonials
 import yelpIcon from "/assets/images/yelp.png";
 import googleIcon from "/assets/images/googleimage.png";
+
 // NEW ICONS from lucide-react
 import { Home, Building2 } from "lucide-react";
 
 /* ─────────────────────────────────────────────────────────────
-   SERVICES DATA
+   SERVICES DATA (unchanged)
 ───────────────────────────────────────────────────────────── */
 const residentialServices = [
-  { icon: FaTools, title: "Shingling", link: "/shingleinstallation" },
-  { icon: FaFan, title: "Ventilation", link: "/ventilation" },
-  { icon: FaTint, title: "Guttering", link: "/gutterrelated" },
-  { icon: FaPaintRoller, title: "Siding", link: "/sidingshowcase" },
+  { icon: FaTools, title: "Shingling", link: "/Residential_service_1" },
+  { icon: FaFan, title: "Ventilation", link: "/Residential_service_2" },
+  { icon: FaTint, title: "Guttering", link: "/Residential_service_3" },
+  { icon: FaPaintRoller, title: "Siding", link: "/Residential_service_4" },
 ];
 
 const commercialServices = [
-  { icon: FaTools, title: "Single Ply", link: "/singleplysystems" },
-  { icon: FaPaintRoller, title: "Coating", link: "/roofcoating" },
-  { icon: FaTools, title: "Metal Roof", link: "/metalroofs" },
-  { icon: FaTools, title: "Built Up", link: "/builtuproofing" },
+  { icon: FaTools, title: "Single Ply", link: "/CommercialService1" },
+  { icon: FaPaintRoller, title: "Coating", link: "/CommercialService2" },
+  { icon: FaTools, title: "Metal Roof", link: "/CommercialService3" },
+  { icon: FaTools, title: "Built Up", link: "/CommercialService4" },
 ];
 
 /* ─────────────────────────────────────────────────────────────
-   TESTIMONIALS DATA
+   YELP TESTIMONIALS (unchanged)
 ───────────────────────────────────────────────────────────── */
-const testimonialsDataSet1 = [
-  {
-    name: "G F",
-    stars: 5,
-    date: "",
-    text: "Luis and his crew were phenomenal!  From the estimate phase to the finish phase. Very fast and professional. Cleanup was very efficient. They did the roof in one day. They worked a long 12 hour day.  My roof is very steep with a lot of angles and they made it look easy!  I would highly recommend Luis for your roofing needs. 5+ stars!",
-    logo: googleIcon,
-    link: "https://www.google.com/maps/place/Rhetts+Roofing/",
-  },
-  {
-    name: "Chae Downing",
-    stars: 5,
-    date: "11/15/24",
-    text: "Luis and Cowboy Construction did a great job on my roof. I first used them in 2018 to replace my roof. Five years later, I called them because I had a rodent problem caused by access through the soffits. Although I hired a rodent removal company to address the issue, they kept saying that there was a problem with the roof. Despite the fact that that wasn’t the cause, Cowboy Construction continued to respond to my calls to check out various possibilities until the problem was resolved.  I would recommend Luis and Cowboy Construction anytime.",
-    logo: googleIcon,
-    link: "https://www.google.com/maps/place/Rhetts+Roofing/",
-  },
-  {
-    name: "Julian Spears",
-    stars: 5,
-    date: "",
-    text: "Luis was very courteous and prompt. He took photos of my shingle issue and explained the problem. Luis was ready and able to handle my repair on the spot. He completed the repair quickly. He told me what to watch for if other shingles showed the same issue. Luis was very professional and knowledgeable. I highly recommend him for roof and shingle issues.",
-    logo: googleIcon,
-    link: "https://www.google.com/maps/place/Rhetts+Roofing/",
-  },
-  {
-    name: "Karina Romero",
-    stars: 5,
-    date: "",
-    text: "Responsiveness, Punctuality, Quality, Professionalism, Value.",
-    logo: googleIcon,
-    link: "https://www.google.com/maps/place/Rhetts+Roofing/",
-  },
-  {
-    name: "Mike Zotta",
-    stars: 5,
-    date: "",
-    text: "I called Luis last year after speaking with several of the large Corporate owned roofing companies. He came out promptly and we discussed what I needed. I knew right away we were going to go with his company but at the last minute I had to delay the work but emailed him almost a year later. He was able to schedule me in within two weeks and despite me adding some last minute gutter damage, him and his team were able to finish in one day. The quaity of the work and the attention to detail was top notch. The extra work I asked last minute was all well done and exceeded my expectations. I only wish I could get this level of service and quality for all my home projects. Thank you Luis much appreciated !!! Mike Z Jonesboro GA",
-    logo: googleIcon,
-    link: "https://www.google.com/maps/place/Rhetts+Roofing/",
-  },
-  {
-    name: "Vincent martin",
-    stars: 5,
-    date: "",
-    text: "Luis is a professional in every sense of the word.  He contacted me less than 2 hrs after I emailed him. 1 hour later he was at my place looking at the job, 2 hours after that he and his crew were working on my project.  They stayed at it, even waiting out some bad weather to continue working.  I would highly recommend Luis and his crew of professionals.",
-    logo: googleIcon,
-    link: "https://www.google.com/maps/place/Rhetts+Roofing/",
-  },
-  {
-    name: "Monti House",
-    stars: 5,
-    date: "",
-    text: "Looking for roof replacement, got multiple quotes way beyond our retiree budget. Found Luis at Cowboy Construction on Craigslist and gave him a call. He came out the same day and gave us his quote which was the first that was actually within our budget. We agreed to the price. He worked directly with us to select a shingle color that we liked that was in stock locally. He was able to get all the materials staged at our house by the end of the day after the day he gave us the quote.  His crew was here at sunrise the next day and worked professionally with great coordination and astonishing speed. IT WAS LESS THAN 48 HOURS FROM THE TIME HE GAVE US THE QUOTE TO TOTAL COMPLETION INCLUDING COMPLETE CLEANUP OF THE ENTIRE AREA!! BEST CONTRACTOR EXPERIENCE EVER!!  and we've used contractors for new construction and storm-related repair. HIGHLY RECOMMENDED and we will be contacting Luis and his company for future remodeling work!",
-    logo: googleIcon,
-    link: "https://www.google.com/maps/place/Rhetts+Roofing/",
-  },
-  {
-    name: "Jeff",
-    stars: 5,
-    date: "",
-    text: "Had a roof leak near the chimney on an old country home in Barnesville. These guys came out, replaced rotted plywood, and redid the flashing around the chimney. They did an excellent job. This house was 3 stories high, with a steep roof,  and I have no idea how they had the nerve to be working that high near the edge. Awesome job guys. Thank you.",
-    logo: googleIcon,
-    link: "https://www.google.com/maps/place/Rhetts+Roofing/",
-  },
-  {
-    name: "Jenifer Newby",
-    stars: 5,
-    date: "",
-    text: "Responsiveness, Punctuality, Quality, Professionalism, Value",
-    logo: googleIcon,
-    link: "https://www.google.com/maps/place/Rhetts+Roofing/",
-  },
-];
-
 const testimonialsDataSet2 = [
   {
     name: "Shantericka G.",
@@ -181,7 +109,7 @@ const testimonialsDataSet2 = [
 ];
 
 /* ─────────────────────────────────────────────────────────────
-   A SINGLE TESTIMONIAL ITEM
+   A SINGLE TESTIMONIAL ITEM (unchanged)
 ───────────────────────────────────────────────────────────── */
 const TestimonialItem = ({ testimonial }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -219,30 +147,23 @@ const TestimonialItem = ({ testimonial }) => {
         </p>
         <div className="flex items-center justify-between">
           <StarRating rating={testimonial.stars} />
-          <p className="text-gray-500 text-xs mt-1">
-            {testimonial.date}
-          </p>
+          <p className="text-gray-500 text-xs mt-1">{testimonial.date}</p>
         </div>
       </div>
-
 
       {/* Text */}
       <p className="text-gray-800 text-sm mt-1">
         <span className="text-[3vw] block md:hidden">
           {isExpanded ? testimonial.text : truncated}
         </span>
-        <span className=" md:text-xs hidden md:block">{testimonial.text}</span>
+        <span className="md:text-xs hidden md:block">{testimonial.text}</span>
       </p>
     </div>
   );
 };
 
 /* ─────────────────────────────────────────────────────────────
-   ANIMATION VARIANTS FOR THE SERVICES BUTTONS
-   - We define a container that handles staggered transitions
-   - Each button has enter/exit animations
-   - We manually reverse the array so the "rightmost" item
-     is effectively index=0 (it exits first, enters first).
+   ANIMATION VARIANTS FOR THE SERVICES BUTTONS (unchanged)
 ───────────────────────────────────────────────────────────── */
 const containerVariants = {
   enter: {
@@ -284,10 +205,42 @@ const CombinedPage = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isCommercial, setIsCommercial] = useState(false);
 
-  const currentTestimonials =
-    activeSet === 1 ? testimonialsDataSet1 : testimonialsDataSet2;
+  // 1) We store the fetched Google reviews here:
+  const [googleReviews, setGoogleReviews] = useState([]);
 
-  const totalReviews = currentTestimonials.length; // 9
+  // 2) Fetch the JSON from /public/data/sentiment_reviews.json on mount
+  useEffect(() => {
+    fetch("/data/sentiment_reviews.json")
+      .then((res) => res.json())
+      .then((data) => {
+        // Filter to get only positive reviews
+        const processed = data
+          .filter((review) => review.sentiment.toLowerCase() === "positive")
+          .map((review) => ({
+            name: review.name,
+            stars: parseInt(review.rating, 10),
+            date: review.date,
+            text: review.review_text,
+            logo: googleIcon,
+            link: "https://www.google.com/maps/place/Rhetts+Roofing/",
+          }))
+          // Sort highest rated first
+          .sort((a, b) => b.stars - a.stars)
+          // Limit to 9
+          .slice(0, 9);
+
+        setGoogleReviews(processed);
+      })
+      .catch((error) => {
+        console.error("Error fetching JSON:", error);
+      });
+  }, []);
+
+  // 3) We decide which set is active (Google or Yelp)
+  const currentTestimonials =
+    activeSet === 1 ? googleReviews : testimonialsDataSet2;
+
+  const totalReviews = currentTestimonials.length; // up to 9
   const chunkSize = 3;
   const visibleReviews = currentTestimonials.slice(
     currentIndex,
@@ -327,7 +280,7 @@ const CombinedPage = () => {
           SMALL SCREEN SECTION
       ────────────────────────────────────────────────────────── */}
       <div className="block md:hidden relative w-full ">
-        {/* (2) Two images side-by-side, animate x for swap */}
+        {/* Two images side-by-side, animate x for swap */}
         <div className="overflow-hidden w-full relative">
           <motion.div
             animate={{ x: isCommercial ? "-100vw" : "0%" }}
@@ -349,7 +302,7 @@ const CombinedPage = () => {
           </motion.div>
         </div>
 
-        {/* (3) White triangle at bottom, no pointer events */}
+        {/* White triangle at bottom (no pointer events) */}
         <div
           className="absolute bottom-0 left-0 w-full h-[9.5vh] bg-black z-0 pointer-events-none"
           style={{ clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)" }}
@@ -360,7 +313,7 @@ const CombinedPage = () => {
         >
           Services
         </h2>
-        {/* (4) SERVICES Buttons (staggered exit/enter) */}
+        {/* SERVICES Buttons (staggered exit/enter) */}
         <div className="absolute bottom-[10vh] left-1/2 transform -translate-x-1/2 z-30">
           <div className=" flex flex-row ">
             <button
@@ -383,10 +336,8 @@ const CombinedPage = () => {
                   "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
               }}
             >
-              <Home className="mr-2 "  size={16}/>
-               <p className=" text-[3vw]">
-                Residential
-              </p>
+              <Home className="mr-2 " size={16} />
+              <p className=" text-[3vw]">Residential</p>
             </button>
             <button
               onClick={handleCommercialClick}
@@ -408,10 +359,8 @@ const CombinedPage = () => {
                   "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
               }}
             >
-              <Building2 className="mr-2 " size={16}  />
-                <p className=" text-[3vw]">
-                  Commercial
-                </p>
+              <Building2 className="mr-2 " size={16} />
+              <p className=" text-[3vw]">Commercial</p>
             </button>
           </div>
         </div>
@@ -426,7 +375,7 @@ const CombinedPage = () => {
               animate="enter"
               exit="exit"
             >
-              {/* Reverse the array so the right-most item has index=0 */}
+              {/* Reverse array so the right-most item has index=0 */}
               {[...currentServices].reverse().map((service, idx) => (
                 <motion.div
                   key={service.title}
@@ -465,7 +414,7 @@ const CombinedPage = () => {
         {/* Overlapping heading + toggle */}
         <div className="flex items-center justify-center px-4">
           <h2
-            className="text-[7.5vw] text-white md:text-[6vh] md:text-5xl font-serif mr-2"
+            className="text-[7.5vw] text-white md:text-[6vh] md:text-5xl font-serif mr-2 my-3"
             style={{ fontFamily: "Times New Roman, Times, serif" }}
           >
             Testimonials
@@ -483,7 +432,7 @@ const CombinedPage = () => {
               <img
                 src={googleIcon}
                 alt="Google Icon"
-                className={`h-5 w-5 transition-opacity duration-300`}
+                className="h-5 w-5 transition-opacity duration-300"
               />
               {activeSet !== 1 && (
                 <div className="absolute inset-0 bg-gray-300 opacity-30 pointer-events-none" />
@@ -494,7 +443,7 @@ const CombinedPage = () => {
               <img
                 src={yelpIcon}
                 alt="Yelp Icon"
-                className={`h-5 w-5 transition-opacity duration-300`}
+                className="h-5 w-5 transition-opacity duration-300"
               />
               {activeSet !== 2 && (
                 <div className="absolute inset-0 bg-gray-300 opacity-30 pointer-events-none" />
@@ -565,26 +514,30 @@ const CombinedPage = () => {
         </div>
 
         {/* "Leave a Review" */}
-        <div className=" text-center">
+        <div className="text-center">
           <div className="flex justify-center space-x-4">
-            <a
-              href="https://www.google.com/maps/place/Rhetts+Roofing"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center px-3 py-1 bg-white rounded-full custom-circle-shadow hover:bg-gray-100 transition duration-300 text-xs"
-            >
-              <img src={googleIcon} alt="Google" className="w-4 h-4 mr-1" />
-              <span>Review on Google</span>
-            </a>
-            <a
-              href="https://www.yelp.com/biz/rhetts-roofing"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center px-3 py-1 bg-white rounded-full shadow-md hover:bg-gray-100 transition duration-300 text-xs"
-            >
-              <img src={yelpIcon} alt="Yelp" className="w-4 h-4 mr-1" />
-              <span>Review on Yelp</span>
-            </a>
+            {activeSet === 1 && (
+              <a
+                href="https://www.google.com/maps/place/Rhetts+Roofing"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center px-3 py-1 bg-white rounded-full custom-circle-shadow hover:bg-gray-100 transition duration-300 text-xs"
+              >
+                <img src={googleIcon} alt="Google" className="w-4 h-4 mr-1" />
+                <span>Review on Google</span>
+              </a>
+            )}
+            {activeSet === 2 && (
+              <a
+                href="https://www.yelp.com/biz/rhetts-roofing"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center px-3 py-1 bg-white rounded-full shadow-md hover:bg-gray-100 transition duration-300 text-xs"
+              >
+                <img src={yelpIcon} alt="Yelp" className="w-4 h-4 mr-1" />
+                <span>Review on Yelp</span>
+              </a>
+            )}
           </div>
         </div>
       </div>
@@ -593,17 +546,6 @@ const CombinedPage = () => {
           LARGE SCREENS
       ────────────────────────────────────────────────────────── */}
       <div className="hidden md:block overflow-hidden">
-        {/* (1) Two toggle buttons ABOVE the main image */}
-        {/* <div className="w-full flex justify-center py-4 bg-gradient-to-b from-faint-color to-dark-button">
-          <h2
-            className="relative z-40
-                       text-white text-[6vh] font-bold drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)]"
-          >
-            Services
-          </h2>
-          
-        </div> */}
-
         {/* (2) Large images side-by-side, animate x for swap */}
         <div className="relative w-full h-[60vh] ">
           <motion.div
@@ -686,7 +628,7 @@ const CombinedPage = () => {
             </div>
           </div>
 
-          {/* (3) Services (buttons) in the center with staggered exit/enter */}
+          {/* Services (buttons) in the center with staggered exit/enter */}
           <div className="absolute inset-0 flex items-end justify-center mb-[18vh]">
             <AnimatePresence mode="wait">
               <motion.div
@@ -730,11 +672,8 @@ const CombinedPage = () => {
           </div>
         </div>
 
-        {/* (4) TESTIMONIALS SECTION (LARGE) */}
-        <section
-          id="testimonials"
-          className="relative bg-black px-3 pt-5"
-        >
+        {/* TESTIMONIALS SECTION (LARGE) */}
+        <section id="testimonials" className="relative bg-black px-3 pt-5">
           <div className="flex items-center justify-center mb-3">
             <h2
               className="text-5xl text-white text-font-serif mr-4 my-3"
@@ -753,7 +692,7 @@ const CombinedPage = () => {
                 <img
                   src={googleIcon}
                   alt="Google Icon"
-                  className={`h-8 w-8 transition-opacity duration-300`}
+                  className="h-8 w-8 transition-opacity duration-300"
                 />
                 {activeSet !== 1 && (
                   <div className="absolute inset-0 bg-gray-300 opacity-30 pointer-events-none" />
@@ -764,7 +703,7 @@ const CombinedPage = () => {
                 <img
                   src={yelpIcon}
                   alt="Yelp Icon"
-                  className={`h-8 w-8 transition-opacity duration-300`}
+                  className="h-8 w-8 transition-opacity duration-300"
                 />
                 {activeSet !== 2 && (
                   <div className="absolute inset-0 bg-gray-300 opacity-30 pointer-events-none" />
@@ -833,26 +772,30 @@ const CombinedPage = () => {
           </div>
 
           {/* "Leave a Review" at bottom */}
-          <div className="py-3 text-center px-3 ">
+          <div className="py-3 text-center px-3">
             <div className="flex justify-center space-x-6">
-              <a
-                href="https://www.google.com/maps/place/Rhetts+Roofing"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center px-4 py-2 bg-white rounded-full custom-circle-shadow hover:bg-gray-100 transition duration-300 text-sm"
-              >
-                <img src={googleIcon} alt="Google" className="w-6 h-6 mr-2" />
-                <span>Review us on Google</span>
-              </a>
-              <a
-                href="https://www.yelp.com/biz/rhetts-roofing"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center px-4 py-2 bg-white rounded-full custom-circle-shadow hover:bg-gray-100 transition duration-300 text-sm"
-              >
-                <img src={yelpIcon} alt="Yelp" className="w-6 h-6 mr-2" />
-                <span>Review us on Yelp</span>
-              </a>
+              {activeSet === 1 && (
+                <a
+                  href="https://www.google.com/maps/place/Rhetts+Roofing"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center px-4 py-2 bg-white rounded-full custom-circle-shadow hover:bg-gray-100 transition duration-300 text-sm"
+                >
+                  <img src={googleIcon} alt="Google" className="w-6 h-6 mr-2" />
+                  <span>Review us on Google</span>
+                </a>
+              )}
+              {activeSet === 2 && (
+                <a
+                  href="https://www.yelp.com/biz/rhetts-roofing"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center px-4 py-2 bg-white rounded-full custom-circle-shadow hover:bg-gray-100 transition duration-300 text-sm"
+                >
+                  <img src={yelpIcon} alt="Yelp" className="w-6 h-6 mr-2" />
+                  <span>Review us on Yelp</span>
+                </a>
+              )}
             </div>
           </div>
         </section>

@@ -1,32 +1,32 @@
-import React, { useState } from "react";
+// src/components/WhyChoose.jsx
+
+import React, { useState, useEffect } from "react";
+import * as Icons from "lucide-react"; // Import all icons from lucide-react
 
 const WhyChoose = () => {
   const [activeCard, setActiveCard] = useState(null);
   const [animationPhase, setAnimationPhase] = useState(null);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [whyChooseData, setWhyChooseData] = useState(null);
 
-  const features = [
-    {
-      title: "Reliability",
-      content:
-        "Clients value contractors who are dependable, punctual, and adhere to agreed-upon schedules. Demonstrating professionalism by arriving on time and fulfilling commitments builds trust and confidence.",
-    },
-    {
-      title: "Materials",
-      content:
-        "Clients are interested in the types of materials the roofer uses and whether they align with their preferences for durability, aesthetics, and budget.",
-    },
-    {
-      title: "Warranty",
-      content:
-        "Offering warranties on both materials and workmanship provides customers with peace of mind.",
-    },
-    {
-      title: "Safety",
-      content:
-        "Clients are concerned about the safety protocols that contractors have in place to protect both workers and the property during the roofing project.",
-    },
-  ];
+  useEffect(() => {
+    // Fetch richText.json
+    const fetchRichText = async () => {
+      try {
+        const response = await fetch("public/data/richText.json");
+        if (!response.ok) {
+          throw new Error("Failed to fetch rich text data.");
+        }
+        const data = await response.json();
+        setWhyChooseData(data.whyChooseFeatures);
+      } catch (error) {
+        console.error("Error fetching rich text data:", error);
+        // Optionally, set default/fallback data here
+      }
+    };
+
+    fetchRichText();
+  }, []);
 
   const handleCardClick = (index) => {
     if (isAnimating) return;
@@ -54,7 +54,7 @@ const WhyChoose = () => {
         transition: "transform 0.2s ease-in-out",
       };
 
-      let zIndex = features.length - index;
+      let zIndex = whyChooseData.length - index;
 
       if (index !== activeCard) {
         return { ...baseStyle, zIndex };
@@ -68,7 +68,7 @@ const WhyChoose = () => {
       };
 
       if (animationPhase === "right") {
-        zIndex = features.length - index;
+        zIndex = whyChooseData.length - index;
       } else {
         zIndex = 30;
       }
@@ -89,7 +89,7 @@ const WhyChoose = () => {
       left: "50%",
     };
 
-    let zIndex = features.length - index;
+    let zIndex = whyChooseData.length - index;
 
     if (index !== activeCard) {
       return { ...baseStyle, zIndex };
@@ -103,7 +103,7 @@ const WhyChoose = () => {
     };
 
     if (animationPhase === "right") {
-      zIndex = features.length - index;
+      zIndex = whyChooseData.length - index;
     } else {
       zIndex = 30;
     }
@@ -115,17 +115,21 @@ const WhyChoose = () => {
     };
   };
 
+  if (!whyChooseData) {
+    return <p>Loading Why Choose Us section...</p>;
+  }
+
   return (
     <section className="">
       <div className="relative px-4 bg-gradient-to-b from-faint-color to-white">
         <h3 className="text-[4.5vw] md:text-3xl text-center font-bold text-gray-900 py-6">
           Why Choose Us?
         </h3>
-        
+
         {/* Mobile view */}
-        <div className="flex md:hidden items-start relative pb-8 mb:p-14">
+        <div className="flex md:hidden items-start relative pb-8">
           <div className="flex flex-col items-start space-y-2">
-            {features.map((feature, index) => (
+            {whyChooseData.map((feature, index) => (
               <button
                 key={index}
                 onClick={() => handleCardClick(index)}
@@ -148,28 +152,31 @@ const WhyChoose = () => {
             ))}
           </div>
           <div className="relative w-2/3">
-            {features.map((feature, index) => (
-              <div
-                key={index}
-                style={getCardStyle(index, true)}
-                className="absolute transform bg-white p-4 rounded-xl drop-shadow-lg transition-transform duration-200"
-              >
-                <h4 className="text-[3.5vw] font-semibold text-gray-800 mb-2">
-                  {feature.title}
-                </h4>
-                <p className="text-[3vw] text-gray-600 mb-3">{feature.content}</p>
-                <p className="text-[2.5vw] text-right text-blue-600 font-semibold">
-                  {feature.source}
-                </p>
-              </div>
-            ))}
+            {whyChooseData.map((feature, index) => {
+              const IconComponent = Icons[feature.icon] || Icons.Star; // Fallback to 'Star' icon
+              return (
+                <div
+                  key={index}
+                  style={getCardStyle(index, true)}
+                  className="absolute transform bg-white p-4 rounded-xl drop-shadow-lg transition-transform duration-200"
+                >
+                  <h4 className="text-[3.5vw] font-semibold text-gray-800 mb-2">
+                    {feature.title}
+                  </h4>
+                  <p className="text-[3vw] text-gray-600 mb-3">{feature.desc}</p>
+                  <div className="text-[6vw] md:text-[3vh] md:mb-4">
+                    <IconComponent />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
         {/* Desktop view with centered deck */}
         <div className="hidden md:block relative ">
           <div className="absolute left-4 flex flex-col items-start space-y-2 justify-center h-48 w-48">
-            {features.map((feature, index) => (
+            {whyChooseData.map((feature, index) => (
               <button
                 key={index}
                 onClick={() => handleCardClick(index)}
@@ -196,21 +203,24 @@ const WhyChoose = () => {
             ))}
           </div>
           <div className="mx-auto max-w-2xl h-64 relative">
-            {features.map((feature, index) => (
-              <div
-                key={index}
-                style={getCardStyle(index, false)}
-                className="absolute transform bg-white p-6 rounded-xl drop-shadow-lg"
-              >
-                <h4 className="text-lg font-semibold text-gray-800 mb-2">
-                  {feature.title}
-                </h4>
-                <p className="text-sm text-gray-600 mb-3">{feature.content}</p>
-                <p className="text-xs text-right text-blue-600 font-semibold">
-                  {feature.source}
-                </p>
-              </div>
-            ))}
+            {whyChooseData.map((feature, index) => {
+              const IconComponent = Icons[feature.icon] || Icons.Star; // Fallback to 'Star' icon
+              return (
+                <div
+                  key={index}
+                  style={getCardStyle(index, false)}
+                  className="absolute transform bg-white p-6 rounded-xl drop-shadow-lg"
+                >
+                  <h4 className="text-lg font-semibold text-gray-800 mb-2">
+                    {feature.title}
+                  </h4>
+                  <p className="text-sm text-gray-600 mb-3">{feature.desc}</p>
+                  <div className="text-lg">
+                    <IconComponent />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
