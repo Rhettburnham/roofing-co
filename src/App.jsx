@@ -51,7 +51,7 @@ import CommercialService3 from "./components/Services/commercial/commercial_serv
 import CommercialService4 from "./components/Services/commercial/commercial_service_4";
 
 import Hero from "./components/Test";
-import LoadingScreen from "./components/LoadingScreen";
+// import LoadingScreen from "./components/LoadingScreen";
 import useScrollRestoration from "./components/usescrollrestoration";
 
 function ScrollRestoration() {
@@ -81,7 +81,7 @@ const AppRoutes = ({
 
   return (
     <>
-      {showLoader && <LoadingScreen />}
+      {/* {showLoader && <LoadingScreen />} */}
       <Routes location={location} key={location.pathname}>
         {/* Home page (read-only blocks) */}
         <Route
