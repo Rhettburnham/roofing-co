@@ -4,8 +4,8 @@ import React, { useState, useEffect } from "react";
 import * as Icons from "lucide-react"; // Import all icons from lucide-react
 import { motion } from "framer-motion";
 import { HashLink } from "react-router-hash-link";
-import Employees from "./Employees";
-import WhyChoose from "./WhyChoose";
+import EmployeesBlock from "./MainPageBlocks/EmployeesBlock";
+// import WhyChoose from "./WhyChoose";
 
 const About = () => {
   const [isShrunk, setIsShrunk] = useState(false);
@@ -82,7 +82,7 @@ const About = () => {
           </motion.h1>
         </div>
       </motion.section>
-      <WhyChoose />
+      {/* <WhyChoose /> */}
       <div className="mx-full pb-8">
         <section id="our-story" className="relative w-full bg-white z-30">
           <div className="relative">
@@ -164,7 +164,7 @@ const About = () => {
 
             {/* Employees section with desktop overlay */}
             <div className="relative w-full">
-              <Employees />
+              <EmployeesBlock />
 
               {/* Desktop text overlay (shown md and above) */}
               <div className="hidden md:flex absolute top-0 right-0 w-1/2 h-full bg-white z-10 items-center justify-center">

@@ -11,12 +11,6 @@ import {
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import About from "./components/About";
-import Inspection from "./components/Inspection";
-import RoofCoating from "./components/RoofCoating";
-import GutterRelated from "./components/GutterRelated";
-import ShingleInstallation from "./components/ShingleInstallation";
-import RoofVentilationInstallation from "./components/RoofVentilationInstallation";
-import MergedRoofingInfoPage from "./components/MergedRoofingInfoPage";
 
 // --- Main Page Blocks ---
 import HeroBlock from "./components/MainPageBlocks/HeroBlock";
@@ -28,29 +22,17 @@ import CombinedPageBlock from "./components/MainPageBlocks/CombinedPageBlock";
 import BeforeAfterBlock from "./components/MainPageBlocks/BeforeAfterBlock";
 import EmployeesBlock from "./components/MainPageBlocks/EmployeesBlock";
 
-import ChimneyCapsService from "./components/ChimneyCapsService";
-import ConcreteWorkService from "./components/ConcreteWorkService";
-import DecksService from "./components/DecksService";
-import UnderDeckWaterproofService from "./components/UnderDeckWaterproofService";
-import ExteriorPaintService from "./components/ExteriorPaintService";
-
 import ServicePage from "./components/ServicePage";
-import OneForm from "./components/OneForm";
+
+
 
 // --- Forms & Editors ---
-import ParentForm from "./components/ParentForm";
+import OneForm from "./components/OneForm";
 import ServiceEditPage from "./components/ServiceEditPage"; // Import the new one-page editor
 
-import Residential_service_1 from "./components/Services/residential/residential_service_1";
-import Residential_service_2 from "./components/Services/residential/Residential_service_2";
-import Residential_service_3 from "./components/Services/residential/Residential_service_3";
-import Residential_service_4 from "./components/Services/residential/Residential_service_4";
-import CommercialService1 from "./components/Services/commercial/commercial_service_1";
-import CommercialService2 from "./components/Services/commercial/commercial_service_2";
-import CommercialService3 from "./components/Services/commercial/commercial_service_3";
-import CommercialService4 from "./components/Services/commercial/commercial_service_4";
 
-import Hero from "./components/Test";
+
+
 // import LoadingScreen from "./components/LoadingScreen";
 import useScrollRestoration from "./components/usescrollrestoration";
 
@@ -118,49 +100,8 @@ const AppRoutes = ({
 
         {/* Other routes */}
         <Route path="/about" element={<About />} />
-        <Route
-          path="/Residential_service_1"
-          element={<Residential_service_1 />}
-        />
-        <Route
-          path="/Residential_service_2"
-          element={<Residential_service_2 />}
-        />
-        <Route
-          path="/Residential_service_3"
-          element={<Residential_service_3 />}
-        />
-        <Route
-          path="/Residential_service_4"
-          element={<Residential_service_4 />}
-        />
-        <Route path="/CommercialService1" element={<CommercialService1 />} />
-        <Route path="/CommercialService2" element={<CommercialService2 />} />
-        <Route path="/CommercialService3" element={<CommercialService3 />} />
-        <Route path="/CommercialService4" element={<CommercialService4 />} />
-        <Route path="/inspection" element={<Inspection />} />
-        <Route path="/roofcoating" element={<RoofCoating />} />
         <Route path="/oneform" element={<OneForm />} />
-        <Route path="/gutterrelated" element={<GutterRelated />} />
-        <Route path="/shingleinstallation" element={<ShingleInstallation />} />
-        <Route
-          path="/ventilation"
-          element={<RoofVentilationInstallation />}
-        />
-        <Route
-          path="/mergedroofinginfopage"
-          element={<MergedRoofingInfoPage />}
-        />
-        <Route path="/chimney-caps" element={<ChimneyCapsService />} />
-        <Route path="/concrete-work" element={<ConcreteWorkService />} />
-        <Route path="/decks" element={<DecksService />} />
-        <Route
-          path="/underdeck"
-          element={<UnderDeckWaterproofService />}
-        />
-        <Route path="/exterior-paint" element={<ExteriorPaintService />} />
         <Route path="/service/:category/:id" element={<ServicePage />} />
-        <Route path="/update-form" element={<ParentForm />} />
         <Route path="/admin/service/edit" element={<ServiceEditPage />} />
       </Routes>
     </>

@@ -1,7 +1,8 @@
 // src/components/MainPageBlocks/BookingBlock.jsx
 import React, { useState } from "react";
 import axios from "axios";
-import * as Icons from "lucide-react";
+// import * as Icons from "lucide-react";
+// import * as FaIcons from "react-icons/fa";
 
 /* ===============================================
    1) BOOKING PREVIEW (Read-Only)
@@ -220,7 +221,7 @@ function BookingPreview({ bookingData }) {
       </div>
 
       {/* MODAL: SELECT SERVICE */}
-      {isModalOpen && (
+      {/* {isModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
           onClick={() => setIsModalOpen(false)}
@@ -258,7 +259,7 @@ function BookingPreview({ bookingData }) {
             </ul>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 }
