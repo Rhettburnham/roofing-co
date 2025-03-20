@@ -113,7 +113,7 @@ function EmployeesPreview({ employeesData }) {
       {/* Header Section with animated nail and title */}
       <div
         ref={headerRef}
-        className="relative flex items-center w-full overflow-hidden py-11"
+        className="relative flex items-center w-full overflow-hidden py-8 md:py-6"
       >
         {/* Nail element (animated from the right) */}
         <div
@@ -135,7 +135,7 @@ function EmployeesPreview({ employeesData }) {
         </div>
         {/* Section title (animated from the left) */}
         <div ref={textRef} className="absolute left-1/2 z-30">
-          <h2 className="text-[6vw] md:text-[6vh] text-black font-normal font-ultra-condensed font-rye pt-3">
+          <h2 className="text-[6vw] md:text-[7vh] text-black font-normal font-ultra-condensed font-rye pt-3">
             {sectionTitle}
           </h2>
         </div>

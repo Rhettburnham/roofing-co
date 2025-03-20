@@ -1,21 +1,20 @@
 // LoadingScreen.jsx
-import React from "react";
+import React, { memo } from "react";
 
-const LoadingScreen = () => {
+// Using a memo to prevent unnecessary re-renders of the loading screen
+const LoadingScreen = memo(() => {
   return (
-    <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
-      <div className="relative" style={{ width: "20vh", height: "20vh" }}>
-        <video
-          src="/assets/videos/our_process_videos/repair.mp4"
-          autoPlay
-          loop
-          muted
-          className="w-full h-full object-cover"
-          style={{ transform: "scale(1.1)" }}
-        />
+    <div className="fixed inset-0 bg-white bg-opacity-90 flex items-center justify-center z-50">
+      <div className="flex flex-col items-center">
+        {/* Simple CSS spinner instead of video for better performance */}
+        <div className="w-16 h-16 border-t-4 border-b-4 border-blue-500 rounded-full animate-spin"></div>
+        <p className="mt-4 text-gray-700 font-medium">Loading content...</p>
       </div>
     </div>
   );
-};
+});
+
+// Display name for debugging
+LoadingScreen.displayName = "LoadingScreen";
 
 export default LoadingScreen;

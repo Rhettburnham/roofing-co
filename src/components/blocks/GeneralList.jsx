@@ -22,18 +22,19 @@ import { FaCheckCircle } from "react-icons/fa";
  *   ]
  * }
  */
-const GeneralList = ({
-  config = {},
-  readOnly = false,
-  onConfigChange,
-}) => {
-  const {
-    sectionTitle = "Select a Siding Type",
-    items = [],
-  } = config;
+const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
+  const { sectionTitle = "Select a Siding Type", items = [] } = config;
 
   // For readOnly mode, we track which item is selected
   const [selectedIndex, setSelectedIndex] = useState(0);
+
+  // Helper function to get display URL
+  const getDisplayUrl = (value) => {
+    if (!value) return null;
+    if (typeof value === "string") return value;
+    if (typeof value === "object" && value.url) return value.url;
+    return null;
+  };
 
   // ---------- READONLY MODE -----------
   if (readOnly) {
@@ -138,26 +139,15 @@ const GeneralList = ({
 
             {/* Pictures */}
             {activeItem.pictures && activeItem.pictures.length > 0 && (
-              <div className="mt-2 md:mt-4 w-full">
-                <h4 className="text-[3.5vw] md:text-xl font-semibold mb-2 text-gray-800">
-                  {activeItem.pictures.length > 1 ? "Pictures:" : "Picture:"}
-                </h4>
-                <div
-                  className={`grid ${
-                    activeItem.pictures.length > 1
-                      ? "grid-cols-2 md:grid-cols-3 gap-4"
-                      : "grid-cols-1"
-                  }`}
-                >
-                  {activeItem.pictures.map((pic, idx) => (
-                    <img
-                      key={idx}
-                      src={pic}
-                      alt={`${activeItem.name || "Option"} ${idx + 1}`}
-                      className="w-full h-32 md:h-48 object-cover rounded-lg shadow-md"
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                {activeItem.pictures.map((pic, picIdx) => (
+                  <img
+                    key={picIdx}
+                    src={typeof pic === "string" ? pic : pic.url}
+                    alt={`${activeItem.name} - Image ${picIdx + 1}`}
+                    className="w-full h-48 object-cover rounded-lg shadow-md"
                     />
                   ))}
-                </div>
               </div>
             )}
           </div>
@@ -262,6 +252,29 @@ const GeneralList = ({
       return i;
     });
     handleFieldChange("items", updated);
+  };
+
+  const handleImageUpload = (itemIndex, picIndex, file) => {
+    if (!file) return;
+
+    // Create a URL for display
+    const fileURL = URL.createObjectURL(file);
+
+    // Update the pictures array with just the URL
+    const updatedItems = [...items];
+    if (!updatedItems[itemIndex].pictures) {
+      updatedItems[itemIndex].pictures = [];
+    }
+
+    if (picIndex === undefined) {
+      // Add new image
+      updatedItems[itemIndex].pictures.push(fileURL);
+    } else {
+      // Replace existing image
+      updatedItems[itemIndex].pictures[picIndex] = fileURL;
+    }
+
+    handleFieldChange("items", updatedItems);
   };
 
   return (

@@ -3,7 +3,7 @@ import React from "react";
 
 /**
  * GridImageTextBlock
- * 
+ *
  * config = {
  *   columns: number, // number of columns (1-6)
  *   items: [
@@ -11,35 +11,45 @@ import React from "react";
  *   ]
  * }
  */
-const GridImageTextBlock = ({ config = {}, readOnly = false, onConfigChange }) => {
+const GridImageTextBlock = ({
+  config = {},
+  readOnly = false,
+  onConfigChange,
+}) => {
   const { columns = 4, items = [] } = config;
+
+  // Default image to use when no image is provided
+  const defaultImage = "/assets/images/placeholder.jpg";
 
   // READ ONLY version
   if (readOnly) {
-    const colClass = `grid-cols-${columns >= 1 && columns <= 6 ? columns : 4}`;
+    // Set a reasonable default for columns that's responsive
+    const colClass = `grid grid-cols-1 md:grid-cols-${Math.min(columns, 3)}`;
+
     return (
-      <section className="w-full">
-        <div className="container mx-auto px-6 py-4 md:py-8">
-          <div className={`grid gap-4 md:gap-8 ${colClass}`}>
+      <section className="w-full py-0">
+        <div className="container mx-auto">
+          <div className={`${colClass} gap-4`}>
             {items.map((item, idx) => (
-              <div key={idx} className="bg-white shadow-md overflow-hidden">
-                {item.image && (
-                  <img
-                    src={item.image}
-                    alt={item.alt || item.title || ""}
-                    className="w-full h-[12vh] md:h-48 object-cover"
-                  />
+              <div
+                key={idx}
+                className="bg-white shadow-md rounded overflow-hidden h-full flex flex-col"
+              >
+                {getDisplayUrl(item.image) && (
+                  <div className="w-full h-48 overflow-hidden">
+                    <img
+                      src={getDisplayUrl(item.image)}
+                      alt={item.alt || item.title || "Feature"}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
                 )}
-                <div className="p-2 md:p-4">
+                <div className="p-4 flex-grow">
                   {item.title && (
-                    <h3 className="text-[3vw] md:text-xl font-semibold mb-1">
-                      {item.title}
-                    </h3>
+                    <h3 className="text-xl font-semibold mb-2">{item.title}</h3>
                   )}
                   {item.description && (
-                    <p className="text-[2.5vw] md:text-sm text-gray-700">
-                      {item.description}
-                    </p>
+                    <p className="text-gray-700">{item.description}</p>
                   )}
                 </div>
               </div>
@@ -60,12 +70,18 @@ const GridImageTextBlock = ({ config = {}, readOnly = false, onConfigChange }) =
 
   const updateItem = (index, field, value) => {
     const newItems = [...items];
-    newItems[index][field] = value;
+    newItems[index] = {
+      ...newItems[index],
+      [field]: value,
+    };
     handleFieldChange("items", newItems);
   };
 
   const addItem = () => {
-    const newItems = [...items, { title: "", image: "", alt: "", description: "" }];
+    const newItems = [
+      ...items,
+      { title: "", image: "", alt: "", description: "" },
+    ];
     handleFieldChange("items", newItems);
   };
 
@@ -75,19 +91,53 @@ const GridImageTextBlock = ({ config = {}, readOnly = false, onConfigChange }) =
     handleFieldChange("items", newItems);
   };
 
+  /**
+   * Gets the display URL from either a string URL or an object with a URL property
+   *
+   * @param {string|Object} value - The value to extract URL from
+   * @returns {string|null} - The URL to display
+   */
+  const getDisplayUrl = (value) => {
+    if (!value) return null;
+    if (typeof value === "string") return value;
+    if (typeof value === "object" && value.url) return value.url;
+    return null;
+  };
+
+  /**
+   * Handles image upload for an item
+   *
+   * @param {number} idx - The index of the item
+   * @param {File} file - The uploaded file
+   */
+  const handleImageUpload = (idx, file) => {
+    if (!file) return;
+
+    // Create a URL for display
+    const fileURL = URL.createObjectURL(file);
+
+    // Store just the URL for display
+    updateItem(idx, "image", fileURL);
+  };
+
   return (
     <div className="p-2 bg-gray-700 rounded text-white">
       <h3 className="font-bold mb-2">GridImageTextBlock Editor</h3>
 
       {/* Columns */}
       <label className="block text-sm mb-1">
-        Number of Columns (1-6):
+        Number of Columns (1-3):
         <input
           type="number"
           value={columns}
-          onChange={(e) => handleFieldChange("columns", parseInt(e.target.value, 10))}
+          onChange={(e) =>
+            handleFieldChange(
+              "columns",
+              Math.min(Math.max(parseInt(e.target.value, 10), 1), 3)
+            )
+          }
           min={1}
-          max={6}
+          max={3}
           className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
         />
       </label>
@@ -112,13 +162,13 @@ const GridImageTextBlock = ({ config = {}, readOnly = false, onConfigChange }) =
               Title:
               <input
                 type="text"
-                value={item.title}
+                value={item.title || ""}
                 onChange={(e) => updateItem(idx, "title", e.target.value)}
                 className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
               />
             </label>
 
-            {/* Image Upload (no URL text input) */}
+            {/* Image Upload */}
             <label className="block text-sm mb-1">
               Upload Image:
               <input
@@ -126,18 +176,17 @@ const GridImageTextBlock = ({ config = {}, readOnly = false, onConfigChange }) =
                 accept="image/*"
                 onChange={(e) => {
                   if (e.target.files && e.target.files[0]) {
-                    const fileURL = URL.createObjectURL(e.target.files[0]);
-                    updateItem(idx, "image", fileURL);
+                    handleImageUpload(idx, e.target.files[0]);
                   }
                 }}
                 className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
               />
             </label>
-            {item.image && (
+            {getDisplayUrl(item.image) && (
               <img
-                src={item.image}
-                alt={item.alt || item.title}
-                className="mt-2 h-24 rounded shadow"
+                src={getDisplayUrl(item.image)}
+                alt={item.alt || item.title || "Preview"}
+                className="mt-2 h-24 object-cover rounded w-full"
               />
             )}
 
@@ -146,7 +195,7 @@ const GridImageTextBlock = ({ config = {}, readOnly = false, onConfigChange }) =
               Alt Text:
               <input
                 type="text"
-                value={item.alt}
+                value={item.alt || ""}
                 onChange={(e) => updateItem(idx, "alt", e.target.value)}
                 className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
               />
@@ -157,7 +206,7 @@ const GridImageTextBlock = ({ config = {}, readOnly = false, onConfigChange }) =
               Description:
               <textarea
                 rows={2}
-                value={item.description}
+                value={item.description || ""}
                 onChange={(e) => updateItem(idx, "description", e.target.value)}
                 className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
               />

@@ -1,7 +1,8 @@
 // src/components/MainPageBlocks/BookingBlock.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback, memo, useMemo } from "react";
 import axios from "axios";
-// import * as Icons from "lucide-react";
+import { FaTools, FaFan, FaPaintRoller, FaTint } from "react-icons/fa";
+import { X } from "lucide-react";
 // import * as FaIcons from "react-icons/fa";
 
 /* ===============================================
@@ -11,16 +12,8 @@ import axios from "axios";
    bookingData.phone for the phone number link, and
    bookingData.logo for the logo image.
 =============================================== */
-function BookingPreview({ bookingData }) {
-  if (!bookingData) {
-    return <p>No data found.</p>;
-  }
-
-  // Destructure headerText, phone, and logo from bookingData; use default logo if not provided
-  const { headerText, phone, logo: bookingLogo } = bookingData;
-  const logo = bookingLogo || "/assets/images/logo.svg";
-
-  // Local state for the form inputs (omitted for brevity)
+const BookingPreview = memo(({ bookingData }) => {
+  // Initialize state at the top level to avoid conditional hooks
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -31,91 +24,181 @@ function BookingPreview({ bookingData }) {
   });
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [residentialServices, setResidentialServices] = useState([]);
+  const [commercialServices, setCommercialServices] = useState([]);
+  const [activeTab, setActiveTab] = useState("residential");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const modalServices = [
-    "Roof Replacement",
-    "Gutter Installation",
-    "Siding",
-    "General Maintenance",
-  ];
+  // Memoize the icons array to prevent recreating it on every render
+  const residentialIcons = useMemo(
+    () => [FaTools, FaFan, FaTint, FaPaintRoller],
+    []
+  );
+  const commercialIcons = useMemo(
+    () => [FaTools, FaPaintRoller, FaTint, FaFan],
+    []
+  );
 
-  const toggleFormVisibility = () => {
-    setIsFormVisible(!isFormVisible);
-  };
+  // Fetch services from services.json with optimized loading
+  useEffect(() => {
+    if (!bookingData) return;
 
-  const handleChange = (e) => {
+    let isMounted = true;
+    const controller = new AbortController();
+    const signal = controller.signal;
+
+    const fetchServices = async () => {
+      try {
+        setIsLoading(true);
+        const res = await fetch("/data/services.json", { signal });
+
+        if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+
+        if (isMounted) {
+          const data = await res.json();
+
+          // Process data outside of state updates to minimize render cycles
+          const processedResServices = data.residential.map(
+            (service, index) => {
+              const heroBlock =
+                service.blocks.find((b) => b.blockName === "HeroBlock") ||
+                service.blocks[0];
+              const title = heroBlock?.config?.title || `Service ${service.id}`;
+              return {
+                icon:
+                  residentialIcons[index % residentialIcons.length] || FaTools,
+                title,
+                id: service.id,
+                category: "residential",
+              };
+            }
+          );
+
+          const processedComServices = data.commercial.map((service, index) => {
+            const heroBlock =
+              service.blocks.find((b) => b.blockName === "HeroBlock") ||
+              service.blocks[0];
+            const title = heroBlock?.config?.title || `Service ${service.id}`;
+            return {
+              icon: commercialIcons[index % commercialIcons.length] || FaTools,
+              title,
+              id: service.id,
+              category: "commercial",
+            };
+          });
+
+          // Batch state updates to reduce renders
+          setResidentialServices(processedResServices);
+          setCommercialServices(processedComServices);
+        }
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          console.error("Error fetching services data:", error);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchServices();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
+  }, [bookingData, residentialIcons, commercialIcons]);
+
+  if (!bookingData) {
+    return <p>No data found.</p>;
+  }
+
+  // Destructure headerText, phone, and logo from bookingData; use default logo if not provided
+  const { headerText, phone, logo: bookingLogo } = bookingData;
+  const logo = bookingLogo || "/assets/images/logo.svg";
+
+  const toggleFormVisibility = useCallback(() => {
+    setIsFormVisible((prev) => !prev);
+  }, []);
+
+  const handleChange = useCallback((e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+  }, []);
 
-  const handleServiceSelect = (serviceTitle) => {
+  const handleServiceSelect = useCallback((serviceTitle) => {
     setFormData((prev) => ({ ...prev, service: serviceTitle }));
     setIsModalOpen(false);
-  };
+  }, []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const { firstName, lastName, email, phone, service, message } = formData;
-    if (!firstName || !lastName || !email || !phone || !service || !message) {
-      alert("Please fill in all required fields.");
-      return;
-    }
-    try {
-      const dataToSend = { ...formData };
-      console.log("Data being sent:", dataToSend);
-      const API_BASE_URL =
-        import.meta.env.VITE_API_BASE_URL ||
-        "https://roofingco-backend.herokuapp.com";
-      const response = await axios.post(
-        `${API_BASE_URL}/submit-booking`,
-        dataToSend
-      );
-      alert(response.data.message);
-      setFormData({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        service: "",
-        message: "",
-      });
-    } catch (error) {
-      console.error("Error submitting booking:", error);
-      alert("An unexpected error occurred. Please try again later.");
-    }
-  };
+  const handleSubmit = useCallback(
+    async (e) => {
+      e.preventDefault();
+
+      try {
+        // Show some form of loading indicator if needed
+        const response = await axios.post("/api/sendForm", formData);
+
+        if (response.status === 200) {
+          alert("Form submitted successfully!");
+          // Reset form data after successful submission
+          setFormData({
+            firstName: "",
+            lastName: "",
+            email: "",
+            phone: "",
+            service: "",
+            message: "",
+          });
+          // Hide the form after submission
+          setIsFormVisible(false);
+        }
+      } catch (error) {
+        console.error("Error submitting form:", error);
+        alert(
+          "There was an error submitting your form. Please try again later."
+        );
+      }
+    },
+    [formData]
+  );
+
+  const handleTabChange = useCallback((tab) => {
+    setActiveTab(tab);
+  }, []);
 
   return (
-    <div className="flex flex-col items-center bg-white w-full bg-gradient-to-t from-black to-white">
+    <div className="flex flex-col items-center bg-white w-full bg-gradient-to-t from-black via-white to-white">
       {/* HEADER RIBBON */}
       <div className="relative w-full">
-        <div className="absolute inset-0 " />
+        <div className="absolute inset-0" />
 
         {/* Jagged SVG at the bottom */}
         <svg
-          className="absolute bottom-0 left-0 w-full h-[10vh] md:h-[15vh] z-10"
+          className="absolute bottom-0 left-0 w-full h-[5vh] md:h-[8vh] z-10"
           viewBox="0 0 1440 320"
           preserveAspectRatio="none"
         >
           <path
-            className = "text-transparent text-[5vh]"
-            fill = "currentColor"
+            className="text-transparent text-[5vh]"
+            fill="currentColor"
             opacity="1"
             d="M0,224 L80,192 C160,160, 320,96, 480,101.3 C640,107, 800,181, 960,192 C1120,203, 1280,149, 1360,122.7 L1440,96 L1440,320 L0,320 Z"
           />
         </svg>
-        <div className="relative z-10 py-4 px-4 flex flex-row items-center justify-center">
+        <div className="relative z-10 py-4 px-4 flex flex-row items-center justify-center bg-dark-below-header">
           <img
             src={logo}
             alt="logo"
-            className="w-20 h-auto mr-6 drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"
-            style={{ filter: "invert(0)" }}
+            className="w-20 h-auto mr-6 drop-shadow-[0_1.2px_1.2px_rgba(255,30,0,0.8)]"
+            style={{ filter: "invert(1)" }}
           />
           <div className="text-left drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
-            <h2 className="text-2xl md:text-3xl font-bold text-black">
+            <h2 className="text-2xl md:text-3xl font-bold text-white">
               {headerText}
             </h2>
-            <div className="font-bold md:text-lg text-black ">
+            <div className="font-bold md:text-lg text-white">
               <a href={`tel:${phone}`}>{phone}</a>
             </div>
           </div>
@@ -125,9 +208,9 @@ function BookingPreview({ bookingData }) {
       {/* "BOOK" BUTTON (mobile) */}
       <button
         onClick={toggleFormVisibility}
-        className="block md:hidden p-2 mb-2 px-6 dark_button text-white text-md font-semibold rounded-md hover:bg-white hover:text-black shadow-xl"
+        className="block md:hidden p-2 my-2 px-6 dark_button text-white text-md font-semibold rounded-md hover:bg-white hover:text-black shadow-xl"
       >
-        {isFormVisible ? "..." : "Book"}
+        {isFormVisible ? "Close" : "Book"}
       </button>
 
       {/* BOOKING FORM */}
@@ -221,7 +304,7 @@ function BookingPreview({ bookingData }) {
       </div>
 
       {/* MODAL: SELECT SERVICE */}
-      {/* {isModalOpen && (
+      {isModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
           onClick={() => setIsModalOpen(false)}
@@ -234,36 +317,92 @@ function BookingPreview({ bookingData }) {
               onClick={() => setIsModalOpen(false)}
               className="absolute top-2 right-2 text-gray-600 hover:text-gray-800 focus:outline-none"
             >
-              <Icons.X className="w-6 h-6" />
+              <X className="w-6 h-6" />
             </button>
-            <h2 className="text-2xl font-bold mb-4 text-center">Select a Service</h2>
+            <h2 className="text-2xl font-bold mb-4 text-center">
+              Select a Service
+            </h2>
+
+            {/* Tabs for Residential/Commercial */}
+            <div className="flex border-b mb-4">
+              <button
+                className={`flex-1 py-2 font-medium ${
+                  activeTab === "residential"
+                    ? "text-dark-below-header border-b-2 border-dark-below-header"
+                    : "text-gray-500"
+                }`}
+                onClick={() => handleTabChange("residential")}
+              >
+                Residential
+              </button>
+              <button
+                className={`flex-1 py-2 font-medium ${
+                  activeTab === "commercial"
+                    ? "text-dark-below-header border-b-2 border-dark-below-header"
+                    : "text-gray-500"
+                }`}
+                onClick={() => handleTabChange("commercial")}
+              >
+                Commercial
+              </button>
+            </div>
+
+            {/* Service List */}
             <ul className="space-y-4 max-h-80 overflow-y-auto">
-              {modalServices.length > 0 ? (
-                modalServices.map((title, idx) => (
+              {activeTab === "residential" ? (
+                residentialServices.length > 0 ? (
+                  residentialServices.map((service, idx) => (
+                    <li
+                      key={idx}
+                      className="flex items-start cursor-pointer p-2 hover:bg-gray-100 rounded"
+                      onClick={() => handleServiceSelect(service.title)}
+                    >
+                      <div className="text-2xl text-dark-below-header mr-3">
+                        {React.createElement(service.icon, {
+                          className: "w-6 h-6",
+                        })}
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold">
+                          {service.title}
+                        </h3>
+                      </div>
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-center text-gray-600">
+                    Loading residential services...
+                  </li>
+                )
+              ) : commercialServices.length > 0 ? (
+                commercialServices.map((service, idx) => (
                   <li
                     key={idx}
                     className="flex items-start cursor-pointer p-2 hover:bg-gray-100 rounded"
-                    onClick={() => handleServiceSelect(title)}
+                    onClick={() => handleServiceSelect(service.title)}
                   >
                     <div className="text-2xl text-dark-below-header mr-3">
-                      <Icons.Tools className="w-6 h-6" />
+                      {React.createElement(service.icon, {
+                        className: "w-6 h-6",
+                      })}
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold">{title}</h3>
+                      <h3 className="text-lg font-semibold">{service.title}</h3>
                     </div>
                   </li>
                 ))
               ) : (
-                <li className="text-center text-gray-600">No services found</li>
+                <li className="text-center text-gray-600">
+                  Loading commercial services...
+                </li>
               )}
             </ul>
           </div>
         </div>
-      )} */}
+      )}
     </div>
   );
-}
-
+});
 
 /* ===============================================
    2) BOOKING EDITOR PANEL (Editing Mode)
@@ -274,13 +413,41 @@ function BookingPreview({ bookingData }) {
 function BookingEditorPanel({ localData, setLocalData, onSave }) {
   const { logo, headerText = "", phone = "" } = localData;
 
-  // Handler for logo upload
+  /**
+   * Handles logo image upload
+   * Stores both the URL for display and the file object for the ZIP
+   *
+   * @param {Event} e - The file input change event
+   */
   const handleLogoChange = (e) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const fileURL = URL.createObjectURL(file);
-      setLocalData((prev) => ({ ...prev, logo: fileURL }));
-    }
+    if (!file) return;
+
+    // Create a URL for display
+    const fileURL = URL.createObjectURL(file);
+
+    // Store both the file and URL
+    setLocalData((prev) => ({
+      ...prev,
+      logo: {
+        file: file,
+        url: fileURL,
+        name: file.name,
+      },
+    }));
+  };
+
+  /**
+   * Gets the display URL from either a string URL or an object with a URL property
+   *
+   * @param {string|Object} value - The value to extract URL from
+   * @returns {string|null} - The URL to display
+   */
+  const getDisplayUrl = (value) => {
+    if (!value) return null;
+    if (typeof value === "string") return value;
+    if (typeof value === "object" && value.url) return value.url;
+    return null;
   };
 
   return (
@@ -306,8 +473,12 @@ function BookingEditorPanel({ localData, setLocalData, onSave }) {
           onChange={handleLogoChange}
           className="w-full bg-gray-700 px-2 py-1 rounded"
         />
-        {logo && (
-          <img src={logo} alt="Logo Preview" className="mt-2 h-24 rounded shadow" />
+        {getDisplayUrl(logo) && (
+          <img
+            src={getDisplayUrl(logo)}
+            alt="Logo Preview"
+            className="mt-2 h-24 rounded shadow"
+          />
         )}
       </div>
 
@@ -347,7 +518,11 @@ function BookingEditorPanel({ localData, setLocalData, onSave }) {
    - Otherwise, show BookingEditorPanel.
    - The default logo is set to "/assets/images/logo.svg" if not provided.
 =============================================== */
-export default function BookingBlock({ readOnly = false, bookingData, onConfigChange }) {
+export default function BookingBlock({
+  readOnly = false,
+  bookingData,
+  onConfigChange,
+}) {
   const [localData, setLocalData] = useState(() => {
     if (!bookingData) {
       return {
@@ -368,6 +543,10 @@ export default function BookingBlock({ readOnly = false, bookingData, onConfigCh
   }
 
   return (
-    <BookingEditorPanel localData={localData} setLocalData={setLocalData} onSave={handleSave} />
+    <BookingEditorPanel
+      localData={localData}
+      setLocalData={setLocalData}
+      onSave={handleSave}
+    />
   );
 }

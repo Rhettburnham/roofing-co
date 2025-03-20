@@ -1,4 +1,11 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, {
+  useRef,
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  memo,
+} from "react";
 import { MapContainer, TileLayer, Marker, Circle, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -6,29 +13,35 @@ import { gsap } from "gsap";
 import * as FaIcons from "react-icons/fa";
 
 const CustomMarkerIcon = L.icon({
-  iconUrl: "https://maps.gstatic.com/mapfiles/ms2/micons/blue.png",
-  iconSize: [32, 32],
-  iconAnchor: [16, 32],
-  popupAnchor: [0, -32],
+  iconUrl: "/assets/images/clipped-cowboy.png",
+  iconSize: [20, 20],
+  iconAnchor: [10, 20],
+  popupAnchor: [0, -20],
 });
 
-function DropMarker({ position }) {
+const DropMarker = memo(({ position }) => {
   const markerRef = useRef(null);
 
   useEffect(() => {
     if (markerRef.current) {
       gsap.from(markerRef.current.getElement(), {
         y: -100,
-        duration: 0.6,
+        duration: 1,
         ease: "bounce.out",
       });
     }
+
+    return () => {
+      if (markerRef.current) {
+        gsap.killTweensOf(markerRef.current.getElement());
+      }
+    };
   }, []);
 
   return <Marker position={position} icon={CustomMarkerIcon} ref={markerRef} />;
-}
+});
 
-function MapInteractionHandler({ mapActive }) {
+const MapInteractionHandler = memo(({ mapActive }) => {
   const map = useMap();
 
   useEffect(() => {
@@ -52,61 +65,109 @@ function MapInteractionHandler({ mapActive }) {
   }, [mapActive, map]);
 
   return null;
-}
+});
 
 /* --------------------------------------------------
    READ-ONLY SUBCOMPONENTS
 -----------------------------------------------------*/
-function StatItem({ iconName, title, value }) {
-  const IconComp = FaIcons[iconName] || FaIcons.FaQuestionCircle;
+const StatItem = memo(({ iconName, title, value }) => {
+  const IconComp = useMemo(
+    () => FaIcons[iconName] || FaIcons.FaQuestionCircle,
+    [iconName]
+  );
   const [count, setCount] = useState(0);
 
   useEffect(() => {
     let startValue = 0;
-    let startTime = Date.now();
+    let startTime = null;
     const duration = 2000;
-    const tick = () => {
-      const now = Date.now();
-      const elapsed = now - startTime;
+    let animationFrameId = null;
+
+    const tick = (timestamp) => {
+      if (!startTime) startTime = timestamp;
+      const elapsed = timestamp - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      const currentValue = Math.floor(progress * (value - startValue) + startValue);
+      const currentValue = Math.floor(
+        progress * (value - startValue) + startValue
+      );
       setCount(currentValue);
-      if (progress < 1) requestAnimationFrame(tick);
+
+      if (progress < 1) {
+        animationFrameId = requestAnimationFrame(tick);
+      }
     };
-    requestAnimationFrame(tick);
+
+    animationFrameId = requestAnimationFrame(tick);
+
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
   }, [value]);
 
   return (
     <div className="flex flex-col items-center justify-center text-center">
-      <div className="flex flex-row justify-center items-center  text-[5.5vh] md:text-[5.5vh] text-gray-50/80 ">
+      <div className="flex flex-row justify-center items-center text-[5.5vhw] md:text-[6.5vh] text-gray-50/80">
         <IconComp className="w-full h-full" />
-        <p className="ml-2 text-base md:text-base font-semibold text-yellow-100">{count}</p>
+        <p className="ml-2 text-xs md:text-base font-semibold text-yellow-100">
+          {count}
+        </p>
       </div>
       <div className="flex gap-1">
-        
-        <p className=" whitespace-nowrap text-sm md:text-sm font-semibold text-white mt-1">{title}</p>
+        <p className="whitespace-nowrap text-sm md:text-sm font-semibold text-white mt-1">
+          {title}
+        </p>
       </div>
     </div>
   );
-  
-}
+});
 
-function StatsPanel({ isSmallScreen, stats }) {
+const StatsPanel = memo(({ isSmallScreen, stats }) => {
+  // Ensure we always have exactly 4 stats for a 2x2 grid
+  const displayStats = [...stats];
+
+  // If we have fewer than 4 stats, add placeholders to maintain the 2x2 grid
+  while (displayStats.length < 4) {
+    displayStats.push({
+      value: "0",
+      label: "Placeholder",
+      icon: "FaAward",
+      title: "Placeholder",
+    });
+  }
+
+  // If we have more than 4, just use the first 4
+  const gridStats = displayStats.slice(0, 4);
+
   return (
     <div
       className={`
-
-        grid gap-6 p-4
-        ${isSmallScreen ? "text-xs" : "text-base"}
-        grid-cols-2
-      `}
+      w-full grid gap-2 
+      grid-cols-2 md:grid-cols-2 
+      text-center p-2
+    `}
     >
-      {stats.map((item, idx) => (
-        <StatItem key={idx} iconName={item.icon} title={item.title} value={item.value} />
-      ))}
+      {gridStats.map((stat, index) => {
+        const IconComponent = FaIcons[stat.icon] || FaIcons.FaAward;
+        return (
+          <div
+            key={index}
+            className="flex flex-col items-center justify-center bg-white/90 rounded-lg p-2 shadow-md"
+          >
+            <IconComponent className="w-6 h-6 mb-1 text-gray-700" />
+            <div className="text-lg md:text-xl font-bold text-gray-600">
+              {stat.value}
+            </div>
+            <div className="text-xs md:text-sm text-gray-600 font-medium">
+              {stat.title || stat.label}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
-}
+});
 
 // Removed `max-h-[75vh] overflow-auto` to allow full height on smaller screens and avoid vertical scrolling.
 function BasicMapPreview({ mapData }) {
@@ -162,7 +223,9 @@ function BasicMapPreview({ mapData }) {
   return (
     <section className="  overflow-hidden ">
       <div className="pb-2 ">
-        <div className={`flex ${isSmallScreen ? "justify-center" : "justify-start pl-11"}`}>
+        <div
+          className={`flex ${isSmallScreen ? "justify-center" : "justify-start pl-11"}`}
+        >
           <h1 className="text-[3vh] md:text-[5vh] font-normal text-black text-center font-serif">
             Are we in your area?
           </h1>
@@ -201,20 +264,23 @@ function BasicMapPreview({ mapData }) {
                     className="absolute inset-0 bg-black bg-opacity-20 flex flex-row items-start justify-center cursor-pointer pt-4"
                     onClick={() => setMapActive(true)}
                   >
-                    <FaIcons.FaMapMarkerAlt className="text-white opacity-75" size={30} />
+                    <FaIcons.FaMapMarkerAlt
+                      className="text-white opacity-75"
+                      size={30}
+                    />
                     <p className="mt-2 text-white text-sm font-serif">
                       Click to interact with the map
                     </p>
                   </div>
                 )}
                 {/* Bottom overlay: address + phone */}
-                <div className="absolute bottom-0 w-full bg-hover-color text-center text-gray-400 py-1 z-10">
-                  <div className="font-semibold text-[2.5vw] md:text-[2.5vh] font-serif">
+                <div className="absolute bottom-0 w-full bg-hover-color text-center text-blue z-10">
+                  <div className="font-semibold text-[2.5vw] md:text-[2vh]">
                     {address}
                   </div>
-                  <div className="text-[2.5vw] md:text-[2vh] text-gray-50 font-bold  font-serif">
+                  <div className="text-[2.5vw] md:text-[2vh] text-blue font-semibold">
                     <a href={`tel:${telephone?.replace(/[^0-9]/g, "")}`}>
-                      📞 {telephone}
+                      {telephone}
                     </a>
                   </div>
                 </div>
@@ -279,7 +345,9 @@ function StatItemEditor({ stat, onChange, onRemove }) {
       <div className="flex items-center space-x-3">
         <IconComp className="text-[7vh] text-gray-800" />
         <div>
-          <p className="text-base md:text-xl font-semibold text-yellow-600">{stat.value}</p>
+          <p className="text-base md:text-xl font-semibold text-yellow-600">
+            {stat.value}
+          </p>
           <p className="text-sm font-semibold text-black">{stat.title}</p>
         </div>
       </div>
@@ -299,7 +367,9 @@ function StatItemEditor({ stat, onChange, onRemove }) {
             type="number"
             className="w-full bg-gray-200 rounded px-2 py-1"
             value={stat.value}
-            onChange={(e) => onChange({ ...stat, value: parseInt(e.target.value, 10) })}
+            onChange={(e) =>
+              onChange({ ...stat, value: parseInt(e.target.value, 10) })
+            }
           />
         </label>
         <label className="block text-xs mb-1">
@@ -389,7 +459,10 @@ function BasicMapEditorPanel({ localMap, setLocalMap, onSave }) {
   const handleAddStat = () => {
     setLocalMap((p) => ({
       ...p,
-      stats: [...p.stats, { title: "New Stat", value: 99, icon: "FaQuestionCircle" }],
+      stats: [
+        ...p.stats,
+        { title: "New Stat", value: 99, icon: "FaQuestionCircle" },
+      ],
     }));
   };
 
@@ -418,7 +491,9 @@ function BasicMapEditorPanel({ localMap, setLocalMap, onSave }) {
                 type="text"
                 className="bg-gray-700 px-2 py-1 rounded w-full"
                 value={localMap.address || ""}
-                onChange={(e) => setLocalMap((p) => ({ ...p, address: e.target.value }))}
+                onChange={(e) =>
+                  setLocalMap((p) => ({ ...p, address: e.target.value }))
+                }
               />
             </label>
             <label className="block">
@@ -427,7 +502,9 @@ function BasicMapEditorPanel({ localMap, setLocalMap, onSave }) {
                 type="text"
                 className="bg-gray-700 px-2 py-1 rounded w-full"
                 value={localMap.telephone || ""}
-                onChange={(e) => setLocalMap((p) => ({ ...p, telephone: e.target.value }))}
+                onChange={(e) =>
+                  setLocalMap((p) => ({ ...p, telephone: e.target.value }))
+                }
               />
             </label>
             <label className="block">
@@ -481,7 +558,10 @@ function BasicMapEditorPanel({ localMap, setLocalMap, onSave }) {
                   className="absolute inset-0 bg-black bg-opacity-20 flex flex-row items-start justify-center cursor-pointer pt-4"
                   onClick={() => setMapActive(true)}
                 >
-                  <FaIcons.FaMapMarkerAlt className="text-white opacity-75" size={30} />
+                  <FaIcons.FaMapMarkerAlt
+                    className="text-white opacity-75"
+                    size={30}
+                  />
                   <p className="mt-2 text-white text-sm font-serif">
                     Click to interact with the map
                   </p>
@@ -489,10 +569,12 @@ function BasicMapEditorPanel({ localMap, setLocalMap, onSave }) {
               )}
 
               <div className="absolute bottom-0 w-full bg-hover-color text-center text-gray-200 py-1 z-10">
-                <div className="font-semibold text-base font-serif">{localMap.address}</div>
+                <div className="font-semibold text-base font-serif">
+                  {localMap.address}
+                </div>
                 <div className="text-sm text-gray-200 font-bold font-serif">
                   <a href={`tel:${localMap.telephone?.replace(/[^0-9]/g, "")}`}>
-                    📞 {localMap.telephone}
+                    {localMap.telephone}
                   </a>
                 </div>
               </div>

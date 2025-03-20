@@ -105,16 +105,15 @@
 .highlight-box {
   background-color: var(--highlight-box);
 }
+
 .dark-below-header {
   background-color: var(--dark-below-header-color);
 }
 
 .dark-below-header-gradient {
-  background: linear-gradient(
-    to bottom,
-    var(--dark-below-header-color) 0%,
-    rgba(65, 179, 149, 0) 70%
-  );
+  background: linear-gradient(to bottom,
+      var(--dark-below-header-color) 0%,
+      rgba(65, 179, 149, 0) 70%);
 }
 
 .bright-gradient {
@@ -132,6 +131,7 @@
 .dark-color {
   background-color: var(--dark-color);
 }
+
 .faint-color {
   background-color: var(--faint-color);
 }
@@ -141,11 +141,9 @@
 }
 
 .button_gradient {
-  background: linear-gradient(
-    to top,
-    rgba(255, 255, 255, 0.7),
-    rgba(0, 0, 0, 0)
-  );
+  background: linear-gradient(to top,
+      rgba(255, 255, 255, 0.7),
+      rgba(0, 0, 0, 0));
 }
 
 .custom-text-shadow {
@@ -153,7 +151,8 @@
 }
 
 .custom-circle-shadow {
-  box-shadow: 3px 3px 5px var(--hover-color) !important; /* Adding the blur radius */
+  box-shadow: 3px 3px 5px var(--hover-color) !important;
+  /* Adding the blur radius */
 }
 
 /* Add these to your CSS file */
@@ -164,6 +163,7 @@
 .text-dynamic-shadow {
   text-shadow: 2px 3px 3px var(--hover-color);
 }
+
 .inner-shadow {
   box-shadow: inset 2px 2px 2px var(--dark-color);
 }
@@ -274,10 +274,14 @@ canvas {
 }
 
 .shingles-img {
-  border-radius: 1rem; /* Equivalent to Tailwind's rounded-xl */
-  height: 15vh; /* 20% of the viewport height */
-  width: 15vh; /* 20% of the viewport width */
-  object-fit: cover; /* Makes the content cover the container while maintaining aspect ratio */
+  border-radius: 1rem;
+  /* Equivalent to Tailwind's rounded-xl */
+  height: 15vh;
+  /* 20% of the viewport height */
+  width: 15vh;
+  /* 20% of the viewport width */
+  object-fit: cover;
+  /* Makes the content cover the container while maintaining aspect ratio */
 }
 
 /* Existing styles */
@@ -456,4 +460,92 @@ canvas {
   .g_fadeIn {
     @apply opacity-0 translate-y-[100px];
   }
+}
+
+/* Service Page Styles */
+.block-container {
+  margin-bottom: 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.block-container:last-child {
+  border-bottom: none;
+}
+
+.block-toggle {
+  padding: 0.75rem 1rem;
+  background-color: #f3f4f6;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.2s ease;
+}
+
+.block-toggle:hover {
+  background-color: #e5e7eb;
+}
+
+.block-content {
+  overflow: hidden;
+}
+
+/* Remove extra padding from service page components */
+.block-content>* {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* Special styling for HeroBlock in service pages */
+.block-container:first-child {
+  margin-bottom: 0;
+}
+
+/* Optimize spacing for blocks in edit mode */
+.service-edit-block {
+  margin-bottom: 1rem;
+}
+
+/* Adjust the service page grid layout */
+@media (min-width: 768px) {
+  .service-page-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 0;
+  }
+}
+
+/* Service Block Wrapper Styles */
+.service-block-wrapper {
+  position: relative;
+}
+
+.service-block-wrapper section {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.service-block-wrapper h1,
+.service-block-wrapper h2,
+.service-block-wrapper h3 {
+  margin-top: 0.5rem;
+}
+
+.block-content {
+  transition: all 0.3s ease-in-out;
+}
+
+/* Expanded/Collapsed Animation */
+.block-content {
+  max-height: 2000px;
+  overflow: hidden;
+}
+
+.block-toggle {
+  position: relative;
+  z-index: 5;
 }

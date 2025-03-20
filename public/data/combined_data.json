@@ -41,31 +41,31 @@
     "phone": "(404) 227-5000"
   },
   "richText": {
-    "heroText": "Seal, Secure, and Enhance",
+    "heroText": "Professional Roofing Excellence",
     "accredited": true,
-    "years_in_business": "11 Years in Business",
-    "bus_description": "Cowboys-Vaqueros Construction is a highly reputable and dependable construction company that specializes in a multitude of roofing services.",
-    "bus_description_second": "Cowboys-Vaqueros Construction is a highly reputable and dependable construction company that specializes in a multitude of roofing services.",
+    "years_in_business": "11 Years of Roofing Experience",
+    "bus_description": "Cowboys-Vaqueros Construction specializes in premium residential and commercial roofing solutions, offering expert installation, repair, and maintenance services tailored to your specific needs.",
+    "bus_description_second": "Our licensed and insured team uses only top-grade materials backed by manufacturer warranties, ensuring your property receives superior protection against the elements for years to come.",
     "cards": [
       {
-        "title": "Rhett ",
-        "desc": "Our friendly, knowledgeable staff ensures a seamless experience from start to finish.",
-        "icon": "Shield"
+        "title": "Expert Inspections",
+        "desc": "Comprehensive roof assessments to identify damage, leaks, and structural issues before they become costly problems.",
+        "icon": "Search"
       },
       {
-        "title": "Quality Craftsmanship",
-        "desc": "We deliver top-tier roofing solutions using premium materials for long-lasting results.",
-        "icon": "Award"
+        "title": "Weather Protection",
+        "desc": "Storm-resistant installations designed to withstand high winds, heavy rain, and harsh Georgia weather conditions.",
+        "icon": "Cloud"
       },
       {
-        "title": "Timely Delivery",
-        "desc": "Count on us to complete your project efficiently without compromising on quality.",
-        "icon": "Clock"
+        "title": "Energy Efficiency",
+        "desc": "Smart roofing solutions that improve insulation and ventilation, reducing your energy costs year-round.",
+        "icon": "ThermometerSnowflake"
       },
       {
-        "title": "Customer Satisfaction",
-        "desc": "Our goal is to exceed your expectations and leave you fully satisfied with our work.",
-        "icon": "Heart"
+        "title": "Lifetime Support",
+        "desc": "Ongoing maintenance programs and rapid response repairs to maximize your roof's lifespan and performance.",
+        "icon": "HeartHandshake"
       }
     ],
     "images": [

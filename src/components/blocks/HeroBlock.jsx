@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 
 /**
  * HeroBlock
- * 
+ *
  * Props:
  *  - config: {
  *      backgroundImage: string (default '/assets/images/growth/hero_growth.jpg'),
@@ -13,14 +13,10 @@ import { motion } from "framer-motion";
  *      initialHeight?: string (default '40vh')
  *      finalHeight?: string (default '20vh')
  *    }
- *  - readOnly: boolean => if true, render “live” version with the shrinking effect
+ *  - readOnly: boolean => if true, render "live" version with the shrinking effect
  *  - onConfigChange: function => called in edit mode to update config
  */
-const HeroBlock = ({
-  config = {},
-  readOnly = false,
-  onConfigChange,
-}) => {
+const HeroBlock = ({ config = {}, readOnly = false, onConfigChange }) => {
   const {
     backgroundImage = "/assets/images/growth/hero_growth.jpg",
     title = "Siding Options",
@@ -29,18 +25,30 @@ const HeroBlock = ({
     finalHeight = "20vh",
   } = config;
 
-  // For the “shrinking” effect
+  // For the "shrinking" effect
   const [isShrunk, setIsShrunk] = useState(false);
 
   useEffect(() => {
     if (readOnly) {
-      // Start the timer to shrink the hero if in readOnly “live” mode
+      // Start the timer to shrink the hero if in readOnly "live" mode
       const timer = setTimeout(() => {
         setIsShrunk(true);
       }, shrinkAfterMs);
       return () => clearTimeout(timer);
     }
   }, [readOnly, shrinkAfterMs]);
+
+  // Helper function to get display URL
+  const getDisplayUrl = (value) => {
+    if (!value) return null;
+    if (typeof value === "string") return value;
+    if (typeof value === "object" && value.url) return value.url;
+    return null;
+  };
+
+  // Get the actual background image URL to display
+  const displayBackgroundImage =
+    getDisplayUrl(backgroundImage) || "/assets/images/growth/hero_growth.jpg";
 
   // RENDER: READONLY => replicate the snippet
   if (readOnly) {
@@ -54,7 +62,7 @@ const HeroBlock = ({
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: `url('${backgroundImage}')`,
+            backgroundImage: `url('${displayBackgroundImage}')`,
             backgroundAttachment: "fixed",
           }}
         ></div>
@@ -66,7 +74,7 @@ const HeroBlock = ({
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 1 }}
-            className="text-center text-[10gvw] md:text-[8vh] font-extrabold text-white tracking-wider"
+            className="text-center text-[10vw] md:text-[8vh] font-extrabold text-white tracking-wider"
           >
             {title}
           </motion.h1>
@@ -81,6 +89,16 @@ const HeroBlock = ({
       ...config,
       [field]: value,
     });
+  };
+
+  const handleImageUpload = (field, file) => {
+    if (!file) return;
+
+    // Create a URL for display
+    const fileURL = URL.createObjectURL(file);
+
+    // Store just the URL for display
+    handleFieldChange(field, fileURL);
   };
 
   return (
@@ -100,31 +118,32 @@ const HeroBlock = ({
 
       {/* Background Image */}
       <label className="block text-sm mb-2">
-        Background Image URL:
+        Background Image:
         <input
-          type="text"
-          value={backgroundImage}
-          onChange={(e) => handleFieldChange("backgroundImage", e.target.value)}
+          type="file"
+          accept="image/*"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+              handleImageUpload("backgroundImage", file);
+            }
+          }}
           className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
         />
       </label>
-
-      {/* Shrink Timing */}
-      <label className="block text-sm mb-2">
-        Shrink After (ms):
-        <input
-          type="number"
-          value={shrinkAfterMs}
-          onChange={(e) =>
-            handleFieldChange("shrinkAfterMs", parseInt(e.target.value, 10))
-          }
-          className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
+      {displayBackgroundImage && (
+        <img
+          src={displayBackgroundImage}
+          alt="Background Preview"
+          className="mt-1 h-24 object-cover rounded w-full"
         />
-      </label>
+      )}
 
-      {/* Initial & Final Heights */}
-      <div className="flex space-x-2">
-        <label className="block text-sm flex-1">
+      {/* Animation Settings */}
+      <div className="mt-4 border-t border-gray-600 pt-2">
+        <h4 className="font-semibold mb-2">Animation Settings</h4>
+
+        <label className="block text-sm mb-2">
           Initial Height:
           <input
             type="text"
@@ -134,12 +153,24 @@ const HeroBlock = ({
           />
         </label>
 
-        <label className="block text-sm flex-1">
+        <label className="block text-sm mb-2">
           Final Height:
           <input
             type="text"
             value={finalHeight}
             onChange={(e) => handleFieldChange("finalHeight", e.target.value)}
+            className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
+          />
+        </label>
+
+        <label className="block text-sm mb-2">
+          Shrink After (ms):
+          <input
+            type="number"
+            value={shrinkAfterMs}
+            onChange={(e) =>
+              handleFieldChange("shrinkAfterMs", parseInt(e.target.value))
+            }
             className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
           />
         </label>

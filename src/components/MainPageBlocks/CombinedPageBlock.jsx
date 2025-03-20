@@ -10,22 +10,57 @@ import googleIcon from "/assets/images/googleimage.png";
 // Additional icons from lucide-react
 import { Home, Building2 } from "lucide-react";
 
-/* ─────────────────────────────────────────────────────────────
-   SERVICES DATA (as in your original snippet)
-───────────────────────────────────────────────────────────── */
-const residentialServices = [
-  { icon: FaTools, title: "Shingling", link: "/Residential_service_1" },
-  { icon: FaFan, title: "Ventilation", link: "/Residential_service_2" },
-  { icon: FaTint, title: "Guttering", link: "/Residential_service_3" },
-  { icon: FaPaintRoller, title: "Siding", link: "/Residential_service_4" },
-];
+/**
+ * Utility functions to build the service arrays from services.json.
+ * Each service's title is dynamically extracted from the 'HeroBlock' (or falls back to the first block).
+ */
+function buildResidentialArray(data) {
+  if (!data?.residential) return [];
+  const icons = [FaTools, FaFan, FaTint, FaPaintRoller];
+  return data.residential.map((service, index) => {
+    const heroBlock =
+      service.blocks.find((b) => b.blockName === "HeroBlock") ||
+      service.blocks[0];
+    const dynamicTitle = heroBlock?.config?.title || `Service ${service.id}`;
 
-const commercialServices = [
-  { icon: FaTools, title: "Single Ply", link: "/CommercialService1" },
-  { icon: FaPaintRoller, title: "Coating", link: "/CommercialService2" },
-  { icon: FaTools, title: "Metal Roof", link: "/CommercialService3" },
-  { icon: FaTools, title: "Built Up", link: "/CommercialService4" },
-];
+    // Create a slug from title if not available
+    const slug =
+      service.slug ||
+      `residential-${service.id}-${dynamicTitle.toLowerCase().replace(/\s+/g, "-")}`;
+
+    console.log(`Built residential service link: /services/${slug}`);
+
+    return {
+      icon: icons[index % icons.length] || FaTools,
+      title: dynamicTitle,
+      link: `/services/${slug}`,
+    };
+  });
+}
+
+function buildCommercialArray(data) {
+  if (!data?.commercial) return [];
+  const icons = [FaTools, FaPaintRoller, FaTools, FaTools];
+  return data.commercial.map((service, index) => {
+    const heroBlock =
+      service.blocks.find((b) => b.blockName === "HeroBlock") ||
+      service.blocks[0];
+    const dynamicTitle = heroBlock?.config?.title || `Service ${service.id}`;
+
+    // Create a slug from title if not available
+    const slug =
+      service.slug ||
+      `commercial-${service.id}-${dynamicTitle.toLowerCase().replace(/\s+/g, "-")}`;
+
+    console.log(`Built commercial service link: /services/${slug}`);
+
+    return {
+      icon: icons[index % icons.length] || FaTools,
+      title: dynamicTitle,
+      link: `/services/${slug}`,
+    };
+  });
+}
 
 /* ─────────────────────────────────────────────────────────────
    ANIMATION VARIANTS FOR THE SERVICES BUTTONS (unchanged)
@@ -34,7 +69,6 @@ const containerVariants = {
   enter: {
     transition: {
       // Stagger children from last to first on enter
-      // because we'll reverse the array
       staggerChildren: 0.07,
       staggerDirection: 1,
     },
@@ -63,16 +97,13 @@ const itemVariants = {
 };
 
 /* ─────────────────────────────────────────────────────────────
-   A SINGLE TESTIMONIAL ITEM
+   A SINGLE TESTIMONIAL ITEM COMPONENT
 ───────────────────────────────────────────────────────────── */
 const TestimonialItem = ({ testimonial }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const handleExpandClick = () => setIsExpanded(!isExpanded);
 
-  const handleExpandClick = () => {
-    setIsExpanded(!isExpanded);
-  };
-
-  // On small screens, show truncated text unless expanded
+  // Show truncated text on small screens unless expanded
   const truncated =
     testimonial.text.length > 100
       ? testimonial.text.slice(0, 100) + "..."
@@ -83,36 +114,45 @@ const TestimonialItem = ({ testimonial }) => {
       className="p-4 bg-white rounded-lg custom-circle-shadow relative cursor-pointer"
       onClick={handleExpandClick}
     >
-      {/* If there's a link and logo, show clickable logo in top-right */}
-      {testimonial.link && testimonial.logo && (
-        <a
-          href={testimonial.link}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="absolute top-2 right-2 w-8 h-8 md:w-10 md:h-10"
-          onClick={(e) => e.stopPropagation()} // don't toggle on logo click
-        >
-          <img src={testimonial.logo} alt="Logo" className="w-full h-full" />
-        </a>
-      )}
+      {/* Name, rating, date with logo to the left */}
+      <div className="flex items-start mb-2">
+        {/* Logo on left, vertically centered with name and date */}
+        {testimonial.link && testimonial.logo && (
+          <a
+            href={testimonial.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center self-center mr-2 flex-shrink-0"
+            onClick={(e) => e.stopPropagation()} // don't toggle on logo click
+          >
+            <img
+              src={testimonial.logo}
+              alt="Logo"
+              className="w-8 h-8 md:w-10 md:h-10"
+            />
+          </a>
+        )}
 
-      {/* Name, rating, date */}
-      <div className="flex flex-col -space-y-1 ">
-        <p className="ml-1 md:ml-1 text-[2.5vw] md:text-[2vh] font-bold text-black font-serif">
-          {testimonial.name}
-        </p>
-        <div className="flex items-center text-base md:text-xl justify-between">
-          <StarRating rating={testimonial.stars} />
-          <p className="text-gray-500 text-[2vw] md:text-[1.6vh] mt-1 md:mt-2">{testimonial.date}</p>
+        {/* Name and date in column with reduced spacing */}
+        <div className="flex-grow">
+          <div className="flex items-center justify-between">
+            <p className="text-[2.5vw] md:text-[2vh] font-bold text-black font-sans">
+              {testimonial.name}
+            </p>
+            <StarRating rating={testimonial.stars} />
+          </div>
+          <p className="text-gray-500 text-[2vw] md:text-[1.6vh] -mt-1">
+            {testimonial.date}
+          </p>
         </div>
       </div>
 
       {/* Text */}
-      <p className="text-gray-800 ">
-        <span className=" text-[2vw] md:text-[2vh] block md:hidden">
+      <p className="text-gray-800">
+        <span className="text-[2vw] md:text-[2vh] block md:hidden font-sans">
           {isExpanded ? testimonial.text : truncated}
         </span>
-        <span className="md:text-xs hidden md:block">{testimonial.text}</span>
+        <span className="md:text-xs hidden md:block font-sans">{testimonial.text}</span>
       </p>
     </div>
   );
@@ -122,17 +162,35 @@ const TestimonialItem = ({ testimonial }) => {
    COMBINEDPAGE COMPONENT
    (All styling, no Yelp toggles — only Google data)
 ───────────────────────────────────────────────────────────── */
-export default function CombinedPage() {
+export default function CombinedPageBlock({ readOnly = false, config = {} }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isCommercial, setIsCommercial] = useState(false);
+  const [residentialServices, setResidentialServices] = useState([]);
+  const [commercialServices, setCommercialServices] = useState([]);
   const [googleReviews, setGoogleReviews] = useState([]);
 
-  // On mount, fetch from /data/sentiment_reviews.json
+  console.log("CombinedPageBlock config:", config);
+
   useEffect(() => {
+    // Fetch services.json to build the services arrays.
+    fetch("/data/services.json")
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+        return res.json();
+      })
+      .then((data) => {
+        console.log("Services data fetched:", data);
+        setResidentialServices(buildResidentialArray(data));
+        setCommercialServices(buildCommercialArray(data));
+      })
+      .catch((error) => {
+        console.error("Error fetching services data:", error);
+      });
+
+    // Fetch sentiment_reviews.json to get testimonials.
     fetch("/data/sentiment_reviews.json")
       .then((res) => res.json())
       .then((data) => {
-        // Filter to get only positive reviews
         const processed = data
           .filter(
             (review) =>
@@ -146,31 +204,34 @@ export default function CombinedPage() {
             logo: googleIcon,
             link: "https://www.google.com/maps/place/Rhetts+Roofing/",
           }))
-          // Sort highest rated first
           .sort((a, b) => b.stars - a.stars)
-          // Limit to 9
           .slice(0, 9);
-
         setGoogleReviews(processed);
       })
       .catch((error) => {
-        console.error("Error fetching JSON:", error);
+        console.error("Error fetching reviews JSON:", error);
       });
   }, []);
 
-  // Which services to show
-  const currentServices = isCommercial ? commercialServices : residentialServices;
+  // Choose which services to display based on the toggle.
+  const currentServices = isCommercial
+    ? commercialServices
+    : residentialServices;
 
-  // For the “Testimonials” arrows
+  // Testimonial pagination.
   const chunkSize = 3;
   const totalReviews = googleReviews.length;
-  const visibleReviews = googleReviews.slice(currentIndex, currentIndex + chunkSize);
+  const visibleReviews = googleReviews.slice(
+    currentIndex,
+    currentIndex + chunkSize
+  );
 
   const handlePrev = () => {
     if (currentIndex - chunkSize >= 0) {
       setCurrentIndex((prev) => prev - chunkSize);
     }
   };
+
   const handleNext = () => {
     if (currentIndex + chunkSize < totalReviews) {
       setCurrentIndex((prev) => prev + chunkSize);
@@ -196,13 +257,11 @@ export default function CombinedPage() {
             transition={{ duration: 0.8 }}
             className="flex"
           >
-            {/* Residential image */}
             <img
               src="/assets/images/main_img.jpg"
               alt="Residential Services"
               className="w-full h-auto"
             />
-            {/* Commercial image */}
             <img
               src="/assets/images/commercialservices.jpg"
               alt="Commercial Services"
@@ -216,10 +275,7 @@ export default function CombinedPage() {
           className="absolute bottom-0 left-0 w-full h-[9.5vh] bg-black z-0 pointer-events-none"
           style={{ clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)" }}
         />
-        <h2
-          className="absolute top-[0vh] left-1/2 transform -translate-x-1/2
-                        text-white text-[10vw] font-normal font-ultra-condensed font-rye drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)]"
-        >
+        <h2 className="absolute top-[0vh] left-1/2 transform -translate-x-1/2 text-white text-[10vw] font-normal font-sans font-medium drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)]">
           Services
         </h2>
 
@@ -228,13 +284,11 @@ export default function CombinedPage() {
           <div className="flex flex-row gap-6">
             <button
               onClick={handleResidentialClick}
-              className={`flex items-center px-2 md:px-4 md:py-2 rounded-full border-1 mx-2 text-md
-                ${
-                  !isCommercial
-                    ? "bg-dark-below-header text-gray-50 border-gray-800 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
-                    : "bg-gray-500 text-white hover:bg-white hover:text-black"
-                }
-                transition-colors duration-300`}
+              className={`flex items-center px-2 md:px-4 md:py-2 rounded-full border-1 mx-2 text-md ${
+                !isCommercial
+                  ? "bg-dark-below-header text-gray-50 border-gray-800 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
+                  : "bg-gray-500 text-white hover:bg-white hover:text-black"
+              } transition-colors duration-300 font-sans`}
               onMouseEnter={(e) => {
                 if (isCommercial) {
                   e.currentTarget.style.boxShadow =
@@ -247,17 +301,15 @@ export default function CombinedPage() {
               }}
             >
               <Home className="mr-2" size={16} />
-              <p className="text-[3vw]">Residential</p>
+              <p className="text-[3vw] font-sans">Residential</p>
             </button>
             <button
               onClick={handleCommercialClick}
-              className={`flex items-center px-2 md:px-4 py-1 md:py-2 text-lg rounded-full border-1 mx-2 
-                ${
-                  isCommercial
-                    ? "bg-dark-below-header text-gray-50 border-gray-800 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
-                    : "bg-gray-500 hover:bg-white hover:text-black text-white"
-                }
-                transition-colors duration-300`}
+              className={`flex items-center px-2 md:px-4 py-1 md:py-2 text-lg rounded-full border-1 mx-2 ${
+                isCommercial
+                  ? "bg-dark-below-header text-gray-50 border-gray-800 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
+                  : "bg-gray-500 hover:bg-white hover:text-black text-white"
+              } transition-colors duration-300 font-sans`}
               onMouseEnter={(e) => {
                 if (!isCommercial) {
                   e.currentTarget.style.boxShadow =
@@ -266,11 +318,11 @@ export default function CombinedPage() {
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.boxShadow =
-                  "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
+                  "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0,0,0 / 0.1)";
               }}
             >
               <Building2 className="mr-2" size={16} />
-              <p className="text-[3vw]">Commercial</p>
+              <p className="text-[3vw] font-sans">Commercial</p>
             </button>
           </div>
         </div>
@@ -286,7 +338,7 @@ export default function CombinedPage() {
               animate="enter"
               exit="exit"
             >
-              {[...currentServices].reverse().map((service, idx) => (
+              {[...currentServices].reverse().map((service) => (
                 <motion.div
                   key={service.title}
                   variants={itemVariants}
@@ -294,11 +346,7 @@ export default function CombinedPage() {
                 >
                   <Link to={service.link}>
                     <div
-                      className="group whitespace-nowrap flex-col dark_button w-[11vh] h-[11vh] md:w-24 md:h-24 rounded-full 
-                                 flex items-center justify-center
-                                 text-white text-[5vw]
-                                 hover:text-gray-200 hover:bg-gray-200 transition
-                                 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
+                      className="group whitespace-nowrap flex-col dark_button w-[11vh] h-[11vh] md:w-24 md:h-24 rounded-full flex items-center justify-center text-white text-[5vw] hover:text-gray-200 hover:bg-gray-200 transition drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
                       onMouseEnter={(e) => {
                         e.currentTarget.style.boxShadow =
                           "inset 0 0 30px 10px rgba(0,0,0,0.8)";
@@ -308,7 +356,7 @@ export default function CombinedPage() {
                       }}
                     >
                       {React.createElement(service.icon)}
-                      <h3 className="mt-1 text-white text-[3vw] group-hover:text-gray-200 md:text-sm font-bold drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
+                      <h3 className="mt-1 text-white text-[3vw] group-hover:text-gray-200 md:text-sm font-sans font-medium drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
                         {service.title}
                       </h3>
                     </div>
@@ -320,29 +368,20 @@ export default function CombinedPage() {
         </div>
       </div>
 
-      {/* ──────────────────────────────────────────────────────────
-          2) TESTIMONIALS (SMALL SCREEN)
-      ────────────────────────────────────────────────────────── */}
+      {/* TESTIMONIALS (SMALL SCREEN) */}
       <div className="block md:hidden -mt-[5vh] relative z-20 px-[6vw] pb-6">
-        {/* Title */}
         <div className="flex items-center justify-center px-4">
           <h2
-            className="text-[7.5vw] text-white md:text-[6vh] md:text-5xl font-serif mr-2 mt-3"
-            style={{ fontFamily: "Times New Roman, Times, serif" }}
+            className="text-[7.5vw] text-white md:text-[6vh] md:text-5xl font-sans mr-2 mt-3"
           >
             Testimonials
           </h2>
         </div>
-
-        {/* Testimonial Cards (3 at a time) with arrow nav */}
         <div className="relative mt-3 pb-3">
           {currentIndex > 0 && (
             <button
               onClick={handlePrev}
-              className="absolute left-0 top-1/2 transform -translate-y-1/2
-                         bg-white text-gray-700 rounded-full w-6 h-6
-                         flex items-center justify-center
-                         drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)] hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10 ml-2"
+              className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-white text-gray-700 rounded-full w-6 h-6 flex items-center justify-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)] hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10 ml-2"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -360,21 +399,15 @@ export default function CombinedPage() {
               </svg>
             </button>
           )}
-
           <div className="grid grid-cols-1 gap-3 px-6">
             {visibleReviews.map((t, idx) => (
               <TestimonialItem key={idx} testimonial={t} />
             ))}
           </div>
-
           {currentIndex + chunkSize < totalReviews && (
             <button
               onClick={handleNext}
-              className="absolute right-0 top-1/2 transform -translate-y-1/2
-                         bg-white text-gray-700 rounded-full w-6 h-6
-                         flex items-center justify-center
-                         drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)]
-                         hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10 mr-2"
+              className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-white text-gray-700 rounded-full w-6 h-6 flex items-center justify-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)] hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10 mr-2"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -393,15 +426,13 @@ export default function CombinedPage() {
             </button>
           )}
         </div>
-
-        {/* "Leave a Review" */}
         <div className="text-center">
           <div className="flex justify-center space-x-4">
             <a
               href="https://www.google.com/maps/place/Rhetts+Roofing"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center px-3 py-1 bg-white rounded-full custom-circle-shadow hover:bg-gray-100 transition duration-300 text-xs"
+              className="flex items-center px-3 py-1 bg-white rounded-full custom-circle-shadow hover:bg-gray-100 transition duration-300 text-xs font-sans"
             >
               <img src={googleIcon} alt="Google" className="w-4 h-4 mr-1" />
               <span>Review on Google</span>
@@ -410,11 +441,8 @@ export default function CombinedPage() {
         </div>
       </div>
 
-      {/* ──────────────────────────────────────────────────────────
-          3) LARGE SCREENS
-      ────────────────────────────────────────────────────────── */}
+      {/* LARGE SCREENS */}
       <div className="hidden md:block overflow-hidden">
-        {/* Large images side-by-side */}
         <div className="relative bg-hover-color h-[1vh] z-30 w-full">
           <div className="absolute bottom-0 right-0 left-0 h-[0.75vh] bg-gradient-to-b from-transparent to-orange-600" />
         </div>
@@ -435,28 +463,20 @@ export default function CombinedPage() {
               className="w-[100vw] h-full object-cover"
             />
           </motion.div>
-
-          {/* Title near top */}
           <div className="absolute top-0 w-full flex justify-center">
-            <h2
-              className="relative z-40 text-white text-[11.5vh] font-serif font-semibold tracking-wider font-condensed drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,1.8)]"
-            >
+            <h2 className="relative z-40 text-white text-[11.5vh] font-sans font-medium tracking-wider drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,1.8)]">
               Services
             </h2>
           </div>
-
-          {/* Toggle: Residential / Commercial */}
           <div className="absolute bottom-[6vh] left-1/2 transform -translate-x-1/2 z-30">
             <div className="flex flex-row">
               <button
                 onClick={handleResidentialClick}
-                className={`flex items-center px-4 py-2 rounded-full border-1 mx-2 text-lg
-                  ${
-                    !isCommercial
-                      ? "bg-dark-below-header text-gray-50 border-gray-800 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
-                      : "bg-gray-500 text-white hover:bg-white hover:text-black"
-                  }
-                  transition-colors duration-300`}
+                className={`flex items-center px-4 py-2 rounded-full border-1 mx-2 text-lg ${
+                  !isCommercial
+                    ? "bg-dark-below-header text-gray-50 border-gray-800 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
+                    : "bg-gray-500 text-white hover:bg-white hover:text-black"
+                } transition-colors duration-300 font-sans`}
                 onMouseEnter={(e) => {
                   if (isCommercial) {
                     e.currentTarget.style.boxShadow =
@@ -473,13 +493,11 @@ export default function CombinedPage() {
               </button>
               <button
                 onClick={handleCommercialClick}
-                className={`flex items-center px-4 py-2 text-lg rounded-full border-1 mx-2 
-                  ${
-                    isCommercial
-                      ? "bg-dark-below-header text-gray-50 border-gray-800 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
-                      : "bg-gray-500 hover:bg-white hover:text-black text-white"
-                  }
-                  transition-colors duration-300`}
+                className={`flex items-center px-4 py-2 text-lg rounded-full border-1 mx-2 ${
+                  isCommercial
+                    ? "bg-dark-below-header text-gray-50 border-gray-800 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
+                    : "bg-gray-500 hover:bg-white hover:text-black text-white"
+                } transition-colors duration-300 font-sans`}
                 onMouseEnter={(e) => {
                   if (!isCommercial) {
                     e.currentTarget.style.boxShadow =
@@ -496,8 +514,6 @@ export default function CombinedPage() {
               </button>
             </div>
           </div>
-
-          {/* Services (buttons) with staggered exit/enter */}
           <div className="absolute inset-0 flex items-end justify-center mb-[26vh]">
             <AnimatePresence mode="wait">
               <motion.div
@@ -516,11 +532,7 @@ export default function CombinedPage() {
                   >
                     <Link to={service.link}>
                       <div
-                        className="dark_button flex-col w-28 h-28 rounded-full 
-                                   flex items-center justify-center
-                                   text-white text-[6vh]
-                                   hover:text-black hover:bg-gray-200 transition
-                                   drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"
+                        className="dark_button flex-col w-28 h-28 rounded-full flex items-center justify-center text-white text-[6vh] hover:text-black hover:bg-gray-200 transition drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"
                         onMouseEnter={(e) => {
                           e.currentTarget.style.boxShadow =
                             "inset 0 0 30px 10px rgba(0,0,0,0.8)";
@@ -530,7 +542,7 @@ export default function CombinedPage() {
                         }}
                       >
                         {React.createElement(service.icon)}
-                        <h3 className="mt-1 text-white text-lg font-semibold drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
+                        <h3 className="mt-1 text-white text-lg font-sans font-medium drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
                           {service.title}
                         </h3>
                       </div>
@@ -544,30 +556,20 @@ export default function CombinedPage() {
             <div className="absolute top-0 right-0 left-0 h-[0.75vh] bg-gradient-to-t from-transparent to-orange-700" />
           </div>
         </div>
-
-        {/* TESTIMONIALS SECTION (LARGE) */}
         <section id="testimonials" className="relative bg-black px-3 pt-5">
           <div className="flex items-center justify-center mb-3">
             <h2
-              className="text-5xl text-white text-font-serif mr-4 my-3"
-              style={{ fontFamily: "Times New Roman, Times, serif" }}
+              className="text-5xl text-white text-font-sans mr-4 my-3 font-sans font-medium"
             >
               Testimonials
             </h2>
           </div>
-
-          {/* Cards + Arrows (3 at a time) */}
           <div className="container mx-auto px-2 relative pb-3">
             <div className="grid gap-4 grid-cols-3">
-              {/* Left Arrow */}
               {currentIndex > 0 && (
                 <button
                   onClick={handlePrev}
-                  className="absolute -left-4 top-1/2 transform -translate-y-1/2
-                             bg-white text-gray-700 rounded-full w-8 h-8
-                             flex items-center justify-center
-                             drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)]
-                             hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10"
+                  className="absolute -left-4 top-1/2 transform -translate-y-1/2 bg-white text-gray-700 rounded-full w-8 h-8 flex items-center justify-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)] hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -580,25 +582,18 @@ export default function CombinedPage() {
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      d="M15.75 19.5 8.25 12l7.5-7.5"
+                      d="M15.75 19.5L8.25 12l7.5-7.5"
                     />
                   </svg>
                 </button>
               )}
-
               {visibleReviews.map((t, idx) => (
                 <TestimonialItem key={idx} testimonial={t} />
               ))}
-
-              {/* Right Arrow */}
               {currentIndex + chunkSize < totalReviews && (
                 <button
                   onClick={handleNext}
-                  className="absolute -right-4 top-1/2 transform -translate-y-1/2
-                             bg-white text-gray-700 rounded-full w-8 h-8
-                             flex items-center justify-center
-                             drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)]
-                             hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10"
+                  className="absolute -right-4 top-1/2 transform -translate-y-1/2 bg-white text-gray-700 rounded-full w-8 h-8 flex items-center justify-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)] hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -618,15 +613,13 @@ export default function CombinedPage() {
               )}
             </div>
           </div>
-
-          {/* "Leave a Review" at bottom */}
           <div className="py-3 text-center px-3">
             <div className="flex justify-center space-x-6">
               <a
                 href="https://www.google.com/maps/place/Rhetts+Roofing"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center px-4 py-2 bg-white rounded-full custom-circle-shadow hover:bg-gray-100 transition duration-300 text-sm"
+                className="flex items-center px-4 py-2 bg-white rounded-full custom-circle-shadow hover:bg-gray-100 transition duration-300 text-sm font-sans"
               >
                 <img src={googleIcon} alt="Google" className="w-6 h-6 mr-2" />
                 <span>Review us on Google</span>
