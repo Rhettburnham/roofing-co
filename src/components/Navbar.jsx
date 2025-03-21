@@ -88,8 +88,8 @@ const Navbar = () => {
         className={`sticky top-0 z-50 w-full flex items-center justify-between 
         ${
           hasScrolled
-            ? "bg-dark-below-header transition-all duration-300 h-14" 
-            : "bg-white transition-all duration-300 h-10 md:h-14" 
+            ? "bg-dark-below-header transition-all duration-300 h-14"
+            : "bg-white transition-all duration-300 h-10 md:h-14"
         } 
         px-5 md:px-10`}
       >
@@ -101,7 +101,7 @@ const Navbar = () => {
                 ref={cowboyRef}
                 src="/assets/images/clipped-cowboy.png"
                 alt="Cowboy Logo"
-                className="h-7 md:h-10 opacity-0 transition-opacity duration-500" 
+                className="h-7 md:h-10 opacity-0 transition-opacity duration-500"
                 style={{ filter: "invert(1)" }}
               />
             ) : (
@@ -109,7 +109,7 @@ const Navbar = () => {
                 ref={logoRef}
                 src="/assets/images/logo.svg"
                 alt="Paramount Roofing Logo"
-                className="h-7 md:h-10 opacity-0 transition-opacity duration-500" 
+                className="h-7 md:h-10 opacity-0 transition-opacity duration-500"
                 style={{ filter: hasScrolled ? "invert(0)" : "invert(1)" }}
               />
             )}
