@@ -216,7 +216,7 @@ function HeroPreview({ heroconfig }) {
           <motion.img
             initial={{ x: -100, opacity: 0 }}
             animate={hasAnimated ? { x: 0, opacity: 1 } : {}}
-            transition={{ duration: 0.8, ease: "easeOut" }}
+            transition={{ duration: 0.8, ease: "easeOut" }}about
             src={logoSrc}
             alt="hero-logo"
             className="w-[15vw] md:w-[14vh] h-auto mr-5 md:mr-10 z-50"
@@ -391,6 +391,7 @@ function HeroPreview({ heroconfig }) {
 
                   {/* Title that moves up when active */}
                   <motion.h2
+
                     variants={titleVariants}
                     animate={
                       activeSection === "commercial" ? "active" : "default"
