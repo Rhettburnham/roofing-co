@@ -1,0 +1,557 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Other global styles */
+
+/* color scheme */
+/* styles.css or your main CSS file */
+/* experimentation for the deteroration */
+/* About */
+/* Flip card container */
+
+/* fonts */
+
+@font-face {
+  font-family: "Frontiersman";
+  src:
+    url("../assets/fonts/Frontiersman-Bold.woff2") format("woff2"),
+    url("../assets/fonts/Frontiersman-Bold.woff") format("woff");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Enforce Rye font */
+.font-rye {
+  font-family: 'Rye', serif !important;
+  font-weight: normal !important;
+}
+
+/* Add more weights/styles as needed */
+
+.image {
+  position: relative;
+  cursor: pointer;
+  transition: width 0.5s ease;
+}
+
+.image img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.services {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  color: white;
+  /* Additional styling */
+}
+
+/* Inner container */
+.card-inner {
+  position: relative;
+  width: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.6s;
+}
+
+/* Flip the card when it has the 'is-flipped' class */
+.card-inner.is-flipped {
+  transform: rotateY(180deg);
+}
+
+/* Front and back faces */
+.card-front,
+.card-back {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+}
+
+/* Back face */
+.card-back {
+  transform: rotateY(180deg);
+}
+
+/* end about */
+/* Custom styles for diagonal separator */
+.diagonal-separator {
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 85%);
+}
+
+@media (min-width: 768px) {
+  .diagonal-separator {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 90%);
+  }
+}
+
+:root {
+  --dark-below-header-color: rgb(255, 30, 0);
+  --dark-below-header-color-rgba: rgba(255, 30, 0, 0.5);
+  /* Dark blue */
+  --dark-button-color: rgb(96, 10, 39);
+  /* Another dark blue */
+  --faint-color: #ff2600;
+  /* Light blue */
+  --hover-color: #39466f;
+  /* Specified light teal/blue-green */
+  --dark-color: #434358;
+  /* Basic map serivce highlight */
+  --highlight-box: #80aff5;
+}
+
+.highlight-box {
+  background-color: var(--highlight-box);
+}
+
+.dark-below-header {
+  background-color: var(--dark-below-header-color);
+}
+
+.dark-below-header-gradient {
+  background: linear-gradient(to bottom,
+      var(--dark-below-header-color) 0%,
+      rgba(65, 179, 149, 0) 70%);
+}
+
+.bright-gradient {
+  background: linear-gradient(to bottom, var(--faint-color) 0%);
+}
+
+.dark_button {
+  background-color: var(--dark-button-color);
+}
+
+.dark-button {
+  background-color: var(--dark-button-color);
+}
+
+.dark-color {
+  background-color: var(--dark-color);
+}
+
+.faint-color {
+  background-color: var(--faint-color);
+}
+
+.hover-color {
+  background-color: var(--hover-color);
+}
+
+.button_gradient {
+  background: linear-gradient(to top,
+      rgba(255, 255, 255, 0.7),
+      rgba(0, 0, 0, 0));
+}
+
+.custom-text-shadow {
+  text-shadow: 2px 2px 3px var(--dark-button-color);
+}
+
+.custom-circle-shadow {
+  box-shadow: 3px 3px 5px var(--hover-color) !important;
+  /* Adding the blur radius */
+}
+
+/* Add these to your CSS file */
+.dynamic-shadow {
+  filter: drop-shadow(5px 5px 1px var(--hover-color));
+}
+
+.text-dynamic-shadow {
+  text-shadow: 2px 3px 3px var(--hover-color);
+}
+
+.inner-shadow {
+  box-shadow: inset 2px 2px 2px var(--dark-color);
+}
+
+.custom-text-shadow-mini {
+  text-shadow: -1px 1px 2px var(--faint-color);
+}
+
+.perspective {
+  perspective: 1000px;
+}
+
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+.group-hover\\:rotatey-180:hover {
+  transform: rotateY(180deg);
+}
+
+/* for poor installation */
+
+.animate-pattern {
+  animation: movePattern 20s linear infinite;
+}
+
+@keyframes movePattern {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  color: black;
+  width: 100dvw;
+  overflow-x: hidden;
+  height: 100%;
+  background: #ffffff;
+  border-color: #3b3b3b;
+  user-select: none;
+}
+
+canvas {
+  touch-action: none;
+}
+
+.caveat-600 {
+  font-family: "Caveat";
+  font-optical-sizing: auto;
+  font-weight: 600;
+  font-style: normal;
+}
+
+/* Shadows Into Light: Regular style class */
+.shadows-into-light-regular {
+  font-family: "Shadows Into Light", cursive;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.overlap-control label {
+  color: black;
+  margin-right: 10px;
+}
+
+.shingles-container {
+  display: grid;
+  gap: 20px;
+  margin-bottom: 0px;
+  /* Add sufficient margin to prevent overlap */
+}
+
+/* Default to small screens: 2 columns, 5 rows */
+.shingles-container {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+/* Large screens: 5 columns, 2 rows */
+@media (min-width: 960px) {
+  .shingles-container {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+.shingles-box {
+  width: 100%;
+  padding-top: 100%;
+  overflow: hidden;
+  transition: transform 0.3s;
+}
+
+.shingles-box:hover {
+  transform: scale(1.03);
+}
+
+.shingles-img {
+  border-radius: 1rem;
+  /* Equivalent to Tailwind's rounded-xl */
+  height: 15vh;
+  /* 20% of the viewport height */
+  width: 15vh;
+  /* 20% of the viewport width */
+  object-fit: cover;
+  /* Makes the content cover the container while maintaining aspect ratio */
+}
+
+/* Existing styles */
+
+.custom-marker-icon {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  background-color: #000;
+  /* Change this color as needed */
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+}
+
+.custom-marker-icon::after {
+  content: "";
+  position: absolute;
+  bottom: -10px;
+  /* Adjust to position the point */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 15px solid #000;
+  /* Match with the background color of the ball */
+}
+
+.custom-marker-icon img {
+  width: 70%;
+  /* Adjust size as needed */
+  height: 70%;
+  object-fit: contain;
+  border-radius: 50%;
+}
+
+.logo-img {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  filter: brightness(0) invert(1);
+}
+
+.social-icon {
+  width: 3.2rem;
+  height: 2rem;
+  filter: brightness(0) invert(1);
+  /* Makes the SVG white */
+}
+
+.testimonials-text {
+  color: #ffffff;
+  font-size: 24px;
+  padding: 10px 10px;
+  border-radius: 10px;
+}
+
+.testimonial-box {
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.1),
+    0 2px 4px rgba(0, 0, 255, 0.2);
+  /* Add custom blue shadow */
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.testimonial-box:hover {
+  transform: translateY(-10px);
+  box-shadow:
+    0 8px 12px rgba(0, 0, 0, 0.1),
+    0 4px 8px rgba(0, 0, 255, 0.4);
+  /* Increase shadow on hover */
+}
+
+.testimonial-box .triangle {
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 10px solid white;
+  position: absolute;
+  bottom: -10px;
+  right: 20px;
+}
+
+@layer utilities {
+  .flex-center {
+    @apply flex items-center justify-center;
+  }
+
+  .nav-height {
+    @apply h-[calc(100vh-60px)];
+  }
+
+  .btn {
+    @apply px-5 py-2 rounded-3xl bg-blue my-5 hover:bg-transparent border border-transparent hover:border hover:text-blue hover:border-blue;
+  }
+
+  .color-container {
+    @apply flex items-center justify-center px-4 py-4 rounded-full bg-gray-300 backdrop-blur;
+  }
+
+  .size-btn-container {
+    @apply flex items-center justify-center p-1 rounded-full bg-gray-300 backdrop-blur ml-3 gap-1;
+  }
+
+  .size-btn {
+    @apply w-10 h-10 text-sm flex justify-center items-center bg-white text-black rounded-full transition-all;
+  }
+
+  .common-padding {
+    @apply sm:py-32 py-20 sm:px-10 px-5;
+  }
+
+  .section-heading {
+    @apply text-black lg:text-6xl md:text-5xl text-3xl lg:mb-0 mb-5 font-medium opacity-0 translate-y-20;
+  }
+
+  .feature-text {
+    @apply text-gray max-w-md text-lg md:text-xl font-semibold opacity-0 translate-y-[100px];
+  }
+
+  .feature-text-container {
+    @apply w-full flex-center flex-col md:flex-row mt-10 md:mt-16 gap-5;
+  }
+
+  .feature-video {
+    @apply w-full h-full object-cover object-center scale-150 opacity-0;
+  }
+
+  .feature-video-container {
+    @apply w-full flex flex-col md:flex-row gap-5 items-center;
+  }
+
+  .link {
+    @apply text-blue hover:underline cursor-pointer flex items-center text-xl opacity-0 translate-y-20;
+  }
+
+  .control-btn {
+    @apply ml-4 p-4 rounded-full bg-gray-300 backdrop-blur flex-center;
+  }
+
+  .hero-title {
+    @apply text-center font-semibold text-3xl text-gray-100 opacity-0 max-md:mb-10;
+  }
+
+  .hiw-title {
+    @apply text-4xl md:text-7xl font-semibold text-center;
+  }
+
+  .hiw-subtitle {
+    @apply text-gray font-semibold text-xl md:text-2xl py-10 text-center;
+  }
+
+  .hiw-video {
+    @apply absolute w-[95%] h-[90%] rounded-[56px] overflow-hidden;
+  }
+
+  .hiw-text-container {
+    @apply flex md:flex-row flex-col justify-between items-start gap-24;
+  }
+
+  .hiw-text {
+    @apply text-gray text-xl font-normal md:font-semibold;
+  }
+
+  .hiw-bigtext {
+    @apply text-white text-3xl md:text-5xl font-normal md:font-semibold my-2;
+  }
+
+  .g_fadeIn {
+    @apply opacity-0 translate-y-[100px];
+  }
+}
+
+/* Service Page Styles */
+.block-container {
+  margin-bottom: 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.block-container:last-child {
+  border-bottom: none;
+}
+
+.block-toggle {
+  padding: 0.75rem 1rem;
+  background-color: #f3f4f6;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.2s ease;
+}
+
+.block-toggle:hover {
+  background-color: #e5e7eb;
+}
+
+.block-content {
+  overflow: hidden;
+}
+
+/* Remove extra padding from service page components */
+.block-content>* {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* Special styling for HeroBlock in service pages */
+.block-container:first-child {
+  margin-bottom: 0;
+}
+
+/* Optimize spacing for blocks in edit mode */
+.service-edit-block {
+  margin-bottom: 1rem;
+}
+
+/* Adjust the service page grid layout */
+@media (min-width: 768px) {
+  .service-page-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 0;
+  }
+}
+
+/* Service Block Wrapper Styles */
+.service-block-wrapper {
+  position: relative;
+}
+
+.service-block-wrapper section {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.service-block-wrapper h1,
+.service-block-wrapper h2,
+.service-block-wrapper h3 {
+  margin-top: 0.5rem;
+}
+
+.block-content {
+  transition: all 0.3s ease-in-out;
+}
+
+/* Expanded/Collapsed Animation */
+.block-content {
+  max-height: 2000px;
+  overflow: hidden;
+}
+
+.block-toggle {
+  position: relative;
+  z-index: 5;
+}
