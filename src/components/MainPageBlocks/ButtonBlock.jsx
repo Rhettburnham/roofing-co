@@ -25,9 +25,14 @@ function ButtonPreview({ buttonconfig }) {
 
   // Destructure the button config (using images rather than "slides")
   const { text, buttonLink, images = [] } = buttonconfig;
+  
+  // Ensure image paths are properly formatted (with leading /)
+  const formattedImages = images.map(img => 
+    img.startsWith('/') ? img : `/${img.replace(/^\.\//, '')}`
+  );
 
   // Duplicate the images array to create a seamless looping carousel.
-  const duplicatedSlides = [...images, ...images];
+  const duplicatedSlides = [...formattedImages, ...formattedImages];
 
   useEffect(() => {
     gsap.to("#slider", {
@@ -73,7 +78,7 @@ function ButtonPreview({ buttonconfig }) {
           {/* Fixed Centered Button */}
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-auto z-10">
             <button
-              className="text-white hover:text-black hover:bg-white font-rye text-xl md:text-3xl px-4 py-2 md:px-8 md:py-4 rounded-lg shadow-lg dark_button !font-rye"
+              className="text-white hover:text-black hover:bg-white font-rye text-xl md:text-3xl px-4 py-2 md:px-8 md:py-4 rounded-lg shadow-lg dark_button "
               onClick={handleClick}
               onMouseEnter={(e) => {
                 e.currentTarget.style.boxShadow =
@@ -96,7 +101,7 @@ function ButtonPreview({ buttonconfig }) {
                   <div className="relative sm:w-[70vw] w-[88vw] md:h-[24vh] sm:h-[20vh] h-[15vh]">
                     <div className="flex items-center justify-center overflow-hidden w-full h-full relative">
                       <img
-                        src={src}
+                        src={duplicatedSlides[i]}
                         alt={`Slide ${i}`}
                         className="w-full h-full object-cover pointer-events-none"
                         ref={(el) => (imageRef.current[i] = el)}

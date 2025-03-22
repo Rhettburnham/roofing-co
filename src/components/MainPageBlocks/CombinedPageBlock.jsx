@@ -109,6 +109,11 @@ const TestimonialItem = ({ testimonial }) => {
       ? testimonial.text.slice(0, 100) + "..."
       : testimonial.text;
 
+  // Format logo path if present
+  const logoPath = testimonial.logo?.startsWith('/') 
+    ? testimonial.logo 
+    : `/assets/images/${testimonial.logo?.split('/').pop() || 'googleimage.png'}`;
+
   return (
     <div
       className="p-4 bg-white rounded-lg custom-circle-shadow relative cursor-pointer"
@@ -126,7 +131,7 @@ const TestimonialItem = ({ testimonial }) => {
             onClick={(e) => e.stopPropagation()} // don't toggle on logo click
           >
             <img
-              src={testimonial.logo}
+              src={logoPath}
               alt="Logo"
               className="w-8 h-8 md:w-10 md:h-10"
             />
@@ -164,83 +169,82 @@ const TestimonialItem = ({ testimonial }) => {
 ───────────────────────────────────────────────────────────── */
 export default function CombinedPageBlock({ readOnly = false, config = {} }) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isCommercial, setIsCommercial] = useState(false);
+  const [commercialSelected, setIsCommercial] = useState(false);
+  const [activeCard, setActiveCard] = useState(null);
+  const [showServiceInfoModal, setShowServiceInfoModal] = useState(false);
+  
+  useEffect(() => {
+    if (config) {
+      if (config.residentialServices) {
+        setResidentialServices(config.residentialServices);
+      }
+      if (config.commercialServices) {
+        setCommercialServices(config.commercialServices);
+      }
+      // Set isCommercial based on config, but still allow it to be toggled
+      if (config.isCommercial !== undefined) {
+        setIsCommercial(config.isCommercial);
+      }
+    }
+  }, [config]);
+  
   const [residentialServices, setResidentialServices] = useState([]);
   const [commercialServices, setCommercialServices] = useState([]);
-  const [googleReviews, setGoogleReviews] = useState([]);
+  
+  const googleReviews = config.googleReviews || [];
+  const title = config.title || "Services";
+  const largeResidentialImg = config.largeResidentialImg || "/assets/images/main_image_expanded.jpg";
+  const largeCommercialImg = config.largeCommercialImg || "/assets/images/commercialservices.jpg";
 
-  console.log("CombinedPageBlock config:", config);
+  // Format image paths
+  const formattedResidentialImg = largeResidentialImg?.startsWith('/')
+    ? largeResidentialImg
+    : `/assets/images/${largeResidentialImg?.split('/').pop() || 'main_image_expanded.jpg'}`;
+    
+  const formattedCommercialImg = largeCommercialImg?.startsWith('/')
+    ? largeCommercialImg
+    : `/assets/images/${largeCommercialImg?.split('/').pop() || 'commercialservices.jpg'}`;
+  
+  // Format review logo paths
+  const formattedReviews = googleReviews.map(review => ({
+    ...review,
+    logo: review.logo?.startsWith('/') 
+      ? review.logo 
+      : `/assets/images/${review.logo?.split('/').pop() || 'googleimage.png'}`
+  }));
 
-  useEffect(() => {
-    // Fetch services.json to build the services arrays.
-    fetch("/data/services.json")
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
-        console.log("Services data fetched:", data);
-        setResidentialServices(buildResidentialArray(data));
-        setCommercialServices(buildCommercialArray(data));
-      })
-      .catch((error) => {
-        console.error("Error fetching services data:", error);
-      });
+  // Choose which services to display based on the toggle
+  const currentServices = commercialSelected ? commercialServices : residentialServices;
 
-    // Fetch sentiment_reviews.json to get testimonials.
-    fetch("/data/sentiment_reviews.json")
-      .then((res) => res.json())
-      .then((data) => {
-        const processed = data
-          .filter(
-            (review) =>
-              review.sentiment && review.sentiment.toLowerCase() === "positive"
-          )
-          .map((review) => ({
-            name: review.name,
-            stars: parseInt(review.rating, 10),
-            date: review.date,
-            text: review.review_text,
-            logo: googleIcon,
-            link: "https://www.google.com/maps/place/Rhetts+Roofing/",
-          }))
-          .sort((a, b) => b.stars - a.stars)
-          .slice(0, 9);
-        setGoogleReviews(processed);
-      })
-      .catch((error) => {
-        console.error("Error fetching reviews JSON:", error);
-      });
-  }, []);
-
-  // Choose which services to display based on the toggle.
-  const currentServices = isCommercial
-    ? commercialServices
-    : residentialServices;
-
-  // Testimonial pagination.
-  const chunkSize = 3;
-  const totalReviews = googleReviews.length;
-  const visibleReviews = googleReviews.slice(
-    currentIndex,
-    currentIndex + chunkSize
-  );
-
-  const handlePrev = () => {
-    if (currentIndex - chunkSize >= 0) {
-      setCurrentIndex((prev) => prev - chunkSize);
+  // Testimonial pagination handling
+  const reviewsPerPage = 3;
+  const totalPages = Math.ceil(googleReviews.length / reviewsPerPage);
+  
+  const handlePageChange = (newIndex) => {
+    if (newIndex >= 0 && newIndex < totalPages) {
+      setCurrentIndex(newIndex);
     }
   };
 
-  const handleNext = () => {
-    if (currentIndex + chunkSize < totalReviews) {
-      setCurrentIndex((prev) => prev + chunkSize);
-    }
+  const handleServiceCardClick = (service) => {
+    setActiveCard(service);
+    setShowServiceInfoModal(true);
   };
 
   const handleResidentialClick = () => setIsCommercial(false);
   const handleCommercialClick = () => setIsCommercial(true);
 
+  if (readOnly) {
+    return <CombinedPagePreview config={config} />;
+  }
+
+  if (!config) {
+    return <p>No Combined Page data available.</p>;
+  }
+  
+  // Use commercialSelected state instead of isCommercial from props
+  const isCommercial = commercialSelected;
+  
   return (
     <div className="w-full bg-black">
       {/* ──────────────────────────────────────────────────────────
@@ -380,7 +384,7 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
         <div className="relative mt-3 pb-3">
           {currentIndex > 0 && (
             <button
-              onClick={handlePrev}
+              onClick={handlePageChange}
               className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-white text-gray-700 rounded-full w-6 h-6 flex items-center justify-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)] hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10 ml-2"
             >
               <svg
@@ -400,13 +404,13 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
             </button>
           )}
           <div className="grid grid-cols-1 gap-3 px-6">
-            {visibleReviews.map((t, idx) => (
+            {currentServices.map((t, idx) => (
               <TestimonialItem key={idx} testimonial={t} />
             ))}
           </div>
-          {currentIndex + chunkSize < totalReviews && (
+          {currentIndex + reviewsPerPage < totalPages && (
             <button
-              onClick={handleNext}
+              onClick={handlePageChange}
               className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-white text-gray-700 rounded-full w-6 h-6 flex items-center justify-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)] hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10 mr-2"
             >
               <svg
@@ -453,13 +457,10 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
             className="flex w-[200%] h-full"
           >
             <img
-              src="/assets/images/main_image_expanded.jpg"
-              alt="Residential Services"
-              className="w-[100vw] h-full object-cover"
-            />
-            <img
-              src="/assets/images/commercialservices.jpg"
-              alt="Commercial Services"
+              src={isCommercial 
+                ? (largeCommercialImg?.startsWith('/') ? largeCommercialImg : `/assets/images/${largeCommercialImg?.split('/').pop() || 'commercialservices.jpg'}`)
+                : (largeResidentialImg?.startsWith('/') ? largeResidentialImg : `/assets/images/${largeResidentialImg?.split('/').pop() || 'main_image_expanded.jpg'}`)} 
+              alt="Background Image" 
               className="w-[100vw] h-full object-cover"
             />
           </motion.div>
@@ -568,7 +569,7 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
             <div className="grid gap-4 grid-cols-3">
               {currentIndex > 0 && (
                 <button
-                  onClick={handlePrev}
+                  onClick={handlePageChange}
                   className="absolute -left-4 top-1/2 transform -translate-y-1/2 bg-white text-gray-700 rounded-full w-8 h-8 flex items-center justify-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)] hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10"
                 >
                   <svg
@@ -587,12 +588,12 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
                   </svg>
                 </button>
               )}
-              {visibleReviews.map((t, idx) => (
+              {currentServices.map((t, idx) => (
                 <TestimonialItem key={idx} testimonial={t} />
               ))}
-              {currentIndex + chunkSize < totalReviews && (
+              {currentIndex + reviewsPerPage < totalPages && (
                 <button
-                  onClick={handleNext}
+                  onClick={handlePageChange}
                   className="absolute -right-4 top-1/2 transform -translate-y-1/2 bg-white text-gray-700 rounded-full w-8 h-8 flex items-center justify-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)] hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10"
                 >
                   <svg
@@ -628,6 +629,67 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
           </div>
         </section>
       </div>
+    </div>
+  );
+}
+
+function CombinedPagePreview({ config }) {
+  if (!config) {
+    return <p>No Combined Page data available.</p>;
+  }
+  
+  const {
+    googleReviews = [],
+    residentialServices = [],
+    commercialServices = [],
+    isCommercial = false,
+    title = "Services",
+    largeResidentialImg = "/assets/images/main_image_expanded.jpg",
+    largeCommercialImg = "/assets/images/commercialservices.jpg"
+  } = config;
+  
+  // Format image paths
+  const formattedResidentialImg = largeResidentialImg?.startsWith('/')
+    ? largeResidentialImg
+    : `/assets/images/${largeResidentialImg?.split('/').pop() || 'main_image_expanded.jpg'}`;
+    
+  const formattedCommercialImg = largeCommercialImg?.startsWith('/')
+    ? largeCommercialImg
+    : `/assets/images/${largeCommercialImg?.split('/').pop() || 'commercialservices.jpg'}`;
+  
+  // Format review logo paths
+  const formattedReviews = googleReviews.map(review => ({
+    ...review,
+    logo: review.logo?.startsWith('/') 
+      ? review.logo 
+      : `/assets/images/${review.logo?.split('/').pop() || 'googleimage.png'}`
+  }));
+
+  const [activeTab, setActiveTab] = useState(isCommercial ? "commercial" : "residential");
+  
+  const handleResidentialClick = () => setActiveTab("residential");
+  const handleCommercialClick = () => setActiveTab("commercial");
+  
+  // Choose which services to display based on the active tab
+  const currentServices = activeTab === "commercial" ? commercialServices : residentialServices;
+  
+  // Rest of the preview implementation...
+  return (
+    <div className="relative w-full">
+      {/* Background image that alternates based on tab selection */}
+      <div className="absolute inset-0 w-full h-full">
+        <div className="relative w-full h-full">
+          <img
+            src={activeTab === "commercial" ? formattedCommercialImg : formattedResidentialImg}
+            alt={activeTab === "commercial" ? "Commercial Services" : "Residential Services"}
+            className="w-[100vw] h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-black/50"></div>
+        </div>
+      </div>
+      
+      {/* Rest of the UI implementation */}
+      {/* ... */}
     </div>
   );
 }

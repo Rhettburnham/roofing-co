@@ -41,10 +41,18 @@ function HeroPreview({ heroconfig }) {
     commercialImage,
   } = heroconfig;
 
-  // Use defaults if images are not provided
-  const logoSrc = logo || "assets/images/clipped-cowboy.png";
-  const resBg = residentialImage || "assets/images/residentialnight.jpg";
-  const comBg = commercialImage || "assets/images/commercialnight.jpg";
+  // Convert logo to standardized path
+  const formattedLogo = logo
+    ? (logo.startsWith('/') ? logo : `/assets/images/${logo.split('/').pop() || 'clipped-cowboy.png'}`)
+    : "/assets/images/clipped-cowboy.png";
+    
+  const resBg = residentialImage
+    ? (residentialImage.startsWith('/') ? residentialImage : `/assets/images/${residentialImage.split('/').pop() || 'residentialnight.jpg'}`)
+    : "/assets/images/residentialnight.jpg";
+    
+  const comBg = commercialImage
+    ? (commercialImage.startsWith('/') ? commercialImage : `/assets/images/${commercialImage.split('/').pop() || 'commercialnight.jpg'}`)
+    : "/assets/images/commercialnight.jpg";
 
   useEffect(() => {
     // Trigger animation on first mount
@@ -217,7 +225,7 @@ function HeroPreview({ heroconfig }) {
             initial={{ x: -100, opacity: 0 }}
             animate={hasAnimated ? { x: 0, opacity: 1 } : {}}
             transition={{ duration: 0.8, ease: "easeOut" }}about
-            src={logoSrc}
+            src={formattedLogo}
             alt="hero-logo"
             className="w-[15vw] md:w-[14vh] h-auto mr-5 md:mr-10 z-50"
             style={{ filter: "invert(0)" }}

@@ -14,9 +14,9 @@ import * as FaIcons from "react-icons/fa";
 
 const CustomMarkerIcon = L.icon({
   iconUrl: "/assets/images/clipped-cowboy.png",
-  iconSize: [20, 20],
-  iconAnchor: [10, 20],
-  popupAnchor: [0, -20],
+  iconSize: [35, 35],
+  iconAnchor: [17, 35],
+  popupAnchor: [0, -20]
 });
 
 const DropMarker = memo(({ position }) => {
@@ -38,7 +38,7 @@ const DropMarker = memo(({ position }) => {
     };
   }, []);
 
-  return <Marker position={position} icon={CustomMarkerIcon} ref={markerRef} />;
+  return <Marker position={position} icon={CustomMarkerIcon} ref={markerRef} style={{ filter: "invert(1)" }}/>;
 });
 
 const MapInteractionHandler = memo(({ mapActive }) => {

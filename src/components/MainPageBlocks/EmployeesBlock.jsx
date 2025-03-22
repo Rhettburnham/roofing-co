@@ -21,6 +21,13 @@ function EmployeesPreview({ employeesData }) {
   }
   // Use the employees data passed in or default to an empty array
   const employeesList = employeesData?.employee || [];
+  
+  // Format image paths to ensure they have proper format
+  const formattedEmployees = employeesList.map(emp => ({
+    ...emp,
+    image: emp.image?.startsWith('/') ? emp.image : `/assets/images/team/${emp.image?.split('/').pop() || 'roofer.png'}`
+  }));
+  
   const headerRef = useRef(null);
   const nailRef = useRef(null);
   const textRef = useRef(null);
@@ -35,10 +42,10 @@ function EmployeesPreview({ employeesData }) {
     employee = [],
   } = employeesData;
 
-  // Extend the employees array for a seamless loop
+  // Extend the employees array for a seamless loop (use formattedEmployees)
   const extendedEmployees = useMemo(() => {
-    return employeesList.concat(employeesList.slice(0, itemsToShow));
-  }, [employeesList, itemsToShow]);
+    return formattedEmployees.concat(formattedEmployees.slice(0, itemsToShow));
+  }, [formattedEmployees, itemsToShow]);
 
   // Auto-slide the carousel
   useEffect(() => {
@@ -167,7 +174,7 @@ function EmployeesPreview({ employeesData }) {
                       className="w-full h-full object-cover"
                       loading="lazy"
                       onError={(e) => {
-                        e.target.src = "/assets/images/placeholder.png";
+                        e.target.src = "/assets/images/team/roofer.png";
                       }}
                     />
                   </div>

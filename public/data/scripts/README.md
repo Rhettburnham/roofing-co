@@ -1,58 +1,72 @@
-# Website Content Generation Scripts
+# Roofing Website Generator
 
-This directory contains scripts for generating website content automatically using data from BBB profiles and reviews.
+This system automates the process of generating website content for roofing companies by scraping and analyzing data from BBB profiles and Google reviews.
 
 ## Setup
 
-1. Install dependencies:
+1. Install Python 3.8 or higher
+2. Install required dependencies:
    ```bash
    pip install -r requirements.txt
    ```
+3. Set up environment variables in `.env`:
+   ```
+   DEEPSEEK_API_KEY=your_api_key_here
+   ```
 
-2. Create a `.env` file from the example:
+## Usage
+
+1. Run the website generator GUI:
    ```bash
-   cp .env.example .env
+   python website_generator.py
    ```
 
-3. Add your OpenAI API key to the `.env` file:
-   ```
-   OPENAI_API_KEY=your_api_key_here
-   ```
+2. In the GUI:
+   - Enter the BBB profile URL
+   - Enter the Google Reviews URL
+   - Click "Start Generation"
 
-## Running the Pipeline
+## Process Steps
 
-The main script to run is `generate_website_content.py`, which orchestrates the entire process:
+1. **BBB Profile Scraping**
+   - Scrapes business information from BBB profile
+   - Saves to `bbb_profile_data.json`
 
-```bash
-python generate_website_content.py
-```
+2. **Google Reviews Scraping**
+   - Scrapes customer reviews from Google
+   - Saves to `raw_reviews.json`
 
-This will:
-1. Check dependencies
-2. Verify environment setup
-3. Validate input files
-4. Back up existing files
-5. Generate all content
-6. Copy files to the correct locations
+3. **Review Analysis**
+   - Processes and analyzes reviews for sentiment
+   - Saves to `sentiment_reviews.json`
 
-## Individual Scripts
+4. **Research Generation**
+   - Generates business research and insights
+   - Saves to `roofing_business_insights.json`
 
-- `content_generator.py`: Core content generation script
-- `bus_filter.py`: Filters businesses based on BBB profiles and websites
-- `list_data_files.py`: Lists all data files in the directory structure
+5. **Website Data Generation**
+   - Combines all data into final website content
+   - Saves to `combined_data.json`
 
-## Data Flow
+## Output Files
 
-1. BBB profile data (`bbb_profile_data.json`) and reviews (`sentiment_reviews.json`) are inputs
-2. Content generator creates:
-   - Main page content (`combined_data.json`)
-   - Service page content
-   - Services index (`services.json`)
-3. Files are copied to the appropriate locations
+All output files are saved in the `public/data` directory:
+- `bbb_profile_data.json`: Business profile information
+- `raw_reviews.json`: Raw scraped reviews
+- `sentiment_reviews.json`: Processed reviews with sentiment
+- `roofing_business_insights.json`: Business research and insights
+- `combined_data.json`: Final website content
 
-## Customizing Content
+## Logs
 
-You can adjust the content generation by modifying:
-- Prompt templates in `content_generator.py`
-- Environment variables in `.env` (model, temperature, etc.)
-- Service variant classification rules 
+Logs are saved in the `logs` directory with timestamps for debugging.
+
+## Error Handling
+
+- The system includes comprehensive error handling and logging
+- Progress and status are shown in the GUI
+- Each step can be retried if needed
+
+## Requirements
+
+See `requirements.txt` for a complete list of dependencies 

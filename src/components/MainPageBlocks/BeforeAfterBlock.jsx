@@ -27,8 +27,15 @@ function BeforeAfterPreview({ beforeAfterData }) {
   const [selectedImages, setSelectedImages] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
-  // Safely destructure data
+  // Safely destructure data and ensure paths are properly formatted
   const { sectionTitle = "", items = [] } = beforeAfterData || {};
+  
+  // Format paths to ensure they start with / if they don't already
+  const formattedItems = items.map(item => ({
+    ...item,
+    before: item.before?.startsWith('/') ? item.before : `/${item.before?.replace(/^\.\//, '')}`,
+    after: item.after?.startsWith('/') ? item.after : `/${item.after?.replace(/^\.\//, '')}`
+  }));
 
   const handleBoxClick = (images) => {
     setSelectedImages(images);
@@ -257,7 +264,7 @@ function BeforeAfterPreview({ beforeAfterData }) {
         {/* Gallery Grid - Now always 3 columns */}
         <div className="w-full flex justify-center">
           <div className="grid grid-cols-3 gap-4 md:gap-6 px-6 md:px-10 md:pb-10">
-            {items.map((img, index) => (
+            {formattedItems.map((img, index) => (
               <div
                 key={index}
                 ref={(el) => (boxesRef.current[index] = el)}

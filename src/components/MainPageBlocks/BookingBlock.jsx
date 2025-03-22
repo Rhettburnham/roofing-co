@@ -111,12 +111,15 @@ const BookingPreview = memo(({ bookingData }) => {
   }, [bookingData, residentialIcons, commercialIcons]);
 
   if (!bookingData) {
-    return <p>No data found.</p>;
+    return <p>No Booking data found.</p>;
   }
 
-  // Destructure headerText, phone, and logo from bookingData; use default logo if not provided
-  const { headerText, phone, logo: bookingLogo } = bookingData;
-  const logo = bookingLogo || "/assets/images/logo.svg";
+  const { headerText, phone, logo } = bookingData;
+  
+  // Format logo path for proper display
+  const formattedLogo = logo
+    ? `/assets/images/${logo.split('/').pop() || 'clipped-cowboy.png'}`
+    : logo || '/assets/images/clipped-cowboy.png';
 
   const toggleFormVisibility = useCallback(() => {
     setIsFormVisible((prev) => !prev);
@@ -189,7 +192,7 @@ const BookingPreview = memo(({ bookingData }) => {
         </svg>
         <div className="relative z-10 py-4 px-4 flex flex-row items-center justify-center bg-dark-below-header">
           <img
-            src={logo}
+            src={formattedLogo}
             alt="logo"
             className="w-20 h-auto mr-6 drop-shadow-[0_1.2px_1.2px_rgba(255,30,0,0.8)]"
             style={{ filter: "invert(1)" }}

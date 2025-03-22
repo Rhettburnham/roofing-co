@@ -5,73 +5,73 @@
     "residential": {
       "subServices": [
         {
-          "title": "Shingling"
+          "title": "Roof Leak Specialist"
         },
         {
-          "title": "Guttering"
+          "title": "Chimney Leak Specialist"
         },
         {
-          "title": "Ventilation"
+          "title": "Roof Replacement"
         },
         {
-          "title": "Siding"
+          "title": "Roof Repairs"
         }
       ]
     },
     "commercial": {
       "subServices": [
         {
-          "title": "Metal Roof"
+          "title": "Siding Repairs"
         },
         {
-          "title": "Coating"
+          "title": "Mason"
         },
         {
-          "title": "Single Ply"
+          "title": "Roof Leak Specialist Services"
         },
         {
-          "title": "Built Up"
+          "title": "Chimney Leak Specialist Services"
         }
       ]
     }
   },
   "booking": {
-    "logo": "/data/clipped.png",
-    "headerText": "Contact Us!",
+    "logo": "/assets/images/logo/clipped.png",
+    "headerText": "Request a Quote!",
     "phone": "(404) 227-5000"
   },
   "richText": {
     "heroText": "Professional Roofing Excellence",
     "accredited": true,
     "years_in_business": "11 Years of Roofing Experience",
-    "bus_description": "Cowboys-Vaqueros Construction specializes in premium residential and commercial roofing solutions, offering expert installation, repair, and maintenance services tailored to your specific needs.",
-    "bus_description_second": "Our licensed and insured team uses only top-grade materials backed by manufacturer warranties, ensuring your property receives superior protection against the elements for years to come.",
+    "bus_description": "For over 11 years, Cowboys-Vaqueros Construction has been the trusted name in roofing across [Location]. Combining traditional craftsmanship with modern techniques, we deliver durable, stylish, and weather-resistant roofs that stand the test of time. Your home deserves the best, and we\u2019re here to provide it.",
+    "bus_description_second": "At Cowboys-Vaqueros Construction, we pride ourselves on our commitment to quality, integrity, and customer satisfaction. Whether it\u2019s a minor repair or a full roof replacement, our skilled team ensures every project is completed with precision and care. Let us protect your home with a roof built to last.",
     "cards": [
       {
-        "title": "Expert Inspections",
-        "desc": "Comprehensive roof assessments to identify damage, leaks, and structural issues before they become costly problems.",
-        "icon": "Search"
+        "title": "Expert Craftsmanship",
+        "desc": "With 11 years of experience, our team delivers top-notch roofing solutions tailored to your needs. Quality is our promise.",
+        "icon": "Tools"
       },
       {
-        "title": "Weather Protection",
-        "desc": "Storm-resistant installations designed to withstand high winds, heavy rain, and harsh Georgia weather conditions.",
-        "icon": "Cloud"
+        "title": "Trusted Reliability",
+        "desc": "We stand by our work with a commitment to integrity and transparency. Your satisfaction is our priority.",
+        "icon": "HeartHandshake"
       },
       {
-        "title": "Energy Efficiency",
-        "desc": "Smart roofing solutions that improve insulation and ventilation, reducing your energy costs year-round.",
+        "title": "Weather-Resistant Solutions",
+        "desc": "Our roofs are designed to withstand harsh weather conditions, ensuring your home stays safe and secure year-round.",
         "icon": "ThermometerSnowflake"
       },
       {
-        "title": "Lifetime Support",
-        "desc": "Ongoing maintenance programs and rapid response repairs to maximize your roof's lifespan and performance.",
-        "icon": "HeartHandshake"
+        "title": "BBB Accredited",
+        "desc": "Recognized for integrity, transparency and commitment to customer satisfaction by the Better Business Bureau.",
+        "icon": "Certificate"
       }
     ],
     "images": [
-      "/assets/images/Richtext/roof_workers.jpg",
-      "/assets/images/Richtext/roof_workers2.jpg",
-      "/assets/images/Richtext/roof_workers3.webp"
+      "/assets/images/richtext/roof_workers.jpg",
+      "/assets/images/richtext/roof_workers2.jpg",
+      "/assets/images/richtext/roof_workers3.webp"
     ],
     "imageUploads": [
       {
@@ -89,31 +89,31 @@
     ]
   },
   "button": {
-    "text": "About Us",
+    "text": "Services",
     "buttonLink": "/about",
     "images": [
-      "assets/images/roof_slideshow/i1.jpeg",
-      "assets/images/roof_slideshow/i2.jpeg",
-      "assets/images/roof_slideshow/i3.jpeg",
-      "assets/images/roof_slideshow/i4.jpeg",
-      "assets/images/roof_slideshow/i5.jpeg",
-      "assets/images/roof_slideshow/i6.jpeg",
-      "assets/images/roof_slideshow/i7.webp",
-      "assets/images/roof_slideshow/i8.webp",
-      "assets/images/roof_slideshow/i9.jpeg",
-      "assets/images/roof_slideshow/i10.webp",
-      "assets/images/roof_slideshow/i11.jpeg",
-      "assets/images/roof_slideshow/i12.webp"
+      "/assets/images/roof_slideshow/i1.jpeg",
+      "/assets/images/roof_slideshow/i2.jpeg",
+      "/assets/images/roof_slideshow/i3.jpeg",
+      "/assets/images/roof_slideshow/i4.jpeg",
+      "/assets/images/roof_slideshow/i5.jpeg",
+      "/assets/images/roof_slideshow/i6.jpeg",
+      "/assets/images/roof_slideshow/i7.webp",
+      "/assets/images/roof_slideshow/i8.webp",
+      "/assets/images/roof_slideshow/i9.jpeg",
+      "/assets/images/roof_slideshow/i10.webp",
+      "/assets/images/roof_slideshow/i11.jpeg",
+      "/assets/images/roof_slideshow/i12.webp"
     ]
   },
   "map": {
     "center": {
-      "lat": 33.422676,
-      "lng": -84.640974
+      "lat": 33.4385,
+      "lng": -84.6474
     },
-    "zoomLevel": 11,
+    "zoomLevel": 9,
     "circleRadius": 6047,
-    "address": "40 Tipperary TrlSharpsburg, GA 30277",
+    "address": "40 Tipperary TrlSharpsburg, GA 30277-3502",
     "telephone": "(404) 227-5000",
     "serviceHours": [
       {
@@ -147,24 +147,24 @@
     ],
     "stats": [
       {
-        "title": "Employees",
-        "value": 1,
-        "icon": "FaUsers"
-      },
-      {
         "title": "Years of Service",
         "value": 11,
         "icon": "FaCalendarAlt"
       },
       {
         "title": "Customers Served",
-        "value": 500,
+        "value": 550,
         "icon": "FaHandshake"
       },
       {
         "title": "Roofs Repaired",
-        "value": 300,
+        "value": 330,
         "icon": "FaHome"
+      },
+      {
+        "title": "Years of Experience",
+        "value": 11,
+        "icon": "FaCalendarAlt"
       }
     ]
   },
@@ -184,85 +184,85 @@
         "stars": 5,
         "date": "3 years ago",
         "text": "Excellent work and very professional!",
-        "logo": "/assets/images/yelp.png",
-        "link": "https://www.yelp.com/biz/cowboys-vaqueros-construction-sharpsburg-7"
+        "logo": "/assets/images/googleimage.png"
       },
       {
         "name": "Beverly Harrison",
         "stars": 5,
         "date": "3 years ago",
         "text": "Workers did a great job.  Have used this business for several years!  Always happy with results.",
-        "logo": "/assets/images/yelp.png",
-        "link": "https://www.yelp.com/biz/cowboys-vaqueros-construction-sharpsburg-7"
+        "logo": "/assets/images/googleimage.png"
       },
       {
         "name": "Dman Cruver",
         "stars": 5,
         "date": "2 years ago",
         "text": "This company did a wonderful job on my mothers roof! The workers were very professional and did their job with good quality!! Will most definitely call them again if needed!",
-        "logo": "/assets/images/yelp.png",
-        "link": "https://www.yelp.com/biz/cowboys-vaqueros-construction-sharpsburg-7"
+        "logo": "/assets/images/googleimage.png"
       },
       {
         "name": "James Stewart",
         "stars": 5,
         "date": "3 years ago",
         "text": "They did a great job I call him all the time I own several property\u2019s and Luis is fair and great I highly recommend",
-        "logo": "/assets/images/yelp.png",
-        "link": "https://www.yelp.com/biz/cowboys-vaqueros-construction-sharpsburg-7"
+        "logo": "/assets/images/googleimage.png"
       },
       {
         "name": "Nicole Skipper",
         "stars": 5,
         "date": "2 years ago",
         "text": "Luis was awesome.  He helped my mother with her roof that needed repairs.  He was courteous, very professional, and reasonably priced.  I would recommend him to anyone.",
-        "logo": "/assets/images/yelp.png",
-        "link": "https://www.yelp.com/biz/cowboys-vaqueros-construction-sharpsburg-7"
+        "logo": "/assets/images/googleimage.png"
       }
     ],
     "residentialServices": [
       {
+        "icon": "FaHardHat",
+        "title": "Roof Leak Specialist",
+        "link": "/residential/roof-leak-specialist"
+      },
+      {
+        "icon": "FaHome",
+        "title": "Chimney Leak Specialist",
+        "link": "/residential/chimney-leak-specialist"
+      },
+      {
         "icon": "FaTools",
-        "title": "Shingling",
-        "link": "/Residential_service_1"
+        "title": "Roof Replacement",
+        "link": "/residential/roof-replacement"
       },
       {
-        "icon": "FaTint",
-        "title": "Guttering",
-        "link": "/Residential_service_2"
-      },
-      {
-        "icon": "FaFan",
-        "title": "Ventilation",
-        "link": "/Residential_service_3"
-      },
-      {
-        "icon": "FaPaintRoller",
-        "title": "Siding",
-        "link": "/Residential_service_4"
+        "icon": "FaBroom",
+        "title": "Roof Repairs",
+        "link": "/residential/roof-repairs"
       }
     ],
     "commercialServices": [
       {
-        "icon": "FaTools",
-        "title": "Metal Roof",
-        "link": "/CommercialService1"
-      },
-      {
         "icon": "FaPaintRoller",
-        "title": "Coating",
-        "link": "/CommercialService2"
+        "title": "Siding Repairs",
+        "link": "/commercial/siding-repairs"
       },
       {
-        "icon": "FaTools",
-        "title": "Single Ply",
-        "link": "/CommercialService3"
+        "icon": "FaBuilding",
+        "title": "Mason",
+        "link": "/commercial/mason"
       },
       {
-        "icon": "FaTools",
-        "title": "Built Up",
-        "link": "/CommercialService4"
+        "icon": "FaWarehouse",
+        "title": "Roof Leak Specialist Services",
+        "link": "/commercial/roof-leak-specialist-services"
+      },
+      {
+        "icon": "FaChimney",
+        "title": "Chimney Leak Specialist Services",
+        "link": "/commercial/chimney-leak-specialist-services"
       }
+    ],
+    "teamTitle": "Leadership",
+    "teamMembers": [
+      "Mr. Luis Aguilar-Lopez, Owner",
+      "Ms. Erika Salinas, Manager"
     ],
     "largeResidentialImg": "/assets/images/main_image_expanded.jpg",
     "largeCommercialImg": "/assets/images/commercialservices.jpg"
@@ -277,14 +277,14 @@
         "sqft": "2000 sqft"
       },
       {
-        "before": "./assets/images/beforeafter/b2.jpeg",
-        "after": "./assets/images/beforeafter/a2.jpeg",
+        "before": "/assets/images/beforeafter/b2.jpeg",
+        "after": "/assets/images/beforeafter/a2.jpeg",
         "shingle": "Metal Roofing",
         "sqft": "1800 sqft"
       },
       {
-        "before": "./assets/images/beforeafter/b3.jpeg",
-        "after": "./assets/images/beforeafter/a3.jpeg",
+        "before": "/assets/images/beforeafter/b3.jpeg",
+        "after": "/assets/images/beforeafter/a3.jpeg",
         "shingle": "Composite Shingle",
         "sqft": "2200 sqft"
       }
@@ -296,32 +296,32 @@
       {
         "name": "Mr. Luis Aguilar-Lopez",
         "role": "Owner",
-        "image": "/assets/images/roofer.png"
+        "image": "/assets/images/team/roofer.png"
       },
       {
         "name": "Ms. Erika Salinas",
         "role": "Manager",
-        "image": "/assets/images/foreman.png"
-      },
-      {
-        "name": "Frank",
-        "role": "Estimator",
-        "image": "/assets/images/estimator.png"
+        "image": "/assets/images/team/foreman.png"
       },
       {
         "name": "Diana",
         "role": "Sales Rep",
-        "image": "/assets/images/salesrep.png"
-      },
-      {
-        "name": "Garret",
-        "role": "Manager",
-        "image": "/assets/images/manager.png"
+        "image": "/assets/images/team/salesrep.png"
       },
       {
         "name": "Drew",
         "role": "Inspector",
-        "image": "/assets/images/inspector.png"
+        "image": "/assets/images/team/inspector.png"
+      },
+      {
+        "name": "Garret",
+        "role": "Manager",
+        "image": "/assets/images/team/manager.png"
+      },
+      {
+        "name": "Frank",
+        "role": "Estimator",
+        "image": "/assets/images/team/estimator.png"
       }
     ]
   }

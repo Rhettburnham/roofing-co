@@ -31,15 +31,21 @@ function RichTextPreview({ richTextData }) {
     return <p className="text-center py-4">No RichText data found.</p>;
   }
 
+  // Format image paths to ensure they're standardized
+  const formattedImages = images.map(img => 
+    img.startsWith('/') ? img : `/assets/images/Richtext/${img.split('/').pop() || 'roof_workers.jpg'}`
+  );
+  
+  // Use a default image if no images are provided
   const slideshowImages =
-    images?.length > 0 ? images : ["/assets/images/richText/white_nophoto.jpg"];
+    formattedImages?.length > 0 ? formattedImages : ["/assets/images/Richtext/roof_workers.jpg"];
 
   // Split cards into left and right for layout
   const half = Math.ceil(cards.length / 2);
   const leftCards = cards.slice(0, half);
   const rightCards = cards.slice(half);
 
-  // Overlay images used for card backgrounds and visual effects
+  // Overlay images used for card backgrounds and visual effects - standardize paths
   const overlayImages = [
     "/assets/images/shake_img/1.png",
     "/assets/images/shake_img/2.png",
@@ -191,8 +197,8 @@ function RichTextPreview({ richTextData }) {
       <style>{animationStyles}</style>
 
       {/* Medium screens and larger */}
-      <div className="hidden md:flex flex-row px-2 my-2">
-        <div className="flex w-full h-[35vh]">
+      <div className="hidden md:flex flex-row px-2 my-2 md:mt-[10vh]">
+        <div className="flex w-full h-[35vh] ">
           {/* Left Column: Cards stacked vertically */}
           <div className="w-1/5 flex p-1 flex-col justify-between ">
             {leftCards.map((card, idx) => {

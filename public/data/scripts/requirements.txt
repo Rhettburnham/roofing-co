@@ -1,8 +1,15 @@
-pandas>=1.5.0
-openai>=0.27.0
-python-dotenv>=1.0.0
-geopy>=2.3.0
-requests>=2.28.0
-beautifulsoup4>=4.11.0
-selenium>=4.9.0
-webdriver-manager>=3.8.0 
+selenium>=4.0.0
+beautifulsoup4>=4.9.3
+requests>=2.25.1
+python-dotenv>=0.19.0
+pandas>=1.3.0
+tkinter  # Usually comes with Python
+argparse  # Usually comes with Python
+logging  # Usually comes with Python
+typing  # Usually comes with Python
+datetime  # Usually comes with Python
+json  # Usually comes with Python
+os  # Usually comes with Python
+sys  # Usually comes with Python
+threading  # Usually comes with Python
+queue  # Usually comes with Python 
