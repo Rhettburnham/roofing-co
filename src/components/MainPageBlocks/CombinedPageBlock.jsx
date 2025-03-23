@@ -109,11 +109,6 @@ const TestimonialItem = ({ testimonial }) => {
       ? testimonial.text.slice(0, 100) + "..."
       : testimonial.text;
 
-  // Format logo path if present
-  const logoPath = testimonial.logo?.startsWith('/') 
-    ? testimonial.logo 
-    : `/assets/images/${testimonial.logo?.split('/').pop() || 'googleimage.png'}`;
-
   return (
     <div
       className="p-4 bg-white rounded-lg custom-circle-shadow relative cursor-pointer"
@@ -131,7 +126,7 @@ const TestimonialItem = ({ testimonial }) => {
             onClick={(e) => e.stopPropagation()} // don't toggle on logo click
           >
             <img
-              src={logoPath}
+              src={testimonial.logo}
               alt="Logo"
               className="w-8 h-8 md:w-10 md:h-10"
             />
@@ -169,89 +164,90 @@ const TestimonialItem = ({ testimonial }) => {
 ───────────────────────────────────────────────────────────── */
 export default function CombinedPageBlock({ readOnly = false, config = {} }) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [commercialSelected, setIsCommercial] = useState(false);
-  const [activeCard, setActiveCard] = useState(null);
-  const [showServiceInfoModal, setShowServiceInfoModal] = useState(false);
-  
-  useEffect(() => {
-    if (config) {
-      if (config.residentialServices) {
-        setResidentialServices(config.residentialServices);
-      }
-      if (config.commercialServices) {
-        setCommercialServices(config.commercialServices);
-      }
-      // Set isCommercial based on config, but still allow it to be toggled
-      if (config.isCommercial !== undefined) {
-        setIsCommercial(config.isCommercial);
-      }
-    }
-  }, [config]);
-  
+  const [isCommercial, setIsCommercial] = useState(false);
   const [residentialServices, setResidentialServices] = useState([]);
   const [commercialServices, setCommercialServices] = useState([]);
-  
-  const googleReviews = config.googleReviews || [];
-  const title = config.title || "Services";
-  const largeResidentialImg = config.largeResidentialImg || "/assets/images/main_image_expanded.jpg";
-  const largeCommercialImg = config.largeCommercialImg || "/assets/images/commercialservices.jpg";
+  const [googleReviews, setGoogleReviews] = useState([]);
 
-  // Format image paths
-  const formattedResidentialImg = largeResidentialImg?.startsWith('/')
-    ? largeResidentialImg
-    : `/assets/images/${largeResidentialImg?.split('/').pop() || 'main_image_expanded.jpg'}`;
-    
-  const formattedCommercialImg = largeCommercialImg?.startsWith('/')
-    ? largeCommercialImg
-    : `/assets/images/${largeCommercialImg?.split('/').pop() || 'commercialservices.jpg'}`;
-  
-  // Format review logo paths
-  const formattedReviews = googleReviews.map(review => ({
-    ...review,
-    logo: review.logo?.startsWith('/') 
-      ? review.logo 
-      : `/assets/images/${review.logo?.split('/').pop() || 'googleimage.png'}`
-  }));
+  console.log("CombinedPageBlock config:", config);
 
-  // Choose which services to display based on the toggle
-  const currentServices = commercialSelected ? commercialServices : residentialServices;
+  useEffect(() => {
+    // Fetch services.json to build the services arrays.
+    fetch("/data/services.json")
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+        return res.json();
+      })
+      .then((data) => {
+        console.log("Services data fetched:", data);
+        setResidentialServices(buildResidentialArray(data));
+        setCommercialServices(buildCommercialArray(data));
+      })
+      .catch((error) => {
+        console.error("Error fetching services data:", error);
+      });
 
-  // Testimonial pagination handling
-  const reviewsPerPage = 3;
-  const totalPages = Math.ceil(googleReviews.length / reviewsPerPage);
-  
-  const handlePageChange = (newIndex) => {
-    if (newIndex >= 0 && newIndex < totalPages) {
-      setCurrentIndex(newIndex);
+    // Fetch sentiment_reviews.json to get testimonials.
+    fetch("/data/sentiment_reviews.json")
+      .then((res) => res.json())
+      .then((data) => {
+        const processed = data
+          .filter(
+            (review) =>
+              review.sentiment && review.sentiment.toLowerCase() === "positive"
+          )
+          .map((review) => ({
+            name: review.name,
+            stars: parseInt(review.rating, 10),
+            date: review.date,
+            text: review.review_text,
+            logo: googleIcon,
+            link: "https://www.google.com/maps/place/Rhetts+Roofing/",
+          }))
+          .sort((a, b) => b.stars - a.stars)
+          .slice(0, 9);
+        setGoogleReviews(processed);
+      })
+      .catch((error) => {
+        console.error("Error fetching reviews JSON:", error);
+      });
+  }, []);
+
+  // Choose which services to display based on the toggle.
+  const currentServices = isCommercial
+    ? commercialServices
+    : residentialServices;
+
+  // Testimonial pagination.
+  const chunkSize = 3;
+  const totalReviews = googleReviews.length;
+  const visibleReviews = googleReviews.slice(
+    currentIndex,
+    currentIndex + chunkSize
+  );
+
+  const handlePrev = () => {
+    if (currentIndex - chunkSize >= 0) {
+      setCurrentIndex((prev) => prev - chunkSize);
     }
   };
 
-  const handleServiceCardClick = (service) => {
-    setActiveCard(service);
-    setShowServiceInfoModal(true);
+  const handleNext = () => {
+    if (currentIndex + chunkSize < totalReviews) {
+      setCurrentIndex((prev) => prev + chunkSize);
+    }
   };
 
   const handleResidentialClick = () => setIsCommercial(false);
   const handleCommercialClick = () => setIsCommercial(true);
 
-  if (readOnly) {
-    return <CombinedPagePreview config={config} />;
-  }
-
-  if (!config) {
-    return <p>No Combined Page data available.</p>;
-  }
-  
-  // Use commercialSelected state instead of isCommercial from props
-  const isCommercial = commercialSelected;
-  
   return (
     <div className="w-full bg-black">
       {/* ──────────────────────────────────────────────────────────
           1) SMALL SCREEN SECTION
       ────────────────────────────────────────────────────────── */}
       <div className="block md:hidden relative w-full">
-        <div className="relative bg-hover-color h-[1vh] z-30 w-full">
+        <div className="relative bg-accent h-[1vh] z-30 w-full">
           <div className="absolute bottom-0 right-0 left-0 h-[0.75vh] bg-gradient-to-b from-transparent to-orange-600" />
         </div>
         {/* Two images side-by-side, animate x for swap */}
@@ -279,18 +275,18 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
           className="absolute bottom-0 left-0 w-full h-[9.5vh] bg-black z-0 pointer-events-none"
           style={{ clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)" }}
         />
-        <h2 className="absolute top-[0vh] left-1/2 transform -translate-x-1/2 text-white text-[10vw] font-normal font-rye drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)]">
+        <h2 className="absolute top-[2vh] left-1/2 transform -translate-x-1/2 text-white text-[10vw] font-normal font-rye drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)]">
           Services
         </h2>
 
         {/* SERVICES Buttons (staggered exit/enter) */}
         <div className="absolute bottom-[10vh] left-1/2 transform -translate-x-1/2 z-30">
-          <div className="flex flex-row gap-6">
+          <div className="flex flex-row gap-3">
             <button
               onClick={handleResidentialClick}
               className={`flex items-center px-2 md:px-4 md:py-2 rounded-full border-1 mx-2 text-md ${
                 !isCommercial
-                  ? "bg-dark-below-header text-gray-50 border-gray-800 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
+                  ? "bg-banner text-gray-50 border-gray-800 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
                   : "bg-gray-500 text-white hover:bg-white hover:text-black"
               } transition-colors duration-300 font-sans`}
               onMouseEnter={(e) => {
@@ -311,7 +307,7 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
               onClick={handleCommercialClick}
               className={`flex items-center px-2 md:px-4 py-1 md:py-2 text-lg rounded-full border-1 mx-2 ${
                 isCommercial
-                  ? "bg-dark-below-header text-gray-50 border-gray-800 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
+                  ? "bg-banner text-gray-50 border-gray-800 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
                   : "bg-gray-500 hover:bg-white hover:text-black text-white"
               } transition-colors duration-300 font-sans`}
               onMouseEnter={(e) => {
@@ -346,11 +342,11 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
                 <motion.div
                   key={service.title}
                   variants={itemVariants}
-                  className="flex flex-col items-center -mt-[7vh] md:-mt-[2vh]"
+                  className=" flex flex-col items-center -mt-[14vh] "
                 >
                   <Link to={service.link}>
                     <div
-                      className="group whitespace-nowrap flex-col dark_button w-[11vh] h-[11vh] md:w-24 md:h-24 rounded-full flex items-center justify-center text-white text-[5vw] hover:text-gray-200 hover:bg-gray-200 transition drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
+                      className="group whitespace-nowrap flex-col dark_button bg-second-accent w-[11vh] h-[11vh] md:w-24 md:h-24 rounded-full flex items-center justify-center text-white text-[5vw] hover:text-gray-200 hover:bg-gray-200 transition drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
                       onMouseEnter={(e) => {
                         e.currentTarget.style.boxShadow =
                           "inset 0 0 30px 10px rgba(0,0,0,0.8)";
@@ -384,7 +380,7 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
         <div className="relative mt-3 pb-3">
           {currentIndex > 0 && (
             <button
-              onClick={handlePageChange}
+              onClick={handlePrev}
               className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-white text-gray-700 rounded-full w-6 h-6 flex items-center justify-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)] hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10 ml-2"
             >
               <svg
@@ -404,13 +400,13 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
             </button>
           )}
           <div className="grid grid-cols-1 gap-3 px-6">
-            {currentServices.map((t, idx) => (
+            {visibleReviews.map((t, idx) => (
               <TestimonialItem key={idx} testimonial={t} />
             ))}
           </div>
-          {currentIndex + reviewsPerPage < totalPages && (
+          {currentIndex + chunkSize < totalReviews && (
             <button
-              onClick={handlePageChange}
+              onClick={handleNext}
               className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-white text-gray-700 rounded-full w-6 h-6 flex items-center justify-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)] hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10 mr-2"
             >
               <svg
@@ -447,7 +443,7 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
 
       {/* LARGE SCREENS */}
       <div className="hidden md:block overflow-hidden">
-        <div className="relative bg-hover-color h-[1vh] z-30 w-full">
+        <div className="relative bg-accent h-[1vh] z-30 w-full">
           <div className="absolute bottom-0 right-0 left-0 h-[0.75vh] bg-gradient-to-b from-transparent to-orange-600" />
         </div>
         <div className="relative w-full h-[60vh]">
@@ -457,10 +453,13 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
             className="flex w-[200%] h-full"
           >
             <img
-              src={isCommercial 
-                ? (largeCommercialImg?.startsWith('/') ? largeCommercialImg : `/assets/images/${largeCommercialImg?.split('/').pop() || 'commercialservices.jpg'}`)
-                : (largeResidentialImg?.startsWith('/') ? largeResidentialImg : `/assets/images/${largeResidentialImg?.split('/').pop() || 'main_image_expanded.jpg'}`)} 
-              alt="Background Image" 
+              src="/assets/images/main_image_expanded.jpg"
+              alt="Residential Services"
+              className="w-[100vw] h-full object-cover"
+            />
+            <img
+              src="/assets/images/commercialservices.jpg"
+              alt="Commercial Services"
               className="w-[100vw] h-full object-cover"
             />
           </motion.div>
@@ -475,7 +474,7 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
                 onClick={handleResidentialClick}
                 className={`flex items-center px-4 py-2 rounded-full border-1 mx-2 text-lg ${
                   !isCommercial
-                    ? "bg-dark-below-header text-gray-50 border-gray-800 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
+                    ? "bg-banner text-gray-50 border-gray-800 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
                     : "bg-gray-500 text-white hover:bg-white hover:text-black"
                 } transition-colors duration-300 font-sans`}
                 onMouseEnter={(e) => {
@@ -496,7 +495,7 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
                 onClick={handleCommercialClick}
                 className={`flex items-center px-4 py-2 text-lg rounded-full border-1 mx-2 ${
                   isCommercial
-                    ? "bg-dark-below-header text-gray-50 border-gray-800 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
+                    ? "bg-banner text-gray-50 border-gray-800 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
                     : "bg-gray-500 hover:bg-white hover:text-black text-white"
                 } transition-colors duration-300 font-sans`}
                 onMouseEnter={(e) => {
@@ -533,7 +532,7 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
                   >
                     <Link to={service.link}>
                       <div
-                        className="dark_button flex-col w-28 h-28 rounded-full flex items-center justify-center text-white text-[6vh] hover:text-black hover:bg-gray-200 transition drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"
+                        className="dark_button bg-second-accent flex-col w-28 h-28 rounded-full flex items-center justify-center text-white text-[6vh] hover:text-black hover:bg-gray-200 transition drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"
                         onMouseEnter={(e) => {
                           e.currentTarget.style.boxShadow =
                             "inset 0 0 30px 10px rgba(0,0,0,0.8)";
@@ -553,7 +552,7 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
               </motion.div>
             </AnimatePresence>
           </div>
-          <div className="relative bottom-0 right-0 left-0 bg-hover-color h-[1vh] z-30 w-full">
+          <div className="relative bottom-0 right-0 left-0 bg-accent h-[1vh] z-30 w-full">
             <div className="absolute top-0 right-0 left-0 h-[0.75vh] bg-gradient-to-t from-transparent to-orange-700" />
           </div>
         </div>
@@ -569,7 +568,7 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
             <div className="grid gap-4 grid-cols-3">
               {currentIndex > 0 && (
                 <button
-                  onClick={handlePageChange}
+                  onClick={handlePrev}
                   className="absolute -left-4 top-1/2 transform -translate-y-1/2 bg-white text-gray-700 rounded-full w-8 h-8 flex items-center justify-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)] hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10"
                 >
                   <svg
@@ -588,12 +587,12 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
                   </svg>
                 </button>
               )}
-              {currentServices.map((t, idx) => (
+              {visibleReviews.map((t, idx) => (
                 <TestimonialItem key={idx} testimonial={t} />
               ))}
-              {currentIndex + reviewsPerPage < totalPages && (
+              {currentIndex + chunkSize < totalReviews && (
                 <button
-                  onClick={handlePageChange}
+                  onClick={handleNext}
                   className="absolute -right-4 top-1/2 transform -translate-y-1/2 bg-white text-gray-700 rounded-full w-8 h-8 flex items-center justify-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)] hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10"
                 >
                   <svg
@@ -629,67 +628,6 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
           </div>
         </section>
       </div>
-    </div>
-  );
-}
-
-function CombinedPagePreview({ config }) {
-  if (!config) {
-    return <p>No Combined Page data available.</p>;
-  }
-  
-  const {
-    googleReviews = [],
-    residentialServices = [],
-    commercialServices = [],
-    isCommercial = false,
-    title = "Services",
-    largeResidentialImg = "/assets/images/main_image_expanded.jpg",
-    largeCommercialImg = "/assets/images/commercialservices.jpg"
-  } = config;
-  
-  // Format image paths
-  const formattedResidentialImg = largeResidentialImg?.startsWith('/')
-    ? largeResidentialImg
-    : `/assets/images/${largeResidentialImg?.split('/').pop() || 'main_image_expanded.jpg'}`;
-    
-  const formattedCommercialImg = largeCommercialImg?.startsWith('/')
-    ? largeCommercialImg
-    : `/assets/images/${largeCommercialImg?.split('/').pop() || 'commercialservices.jpg'}`;
-  
-  // Format review logo paths
-  const formattedReviews = googleReviews.map(review => ({
-    ...review,
-    logo: review.logo?.startsWith('/') 
-      ? review.logo 
-      : `/assets/images/${review.logo?.split('/').pop() || 'googleimage.png'}`
-  }));
-
-  const [activeTab, setActiveTab] = useState(isCommercial ? "commercial" : "residential");
-  
-  const handleResidentialClick = () => setActiveTab("residential");
-  const handleCommercialClick = () => setActiveTab("commercial");
-  
-  // Choose which services to display based on the active tab
-  const currentServices = activeTab === "commercial" ? commercialServices : residentialServices;
-  
-  // Rest of the preview implementation...
-  return (
-    <div className="relative w-full">
-      {/* Background image that alternates based on tab selection */}
-      <div className="absolute inset-0 w-full h-full">
-        <div className="relative w-full h-full">
-          <img
-            src={activeTab === "commercial" ? formattedCommercialImg : formattedResidentialImg}
-            alt={activeTab === "commercial" ? "Commercial Services" : "Residential Services"}
-            className="w-[100vw] h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-black/50"></div>
-        </div>
-      </div>
-      
-      {/* Rest of the UI implementation */}
-      {/* ... */}
     </div>
   );
 }

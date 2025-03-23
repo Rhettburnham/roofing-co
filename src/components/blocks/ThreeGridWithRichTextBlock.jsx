@@ -24,10 +24,10 @@ const ThreeGridWithRichTextBlock = ({
   // READ ONLY
   if (readOnly) {
     return (
-      <section className="w-full bg-gradient-to-t from-faint-color to-white">
+      <section className="w-full bg-gradient-to-t from-accent to-white">
         <div className="container mx-auto text-center mb-4 px-6 md:px-10">
           {paragraphText && (
-            <p className="text-xs md:text-lg text-gray-700 my-4">
+            <p className="text-xs md:text-lg text-gray-700 my-4 max-w-full overflow-hidden text-ellipsis font-serif">
               {paragraphText}
             </p>
           )}

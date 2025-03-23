@@ -78,7 +78,7 @@ function ButtonPreview({ buttonconfig }) {
           {/* Fixed Centered Button */}
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-auto z-10">
             <button
-              className="text-white hover:text-black hover:bg-white font-rye text-xl md:text-3xl px-4 py-2 md:px-8 md:py-4 rounded-lg shadow-lg dark_button "
+              className="text-black hover:text-black hover:bg-white font-sans text-xl md:text-3xl px-4 py-2 md:px-8 md:py-4 rounded-lg shadow-lg dark_button bg-accent"
               onClick={handleClick}
               onMouseEnter={(e) => {
                 e.currentTarget.style.boxShadow =
@@ -94,7 +94,7 @@ function ButtonPreview({ buttonconfig }) {
           </div>
 
           {/* Image Carousel Wrapper with fixed height */}
-          <div className="relative h-[15vh] overflow-hidden">
+          <div className="relative h-[10vh] overflow-hidden">
             <div className="flex" id="slider">
               {duplicatedSlides.map((src, i) => (
                 <div key={i} className="flex-shrink-0">

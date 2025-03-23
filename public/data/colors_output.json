@@ -10,5 +10,7 @@
   "error": "#ef4444",
   "hover-color": "#2563eb",
   "dark-below-header": "#1e293b",
-  "light-color": "#f9fafb"
+  "light-color": "#f9fafb",
+  "banner": "#1e293b",
+  "second-accent": "#FFF8E1"
 } 

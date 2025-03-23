@@ -134,7 +134,7 @@ function RichTextPreview({ richTextData }) {
     return (
       <div
         ref={cardRef}
-        className={`${baseClasses} ${animationClasses} w-[40vw] h-[22vw] md:w-[16vw] md:h-[15vh]`}
+        className={`${baseClasses} ${animationClasses} w-[40vw] h-[22vw] md:w-[16vw] md:h-[13vh]`}
       >
         {/* Decorative triangle in top-right corner */}
         <div
@@ -166,13 +166,13 @@ function RichTextPreview({ richTextData }) {
           }}
         />
         {/* Title container */}
-        <div className="absolute inset-0 top-0 w-full ml-2 md:ml-3 md:mt-3 mt-3">
-          <h3 className="md:whitespace-nowrap z-40 text-[2vw] md:text-[1.8vh] font-semibold text-gray-900 font-sans">
+        <div className="absolute inset-0 top-0 w-full ml-2 md:ml-3 md:mt-2 mt-3">
+          <h3 className="md:whitespace-nowrap z-40 text-[2vw] md:text-[1.6vh] font-semibold text-gray-900 font-sans">
             {title}
           </h3>
         </div>
         {/* Description text */}
-        <p className="z-40 text-[1.8vw] md:text-[1.4vh] text-gray-700 text-left px-1 md:px-1  font-sans">
+        <p className="z-40 text-[1.8vw] md:text-[1.2vh] text-gray-700 text-left px-1 md:px-1 font-serif">
           {desc}
         </p>
       </div>
@@ -197,8 +197,8 @@ function RichTextPreview({ richTextData }) {
       <style>{animationStyles}</style>
 
       {/* Medium screens and larger */}
-      <div className="hidden md:flex flex-row px-2 my-2 md:mt-[10vh]">
-        <div className="flex w-full h-[35vh] ">
+      <div className="hidden md:flex flex-row px-2 my-2 md:mt-[7vh]">
+        <div className="flex w-full h-[32vh] ">
           {/* Left Column: Cards stacked vertically */}
           <div className="w-1/5 flex p-1 flex-col justify-between ">
             {leftCards.map((card, idx) => {
@@ -249,13 +249,13 @@ function RichTextPreview({ richTextData }) {
               {/* Bus Descriptions: 1/3 width */}
               <div className="w-1/3 flex flex-col items-start justify-start">
                 <div className="px-1">
-                  <h2 className=" text-[3.5vw] md:text-[2vh] text-left font-bold z-60 font-sans">
+                  <h2 className="text-[3.5vw] md:text-[2vh] text-left font-bold z-60 font-sans">
                     {heroText}
                   </h2>
-                  <p className="text-[2.5vw] md:text-[1.6vh] text-gray-700 pl-3 font-sans">
+                  <p className="text-[2.5vw] md:text-[1.4vh] text-gray-700 pl-3 -mt-1 font-serif">
                     {bus_description}
                   </p>
-                  <p className="text-[2.5vw] mt-1 md:text-[1.6vh] text-gray-700 pl-3 font-sans">
+                  <p className="text-[2.5vw] md:text-[1.4vh] text-gray-700 pl-3 -mt-0.5 font-serif">
                     {bus_description_second}
                   </p>
                 </div>
@@ -266,7 +266,7 @@ function RichTextPreview({ richTextData }) {
           </div>
 
           {/* Right Column: Cards stacked vertically */}
-          <div className="w-1/5 flex p-3 flex-col justify-between h-[30vh]">
+          <div className="w-1/5 flex p-3 flex-col justify-between h-[28vh]">
             {rightCards.map((card, idx) => {
               const i = idx + half;
               const IconComp = Icons[card.icon] || Icons.Star;

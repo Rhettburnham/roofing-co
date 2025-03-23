@@ -88,7 +88,7 @@ const Navbar = () => {
         className={`sticky top-0 z-50 w-full flex items-center justify-between 
         ${
           hasScrolled
-            ? "bg-dark-below-header transition-all duration-300 h-14"
+            ? "bg-banner transition-all duration-300 h-14"
             : "bg-white transition-all duration-300 h-10 md:h-14"
         } 
         px-5 md:px-10`}

@@ -94,18 +94,14 @@
 }
 
 :root {
-  --dark-below-header-color: rgb(255, 30, 0);
-  --dark-below-header-color-rgba: rgba(255, 30, 0, 0.5);
-  /* Dark blue */
-  --dark-button-color: rgb(96, 10, 39);
-  /* Another dark blue */
-  --faint-color: #ff2600;
-  /* Light blue */
-  --hover-color: #39466f;
-  /* Specified light teal/blue-green */
-  --dark-color: #434358;
-  /* Basic map serivce highlight */
-  --highlight-box: #80aff5;
+  --accent-color: #60a5fa;
+  --banner-color: #1e293b;
+  --second-accent: #FFF8E1;
+  --dark-below-header-color: #1e293b;
+  --dark-button-color: #1e293b;
+  --dark-color: #374151;
+  --faint-color: #f9fafb;
+  --hover-color: #2563eb;
 }
 
 .highlight-box {
@@ -144,6 +140,10 @@
 
 .hover-color {
   background-color: var(--hover-color);
+}
+
+.second-accent {
+  background-color: var(--second-accent);
 }
 
 .button_gradient {
@@ -554,4 +554,41 @@ canvas {
 .block-toggle {
   position: relative;
   z-index: 5;
+}
+
+.banner {
+  background-color: var(--banner-color);
+}
+
+.banner-gradient {
+  background: linear-gradient(
+    to top,
+    var(--banner-color) 0%,
+    transparent 100%
+  );
+}
+
+.accent-gradient {
+  background: linear-gradient(to bottom, var(--accent-color) 0%);
+}
+
+.accent {
+  background-color: var(--accent-color);
+}
+
+.text-shadow-accent {
+  text-shadow: -1px 1px 2px var(--accent-color);
+}
+
+/* Explicit background color classes for when Tailwind isn't recognizing them */
+.bg-second-accent {
+  background-color: var(--second-accent);
+}
+
+.bg-accent {
+  background-color: var(--accent-color);
+}
+
+.bg-banner {
+  background-color: var(--banner-color);
 }

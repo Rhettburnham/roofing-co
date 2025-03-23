@@ -41,7 +41,7 @@ const HeaderBannerBlock = ({
           }}
         ></div>
         {/* Overlay */}
-        <div className="absolute inset-0 dark-below-header"></div>
+        <div className="absolute inset-0 bg-banner"></div>
         <div className="relative z-10 h-full flex items-center justify-center">
           <h2
             className={`${fontSize} font-semibold`}

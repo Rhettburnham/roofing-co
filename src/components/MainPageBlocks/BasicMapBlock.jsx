@@ -155,11 +155,11 @@ const StatsPanel = memo(({ isSmallScreen, stats }) => {
             key={index}
             className="flex flex-col items-center justify-center bg-white/90 rounded-lg p-2 shadow-md"
           >
-            <IconComponent className="w-6 h-6 mb-1 text-gray-700" />
-            <div className="text-lg md:text-xl font-bold text-gray-600">
+            <IconComponent className="w-6 h-6 mb-1 text-blue-700" />
+            <div className="text-lg md:text-xl font-bold text-blue-700">
               {stat.value}
             </div>
-            <div className="text-xs md:text-sm text-gray-600 font-medium">
+            <div className="text-xs md:text-sm text-blue-700 font-medium">
               {stat.title || stat.label}
             </div>
           </div>
@@ -274,7 +274,7 @@ function BasicMapPreview({ mapData }) {
                   </div>
                 )}
                 {/* Bottom overlay: address + phone */}
-                <div className="absolute bottom-0 w-full bg-hover-color text-center text-blue z-10">
+                <div className="absolute bottom-0 w-full bg-banner text-center text-blue z-10">
                   <div className="font-semibold text-[2.5vw] md:text-[2vh]">
                     {address}
                   </div>
@@ -292,7 +292,7 @@ function BasicMapPreview({ mapData }) {
             <button
               type="button"
               onClick={() => setIsServiceHoursVisible(!isServiceHoursVisible)}
-              className="dark_button rounded-t-xl md:py-2 items-center justify-center text-white text-[2vh] transition-all duration-300 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] font-serif"
+              className="dark_button bg-second-accent rounded-t-xl md:py-2 items-center justify-center text-black text-[2vh] transition-all duration-300 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] font-serif"
             >
               {isServiceHoursVisible ? "Hide Hours" : "Show Hours"}
             </button>
@@ -568,7 +568,7 @@ function BasicMapEditorPanel({ localMap, setLocalMap, onSave }) {
                 </div>
               )}
 
-              <div className="absolute bottom-0 w-full bg-hover-color text-center text-gray-200 py-1 z-10">
+              <div className="absolute bottom-0 w-full bg-banner text-center text-blue z-10">
                 <div className="font-semibold text-base font-serif">
                   {localMap.address}
                 </div>

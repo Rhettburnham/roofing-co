@@ -190,7 +190,7 @@ const BookingPreview = memo(({ bookingData }) => {
             d="M0,224 L80,192 C160,160, 320,96, 480,101.3 C640,107, 800,181, 960,192 C1120,203, 1280,149, 1360,122.7 L1440,96 L1440,320 L0,320 Z"
           />
         </svg>
-        <div className="relative z-10 py-4 px-4 flex flex-row items-center justify-center bg-dark-below-header">
+        <div className="relative z-10 py-4 px-4 flex flex-row items-center justify-center bg-banner">
           <img
             src={formattedLogo}
             alt="logo"
@@ -298,7 +298,7 @@ const BookingPreview = memo(({ bookingData }) => {
           <div className="flex justify-center w-full mt-4">
             <button
               type="submit"
-              className="p-4 text-white text-lg font-semibold rounded-md dark_button hover:bg-white hover:text-black md:px-[25vw] shadow-md"
+              className="p-4 text-white text-lg font-semibold rounded-md dark_button bg-second-accent hover:bg-white hover:text-black md:px-[25vw] shadow-md"
             >
               Submit
             </button>

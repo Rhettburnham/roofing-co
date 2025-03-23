@@ -3,30 +3,23 @@
 const fs = require("fs");
 const path = require("path");
 
-// Attempt to read your color_extractor output JSON:
+// Default professional color scheme
 let customColors = {
-  "faint-color": "#E0F7FA",
-  "hover-color": "#434358",
-  "dark-below-header": "#6a0202",
-}; // defaults
+  "accent": "#2B4C7E",     // Professional blue
+  "banner": "#1A2F4D",     // Darker blue
+  "second-accent": "#FFF8E1", // Amber 100 equivalent
+  "faint-color": "#E0F7FA" // Light blue
+};
 
 const jsonPath = path.join(__dirname, "public", "data", "colors_output.json");
 try {
   const raw = fs.readFileSync(jsonPath, "utf-8");
   const parsed = JSON.parse(raw);
-  // Expecting an object with keys "faint-color", "hover-color", "dark-below-header"
-  if (
-    typeof parsed === "object" &&
-    parsed["faint-color"] &&
-    parsed["hover-color"] &&
-    parsed["dark-below-header"]
-  ) {
+  if (typeof parsed === "object") {
     customColors = parsed;
     console.log("[INFO] Using colors from colors_output.json:", customColors);
   } else {
-    console.log(
-      "[WARN] colors_output.json missing required keys. Using defaults."
-    );
+    console.log("[WARN] colors_output.json has invalid format. Using defaults.");
   }
 } catch (err) {
   console.log("[WARN] Could not read colors_output.json. Using defaults.", err);
@@ -40,16 +33,22 @@ module.exports = {
         rye: ["Rye", "serif"],
       },
       colors: {
-        // Just use the 3 custom keys from the JSON
-        ...customColors,
-        blue: "#2997FF",
+        // Use our website's color scheme
+        accent: "#E0F7FA", // Light blue
+        banner: "#1e293b", // Dark blue for banner/header backgrounds
+        "second-accent": "#FFF8E1", // Amber 100 equivalent
+        // Add utility colors
+        blue: {
+          DEFAULT: "#2997FF",
+          light: "#E0F7FA",
+          dark: "#1A2F4D"
+        },
         gray: {
           DEFAULT: "#86868b",
           100: "#94928d",
           200: "#afafaf",
           300: "#42424570",
         },
-        zinc: "#101010",
       },
     },
   },

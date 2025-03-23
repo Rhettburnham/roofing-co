@@ -69,7 +69,7 @@ const About = () => {
             backgroundAttachment: "fixed",
           }}
         ></div>
-        <div className="absolute inset-0 dark-below-header"></div>
+        <div className="absolute inset-0 bg-banner"></div>
 
         <div className="relative z-10 h-full flex items-center justify-center custom-circle-shadow">
           <motion.h1

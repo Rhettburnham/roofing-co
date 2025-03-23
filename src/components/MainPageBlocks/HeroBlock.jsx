@@ -182,7 +182,7 @@ function HeroPreview({ heroconfig }) {
 
   const titleVariants = {
     active: {
-      y: -50,
+      y: -170,
       transition: { duration: 0.6 },
     },
     default: {
@@ -217,10 +217,10 @@ function HeroPreview({ heroconfig }) {
 
   return (
     <section className="relative">
-      {/* Top white area */}
-      <div className="h-[10vh] md:h-[15vh] bg-white w-full relative z-10">
-        {/* Logo & Titles */}
-        <div className="absolute bottom-0 left-0 right-0 transform translate-y-1/2 w-full z-40 flex flex-row items-center justify-center">
+      {/* Top white area - Controls distance from top via height */}
+      <div className="h-[6vh] md:h-[8vh] bg-white w-full relative z-10">
+        {/* Logo & Titles - Controls vertical position via transform translate */}
+        <div className="absolute bottom-0 lef-0 right-0 transform translate-y-1/2 w-full z-40 flex flex-row items-center justify-center">
           <motion.img
             initial={{ x: -100, opacity: 0 }}
             animate={hasAnimated ? { x: 0, opacity: 1 } : {}}
@@ -248,7 +248,7 @@ function HeroPreview({ heroconfig }) {
 
       {/* Gradient from white to transparent - overlay on top of images */}
       <div
-        className={`absolute top-[10vh] md:top-[15vh] left-0 right-0 bg-gradient-to-b from-white from-0% to-transparent ${
+        className={`absolute top-[6vh] md:top-[8vh] left-0 right-0 bg-gradient-to-b from-white from-0% to-transparent ${
           activeSection === "neutral"
             ? "h-[20vh] md:h-[25vh]"
             : "h-[10vh] md:h-[15vh]"
@@ -449,7 +449,7 @@ function HeroPreview({ heroconfig }) {
 
         {/* Dark red gradient at the bottom - overlay only on the images */}
         <div
-          className={`absolute bottom-0 left-0 right-0 pointer-events-none bg-gradient-to-t from-dark-below-header from-10% to-transparent z-30 ${
+          className={`absolute bottom-0 left-0 right-0 pointer-events-none bg-gradient-to-t from-banner from-10% to-transparent z-30 ${
             activeSection === "neutral"
               ? "h-[20vh] md:h-[22vh]"
               : "h-[10vh] md:h-[15vh]"

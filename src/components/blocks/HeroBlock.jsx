@@ -66,15 +66,14 @@ const HeroBlock = ({ config = {}, readOnly = false, onConfigChange }) => {
             backgroundAttachment: "fixed",
           }}
         ></div>
-        {/* Could map a dark overlay class here if you have one, e.g. .dark-below-header */}
-        <div className="absolute inset-0 dark-below-header"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-banner via-transparent to-transparent"></div>
 
         <div className="relative z-10 h-full flex items-center justify-center custom-circle-shadow">
           <motion.h1
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 1 }}
-            className="text-center text-[10vw] md:text-[8vh] font-extrabold text-white tracking-wider"
+            className="text-center text-[10vw] md:text-[8vh] font-extrabold text-second-accent tracking-wider"
           >
             {title}
           </motion.h1>
