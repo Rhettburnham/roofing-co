@@ -272,7 +272,7 @@ class CombinedDataGenerator:
         phone = self.bbb_profile.get('telephone', "(404) 555-1234")
         
         # Get the logo URL from BBB profile if available
-        logo_url = "/assets/images/clipped-cowboy.png"  # Updated default logo path
+        logo_url = "/assets/images/logo/clipped.png"  # default
         
         # Variations of "Contact Us"
         contact_texts = [
@@ -352,11 +352,11 @@ class CombinedDataGenerator:
         city = self.bbb_profile.get('city', '')
         accredited = self.bbb_profile.get('accredited', True)
         
-        # Updated image paths for rich text section with correct case (Richtext)
+        # Standardized image paths for rich text section
         rich_text_images = [
-            "/assets/images/Richtext/roof_workers.jpg",
-            "/assets/images/Richtext/roof_workers2.jpg",
-            "/assets/images/Richtext/roof_workers3.webp"
+            "/assets/images/richtext/roof_workers.jpg",
+            "/assets/images/richtext/roof_workers2.jpg",
+            "/assets/images/richtext/roof_workers3.webp"
         ]
         
         try:

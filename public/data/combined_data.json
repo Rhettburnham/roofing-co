@@ -36,42 +36,42 @@
     }
   },
   "booking": {
-    "logo": "/assets/images/logo/clipped.png",
+    "logo": "/assets/images/clipped-cowboy.png",
     "headerText": "Request a Quote!",
     "phone": "(404) 227-5000"
   },
   "richText": {
-    "heroText": "Professional Roofing Excellence",
+    "heroText": "Trusted  Roofing Since 2012",
     "accredited": true,
     "years_in_business": "11 Years of Roofing Experience",
-    "bus_description": "For over 11 years, Cowboys-Vaqueros Construction has been the trusted name in roofing across [Location]. Combining traditional craftsmanship with modern techniques, we deliver durable, stylish, and weather-resistant roofs that stand the test of time. Your home deserves the best, and we\u2019re here to provide it.",
-    "bus_description_second": "At Cowboys-Vaqueros Construction, we pride ourselves on our commitment to quality, integrity, and customer satisfaction. Whether it\u2019s a minor repair or a full roof replacement, our skilled team ensures every project is completed with precision and care. Let us protect your home with a roof built to last.",
+    "bus_description": "For over 11 years, Cowboys-Vaqueros Construction has been a trusted name in roofing, blending craftsmanship with a cowboy's grit and a vaquero's precision. We specialize in durable, high-quality roofing solutions tailored to withstand the toughest weather, ensuring your home stays protected for years to come.",
+    "bus_description_second": "Rooted in tradition and driven by innovation, Cowboys-Vaqueros Construction takes pride in delivering personalized service with a family-first approach. Our bilingual team combines modern techniques with time-tested expertise, making us the go-to choice for homeowners seeking reliability, integrity, and a roof built to last.",
     "cards": [
       {
         "title": "Expert Craftsmanship",
-        "desc": "With 11 years of experience, our team delivers top-notch roofing solutions tailored to your needs. Quality is our promise.",
+        "desc": "With over a decade of experience, our skilled team ensures every roof is built to the highest standards, combining precision and durability.",
         "icon": "Tools"
       },
       {
-        "title": "Trusted Reliability",
-        "desc": "We stand by our work with a commitment to integrity and transparency. Your satisfaction is our priority.",
-        "icon": "HeartHandshake"
-      },
-      {
-        "title": "Weather-Resistant Solutions",
-        "desc": "Our roofs are designed to withstand harsh weather conditions, ensuring your home stays safe and secure year-round.",
+        "title": "Weather-Tested Solutions",
+        "desc": "Our roofs are designed to withstand extreme weather conditions, keeping your home safe and secure through every season.",
         "icon": "ThermometerSnowflake"
       },
       {
         "title": "BBB Accredited",
         "desc": "Recognized for integrity, transparency and commitment to customer satisfaction by the Better Business Bureau.",
         "icon": "Certificate"
+      },
+      {
+        "title": "Timely & Reliable",
+        "desc": "We respect your time. Our team delivers projects on schedule, with minimal disruption to your daily life.",
+        "icon": "Clock"
       }
     ],
     "images": [
-      "/assets/images/richtext/roof_workers.jpg",
-      "/assets/images/richtext/roof_workers2.jpg",
-      "/assets/images/richtext/roof_workers3.webp"
+      "/assets/images/Richtext/roof_workers.jpg",
+      "/assets/images/Richtext/roof_workers2.jpg",
+      "/assets/images/Richtext/roof_workers3.webp"
     ],
     "imageUploads": [
       {
@@ -111,7 +111,7 @@
       "lat": 33.4385,
       "lng": -84.6474
     },
-    "zoomLevel": 9,
+    "zoomLevel": 11,
     "circleRadius": 6047,
     "address": "40 Tipperary TrlSharpsburg, GA 30277-3502",
     "telephone": "(404) 227-5000",
@@ -304,16 +304,6 @@
         "image": "/assets/images/team/foreman.png"
       },
       {
-        "name": "Diana",
-        "role": "Sales Rep",
-        "image": "/assets/images/team/salesrep.png"
-      },
-      {
-        "name": "Drew",
-        "role": "Inspector",
-        "image": "/assets/images/team/inspector.png"
-      },
-      {
         "name": "Garret",
         "role": "Manager",
         "image": "/assets/images/team/manager.png"
@@ -322,6 +312,16 @@
         "name": "Frank",
         "role": "Estimator",
         "image": "/assets/images/team/estimator.png"
+      },
+      {
+        "name": "Diana",
+        "role": "Sales Rep",
+        "image": "/assets/images/team/salesrep.png"
+      },
+      {
+        "name": "Drew",
+        "role": "Inspector",
+        "image": "/assets/images/team/inspector.png"
       }
     ]
   }

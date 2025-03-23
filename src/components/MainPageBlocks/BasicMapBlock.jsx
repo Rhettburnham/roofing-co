@@ -13,9 +13,9 @@ import { gsap } from "gsap";
 import * as FaIcons from "react-icons/fa";
 
 const CustomMarkerIcon = L.icon({
-  iconUrl: "/assets/images/clipped-cowboy.png",
-  iconSize: [35, 35],
-  iconAnchor: [17, 35],
+  iconUrl: "/assets/images/logo/clipped.png",
+  iconSize: [20, 20],
+  iconAnchor: [10, 20],
   popupAnchor: [0, -20]
 });
 
