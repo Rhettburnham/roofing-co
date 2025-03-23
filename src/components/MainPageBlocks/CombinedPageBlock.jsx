@@ -275,7 +275,7 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
           className="absolute bottom-0 left-0 w-full h-[9.5vh] bg-black z-0 pointer-events-none"
           style={{ clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)" }}
         />
-        <h2 className="absolute top-[2vh] left-1/2 transform -translate-x-1/2 text-white text-[10vw] font-normal font-rye drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)]">
+        <h2 className="absolute top-[2vh] left-1/2 transform -translate-x-1/2 text-white text-[10vw] font-normal drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)]">
           Services
         </h2>
 
@@ -464,7 +464,7 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
             />
           </motion.div>
           <div className="absolute top-0 w-full flex justify-center">
-            <h2 className="relative z-40 text-white text-[11.5vh] font-rye tracking-wider drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,1.8)]">
+            <h2 className="relative z-40 text-white text-[11.5vh] tracking-wider drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,1.8)]">
               Services
             </h2>
           </div>
@@ -542,7 +542,7 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
                         }}
                       >
                         {React.createElement(service.icon)}
-                        <h3 className="mt-1 text-white text-lg font-rye drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
+                        <h3 className="mt-1 text-white text-lg drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
                           {service.title}
                         </h3>
                       </div>
