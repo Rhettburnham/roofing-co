@@ -346,7 +346,7 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
                 >
                   <Link to={service.link}>
                     <div
-                      className="group whitespace-nowrap flex-col dark_button bg-second-accent w-[11vh] h-[11vh] md:w-24 md:h-24 rounded-full flex items-center justify-center text-white text-[5vw] hover:text-gray-200 hover:bg-gray-200 transition drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
+                      className="group whitespace-nowrap flex-col dark_button bg-banner w-[11vh] h-[11vh] md:w-24 md:h-24 rounded-full flex items-center justify-center text-white text-[5vw] hover:text-gray-200 hover:bg-gray-200 transition drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
                       onMouseEnter={(e) => {
                         e.currentTarget.style.boxShadow =
                           "inset 0 0 30px 10px rgba(0,0,0,0.8)";
@@ -532,7 +532,7 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
                   >
                     <Link to={service.link}>
                       <div
-                        className="dark_button bg-second-accent flex-col w-28 h-28 rounded-full flex items-center justify-center text-white text-[6vh] hover:text-black hover:bg-gray-200 transition drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"
+                        className="dark_button bg-banner flex-col w-28 h-28 rounded-full flex items-center justify-center text-white text-[6vh] hover:text-black hover:bg-gray-200 transition drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"
                         onMouseEnter={(e) => {
                           e.currentTarget.style.boxShadow =
                             "inset 0 0 30px 10px rgba(0,0,0,0.8)";

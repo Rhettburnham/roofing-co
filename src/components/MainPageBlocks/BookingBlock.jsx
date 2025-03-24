@@ -211,9 +211,18 @@ const BookingPreview = memo(({ bookingData }) => {
       {/* "BOOK" BUTTON (mobile) */}
       <button
         onClick={toggleFormVisibility}
-        className="block md:hidden p-2 my-2 px-6 dark_button text-white text-md font-semibold rounded-md hover:bg-white hover:text-black shadow-xl"
+        className={`block md:hidden my-2 px-4 rounded-md shadow-xl relative overflow-hidden ${isFormVisible ? 'py-1' : 'py-2'}`}
       >
-        {isFormVisible ? "Close" : "Book"}
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-900/20 to-transparent rounded-lg" />
+        {isFormVisible ? (
+          <div className="relative z-40 flex space-x-1 justify-center">
+            <div className="w-2 h-2 rounded-full bg-accent"></div>
+            <div className="w-2 h-2 rounded-full bg-accent"></div>
+            <div className="w-2 h-2 rounded-full bg-accent"></div>
+          </div>
+        ) : (
+          <span className="relative z-40 text-white text-md font-semibold">Book</span>
+        )}
       </button>
 
       {/* BOOKING FORM */}
@@ -295,12 +304,22 @@ const BookingPreview = memo(({ bookingData }) => {
             </div>
           </div>
           {/* Submit Button */}
-          <div className="flex justify-center w-full mt-4">
+          <div className="flex justify-center w-full mt-4 relative">
             <button
               type="submit"
-              className="p-4 text-white text-lg font-semibold rounded-md dark_button bg-second-accent hover:bg-white hover:text-black md:px-[25vw] shadow-md"
+              className="relative p-4 text-white text-lg font-semibold rounded-md bg-accent hover:bg-white hover:text-black md:px-[25vw] shadow-md z-40 overflow-hidden"
             >
-              Submit
+              <span className="relative z-50">Submit</span>
+              <div className="absolute inset-0 bg-gradient-to-br from-gray-900/20 to-transparent" />
+              <div className="absolute top-0 right-0 w-12 h-12 md:w-14 md:h-14 z-20 rounded-tr-lg"
+                style={{
+                  backgroundImage: "url(/assets/images/shake_img/1.png)",
+                  backgroundPosition: "top right",
+                  backgroundRepeat: "no-repeat",
+                  backgroundSize: "auto",
+                  clipPath: "polygon(0 0, 100% 0, 100% 100%)"
+                }}
+              />
             </button>
           </div>
         </form>
