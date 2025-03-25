@@ -13,8 +13,8 @@ import { gsap } from "gsap";
 import * as FaIcons from "react-icons/fa";
 
 const CustomMarkerIcon = L.icon({
-  iconUrl: "/assets/images/logo/clipped.png",
-  iconSize: [20, 20],
+  iconUrl: "/assets/images/clipped-cowboy.png",
+  iconSize: [30, 30],
   iconAnchor: [10, 20],
   popupAnchor: [0, -20]
 });
@@ -143,7 +143,7 @@ const StatsPanel = memo(({ isSmallScreen, stats }) => {
   return (
     <div
       className={`
-      w-full grid gap-2 
+      w-full h-full grid gap-2 
       grid-cols-2 md:grid-cols-2 
       text-center p-2
     `}
@@ -153,18 +153,83 @@ const StatsPanel = memo(({ isSmallScreen, stats }) => {
         return (
           <div
             key={index}
-            className="flex flex-col items-center justify-center bg-white/90 rounded-lg p-2 shadow-md"
+            className="flex flex-col items-center justify-center bg-white/30 rounded-lg p-1 shadow-md h-full"
           >
-            <IconComponent className="w-6 h-6 mb-1 text-blue-700" />
-            <div className="text-lg md:text-xl font-bold text-blue-700">
+            <IconComponent className="w-6 h-6 mb-1 text-white" />
+            <div className="text-lg md:text-xl font-bold text-white">
               {stat.value}
             </div>
-            <div className="text-xs md:text-sm text-blue-700 font-medium">
+            <div className="text-xs md:text-sm text-white font-medium">
               {stat.title || stat.label}
             </div>
           </div>
         );
       })}
+    </div>
+  );
+});
+
+// Window strings component
+const WindowStrings = memo(({ isVisible, isSmallScreen }) => {
+  const leftRef = useRef(null);
+  const rightRef = useRef(null);
+  
+  // Simple movement amount
+  const moveAmount = '5vh';
+  
+  useEffect(() => {
+    // Simple toggle animation
+    if (isVisible) {
+      // LEFT GOES UP
+      gsap.to(leftRef.current, {
+        y: `-${moveAmount}`,
+        duration: 1.5,
+        ease: "elastic.out(1, 0.5)"
+      });
+      
+      // RIGHT GOES DOWN
+      gsap.to(rightRef.current, {
+        y: moveAmount,
+        duration: 1.5,
+        ease: "elastic.out(1, 0.5)"
+      });
+    } else {
+      // BOTH RETURN TO ORIGINAL
+      gsap.to(leftRef.current, {
+        y: 0,
+        duration: 1,
+        ease: "power2.inOut"
+      });
+      
+      gsap.to(rightRef.current, {
+        y: 0,
+        duration: 1,
+        ease: "power2.inOut"
+      });
+    }
+  }, [isVisible]);
+
+  return (
+    <div className="absolute md:right-[3%] right-0 -top-[15vh] z-30 pointer-events-none h-full">
+      <div className="flex md:space-x-2 space-x-0">
+        {/* Left side */}
+        <div ref={leftRef} className="flex flex-col items-center">
+          <div className="w-[4px] h-[27vh] bg-gray-700"></div>
+          <div className="w-[30px] h-[40px] bg-gray-800" style={{ 
+            clipPath: 'polygon(40% 0%, 60% 0%, 80% 100%, 20% 100%)',
+            borderRadius: '0px 0px 8px 8px'
+          }}></div>
+        </div>
+        
+        {/* Right side */}
+        <div ref={rightRef} className="flex flex-col items-center">
+          <div className="w-[4px] h-[27vh] bg-gray-700"></div>
+          <div className="w-[30px] h-[40px] bg-gray-800" style={{ 
+            clipPath: 'polygon(40% 0%, 60% 0%, 80% 100%, 20% 100%)',
+            borderRadius: '0px 0px 8px 8px'
+          }}></div>
+        </div>
+      </div>
     </div>
   );
 });
@@ -180,6 +245,7 @@ function BasicMapPreview({ mapData }) {
     typeof window !== "undefined" ? window.innerWidth <= 768 : false
   );
   const [mapActive, setMapActive] = useState(false);
+  const statsDivRef = useRef(null);
 
   const {
     center,
@@ -199,6 +265,7 @@ function BasicMapPreview({ mapData }) {
         setIsServiceHoursVisible(false);
       }
     };
+    
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -221,8 +288,8 @@ function BasicMapPreview({ mapData }) {
   );
 
   return (
-    <section className="  overflow-hidden ">
-      <div className="pb-2 ">
+    <section className="overflow-hidden">
+      <div className="pb-2">
         <div
           className={`flex ${isSmallScreen ? "justify-center" : "justify-start pl-11"}`}
         >
@@ -233,7 +300,7 @@ function BasicMapPreview({ mapData }) {
         <div className="relative flex flex-col md:flex-row gap-4 px-10 md:px-8 h-auto md:h-[45vh]">
           {/* Left: Map */}
           <div className="flex flex-col w-full md:w-[60%]">
-            <div className="relative h-[35vh] md:h-[50vh] w-full z-10">
+            <div className="relative h-[22vh] md:h-[50vh] w-full z-10">
               <div className="w-full h-full rounded-xl overflow-hidden shadow-lg border border-gray-300 relative">
                 <MapContainer
                   center={center}
@@ -250,8 +317,8 @@ function BasicMapPreview({ mapData }) {
                     center={center}
                     radius={circleRadius}
                     pathOptions={{
-                      color: "black",
-                      weight: 1,
+                      color: "transparent",
+                      weight: 0,
                       fillColor: "blue",
                       fillOpacity: 0.2,
                     }}
@@ -274,11 +341,11 @@ function BasicMapPreview({ mapData }) {
                   </div>
                 )}
                 {/* Bottom overlay: address + phone */}
-                <div className="absolute bottom-0 w-full bg-banner text-center text-blue z-10">
-                  <div className="font-semibold text-[2.5vw] md:text-[2vh]">
+                <div className="absolute bottom-0 w-full bg-banner text-center text-white font-semibold z-10">
+                  <div className="font-semibold text-[2.5vw] md:text-[2vh] leading-tight">
                     {address}
                   </div>
-                  <div className="text-[2.5vw] md:text-[2vh] text-blue font-semibold">
+                  <div className="text-[2.5vw] md:text-[2vh] text-white font-semibold leading-tight">
                     <a href={`tel:${telephone?.replace(/[^0-9]/g, "")}`}>
                       {telephone}
                     </a>
@@ -292,11 +359,12 @@ function BasicMapPreview({ mapData }) {
             <button
               type="button"
               onClick={() => setIsServiceHoursVisible(!isServiceHoursVisible)}
-              className="dark_button bg-second-accent rounded-t-xl md:py-2 items-center justify-center text-black text-[2vh] transition-all duration-300 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] font-serif"
+              className="dark_button bg-gray-700 rounded-t-xl md:py-2 items-center justify-center text-white text-[2vh] transition-all duration-300 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] font-serif z-20 relative"
             >
               {isServiceHoursVisible ? "Hide Hours" : "Show Hours"}
             </button>
-            <div className="relative h-[30vh] md:h-[50vh] rounded-b-xl overflow-hidden">
+            <div className="relative h-[30vh] md:h-[50vh] rounded-b-xl overflow-hidden" ref={statsDivRef}>
+              <WindowStrings isVisible={isServiceHoursVisible} isSmallScreen={isSmallScreen} />
               <div className="absolute inset-0 z-10">
                 <div className="absolute inset-0">
                   <img
@@ -314,8 +382,9 @@ function BasicMapPreview({ mapData }) {
                 className={`
                   absolute inset-0 z-20
                   bg-white border-t border-gray-300
-                  transition-transform duration-300 ease-in-out
-                  ${isServiceHoursVisible ? "translate-y-0" : "translate-y-full"}
+                  transition-transform duration-500 ease-in-out
+                  h-full
+                  ${isServiceHoursVisible ? "translate-y-0" : "translate-y-[-100%]"}
                 `}
               >
                 {renderServiceHoursTable()}
@@ -392,6 +461,7 @@ function BasicMapEditorPanel({ localMap, setLocalMap, onSave }) {
   const [isSmallScreen, setIsSmallScreen] = useState(
     typeof window !== "undefined" ? window.innerWidth <= 768 : false
   );
+  const statsDivRef = useRef(null);
 
   useEffect(() => {
     const handleResize = () => {
@@ -401,6 +471,7 @@ function BasicMapEditorPanel({ localMap, setLocalMap, onSave }) {
         setIsServiceHoursVisible(false);
       }
     };
+    
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -542,8 +613,8 @@ function BasicMapEditorPanel({ localMap, setLocalMap, onSave }) {
                     center={localMap.center}
                     radius={localMap.circleRadius || 0}
                     pathOptions={{
-                      color: "black",
-                      weight: 1,
+                      color: "transparent",
+                      weight: 0,
                       fillColor: "blue",
                       fillOpacity: 0.2,
                     }}
@@ -568,11 +639,11 @@ function BasicMapEditorPanel({ localMap, setLocalMap, onSave }) {
                 </div>
               )}
 
-              <div className="absolute bottom-0 w-full bg-banner text-center text-blue z-10">
-                <div className="font-semibold text-base font-serif">
+              <div className="absolute bottom-0 w-full bg-banner text-center  z-10">
+                <div className="font-semibold text-base font-serif leading-tight">
                   {localMap.address}
                 </div>
-                <div className="text-sm text-gray-200 font-bold font-serif">
+                <div className="text-sm text-gray-200 font-bold font-serif leading-tight">
                   <a href={`tel:${localMap.telephone?.replace(/[^0-9]/g, "")}`}>
                     {localMap.telephone}
                   </a>
@@ -587,7 +658,7 @@ function BasicMapEditorPanel({ localMap, setLocalMap, onSave }) {
           {/* Stats Editor */}
           <div className="bg-gray-800 p-3 rounded">
             <h4 className="text-sm font-semibold mb-2">Stats Editor</h4>
-            <div className="max-h-[35vh] overflow-auto">
+            <div className="max-h-[22vh] overflow-auto">
               {localMap.stats?.map((stat, i) => (
                 <StatItemEditor
                   key={i}
@@ -606,18 +677,29 @@ function BasicMapEditorPanel({ localMap, setLocalMap, onSave }) {
           </div>
 
           {/* Service Hours Editor */}
-          <div className="bg-gray-800 p-3 rounded">
+          <div className="bg-gray-800 p-3 rounded relative">
             <button
               onClick={() => setIsServiceHoursVisible(!isServiceHoursVisible)}
-              className="bg-blue-600 hover:bg-blue-500 px-2 py-1 rounded text-xs"
+              className="bg-gray-600 hover:bg-gray-500 px-2 py-1 rounded text-xs relative z-20"
             >
               {isServiceHoursVisible ? "Hide Hours" : "Show Hours"}
             </button>
-            {isServiceHoursVisible && (
-              <div className="mt-2 max-h-[30vh] overflow-auto">
-                {renderServiceHoursTable()}
+            <div className="relative overflow-hidden h-[30vh] md:h-[50vh]" ref={statsDivRef}>
+              <WindowStrings isVisible={isServiceHoursVisible} isSmallScreen={isSmallScreen} />
+              <div
+                className={`
+                  ${isServiceHoursVisible ? "translate-y-0" : "translate-y-[-100%]"}
+                  transform transition-transform duration-500 ease-in-out
+                  h-full
+                `}
+              >
+                {isServiceHoursVisible && (
+                  <div className="h-full overflow-auto">
+                    {renderServiceHoursTable()}
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>

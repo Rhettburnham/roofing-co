@@ -149,7 +149,7 @@ const TestimonialItem = ({ testimonial }) => {
 
       {/* Text */}
       <p className="text-gray-800">
-        <span className="text-[2vw] md:text-[2vh] block md:hidden font-serif">
+        <span className="text-[2.4vw] md:text-[2.2vh] block md:hidden font-serif">
           {isExpanded ? testimonial.text : truncated}
         </span>
         <span className="md:text-xs hidden md:block font-serif">{testimonial.text}</span>
@@ -242,14 +242,12 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
   const handleCommercialClick = () => setIsCommercial(true);
 
   return (
-    <div className="w-full bg-black">
+    <div className="w-full bg-black mt-3">
       {/* ──────────────────────────────────────────────────────────
           1) SMALL SCREEN SECTION
       ────────────────────────────────────────────────────────── */}
       <div className="block md:hidden relative w-full">
-        <div className="relative bg-accent h-[1vh] z-30 w-full">
-          <div className="absolute bottom-0 right-0 left-0 h-[0.75vh] bg-gradient-to-b from-transparent to-orange-600" />
-        </div>
+
         {/* Two images side-by-side, animate x for swap */}
         <div className="overflow-hidden w-full relative">
           <motion.div
@@ -275,7 +273,7 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
           className="absolute bottom-0 left-0 w-full h-[9.5vh] bg-black z-0 pointer-events-none"
           style={{ clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)" }}
         />
-        <h2 className="absolute top-[2vh] left-1/2 transform -translate-x-1/2 text-white text-[10vw] font-normal drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)]">
+        <h2 className="absolute top-[2vh] left-1/2 transform -translate-x-1/2 text-white text-[10vw] font-rye drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)]">
           Services
         </h2>
 
@@ -328,11 +326,11 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
         </div>
 
         {/* Staggered row of service icons */}
-        <div className="absolute inset-0 flex flex-col items-center justify-start pt-[26vh]">
+        <div className="absolute inset-0 flex flex-col items-center justify-start pt-[23vh]">
           <AnimatePresence mode="wait">
             <motion.div
               key={isCommercial ? "commercial" : "residential"}
-              className="flex flex-row gap-6"
+              className="flex flex-row gap-4"
               variants={containerVariants}
               initial="initial"
               animate="enter"
@@ -346,7 +344,7 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
                 >
                   <Link to={service.link}>
                     <div
-                      className="group whitespace-nowrap flex-col dark_button bg-banner w-[11vh] h-[11vh] md:w-24 md:h-24 rounded-full flex items-center justify-center text-white text-[5vw] hover:text-gray-200 hover:bg-gray-200 transition drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
+                      className="group whitespace-nowrap flex-col dark_button bg-banner w-[8vh] h-[8vh] md:w-24 md:h-24 rounded-full flex items-center justify-center text-white text-[5vw] hover:text-gray-200 hover:bg-gray-200 transition drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
                       onMouseEnter={(e) => {
                         e.currentTarget.style.boxShadow =
                           "inset 0 0 30px 10px rgba(0,0,0,0.8)";
@@ -356,7 +354,7 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
                       }}
                     >
                       {React.createElement(service.icon)}
-                      <h3 className="mt-1 text-white text-[3vw] group-hover:text-gray-200 md:text-sm font-rye drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
+                      <h3 className="mt-1 text-white text-[3vw] group-hover:text-gray-200 md:text-sm drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
                         {service.title}
                       </h3>
                     </div>
@@ -444,7 +442,7 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
       {/* LARGE SCREENS */}
       <div className="hidden md:block overflow-hidden">
         <div className="relative bg-accent h-[1vh] z-30 w-full">
-          <div className="absolute bottom-0 right-0 left-0 h-[0.75vh] bg-gradient-to-b from-transparent to-orange-600" />
+          <div className="absolute bottom-0 right-0 left-0 h-[0.75vh] bg-gray" />
         </div>
         <div className="relative w-full h-[60vh]">
           <motion.div
@@ -553,13 +551,13 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
             </AnimatePresence>
           </div>
           <div className="relative bottom-0 right-0 left-0 bg-accent h-[1vh] z-30 w-full">
-            <div className="absolute top-0 right-0 left-0 h-[0.75vh] bg-gradient-to-t from-transparent to-orange-700" />
+            <div className="absolute top-0 right-0 left-0 h-[0.75vh] bg-gray" />
           </div>
         </div>
         <section id="testimonials" className="relative bg-black px-3 pt-5">
           <div className="flex items-center justify-center mb-3">
             <h2
-              className="text-5xl text-white mr-4 my-3 font-serif"
+              className="text-5xl text-white mr-4 my-2 font-serif"
             >
               Testimonials
             </h2>

@@ -166,15 +166,17 @@ function RichTextPreview({ richTextData }) {
           }}
         />
         {/* Title container */}
-        <div className="absolute inset-0 top-0 w-full ml-2 md:ml-3 md:mt-2 mt-3">
-          <h3 className="md:whitespace-nowrap z-40 text-[2vw] md:text-[1.6vh] font-semibold text-gray-900 font-sans">
-            {title}
-          </h3>
+        <div className="flex flex-col">
+          <div className="absolute inset-0 top-0  w-full ml-2 md:ml-3 md:mt-2 mt-3">
+            <h3 className="md:whitespace-nowrap z-40 text-[2.3vw] md:text-[1.8vh] font-bold text-gray-900 font-sans">
+              {title}
+            </h3>
+          </div>
+          {/* Description text */}
+          <p className="z-40 text-[2.2vw] md:text-[1.5vh] text-gray-700 text-left px-1 md:px-1 mr-4 md:mr-0font-serif">
+            {desc}
+          </p>
         </div>
-        {/* Description text */}
-        <p className="z-40 text-[1.8vw] md:text-[1.2vh] text-gray-700 text-left px-1 md:px-1 font-serif">
-          {desc}
-        </p>
       </div>
     );
   }
@@ -197,7 +199,7 @@ function RichTextPreview({ richTextData }) {
       <style>{animationStyles}</style>
 
       {/* Medium screens and larger */}
-      <div className="hidden md:flex flex-row px-2 my-2 md:mt-[7vh]">
+      <div className="hidden md:flex flex-row px-2 mb-2 -mt-[5vh] md:-mt-[5vh]">
         <div className="flex w-full h-[32vh] ">
           {/* Left Column: Cards stacked vertically */}
           <div className="w-1/5 flex p-1 flex-col justify-between ">
@@ -224,7 +226,7 @@ function RichTextPreview({ richTextData }) {
           <div className="relative flex">
             <div className="w-full flex">
               {/* Image Set: 2/3 width */}
-              <div className="w-2/3 relative rounded-2xl shadow-md">
+              <div className="w-1/2 relative rounded-2xl shadow-md">
                 <img
                   src={slideshowImages[currentImage]}
                   alt="Slideshow"
@@ -247,15 +249,15 @@ function RichTextPreview({ richTextData }) {
               </div>
 
               {/* Bus Descriptions: 1/3 width */}
-              <div className="w-1/3 flex flex-col items-start justify-start">
+              <div className="w-1/2 flex flex-col items-start justify-start">
                 <div className="px-1">
-                  <h2 className="text-[3.5vw] md:text-[2vh] text-left font-bold z-60 font-sans">
+                  <h2 className="text-[3.5vw] md:text-[2.5vh] text-center font-bold z-60 font-sans">
                     {heroText}
                   </h2>
-                  <p className="text-[2.5vw] md:text-[1.4vh] text-gray-700 pl-3 -mt-1 font-serif">
+                  <p className="text-[2.5vw] md:text-[1.8vh] text-gray-700 pl-3 mt-1 font-serif">
                     {bus_description}
                   </p>
-                  <p className="text-[2.5vw] md:text-[1.4vh] text-gray-700 pl-3 -mt-0.5 font-serif">
+                  <p className="text-[2.5vw] md:text-[1.8vh] text-gray-700 pl-3 -mt-0.5 font-serif">
                     {bus_description_second}
                   </p>
                 </div>

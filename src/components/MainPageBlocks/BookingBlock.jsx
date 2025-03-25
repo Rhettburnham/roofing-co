@@ -1,8 +1,9 @@
 // src/components/MainPageBlocks/BookingBlock.jsx
-import React, { useState, useEffect, useCallback, memo, useMemo } from "react";
+import React, { useState, useEffect, useCallback, memo, useMemo, useRef } from "react";
 import axios from "axios";
 import { FaTools, FaFan, FaPaintRoller, FaTint } from "react-icons/fa";
 import { X } from "lucide-react";
+import gsap from "gsap";
 // import * as FaIcons from "react-icons/fa";
 
 /* ===============================================
@@ -28,6 +29,11 @@ const BookingPreview = memo(({ bookingData }) => {
   const [commercialServices, setCommercialServices] = useState([]);
   const [activeTab, setActiveTab] = useState("residential");
   const [isLoading, setIsLoading] = useState(false);
+
+  // Refs for GSAP animations
+  const bannerRef = useRef(null);
+  const formContainerRef = useRef(null);
+  const toggleButtonRef = useRef(null);
 
   // Memoize the icons array to prevent recreating it on every render
   const residentialIcons = useMemo(
@@ -110,20 +116,43 @@ const BookingPreview = memo(({ bookingData }) => {
     };
   }, [bookingData, residentialIcons, commercialIcons]);
 
-  if (!bookingData) {
-    return <p>No Booking data found.</p>;
-  }
-
-  const { headerText, phone, logo } = bookingData;
-  
-  // Format logo path for proper display
-  const formattedLogo = logo
-    ? `/assets/images/${logo.split('/').pop() || 'clipped-cowboy.png'}`
-    : logo || '/assets/images/clipped-cowboy.png';
-
+  // GSAP animation for mobile toggle
   const toggleFormVisibility = useCallback(() => {
+    if (window.innerWidth < 768) { // Only animate on mobile
+      if (!isFormVisible) {
+        // Animation to expand banner into form
+        gsap.to(bannerRef.current, {
+          height: "auto",
+          duration: 0.5,
+          ease: "power2.inOut",
+          onComplete: () => {
+            // Fade in form elements
+            gsap.fromTo(
+              formContainerRef.current,
+              { opacity: 0, y: 20 },
+              { opacity: 1, y: 0, duration: 0.3 }
+            );
+          }
+        });
+      } else {
+        // Animation to collapse form back to banner
+        gsap.to(formContainerRef.current, {
+          opacity: 0,
+          y: 20,
+          duration: 0.3,
+          onComplete: () => {
+            gsap.to(bannerRef.current, {
+              height: "auto",
+              duration: 0.5,
+              ease: "power2.inOut"
+            });
+          }
+        });
+      }
+    }
+    
     setIsFormVisible((prev) => !prev);
-  }, []);
+  }, [isFormVisible]);
 
   const handleChange = useCallback((e) => {
     const { name, value } = e.target;
@@ -171,158 +200,152 @@ const BookingPreview = memo(({ bookingData }) => {
     setActiveTab(tab);
   }, []);
 
+  if (!bookingData) {
+    return <p>No Booking data found.</p>;
+  }
+
+  const { headerText, phone, logo } = bookingData;
+  
+  // Format logo path for proper display
+  const formattedLogo = logo
+    ? `/assets/images/${logo.split('/').pop() || 'clipped-cowboy.png'}`
+    : logo || '/assets/images/clipped-cowboy.png';
+
   return (
-    <div className="flex flex-col items-center bg-white w-full bg-gradient-to-t from-black via-white to-white">
-      {/* HEADER RIBBON */}
-      <div className="relative w-full">
-        <div className="absolute inset-0" />
-
-        {/* Jagged SVG at the bottom */}
-        <svg
-          className="absolute bottom-0 left-0 w-full h-[5vh] md:h-[8vh] z-10"
-          viewBox="0 0 1440 320"
-          preserveAspectRatio="none"
-        >
-          <path
-            className="text-transparent text-[5vh]"
-            fill="currentColor"
-            opacity="1"
-            d="M0,224 L80,192 C160,160, 320,96, 480,101.3 C640,107, 800,181, 960,192 C1120,203, 1280,149, 1360,122.7 L1440,96 L1440,320 L0,320 Z"
-          />
-        </svg>
-        <div className="relative z-10 py-4 px-4 flex flex-row items-center justify-center bg-banner">
-          <img
-            src={formattedLogo}
-            alt="logo"
-            className="w-20 h-auto mr-6 drop-shadow-[0_1.2px_1.2px_rgba(255,30,0,0.8)]"
-            style={{ filter: "invert(1)" }}
-          />
-          <div className="text-left drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
-            <h2 className="text-2xl md:text-3xl font-bold text-white">
-              {headerText}
-            </h2>
-            <div className="font-bold md:text-lg text-white">
-              <a href={`tel:${phone}`}>{phone}</a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* "BOOK" BUTTON (mobile) */}
-      <button
-        onClick={toggleFormVisibility}
-        className={`block md:hidden my-2 px-4 rounded-md shadow-xl relative overflow-hidden ${isFormVisible ? 'py-1' : 'py-2'}`}
-      >
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-900/20 to-transparent rounded-lg" />
-        {isFormVisible ? (
-          <div className="relative z-40 flex space-x-1 justify-center">
-            <div className="w-2 h-2 rounded-full bg-accent"></div>
-            <div className="w-2 h-2 rounded-full bg-accent"></div>
-            <div className="w-2 h-2 rounded-full bg-accent"></div>
-          </div>
-        ) : (
-          <span className="relative z-40 text-white text-md font-semibold">Book</span>
-        )}
-      </button>
-
-      {/* BOOKING FORM */}
-      <div className={`${isFormVisible ? "block" : "hidden"} md:block w-full`}>
-        <form onSubmit={handleSubmit} className="w-full mb-1 px-4 md:px-0">
-          <div className="grid grid-cols-1 gap-4 md:max-w-xl mx-auto">
-            {/* First Name */}
-            <div>
-              <input
-                type="text"
-                name="firstName"
-                value={formData.firstName}
-                onChange={handleChange}
-                placeholder="First Name"
-                required
-                className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600"
-              />
-            </div>
-            {/* Last Name */}
-            <div>
-              <input
-                type="text"
-                name="lastName"
-                value={formData.lastName}
-                onChange={handleChange}
-                placeholder="Last Name"
-                required
-                className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600"
-              />
-            </div>
-            {/* Email */}
-            <div>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="Your Email"
-                required
-                className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600"
-              />
-            </div>
-            {/* Phone */}
-            <div>
-              <input
-                type="tel"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                placeholder="Your Phone"
-                required
-                className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600"
-              />
-            </div>
-            {/* Service */}
-            <div>
-              <div
-                onClick={() => setIsModalOpen(true)}
-                className="w-full p-2 bg-transparent border-b border-gray-400 cursor-pointer"
-              >
-                {formData.service ? (
-                  <span className="text-gray-800">{formData.service}</span>
-                ) : (
-                  <span className="text-gray-600">Select a Service</span>
-                )}
+    <div className="flex flex-col items-center w-full">
+      {/* OUTER BOX WITH BANNER COLOR */}
+      <div ref={bannerRef} className="w-full bg-banner rounded-lg overflow-hidden shadow-lg">
+        {/* HEADER RIBBON WITH LOGO & TEXT */}
+        <div className="relative py-4 px-4 flex flex-col items-center">
+          <div className="flex items-center justify-center w-full">
+            <img
+              src={formattedLogo}
+              alt="logo"
+              className="w-20 h-auto mr-6 drop-shadow-[0_1.2px_1.2px_rgba(255,30,0,0.8)]"
+              style={{ filter: "invert(1)" }}
+            />
+            <div className="text-left drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
+              <h2 className="text-2xl md:text-3xl font-bold text-white">
+                {headerText}
+              </h2>
+              <div className="font-bold md:text-lg text-white">
+                <a href={`tel:${phone}`}>{phone}</a>
               </div>
             </div>
-            {/* Message */}
-            <div>
-              <textarea
-                name="message"
-                value={formData.message}
-                onChange={handleChange}
-                placeholder="Your Message"
-                required
-                rows="3"
-                className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600"
-              />
-            </div>
           </div>
-          {/* Submit Button */}
-          <div className="flex justify-center w-full mt-4 relative">
-            <button
-              type="submit"
-              className="relative p-4 text-white text-lg font-semibold rounded-md bg-accent hover:bg-white hover:text-black md:px-[25vw] shadow-md z-40 overflow-hidden"
-            >
-              <span className="relative z-50">Submit</span>
-              <div className="absolute inset-0 bg-gradient-to-br from-gray-900/20 to-transparent" />
-              <div className="absolute top-0 right-0 w-12 h-12 md:w-14 md:h-14 z-20 rounded-tr-lg"
-                style={{
-                  backgroundImage: "url(/assets/images/shake_img/1.png)",
-                  backgroundPosition: "top right",
-                  backgroundRepeat: "no-repeat",
-                  backgroundSize: "auto",
-                  clipPath: "polygon(0 0, 100% 0, 100% 100%)"
-                }}
-              />
-            </button>
+          
+          {/* TOGGLE BUTTON (mobile only) - Now below the header content */}
+          <button
+            ref={toggleButtonRef}
+            onClick={toggleFormVisibility}
+            className="md:hidden mt-3 px-4 rounded-md shadow-lg relative"
+          >
+            {isFormVisible ? (
+              <div className="relative z-40 flex space-x-1 justify-center p-2">
+                <div className="w-2 h-2 rounded-full bg-white"></div>
+                <div className="w-2 h-2 rounded-full bg-white"></div>
+                <div className="w-2 h-2 rounded-full bg-white"></div>
+              </div>
+            ) : (
+              <span className="relative z-40 text-white text-md font-semibold px-4 py-2">Book</span>
+            )}
+          </button>
+        </div>
+
+        {/* INNER BOX WITH FORM (white background) */}
+        <div 
+          ref={formContainerRef}
+          className={`${isFormVisible ? "block" : "hidden"} md:block w-full`}
+        >
+          <div className="bg-white m-4 rounded-lg p-4 shadow-inner">
+            <form onSubmit={handleSubmit} className="w-full mb-1">
+              <div className="grid grid-cols-1 gap-4 md:max-w-xl mx-auto">
+                {/* First Name */}
+                <div>
+                  <input
+                    type="text"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleChange}
+                    placeholder="First Name"
+                    required
+                    className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600"
+                  />
+                </div>
+                {/* Last Name */}
+                <div>
+                  <input
+                    type="text"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    placeholder="Last Name"
+                    required
+                    className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600"
+                  />
+                </div>
+                {/* Email */}
+                <div>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    placeholder="Your Email"
+                    required
+                    className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600"
+                  />
+                </div>
+                {/* Phone */}
+                <div>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    placeholder="Your Phone"
+                    required
+                    className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600"
+                  />
+                </div>
+                {/* Service */}
+                <div>
+                  <div
+                    onClick={() => setIsModalOpen(true)}
+                    className="w-full p-2 bg-transparent border-b border-gray-400 cursor-pointer"
+                  >
+                    {formData.service ? (
+                      <span className="text-gray-800">{formData.service}</span>
+                    ) : (
+                      <span className="text-gray-600">Select a Service</span>
+                    )}
+                  </div>
+                </div>
+                {/* Message */}
+                <div>
+                  <textarea
+                    name="message"
+                    value={formData.message}
+                    onChange={handleChange}
+                    placeholder="Your Message"
+                    required
+                    rows="3"
+                    className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600"
+                  />
+                </div>
+              </div>
+              {/* Submit Button - Made more narrow */}
+              <div className="flex justify-center w-full mt-4 relative">
+                <button
+                  type="submit"
+                  className="relative px-8 py-2 text-white text-lg font-semibold rounded-md bg-accent hover:bg-banner hover:text-white md:w-1/3 shadow-md"
+                >
+                  Submit
+                </button>
+              </div>
+            </form>
           </div>
-        </form>
+        </div>
       </div>
 
       {/* MODAL: SELECT SERVICE */}
@@ -350,7 +373,7 @@ const BookingPreview = memo(({ bookingData }) => {
               <button
                 className={`flex-1 py-2 font-medium ${
                   activeTab === "residential"
-                    ? "text-dark-below-header border-b-2 border-dark-below-header"
+                    ? "text-banner border-b-2 border-banner"
                     : "text-gray-500"
                 }`}
                 onClick={() => handleTabChange("residential")}
@@ -360,7 +383,7 @@ const BookingPreview = memo(({ bookingData }) => {
               <button
                 className={`flex-1 py-2 font-medium ${
                   activeTab === "commercial"
-                    ? "text-dark-below-header border-b-2 border-dark-below-header"
+                    ? "text-banner border-b-2 border-banner"
                     : "text-gray-500"
                 }`}
                 onClick={() => handleTabChange("commercial")}
@@ -379,7 +402,7 @@ const BookingPreview = memo(({ bookingData }) => {
                       className="flex items-start cursor-pointer p-2 hover:bg-gray-100 rounded"
                       onClick={() => handleServiceSelect(service.title)}
                     >
-                      <div className="text-2xl text-dark-below-header mr-3">
+                      <div className="text-2xl text-banner mr-3">
                         {React.createElement(service.icon, {
                           className: "w-6 h-6",
                         })}
@@ -403,7 +426,7 @@ const BookingPreview = memo(({ bookingData }) => {
                     className="flex items-start cursor-pointer p-2 hover:bg-gray-100 rounded"
                     onClick={() => handleServiceSelect(service.title)}
                   >
-                    <div className="text-2xl text-dark-below-header mr-3">
+                    <div className="text-2xl text-banner mr-3">
                       {React.createElement(service.icon, {
                         className: "w-6 h-6",
                       })}

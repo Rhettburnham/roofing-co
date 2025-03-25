@@ -78,7 +78,7 @@ function ButtonPreview({ buttonconfig }) {
           {/* Fixed Centered Button */}
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-auto z-10">
             <button
-              className="text-black hover:text-black hover:bg-white font-sans text-xl md:text-3xl px-4 py-2 md:px-8 md:py-4 rounded-lg shadow-lg dark_button bg-accent"
+              className="text-white hover:text-black hover:bg-white font-sans text-xl  font-bold md:text-2xl px-4 py-2 md:px-5 md:py-2 rounded-lg shadow-lg dark_button bg-accent"
               onClick={handleClick}
               onMouseEnter={(e) => {
                 e.currentTarget.style.boxShadow =
