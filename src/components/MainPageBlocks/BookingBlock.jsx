@@ -1,5 +1,12 @@
 // src/components/MainPageBlocks/BookingBlock.jsx
-import React, { useState, useEffect, useCallback, memo, useMemo, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  memo,
+  useMemo,
+  useRef,
+} from "react";
 import axios from "axios";
 import { FaTools, FaFan, FaPaintRoller, FaTint } from "react-icons/fa";
 import { X } from "lucide-react";
@@ -118,7 +125,8 @@ const BookingPreview = memo(({ bookingData }) => {
 
   // GSAP animation for mobile toggle
   const toggleFormVisibility = useCallback(() => {
-    if (window.innerWidth < 768) { // Only animate on mobile
+    if (window.innerWidth < 768) {
+      // Only animate on mobile
       if (!isFormVisible) {
         // Animation to expand banner into form
         gsap.to(bannerRef.current, {
@@ -132,7 +140,7 @@ const BookingPreview = memo(({ bookingData }) => {
               { opacity: 0, y: 20 },
               { opacity: 1, y: 0, duration: 0.3 }
             );
-          }
+          },
         });
       } else {
         // Animation to collapse form back to banner
@@ -144,13 +152,13 @@ const BookingPreview = memo(({ bookingData }) => {
             gsap.to(bannerRef.current, {
               height: "auto",
               duration: 0.5,
-              ease: "power2.inOut"
+              ease: "power2.inOut",
             });
-          }
+          },
         });
       }
     }
-    
+
     setIsFormVisible((prev) => !prev);
   }, [isFormVisible]);
 
@@ -205,23 +213,26 @@ const BookingPreview = memo(({ bookingData }) => {
   }
 
   const { headerText, phone, logo } = bookingData;
-  
+
   // Format logo path for proper display
   const formattedLogo = logo
-    ? `/assets/images/${logo.split('/').pop() || 'clipped-cowboy.png'}`
-    : logo || '/assets/images/clipped-cowboy.png';
+    ? `/assets/images/${logo.split("/").pop() || "clipped-cowboy.png"}`
+    : logo || "/assets/images/clipped-cowboy.png";
 
   return (
-    <div className="flex flex-col items-center w-full">
+    <div className="flex flex-col items-center w-full px-6">
       {/* OUTER BOX WITH BANNER COLOR */}
-      <div ref={bannerRef} className="w-full bg-banner rounded-lg overflow-hidden shadow-lg">
+      <div
+        ref={bannerRef}
+        className="w-full bg-banner rounded-lg overflow-hidden shadow-lg"
+      >
         {/* HEADER RIBBON WITH LOGO & TEXT */}
-        <div className="relative py-4 px-4 flex flex-col items-center">
+        <div className="relative py-3 px-4 flex flex-col items-center">
           <div className="flex items-center justify-center w-full">
             <img
               src={formattedLogo}
               alt="logo"
-              className="w-20 h-auto mr-6 drop-shadow-[0_1.2px_1.2px_rgba(255,30,0,0.8)]"
+              className="w-16 h-auto mr-4 drop-shadow-[0_1.2px_1.2px_rgba(255,30,0,0.8)]"
               style={{ filter: "invert(1)" }}
             />
             <div className="text-left drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
@@ -233,33 +244,35 @@ const BookingPreview = memo(({ bookingData }) => {
               </div>
             </div>
           </div>
-          
-          {/* TOGGLE BUTTON (mobile only) - Now below the header content */}
+
+          {/* TOGGLE BUTTON (mobile only) */}
           <button
             ref={toggleButtonRef}
             onClick={toggleFormVisibility}
-            className="md:hidden mt-3 px-4 rounded-md shadow-lg relative"
+            className="md:hidden mt-2 px-4 rounded-md shadow-lg relative"
           >
             {isFormVisible ? (
-              <div className="relative z-40 flex space-x-1 justify-center p-2">
+              <div className="relative z-40 flex space-x-1 justify-center p-1">
                 <div className="w-2 h-2 rounded-full bg-white"></div>
                 <div className="w-2 h-2 rounded-full bg-white"></div>
                 <div className="w-2 h-2 rounded-full bg-white"></div>
               </div>
             ) : (
-              <span className="relative z-40 text-white text-md font-semibold px-4 py-2">Book</span>
+              <span className="relative z-40 text-white text-md font-semibold px-4 py-1">
+                Book
+              </span>
             )}
           </button>
         </div>
 
         {/* INNER BOX WITH FORM (white background) */}
-        <div 
+        <div
           ref={formContainerRef}
           className={`${isFormVisible ? "block" : "hidden"} md:block w-full`}
         >
-          <div className="bg-white m-4 rounded-lg p-4 shadow-inner">
-            <form onSubmit={handleSubmit} className="w-full mb-1">
-              <div className="grid grid-cols-1 gap-4 md:max-w-xl mx-auto">
+          <div className="bg-white rounded-lg p-3 shadow-inner md:max-w-xl mx-auto">
+            <form onSubmit={handleSubmit} className="w-full">
+              <div className="grid grid-cols-1 gap-4">
                 {/* First Name */}
                 <div>
                   <input

@@ -32,13 +32,17 @@ function RichTextPreview({ richTextData }) {
   }
 
   // Format image paths to ensure they're standardized
-  const formattedImages = images.map(img => 
-    img.startsWith('/') ? img : `/assets/images/Richtext/${img.split('/').pop() || 'roof_workers.jpg'}`
+  const formattedImages = images.map((img) =>
+    img.startsWith("/")
+      ? img
+      : `/assets/images/Richtext/${img.split("/").pop() || "roof_workers.jpg"}`
   );
-  
+
   // Use a default image if no images are provided
   const slideshowImages =
-    formattedImages?.length > 0 ? formattedImages : ["/assets/images/Richtext/roof_workers.jpg"];
+    formattedImages?.length > 0
+      ? formattedImages
+      : ["/assets/images/Richtext/roof_workers.jpg"];
 
   // Split cards into left and right for layout
   const half = Math.ceil(cards.length / 2);
@@ -167,13 +171,13 @@ function RichTextPreview({ richTextData }) {
         />
         {/* Title container */}
         <div className="flex flex-col">
-          <div className="absolute inset-0 top-0  w-full ml-2 md:ml-3 md:mt-2 mt-3">
+          <div className="absolute inset-0 top-0 w-full ml-2 md:ml-3 md:mt-1 mt-2">
             <h3 className="md:whitespace-nowrap z-40 text-[2.3vw] md:text-[1.8vh] font-bold text-gray-900 font-sans">
               {title}
             </h3>
           </div>
-          {/* Description text */}
-          <p className="z-40 text-[2.2vw] md:text-[1.5vh] text-gray-700 text-left px-1 md:px-1 mr-4 md:mr-0font-serif">
+          {/* Description text - Adjusted for tighter vertical spacing */}
+          <p className="z-40 text-[2.2vw] md:text-[1.5vh] text-gray-700 text-left px-1 md:px-1 mr-4 md:mr-0 font-serif leading-tight mt-6 md:mt-5">
             {desc}
           </p>
         </div>

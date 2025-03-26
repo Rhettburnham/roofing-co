@@ -300,7 +300,7 @@ function BasicMapPreview({ mapData }) {
         <div className="relative flex flex-col md:flex-row gap-4 px-10 md:px-8 h-auto md:h-[45vh]">
           {/* Left: Map */}
           <div className="flex flex-col w-full md:w-[60%]">
-            <div className="relative h-[22vh] md:h-[50vh] w-full z-10">
+            <div className="relative h-[22vh] md:h-full w-full z-10">
               <div className="w-full h-full rounded-xl overflow-hidden shadow-lg border border-gray-300 relative">
                 <MapContainer
                   center={center}
@@ -363,7 +363,7 @@ function BasicMapPreview({ mapData }) {
             >
               {isServiceHoursVisible ? "Hide Hours" : "Show Hours"}
             </button>
-            <div className="relative h-[30vh] md:h-[50vh] rounded-b-xl overflow-hidden" ref={statsDivRef}>
+            <div className="relative h-[30vh] md:h-[calc(45vh-2.5rem)] rounded-b-xl overflow-hidden" ref={statsDivRef}>
               <WindowStrings isVisible={isServiceHoursVisible} isSmallScreen={isSmallScreen} />
               <div className="absolute inset-0 z-10">
                 <div className="absolute inset-0">

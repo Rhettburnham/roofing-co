@@ -152,7 +152,9 @@ const TestimonialItem = ({ testimonial }) => {
         <span className="text-[2.4vw] md:text-[2.2vh] block md:hidden font-serif">
           {isExpanded ? testimonial.text : truncated}
         </span>
-        <span className="md:text-xs hidden md:block font-serif">{testimonial.text}</span>
+        <span className="md:text-xs hidden md:block font-serif">
+          {testimonial.text}
+        </span>
       </p>
     </div>
   );
@@ -247,7 +249,6 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
           1) SMALL SCREEN SECTION
       ────────────────────────────────────────────────────────── */}
       <div className="block md:hidden relative w-full">
-
         {/* Two images side-by-side, animate x for swap */}
         <div className="overflow-hidden w-full relative">
           <motion.div
@@ -369,9 +370,7 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
       {/* TESTIMONIALS (SMALL SCREEN) */}
       <div className="block md:hidden -mt-[5vh] relative z-20 px-[6vw] pb-6">
         <div className="flex items-center justify-center px-4">
-          <h2
-            className="text-[7.5vw] text-white md:text-[6vh] md:text-5xl font-serif mr-2 mt-3"
-          >
+          <h2 className="text-[7.5vw] text-white md:text-[6vh] md:text-5xl font-serif mr-2 mt-3">
             Testimonials
           </h2>
         </div>
@@ -441,9 +440,6 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
 
       {/* LARGE SCREENS */}
       <div className="hidden md:block overflow-hidden">
-        <div className="relative bg-accent h-[1vh] z-30 w-full">
-          <div className="absolute bottom-0 right-0 left-0 h-[0.75vh] bg-gray" />
-        </div>
         <div className="relative w-full h-[60vh]">
           <motion.div
             animate={{ x: isCommercial ? "-100vw" : "0%" }}
@@ -462,7 +458,7 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
             />
           </motion.div>
           <div className="absolute top-0 w-full flex justify-center">
-            <h2 className="relative z-40 text-white text-[11.5vh] tracking-wider drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,1.8)]">
+            <h2 className="relative z-40 text-white text-[11.5vh] tracking-wider font-rye first:drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,1.8)]">
               Services
             </h2>
           </div>
@@ -550,15 +546,10 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
               </motion.div>
             </AnimatePresence>
           </div>
-          <div className="relative bottom-0 right-0 left-0 bg-accent h-[1vh] z-30 w-full">
-            <div className="absolute top-0 right-0 left-0 h-[0.75vh] bg-gray" />
-          </div>
         </div>
         <section id="testimonials" className="relative bg-black px-3 pt-5">
           <div className="flex items-center justify-center mb-3">
-            <h2
-              className="text-5xl text-white mr-4 my-2 font-serif"
-            >
+            <h2 className="text-5xl text-white mr-4 my-2 font-serif">
               Testimonials
             </h2>
           </div>

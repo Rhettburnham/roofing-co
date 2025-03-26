@@ -5,10 +5,10 @@ const path = require("path");
 
 // Default professional color scheme
 let customColors = {
-  "accent": "#2B4C7E",     // Professional blue
-  "banner": "#1A2F4D",     // Darker blue
+  accent: "#2B4C7E", // Professional blue
+  banner: "#1A2F4D", // Darker blue
   "second-accent": "#FFF8E1", // Amber 100 equivalent
-  "faint-color": "#E0F7FA" // Light blue
+  "faint-color": "#E0F7FA", // Light blue
 };
 
 const jsonPath = path.join(__dirname, "public", "data", "colors_output.json");
@@ -19,7 +19,9 @@ try {
     customColors = parsed;
     console.log("[INFO] Using colors from colors_output.json:", customColors);
   } else {
-    console.log("[WARN] colors_output.json has invalid format. Using defaults.");
+    console.log(
+      "[WARN] colors_output.json has invalid format. Using defaults."
+    );
   }
 } catch (err) {
   console.log("[WARN] Could not read colors_output.json. Using defaults.", err);
@@ -41,7 +43,7 @@ module.exports = {
         blue: {
           DEFAULT: "#2997FF",
           light: "#E0F7FA",
-          dark: "#1A2F4D"
+          dark: "#1A2F4D",
         },
         gray: {
           DEFAULT: "#86868b",
