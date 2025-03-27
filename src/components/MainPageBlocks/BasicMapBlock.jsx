@@ -16,7 +16,7 @@ const CustomMarkerIcon = L.icon({
   iconUrl: "/assets/images/clipped-cowboy.png",
   iconSize: [30, 30],
   iconAnchor: [10, 20],
-  popupAnchor: [0, -20]
+  popupAnchor: [0, -20],
 });
 
 const DropMarker = memo(({ position }) => {
@@ -38,7 +38,14 @@ const DropMarker = memo(({ position }) => {
     };
   }, []);
 
-  return <Marker position={position} icon={CustomMarkerIcon} ref={markerRef} style={{ filter: "invert(1)" }}/>;
+  return (
+    <Marker
+      position={position}
+      icon={CustomMarkerIcon}
+      ref={markerRef}
+      style={{ filter: "invert(1)" }}
+    />
+  );
 });
 
 const MapInteractionHandler = memo(({ mapActive }) => {
@@ -143,9 +150,9 @@ const StatsPanel = memo(({ isSmallScreen, stats }) => {
   return (
     <div
       className={`
-      w-full h-full grid gap-2 
-      grid-cols-2 md:grid-cols-2 
-      text-center p-2
+      w-full h-full grid gap-1 md:gap-2 
+      grid-cols-2 
+      text-center p-1 md:p-2
     `}
     >
       {gridStats.map((stat, index) => {
@@ -155,11 +162,11 @@ const StatsPanel = memo(({ isSmallScreen, stats }) => {
             key={index}
             className="flex flex-col items-center justify-center bg-white/30 rounded-lg p-1 shadow-md h-full"
           >
-            <IconComponent className="w-6 h-6 mb-1 text-white" />
-            <div className="text-lg md:text-xl font-bold text-white">
+            <IconComponent className="w-4 h-4 md:w-6 md:h-6 mb-0.5 md:mb-1 text-white" />
+            <div className="text-sm md:text-lg font-bold text-white">
               {stat.value}
             </div>
-            <div className="text-xs md:text-sm text-white font-medium">
+            <div className="text-[1.8vw] md:text-sm text-white font-medium line-clamp-1">
               {stat.title || stat.label}
             </div>
           </div>
@@ -173,10 +180,10 @@ const StatsPanel = memo(({ isSmallScreen, stats }) => {
 const WindowStrings = memo(({ isVisible, isSmallScreen }) => {
   const leftRef = useRef(null);
   const rightRef = useRef(null);
-  
+
   // Simple movement amount
-  const moveAmount = '5vh';
-  
+  const moveAmount = "5vh";
+
   useEffect(() => {
     // Simple toggle animation
     if (isVisible) {
@@ -184,27 +191,27 @@ const WindowStrings = memo(({ isVisible, isSmallScreen }) => {
       gsap.to(leftRef.current, {
         y: `-${moveAmount}`,
         duration: 1.5,
-        ease: "elastic.out(1, 0.5)"
+        ease: "elastic.out(1, 0.5)",
       });
-      
+
       // RIGHT GOES DOWN
       gsap.to(rightRef.current, {
         y: moveAmount,
         duration: 1.5,
-        ease: "elastic.out(1, 0.5)"
+        ease: "elastic.out(1, 0.5)",
       });
     } else {
       // BOTH RETURN TO ORIGINAL
       gsap.to(leftRef.current, {
         y: 0,
         duration: 1,
-        ease: "power2.inOut"
+        ease: "power2.inOut",
       });
-      
+
       gsap.to(rightRef.current, {
         y: 0,
         duration: 1,
-        ease: "power2.inOut"
+        ease: "power2.inOut",
       });
     }
   }, [isVisible]);
@@ -215,19 +222,25 @@ const WindowStrings = memo(({ isVisible, isSmallScreen }) => {
         {/* Left side */}
         <div ref={leftRef} className="flex flex-col items-center">
           <div className="w-[4px] h-[27vh] bg-gray-700"></div>
-          <div className="w-[30px] h-[40px] bg-gray-800" style={{ 
-            clipPath: 'polygon(40% 0%, 60% 0%, 80% 100%, 20% 100%)',
-            borderRadius: '0px 0px 8px 8px'
-          }}></div>
+          <div
+            className="w-[30px] h-[40px] bg-gray-800"
+            style={{
+              clipPath: "polygon(40% 0%, 60% 0%, 80% 100%, 20% 100%)",
+              borderRadius: "0px 0px 8px 8px",
+            }}
+          ></div>
         </div>
-        
+
         {/* Right side */}
         <div ref={rightRef} className="flex flex-col items-center">
           <div className="w-[4px] h-[27vh] bg-gray-700"></div>
-          <div className="w-[30px] h-[40px] bg-gray-800" style={{ 
-            clipPath: 'polygon(40% 0%, 60% 0%, 80% 100%, 20% 100%)',
-            borderRadius: '0px 0px 8px 8px'
-          }}></div>
+          <div
+            className="w-[30px] h-[40px] bg-gray-800"
+            style={{
+              clipPath: "polygon(40% 0%, 60% 0%, 80% 100%, 20% 100%)",
+              borderRadius: "0px 0px 8px 8px",
+            }}
+          ></div>
         </div>
       </div>
     </div>
@@ -265,22 +278,22 @@ function BasicMapPreview({ mapData }) {
         setIsServiceHoursVisible(false);
       }
     };
-    
+
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const renderServiceHoursTable = () => (
-    <table
-      className={`w-full h-full rounded-xl border border-gray-300 bg-white text-center ${
-        isSmallScreen ? "text-xs" : "text-sm"
-      }`}
-    >
+    <table className="w-full rounded-xl border border-gray-300 bg-white text-center">
       <tbody>
         {serviceHours.map((item, idx) => (
           <tr key={idx} className={idx % 2 === 0 ? "faint-color" : ""}>
-            <td className="py-2 px-2 border border-gray-300">{item.day}</td>
-            <td className="py-2 px-2 border border-gray-300">{item.time}</td>
+            <td className="py-1 md:py-2 px-1 md:px-2 border border-gray-300 text-[2.2vw] md:text-sm whitespace-nowrap">
+              {item.day}
+            </td>
+            <td className="py-1 md:py-2 px-1 md:px-2 border border-gray-300 text-[2.2vw] md:text-sm whitespace-nowrap">
+              {item.time}
+            </td>
           </tr>
         ))}
       </tbody>
@@ -363,8 +376,14 @@ function BasicMapPreview({ mapData }) {
             >
               {isServiceHoursVisible ? "Hide Hours" : "Show Hours"}
             </button>
-            <div className="relative h-[30vh] md:h-[calc(45vh-2.5rem)] rounded-b-xl overflow-hidden" ref={statsDivRef}>
-              <WindowStrings isVisible={isServiceHoursVisible} isSmallScreen={isSmallScreen} />
+            <div
+              className="relative h-[30vh] md:h-[calc(45vh-2.5rem)] rounded-b-xl overflow-hidden"
+              ref={statsDivRef}
+            >
+              <WindowStrings
+                isVisible={isServiceHoursVisible}
+                isSmallScreen={isSmallScreen}
+              />
               <div className="absolute inset-0 z-10">
                 <div className="absolute inset-0">
                   <img
@@ -374,7 +393,7 @@ function BasicMapPreview({ mapData }) {
                   />
                   <div className="absolute inset-0 bg-black opacity-20"></div>
                 </div>
-                <div className="relative w-full h-full flex items-center justify-center">
+                <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
                   <StatsPanel isSmallScreen={isSmallScreen} stats={stats} />
                 </div>
               </div>
@@ -383,11 +402,13 @@ function BasicMapPreview({ mapData }) {
                   absolute inset-0 z-20
                   bg-white border-t border-gray-300
                   transition-transform duration-500 ease-in-out
-                  h-full
+                  h-full overflow-y-auto
                   ${isServiceHoursVisible ? "translate-y-0" : "translate-y-[-100%]"}
                 `}
               >
-                {renderServiceHoursTable()}
+                <div className="h-full overflow-y-auto">
+                  {renderServiceHoursTable()}
+                </div>
               </div>
             </div>
           </div>
@@ -471,43 +492,21 @@ function BasicMapEditorPanel({ localMap, setLocalMap, onSave }) {
         setIsServiceHoursVisible(false);
       }
     };
-    
+
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const renderServiceHoursTable = () => (
-    <table
-      className={`w-full h-full rounded-xl border border-gray-300 bg-white text-center ${
-        isSmallScreen ? "text-xs" : "text-sm"
-      }`}
-    >
+    <table className="w-full rounded-xl border border-gray-300 bg-white text-center">
       <tbody>
         {localMap.serviceHours.map((item, idx) => (
           <tr key={idx} className={idx % 2 === 0 ? "faint-color" : ""}>
-            <td className="py-2 px-2 border border-gray-300">
-              <input
-                type="text"
-                className="bg-white w-full text-xs"
-                value={item.day}
-                onChange={(e) => {
-                  const newSH = [...localMap.serviceHours];
-                  newSH[idx] = { ...newSH[idx], day: e.target.value };
-                  setLocalMap((p) => ({ ...p, serviceHours: newSH }));
-                }}
-              />
+            <td className="py-1 md:py-2 px-1 md:px-2 border border-gray-300 text-[2.2vw] md:text-sm whitespace-nowrap">
+              {item.day}
             </td>
-            <td className="py-2 px-2 border border-gray-300">
-              <input
-                type="text"
-                className="bg-white w-full text-xs"
-                value={item.time}
-                onChange={(e) => {
-                  const newSH = [...localMap.serviceHours];
-                  newSH[idx] = { ...newSH[idx], time: e.target.value };
-                  setLocalMap((p) => ({ ...p, serviceHours: newSH }));
-                }}
-              />
+            <td className="py-1 md:py-2 px-1 md:px-2 border border-gray-300 text-[2.2vw] md:text-sm whitespace-nowrap">
+              {item.time}
             </td>
           </tr>
         ))}
@@ -684,8 +683,14 @@ function BasicMapEditorPanel({ localMap, setLocalMap, onSave }) {
             >
               {isServiceHoursVisible ? "Hide Hours" : "Show Hours"}
             </button>
-            <div className="relative overflow-hidden h-[30vh] md:h-[50vh]" ref={statsDivRef}>
-              <WindowStrings isVisible={isServiceHoursVisible} isSmallScreen={isSmallScreen} />
+            <div
+              className="relative overflow-hidden h-[30vh] md:h-[50vh]"
+              ref={statsDivRef}
+            >
+              <WindowStrings
+                isVisible={isServiceHoursVisible}
+                isSmallScreen={isSmallScreen}
+              />
               <div
                 className={`
                   ${isServiceHoursVisible ? "translate-y-0" : "translate-y-[-100%]"}

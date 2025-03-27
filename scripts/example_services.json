@@ -1,0 +1,320 @@
+{
+  "residential": [
+    {
+      "id": "r1",
+      "name": "Roof Shingling",
+      "category": "residential",
+      "research": {
+        "construction_process": "Roof shingling is a methodical process that requires careful planning and execution. The installation typically begins with a thorough inspection of the existing roof structure to identify any damage or weak points that need addressing. Once the inspection is complete, any old roofing materials are removed down to the roof deck. The roof deck is then inspected for rot or damage and repaired as necessary. A layer of roofing felt or synthetic underlayment is applied to protect the roof deck from water infiltration. Proper flashing is installed around chimneys, vents, and in roof valleys to prevent water from seeping into vulnerable areas. Starter shingles are installed along the eaves, followed by the main shingle installation, working from bottom to top. The process requires precise nailing patterns according to manufacturer specifications and local building codes. Ridge caps are installed along the peak of the roof as a finishing touch. Specialized equipment like nail guns, roofing hammers, and safety harnesses are essential. The timeline for completion varies based on roof size and complexity but typically ranges from 1-3 days for an average residential roof.",
+        "variants": "Asphalt shingles come in three main types: 3-tab (basic, flat appearance), architectural/dimensional (layered for a textured look), and luxury/designer (premium appearance mimicking slate or wood). Beyond asphalt, homeowners can choose from wood shingles or shakes, metal shingles, composite/synthetic shingles, slate, and clay/concrete tiles. Each material offers different aesthetics, durability, and price points. Asphalt shingles are the most common due to their cost-effectiveness ($70-$150 per square) and 15-30 year lifespan. Wood provides a natural aesthetic but requires more maintenance and costs $250-$600 per square. Metal shingles offer exceptional durability (40-70 years) at $200-$600 per square. Composite shingles mimic natural materials without their disadvantages at $300-$600 per square. Premium options like slate ($600-$1,700 per square) or clay tiles ($600-$1,800 per square) offer unmatched longevity (75-100+ years) but require substantial structural support due to their weight.",
+        "sales_supply": "Roofing contractors typically don't maintain large inventories of shingles due to storage space limitations, color variations between manufacturing batches, and capital investment concerns. Instead, they usually order materials per project from specialty roofing supply distributors or big box retailers. The procurement process begins after signing a contract and receiving a deposit. Contractors leverage relationships with suppliers to get preferred pricing, prompt delivery, and occasional price protection during volatile markets. For standard projects, materials are typically delivered directly to the job site 1-3 days before installation. Profit margins for shingling projects generally range from 30-40% on materials and 50-60% on labor, with an overall project profit margin of 20-35%. Pricing is typically structured as a complete project quote rather than itemized, based on factors like roof area (measured in \"squares,\" each representing 100 square feet), complexity, material quality, labor costs, and local market conditions. Most contractors include a detailed scope of work in their quotes while keeping specific cost breakdowns proprietary.",
+        "advantages": "Roof shingling offers numerous advantages that make it the most popular roofing choice for residential properties. Properly installed shingles provide excellent weather protection, creating a water-resistant barrier that shields the home from rain, snow, and ice. They offer outstanding durability, with premium options lasting 25-50 years with proper maintenance. Shingles provide effective insulation properties that help regulate indoor temperatures, potentially lowering energy costs. Their versatility in styles, colors, and materials allows homeowners to achieve virtually any aesthetic they desire, from traditional to contemporary. Modern shingles often include algae-resistant granules to maintain appearance over time. Compared to alternative roofing systems like metal panels or tile, shingled roofs typically have lower upfront installation costs. They're also relatively simple to repair when damaged, as individual shingles can be replaced without disturbing the entire roof. Many insurance companies offer premium discounts for impact-resistant shingles in hail-prone regions. Additionally, certain shingle types qualify for energy efficiency tax credits, providing financial incentives beyond the inherent value of the roofing system itself.",
+        "marketing": "In marketing, roofers typically highlight the durability, warranty coverage, aesthetics, and value-added aspects of their shingling services. They emphasize manufacturer certifications that allow them to offer enhanced warranties. Before/after transformation photos are highly effective visual content, as are videos showing installation processes and testimonials. Many establish authenticity by touring customers through previously completed projects. Roofers rarely display specific pricing on their websites or marketing materials due to the customized nature of each project and the many variables that affect final costs. Instead, they focus on the value proposition and offer free consultations and estimates. When addressing customer concerns, they focus on education about material quality differences, warranty coverage, installation expertise, and proper ventilation/insulation that accompanies a quality installation. Marketing typically emphasizes the long-term investment aspect of a new roof, highlighting potential energy savings, increased home value, and protection from the elements.",
+        "warranty_maintenance": "Roofing contractors typically offer two types of warranties: manufacturer's warranties covering materials (typically 25-50 years for premium shingles) and workmanship warranties covering installation (typically 5-10 years). Top contractors with manufacturer certifications can offer enhanced warranties covering both materials and labor for 25-50 years. Maintenance requirements include regular inspections (twice yearly), prompt repairs, keeping the roof clean of debris, ensuring proper ventilation, addressing moss/algae growth, and checking for damaged/missing shingles after severe weather. With proper maintenance, asphalt shingles typically last 15-30 years for standard varieties and 25-50 years for premium options. Other materials offer greater longevity: wood (20-40 years), metal (40-70 years), and slate/clay (75-100+ years). The investment in regular maintenance significantly extends roof life and maintains warranty validity, making it an essential aspect of roof ownership that contractors should emphasize to customers."
+      },
+      "blocks": [
+        {
+          "blockName": "HeroBlock",
+          "config": {
+            "title": "Expert Roof Shingling Services",
+            "subtitle": "Premium materials, professional installation, lasting protection for your home",
+            "backgroundOpacity": 0.5,
+            "buttonText": "Get Your Free Estimate",
+            "buttonUrl": "#contact"
+          },
+          "searchTerms": "professional roof shingling installation residential home",
+          "imagePath": "/assets/images/services/residential/r1/block_1.jpg"
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "Our Shingling Process",
+            "subtitle": "Professional installation from start to finish",
+            "textAlign": "center",
+            "backgroundImage": ""
+          },
+          "searchTerms": "roof shingling installation process",
+          "imagePath": "/assets/images/services/residential/r1/block_2.jpg"
+        },
+        {
+          "blockName": "GeneralList",
+          "config": {
+            "title": "Our 7-Step Installation Process",
+            "items": [
+              {
+                "title": "Thorough Roof Inspection",
+                "description": "We start with a comprehensive assessment of your existing roof structure to identify any damage or weak points."
+              },
+              {
+                "title": "Removal of Old Materials",
+                "description": "All old roofing materials are properly removed down to the roof deck to ensure a clean foundation."
+              },
+              {
+                "title": "Deck Repair & Preparation",
+                "description": "We repair any damaged sections of the roof deck to ensure a solid base for your new shingles."
+              },
+              {
+                "title": "Underlayment Installation",
+                "description": "High-quality felt or synthetic underlayment is applied to provide an additional water barrier."
+              },
+              {
+                "title": "Flashing Installation",
+                "description": "Proper flashing is installed around chimneys, vents, and valleys to prevent water infiltration."
+              },
+              {
+                "title": "Shingle Application",
+                "description": "Shingles are precisely installed using manufacturer-specified nailing patterns for maximum durability."
+              },
+              {
+                "title": "Ridge Cap Installation",
+                "description": "The roof is finished with ridge caps along the peak for a polished look and additional protection."
+              }
+            ]
+          }
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "Shingle Options",
+            "subtitle": "Quality materials for every budget and style preference",
+            "textAlign": "center",
+            "backgroundImage": ""
+          },
+          "searchTerms": "different types of roof shingles materials",
+          "imagePath": "/assets/images/services/residential/r1/block_4.jpg"
+        },
+        {
+          "blockName": "GridImageTextBlock",
+          "config": {
+            "title": "Choose Your Perfect Shingle",
+            "items": [
+              {
+                "title": "3-Tab Shingles",
+                "description": "Economical and practical with a flat, uniform appearance and 15-25 year lifespan.",
+                "imagePosition": "top"
+              },
+              {
+                "title": "Architectural Shingles",
+                "description": "Multi-dimensional appearance with enhanced durability and a 25-40 year lifespan.",
+                "imagePosition": "top"
+              },
+              {
+                "title": "Luxury Designer Shingles",
+                "description": "Premium appearance mimicking slate or wood with maximum durability and a 25-50 year lifespan.",
+                "imagePosition": "top"
+              },
+              {
+                "title": "Specialty Shingles",
+                "description": "Impact-resistant and cool roof options for special climate needs and insurance benefits.",
+                "imagePosition": "top"
+              }
+            ]
+          },
+          "searchTerms": "3-tab architectural luxury designer roof shingles types comparison",
+          "imagePath": "/assets/images/services/residential/r1/block_5.jpg"
+        },
+        {
+          "blockName": "OverviewAndAdvantagesBlock",
+          "config": {
+            "title": "Why Choose Our Shingling Services",
+            "overview": "Our professional roof shingling services provide excellent protection against the elements while enhancing your home's appearance and value. We use only premium materials and follow manufacturer specifications for installation, ensuring maximum durability and warranty coverage.",
+            "advantages": [
+              "Excellent weather resistance against rain, snow, and ice",
+              "Superior durability with lifespans of 25-50 years for premium options",
+              "Enhanced energy efficiency and potential utility savings",
+              "Versatile styles and colors to complement any home aesthetic",
+              "Protection against algae growth to maintain appearance",
+              "Competitive pricing compared to alternative roofing systems",
+              "Easy repairs when needed without total roof replacement",
+              "Potential insurance discounts for impact-resistant options",
+              "Manufacturer and workmanship warranties for peace of mind"
+            ]
+          },
+          "searchTerms": "benefits of professional roof shingling services",
+          "imagePath": "/assets/images/services/residential/r1/block_6.jpg"
+        },
+        {
+          "blockName": "ActionButtonBlock",
+          "config": {
+            "title": "Ready to Protect Your Home?",
+            "subtitle": "Contact us today for a free, no-obligation consultation and estimate",
+            "buttonText": "Contact Us Now",
+            "buttonUrl": "#contact",
+            "backgroundColor": "bg-banner"
+          }
+        }
+      ]
+    }
+  ],
+  "commercial": [
+    {
+      "id": "c1",
+      "name": "Flat Roof Installation",
+      "category": "commercial",
+      "research": {
+        "construction_process": "Commercial flat roof installation is a multi-phase process requiring specialized expertise. It begins with an engineering assessment to determine appropriate materials and load requirements. The preparation phase involves removing existing roofing (in re-roofing projects), repairing the roof deck, and installing insulation to meet energy code requirements. For the actual installation, the process varies by material type. Built-up roofing (BUR) involves alternating layers of bitumen and reinforcing fabrics. Modified bitumen requires torch application, cold adhesive, or self-adhesion of polymer-modified asphalt sheets. Single-ply membranes (EPDM, TPO, PVC) are either mechanically fastened, fully adhered, or ballasted. The installation concludes with flashing details around penetrations, edge treatments, drainage solutions, and a final inspection. Projects can take several weeks to months depending on size, with considerations for weather conditions, building occupancy, and material curing times. Compliance with local building codes, manufacturer specifications, and OSHA safety regulations is essential throughout the process.",
+        "variants": "Commercial flat roofing offers several primary system types, each with distinct advantages. Built-up roofing (BUR), the traditional tar-and-gravel approach, provides multi-layer protection at $5-$7 per square foot with a 15-30 year lifespan. Modified bitumen systems, which apply asphalt sheets with polymer reinforcement, cost $4-$8 per square foot and last 10-20 years. Single-ply membranes include EPDM (synthetic rubber) at $3-$7 per square foot with a 20-30 year lifespan, TPO (thermoplastic) at $5-$9 per square foot lasting 15-25 years, and PVC (vinyl) at $6-$10 per square foot with a 20-30 year lifespan. Spray polyurethane foam (SPF) creates a seamless, insulating layer at $4-$7 per square foot, lasting 15-30 years with regular maintenance. For premium installations, metal flat roofing provides exceptional longevity (30-50 years) at $10-$15 per square foot. Roofers typically recommend systems based on climate conditions, building use, budget constraints, and desired longevity, with material selection representing critical trade-offs between upfront cost, maintenance requirements, and long-term performance.",
+        "sales_supply": "Commercial roofing contractors typically operate on a project-by-project procurement model rather than maintaining large inventories. Materials are ordered after contract signing, with delivery scheduled to align with installation phases. Contractors develop strong relationships with specialty distributors who provide volume discounts, credit terms, and technical support. For large projects, materials may be delivered in multiple shipments to accommodate staging limitations. Profit margins generally range from 20-35%, with complex projects commanding higher margins. Material costs typically represent 40-60% of the total project, with labor at 30-40% and overhead/profit making up the remainder. Pricing strategies include per-square-foot quoting, detailed line-item proposals, or value-based pricing that emphasizes lifecycle cost benefits. Contracts often include allowances for potential deck repair discovered after tear-off. Most contractors secure deposits of 25-33% upfront, with progress payments tied to project milestones. The sales process emphasizes total cost of ownership over the roof's lifespan rather than focusing solely on initial installation costs.",
+        "advantages": "Commercial flat roofing offers several compelling advantages over alternative systems. Its excellent water resistance, when properly installed and maintained, provides superior protection against leaks and water damage. The flat design creates valuable usable space for HVAC equipment, solar panels, or even rooftop amenities like gardens or recreation areas. Modern systems offer exceptional energy efficiency through reflective surfaces and insulation options, often qualifying for energy rebates or LEED certification points. Maintenance is typically straightforward, with easy access for inspections and repairs. Installation costs are generally lower than pitched roof alternatives for large commercial structures, while repair and replacement are less complicated due to the simplified geometry. The system versatility allows for matching specific regional challenges with appropriate materials: EPDM for cold climates, TPO/PVC for hot regions, or built-up systems for areas with heavy precipitation. Most systems can be restored multiple times through recoating, extending useful life without full replacement. The uniformity of a flat roof also provides clean aesthetics for modern commercial architecture and simplified integration with wall systems.",
+        "marketing": "When marketing commercial flat roofing services, contractors typically emphasize long-term performance, energy efficiency, and minimized business disruption. Presentations focus on the total cost of ownership rather than just installation price, highlighting lifecycle expenses. Marketing materials showcase completed projects, particularly those with similar building types or challenges. Technical specifications and manufacturer certification credentials establish expertise. Energy savings potential and reflective roofing benefits are quantified when possible. Many contractors create case studies demonstrating problem-solving capabilities and ROI timelines. Public pricing is rarely displayed due to the customized nature of commercial projects. Instead, comprehensive proposals are developed following site inspections. Prospective clients typically have concerns about project timeline management, potential business disruptions, and how contractors handle unexpected issues. Successful marketing addresses these by detailing project management processes, disruption mitigation strategies, and examples of problem resolution. Warranties are a major selling point, with contractors highlighting manufacturer-backed guarantees and their own workmanship coverage.",
+        "warranty_maintenance": "Commercial flat roofing typically carries two distinct warranty types: manufacturer's warranties covering materials (ranging from 10-30 years depending on system type and thickness) and contractor workmanship warranties (typically 2-5 years). Premium installations may qualify for NDL (No Dollar Limit) manufacturer warranties that cover both materials and authorized contractor labor. Recommended maintenance includes bi-annual professional inspections (spring and fall), monthly visual checks, keeping drains clear, prompt repairs of any damage, and recoating/resurfacing at manufacturer-recommended intervals. Expected lifespans vary significantly by system: built-up roofing lasts 15-30 years, modified bitumen 10-20 years, EPDM 20-30 years, TPO 15-25 years, PVC 20-30 years, and spray polyurethane foam 15-30 years with regular recoating. Metal systems can last 30-50 years. Regular maintenance significantly extends roof life, with studies showing properly maintained roofs lasting 25-50% longer than neglected systems. Most warranty programs require documented regular maintenance to maintain coverage validity. Many commercial roofing contractors offer maintenance programs to help building owners protect their investment and maintain warranty coverage."
+      },
+      "blocks": [
+        {
+          "blockName": "HeroBlock",
+          "config": {
+            "title": "Commercial Flat Roof Installation",
+            "subtitle": "Expert installation of durable, energy-efficient roofing systems for your business",
+            "backgroundOpacity": 0.5,
+            "buttonText": "Request a Consultation",
+            "buttonUrl": "#contact"
+          },
+          "searchTerms": "commercial flat roof installation business building",
+          "imagePath": "/assets/images/services/commercial/c1/block_1.jpg"
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "Professional Installation Process",
+            "subtitle": "Engineered solutions for lasting performance",
+            "textAlign": "center",
+            "backgroundImage": ""
+          },
+          "searchTerms": "commercial flat roof installation process",
+          "imagePath": "/assets/images/services/commercial/c1/block_2.jpg"
+        },
+        {
+          "blockName": "GeneralList",
+          "config": {
+            "title": "Our Comprehensive Installation Approach",
+            "items": [
+              {
+                "title": "Engineering Assessment",
+                "description": "We begin with a thorough engineering evaluation to determine appropriate materials and load requirements for your specific building."
+              },
+              {
+                "title": "Surface Preparation",
+                "description": "Existing roofing is removed (for re-roofs), the deck is inspected and repaired, and high-performance insulation is installed to meet energy codes."
+              },
+              {
+                "title": "System Installation",
+                "description": "Your chosen roofing system is professionally installed according to manufacturer specifications and industry best practices."
+              },
+              {
+                "title": "Detail Work",
+                "description": "Critical flashing around penetrations, edge treatments, and drainage solutions are meticulously installed to prevent potential leak points."
+              },
+              {
+                "title": "Quality Inspection",
+                "description": "A comprehensive inspection ensures all aspects of the installation meet our quality standards and manufacturer requirements."
+              },
+              {
+                "title": "Final Documentation",
+                "description": "You receive complete warranty documentation, maintenance guidelines, and inspection records for your new roofing system."
+              }
+            ]
+          }
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "Roofing System Options",
+            "subtitle": "Finding the perfect solution for your building's needs",
+            "textAlign": "center",
+            "backgroundImage": ""
+          },
+          "searchTerms": "commercial flat roof system types materials",
+          "imagePath": "/assets/images/services/commercial/c1/block_4.jpg"
+        },
+        {
+          "blockName": "GridImageTextBlock",
+          "config": {
+            "title": "Premium Flat Roofing Systems",
+            "items": [
+              {
+                "title": "Built-Up Roofing (BUR)",
+                "description": "Multi-layer protection with alternating bitumen and reinforcement layers, ideal for roofs with frequent foot traffic.",
+                "imagePosition": "top"
+              },
+              {
+                "title": "Modified Bitumen",
+                "description": "Reinforced asphalt sheets provide excellent tensile strength and flexibility in changing temperatures.",
+                "imagePosition": "top"
+              },
+              {
+                "title": "EPDM Single-Ply",
+                "description": "Synthetic rubber membrane offering superior durability, UV resistance, and performance in extreme temperatures.",
+                "imagePosition": "top"
+              },
+              {
+                "title": "TPO/PVC Single-Ply",
+                "description": "Thermoplastic membranes providing excellent energy efficiency, chemical resistance, and hot-weld seams for maximum protection.",
+                "imagePosition": "top"
+              }
+            ]
+          },
+          "searchTerms": "commercial flat roof systems BUR modified bitumen EPDM TPO PVC comparison",
+          "imagePath": "/assets/images/services/commercial/c1/block_5.jpg"
+        },
+        {
+          "blockName": "OverviewAndAdvantagesBlock",
+          "config": {
+            "title": "The Benefits of Our Commercial Flat Roofing",
+            "overview": "Our commercial flat roofing solutions provide excellent protection while maximizing the value of your building investment. We work with you to select the optimal system based on your building's specific needs, regional climate considerations, budget requirements, and long-term performance expectations.",
+            "advantages": [
+              "Superior water resistance with properly designed drainage solutions",
+              "Valuable usable space for HVAC equipment, solar panels, or rooftop amenities",
+              "Exceptional energy efficiency with reflective surfaces and insulation options",
+              "Easy access for routine maintenance and straightforward repairs",
+              "Lower installation costs compared to pitched alternatives for large structures",
+              "System versatility to match specific regional and building challenges",
+              "Potential for restoration and recoating to extend service life",
+              "Clean, modern aesthetics that complement contemporary architecture",
+              "Manufacturer-backed warranties and comprehensive coverage options"
+            ]
+          },
+          "searchTerms": "benefits of professional commercial flat roof installation",
+          "imagePath": "/assets/images/services/commercial/c1/block_6.jpg"
+        },
+        {
+          "blockName": "ListDropdown",
+          "config": {
+            "title": "Frequently Asked Questions",
+            "items": [
+              {
+                "title": "How long will my commercial flat roof last?",
+                "content": "Lifespan varies by system: Built-up roofing (15-30 years), Modified bitumen (10-20 years), EPDM (20-30 years), TPO/PVC (15-30 years). Regular professional maintenance can extend these lifespans by 25-50%."
+              },
+              {
+                "title": "What maintenance is required for a flat roof?",
+                "content": "We recommend bi-annual professional inspections (spring and fall), monthly visual checks by your staff, keeping drains clear of debris, prompt repairs of any damage, and scheduled recoating at manufacturer-recommended intervals."
+              },
+              {
+                "title": "How energy efficient are your flat roofing systems?",
+                "content": "Our reflective roofing options can reduce cooling costs by 15-30% in warm climates. Combined with proper insulation, our systems help meet or exceed energy code requirements and may qualify for utility rebates or LEED certification points."
+              },
+              {
+                "title": "Will business operations be disrupted during installation?",
+                "content": "We minimize disruption through careful planning, off-hours work when possible, sectional installation methods, and coordination with your team. Our goal is to maintain your operational continuity throughout the project."
+              },
+              {
+                "title": "What warranties do you offer?",
+                "content": "We provide manufacturer material warranties (10-30 years depending on system), our own workmanship warranty (5 years), and optional extended NDL (No Dollar Limit) coverage that includes both materials and labor for the ultimate protection."
+              }
+            ]
+          }
+        },
+        {
+          "blockName": "ActionButtonBlock",
+          "config": {
+            "title": "Protect Your Commercial Investment",
+            "subtitle": "Contact our commercial roofing experts for a comprehensive consultation",
+            "buttonText": "Schedule Your Consultation",
+            "buttonUrl": "#contact",
+            "backgroundColor": "bg-banner"
+          }
+        }
+      ]
+    }
+  ]
+}

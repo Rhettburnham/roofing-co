@@ -30,6 +30,7 @@ function HeroPreview({ heroconfig }) {
   const [residentialServices, setResidentialServices] = useState([]);
   const [commercialServices, setCommercialServices] = useState([]);
   const [hasAnimated, setHasAnimated] = useState(false);
+  const [isServicesLoading, setIsServicesLoading] = useState(true);
 
   const {
     mainTitle,
@@ -63,6 +64,7 @@ function HeroPreview({ heroconfig }) {
   useEffect(() => {
     // Trigger animation on first mount
     setHasAnimated(true);
+    setIsServicesLoading(true);
 
     // Fetch services.json to get the latest service data
     fetch("/data/services.json")
@@ -74,11 +76,16 @@ function HeroPreview({ heroconfig }) {
         console.log("HeroBlock: Services data fetched:", data);
 
         // Process residential services from services.json
-        const residentialFromJson = data.residential.map((service, idx) => {
+        const residentialFromJson = data.residential.map((service) => {
           const heroBlock =
             service.blocks.find((b) => b.blockName === "HeroBlock") ||
             service.blocks[0];
-          const title = heroBlock?.config?.title || `Service ${service.id}`;
+
+          // Extract title from the HeroBlock's config
+          const title =
+            heroBlock?.config?.title || service.name || `Service ${service.id}`;
+
+          // Use slug if defined, otherwise create one
           const slug =
             service.slug ||
             `residential-${service.id}-${title.toLowerCase().replace(/\s+/g, "-")}`;
@@ -94,11 +101,16 @@ function HeroPreview({ heroconfig }) {
         });
 
         // Process commercial services from services.json
-        const commercialFromJson = data.commercial.map((service, idx) => {
+        const commercialFromJson = data.commercial.map((service) => {
           const heroBlock =
             service.blocks.find((b) => b.blockName === "HeroBlock") ||
             service.blocks[0];
-          const title = heroBlock?.config?.title || `Service ${service.id}`;
+
+          // Extract title from the HeroBlock's config
+          const title =
+            heroBlock?.config?.title || service.name || `Service ${service.id}`;
+
+          // Use slug if defined, otherwise create one
           const slug =
             service.slug ||
             `commercial-${service.id}-${title.toLowerCase().replace(/\s+/g, "-")}`;
@@ -115,6 +127,7 @@ function HeroPreview({ heroconfig }) {
 
         setResidentialServices(residentialFromJson);
         setCommercialServices(commercialFromJson);
+        setIsServicesLoading(false);
       })
       .catch((error) => {
         console.error("HeroBlock: Error fetching services data:", error);
@@ -146,6 +159,7 @@ function HeroPreview({ heroconfig }) {
 
         setResidentialServices(residentialFallback);
         setCommercialServices(commercialFallback);
+        setIsServicesLoading(false);
       });
   }, [residential.subServices, commercial.subServices]);
 

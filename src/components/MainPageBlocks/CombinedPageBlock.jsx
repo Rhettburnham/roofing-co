@@ -135,11 +135,13 @@ const TestimonialItem = ({ testimonial }) => {
 
         {/* Name and date in column with reduced spacing */}
         <div className="flex-grow">
-          <div className="flex items-center justify-between">
-            <p className="text-[2.5vw] md:text-[2vh] font-bold text-black font-sans">
+          <div className="flex items-center justify-between gap-1">
+            <p className="text-[2.5vw] md:text-[2vh] font-bold text-black font-sans truncate">
               {testimonial.name}
             </p>
-            <StarRating rating={testimonial.stars} />
+            <div className="flex-shrink-0">
+              <StarRating rating={testimonial.stars} />
+            </div>
           </div>
           <p className="text-gray-500 text-[2vw] md:text-[1.6vh] -mt-1">
             {testimonial.date}

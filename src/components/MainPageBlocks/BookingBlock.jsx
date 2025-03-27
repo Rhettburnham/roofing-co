@@ -11,7 +11,11 @@ import axios from "axios";
 import { FaTools, FaFan, FaPaintRoller, FaTint } from "react-icons/fa";
 import { X } from "lucide-react";
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 // import * as FaIcons from "react-icons/fa";
+
+// Register GSAP's ScrollTrigger plugin
+gsap.registerPlugin(ScrollTrigger);
 
 /* ===============================================
    1) BOOKING PREVIEW (Read-Only)
@@ -41,6 +45,9 @@ const BookingPreview = memo(({ bookingData }) => {
   const bannerRef = useRef(null);
   const formContainerRef = useRef(null);
   const toggleButtonRef = useRef(null);
+  const leftNailRef = useRef(null);
+  const rightNailRef = useRef(null);
+  const contentRef = useRef(null);
 
   // Memoize the icons array to prevent recreating it on every render
   const residentialIcons = useMemo(
@@ -122,6 +129,47 @@ const BookingPreview = memo(({ bookingData }) => {
       controller.abort();
     };
   }, [bookingData, residentialIcons, commercialIcons]);
+
+  // GSAP animations for banner reveal and nails
+  useEffect(() => {
+    // Initial states
+    gsap.set(contentRef.current, { y: "-100%" });
+    gsap.set(leftNailRef.current, { x: "-100vw" });
+    gsap.set(rightNailRef.current, { x: "100vw" });
+
+    const masterTimeline = gsap.timeline({
+      scrollTrigger: {
+        trigger: bannerRef.current,
+        start: "top 80%",
+        toggleActions: "play none none none",
+        markers: false,
+        once: true,
+      },
+    });
+
+    // 1. Banner slides down
+    masterTimeline.to(contentRef.current, {
+      y: 0,
+      duration: 0.8,
+      ease: "power2.out",
+    });
+
+    // 2. After a short delay, nails pierce from both sides
+    masterTimeline.to(
+      [leftNailRef.current, rightNailRef.current],
+      {
+        x: 0,
+        duration: 0.6,
+        ease: "power2.out",
+        stagger: 0.1,
+      },
+      "+=0.3"
+    );
+
+    return () => {
+      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+    };
+  }, []);
 
   // GSAP animation for mobile toggle
   const toggleFormVisibility = useCallback(() => {
@@ -224,139 +272,180 @@ const BookingPreview = memo(({ bookingData }) => {
       {/* OUTER BOX WITH BANNER COLOR */}
       <div
         ref={bannerRef}
-        className="w-full bg-banner rounded-lg overflow-hidden shadow-lg"
+        className="md:max-w-xl w-full bg-banner rounded-lg overflow-hidden shadow-lg relative"
       >
-        {/* HEADER RIBBON WITH LOGO & TEXT */}
-        <div className="relative py-3 px-4 flex flex-col items-center">
-          <div className="flex items-center justify-center w-full">
-            <img
-              src={formattedLogo}
-              alt="logo"
-              className="w-16 h-auto mr-4 drop-shadow-[0_1.2px_1.2px_rgba(255,30,0,0.8)]"
-              style={{ filter: "invert(1)" }}
-            />
-            <div className="text-left drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
-              <h2 className="text-2xl md:text-3xl font-bold text-white">
-                {headerText}
-              </h2>
-              <div className="font-bold md:text-lg text-white">
-                <a href={`tel:${phone}`}>{phone}</a>
-              </div>
-            </div>
-          </div>
-
-          {/* TOGGLE BUTTON (mobile only) */}
-          <button
-            ref={toggleButtonRef}
-            onClick={toggleFormVisibility}
-            className="md:hidden mt-2 px-4 rounded-md shadow-lg relative"
-          >
-            {isFormVisible ? (
-              <div className="relative z-40 flex space-x-1 justify-center p-1">
-                <div className="w-2 h-2 rounded-full bg-white"></div>
-                <div className="w-2 h-2 rounded-full bg-white"></div>
-                <div className="w-2 h-2 rounded-full bg-white"></div>
-              </div>
-            ) : (
-              <span className="relative z-40 text-white text-md font-semibold px-4 py-1">
-                Book
-              </span>
-            )}
-          </button>
+        {/* Left Nail */}
+        <div
+          ref={leftNailRef}
+          className="absolute left-4 top-1/2 -translate-y-1/2 w-[20%] h-[4vh] hidden md:block"
+        >
+          <div
+            className="w-full h-full"
+            style={{
+              backgroundImage: "url('/assets/images/nail.png')",
+              backgroundPosition: "left center",
+              backgroundRepeat: "no-repeat",
+              backgroundSize: "contain",
+              transform: "scale(2)",
+              transformOrigin: "left center",
+            }}
+          />
         </div>
 
-        {/* INNER BOX WITH FORM (white background) */}
+        {/* Right Nail */}
         <div
-          ref={formContainerRef}
-          className={`${isFormVisible ? "block" : "hidden"} md:block w-full`}
+          ref={rightNailRef}
+          className="absolute right-4 top-1/2 -translate-y-1/2 w-[20%] h-[4vh] hidden md:block"
         >
-          <div className="bg-white rounded-lg p-3 shadow-inner md:max-w-xl mx-auto">
-            <form onSubmit={handleSubmit} className="w-full">
-              <div className="grid grid-cols-1 gap-4">
-                {/* First Name */}
-                <div>
-                  <input
-                    type="text"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    placeholder="First Name"
-                    required
-                    className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600"
-                  />
+          <div
+            className="w-full h-full"
+            style={{
+              backgroundImage: "url('/assets/images/nail.png')",
+              backgroundPosition: "right center",
+              backgroundRepeat: "no-repeat",
+              backgroundSize: "contain",
+              transform: "scale(2) scaleX(-1)",
+              transformOrigin: "right center",
+            }}
+          />
+        </div>
+
+        {/* Content Container */}
+        <div ref={contentRef}>
+          {/* HEADER RIBBON WITH LOGO & TEXT */}
+          <div className="relative py-3 px-4 flex flex-col items-center">
+            <div className="flex items-center justify-center w-full">
+              <img
+                src={formattedLogo}
+                alt="logo"
+                className="w-16 h-auto mr-4 drop-shadow-[0_1.2px_1.2px_rgba(255,30,0,0.8)]"
+                style={{ filter: "invert(1)" }}
+              />
+              <div className="text-left drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
+                <h2 className="text-2xl md:text-3xl font-bold text-white">
+                  {headerText}
+                </h2>
+                <div className="font-bold md:text-lg text-white">
+                  <a href={`tel:${phone}`}>{phone}</a>
                 </div>
-                {/* Last Name */}
-                <div>
-                  <input
-                    type="text"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    placeholder="Last Name"
-                    required
-                    className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600"
-                  />
+              </div>
+            </div>
+
+            {/* TOGGLE BUTTON (mobile only) */}
+            <button
+              ref={toggleButtonRef}
+              onClick={toggleFormVisibility}
+              className="md:hidden mt-2 px-4 rounded-md shadow-lg relative"
+            >
+              {isFormVisible ? (
+                <div className="relative z-40 flex space-x-1 justify-center p-1">
+                  <div className="w-2 h-2 rounded-full bg-white"></div>
+                  <div className="w-2 h-2 rounded-full bg-white"></div>
+                  <div className="w-2 h-2 rounded-full bg-white"></div>
                 </div>
-                {/* Email */}
-                <div>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="Your Email"
-                    required
-                    className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600"
-                  />
-                </div>
-                {/* Phone */}
-                <div>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    placeholder="Your Phone"
-                    required
-                    className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600"
-                  />
-                </div>
-                {/* Service */}
-                <div>
-                  <div
-                    onClick={() => setIsModalOpen(true)}
-                    className="w-full p-2 bg-transparent border-b border-gray-400 cursor-pointer"
-                  >
-                    {formData.service ? (
-                      <span className="text-gray-800">{formData.service}</span>
-                    ) : (
-                      <span className="text-gray-600">Select a Service</span>
-                    )}
+              ) : (
+                <span className="relative z-40 text-white text-md font-semibold px-4 py-1">
+                  Book
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* INNER BOX WITH FORM (white background) */}
+          <div
+            ref={formContainerRef}
+            className={`${isFormVisible ? "block" : "hidden"} md:block w-full pb-2`}
+          >
+            <div className="bg-white rounded-lg p-3 shadow-inner mx-2">
+              <form onSubmit={handleSubmit} className="w-full">
+                <div className="grid grid-cols-1 gap-4">
+                  {/* First Name */}
+                  <div>
+                    <input
+                      type="text"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleChange}
+                      placeholder="First Name"
+                      required
+                      className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600"
+                    />
+                  </div>
+                  {/* Last Name */}
+                  <div>
+                    <input
+                      type="text"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      placeholder="Last Name"
+                      required
+                      className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600"
+                    />
+                  </div>
+                  {/* Email */}
+                  <div>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      placeholder="Your Email"
+                      required
+                      className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600"
+                    />
+                  </div>
+                  {/* Phone */}
+                  <div>
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      placeholder="Your Phone"
+                      required
+                      className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600"
+                    />
+                  </div>
+                  {/* Service */}
+                  <div>
+                    <div
+                      onClick={() => setIsModalOpen(true)}
+                      className="w-full p-2 bg-transparent border-b border-gray-400 cursor-pointer"
+                    >
+                      {formData.service ? (
+                        <span className="text-gray-800">
+                          {formData.service}
+                        </span>
+                      ) : (
+                        <span className="text-gray-600">Select a Service</span>
+                      )}
+                    </div>
+                  </div>
+                  {/* Message */}
+                  <div>
+                    <textarea
+                      name="message"
+                      value={formData.message}
+                      onChange={handleChange}
+                      placeholder="Your Message"
+                      required
+                      rows="3"
+                      className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600"
+                    />
                   </div>
                 </div>
-                {/* Message */}
-                <div>
-                  <textarea
-                    name="message"
-                    value={formData.message}
-                    onChange={handleChange}
-                    placeholder="Your Message"
-                    required
-                    rows="3"
-                    className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600"
-                  />
+                {/* Submit Button - Made more narrow */}
+                <div className="flex justify-center w-full mt-4 relative">
+                  <button
+                    type="submit"
+                    className="relative px-8 py-2 text-white text-lg font-semibold rounded-md bg-accent hover:bg-banner hover:text-white md:w-1/3 shadow-md"
+                  >
+                    Submit
+                  </button>
                 </div>
-              </div>
-              {/* Submit Button - Made more narrow */}
-              <div className="flex justify-center w-full mt-4 relative">
-                <button
-                  type="submit"
-                  className="relative px-8 py-2 text-white text-lg font-semibold rounded-md bg-accent hover:bg-banner hover:text-white md:w-1/3 shadow-md"
-                >
-                  Submit
-                </button>
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
         </div>
       </div>
