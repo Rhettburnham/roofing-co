@@ -1,5 +1,6 @@
 // src/components/MainPageBlocks/ButtonBlock.jsx
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import PropTypes from "prop-types";
 import gsap from "gsap";
 import { useNavigate } from "react-router-dom";
 
@@ -18,23 +19,28 @@ function ButtonPreview({ buttonconfig }) {
   const [image, setImage] = useState({ imageId: 0 });
   const { imageId } = image;
   const slideDuration = 3.5;
+  const [duplicatedSlides, setDuplicatedSlides] = useState([]);
 
-  if (!buttonconfig) {
-    return <p>No data found.</p>;
-  }
-
-  // Destructure the button config (using images rather than "slides")
-  const { text, buttonLink, images = [] } = buttonconfig;
-  
-  // Ensure image paths are properly formatted (with leading /)
-  const formattedImages = images.map(img => 
-    img.startsWith('/') ? img : `/${img.replace(/^\.\//, '')}`
-  );
-
-  // Duplicate the images array to create a seamless looping carousel.
-  const duplicatedSlides = [...formattedImages, ...formattedImages];
-
+  // Initialize defaults if no config is provided
   useEffect(() => {
+    if (!buttonconfig) return;
+
+    // Destructure the button config (using images rather than "slides")
+    const { images = [] } = buttonconfig;
+
+    // Ensure image paths are properly formatted (with leading /)
+    const formattedImages = images.map((img) =>
+      img.startsWith("/") ? img : `/${img.replace(/^\.\//, "")}`
+    );
+
+    // Duplicate the images array to create a seamless looping carousel.
+    setDuplicatedSlides([...formattedImages, ...formattedImages]);
+  }, [buttonconfig]);
+
+  // GSAP animation for carousel
+  useEffect(() => {
+    if (!duplicatedSlides.length) return;
+
     gsap.to("#slider", {
       transform: `translateX(${-50 * imageId}%)`,
       duration: slideDuration,
@@ -42,15 +48,18 @@ function ButtonPreview({ buttonconfig }) {
       onComplete: () => {
         // When we reach the end (i.e. after the original set of images),
         // reset the translation back to 0.
-        if (imageId === images.length) {
+        if (imageId === duplicatedSlides.length / 2) {
           gsap.set("#slider", { transform: `translateX(0%)` });
           setImage({ imageId: 0 });
         }
       },
     });
-  }, [imageId, images.length]);
+  }, [imageId, duplicatedSlides.length, slideDuration]);
 
+  // Auto-advance the carousel
   useEffect(() => {
+    if (!duplicatedSlides.length) return;
+
     const interval = setInterval(() => {
       setImage((prev) => ({
         ...prev,
@@ -59,11 +68,20 @@ function ButtonPreview({ buttonconfig }) {
     }, 4000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [duplicatedSlides.length]);
 
   const handleClick = () => {
-    navigate(buttonLink);
+    if (buttonconfig && buttonconfig.buttonLink) {
+      navigate(buttonconfig.buttonLink);
+    }
   };
+
+  if (!buttonconfig) {
+    return <p className="text-center p-4">No button configuration found.</p>;
+  }
+
+  // Get the text from config
+  const { text = "About Us" } = buttonconfig;
 
   return (
     <div className="flex flex-col relative w-full mt-0 pt-0">
@@ -78,7 +96,7 @@ function ButtonPreview({ buttonconfig }) {
           {/* Fixed Centered Button */}
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-auto z-10">
             <button
-              className="text-white hover:text-black hover:bg-white font-sans text-xl  font-bold md:text-2xl px-4 py-2 md:px-5 md:py-2 rounded-lg shadow-lg dark_button bg-accent"
+              className="text-white hover:text-black hover:bg-white font-sans text-xl font-bold md:text-2xl px-4 py-2 md:px-5 md:py-2 rounded-lg shadow-lg dark_button bg-accent"
               onClick={handleClick}
               onMouseEnter={(e) => {
                 e.currentTarget.style.boxShadow =
@@ -89,7 +107,7 @@ function ButtonPreview({ buttonconfig }) {
                   "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
               }}
             >
-              <div>{text || "About Us"}</div>
+              <div>{text}</div>
             </button>
           </div>
 
@@ -101,7 +119,7 @@ function ButtonPreview({ buttonconfig }) {
                   <div className="relative sm:w-[70vw] w-[88vw] md:h-[24vh] sm:h-[20vh] h-[15vh]">
                     <div className="flex items-center justify-center overflow-hidden w-full h-full relative">
                       <img
-                        src={duplicatedSlides[i]}
+                        src={src}
                         alt={`Slide ${i}`}
                         className="w-full h-full object-cover pointer-events-none"
                         ref={(el) => (imageRef.current[i] = el)}
@@ -125,6 +143,14 @@ function ButtonPreview({ buttonconfig }) {
   );
 }
 
+ButtonPreview.propTypes = {
+  buttonconfig: PropTypes.shape({
+    text: PropTypes.string,
+    buttonLink: PropTypes.string,
+    images: PropTypes.arrayOf(PropTypes.string),
+  }),
+};
+
 /* ======================================================
    EDITOR VIEW: ButtonEditorPanel
    ------------------------------------------------------
@@ -133,28 +159,57 @@ function ButtonPreview({ buttonconfig }) {
    are kept in local state until the user clicks "Save."
 ========================================================= */
 function ButtonEditorPanel({ localButton, setLocalButton, onSave }) {
+  const [validationError, setValidationError] = useState("");
+
+  const handleSaveClick = () => {
+    // Validate the localButton data
+    if (!localButton.text) {
+      setValidationError("Button text is required");
+      return;
+    }
+
+    if (!localButton.buttonLink) {
+      setValidationError("Button link is required");
+      return;
+    }
+
+    if (!localButton.images || localButton.images.length === 0) {
+      setValidationError("At least one image is required");
+      return;
+    }
+
+    // Clear any validation errors and save
+    setValidationError("");
+    onSave();
+  };
+
   return (
-    <div className="bg-black text-white p-4 rounded max-h-[75vh] overflow-auto">
+    <div className="bg-gray-800 text-white p-4 rounded-lg max-h-[75vh] overflow-auto">
       {/* Top bar with "Save" button */}
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-lg md:text-2xl font-medium font-sans">
-          Button Editor
-        </h1>
+      <div className="flex items-center justify-between mb-4 sticky top-0 bg-gray-800 py-2 z-10">
+        <h1 className="text-lg md:text-xl font-medium">Button Editor</h1>
         <button
           type="button"
-          onClick={onSave}
-          className="bg-green-600 hover:bg-green-500 px-4 py-2 rounded text-white font-medium font-sans"
+          onClick={handleSaveClick}
+          className="bg-gray-600 hover:bg-gray-500 px-4 py-2 rounded text-white font-medium"
         >
           Save
         </button>
       </div>
 
+      {/* Validation error message */}
+      {validationError && (
+        <div className="bg-red-500 text-white p-2 mb-4 rounded">
+          {validationError}
+        </div>
+      )}
+
       {/* Editable Button Text */}
       <div className="mb-6">
-        <label className="block text-sm mb-1 font-sans">Button Text:</label>
+        <label className="block text-sm mb-1 font-medium">Button Text:</label>
         <input
           type="text"
-          className="w-full bg-gray-700 px-2 py-1 rounded font-sans"
+          className="w-full bg-gray-700 px-2 py-2 rounded text-white"
           value={localButton.text || ""}
           onChange={(e) =>
             setLocalButton((prev) => ({
@@ -167,10 +222,10 @@ function ButtonEditorPanel({ localButton, setLocalButton, onSave }) {
 
       {/* Editable Button Link */}
       <div className="mb-6">
-        <label className="block text-sm mb-1 font-sans">Button Link:</label>
+        <label className="block text-sm mb-1 font-medium">Button Link:</label>
         <input
           type="text"
-          className="w-full bg-gray-700 px-2 py-1 rounded font-sans"
+          className="w-full bg-gray-700 px-2 py-2 rounded text-white"
           value={localButton.buttonLink || ""}
           onChange={(e) =>
             setLocalButton((prev) => ({
@@ -179,50 +234,76 @@ function ButtonEditorPanel({ localButton, setLocalButton, onSave }) {
             }))
           }
         />
+        <div className="text-xs text-gray-400 mt-1">
+          Example: /about for internal page or https://example.com for external
+          site
+        </div>
       </div>
 
       {/* Editable Images List */}
       <div>
-        <h2 className="text-lg font-medium font-sans mb-2">Images</h2>
-        {localButton.images.map((img, index) => (
-          <div key={index} className="bg-gray-800 p-3 rounded mb-3 relative">
-            <button
-              onClick={() => {
-                const updated = [...localButton.images];
-                updated.splice(index, 1);
-                setLocalButton((prev) => ({
-                  ...prev,
-                  images: updated,
-                }));
-              }}
-              className="bg-red-600 text-white text-xs px-2 py-1 rounded absolute top-2 right-2 font-sans"
-            >
-              Remove
-            </button>
-            <label className="block text-sm mb-1 font-sans">
-              Image URL:
-              <input
-                type="text"
-                className="w-full bg-gray-700 px-2 py-1 rounded mt-1 font-sans"
-                value={img || ""}
-                onChange={(e) => {
+        <h2 className="text-lg font-medium mb-2">Background Images</h2>
+        <p className="text-sm text-gray-400 mb-3">
+          Add background images for the carousel. These images will scroll
+          behind the button.
+        </p>
+
+        {localButton.images &&
+          localButton.images.map((img, index) => (
+            <div key={index} className="bg-gray-700 p-3 rounded mb-3 relative">
+              <button
+                onClick={() => {
                   const updated = [...localButton.images];
-                  updated[index] = e.target.value;
-                  setLocalButton((prev) => ({ ...prev, images: updated }));
+                  updated.splice(index, 1);
+                  setLocalButton((prev) => ({
+                    ...prev,
+                    images: updated,
+                  }));
                 }}
-              />
-            </label>
-          </div>
-        ))}
+                className="bg-red-600 text-white text-xs px-2 py-1 rounded absolute top-2 right-2 hover:bg-red-500"
+              >
+                Remove
+              </button>
+              <label className="block text-sm mb-1 font-medium">
+                Image URL:
+                <input
+                  type="text"
+                  className="w-full bg-gray-600 px-2 py-2 rounded mt-1 text-white"
+                  value={img || ""}
+                  onChange={(e) => {
+                    const updated = [...localButton.images];
+                    updated[index] = e.target.value;
+                    setLocalButton((prev) => ({ ...prev, images: updated }));
+                  }}
+                />
+              </label>
+              {img && (
+                <div className="mt-2 border border-gray-600 rounded overflow-hidden">
+                  <img
+                    src={
+                      img.startsWith("/") ? img : `/${img.replace(/^\.\//, "")}`
+                    }
+                    alt={`Background ${index + 1}`}
+                    className="w-full h-24 object-cover"
+                    onError={(e) => {
+                      e.target.src = "/assets/images/placeholder.png";
+                      e.target.alt = "Image not found";
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          ))}
+
         <button
           onClick={() => {
             const updated = [
-              ...localButton.images,
+              ...(localButton.images || []),
               "/assets/images/placeholder.png",
             ];
             setLocalButton((prev) => ({ ...prev, images: updated }));
           }}
-          className="bg-blue-600 text-white text-xs px-2 py-1 rounded font-sans"
+          className="bg-gray-600 text-white text-sm px-3 py-2 rounded font-medium hover:bg-gray-500"
         >
           + Add Image
         </button>
@@ -230,6 +311,16 @@ function ButtonEditorPanel({ localButton, setLocalButton, onSave }) {
     </div>
   );
 }
+
+ButtonEditorPanel.propTypes = {
+  localButton: PropTypes.shape({
+    text: PropTypes.string,
+    buttonLink: PropTypes.string,
+    images: PropTypes.arrayOf(PropTypes.string),
+  }),
+  setLocalButton: PropTypes.func.isRequired,
+  onSave: PropTypes.func.isRequired,
+};
 
 /* ======================================================
    MAIN COMPONENT: ButtonBlock
@@ -247,39 +338,60 @@ export default function ButtonBlock({
   const [localButton, setLocalButton] = useState(() => {
     if (!buttonconfig) {
       return {
-        text: "",
-        buttonLink: "",
-        images: [],
+        text: "About Us",
+        buttonLink: "/about",
+        images: [
+          "/assets/images/placeholder.png",
+          "/assets/images/placeholder.png",
+        ],
       };
     }
-    return {
-      ...buttonconfig,
-      images: buttonconfig.images ? [...buttonconfig.images] : [],
-    };
+    return { ...buttonconfig };
   });
 
-  // Callback to save the changes back to the parent.
   const handleSave = () => {
-    onConfigChange?.(localButton);
+    if (onConfigChange) {
+      onConfigChange(localButton);
+    }
   };
 
+  // If read-only mode, just show the preview
   if (readOnly) {
     return <ButtonPreview buttonconfig={buttonconfig} />;
   }
 
+  // Otherwise show both editor and preview
   return (
-    <div>
-      {/* Live Preview Section */}
-      <div className="mb-4">
-        <h2 className="text-xl font-medium font-sans mb-2">Live Preview</h2>
-        <ButtonPreview buttonconfig={localButton} />
+    <div className="flex flex-col md:flex-row gap-4">
+      <div className="md:w-1/2 order-2 md:order-1">
+        <h3 className="text-sm text-gray-400 mb-2">Preview:</h3>
+        <div className="border border-gray-300 rounded overflow-hidden">
+          <ButtonPreview buttonconfig={localButton} />
+        </div>
       </div>
-      {/* Editor Panel */}
-      <ButtonEditorPanel
-        localButton={localButton}
-        setLocalButton={setLocalButton}
-        onSave={handleSave}
-      />
+      <div className="md:w-1/2 order-1 md:order-2">
+        <ButtonEditorPanel
+          localButton={localButton}
+          setLocalButton={setLocalButton}
+          onSave={handleSave}
+        />
+      </div>
     </div>
   );
 }
+
+ButtonBlock.propTypes = {
+  readOnly: PropTypes.bool,
+  buttonconfig: PropTypes.shape({
+    text: PropTypes.string,
+    buttonLink: PropTypes.string,
+    images: PropTypes.arrayOf(PropTypes.string),
+  }),
+  onConfigChange: PropTypes.func,
+};
+
+ButtonBlock.defaultProps = {
+  readOnly: false,
+  buttonconfig: null,
+  onConfigChange: null,
+};

@@ -35,6 +35,103 @@
       ]
     }
   },
+  "process": {
+    "steps": [
+      {
+        "title": "Book",
+        "videoSrc": "/assets/videos/our_process_videos/booking.mp4",
+        "href": "/#booking",
+        "scale": 0.8
+      },
+      {
+        "title": "Inspection",
+        "videoSrc": "/assets/videos/our_process_videos/magnify.mp4",
+        "href": "/inspection",
+        "scale": 1.25
+      },
+      {
+        "title": "Service",
+        "videoSrc": "/assets/videos/our_process_videos/repair.mp4",
+        "href": "/#packages",
+        "scale": 1.1
+      },
+      {
+        "title": "Review",
+        "videoSrc": "/assets/videos/our_process_videos/approval.mp4",
+        "href": "/#testimonials",
+        "scale": 0.9
+      }
+    ]
+  },
+  "aboutPage": {
+    "title": "About COWBOYS-VAQUEROS",
+    "subtitle": "Building Trust Since 2014",
+    "history": "Founded in 2014, COWBOYS-VAQUEROS has grown from a small family business to one of the most trusted roofing companies in the region. With a focus on quality craftsmanship and customer satisfaction, we've built a reputation for excellence in both residential and commercial roofing.",
+    "mission": "Our mission is to provide the highest quality roofing services with integrity, exceptional customer service, and a commitment to excellence. We strive to build lasting relationships with our clients based on trust, reliability, and outstanding results.",
+    "values": [
+      {
+        "title": "Innovation",
+        "description": "We continuously update our methods and materials to incorporate the latest advances in roofing technology."
+      },
+      {
+        "title": "Sustainability",
+        "description": "We're committed to environmentally responsible practices and offering sustainable roofing options."
+      },
+      {
+        "title": "Community",
+        "description": "We're proud to serve our local community and contribute to making homes safer and more beautiful."
+      },
+      {
+        "title": "Integrity",
+        "description": "We believe in honest communication, fair pricing, and standing behind our work."
+      }
+    ],
+    "team": [
+      {
+        "name": "Luis Aguilar-Lopez",
+        "position": "Owner",
+        "photo": "/assets/images/team/roofer.png"
+      },
+      {
+        "name": "Erika Salinas",
+        "position": "Manager",
+        "photo": "/assets/images/team/foreman.png"
+      },
+      {
+        "name": "Robert Garcia",
+        "position": "Project Manager",
+        "photo": "/assets/images/team/estimator.png"
+      },
+      {
+        "name": "Sarah Johnson",
+        "position": "Customer Relations",
+        "photo": "/assets/images/team/salesrep.png"
+      }
+    ],
+    "stats": [
+      {
+        "title": "Years in Business",
+        "value": 11,
+        "icon": "FaHistory"
+      },
+      {
+        "title": "Completed Projects",
+        "value": 626,
+        "icon": "FaAward"
+      },
+      {
+        "title": "Happy Clients",
+        "value": 497,
+        "icon": "FaUsers"
+      },
+      {
+        "title": "Team Members",
+        "value": 11,
+        "icon": "FaHandshake"
+      }
+    ],
+    "heroImage": "/assets/images/about/about-hero.jpg"
+  },
   "booking": {
     "logo": "/assets/images/clipped-cowboy.png",
     "headerText": "Request a Quote!",

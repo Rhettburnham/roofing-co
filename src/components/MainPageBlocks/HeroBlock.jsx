@@ -278,7 +278,7 @@ function HeroPreview({ heroconfig }) {
       />
 
       {/* Hero Split Sections */}
-      <div className="relative w-full h-[65vw] md:h-[65vh]">
+      <div className="relative w-full h-[50vw] md:h-[50vh]">
         {/* Residential half */}
         <motion.div
           className="absolute left-0 h-full w-1/2 cursor-pointer"
@@ -296,7 +296,11 @@ function HeroPreview({ heroconfig }) {
             duration: activeSection === "neutral" ? 5 : 0.5,
             ease: "easeInOut",
           }}
-          onClick={(e) => handleSectionElementClick(e, "residential")}
+          onClick={(e) =>
+            setActiveSection((prev) =>
+              prev === "residential" ? "neutral" : "residential"
+            )
+          }
         >
           <div className="relative w-full h-full">
             <div
@@ -309,11 +313,8 @@ function HeroPreview({ heroconfig }) {
             />
             <div className="absolute top-0 left-0 w-full h-full z-20 flex flex-col items-end justify-center">
               <div className="flex flex-col items-center mr-[8vh] md:mr-[13.2vw]">
-                {/* Grouped container for icon and title */}
-                <div
-                  className="flex flex-col items-center cursor-pointer z-30"
-                  onClick={(e) => handleSectionElementClick(e, "residential")}
-                >
+                {/* Combined container for icon, title and services */}
+                <div className="flex flex-col items-center z-30">
                   {/* Icon that fades out when active */}
                   <motion.div
                     variants={iconVariants}
@@ -334,21 +335,14 @@ function HeroPreview({ heroconfig }) {
                   >
                     Residential
                   </motion.h2>
-                </div>
 
-                {/* Services list that appears below */}
-                {activeSection === "residential" && (
-                  <motion.div
-                    className="absolute right-0 top-1/2 transform -translate-y-1/3 z-20 w-full flex justify-center"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.3, delay: 0.4 }}
-                  >
+                  {/* Services list that appears below */}
+                  {activeSection === "residential" && (
                     <motion.ul
                       variants={listVariants}
                       initial="hidden"
                       animate="visible"
-                      className="text-white font-serif w-3/4 text-center space-y-1 md:space-y-3 text-[3.5vw] md:text-[2.8vh] font-bold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,3)] mt-5"
+                      className="text-white font-serif text-center space-y-1 md:space-y-2 text-[3vw] md:text-[2.4vh] font-bold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,3)] mt-5"
                     >
                       {residentialServices.map((service, idx) => (
                         <motion.li
@@ -366,8 +360,8 @@ function HeroPreview({ heroconfig }) {
                         </motion.li>
                       ))}
                     </motion.ul>
-                  </motion.div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -390,7 +384,11 @@ function HeroPreview({ heroconfig }) {
             duration: activeSection === "neutral" ? 5 : 0.5,
             ease: "easeInOut",
           }}
-          onClick={(e) => handleSectionElementClick(e, "commercial")}
+          onClick={(e) =>
+            setActiveSection((prev) =>
+              prev === "commercial" ? "neutral" : "commercial"
+            )
+          }
         >
           <div className="relative w-full h-full">
             <div
@@ -403,11 +401,8 @@ function HeroPreview({ heroconfig }) {
             />
             <div className="absolute top-0 right-0 w-full h-full z-20 flex flex-col items-start justify-center">
               <div className="flex flex-col items-center ml-[8vh] md:ml-[13.2vw]">
-                {/* Grouped container for icon and title */}
-                <div
-                  className="flex flex-col items-center cursor-pointer z-30"
-                  onClick={(e) => handleSectionElementClick(e, "commercial")}
-                >
+                {/* Combined container for icon, title and services */}
+                <div className="flex flex-col items-center z-30">
                   {/* Icon that fades out when active */}
                   <motion.div
                     variants={iconVariants}
@@ -428,21 +423,14 @@ function HeroPreview({ heroconfig }) {
                   >
                     Commercial
                   </motion.h2>
-                </div>
 
-                {/* Services list that appears below */}
-                {activeSection === "commercial" && (
-                  <motion.div
-                    className="absolute left-0 top-1/2 transform -translate-y-1/3 z-20 w-full flex justify-center"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.3, delay: 0.4 }}
-                  >
+                  {/* Services list that appears below */}
+                  {activeSection === "commercial" && (
                     <motion.ul
                       variants={listVariants}
                       initial="hidden"
                       animate="visible"
-                      className="text-white font-serif w-3/4 text-center space-y-1 md:space-y-3 text-[3.5vw] md:text-[2.8vh] font-bold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,3)] mt-5"
+                      className="text-white font-serif text-center space-y-1 md:space-y-2 text-[3vw] md:text-[2.4vh] font-bold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,3)] mt-5"
                     >
                       {commercialServices.map((service, idx) => (
                         <motion.li
@@ -460,8 +448,8 @@ function HeroPreview({ heroconfig }) {
                         </motion.li>
                       ))}
                     </motion.ul>
-                  </motion.div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -485,10 +473,8 @@ function HeroPreview({ heroconfig }) {
 ====================================================
  2) HERO EDITOR PANEL (EDIT MODE)
 ----------------------------------------------------
-Only the image functionality is changed.
-- New file inputs for Logo, Residential Background, and Commercial Background.
-- When a file is chosen, URL.createObjectURL is used to immediately preview the image.
-The rest of the editor remains unchanged.
+Reorganized to match the visual layout of the preview.
+Connects services directly to the services.json file.
 ====================================================
 */
 function HeroEditorPanel({ localData, setLocalData, onSave }) {
@@ -497,7 +483,81 @@ function HeroEditorPanel({ localData, setLocalData, onSave }) {
     subTitle = "",
     residential = { subServices: [] },
     commercial = { subServices: [] },
+    logo,
+    residentialImage,
+    commercialImage,
   } = localData;
+
+  const [residentialServices, setResidentialServices] = useState([]);
+  const [commercialServices, setCommercialServices] = useState([]);
+  const [isServicesLoading, setIsServicesLoading] = useState(true);
+
+  // Load services from services.json
+  useEffect(() => {
+    setIsServicesLoading(true);
+
+    // Fetch services.json to get the latest service data
+    fetch("/data/services.json")
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+        return res.json();
+      })
+      .then((data) => {
+        // Process residential services from services.json
+        const residentialFromJson = data.residential.map((service) => {
+          const heroBlock =
+            service.blocks.find((b) => b.blockName === "HeroBlock") ||
+            service.blocks[0];
+
+          // Extract title from the HeroBlock's config
+          const title =
+            heroBlock?.config?.title || service.name || `Service ${service.id}`;
+
+          // Use slug if defined, otherwise create one
+          const slug =
+            service.slug ||
+            `residential-${service.id}-${title.toLowerCase().replace(/\s+/g, "-")}`;
+
+          return {
+            id: service.id,
+            label: title,
+            route: `/services/${slug}`,
+            slug,
+          };
+        });
+
+        // Process commercial services from services.json
+        const commercialFromJson = data.commercial.map((service) => {
+          const heroBlock =
+            service.blocks.find((b) => b.blockName === "HeroBlock") ||
+            service.blocks[0];
+
+          // Extract title from the HeroBlock's config
+          const title =
+            heroBlock?.config?.title || service.name || `Service ${service.id}`;
+
+          // Use slug if defined, otherwise create one
+          const slug =
+            service.slug ||
+            `commercial-${service.id}-${title.toLowerCase().replace(/\s+/g, "-")}`;
+
+          return {
+            id: service.id,
+            label: title,
+            route: `/services/${slug}`,
+            slug,
+          };
+        });
+
+        setResidentialServices(residentialFromJson);
+        setCommercialServices(commercialFromJson);
+        setIsServicesLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching services data:", error);
+        setIsServicesLoading(false);
+      });
+  }, []);
 
   // Image upload handlers
   const handleLogoChange = (file) => {
@@ -507,44 +567,18 @@ function HeroEditorPanel({ localData, setLocalData, onSave }) {
     }
   };
 
-  /**
-   * Handles residential image upload
-   * Stores both the URL for display and the file object for the ZIP
-   *
-   * @param {File} file - The uploaded file
-   */
   const handleResidentialImageChange = (file) => {
     if (!file) return;
-
-    // Create a URL for display
     const fileURL = URL.createObjectURL(file);
-
-    // Store just the URL for display
     setLocalData((prev) => ({ ...prev, residentialImage: fileURL }));
   };
 
-  /**
-   * Handles commercial image upload
-   * Stores both the URL for display and the file object for the ZIP
-   *
-   * @param {File} file - The uploaded file
-   */
   const handleCommercialImageChange = (file) => {
     if (!file) return;
-
-    // Create a URL for display
     const fileURL = URL.createObjectURL(file);
-
-    // Store just the URL for display
     setLocalData((prev) => ({ ...prev, commercialImage: fileURL }));
   };
 
-  /**
-   * Gets the display URL from either a string URL or an object with a URL property
-   *
-   * @param {string|Object} value - The value to extract URL from
-   * @returns {string|null} - The URL to display
-   */
   const getDisplayUrl = (value) => {
     if (!value) return null;
     if (typeof value === "string") return value;
@@ -552,223 +586,242 @@ function HeroEditorPanel({ localData, setLocalData, onSave }) {
     return null;
   };
 
-  // Existing text and sub-service handlers remain unchanged...
-  const addResidentialService = () => {
+  // Handler for service selection/deselection
+  const handleServiceToggle = (serviceType, serviceId) => {
+    const services =
+      serviceType === "residential" ? residentialServices : commercialServices;
+    const selectedService = services.find((s) => s.id === serviceId);
+
+    if (!selectedService) return;
+
+    const currentSubServices = localData[serviceType]?.subServices || [];
+    const isSelected = currentSubServices.some((s) => s.id === serviceId);
+
+    let newSubServices;
+    if (isSelected) {
+      // Remove service
+      newSubServices = currentSubServices.filter((s) => s.id !== serviceId);
+    } else {
+      // Add service
+      newSubServices = [
+        ...currentSubServices,
+        {
+          id: serviceId,
+          title: selectedService.label,
+          slug: selectedService.slug,
+        },
+      ];
+    }
+
     setLocalData((prev) => ({
       ...prev,
-      residential: {
-        ...prev.residential,
-        subServices: [...(prev.residential.subServices || []), { title: "" }],
+      [serviceType]: {
+        ...prev[serviceType],
+        subServices: newSubServices,
       },
-    }));
-  };
-  const removeResidentialService = (idx) => {
-    const newArr = [...(residential.subServices || [])];
-    newArr.splice(idx, 1);
-    setLocalData((prev) => ({
-      ...prev,
-      residential: { ...prev.residential, subServices: newArr },
-    }));
-  };
-  const changeResidentialService = (idx, newTitle) => {
-    const newArr = [...(residential.subServices || [])];
-    newArr[idx] = { title: newTitle };
-    setLocalData((prev) => ({
-      ...prev,
-      residential: { ...prev.residential, subServices: newArr },
     }));
   };
 
-  const addCommercialService = () => {
-    setLocalData((prev) => ({
-      ...prev,
-      commercial: {
-        ...prev.commercial,
-        subServices: [...(prev.commercial.subServices || []), { title: "" }],
-      },
-    }));
-  };
-  const removeCommercialService = (idx) => {
-    const newArr = [...(commercial.subServices || [])];
-    newArr.splice(idx, 1);
-    setLocalData((prev) => ({
-      ...prev,
-      commercial: { ...prev.commercial, subServices: newArr },
-    }));
-  };
-  const changeCommercialService = (idx, newTitle) => {
-    const newArr = [...(commercial.subServices || [])];
-    newArr[idx] = { title: newTitle };
-    setLocalData((prev) => ({
-      ...prev,
-      commercial: { ...prev.commercial, subServices: newArr },
-    }));
+  // Utility function to check if a service is selected
+  const isServiceSelected = (serviceType, serviceId) => {
+    return (
+      localData[serviceType]?.subServices?.some((s) => s.id === serviceId) ||
+      false
+    );
   };
 
   return (
-    <div className="bg-black text-white p-4 rounded max-h-[75vh] overflow-auto">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-lg md:text-2xl font-semibold">Hero Editor</h1>
+    <div className="bg-gray-900 text-white rounded-md overflow-hidden">
+      {/* Title Bar with Save Button */}
+      <div className="flex items-center justify-between bg-banner p-4">
+        <h2 className="text-xl font-semibold">Hero Block Editor</h2>
         <button
-          type="button"
           onClick={onSave}
-          className="bg-green-600 hover:bg-green-500 px-4 py-2 rounded text-white font-semibold"
+          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors"
         >
-          Save
+          Save Changes
         </button>
       </div>
 
-      {/* Image Uploads */}
-      <div className="mb-4">
-        <label className="block text-sm mb-1">Logo Image:</label>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            handleLogoChange(file);
-          }}
-          className="w-full bg-gray-700 px-2 py-1 rounded"
-        />
-        {localData.logo && (
-          <img
-            src={localData.logo}
-            alt="Logo Preview"
-            className="mt-2 h-24 rounded shadow"
-          />
-        )}
-      </div>
-      <div className="mb-4">
-        <label className="block text-sm mb-1">
-          Residential Background Image:
-        </label>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            handleResidentialImageChange(file);
-          }}
-          className="w-full bg-gray-700 px-2 py-1 rounded"
-        />
-        {getDisplayUrl(localData.residentialImage) && (
-          <img
-            src={getDisplayUrl(localData.residentialImage)}
-            alt="Residential Preview"
-            className="mt-2 h-24 rounded shadow"
-          />
-        )}
-      </div>
-      <div className="mb-4">
-        <label className="block text-sm mb-1">
-          Commercial Background Image:
-        </label>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            handleCommercialImageChange(file);
-          }}
-          className="w-full bg-gray-700 px-2 py-1 rounded"
-        />
-        {getDisplayUrl(localData.commercialImage) && (
-          <img
-            src={getDisplayUrl(localData.commercialImage)}
-            alt="Commercial Preview"
-            className="mt-2 h-24 rounded shadow"
-          />
-        )}
-      </div>
-
-      {/* Main Title */}
-      <div className="mb-4">
-        <label className="block text-sm mb-1">Main Title:</label>
-        <input
-          type="text"
-          className="w-full bg-gray-700 px-2 py-1 rounded"
-          value={localData.mainTitle}
-          onChange={(e) =>
-            setLocalData((prev) => ({ ...prev, mainTitle: e.target.value }))
-          }
-        />
-      </div>
-
-      {/* Sub Title */}
-      <div className="mb-4">
-        <label className="block text-sm mb-1">Sub Title:</label>
-        <input
-          type="text"
-          className="w-full bg-gray-700 px-2 py-1 rounded"
-          value={localData.subTitle}
-          onChange={(e) =>
-            setLocalData((prev) => ({ ...prev, subTitle: e.target.value }))
-          }
-        />
-      </div>
-
-      {/* Residential Sub-Services */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-lg font-semibold">Residential Sub-Services</h2>
-          <button
-            onClick={addResidentialService}
-            className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-2 py-1 rounded"
-          >
-            + Add
-          </button>
-        </div>
-        {(localData.residential.subServices || []).map((svc, idx) => (
-          <div key={idx} className="bg-gray-800 p-3 rounded mb-2 relative">
-            <button
-              onClick={() => removeResidentialService(idx)}
-              className="bg-red-600 text-white text-xs px-2 py-1 rounded absolute top-2 right-2"
-            >
-              Remove
-            </button>
-            <label className="block text-sm mb-1">
-              Title:
+      {/* Main Title and Logo Section */}
+      <div className="p-4 bg-gray-800 border-b border-gray-700">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="w-full md:w-1/3">
+            <label className="block text-sm mb-1 text-gray-300">Logo:</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleLogoChange(e.target.files?.[0])}
+              className="w-full bg-gray-700 text-sm rounded-md border border-gray-600 p-2"
+            />
+            {logo && (
+              <img
+                src={logo}
+                alt="Logo Preview"
+                className="mt-2 h-20 object-contain"
+              />
+            )}
+          </div>
+          <div className="w-full md:w-2/3">
+            <div className="mb-3">
+              <label className="block text-sm mb-1 text-gray-300">
+                Main Title:
+              </label>
               <input
                 type="text"
-                className="w-full bg-gray-700 px-2 py-1 rounded mt-1"
-                value={svc.title || ""}
-                onChange={(e) => changeResidentialService(idx, e.target.value)}
+                value={localData.mainTitle || ""}
+                onChange={(e) =>
+                  setLocalData((prev) => ({
+                    ...prev,
+                    mainTitle: e.target.value,
+                  }))
+                }
+                className="w-full bg-gray-700 text-white rounded-md border border-gray-600 p-2"
+                placeholder="Enter main title"
               />
-            </label>
-          </div>
-        ))}
-      </div>
-
-      {/* Commercial Sub-Services */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-lg font-semibold">Commercial Sub-Services</h2>
-          <button
-            onClick={addCommercialService}
-            className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-2 py-1 rounded"
-          >
-            + Add
-          </button>
-        </div>
-        {(localData.commercial.subServices || []).map((svc, idx) => (
-          <div key={idx} className="bg-gray-800 p-3 rounded mb-2 relative">
-            <button
-              onClick={() => removeCommercialService(idx)}
-              className="bg-red-600 text-white text-xs px-2 py-1 rounded absolute top-2 right-2"
-            >
-              Remove
-            </button>
-            <label className="block text-sm mb-1">
-              Title:
+            </div>
+            <div>
+              <label className="block text-sm mb-1 text-gray-300">
+                Sub Title:
+              </label>
               <input
                 type="text"
-                className="w-full bg-gray-700 px-2 py-1 rounded mt-1"
-                value={svc.title || ""}
-                onChange={(e) => changeCommercialService(idx, e.target.value)}
+                value={localData.subTitle || ""}
+                onChange={(e) =>
+                  setLocalData((prev) => ({
+                    ...prev,
+                    subTitle: e.target.value,
+                  }))
+                }
+                className="w-full bg-gray-700 text-white rounded-md border border-gray-600 p-2"
+                placeholder="Enter subtitle"
               />
-            </label>
+            </div>
           </div>
-        ))}
+        </div>
+      </div>
+
+      {/* Split Section for Residential and Commercial */}
+      <div className="flex flex-col md:flex-row">
+        {/* Residential Side */}
+        <div className="w-full md:w-1/2 p-4 bg-gray-800 border-r border-gray-700">
+          <h3 className="text-lg font-semibold mb-3 text-amber-100">
+            Residential
+          </h3>
+
+          <div className="mb-4">
+            <label className="block text-sm mb-1 text-gray-300">
+              Background Image:
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) =>
+                handleResidentialImageChange(e.target.files?.[0])
+              }
+              className="w-full bg-gray-700 text-sm rounded-md border border-gray-600 p-2"
+            />
+            {getDisplayUrl(residentialImage) && (
+              <img
+                src={getDisplayUrl(residentialImage)}
+                alt="Residential Background"
+                className="mt-2 h-24 w-full object-cover rounded-md"
+              />
+            )}
+          </div>
+
+          <div className="mt-4">
+            <label className="block text-sm mb-2 text-gray-300">
+              Available Services:
+            </label>
+            {isServicesLoading ? (
+              <p className="text-gray-400 text-sm">Loading services...</p>
+            ) : (
+              <div className="space-y-1 max-h-60 overflow-y-auto pr-2">
+                {residentialServices.map((service) => (
+                  <div
+                    key={service.id}
+                    className={`p-2 rounded-md cursor-pointer flex items-center ${
+                      isServiceSelected("residential", service.id)
+                        ? "bg-blue-900"
+                        : "bg-gray-700 hover:bg-gray-600"
+                    }`}
+                    onClick={() =>
+                      handleServiceToggle("residential", service.id)
+                    }
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isServiceSelected("residential", service.id)}
+                      onChange={() => {}}
+                      className="mr-2"
+                    />
+                    <span>{service.label}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Commercial Side */}
+        <div className="w-full md:w-1/2 p-4 bg-gray-800">
+          <h3 className="text-lg font-semibold mb-3 text-amber-100">
+            Commercial
+          </h3>
+
+          <div className="mb-4">
+            <label className="block text-sm mb-1 text-gray-300">
+              Background Image:
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleCommercialImageChange(e.target.files?.[0])}
+              className="w-full bg-gray-700 text-sm rounded-md border border-gray-600 p-2"
+            />
+            {getDisplayUrl(commercialImage) && (
+              <img
+                src={getDisplayUrl(commercialImage)}
+                alt="Commercial Background"
+                className="mt-2 h-24 w-full object-cover rounded-md"
+              />
+            )}
+          </div>
+
+          <div className="mt-4">
+            <label className="block text-sm mb-2 text-gray-300">
+              Available Services:
+            </label>
+            {isServicesLoading ? (
+              <p className="text-gray-400 text-sm">Loading services...</p>
+            ) : (
+              <div className="space-y-1 max-h-60 overflow-y-auto pr-2">
+                {commercialServices.map((service) => (
+                  <div
+                    key={service.id}
+                    className={`p-2 rounded-md cursor-pointer flex items-center ${
+                      isServiceSelected("commercial", service.id)
+                        ? "bg-blue-900"
+                        : "bg-gray-700 hover:bg-gray-600"
+                    }`}
+                    onClick={() =>
+                      handleServiceToggle("commercial", service.id)
+                    }
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isServiceSelected("commercial", service.id)}
+                      onChange={() => {}}
+                      className="mr-2"
+                    />
+                    <span>{service.label}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

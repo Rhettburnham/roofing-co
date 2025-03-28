@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import PropTypes from "prop-types";
 
 // Import preview components for blocks
 import HeroBlock from "./blocks/HeroBlock";
@@ -43,6 +44,40 @@ const blockMap = {
   ListImageVerticalBlock,
 };
 
+// EditOverlay component
+const EditOverlay = ({ children, onClose }) => (
+  <div className="absolute inset-0 bg-black bg-opacity-80 z-50 flex flex-col overflow-auto">
+    <div className="flex justify-end p-2">
+      <button
+        type="button"
+        onClick={onClose}
+        className="bg-gray-800 rounded-full p-2 text-white hover:bg-gray-700"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth="1.5"
+          stroke="currentColor"
+          className="w-6 h-6"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M6 18L18 6M6 6l12 12"
+          />
+        </svg>
+      </button>
+    </div>
+    <div className="flex-1 overflow-auto p-4">{children}</div>
+  </div>
+);
+
+EditOverlay.propTypes = {
+  children: PropTypes.node.isRequired,
+  onClose: PropTypes.func.isRequired,
+};
+
 // Export a reference to the services data
 let servicesDataRef = null;
 
@@ -53,18 +88,6 @@ ServiceEditPage Component
 This component provides a comprehensive editor for service pages.
 It loads data from services.json and allows editing of all
 service page content.
-
-Key features:
-- Loads and parses the services.json file
-- Allows switching between service categories and pages
-- Provides form controls for editing all aspects of each block
-- Supports image uploads with local preview
-- Enables downloading the edited JSON for later integration
-
-This is part of the website's content management system that
-allows for local editing of content without direct database access.
-The edited JSON can be downloaded with the same filename and sent 
-to the developer for permanent integration into the site.
 =============================================
 */
 const ServiceEditPage = () => {
@@ -75,8 +98,8 @@ const ServiceEditPage = () => {
   const [selectedBlockType, setSelectedBlockType] = useState(
     Object.keys(blockMap)[0]
   );
-  // Add state to track which blocks are being edited
-  const [editingBlocks, setEditingBlocks] = useState({});
+  // Track which block is being edited
+  const [activeEditBlock, setActiveEditBlock] = useState(null);
 
   // Update the reference when servicesData changes
   useEffect(() => {
@@ -86,7 +109,6 @@ const ServiceEditPage = () => {
   }, [servicesData]);
 
   // Fetch services.json on mount
-  // This loads the services data for editing
   useEffect(() => {
     fetch("/data/services.json")
       .then((res) => res.json())
@@ -115,14 +137,6 @@ const ServiceEditPage = () => {
   handleConfigChange
   ---------------------------------------------
   Updates a specific configuration field in a block.
-  
-  This function:
-  1. Updates the current page state
-  2. Updates the master JSON data in servicesData
-  
-  This ensures that all changes are tracked both in the
-  current view and in the complete dataset that will be
-  available for download.
   =============================================
   */
   const handleConfigChange = (blockIndex, key, value) => {
@@ -154,10 +168,6 @@ const ServiceEditPage = () => {
   handleFileChange
   ---------------------------------------------
   Handles file uploads for images within blocks.
-  
-  This function:
-  1. Creates a URL for the uploaded file
-  2. Updates the configuration with just the URL for display
   =============================================
   */
   const handleFileChange = (blockIndex, key, file) => {
@@ -172,9 +182,6 @@ const ServiceEditPage = () => {
 
   /**
    * Gets the display URL from either a string URL or an object with a URL property
-   *
-   * @param {string|Object} value - The value to extract URL from
-   * @returns {string|null} - The URL to display
    */
   const getDisplayUrl = (value) => {
     if (!value) return null;
@@ -188,14 +195,6 @@ const ServiceEditPage = () => {
   renderArrayField
   ---------------------------------------------
   Renders form controls for array-type configuration fields.
-  
-  This function handles different types of arrays:
-  - Image arrays (with file upload controls)
-  - Text arrays (with text input controls)
-  - Object arrays (with nested form controls)
-  
-  It provides add/remove functionality for array items and
-  appropriate input controls based on the data type.
   =============================================
   */
   const renderArrayField = (blockIndex, key, arr) => {
@@ -359,14 +358,6 @@ const ServiceEditPage = () => {
   renderPageButtons
   ---------------------------------------------
   Renders navigation buttons for switching between service pages.
-  
-  This function:
-  1. Groups pages by category
-  2. Creates buttons for each page
-  3. Highlights the currently selected page
-  
-  This allows easy navigation between different service pages
-  while editing.
   =============================================
   */
   const renderPageButtons = () => {
@@ -391,50 +382,59 @@ const ServiceEditPage = () => {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {servicesData[selectedCategory].map((page) => (
-            <button
-              key={page.id}
-              onClick={() => setSelectedPageId(page.id)}
-              className={`px-3 py-1 rounded ${
-                selectedPageId === page.id
-                  ? "bg-blue text-white drop-shadow-[0_1.2px_1.2px_rgba(255,30,0,0.8)]"
-                  : "bg-gray-200"
-              }`}
-            >
-              {page.title || `Page ${page.id}`}
-            </button>
-          ))}
+          {servicesData[selectedCategory].map((page) => {
+            // Find the service name from the HeroBlock or first block
+            const heroBlock =
+              page.blocks.find((b) => b.blockName === "HeroBlock") ||
+              page.blocks[0];
+            const serviceName =
+              heroBlock?.config?.title ||
+              page.name ||
+              page.title ||
+              `Service ${page.id}`;
+
+            return (
+              <button
+                key={page.id}
+                onClick={() => setSelectedPageId(page.id)}
+                className={`px-3 py-1 rounded ${
+                  selectedPageId === page.id
+                    ? "bg-blue text-white drop-shadow-[0_1.2px_1.2px_rgba(255,30,0,0.8)]"
+                    : "bg-gray-200"
+                }`}
+              >
+                {serviceName}
+              </button>
+            );
+          })}
         </div>
       </div>
     );
   };
 
-  // We'll keep the handleDownload function for potential future use, but not display the button
-  const handleDownload = () => {
-    const dataStr = JSON.stringify(servicesData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "services.json";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  // SVG icons
+  const PencilIcon = (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth="1.5"
+      stroke="currentColor"
+      className="w-6 h-6"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M16.862 4.487a2.032 2.032 0 112.872 2.872L7.5 21.613H4v-3.5L16.862 4.487z"
+      />
+    </svg>
+  );
 
   /* 
   =============================================
   renderBlockEditor
   ---------------------------------------------
   Renders the editor for a specific block.
-
-  This function:
-  1. Creates a form for editing the block's configuration
-  2. Handles different field types (text, number, array, etc.)
-  3. Provides controls for adding/removing blocks
-
-  The editor is dynamically generated based on the block's
-  configuration, making it flexible for different block types.
   =============================================
   */
   const renderBlockEditor = (block, blockIndex) => {
@@ -442,7 +442,7 @@ const ServiceEditPage = () => {
 
     if (!Component) {
       return (
-        <div className="bg-red-100 p-4 rounded mb-4">
+        <div className="bg-red-100 p-4 mb-0">
           <p className="text-red-700">Unknown block type: {block.blockName}</p>
         </div>
       );
@@ -450,180 +450,178 @@ const ServiceEditPage = () => {
 
     // Always show HeroBlock without toggle option if it's the first block
     const isHeroBlock = block.blockName === "HeroBlock" && blockIndex === 0;
-    const isEditing = editingBlocks[blockIndex];
 
     return (
       <div
         key={blockIndex}
-        className="border border-gray-300 rounded mb-4 bg-white overflow-hidden block-container"
+        className="relative border-t border-b border-gray-300 mb-0 bg-white overflow-hidden"
       >
-        <div className="flex justify-between items-center bg-gray-100 p-2">
-          <h3 className="text-lg font-semibold">{block.blockName}</h3>
-          <div className="flex space-x-2">
-            <button
-              type="button"
-              onClick={() => toggleEditBlock(blockIndex)}
-              className={`px-2 py-1 rounded ${
-                isEditing
-                  ? "bg-blue-700 text-white"
-                  : "bg-blue-500 text-white hover:bg-blue-600"
-              }`}
-            >
-              {isEditing ? "Done" : "Edit"}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleMoveBlock(blockIndex, "up")}
-              disabled={blockIndex === 0}
-              className={`px-2 py-1 rounded ${
-                blockIndex === 0
-                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  : "bg-blue-500 text-white hover:bg-blue-600"
-              }`}
-            >
-              ↑
-            </button>
-            <button
-              type="button"
-              onClick={() => handleMoveBlock(blockIndex, "down")}
-              disabled={blockIndex === currentPage.blocks.length - 1}
-              className={`px-2 py-1 rounded ${
-                blockIndex === currentPage.blocks.length - 1
-                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  : "bg-blue-500 text-white hover:bg-blue-600"
-              }`}
-            >
-              ↓
-            </button>
-            {!isHeroBlock && (
-              <button
-                type="button"
-                onClick={() => handleRemoveBlock(blockIndex)}
-                className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
-              >
-                Remove
-              </button>
-            )}
-          </div>
+        <div className="absolute top-4 right-4 z-40">
+          <button
+            type="button"
+            onClick={() => setActiveEditBlock(blockIndex)}
+            className="bg-gray-800 text-white rounded-full p-2 shadow-lg"
+          >
+            {PencilIcon}
+          </button>
         </div>
 
         {/* Always show the preview */}
-        <div className="bg-white border-b border-gray-200">
-          <Component config={block.config} readOnly={true} />
-        </div>
+        <Component config={block.config} readOnly={true} />
 
-        {/* Only show the edit form when isEditing is true */}
-        {isEditing && (
-          <div className="grid grid-cols-1 gap-4 p-2 bg-gray-50">
-            <div className="rounded">
-              <h4 className="font-medium mb-2">Configuration</h4>
-              <div className="space-y-3 max-h-[500px] overflow-y-auto px-1">
-                {Object.entries(block.config).map(([key, value]) => {
-                  // Skip rendering certain fields that are handled specially
-                  if (key === "id") return null;
+        {/* Show editing overlay when activeEditBlock matches this block's index */}
+        {activeEditBlock === blockIndex && (
+          <EditOverlay onClose={() => setActiveEditBlock(null)}>
+            <div className="bg-gray-800 p-4 mb-0 text-white">
+              <h3 className="text-lg font-semibold">{block.blockName}</h3>
+              <div className="mt-4">
+                <div className="space-y-3 max-h-[600px] overflow-y-auto p-3 bg-gray-700 rounded">
+                  {Object.entries(block.config).map(([key, value]) => {
+                    // Skip rendering certain fields that are handled specially
+                    if (key === "id") return null;
 
-                  // Handle different field types
-                  if (Array.isArray(value)) {
-                    return renderArrayField(blockIndex, key, value);
-                  } else if (typeof value === "object" && value !== null) {
-                    return renderObjectField(blockIndex, key, value);
-                  } else if (typeof value === "boolean") {
-                    return (
-                      <div key={key} className="mb-3">
-                        <label className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={value}
-                            onChange={(e) =>
-                              handleConfigChange(
-                                blockIndex,
-                                key,
-                                e.target.checked
-                              )
-                            }
-                            className="mr-2"
-                          />
-                          <span>{key}</span>
-                        </label>
-                      </div>
-                    );
-                  } else if (typeof value === "number") {
-                    return (
-                      <div key={key} className="mb-3">
-                        <label className="block mb-1">{key}:</label>
-                        <input
-                          type="number"
-                          value={value}
-                          onChange={(e) =>
-                            handleConfigChange(
-                              blockIndex,
-                              key,
-                              parseFloat(e.target.value)
-                            )
-                          }
-                          className="w-full p-1 border rounded"
-                        />
-                      </div>
-                    );
-                  } else {
-                    // Handle image fields specially
-                    if (
-                      key.toLowerCase().includes("image") ||
-                      key.toLowerCase().includes("picture") ||
-                      key.toLowerCase().includes("photo")
-                    ) {
+                    // Handle different field types
+                    if (Array.isArray(value)) {
+                      return renderArrayField(blockIndex, key, value);
+                    } else if (typeof value === "object" && value !== null) {
+                      return renderObjectField(blockIndex, key, value);
+                    } else if (typeof value === "boolean") {
                       return (
                         <div key={key} className="mb-3">
-                          <label className="block mb-1">{key}:</label>
-                          <div className="flex flex-col space-y-2">
+                          <label className="flex items-center">
                             <input
-                              type="file"
-                              accept="image/*"
-                              onChange={(e) => {
-                                if (e.target.files && e.target.files[0]) {
-                                  const file = e.target.files[0];
-                                  handleFileChange(blockIndex, key, file);
-                                }
-                              }}
-                              className="p-1 border rounded"
+                              type="checkbox"
+                              checked={value}
+                              onChange={(e) =>
+                                handleConfigChange(
+                                  blockIndex,
+                                  key,
+                                  e.target.checked
+                                )
+                              }
+                              className="mr-2"
                             />
-                            {getDisplayUrl(value) && (
-                              <div className="mt-2">
-                                <img
-                                  src={getDisplayUrl(value)}
-                                  alt={`Preview for ${key}`}
-                                  className="h-24 object-cover rounded"
-                                />
-                              </div>
-                            )}
-                          </div>
+                            <span>{key}</span>
+                          </label>
                         </div>
                       );
-                    } else {
-                      // Default text input
+                    } else if (typeof value === "number") {
                       return (
                         <div key={key} className="mb-3">
                           <label className="block mb-1">{key}:</label>
                           <input
-                            type="text"
-                            value={value || ""}
+                            type="number"
+                            value={value}
                             onChange={(e) =>
                               handleConfigChange(
                                 blockIndex,
                                 key,
-                                e.target.value
+                                parseFloat(e.target.value)
                               )
                             }
                             className="w-full p-1 border rounded"
                           />
                         </div>
                       );
+                    } else {
+                      // Handle image fields specially
+                      if (
+                        key.toLowerCase().includes("image") ||
+                        key.toLowerCase().includes("picture") ||
+                        key.toLowerCase().includes("photo")
+                      ) {
+                        return (
+                          <div key={key} className="mb-3">
+                            <label className="block mb-1">{key}:</label>
+                            <div className="flex flex-col space-y-2">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => {
+                                  if (e.target.files && e.target.files[0]) {
+                                    const file = e.target.files[0];
+                                    handleFileChange(blockIndex, key, file);
+                                  }
+                                }}
+                                className="p-1 border rounded"
+                              />
+                              {getDisplayUrl(value) && (
+                                <div className="mt-2">
+                                  <img
+                                    src={getDisplayUrl(value)}
+                                    alt={`Preview for ${key}`}
+                                    className="h-24 object-cover rounded"
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      } else {
+                        // Default text input
+                        return (
+                          <div key={key} className="mb-3">
+                            <label className="block mb-1">{key}:</label>
+                            <input
+                              type="text"
+                              value={value || ""}
+                              onChange={(e) =>
+                                handleConfigChange(
+                                  blockIndex,
+                                  key,
+                                  e.target.value
+                                )
+                              }
+                              className="w-full p-1 border rounded"
+                            />
+                          </div>
+                        );
+                      }
                     }
-                  }
-                })}
+                  })}
+                </div>
+              </div>
+
+              {/* Block action buttons */}
+              <div className="mt-4 flex justify-between">
+                <div className="flex space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => handleMoveBlock(blockIndex, "up")}
+                    disabled={blockIndex === 0}
+                    className={`px-3 py-1 rounded ${
+                      blockIndex === 0
+                        ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+                        : "bg-blue-500 text-white hover:bg-blue-600"
+                    }`}
+                  >
+                    Move Up
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleMoveBlock(blockIndex, "down")}
+                    disabled={blockIndex === currentPage.blocks.length - 1}
+                    className={`px-3 py-1 rounded ${
+                      blockIndex === currentPage.blocks.length - 1
+                        ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+                        : "bg-blue-500 text-white hover:bg-blue-600"
+                    }`}
+                  >
+                    Move Down
+                  </button>
+                </div>
+                {!isHeroBlock && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveBlock(blockIndex)}
+                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                  >
+                    Remove Block
+                  </button>
+                )}
               </div>
             </div>
-          </div>
+          </EditOverlay>
         )}
       </div>
     );
@@ -634,10 +632,6 @@ const ServiceEditPage = () => {
   handleMoveBlock
   ---------------------------------------------
   Moves a block up or down in the page layout.
-
-  This function:
-  1. Swaps the block with its neighbor
-  2. Updates both the current page and the master data
   =============================================
   */
   const handleMoveBlock = (blockIndex, direction) => {
@@ -670,10 +664,6 @@ const ServiceEditPage = () => {
   handleRemoveBlock
   ---------------------------------------------
   Removes a block from the page layout.
-
-  This function:
-  1. Removes the block at the specified index
-  2. Updates both the current page and the master data
   =============================================
   */
   const handleRemoveBlock = (blockIndex) => {
@@ -700,10 +690,6 @@ const ServiceEditPage = () => {
   renderObjectField
   ---------------------------------------------
   Renders form controls for object-type configuration fields.
-
-  This function:
-  1. Creates a form for editing nested object properties
-  2. Handles different field types within the object
   =============================================
   */
   const renderObjectField = (blockIndex, key, obj) => {
@@ -776,12 +762,7 @@ const ServiceEditPage = () => {
   =============================================
   renderAddBlockSection
   ---------------------------------------------
-  Renders a section for adding new blocks to the page.
-
-  This function:
-  1. Creates a dropdown with available block types
-  2. Provides an "Add Block" button
-  3. Handles the addition of new blocks
+  Renders the controls for adding a new block.
   =============================================
   */
   const renderAddBlockSection = () => {
@@ -836,46 +817,28 @@ const ServiceEditPage = () => {
       setServicesData(updatedData);
 
       // Automatically open edit mode for the new block
-      setEditingBlocks((prev) => ({
-        ...prev,
-        [insertIndex]: true,
-      }));
-
-      // Scroll to the new block at top
-      setTimeout(() => {
-        const blockElements = document.querySelectorAll(".block-container");
-        if (blockElements[insertIndex]) {
-          blockElements[insertIndex].scrollIntoView({ behavior: "smooth" });
-        }
-      }, 100);
+      setActiveEditBlock(insertIndex);
     };
 
     return (
-      <div className="bg-white border border-gray-300 rounded mb-6 overflow-hidden">
-        <div className="bg-gray-100 p-2 flex justify-between items-center">
-          <h3 className="text-lg font-semibold">Add New Block</h3>
-        </div>
-        <div className="p-3">
-          <div className="flex items-center gap-3">
-            <select
-              value={selectedBlockType}
-              onChange={(e) => setSelectedBlockType(e.target.value)}
-              className="p-1 border rounded flex-grow"
-            >
-              {blockOptions.map(({ value, label }) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-            <button
-              onClick={handleAddBlock}
-              className="bg-green-500 text-white px-4 py-1 rounded hover:bg-green-600 whitespace-nowrap"
-            >
-              Add Block
-            </button>
-          </div>
-        </div>
+      <div className="flex items-center gap-3 mb-4 p-3 bg-white border border-gray-300 rounded">
+        <select
+          value={selectedBlockType}
+          onChange={(e) => setSelectedBlockType(e.target.value)}
+          className="p-2 border rounded flex-grow"
+        >
+          {blockOptions.map(({ value, label }) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+        <button
+          onClick={handleAddBlock}
+          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 whitespace-nowrap"
+        >
+          Add Block
+        </button>
       </div>
     );
   };
@@ -923,14 +886,6 @@ const ServiceEditPage = () => {
     return defaults[blockType] || {};
   };
 
-  // Toggle edit mode for a specific block
-  const toggleEditBlock = (blockIndex) => {
-    setEditingBlocks((prev) => ({
-      ...prev,
-      [blockIndex]: !prev[blockIndex],
-    }));
-  };
-
   if (!servicesData || !currentPage) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -940,31 +895,23 @@ const ServiceEditPage = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      <div className="mb-4">
-        <h1 className="text-2xl font-bold">
-          Service Page Editor: {currentPage.title}
-        </h1>
-      </div>
-
-      <div className="bg-blue-50 border border-blue-200 text-blue-700 p-3 rounded mb-4">
-        <p>
-          You are directly editing the content from{" "}
-          <strong>services.json</strong>. All changes will be included when you
-          download the complete website data ZIP file from the button at the
-          bottom of the page.
+    <div className="container mx-auto px-4 py-6 bg-gray-100">
+      <div className="mb-4 bg-gray-800 text-white p-4 rounded">
+        <h1 className="text-2xl font-bold">Service Pages</h1>
+        <p className="text-gray-300 mt-1">
+          Edit individual service pages and their blocks
         </p>
       </div>
 
       {renderPageButtons()}
-
-      {/* Add Block Section */}
       {renderAddBlockSection()}
 
       {/* Blocks */}
-      {currentPage.blocks.map((block, blockIndex) =>
-        renderBlockEditor(block, blockIndex)
-      )}
+      <div className="border border-gray-300 rounded overflow-hidden">
+        {currentPage.blocks.map((block, blockIndex) =>
+          renderBlockEditor(block, blockIndex)
+        )}
+      </div>
     </div>
   );
 };
