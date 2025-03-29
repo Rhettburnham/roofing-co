@@ -1,0 +1,38 @@
+{
+  "residential": [
+    {
+      "id": 1,
+      "name": "Asphalt Shingle Installation & Replacement"
+    },
+    {
+      "id": 2,
+      "name": "Residential Roof Inspection & Maintenance"
+    },
+    {
+      "id": 3,
+      "name": "Tile Roof Repair & Restoration"
+    },
+    {
+      "id": 4,
+      "name": "Skylight Installation & Leak Repair"
+    }
+  ],
+  "commercial": [
+    {
+      "id": 1,
+      "name": "EPDM Flat Roof Installation & Repair"
+    },
+    {
+      "id": 2,
+      "name": "Commercial Roof Coating & Sealant Application"
+    },
+    {
+      "id": 3,
+      "name": "Metal Roof Panel Installation & Maintenance"
+    },
+    {
+      "id": 4,
+      "name": "Commercial Roof Drainage System Repair"
+    }
+  ]
+}

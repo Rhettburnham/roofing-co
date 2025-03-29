@@ -1,0 +1,59 @@
+{
+  "hero": {
+    "type": "hero",
+    "config": {
+      "title": "Asphalt Shingle Installation & Replacement",
+      "backgroundImage": "",
+      "shrinkAfterMs": 1000,
+      "initialHeight": "40vh",
+      "finalHeight": "20vh"
+    }
+  },
+  "generalListVariant2": {
+    "type": "general-list-variant-2",
+    "config": {
+      "title": "Explore Our Asphalt Shingle Installation & Replacement Options",
+      "items": [
+        {
+          "id": 1,
+          "name": "Asphalt Shingle Installation & Replacement - Variation A",
+          "description": "Placeholder for Variation A of Asphalt Shingle Installation & Replacement.",
+          "features": [
+            "Feature A1",
+            "Feature A2",
+            "Feature A3"
+          ],
+          "uses": "Placeholder uses",
+          "limitations": "Placeholder limitations",
+          "imageUrl": ""
+        },
+        {
+          "id": 2,
+          "name": "Asphalt Shingle Installation & Replacement - Variation B",
+          "description": "Placeholder for Variation B of Asphalt Shingle Installation & Replacement.",
+          "features": [
+            "Feature B1",
+            "Feature B2",
+            "Feature B3"
+          ],
+          "uses": "Placeholder uses",
+          "limitations": "Placeholder limitations",
+          "imageUrl": ""
+        }
+      ]
+    }
+  },
+  "videoCTA": {
+    "type": "video-cta",
+    "config": {
+      "videoSrc": "",
+      "title": "Ready to Explore Asphalt Shingle Installation & Replacement Showcase?",
+      "description": "Contact us today for a free consultation on the best roofing showcase.",
+      "buttonText": "Schedule a Consultation",
+      "buttonLink": "/#contact",
+      "textColor": "1",
+      "textAlignment": "center",
+      "overlayOpacity": 0.7
+    }
+  }
+}

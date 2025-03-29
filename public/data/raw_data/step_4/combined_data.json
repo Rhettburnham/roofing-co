@@ -1,0 +1,470 @@
+{
+  "hero": {
+    "mainTitle": "COWBOYS-VAQUEROS",
+    "subTitle": "CONSTRUCTION",
+    "residential": {
+      "subServices": [
+        {
+          "title": "Asphalt Shingle Roofing"
+        },
+        {
+          "title": "Metal Roof Installation"
+        },
+        {
+          "title": "Roof Leak Repair"
+        },
+        {
+          "title": "Roof Inspection & Maintenance"
+        }
+      ]
+    },
+    "commercial": {
+      "subServices": [
+        {
+          "title": "Flat Roof Systems"
+        },
+        {
+          "title": "TPO Membrane Roofing"
+        },
+        {
+          "title": "Commercial Roof Restoration"
+        },
+        {
+          "title": "Industrial Roof Maintenance"
+        }
+      ]
+    }
+  },
+  "process": {
+    "steps": [
+      {
+        "title": "Book",
+        "videoSrc": "/assets/videos/our_process_videos/booking.mp4",
+        "href": "/#booking",
+        "scale": 0.8
+      },
+      {
+        "title": "Inspection",
+        "videoSrc": "/assets/videos/our_process_videos/magnify.mp4",
+        "href": "/inspection",
+        "scale": 1.25
+      },
+      {
+        "title": "Service",
+        "videoSrc": "/assets/videos/our_process_videos/repair.mp4",
+        "href": "/#packages",
+        "scale": 1.1
+      },
+      {
+        "title": "Review",
+        "videoSrc": "/assets/videos/our_process_videos/approval.mp4",
+        "href": "/#testimonials",
+        "scale": 0.9
+      }
+    ]
+  },
+  "aboutPage": {
+    "title": "About COWBOYS-VAQUEROS",
+    "subtitle": "Building Trust Since 2014",
+    "history": "Founded in 2014, COWBOYS-VAQUEROS has grown from a small family business to one of the most trusted roofing companies in the region. With a focus on quality craftsmanship and customer satisfaction, we've built a reputation for excellence in both residential and commercial roofing.",
+    "mission": "Our mission is to provide the highest quality roofing services with integrity, exceptional customer service, and a commitment to excellence. We strive to build lasting relationships with our clients based on trust, reliability, and outstanding results.",
+    "values": [
+      {
+        "title": "Innovation",
+        "description": "We continuously update our methods and materials to incorporate the latest advances in roofing technology."
+      },
+      {
+        "title": "Sustainability",
+        "description": "We're committed to environmentally responsible practices and offering sustainable roofing options."
+      },
+      {
+        "title": "Community",
+        "description": "We're proud to serve our local community and contribute to making homes safer and more beautiful."
+      },
+      {
+        "title": "Integrity",
+        "description": "We believe in honest communication, fair pricing, and standing behind our work."
+      }
+    ],
+    "team": [
+      {
+        "name": "Luis Aguilar-Lopez",
+        "position": "Owner",
+        "photo": "/assets/images/team/roofer.png"
+      },
+      {
+        "name": "Erika Salinas",
+        "position": "Manager",
+        "photo": "/assets/images/team/foreman.png"
+      },
+      {
+        "name": "Robert Garcia",
+        "position": "Project Manager",
+        "photo": "/assets/images/team/estimator.png"
+      },
+      {
+        "name": "Sarah Johnson",
+        "position": "Customer Relations",
+        "photo": "/assets/images/team/salesrep.png"
+      }
+    ],
+    "stats": [
+      {
+        "title": "Years in Business",
+        "value": 11,
+        "icon": "FaHistory"
+      },
+      {
+        "title": "Completed Projects",
+        "value": 626,
+        "icon": "FaAward"
+      },
+      {
+        "title": "Happy Clients",
+        "value": 497,
+        "icon": "FaUsers"
+      },
+      {
+        "title": "Team Members",
+        "value": 11,
+        "icon": "FaHandshake"
+      }
+    ],
+    "heroImage": "/assets/images/about/about-hero.jpg"
+  },
+  "booking": {
+    "logo": "/assets/images/logo/clipped.png",
+    "headerText": "Call Us Today!",
+    "phone": "(404) 227-5000"
+  },
+  "richText": {
+    "heroText": "Professional Roofing Excellence",
+    "accredited": true,
+    "years_in_business": "9 Years of Roofing Experience",
+    "bus_description": "Cowboys-Vaqueros Construction has earned a stellar reputation for high-quality roofing solutions throughout Georgia. With over 11 years of industry experience, our team of licensed professionals specializes in both residential and commercial projects, delivering exceptional results every time.",
+    "bus_description_second": "What sets us apart is our unwavering commitment to customer satisfaction and attention to detail. We use only premium materials backed by comprehensive warranties, ensuring your roof not only looks great but provides lasting protection for your home or business.",
+    "cards": [
+      {
+        "title": "Expert Craftsmanship",
+        "desc": "Our skilled team brings years of specialized training to every project, ensuring precision installation and repairs that stand the test of time.",
+        "icon": "Tools"
+      },
+      {
+        "title": "Quality Materials",
+        "desc": "We partner with top manufacturers to provide superior roofing products backed by industry-leading warranties for your peace of mind.",
+        "icon": "Shield"
+      },
+      {
+        "title": "BBB Accredited",
+        "desc": "Recognized for integrity, transparency and commitment to customer satisfaction by the Better Business Bureau.",
+        "icon": "Certificate"
+      },
+      {
+        "title": "BBB Accredited",
+        "desc": "Our A+ Better Business Bureau rating reflects our commitment to ethical practices and outstanding customer satisfaction.",
+        "icon": "Certificate"
+      }
+    ],
+    "images": [
+      "/assets/images/Richtext/roof_workers.jpg",
+      "/assets/images/Richtext/roof_workers2.jpg",
+      "/assets/images/Richtext/roof_workers3.webp"
+    ],
+    "imageUploads": [
+      {
+        "file": null,
+        "fileName": ""
+      },
+      {
+        "file": null,
+        "fileName": ""
+      },
+      {
+        "file": null,
+        "fileName": ""
+      }
+    ]
+  },
+  "button": {
+    "text": "Services",
+    "buttonLink": "/about",
+    "images": [
+      "/assets/images/roof_slideshow/i1.webp",
+      "/assets/images/roof_slideshow/i2.webp",
+      "/assets/images/roof_slideshow/i3.jpeg",
+      "/assets/images/roof_slideshow/i4.webp",
+      "/assets/images/roof_slideshow/i5.webp",
+      "/assets/images/roof_slideshow/i6.jpeg",
+      "/assets/images/roof_slideshow/i7.webp",
+      "/assets/images/roof_slideshow/i8.webp",
+      "/assets/images/roof_slideshow/i9.jpeg",
+      "/assets/images/roof_slideshow/i10.webp",
+      "/assets/images/roof_slideshow/i11.webp",
+      "/assets/images/roof_slideshow/i12.jpeg"
+    ]
+  },
+  "map": {
+    "center": {
+      "lat": 33.3365,
+      "lng": -84.6472
+    },
+    "zoomLevel": 9,
+    "circleRadius": 6047,
+    "address": "1201 Peachtree StreetSuite 345Atlanta, GA 30361",
+    "telephone": "(404) 227-5000",
+    "serviceHours": [
+      {
+        "day": "Mon",
+        "time": "08:00 AM - 6:00 PM"
+      },
+      {
+        "day": "Tue",
+        "time": "08:00 AM - 6:00 PM"
+      },
+      {
+        "day": "Wed",
+        "time": "08:00 AM - 6:00 PM"
+      },
+      {
+        "day": "Thu",
+        "time": "08:00 AM - 6:00 PM"
+      },
+      {
+        "day": "Fri",
+        "time": "08:00 AM - 6:00 PM"
+      },
+      {
+        "day": "Sat",
+        "time": "08:00 AM - 6:00 PM"
+      },
+      {
+        "day": "Sun",
+        "time": "CLOSED"
+      }
+    ],
+    "stats": [
+      {
+        "title": "Years of Service",
+        "value": 9,
+        "icon": "FaCalendarAlt"
+      },
+      {
+        "title": "Customers Served",
+        "value": 450,
+        "icon": "FaHandshake"
+      },
+      {
+        "title": "Roofs Repaired",
+        "value": 270,
+        "icon": "FaHome"
+      },
+      {
+        "title": "Years of Experience",
+        "value": 9,
+        "icon": "FaCalendarAlt"
+      }
+    ],
+    "markerIcon": "/assets/images/logo/clipped.png"
+  },
+  "combinedPage": {
+    "isCommercial": false,
+    "title": "Services",
+    "googleReviews": [
+      {
+        "name": "David Francis",
+        "stars": 5,
+        "date": "3 years ago",
+        "text": "Great service\nTY for repairing my siding",
+        "logo": "/assets/images/googleimage.png"
+      },
+      {
+        "name": "Gwen Maddox",
+        "stars": 5,
+        "date": "3 years ago",
+        "text": "Excellent work and very professional!",
+        "logo": "/assets/images/googleimage.png"
+      },
+      {
+        "name": "Beverly Harrison",
+        "stars": 5,
+        "date": "3 years ago",
+        "text": "Workers did a great job.  Have used this business for several years!  Always happy with results.",
+        "logo": "/assets/images/googleimage.png"
+      },
+      {
+        "name": "Dman Cruver",
+        "stars": 5,
+        "date": "2 years ago",
+        "text": "This company did a wonderful job on my mothers roof! The workers were very professional and did their job with good quality!! Will most definitely call them again if needed!",
+        "logo": "/assets/images/googleimage.png"
+      },
+      {
+        "name": "James Stewart",
+        "stars": 5,
+        "date": "3 years ago",
+        "text": "They did a great job I call him all the time I own several property\u2019s and Luis is fair and great I highly recommend",
+        "logo": "/assets/images/googleimage.png"
+      },
+      {
+        "name": "Nicole Skipper",
+        "stars": 5,
+        "date": "2 years ago",
+        "text": "Luis was awesome.  He helped my mother with her roof that needed repairs.  He was courteous, very professional, and reasonably priced.  I would recommend him to anyone.",
+        "logo": "/assets/images/googleimage.png"
+      }
+    ],
+    "residentialServices": [
+      {
+        "icon": "FaHardHat",
+        "title": "Asphalt Shingle Roofing",
+        "link": "/residential/asphalt-shingle-roofing"
+      },
+      {
+        "icon": "FaHome",
+        "title": "Metal Roof Installation",
+        "link": "/residential/metal-roof-installation"
+      },
+      {
+        "icon": "FaTools",
+        "title": "Roof Leak Repair",
+        "link": "/residential/roof-leak-repair"
+      },
+      {
+        "icon": "FaBroom",
+        "title": "Roof Inspection & Maintenance",
+        "link": "/residential/roof-inspection-&-maintenance"
+      }
+    ],
+    "commercialServices": [
+      {
+        "icon": "FaPaintRoller",
+        "title": "Flat Roof Systems",
+        "link": "/commercial/flat-roof-systems"
+      },
+      {
+        "icon": "FaBuilding",
+        "title": "TPO Membrane Roofing",
+        "link": "/commercial/tpo-membrane-roofing"
+      },
+      {
+        "icon": "FaWarehouse",
+        "title": "Commercial Roof Restoration",
+        "link": "/commercial/commercial-roof-restoration"
+      },
+      {
+        "icon": "FaChimney",
+        "title": "Industrial Roof Maintenance",
+        "link": "/commercial/industrial-roof-maintenance"
+      }
+    ],
+    "teamTitle": "Leadership",
+    "teamMembers": [
+      "Mr. Carl Craft, President",
+      "Mr. Carl Craft, President/Owner"
+    ],
+    "largeResidentialImg": "/assets/images/main_image_expanded.jpg",
+    "largeCommercialImg": "/assets/images/commercialservices.jpg"
+  },
+  "employees": {
+    "sectionTitle": "OUR TEAM",
+    "employee": [
+      {
+        "name": "Mr. Carl Craft",
+        "role": "President",
+        "image": "/assets/images/team/foreman.png"
+      },
+      {
+        "name": "Mr. Carl Craft",
+        "role": "President/Owner",
+        "image": "/assets/images/team/roofer.png"
+      },
+      {
+        "name": "Frank",
+        "role": "Estimator",
+        "image": "/assets/images/team/estimator.png"
+      },
+      {
+        "name": "Garret",
+        "role": "Manager",
+        "image": "/assets/images/team/manager.png"
+      },
+      {
+        "name": "Diana",
+        "role": "Sales Rep",
+        "image": "/assets/images/team/salesrep.png"
+      },
+      {
+        "name": "Drew",
+        "role": "Inspector",
+        "image": "/assets/images/team/inspector.png"
+      }
+    ]
+  },
+  "before_after": {
+    "sectionTitle": "GALLERY",
+    "items": [
+      {
+        "before": "/assets/images/beforeafter/b1.JPG",
+        "after": "/assets/images/beforeafter/a1.jpeg",
+        "shingle": "Asphalt Shingle",
+        "sqft": "2000 sqft"
+      },
+      {
+        "before": "/assets/images/beforeafter/b2.jpeg",
+        "after": "/assets/images/beforeafter/a2.jpeg",
+        "shingle": "Metal Roofing",
+        "sqft": "1800 sqft"
+      },
+      {
+        "before": "/assets/images/beforeafter/b3.jpeg",
+        "after": "/assets/images/beforeafter/a3.jpeg",
+        "shingle": "Composite Shingle",
+        "sqft": "2200 sqft"
+      }
+    ]
+  },
+  "reviews": [
+    {
+      "name": "David Francis",
+      "stars": 5,
+      "date": "3 years ago",
+      "text": "Great service\nTY for repairing my siding",
+      "logo": "/assets/images/googleimage.png"
+    },
+    {
+      "name": "Gwen Maddox",
+      "stars": 5,
+      "date": "3 years ago",
+      "text": "Excellent work and very professional!",
+      "logo": "/assets/images/googleimage.png"
+    },
+    {
+      "name": "Beverly Harrison",
+      "stars": 5,
+      "date": "3 years ago",
+      "text": "Workers did a great job.  Have used this business for several years!  Always happy with results.",
+      "logo": "/assets/images/googleimage.png"
+    },
+    {
+      "name": "Dman Cruver",
+      "stars": 5,
+      "date": "2 years ago",
+      "text": "This company did a wonderful job on my mothers roof! The workers were very professional and did their job with good quality!! Will most definitely call them again if needed!",
+      "logo": "/assets/images/googleimage.png"
+    },
+    {
+      "name": "James Stewart",
+      "stars": 5,
+      "date": "3 years ago",
+      "text": "They did a great job I call him all the time I own several property\u2019s and Luis is fair and great I highly recommend",
+      "logo": "/assets/images/googleimage.png"
+    },
+    {
+      "name": "Nicole Skipper",
+      "stars": 5,
+      "date": "2 years ago",
+      "text": "Luis was awesome.  He helped my mother with her roof that needed repairs.  He was courteous, very professional, and reasonably priced.  I would recommend him to anyone.",
+      "logo": "/assets/images/googleimage.png"
+    }
+  ]
+}

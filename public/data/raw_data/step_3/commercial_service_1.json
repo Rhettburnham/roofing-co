@@ -1,0 +1,59 @@
+{
+  "hero": {
+    "type": "hero",
+    "config": {
+      "title": "EPDM Flat Roof Installation & Repair",
+      "backgroundImage": "",
+      "shrinkAfterMs": 1000,
+      "initialHeight": "40vh",
+      "finalHeight": "20vh"
+    }
+  },
+  "generalListVariant2": {
+    "type": "general-list-variant-2",
+    "config": {
+      "title": "Types of EPDM Flat Roof Installation & Repair Solutions",
+      "items": [
+        {
+          "id": 1,
+          "name": "EPDM Flat Roof Installation & Repair - Basic Coating",
+          "description": "Placeholder for a basic coating approach.",
+          "features": [
+            "Water-based",
+            "Affordable",
+            "Quick drying"
+          ],
+          "uses": "General roofs that need reflectivity",
+          "limitations": "Not ideal for heavy ponding",
+          "imageUrl": ""
+        },
+        {
+          "id": 2,
+          "name": "EPDM Flat Roof Installation & Repair - Premium Coating",
+          "description": "Placeholder for a premium coating approach.",
+          "features": [
+            "High durability",
+            "UV stable",
+            "Ponding safe"
+          ],
+          "uses": "Flat roofs with standing water potential",
+          "limitations": "Higher cost, specialized prep",
+          "imageUrl": ""
+        }
+      ]
+    }
+  },
+  "videoCTA": {
+    "type": "video-cta",
+    "config": {
+      "videoSrc": "",
+      "title": "Ready to Upgrade with EPDM Flat Roof Installation & Repair?",
+      "description": "Contact us today for a free roof inspection and personalized plan.",
+      "buttonText": "Schedule a Consultation",
+      "buttonLink": "/#contact",
+      "textColor": "1",
+      "textAlignment": "center",
+      "overlayOpacity": 0.7
+    }
+  }
+}

@@ -15,11 +15,13 @@ gsap.registerPlugin();
 ========================================================= */
 function ButtonPreview({ buttonconfig }) {
   const navigate = useNavigate();
-  const imageRef = useRef([]);
-  const [image, setImage] = useState({ imageId: 0 });
-  const { imageId } = image;
+  const sliderRef = useRef(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [visibleSlides, setVisibleSlides] = useState([]);
   const slideDuration = 3.5;
-  const [duplicatedSlides, setDuplicatedSlides] = useState([]);
+  const slideAnimationRef = useRef(null);
+  const intervalRef = useRef(null);
+  const [originalImages, setOriginalImages] = useState([]);
 
   // Initialize defaults if no config is provided
   useEffect(() => {
@@ -33,42 +35,81 @@ function ButtonPreview({ buttonconfig }) {
       img.startsWith("/") ? img : `/${img.replace(/^\.\//, "")}`
     );
 
-    // Duplicate the images array to create a seamless looping carousel.
-    setDuplicatedSlides([...formattedImages, ...formattedImages]);
+    // Store the original images array
+    setOriginalImages(formattedImages);
+
+    // Initialize with the first three images for efficiency
+    updateVisibleSlides(0, formattedImages);
   }, [buttonconfig]);
 
-  // GSAP animation for carousel
-  useEffect(() => {
-    if (!duplicatedSlides.length) return;
+  // Update which slides are visible (keep only 3 at a time)
+  const updateVisibleSlides = (startIndex, images = originalImages) => {
+    if (!images.length) return;
+    
+    const slides = [];
+    // We need the current slide and the next two
+    for (let i = 0; i < 3; i++) {
+      const index = (startIndex + i) % images.length;
+      slides.push({
+        src: images[index],
+        position: i,
+      });
+    }
+    setVisibleSlides(slides);
+  };
 
-    gsap.to("#slider", {
-      transform: `translateX(${-50 * imageId}%)`,
+  // GSAP animation for carousel
+  const animateSlide = () => {
+    if (!sliderRef.current || !visibleSlides.length) return;
+    
+    // Kill any existing animation
+    if (slideAnimationRef.current) {
+      slideAnimationRef.current.kill();
+    }
+    
+    // Animate the slider to move left
+    slideAnimationRef.current = gsap.to(sliderRef.current, {
+      x: '-100%', // Move one full slide to the left
       duration: slideDuration,
       ease: "power2.inOut",
       onComplete: () => {
-        // When we reach the end (i.e. after the original set of images),
-        // reset the translation back to 0.
-        if (imageId === duplicatedSlides.length / 2) {
-          gsap.set("#slider", { transform: `translateX(0%)` });
-          setImage({ imageId: 0 });
-        }
-      },
+        // When animation completes, move to the next index and reset position
+        const nextIndex = (currentIndex + 1) % originalImages.length;
+        setCurrentIndex(nextIndex);
+        
+        // Reset slider position without animation
+        gsap.set(sliderRef.current, { x: '0%' });
+        
+        // Update visible slides to show the next set
+        updateVisibleSlides(nextIndex);
+      }
     });
-  }, [imageId, duplicatedSlides.length, slideDuration]);
+  };
 
   // Auto-advance the carousel
   useEffect(() => {
-    if (!duplicatedSlides.length) return;
+    if (!visibleSlides.length) return;
+    
+    // Clear any existing interval
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+    
+    // Start animation immediately
+    animateSlide();
+    
+    // Set interval for subsequent animations
+    intervalRef.current = setInterval(() => {
+      animateSlide();
+    }, (slideDuration + 0.5) * 1000); // Add a small buffer between animations
 
-    const interval = setInterval(() => {
-      setImage((prev) => ({
-        ...prev,
-        imageId: prev.imageId + 1,
-      }));
-    }, 4000);
-
-    return () => clearInterval(interval);
-  }, [duplicatedSlides.length]);
+    return () => {
+      clearInterval(intervalRef.current);
+      if (slideAnimationRef.current) {
+        slideAnimationRef.current.kill();
+      }
+    };
+  }, [visibleSlides, originalImages.length]);
 
   const handleClick = () => {
     if (buttonconfig && buttonconfig.buttonLink) {
@@ -113,16 +154,16 @@ function ButtonPreview({ buttonconfig }) {
 
           {/* Image Carousel Wrapper with fixed height */}
           <div className="relative h-[10vh] overflow-hidden">
-            <div className="flex" id="slider">
-              {duplicatedSlides.map((src, i) => (
-                <div key={i} className="flex-shrink-0">
+            <div className="flex" ref={sliderRef}>
+              {visibleSlides.map((slide, i) => (
+                <div key={`slide-${currentIndex}-${i}`} className="flex-shrink-0">
                   <div className="relative sm:w-[70vw] w-[88vw] md:h-[24vh] sm:h-[20vh] h-[15vh]">
                     <div className="flex items-center justify-center overflow-hidden w-full h-full relative">
                       <img
-                        src={src}
+                        src={slide.src}
                         alt={`Slide ${i}`}
                         className="w-full h-full object-cover pointer-events-none"
-                        ref={(el) => (imageRef.current[i] = el)}
+                        loading={i === 0 ? "eager" : "lazy"}
                       />
                       {/* Grey Overlay */}
                       <div className="absolute top-0 left-0 w-full h-full bg-gray-800 opacity-60"></div>

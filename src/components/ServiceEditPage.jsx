@@ -110,7 +110,7 @@ const ServiceEditPage = () => {
 
   // Fetch services.json on mount
   useEffect(() => {
-    fetch("/data/services.json")
+    fetch("/data/raw_data/step_2/roofing_services.json")
       .then((res) => res.json())
       .then((data) => {
         setServicesData(data);

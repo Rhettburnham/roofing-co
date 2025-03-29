@@ -24,7 +24,7 @@ const Footer = () => {
 
   // Fetch bbb_profile_data.json
   useEffect(() => {
-    fetch("/data/bbb_profile_data.json")
+    fetch("/data/raw_data/step_1/bbb_profile_data.json")
       .then((res) => res.json())
       .then((data) => {
         setBbbData({

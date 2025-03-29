@@ -72,7 +72,7 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode }) => {
     setFormData((prev) => ({ ...prev, combinedPage: newCombinedConfig }));
   };
   const handleBeforeConfigChange = (newBeforeConfig) => {
-    setFormData((prev) => ({ ...prev, beforeAfter: newBeforeConfig }));
+    setFormData((prev) => ({ ...prev, before_after: newBeforeConfig }));
   };
   const handleEmployeesConfigChange = (newEmployeesConfig) => {
     setFormData((prev) => ({ ...prev, employees: newEmployeesConfig }));
@@ -168,7 +168,7 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode }) => {
           <div className="relative">
             <BeforeAfterBlock
               readOnly={false}
-              beforeAfterData={formData.beforeAfter}
+              beforeAfterData={formData.before_after}
               onConfigChange={handleBeforeConfigChange}
             />
           </div>
@@ -375,13 +375,13 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode }) => {
         </div>
         <BeforeAfterBlock
           readOnly={true}
-          beforeAfterData={formData.beforeAfter}
+          beforeAfterData={formData.before_after}
         />
         {activeEditBlock === "beforeAfter" && (
           <EditOverlay onClose={() => setActiveEditBlock(null)}>
             <BeforeAfterBlock
               readOnly={false}
-              beforeAfterData={formData.beforeAfter}
+              beforeAfterData={formData.before_after}
               onConfigChange={handleBeforeConfigChange}
             />
           </EditOverlay>

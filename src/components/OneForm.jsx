@@ -59,10 +59,71 @@ const OneForm = ({ initialData, blockName, title }) => {
           return;
         }
 
-        // Otherwise, fetch the complete combined_data.json
-        const response = await fetch("/data/combined_data.json");
-        const data = await response.json();
-        setFormData(data);
+        // Otherwise, create a default configuration
+        try {
+          // Fetch colors from colors_output.json
+          const colorsResponse = await fetch("/data/raw_data/step_2/colors_output.json");
+          const colorData = await colorsResponse.json();
+          
+          // Create a basic default form data
+          const defaultData = {
+            hero: {
+              title: "Welcome to Craft Roofing Company",
+              subtitle: "Professional Roofing Services",
+              buttonText: "Get a Quote",
+              buttonUrl: "#contact",
+              residentialImage: "/assets/images/residential-roof.jpg",
+              commercialImage: "/assets/images/commercial-roof.jpg",
+              accentColor: colorData.accent || "#2B4C7E"
+            },
+            // Add other basic block configurations as needed
+            richText: {
+              title: "About Our Services",
+              content: "We provide professional roofing services for both residential and commercial properties."
+            },
+            button: {
+              text: "Contact Us",
+              url: "#contact"
+            },
+            map: {
+              title: "Find Us",
+              location: "Your Location"
+            },
+            booking: {
+              title: "Book an Appointment"
+            },
+            combinedPage: {
+              title: "Our Services"
+            },
+            before_after: {
+              title: "Before & After"
+            },
+            employees: {
+              title: "Our Team"
+            },
+            process: {
+              title: "Our Process"
+            },
+            aboutPage: {
+              title: "About Us"
+            }
+          };
+          
+          setFormData(defaultData);
+        } catch (colorError) {
+          console.error("Error loading color data:", colorError);
+          
+          // Fallback to very basic data if color fetch fails
+          setFormData({
+            hero: {
+              title: "Welcome",
+              subtitle: "Professional Services",
+              buttonText: "Contact Us",
+              buttonUrl: "#contact"
+            }
+          });
+        }
+        
         setLoading(false);
       } catch (error) {
         console.error("Error loading form data:", error);

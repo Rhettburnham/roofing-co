@@ -28,7 +28,7 @@ function BeforeAfterPreview({ beforeAfterData }) {
   const [showModal, setShowModal] = useState(false);
 
   // Safely destructure data and ensure paths are properly formatted
-  const { sectionTitle = "", items = [] } = beforeAfterData || {};
+  const { sectionTitle = "BEFORE & AFTER", items = [] } = beforeAfterData || {};
   
   // Format paths to ensure they start with / if they don't already
   const formattedItems = items.map(item => ({

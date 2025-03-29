@@ -420,23 +420,44 @@ const AppRoutes = ({
  * sent to the developer for permanent integration into the site.
  */
 const App = () => {
+  const [loading, setLoading] = useState(true);
   const [pageData, setPageData] = useState(null);
-  const dataUrl = "/data/combined_data.json";
+  const dataUrl = "/data/ignore/combined_data.json";
 
   // Fetch the combined_data.json file on component mount
   useEffect(() => {
     const fetchData = async () => {
-      const res = await fetch(dataUrl);
-      const data = await res.json();
-      setPageData(data);
+      setLoading(true);
+      try {
+        // Fetch and parse the combined_data.json file
+        const response = await fetch(dataUrl);
+        if (!response.ok) {
+          throw new Error("Failed to fetch site content");
+        }
+
+        const data = await response.json();
+        setPageData(data);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error loading data:", error);
+        setLoading(false);
+      }
     };
     fetchData();
   }, [dataUrl]);
 
-  if (!pageData) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p>Loading main page data...</p>
+      </div>
+    );
+  }
+
+  if (!pageData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>No data available. Please check your connection and try again.</p>
       </div>
     );
   }
@@ -448,7 +469,7 @@ const App = () => {
   const mapConfig = pageData.map;
   const bookingConfig = pageData.booking;
   const combinedPageCfg = pageData.combinedPage;
-  const beforeAfterConfig = pageData.beforeAfter;
+  const beforeAfterConfig = pageData.before_after;
   const employeesConfig = pageData.employees;
   const processConfig = pageData.process;
   const aboutPageConfig = pageData.aboutPage;

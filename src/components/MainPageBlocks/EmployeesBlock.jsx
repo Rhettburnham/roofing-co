@@ -22,6 +22,9 @@ function EmployeesPreview({ employeesData }) {
   // Use the employees data passed in or default to an empty array
   const employeesList = employeesData?.employee || [];
   
+  // Ensure we have a section title, default to "OUR TEAM" if none provided
+  const sectionTitle = employeesData?.sectionTitle || "OUR TEAM";
+  
   // Format image paths to ensure they have proper format
   const formattedEmployees = employeesList.map(emp => ({
     ...emp,
@@ -37,10 +40,9 @@ function EmployeesPreview({ employeesData }) {
   const [transitionDuration, setTransitionDuration] = useState(0.5);
   const itemsToShow = useItemsToShow(); // custom hook for responsive count
   const slideInterval = 2500;
-  const {
-    sectionTitle,
-    employee = [],
-  } = employeesData;
+  
+  // Get employee data from employeesData, default to empty array
+  const employee = employeesData?.employee || [];
 
   // Extend the employees array for a seamless loop (use formattedEmployees)
   const extendedEmployees = useMemo(() => {

@@ -41,18 +41,26 @@ const Navbar = () => {
   useEffect(() => {
     if (location.pathname === "/") {
       // Home Page - Cowboy logo starts invisible, fades to black on scroll
-      gsap.to(cowboyRef.current, {
-        opacity: hasScrolled ? 1 : 0,
-        duration: 0.5,
-      });
-      gsap.to(logoRef.current, { opacity: 0, duration: 0.5 });
+      if (cowboyRef.current) {
+        gsap.to(cowboyRef.current, {
+          opacity: hasScrolled ? 1 : 0,
+          duration: 0.5,
+        });
+      }
+      if (logoRef.current) {
+        gsap.to(logoRef.current, { opacity: 0, duration: 0.5 });
+      }
     } else {
       // Other pages
-      gsap.to(cowboyRef.current, { opacity: 0, duration: 0.5 });
-      gsap.to(logoRef.current, {
-        opacity: hasScrolled ? 1 : 0,
-        duration: 0.5,
-      });
+      if (cowboyRef.current) {
+        gsap.to(cowboyRef.current, { opacity: 0, duration: 0.5 });
+      }
+      if (logoRef.current) {
+        gsap.to(logoRef.current, {
+          opacity: hasScrolled ? 1 : 0,
+          duration: 0.5,
+        });
+      }
     }
   }, [location, hasScrolled]);
 
