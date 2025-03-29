@@ -4,11 +4,20 @@ import os
 import requests
 import time
 import re
+import dotenv
+from pathlib import Path
 from typing import Dict, List, Any
 
-# Replace with your actual DeepSeek API key
-DEEPSEEK_API_KEY = "YOUR_DEEPSEEK_API_KEY"
+# Load the DeepSeek API key from .env.deepseek file
+env_path = Path(__file__).parent / ".env.deepseek"
+dotenv.load_dotenv(env_path)
+
+# Get API key from environment variable
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 API_ENDPOINT = "https://api.deepseek.com/v1/chat/completions"
+
+if not DEEPSEEK_API_KEY:
+    print("WARNING: DeepSeek API key not found. Please set it in the .env.deepseek file.")
 
 # Define the available block types
 AVAILABLE_BLOCKS = [
@@ -192,45 +201,169 @@ def convert_service_id(service_id):
         return int(service_id[1:])
     return service_id
 
-def main():
-    """Main function to generate service pages from research."""
+def load_json_file(file_path: str) -> Dict:
+    """Load a JSON file."""
     try:
-        # Load the research data
-        with open("public/data/services_research.json", "r") as f:
-            services_data = json.load(f)
-        
-        # Prepare the output structure
-        output_data = {
-            "residential": [],
-            "commercial": []
+        with open(file_path, "r") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        print(f"Error loading JSON file: {e}")
+        return {}
+
+def create_hero_block(service_name: str, category: str) -> Dict[str, Any]:
+    """Create a HeroBlock for a service."""
+    return {
+        "blockName": "HeroBlock",
+        "config": {
+            "backgroundImage": "",
+            "title": service_name,
+            "shrinkAfterMs": 1500,
+            "initialHeight": "40vh",
+            "finalHeight": "20vh"
         }
-        
-        # Create service pages for residential services
-        for i, service in enumerate(services_data["residential"]):
-            enriched_service = generate_service_page(service)
-            # Convert ID format for compatibility (from "r1" to 1)
-            enriched_service["id"] = convert_service_id(enriched_service["id"])
-            output_data["residential"].append(enriched_service)
-            time.sleep(2)  # Avoid rate limiting
-        
-        # Create service pages for commercial services
-        for i, service in enumerate(services_data["commercial"]):
-            enriched_service = generate_service_page(service)
-            # Convert ID format for compatibility (from "c1" to 1)
-            enriched_service["id"] = convert_service_id(enriched_service["id"])
-            output_data["commercial"].append(enriched_service)
-            time.sleep(2)  # Avoid rate limiting
-        
-        # Save the final services.json
-        with open("public/data/services.json", "w") as f:
-            json.dump(output_data, f, indent=2)
-        
-        print("Service pages generated and saved to public/data/services.json")
+    }
+
+def create_action_button_block() -> Dict[str, Any]:
+    """Create an ActionButtonBlock."""
+    return {
+        "blockName": "ActionButtonBlock",
+        "config": {
+            "buttonText": "Schedule an Inspection",
+            "buttonLink": "/#book",
+            "buttonColor": "1"
+        }
+    }
+
+def create_header_banner_block(title: str) -> Dict[str, Any]:
+    """Create a HeaderBannerBlock."""
+    return {
+        "blockName": "HeaderBannerBlock",
+        "config": {
+            "title": title,
+            "textAlign": "center",
+            "fontSize": "text-2xl",
+            "textColor": "#ffffff",
+            "bannerHeight": "h-16",
+            "paddingY": "",
+            "backgroundImage": "/assets/images/growth/hero_growth.jpg"
+        }
+    }
+
+def create_video_cta_block() -> Dict[str, Any]:
+    """Create a VideoCTA block."""
+    return {
+        "blockName": "VideoCTA",
+        "config": {
+            "videoSrc": "",
+            "title": "Ready to Upgrade Your Roof?",
+            "description": "Contact us today for a free consultation and estimate.",
+            "buttonText": "Schedule a Consultation",
+            "buttonLink": "/#contact",
+            "textColor": "1",
+            "textAlignment": "center",
+            "overlayOpacity": 0.7
+        }
+    }
+
+def extract_advantages(research: Dict[str, str]) -> List[str]:
+    """Extract advantages from research data."""
+    advantages = []
+    if 'advantages' in research:
+        # Try to extract bullet points
+        bullet_pattern = r"([\*\-•] .*?)(?=[\*\-•]|$)"
+        matches = re.findall(bullet_pattern, research['advantages'])
+        if matches:
+            advantages = [match.strip().lstrip('*-• ') for match in matches if match.strip()]
     
-    except FileNotFoundError:
-        print("Error: services_research.json not found. Run research_services.py first.")
-    except Exception as e:
-        print(f"Error generating service pages: {e}")
+    # If no advantages found, add some generic ones
+    if not advantages:
+        advantages = [
+            "High-quality materials and expert installation",
+            "Comprehensive warranty coverage",
+            "Energy-efficient solutions",
+            "Protect your property from the elements"
+        ]
+    
+    return advantages[:4]  # Limit to 4 advantages
+
+def create_service_blocks(service: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Create a set of blocks for a service based on its research data."""
+    service_name = service["name"]
+    category = service["category"]
+    research = service.get("research", {})
+    
+    blocks = []
+    
+    # 1. Hero Block
+    blocks.append(create_hero_block(service_name, category))
+    
+    # 2. Action Button
+    blocks.append(create_action_button_block())
+    
+    # 3. Header Banner for Overview
+    blocks.append(create_header_banner_block("Overview & Benefits"))
+    
+    # 4. Advantages Block
+    advantages = extract_advantages(research)
+    blocks.append({
+        "blockName": "OverviewAndAdvantagesBlock",
+        "config": {
+            "title": f"Benefits of Our {service_name} Services",
+            "advantages": advantages
+        }
+    })
+    
+    # 5. Video CTA
+    blocks.append(create_video_cta_block())
+    
+    return blocks
+
+def transform_services(input_data: Dict[str, List[Dict[str, Any]]]) -> Dict[str, List[Dict[str, Any]]]:
+    """Transform research services data to frontend format."""
+    output_data = {
+        "residential": [],
+        "commercial": []
+    }
+    
+    # Process residential services
+    for service in input_data.get("residential", []):
+        transformed_service = {
+            "id": service["id"],
+            "blocks": create_service_blocks(service)
+        }
+        output_data["residential"].append(transformed_service)
+    
+    # Process commercial services
+    for service in input_data.get("commercial", []):
+        transformed_service = {
+            "id": service["id"],
+            "blocks": create_service_blocks(service)
+        }
+        output_data["commercial"].append(transformed_service)
+    
+    return output_data
+
+def main():
+    """Main function to generate service pages."""
+    # Load the research data
+    raw_data_path = os.path.join("public", "data", "raw_data", "services.json")
+    research_data = load_json_file(raw_data_path)
+    
+    if not research_data:
+        print("No research data found. Please run research_services.py first.")
+        return
+    
+    # Transform the data
+    frontend_data = transform_services(research_data)
+    
+    # Save the frontend format
+    output_path = os.path.join("public", "data", "scripts", "services.json")
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    
+    with open(output_path, "w") as f:
+        json.dump(frontend_data, f, indent=2)
+    
+    print(f"Service pages generated and saved to {output_path}")
 
 if __name__ == "__main__":
     main() 

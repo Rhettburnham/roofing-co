@@ -1,0 +1,1066 @@
+{
+  "residential": [
+    {
+      "id": 1,
+      "name": "Roof Shingling",
+      "category": "residential",
+      "research": {
+        "construction_process": "**  \n\n### **Step-by-Step Installation Process**  \n1. **Inspection & Preparation** \u2013 Assess the existing roof structure for damage, rot, or structural issues. Remove old shingles, underlayment, and nails.  \n2. **Decking Repair/Replacement** \u2013 Replace damaged plywood or OSB sheathing to ensure a solid base.  \n3. **Underlayment Installation** \u2013 Apply a waterproof barrier (synthetic or felt underlayment) over the decking. Install ice and water shield in vulnerable areas (e.g., eaves, valleys).  \n4. **Flashing Installation** \u2013 Install metal flashing around chimneys, vents, skylights, and roof valleys to prevent leaks.  \n5. **Starter Shingle Application** \u2013 Lay starter strips along the eaves to provide a secure base and prevent wind uplift.  \n6. **Shingle Installation** \u2013 Begin at the bottom edge, working upward in staggered rows (offsetting seams for proper water runoff). Nail according to manufacturer specs (typically 4-6 nails per shingle).  \n7. **Ridge Cap Installation** \u2013 Finish with pre-cut ridge shingles or hip-and-ridge caps for a sealed, professional look.  \n8. **Cleanup & Inspection** \u2013 Remove debris, check for loose nails, and ensure proper sealing.  \n\n### **Materials & Specifications**  \n**Shingles:** Asphalt (most common), architectural/laminated (premium), 3-tab (budget).  \n**Underlayment:** Synthetic (30-50#) or felt (15-30#).  \n**Flashing:** Galvanized steel, aluminum, or copper.  \n**Fasteners:** Galvanized or stainless steel roofing nails (1\u00bc\" to 1\u00be\").  \n\n### **Safety & Building Codes**  \nOSHA requires fall protection (harnesses, guardrails) for roofs over 6 feet.  \nLocal codes dictate nailing patterns, underlayment requirements, and fire ratings (Class A, B, or C).  \nIce & water shield is mandatory in cold climates (IRC Section R905).  \n\n### **Timeline Estimates**  \n**Tear-off & replacement:** 1-3 days (1,500\u20133,000 sq. ft. roof).  \n**Overlay (new shingles over old):** 1-2 days (not recommended due to added weight and reduced lifespan).  \n\n-- \n\n## **2.",
+        "variants": "**  \n\n### **Types of Shingles**  \n**3-Tab Asphalt:** Budget-friendly, lightweight, 20-25-year lifespan.  \n**Architectural (Dimensional):** Mid-range, textured appearance, 30-50-year lifespan.  \n**Luxury Shingles (Premium):** Slate-like or designer styles (e.g., GAF Timberline HDZ, Malarkey Vista), 50+ years.  \n**Metal Shingles:** Long-lasting (50+ years), energy-efficient, but higher cost.  \n**Synthetic (Composite):** Mimics slate/wood, durable, but expensive.  \n\n### **Durability, Appearance, & Cost Comparison**  \n| Type | Cost (per sq. ft.) | Lifespan | Appearance |  \n|------|-------------------|----------|------------|  \n| 3-Tab | $1.50\u2013$3.00 | 20\u201325 yrs | Flat, uniform |  \n| Architectural | $3.50\u2013$5.50 | 30\u201350 yrs | Dimensional, textured |  \n| Luxury | $6.00\u2013$12.00 | 50+ yrs | High-end, custom colors |  \n| Metal | $7.00\u2013$14.00 | 50+ yrs | Modern, sleek |  \n\n### **Premium vs. Budget Options**  \n**Budget:** 3-tab asphalt (short-term solution).  \n**Mid-Range:** Architectural (best value).  \n**Premium:** Luxury shingles or metal (long-term investment).  \n\n-- \n\n## **3.",
+        "sales_supply": "**  \n\n### **Material Procurement**  \nMost contractors order per job from suppliers (ABC Supply, Beacon, local lumberyards).  \nBulk discounts available for large orders.  \n\n### **Inventory vs. Project-Based Ordering**  \nSmall contractors order per project.  \nLarger companies may stock common shingle types.  \n\n### **Markup & Profit Margins**  \nTypical markup: 20\u201350% (labor + materials).  \nAverage profit margin: 10\u201330% after overhead.  \n\n### **Quoting Process**  \n**Per square (100 sq. ft.):** $350\u2013$700 (labor + materials).  \n**Total project cost:** $5,000\u2013$15,000 (varies by roof size, pitch, and material).  \n\n-- \n\n## **4.",
+        "advantages": "**  \n\n### **Selling Points**  \n**Weather Protection:** High wind ratings (up to 130 mph for premium shingles).  \n**Curb Appeal:** Wide range of colors/styles.  \n**Energy Efficiency:** Cool roof shingles (reflect UV rays, reduce cooling costs).  \n\n### **Comparison to Alternatives**  \n**Metal Roofing:** More durable but 2\u20133x the cost.  \n**Tile/Slate:** Longer lifespan but heavier and expensive.  \n\n### **Long-Term Benefits**  \n**Insurance Discounts:** Impact-resistant shingles may lower premiums.  \n**Warranties:** Transferable lifetime warranties on premium products.  \n\n-- \n\n## **5.",
+        "marketing": "**  \n\n### **Key Marketing Points**  \n**Durability & Warranty:** Emphasize 30\u201350-year warranties.  \n**Visuals:** Before/after photos, 3D renderings, close-ups of high-end shingles.  \n\n### **Pricing Transparency**  \nMost contractors avoid public pricing (varies by roof complexity). Instead, offer free estimates.  \n\n### **Common Customer Concerns**  \n**\"How long will it last?\"** \u2013 Highlight warranties.  \n**\"Will it match my neighborhood?\"** \u2013 Show color samples.  \n\n-- \n\n## **6.",
+        "warranty_maintenance": "**  \n\n### **Warranties**  \n**Manufacturer:** 25\u201350 years (prorated after 10\u201315 years).  \n**Workmanship:** 5\u201310 years (contractor-provided).  \n\n### **Maintenance Requirements**  \nAnnual inspections (check for loose shingles, debris).  \nClean gutters to prevent water backup.  \n\n### **Lifespan**  \n**3-Tab:** 20\u201325 years.  \n**Architectural:** 30\u201350 years.  \n**Metal/Synthetic:** 50+ years.  \n\n-- \n\nThis guide provides a **comprehensive, contractor-level breakdown** of residential roof shingling, ideal for roofing websites, sales teams, and customer education. Let me know if you'd like any section expanded!"
+      },
+      "blocks": [
+        {
+          "blockName": "HeroBlock",
+          "config": {
+            "title": "Residential Roof Shingling Services",
+            "subtitle": "Expert installation of durable, high-quality shingles for your home",
+            "backgroundOpacity": 0.6,
+            "buttonText": "Get a Free Estimate",
+            "buttonUrl": "#contact"
+          },
+          "searchTerms": "roof shingling residential home",
+          "imagePath": "/assets/images/services/residential/r1/block_1.jpg"
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "Our Roof Shingling Process",
+            "subtitle": "A step-by-step guide to professional installation"
+          },
+          "searchTerms": "roofing construction process",
+          "imagePath": "/assets/images/services/residential/r1/block_2.jpg"
+        },
+        {
+          "blockName": "GeneralList",
+          "config": {
+            "title": "Step-by-Step Installation",
+            "items": [
+              "Inspection & Preparation",
+              "Decking Repair/Replacement",
+              "Underlayment Installation",
+              "Flashing Installation",
+              "Starter Shingle Application",
+              "Shingle Installation",
+              "Ridge Cap Installation",
+              "Cleanup & Inspection"
+            ]
+          },
+          "searchTerms": "roof shingle installation steps",
+          "imagePath": "/assets/images/services/residential/r1/block_3.jpg"
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "Shingle Options & Materials",
+            "subtitle": "Choose the perfect shingles for your home"
+          },
+          "searchTerms": "roof shingle types",
+          "imagePath": "/assets/images/services/residential/r1/block_4.jpg"
+        },
+        {
+          "blockName": "ShingleSelectorBlock",
+          "config": {
+            "title": "Compare Shingle Types",
+            "items": [
+              {
+                "name": "3-Tab Asphalt",
+                "cost": "$1.50\u2013$3.00 per sq. ft.",
+                "lifespan": "20\u201325 years",
+                "description": "Budget-friendly, lightweight, flat appearance"
+              },
+              {
+                "name": "Architectural",
+                "cost": "$3.50\u2013$5.50 per sq. ft.",
+                "lifespan": "30\u201350 years",
+                "description": "Mid-range, textured, dimensional look"
+              },
+              {
+                "name": "Luxury Shingles",
+                "cost": "$6.00\u2013$12.00 per sq. ft.",
+                "lifespan": "50+ years",
+                "description": "High-end, custom colors, slate-like appearance"
+              }
+            ]
+          },
+          "searchTerms": "asphalt shingles comparison",
+          "imagePath": "/assets/images/services/residential/r1/block_5.jpg"
+        },
+        {
+          "blockName": "OverviewAndAdvantagesBlock",
+          "config": {
+            "title": "Benefits of Professional Roof Shingling",
+            "items": [
+              "Superior weather protection with high wind ratings",
+              "Enhanced curb appeal with a variety of styles and colors",
+              "Energy-efficient options to reduce cooling costs",
+              "Long-term warranties for peace of mind"
+            ]
+          },
+          "searchTerms": "roof shingling benefits",
+          "imagePath": "/assets/images/services/residential/r1/block_6.jpg"
+        },
+        {
+          "blockName": "ActionButtonBlock",
+          "config": {
+            "title": "Ready to Upgrade Your Roof?",
+            "buttonText": "Schedule a Free Consultation",
+            "buttonUrl": "#contact"
+          },
+          "searchTerms": "roofing contractor consultation",
+          "imagePath": "/assets/images/services/residential/r1/block_7.jpg"
+        }
+      ],
+      "slug": "residential-r1-residential-roof-shingling-services"
+    },
+    {
+      "id": 2,
+      "name": "Roof Repair",
+      "category": "residential",
+      "research": {
+        "construction_process": "**  \n\n### **Step-by-Step Process**  \n1. **Inspection & Assessment** \u2013 A thorough roof inspection identifies leaks, damaged shingles, flashing issues, or structural concerns. Infrared scans may detect hidden moisture.  \n2. **Material Removal** \u2013 Damaged shingles, underlayment, or rotten decking are removed.  \n3. **Structural Repairs** \u2013 If decking (plywood/OSB) is compromised, it is replaced to ensure a solid base.  \n4. **Underlayment Replacement** \u2013 Synthetic or felt underlayment is installed for waterproofing.  \n5. **Flashing Repair/Replacement** \u2013 Damaged flashing around chimneys, vents, or valleys is repaired with new metal (aluminum, copper, or galvanized steel).  \n6. **Shingle Replacement** \u2013 Matching shingles are installed, ensuring proper alignment and nailing patterns.  \n7. **Sealing & Caulking** \u2013 Roof cement or sealant is applied to vulnerable areas (vents, pipe boots).  \n8. **Cleanup & Final Inspection** \u2013 Debris is removed, and a final inspection ensures quality.  \n\n### **Materials & Specifications**  \n**Shingles:** Asphalt (3-tab, architectural, premium), wood shakes, metal, slate, or tile.  \n**Underlayment:** Synthetic (e.g., GAF Tiger Paw) or traditional felt (30# or 15#).  \n**Flashing:** Galvanized steel, aluminum, or copper (best for longevity).  \n**Fasteners:** Galvanized or stainless-steel nails (roofing-specific).  \n\n### **Safety & Building Codes**  \n**OSHA Compliance:** Fall protection (harnesses, guardrails) is mandatory for steep roofs.  \n**Local Codes:** Most jurisdictions follow IRC (International Residential Code) for material specs, slope requirements, and fire ratings.  \n**Permits:** Required for structural repairs or major re-roofing.  \n\n### **Timeline Estimates**  \n**Minor repairs (leak fixes, shingle replacement):** 1\u20132 days  \n**Moderate repairs (flashing, partial decking replacement):** 2\u20134 days  \n**Extensive repairs (multiple layers, structural issues):** 5\u20137 days  \n\n---\n\n## **2.",
+        "variants": "**  \n\n### **Types of Roofing Materials**  \n**Asphalt Shingles:**  \n  **3-Tab:** Budget-friendly (~$1.50\u2013$3.50/sq ft), 20\u201325-year lifespan.  \n  **Architectural:** Mid-range (~$3.50\u2013$5.50/sq ft), 30\u201350-year lifespan, better wind resistance.  \n  **Premium/Luxury:** High-end (~$5.50\u2013$12/sq ft), 50+ years, impact-resistant.  \n**Metal Roofing:**  \n  **Steel/Aluminum:** $7\u2013$14/sq ft, 50+ years, energy-efficient.  \n  **Copper:** $15\u2013$25/sq ft, 100+ years, premium aesthetic.  \n**Slate/Tile:** $10\u2013$30/sq ft, 75\u2013150 years, extremely durable but heavy.  \n**Wood Shakes:** $6\u2013$12/sq ft, 30\u201350 years, natural look but fire risk.  \n\n### **Budget vs. Premium Options**  \n**Budget:** 3-tab asphalt, basic underlayment, galvanized flashing.  \n**Premium:** Architectural shingles, synthetic underlayment, copper flashing.  \n\n---\n\n## **3.",
+        "sales_supply": "**  \n\n### **Material Procurement**  \n**Local Suppliers:** Roofers buy from distributors (ABC Supply, Beacon) or big-box stores (Home Depot).  \n**Order Per Project:** Most contractors order materials after signing a contract to avoid excess inventory.  \n\n### **Pricing & Profit Margins**  \n**Markup:** 20\u201350% on materials, 50\u2013100% on labor.  \n**Quoting Method:** Square footage + labor + overhead (e.g., $350\u2013$700 per square [100 sq ft]).  \n\n---\n\n## **4.",
+        "advantages": "**  \n\n### **Selling Points**  \n**Prevents Further Damage:** Fixing leaks early avoids costly interior repairs.  \n**Energy Efficiency:** Reflective coatings or metal roofs reduce cooling costs.  \n**Insurance Benefits:** Some insurers offer discounts for impact-resistant shingles.  \n\n### **Comparison to Alternatives**  \n**Patch vs. Full Replacement:** Repairs are 60\u201380% cheaper than a full roof replacement.  \n\n---\n\n## **5.",
+        "marketing": "**  \n\n### **Key Marketing Points**  \n**Emergency Repairs:** Highlight 24/7 leak response.  \n**Before/After Photos:** Show repaired vs. damaged sections.  \n**Pricing Strategy:** Rarely public\u2014quotes vary by damage extent.  \n\n### **Common Customer Concerns**  \n\"Will the repair match my existing roof?\"  \n\"How long will it last?\"  \n\"Is this covered by insurance?\"  \n\n---\n\n## **6.",
+        "warranty_maintenance": "**  \n\n### **Warranties**  \n**Manufacturer:** 25\u201350 years for premium shingles.  \n**Workmanship:** 2\u201310 years from contractor.  \n\n### **Maintenance Requirements**  \nBi-annual inspections, gutter cleaning, moss removal.  \n\n### **Lifespan**  \nAsphalt: 20\u201350 years  \nMetal: 50+ years  \nSlate: 100+ years  \n\nThis guide ensures homeowners understand the value of professional roof repair while helping contractors present their services authoritatively."
+      },
+      "blocks": [
+        {
+          "blockName": "HeroBlock",
+          "config": {
+            "title": "Residential Roof Repair Services",
+            "subtitle": "Expert repairs to protect your home from leaks and damage. Fast, reliable, and backed by industry-leading warranties.",
+            "backgroundOpacity": 0.6,
+            "buttonText": "Get a Free Inspection",
+            "buttonUrl": "#contact"
+          },
+          "searchTerms": "roof repair residential, roofing contractor, damaged shingles",
+          "imagePath": "/assets/images/services/residential/r2/block_1.jpg"
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "Our Roof Repair Process",
+            "subtitle": "Transparent, step-by-step repairs tailored to your home's needs"
+          },
+          "searchTerms": "roof inspection, roofing process",
+          "imagePath": "/assets/images/services/residential/r2/block_2.jpg"
+        },
+        {
+          "blockName": "GeneralList",
+          "config": {
+            "title": "Step-by-Step Roof Repair",
+            "items": [
+              "Inspection & Assessment: Identify leaks, damaged shingles, or structural issues.",
+              "Material Removal: Clear damaged shingles, underlayment, or decking.",
+              "Structural Repairs: Replace compromised decking for a solid base.",
+              "Underlayment Replacement: Install synthetic or felt underlayment for waterproofing.",
+              "Flashing Repair/Replacement: Fix or replace damaged flashing around chimneys and vents.",
+              "Shingle Replacement: Install matching shingles with proper alignment.",
+              "Sealing & Caulking: Apply roof cement to vulnerable areas.",
+              "Cleanup & Final Inspection: Ensure quality and remove all debris."
+            ]
+          },
+          "searchTerms": "roof repair steps, roofing tools",
+          "imagePath": "/assets/images/services/residential/r2/block_3.jpg"
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "Roofing Materials & Options",
+            "subtitle": "High-quality materials for every budget and style"
+          },
+          "searchTerms": "roofing materials, asphalt shingles, metal roofing",
+          "imagePath": "/assets/images/services/residential/r2/block_4.jpg"
+        },
+        {
+          "blockName": "ShingleSelectorBlock",
+          "config": {
+            "title": "Popular Roofing Materials",
+            "items": [
+              {
+                "title": "Asphalt Shingles",
+                "description": "Budget-friendly and versatile with a 20-50 year lifespan.",
+                "imageUrl": "#",
+                "types": [
+                  "3-Tab",
+                  "Architectural",
+                  "Premium"
+                ]
+              },
+              {
+                "title": "Metal Roofing",
+                "description": "Durable and energy-efficient with a 50+ year lifespan.",
+                "imageUrl": "#",
+                "types": [
+                  "Steel",
+                  "Aluminum",
+                  "Copper"
+                ]
+              },
+              {
+                "title": "Slate/Tile",
+                "description": "Premium and long-lasting with a 75-150 year lifespan.",
+                "imageUrl": "#",
+                "types": [
+                  "Slate",
+                  "Clay Tile",
+                  "Concrete Tile"
+                ]
+              }
+            ]
+          },
+          "searchTerms": "asphalt shingles, metal roof, slate tiles",
+          "imagePath": "/assets/images/services/residential/r2/block_5.jpg"
+        },
+        {
+          "blockName": "OverviewAndAdvantagesBlock",
+          "config": {
+            "title": "Why Choose Professional Roof Repair?",
+            "items": [
+              {
+                "title": "Prevents Further Damage",
+                "description": "Early repairs avoid costly interior damage from leaks."
+              },
+              {
+                "title": "Energy Efficiency",
+                "description": "Reflective coatings or metal roofs reduce cooling costs."
+              },
+              {
+                "title": "Insurance Benefits",
+                "description": "Some insurers offer discounts for impact-resistant shingles."
+              }
+            ]
+          },
+          "searchTerms": "roof repair benefits, energy efficient roofing",
+          "imagePath": "/assets/images/services/residential/r2/block_6.jpg"
+        },
+        {
+          "blockName": "ActionButtonBlock",
+          "config": {
+            "title": "Ready to Repair Your Roof?",
+            "subtitle": "Contact us today for a free, no-obligation inspection.",
+            "buttonText": "Schedule Now",
+            "buttonUrl": "#contact"
+          },
+          "searchTerms": "roofing contractor, free inspection",
+          "imagePath": "/assets/images/services/residential/r2/block_7.jpg"
+        }
+      ],
+      "slug": "residential-r2-residential-roof-repair-services"
+    },
+    {
+      "id": 3,
+      "name": "Siding Installation",
+      "category": "residential",
+      "research": {
+        "construction_process": "**  \n\n### **Step-by-Step Installation Process**  \n1. **Initial Inspection & Preparation** \u2013 Assess the existing siding (if any) for damage, rot, or mold. Remove old siding and repair underlying sheathing if necessary.  \n2. **Weather Barrier Installation** \u2013 Apply a water-resistant barrier (e.g., house wrap or felt paper) to protect against moisture infiltration.  \n3. **Flashing & Trim Work** \u2013 Install metal or vinyl flashing around windows, doors, and corners to prevent water intrusion.  \n4. **Starter Strip Installation** \u2013 For vinyl or fiber cement siding, a starter strip ensures proper alignment and prevents warping.  \n5. **Siding Panel Installation** \u2013 Begin at the bottom, working upward, overlapping panels for proper drainage. Secure with corrosion-resistant nails or screws, leaving room for expansion.  \n6. **Finishing Touches** \u2013 Install J-channels, corner posts, and soffit/fascia trim for a polished look.  \n7. **Final Inspection** \u2013 Check for gaps, loose panels, or improper fastening to ensure compliance with building codes.  \n\n### **Materials & Specifications**  \n**Vinyl Siding:** Lightweight, UV-resistant, available in various textures (e.g., wood grain).  \n**Fiber Cement:** Durable, fire-resistant, mimics wood but requires sealing.  \n**Wood Siding:** Natural appearance, requires staining/sealing (cedar, redwood).  \n**Metal Siding (Aluminum/Steel):** Long-lasting, low-maintenance, but prone to dents.  \n**Engineered Wood:** Composite material, moisture-resistant, mimics real wood.  \n\n### **Safety & Building Code Requirements**  \nOSHA compliance for ladder/fall protection.  \nLocal building codes dictate fire ratings, wind resistance, and fastener spacing.  \nProper ventilation behind siding to prevent moisture buildup.  \n\n### **Timeline Estimates**  \nSmall home (1,500 sq. ft.): **3\u20135 days**  \nLarger homes (2,500+ sq. ft.): **1\u20132 weeks** (varies based on material complexity).  \n\n-- \n\n## **2.",
+        "variants": "**  \n\n### **Types of Siding Materials**  \n1. **Vinyl Siding** \u2013 Budget-friendly, low maintenance, but can fade/warp.  \n2. **Fiber Cement** \u2013 Mid-range cost, durable, resists pests/rot.  \n3. **Wood Siding** \u2013 Premium aesthetic, high maintenance, susceptible to rot/insects.  \n4. **Metal Siding** \u2013 Long lifespan, energy-efficient, but higher upfront cost.  \n5. **Engineered Wood** \u2013 Affordable alternative to real wood, better moisture resistance.  \n\n### **Durability, Appearance, & Cost Comparison**  \n| Material       | Durability (Years) | Appearance | Cost (per sq. ft.) |  \n|----------------|-------------------|------------|-------------------|  \n| Vinyl          | 20\u201340             | Moderate   | $2\u2013$7             |  \n| Fiber Cement   | 30\u201350             | High       | $5\u2013$12            |  \n| Wood           | 20\u201340 (with care) | Premium    | $6\u2013$15            |  \n| Metal          | 40\u201360             | Industrial | $4\u2013$10            |  \n| Engineered Wood| 20\u201330             | Wood-like  | $4\u2013$9             |  \n\n### **Premium vs. Budget Options**  \n**Premium:** Fiber cement, natural wood, high-end vinyl (thicker panels).  \n**Budget:** Basic vinyl, engineered wood.  \n\n-- \n\n## **3.",
+        "sales_supply": "**  \n\n### **Procurement & Inventory**  \nMost contractors order materials per project from suppliers (e.g., ABC Supply, Beacon, local lumberyards).  \nSome keep limited stock of common vinyl/fiber cement colors.  \n\n### **Markup & Profit Margins**  \nTypical markup: **30\u201350%** (labor + materials).  \nHigh-end materials yield better margins due to perceived value.  \n\n### **Quoting & Estimation**  \nQuotes based on **square footage**, material choice, and labor.  \nAdditional costs for removal, repairs, and trim work.  \n\n-- \n\n## **4.",
+        "advantages": "**  \n\n### **Key Selling Points**  \n**Curb Appeal:** Enhances home aesthetics.  \n**Protection:** Shields against weather, pests, and moisture.  \n**Energy Efficiency:** Insulated siding reduces heating/cooling costs.  \n**Insurance Benefits:** Some insurers offer discounts for fire-resistant siding (fiber cement/metal).  \n\n### **Comparison to Alternatives**  \n**Stucco:** More expensive, less flexible in cold climates.  \n**Brick:** Higher cost, longer installation time.  \n\n### **Long-Term Benefits**  \nIncreased home value.  \nLower maintenance vs. wood.  \nPotential energy savings.  \n\n-- \n\n## **5.",
+        "marketing": "**  \n\n### **Effective Marketing Strategies**  \n**Visuals:** Before/after photos, 3D renderings, sample swatches.  \n**Emphasize:** Durability, energy efficiency, low maintenance.  \n**Pricing:** Rarely public\u2014varies by project scope; instead, offer free estimates.  \n\n### **Common Customer Concerns**  \n**Cost vs. ROI** \u2013 Highlight long-term savings.  \n**Maintenance** \u2013 Vinyl/fiber cement require minimal upkeep.  \n**Weather Resistance** \u2013 Discuss impact resistance (hail, wind).  \n\n-- \n\n## **6.",
+        "warranty_maintenance": "**  \n\n### **Warranties**  \n**Vinyl:** 20\u201340 years (limited lifetime common).  \n**Fiber Cement:** 30\u201350 years (prorated).  \n**Wood:** 10\u201320 years (requires maintenance).  \n\n### **Maintenance Requirements**  \n**Vinyl:** Occasional washing.  \n**Fiber Cement:** Repaint every 10\u201315 years.  \n**Wood:** Regular sealing/staining.  \n\n### **Lifespan**  \nVinyl: **20\u201340 years**  \nFiber Cement: **30\u201350 years**  \nWood: **20\u201340 years** (with care)  \n\n-- \n\nThis guide provides roofing contractors with authoritative content to educate customers and optimize service pages for siding installation."
+      },
+      "blocks": [
+        {
+          "blockName": "HeroBlock",
+          "config": {
+            "title": "Residential Siding Installation",
+            "subtitle": "Enhance your home's curb appeal and protection with our professional siding installation services",
+            "backgroundOpacity": 0.6,
+            "buttonText": "Get a Free Estimate",
+            "buttonUrl": "#contact"
+          },
+          "searchTerms": "residential siding installation, home exterior, vinyl siding",
+          "imagePath": "/assets/images/services/residential/r3/block_1.jpg"
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "Why Choose Our Siding Installation Services?",
+            "subtitle": "Quality materials and expert craftsmanship for lasting results"
+          },
+          "searchTerms": "",
+          "imagePath": "/assets/images/services/residential/r3/block_2.jpg"
+        },
+        {
+          "blockName": "OverviewAndAdvantagesBlock",
+          "config": {
+            "title": "Benefits of New Siding",
+            "items": [
+              {
+                "title": "Curb Appeal",
+                "description": "Transform your home's appearance with a fresh, modern look"
+              },
+              {
+                "title": "Weather Protection",
+                "description": "Shield your home from rain, wind, and extreme temperatures"
+              },
+              {
+                "title": "Energy Efficiency",
+                "description": "Reduce heating and cooling costs with insulated siding options"
+              },
+              {
+                "title": "Low Maintenance",
+                "description": "Spend less time on upkeep with durable materials like vinyl and fiber cement"
+              }
+            ]
+          },
+          "searchTerms": "siding benefits, home protection, energy efficient siding",
+          "imagePath": "/assets/images/services/residential/r3/block_3.jpg"
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "Our Siding Materials",
+            "subtitle": "High-quality options to suit every home and budget"
+          },
+          "searchTerms": "",
+          "imagePath": "/assets/images/services/residential/r3/block_4.jpg"
+        },
+        {
+          "blockName": "GridImageTextBlock",
+          "config": {
+            "items": [
+              {
+                "title": "Vinyl Siding",
+                "description": "Affordable, low-maintenance option with various colors and textures",
+                "imageUrl": ""
+              },
+              {
+                "title": "Fiber Cement",
+                "description": "Durable, fire-resistant material that mimics wood without the upkeep",
+                "imageUrl": ""
+              },
+              {
+                "title": "Wood Siding",
+                "description": "Classic natural beauty that requires regular maintenance",
+                "imageUrl": ""
+              },
+              {
+                "title": "Metal Siding",
+                "description": "Long-lasting protection with modern industrial appeal",
+                "imageUrl": ""
+              }
+            ]
+          },
+          "searchTerms": "vinyl siding, fiber cement siding, wood siding, metal siding",
+          "imagePath": "/assets/images/services/residential/r3/block_5.jpg"
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "Our Installation Process",
+            "subtitle": "Professional, code-compliant siding installation you can trust"
+          },
+          "searchTerms": "",
+          "imagePath": "/assets/images/services/residential/r3/block_6.jpg"
+        },
+        {
+          "blockName": "GeneralList",
+          "config": {
+            "title": "Step-by-Step Siding Installation",
+            "items": [
+              "Initial inspection and preparation of your home's exterior",
+              "Installation of weather-resistant barrier for moisture protection",
+              "Precise flashing and trim work around openings",
+              "Professional siding panel installation with proper fastening",
+              "Finishing touches with trim and thorough quality inspection"
+            ]
+          },
+          "searchTerms": "siding installation process, roofing contractor at work",
+          "imagePath": "/assets/images/services/residential/r3/block_7.jpg"
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "Ready to Transform Your Home?",
+            "subtitle": "Contact us today for a free consultation and estimate"
+          },
+          "searchTerms": "",
+          "imagePath": "/assets/images/services/residential/r3/block_8.jpg"
+        },
+        {
+          "blockName": "ActionButtonBlock",
+          "config": {
+            "title": "Schedule Your Free Estimate",
+            "buttonText": "Contact Us Now",
+            "buttonUrl": "#contact"
+          },
+          "searchTerms": "happy homeowner, beautiful siding",
+          "imagePath": "/assets/images/services/residential/r3/block_9.jpg"
+        }
+      ],
+      "slug": "residential-r3-residential-siding-installation"
+    },
+    {
+      "id": 4,
+      "name": "Gutter Installation",
+      "category": "residential",
+      "research": {
+        "construction_process": "**  \n\n### **Step-by-Step Installation Process**  \n1. **Assessment & Measurement:**  \n   Inspect the roofline to determine gutter length, downspout placement, and slope requirements.  \n   Measure fascia board width and check for rot or structural issues.  \n\n2. **Material Preparation:**  \n   Cut gutters to size (if using sectional gutters) or prepare seamless gutter coils.  \n   Pre-assemble downspouts, elbows, and end caps.  \n\n3. **Fascia & Drip Edge Check:**  \n   Ensure the fascia is sturdy; reinforce or replace if needed.  \n   Verify proper drip edge installation to direct water into the gutter.  \n\n4. **Gutter Hanger Installation:**  \n   Install hidden hangers, spike-and-ferrule, or strap hangers at 24\"\u201336\" intervals.  \n   Ensure a slight slope (\u00bc\" per 10 ft) toward downspouts for drainage.  \n\n5. **Gutter Placement & Seaming:**  \n   Snap or weld sections together (for seamless aluminum/steel).  \n   Seal joints with high-quality gutter sealant.  \n\n6. **Downspout Installation:**  \n   Position downspouts at optimal drainage points (away from foundations).  \n   Secure with brackets and extenders if needed.  \n\n7. **Final Inspection & Testing:**  \n   Flush with water to check flow, leaks, and proper drainage.  \n\n### **Materials & Specifications**  \n**Gutter Types:** Aluminum (0.027\"\u20130.032\" thickness), Galvanized Steel (24\u201328 gauge), Copper (16\u201320 oz), Vinyl (UV-resistant).  \n**Hangers:** Hidden hangers (most secure), spike-and-ferrule (budget), strap hangers (adjustable).  \n**Downspouts:** 2x3\" (small homes), 3x4\" (standard), 4x5\" (high-capacity).  \n\n### **Safety & Building Codes**  \nOSHA compliance: Fall protection (harnesses, guardrails) when working above 6 ft.  \nLocal codes: Downspout extensions must discharge 5\u201310 ft from foundation.  \n\n### **Timeline Estimates**  \n**Small home (1-story, 100\u2013150 LF):** 4\u20136 hours.  \n**Large home (2-story, 200+ LF):** 1\u20132 days.  \n\n-- \n\n## **2.",
+        "variants": "**  \n\n### **Types of Gutters**  \n**Seamless Aluminum:** Custom-formed on-site, fewer leaks, mid-range cost ($8\u2013$12/LF).  \n**Sectional (Vinyl or Aluminum):** DIY-friendly, lower cost ($4\u2013$8/LF) but prone to leaks.  \n**Copper:** High-end ($15\u2013$25/LF), durable (50+ years), develops patina.  \n**Galvanized Steel:** Strong ($6\u2013$10/LF), prone to rust unless coated.  \n\n### **Durability & Cost Comparison**  \n| Material      | Durability | Cost (per LF) | Best For            |  \n|--------------|------------|--------------|---------------------|  \n| Vinyl        | 10\u201320 yrs  | $4\u2013$8        | Budget, DIY         |  \n| Aluminum     | 20\u201330 yrs  | $8\u2013$12       | Balance of cost/quality |  \n| Steel        | 20\u201340 yrs  | $6\u2013$10       | Heavy snow areas    |  \n| Copper       | 50+ yrs    | $15\u2013$25      | Luxury, historic homes |  \n\n### **Premium vs. Budget Options**  \n**Premium:** Seamless copper, hidden hangers, gutter guards.  \n**Budget:** Vinyl sectional, spike-and-ferrule hangers.  \n\n-- \n\n## **3.",
+        "sales_supply": "**  \n\n### **Material Procurement**  \nRoofers typically order materials per project from suppliers (ABC Supply, Beacon, local metal fabricators).  \nSeamless gutters are often formed on-site with a gutter machine.  \n\n### **Inventory vs. Project-Based Orders**  \nMost contractors order per job to avoid storage costs.  \nCommon accessories (hangers, sealant) may be stocked.  \n\n### **Pricing & Profit Margins**  \n**Material Markup:** 30\u201350%.  \n**Labor Cost:** $3\u2013$6/LF installed.  \n**Total Quote:** $7\u2013$18/LF depending on material and complexity.  \n\n### **Quoting Process**  \nMeasure linear footage, assess roof pitch, and factor in downspouts.  \nProvide itemized quotes (materials + labor).  \n\n-- \n\n## **4.",
+        "advantages": "**  \n\n### **Key Selling Points**  \nPrevents foundation damage, soil erosion, and basement flooding.  \nProtects siding and landscaping from water overflow.  \n\n### **Comparison to Alternatives**  \n**Gutterless Roofs:** Require steep slopes and may still cause erosion.  \n**DIY Kits:** Often lack proper slope/sealing, leading to leaks.  \n\n### **Long-Term Benefits**  \nExtends roof and fascia lifespan.  \nReduces mold/mildew risks near the foundation.  \n\n### **Energy Efficiency & Insurance Perks**  \nSome insurers offer discounts for proper drainage systems.  \nGutter guards reduce debris, lowering maintenance costs.  \n\n-- \n\n## **5.",
+        "marketing": "**  \n\n### **Marketing Emphasis**  \nHighlight **leak-free seamless designs** and **lifetime warranties** on premium materials.  \nShow before/after photos of water damage prevention.  \n\n### **Effective Visuals**  \nVideos of gutter overflow vs. proper drainage.  \n3D animations of gutter systems.  \n\n### **Pricing Transparency**  \nMost roofers avoid public pricing due to variability (materials, roof height).  \nInstead, offer free estimates with a breakdown.  \n\n### **Common Customer Concerns**  \n\"How often do gutters need cleaning?\" (Depends on guards/tree coverage.)  \n\"Will gutters sag over time?\" (Only with poor hanger spacing.)  \n\n-- \n\n## **6.",
+        "warranty_maintenance": "**  \n\n### **Warranties Offered**  \n**Materials:** 20+ years for aluminum/steel, limited lifetime for copper.  \n**Labor:** 1\u20135 years (varies by contractor).  \n\n### **Maintenance Requirements**  \nClean 2x/year (more if near trees).  \nInspect for leaks, loose hangers, and rust.  \n\n### **Lifespan Expectations**  \nVinyl: 10\u201320 years.  \nAluminum/Steel: 20\u201340 years.  \nCopper: 50+ years.  \n\n-- \n\nThis guide provides roofing contractors with authoritative content for service pages, helping homeowners understand the value of professional gutter installation."
+      },
+      "blocks": [
+        {
+          "blockName": "HeroBlock",
+          "config": {
+            "title": "Residential Gutter Installation",
+            "subtitle": "Protect your home with durable, leak-free gutters tailored to your needs",
+            "backgroundOpacity": 0.6,
+            "buttonText": "Get a Free Estimate",
+            "buttonUrl": "#contact"
+          },
+          "searchTerms": "residential gutter installation, seamless gutters, home drainage system",
+          "imagePath": "/assets/images/services/residential/r4/block_1.jpg"
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "Why Professional Gutter Installation Matters",
+            "subtitle": "Prevent costly damage with expert solutions"
+          },
+          "searchTerms": "water damage prevention, gutter benefits",
+          "imagePath": "/assets/images/services/residential/r4/block_2.jpg"
+        },
+        {
+          "blockName": "OverviewAndAdvantagesBlock",
+          "config": {
+            "title": "Benefits of Our Gutter Systems",
+            "advantages": [
+              "Prevents foundation damage and soil erosion",
+              "Protects siding and landscaping from water overflow",
+              "Extends roof and fascia lifespan",
+              "Reduces mold and mildew risks near the foundation",
+              "Energy efficiency and potential insurance discounts"
+            ]
+          },
+          "searchTerms": "gutter benefits, home protection",
+          "imagePath": "/assets/images/services/residential/r4/block_3.jpg"
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "Our Gutter Installation Process",
+            "subtitle": "A seamless, step-by-step approach"
+          },
+          "searchTerms": "gutter installation process",
+          "imagePath": "/assets/images/services/residential/r4/block_4.jpg"
+        },
+        {
+          "blockName": "GeneralList",
+          "config": {
+            "title": "Step-by-Step Installation",
+            "items": [
+              "Assessment & Measurement: Inspect roofline and measure fascia",
+              "Material Preparation: Cut gutters and pre-assemble components",
+              "Fascia & Drip Edge Check: Ensure structural integrity",
+              "Gutter Hanger Installation: Secure with proper spacing",
+              "Gutter Placement & Seaming: Snap or weld sections",
+              "Downspout Installation: Position for optimal drainage",
+              "Final Inspection & Testing: Flush with water to check flow"
+            ]
+          },
+          "searchTerms": "gutter installation steps, roofing professional",
+          "imagePath": "/assets/images/services/residential/r4/block_5.jpg"
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "Gutter Material Options",
+            "subtitle": "Choose the best fit for your home"
+          },
+          "searchTerms": "gutter materials, aluminum vs copper gutters",
+          "imagePath": "/assets/images/services/residential/r4/block_6.jpg"
+        },
+        {
+          "blockName": "GridImageTextBlock",
+          "config": {
+            "title": "Compare Gutter Types",
+            "items": [
+              {
+                "title": "Seamless Aluminum",
+                "description": "Custom-formed on-site, fewer leaks, mid-range cost ($8\u2013$12/LF)",
+                "imageUrl": ""
+              },
+              {
+                "title": "Sectional Vinyl",
+                "description": "DIY-friendly, lower cost ($4\u2013$8/LF) but prone to leaks",
+                "imageUrl": ""
+              },
+              {
+                "title": "Copper",
+                "description": "High-end ($15\u2013$25/LF), durable (50+ years), develops patina",
+                "imageUrl": ""
+              },
+              {
+                "title": "Galvanized Steel",
+                "description": "Strong ($6\u2013$10/LF), prone to rust unless coated",
+                "imageUrl": ""
+              }
+            ]
+          },
+          "searchTerms": "aluminum gutters, vinyl gutters, copper gutters, steel gutters",
+          "imagePath": "/assets/images/services/residential/r4/block_7.jpg"
+        },
+        {
+          "blockName": "ActionButtonBlock",
+          "config": {
+            "title": "Ready to Protect Your Home?",
+            "buttonText": "Schedule a Free Consultation",
+            "buttonUrl": "#contact"
+          },
+          "searchTerms": "gutter installation call to action",
+          "imagePath": "/assets/images/services/residential/r4/block_8.jpg"
+        }
+      ],
+      "slug": "residential-r4-residential-gutter-installation"
+    }
+  ],
+  "commercial": [
+    {
+      "id": 1,
+      "name": "Flat Roof Installation",
+      "category": "commercial",
+      "research": {
+        "construction_process": "**  \n\n### **Step-by-Step Installation Process**  \n1. **Site Inspection & Preparation**: Assess the existing roof structure, check for damage, and ensure the deck is sound. Remove debris and old roofing materials if necessary.  \n2. **Deck Repair/Reinforcement**: Repair or replace damaged substrate (plywood, concrete, or metal decking) to ensure a stable base.  \n3. **Vapor Barrier Installation**: Apply a vapor retarder (if required by climate) to prevent moisture infiltration.  \n4. **Insulation Layer**: Install rigid foam insulation boards (e.g., polyiso, EPS, or XPS) to meet energy code requirements.  \n5. **Membrane Installation**:  \n   **Single-Ply (TPO, PVC, EPDM)**: Mechanically fastened, fully adhered, or ballasted.  \n   **Built-Up Roofing (BUR)**: Multiple layers of asphalt and reinforcing fabrics.  \n   **Modified Bitumen**: Torch-applied or self-adhering sheets.  \n6. **Flashing & Edge Details**: Seal penetrations (vents, HVAC units) with metal flashing and membrane adhesives.  \n7. **Final Inspection & Testing**: Conduct water testing (flood test) to ensure no leaks.  \n\n### **Materials & Specifications**  \n**Membranes**:  \n  **TPO (Thermoplastic Polyolefin)**: 45-80 mil thickness, heat-welded seams.  \n  **EPDM (Ethylene Propylene Diene Monomer)**: 45-60 mil, glued or ballasted.  \n  **PVC (Polyvinyl Chloride)**: 50-80 mil, chemical-resistant.  \n  **Modified Bitumen**: SBS or APP polymer-modified asphalt.  \n**Insulation**: Polyiso (R-6 per inch), EPS (R-4 per inch).  \n**Fasteners & Adhesives**: Stainless steel screws, polyurethane adhesives.  \n\n### **Safety & Building Codes**  \nOSHA fall protection (harnesses, guardrails).  \nFire ratings (ASTM E108, UL Class A/B/C).  \nLocal wind uplift resistance requirements (e.g., ASTM D6630).  \n\n### **Timeline Estimates**  \nSmall commercial (5,000 sq. ft.): 3\u20135 days.  \nLarge projects (20,000+ sq. ft.): 2\u20134 weeks.  \n\n-- \n\n## **2.",
+        "variants": "**  \n\n### **Types of Flat Roofing Systems**  \n1. **Single-Ply Membranes (TPO, PVC, EPDM)**:  \n   **Durability**: 20\u201330 years (PVC longest).  \n   **Cost**: $4\u2013$10/sq. ft. (TPO mid-range, PVC premium).  \n2. **Built-Up Roofing (BUR)**:  \n   **Durability**: 15\u201330 years (gravel-surfaced).  \n   **Cost**: $3\u2013$7/sq. ft. (budget-friendly).  \n3. **Modified Bitumen**:  \n   **Durability**: 15\u201320 years.  \n   **Cost**: $5\u2013$9/sq. ft.  \n\n### **Premium vs. Budget Options**  \n**Premium**: PVC (best longevity, chemical resistance).  \n**Budget**: EPDM (affordable but less energy-efficient).  \n\n-- \n\n## **3.",
+        "sales_supply": "**  \n\n### **Material Procurement**  \nOrdered per project from distributors (e.g., ABC Supply, Beacon).  \nSome contractors stock common membranes (TPO, EPDM).  \n\n### **Pricing & Profit Margins**  \n**Markup**: 30\u201350% (labor + materials).  \n**Quoting Method**: Per square foot + labor + ancillary costs (flashing, insulation).  \n\n-- \n\n## **4.",
+        "advantages": "**  \n\n### **Selling Points**  \n**Low Maintenance**: Fewer leaks vs. shingle roofs.  \n**Energy Efficiency**: White TPO/PVC reflects UV rays (cool roof savings).  \n**Space Utilization**: Rooftop HVAC/patio potential.  \n\n### **Comparison to Alternatives**  \n**vs. Sloped Roofs**: Cheaper installation, easier access.  \n**vs. Metal Roofs**: Lower upfront cost, quieter.  \n\n### **Insurance & Energy Benefits**  \nSome insurers offer discounts for impact-resistant membranes.  \nENERGY STAR-rated TPO/PVC may qualify for tax credits.  \n\n-- \n\n## **5.",
+        "marketing": "**  \n\n### **Key Marketing Points**  \nHighlight **leak resistance, energy savings, and warranties**.  \nUse **time-lapse installation videos** and **before/after case studies**.  \n\n### **Pricing Transparency**  \nRarely public\u2014quotes vary by project complexity.  \n\n### **Common Customer Questions**  \n\"How long will it last?\"  \n\"Will it withstand ponding water?\"  \n\n-- \n\n## **6.",
+        "warranty_maintenance": "**  \n\n### **Warranties**  \n**Manufacturer**: 10\u201330 years (material defects).  \n**Contractor**: 2\u201310 years (workmanship).  \n\n### **Maintenance Requirements**  \nBiannual inspections, debris removal.  \nSealant checks at penetrations.  \n\n### **Lifespan**  \n**TPO/PVC**: 25\u201330 years.  \n**EPDM**: 20\u201325 years.  \n**BUR**: 15\u201330 years.  \n\n-- \n\nThis guide provides a **comprehensive overview** for roofing contractors to educate clients and optimize service pages. Let me know if you'd like any section expanded!"
+      },
+      "blocks": [
+        {
+          "blockName": "HeroBlock",
+          "config": {
+            "title": "Commercial Flat Roof Installation",
+            "subtitle": "Durable, energy-efficient flat roofing solutions tailored for your business",
+            "backgroundOpacity": 0.6,
+            "buttonText": "Get a Free Quote",
+            "buttonUrl": "#contact"
+          },
+          "searchTerms": "commercial flat roof installation",
+          "imagePath": "/assets/images/services/commercial/c1/block_1.jpg"
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "Our Flat Roofing Systems",
+            "subtitle": "High-quality materials designed for longevity and performance"
+          },
+          "searchTerms": "",
+          "imagePath": "/assets/images/services/commercial/c1/block_2.jpg"
+        },
+        {
+          "blockName": "ThreeGridWithRichTextBlock",
+          "config": {
+            "items": [
+              {
+                "title": "Single-Ply Membranes",
+                "content": "TPO, PVC, and EPDM options for durability and energy efficiency.",
+                "buttonText": "Learn More",
+                "buttonUrl": "#single-ply"
+              },
+              {
+                "title": "Built-Up Roofing",
+                "content": "Budget-friendly multi-layer asphalt systems with gravel surfacing.",
+                "buttonText": "Learn More",
+                "buttonUrl": "#bur"
+              },
+              {
+                "title": "Modified Bitumen",
+                "content": "Flexible, torch-applied sheets for enhanced waterproofing.",
+                "buttonText": "Learn More",
+                "buttonUrl": "#bitumen"
+              }
+            ]
+          },
+          "searchTerms": "flat roofing materials",
+          "imagePath": "/assets/images/services/commercial/c1/block_3.jpg"
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "Installation Process",
+            "subtitle": "A step-by-step approach to ensure quality and reliability"
+          },
+          "searchTerms": "",
+          "imagePath": "/assets/images/services/commercial/c1/block_4.jpg"
+        },
+        {
+          "blockName": "GeneralList",
+          "config": {
+            "title": "Step-by-Step Installation",
+            "items": [
+              "Site Inspection & Preparation",
+              "Deck Repair/Reinforcement",
+              "Vapor Barrier Installation",
+              "Insulation Layer",
+              "Membrane Installation",
+              "Flashing & Edge Details",
+              "Final Inspection & Testing"
+            ]
+          },
+          "searchTerms": "flat roof installation process",
+          "imagePath": "/assets/images/services/commercial/c1/block_5.jpg"
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "Benefits of Flat Roofs",
+            "subtitle": "Why choose a flat roof for your commercial property?"
+          },
+          "searchTerms": "",
+          "imagePath": "/assets/images/services/commercial/c1/block_6.jpg"
+        },
+        {
+          "blockName": "OverviewAndAdvantagesBlock",
+          "config": {
+            "overview": "Flat roofs offer unmatched durability and versatility for commercial buildings.",
+            "advantages": [
+              "Low Maintenance: Fewer leaks compared to traditional roofs.",
+              "Energy Efficiency: Reflective surfaces reduce cooling costs.",
+              "Space Utilization: Ideal for rooftop equipment or outdoor spaces."
+            ]
+          },
+          "searchTerms": "commercial flat roof benefits",
+          "imagePath": "/assets/images/services/commercial/c1/block_7.jpg"
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "Warranty & Maintenance",
+            "subtitle": "Protecting your investment for years to come"
+          },
+          "searchTerms": "",
+          "imagePath": "/assets/images/services/commercial/c1/block_8.jpg"
+        },
+        {
+          "blockName": "ListDropdown",
+          "config": {
+            "items": [
+              {
+                "title": "Manufacturer Warranty",
+                "content": "10\u201330 years coverage for material defects."
+              },
+              {
+                "title": "Contractor Warranty",
+                "content": "2\u201310 years coverage for workmanship."
+              },
+              {
+                "title": "Maintenance Tips",
+                "content": "Biannual inspections and debris removal to extend lifespan."
+              }
+            ]
+          },
+          "searchTerms": "roof warranty",
+          "imagePath": "/assets/images/services/commercial/c1/block_9.jpg"
+        },
+        {
+          "blockName": "ActionButtonBlock",
+          "config": {
+            "title": "Ready to Upgrade Your Roof?",
+            "buttonText": "Schedule a Consultation",
+            "buttonUrl": "#contact"
+          },
+          "searchTerms": "",
+          "imagePath": "/assets/images/services/commercial/c1/block_10.jpg"
+        }
+      ],
+      "slug": "commercial-c1-commercial-flat-roof-installation"
+    },
+    {
+      "id": 2,
+      "name": "Commercial Roof Repair",
+      "category": "commercial",
+      "research": {
+        "construction_process": "**  \n\n### **Step-by-Step Process**  \n1. **Inspection & Assessment** \u2013 A professional roofer conducts a thorough inspection to identify leaks, cracks, membrane damage, or structural issues. Infrared scans or moisture meters may be used.  \n2. **Material Removal** \u2013 Damaged sections (e.g., membrane, flashing, insulation) are removed. In some cases, a full tear-off is required.  \n3. **Substrate Preparation** \u2013 The roof deck is cleaned, dried, and repaired if necessary. Any rusted metal or rotted wood is replaced.  \n4. **Repair Application** \u2013 Depending on the roofing system, repairs may include:  \n   **Single-Ply Membranes (TPO, EPDM, PVC):** Patches or new membrane sections are heat-welded or adhered.  \n   **Built-Up Roofing (BUR):** New asphalt layers and gravel may be applied.  \n   **Metal Roofing:** Damaged panels are replaced, and seams are resealed.  \n   **Modified Bitumen:** Torch-down or cold-applied patches are used.  \n5. **Flashing & Sealant Application** \u2013 New flashing is installed around penetrations (vents, HVAC units) and sealed with high-quality urethane or silicone.  \n6. **Final Inspection & Testing** \u2013 A water test or infrared scan ensures no leaks remain.  \n\n### **Materials & Specifications**  \n**Membranes:** TPO (45-60 mil), EPDM (45-90 mil), PVC (50-80 mil)  \n**Flashing:** Galvanized steel, aluminum, or copper  \n**Adhesives & Sealants:** Polyurethane, silicone, or acrylic-based  \n**Insulation:** Polyiso, EPS, or XPS (R-value varies by climate)  \n\n### **Safety & Building Codes**  \nOSHA fall protection (harnesses, guardrails) is mandatory.  \nLocal building codes dictate fire ratings (e.g., Class A, B, or C) and wind uplift resistance.  \nPermits may be required for structural repairs.  \n\n### **Timeline Estimates**  \n**Minor repairs:** 1\u20133 days  \n**Moderate repairs (partial tear-off):** 3\u20137 days  \n**Extensive repairs (full membrane replacement):** 1\u20132 weeks  \n\n-- \n\n## **2.",
+        "variants": "**  \n\n### **Types of Commercial Roofing Materials**  \n1. **Single-Ply Membranes (TPO, EPDM, PVC)** \u2013 Lightweight, flexible, and energy-efficient. TPO is popular for its reflectivity; EPDM is durable but black (absorbs heat).  \n2. **Built-Up Roofing (BUR)** \u2013 Multiple asphalt layers with gravel; long-lasting but heavy.  \n3. **Modified Bitumen** \u2013 Asphalt-based with fiberglass reinforcement; good for cold climates.  \n4. **Metal Roofing (Standing Seam, Corrugated)** \u2013 Durable (50+ years) but expensive.  \n5. **Spray Polyurethane Foam (SPF)** \u2013 Seamless and insulating but requires recoating.  \n\n### **Durability, Appearance, & Cost Comparison**  \n| Material       | Lifespan   | Cost (per sq. ft.) | Key Features |  \n|----------------|------------|--------------------|--------------|  \n| **TPO**        | 20\u201330 yrs  | $3.50\u2013$7.00        | Reflective, energy-efficient |  \n| **EPDM**       | 25\u201335 yrs  | $4.00\u2013$8.00        | Durable, UV-resistant |  \n| **Metal**      | 40\u201350 yrs  | $7.00\u2013$12.00       | Long lifespan, fireproof |  \n| **BUR**        | 20\u201330 yrs  | $4.50\u2013$8.50        | Heavy-duty, traditional |  \n\n### **Premium vs. Budget Options**  \n**Premium:** Metal roofing, PVC membranes (highest durability)  \n**Budget:** EPDM, BUR (lower upfront cost but may need more maintenance)  \n\n-- \n\n## **3.",
+        "sales_supply": "**  \n\n### **Material Procurement**  \nMost contractors order materials per project from distributors (e.g., ABC Supply, Beacon).  \nLarge companies may stock common membranes/flashing for quick repairs.  \n\n### **Markup & Profit Margins**  \nTypical markup: **30\u201350%** (labor + materials).  \nEmergency repairs may have higher margins due to urgency.  \n\n### **Quoting Process**  \nQuotes are based on **square footage, material type, and labor intensity**.  \nSome contractors offer **free inspections** before providing estimates.  \n\n-- \n\n## **4.",
+        "advantages": "**  \n\n### **Key Selling Points**  \n**Prevents costly water damage** to interiors and equipment.  \n**Extends roof lifespan** (vs. full replacement).  \n**Energy-efficient options** (cool roofs reduce HVAC costs).  \n\n### **Comparison to Alternatives**  \n**Repair vs. Replacement:** Repairs are **60\u201380% cheaper** than full replacement.  \n**DIY vs. Professional:** Improper repairs void warranties and lead to leaks.  \n\n### **Long-Term Benefits**  \n**Insurance discounts** for storm-resistant roofs.  \n**Tax incentives** for energy-efficient materials (e.g., TPO).  \n\n-- \n\n## **5.",
+        "marketing": "**  \n\n### **Effective Marketing Strategies**  \n**Before/After Photos** \u2013 Show damage vs. repaired sections.  \n**Case Studies** \u2013 Highlight cost savings for clients.  \n**Video Demonstrations** \u2013 Show waterproofing tests.  \n\n### **Pricing Transparency**  \nMost roofers **avoid public pricing** (varies by project scope).  \nInstead, offer **free estimates** to attract leads.  \n\n### **Common Customer Concerns**  \n**\"How long will the repair last?\"** \u2192 Highlight warranties.  \n**\"Will this disrupt my business?\"** \u2192 Emphasize quick turnaround.  \n\n-- \n\n## **6.",
+        "warranty_maintenance": "**  \n\n### **Warranties Offered**  \n**Material Warranty:** 10\u201330 years (from manufacturer).  \n**Workmanship Warranty:** 1\u201310 years (from contractor).  \n\n### **Maintenance Requirements**  \n**Bi-annual inspections** (check seams, flashing, drains).  \n**Debris removal** to prevent ponding water.  \n\n### **Expected Lifespan**  \n**TPO/EPDM:** 20\u201330 years  \n**Metal:** 40\u201350 years  \n**BUR:** 20\u201330 years  \n\n-- \n\nThis guide provides a **commercial roofing contractor\u2019s perspective**, ensuring credibility and depth for a professional service page. Let me know if you'd like any section expanded!"
+      },
+      "blocks": [
+        {
+          "blockName": "HeroBlock",
+          "config": {
+            "title": "Commercial Roof Repair Services",
+            "subtitle": "Expert repairs for leaks, cracks, and structural damage to keep your business protected.",
+            "backgroundOpacity": 0.6,
+            "buttonText": "Get a Free Estimate",
+            "buttonUrl": "#contact"
+          },
+          "searchTerms": "commercial roof repair, roofing contractor, flat roof repair",
+          "imagePath": "/assets/images/services/commercial/c2/block_1.jpg"
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "Our Commercial Roof Repair Process",
+            "subtitle": "A step-by-step approach to ensure quality and durability"
+          },
+          "searchTerms": "roof inspection, roofing repair process",
+          "imagePath": "/assets/images/services/commercial/c2/block_2.jpg"
+        },
+        {
+          "blockName": "GeneralList",
+          "config": {
+            "title": "Step-by-Step Repair Process",
+            "items": [
+              "Inspection & Assessment \u2013 Identify leaks, cracks, and structural issues.",
+              "Material Removal \u2013 Remove damaged sections or full tear-off if needed.",
+              "Substrate Preparation \u2013 Clean, dry, and repair the roof deck.",
+              "Repair Application \u2013 Apply patches, new membranes, or metal panels.",
+              "Flashing & Sealant \u2013 Install new flashing and seal penetrations.",
+              "Final Inspection \u2013 Test for leaks and ensure quality."
+            ]
+          },
+          "searchTerms": "roof repair steps, commercial roofing work",
+          "imagePath": "/assets/images/services/commercial/c2/block_3.jpg"
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "Commercial Roofing Materials & Options",
+            "subtitle": "Choose the best solution for your business"
+          },
+          "searchTerms": "commercial roofing materials, TPO roof, metal roofing",
+          "imagePath": "/assets/images/services/commercial/c2/block_4.jpg"
+        },
+        {
+          "blockName": "GridImageTextBlock",
+          "config": {
+            "title": "Popular Roofing Materials",
+            "items": [
+              {
+                "title": "TPO Membrane",
+                "description": "Reflective, energy-efficient, and cost-effective.",
+                "imageUrl": ""
+              },
+              {
+                "title": "EPDM Rubber",
+                "description": "Durable and UV-resistant, ideal for long-term use.",
+                "imageUrl": ""
+              },
+              {
+                "title": "Metal Roofing",
+                "description": "Fireproof and long-lasting, but higher upfront cost.",
+                "imageUrl": ""
+              },
+              {
+                "title": "Built-Up Roofing (BUR)",
+                "description": "Traditional, heavy-duty, and reliable.",
+                "imageUrl": ""
+              }
+            ]
+          },
+          "searchTerms": "TPO roof, EPDM membrane, metal commercial roof",
+          "imagePath": "/assets/images/services/commercial/c2/block_5.jpg"
+        },
+        {
+          "blockName": "OverviewAndAdvantagesBlock",
+          "config": {
+            "title": "Why Choose Professional Commercial Roof Repair?",
+            "items": [
+              {
+                "title": "Prevent Costly Damage",
+                "description": "Avoid interior water damage and equipment failures."
+              },
+              {
+                "title": "Extend Roof Lifespan",
+                "description": "Repairs are 60-80% cheaper than full replacement."
+              },
+              {
+                "title": "Energy Efficiency",
+                "description": "Cool roofs reduce HVAC costs and qualify for tax incentives."
+              }
+            ]
+          },
+          "searchTerms": "benefits of roof repair, commercial roofing advantages",
+          "imagePath": "/assets/images/services/commercial/c2/block_6.jpg"
+        },
+        {
+          "blockName": "ActionButtonBlock",
+          "config": {
+            "title": "Ready to Repair Your Commercial Roof?",
+            "buttonText": "Schedule a Free Inspection",
+            "buttonUrl": "#contact"
+          },
+          "searchTerms": "roofing contractor, commercial roof inspection",
+          "imagePath": "/assets/images/services/commercial/c2/block_7.jpg"
+        }
+      ],
+      "slug": "commercial-c2-commercial-roof-repair-services"
+    },
+    {
+      "id": 3,
+      "name": "Metal Roofing",
+      "category": "commercial",
+      "research": {
+        "construction_process": "**  \n\n### **Step-by-Step Installation Process**  \n1. **Initial Assessment & Measurements** \u2013 A professional roofing contractor conducts a thorough inspection of the existing roof structure, checks for structural integrity, and takes precise measurements.  \n2. **Removal of Old Roofing (if applicable)** \u2013 If replacing an existing roof, the old material is stripped away, and the deck is inspected for damage.  \n3. **Underlayment Installation** \u2013 A high-quality synthetic or felt underlayment is applied to provide a moisture barrier.  \n4. **Flashing & Edge Metal Installation** \u2013 Critical for waterproofing, flashing is installed around roof penetrations (vents, chimneys, skylights) and along eaves/rakes.  \n5. **Panel Installation** \u2013 Metal panels are secured using concealed clips or exposed fasteners, depending on the system. Panels are overlapped and fastened according to manufacturer specs.  \n6. **Sealing & Finishing** \u2013 Sealants are applied at seams and penetrations to prevent leaks. Trim pieces are installed for a clean, finished look.  \n7. **Final Inspection** \u2013 The roof is checked for proper fastening, alignment, and waterproofing.  \n\n### **Materials & Specifications**  \n**Metal Panels**: Typically 22-26 gauge steel, aluminum, or copper.  \n**Fasteners**: Stainless steel or galvanized screws with neoprene washers.  \n**Underlayment**: Synthetic (e.g., Tyvek\u00ae) or traditional felt (30#).  \n**Flashing**: Galvanized or aluminum step flashing, counterflashing, and drip edges.  \n\n### **Safety & Building Codes**  \nOSHA requires fall protection (harnesses, guardrails) for roofs with a pitch >4:12.  \nLocal building codes dictate fire ratings, wind uplift resistance (ASTM E1592), and snow load capacity.  \nProper ventilation and insulation must comply with energy codes (e.g., IECC).  \n\n### **Timeline Estimates**  \nSmall commercial roofs (5,000\u201310,000 sq. ft.): **1\u20132 weeks**  \nLarge installations (20,000+ sq. ft.): **3\u20136 weeks** (weather-dependent)  \n\n-- \n\n## **2.",
+        "variants": "**  \n\n### **Types of Metal Roofing Systems**  \n1. **Standing Seam** \u2013 Concealed fasteners, most durable, premium option.  \n2. **Corrugated Metal** \u2013 Exposed fasteners, economical, common in agricultural/industrial buildings.  \n3. **Metal Shingles/Tiles** \u2013 Mimic traditional shingles or slate, higher aesthetic appeal.  \n4. **R-Panel/5V Crimp** \u2013 Budget-friendly, often used for warehouses.  \n\n### **Durability, Appearance, & Cost Comparison**  \n| Type               | Durability (Years) | Appearance          | Cost (per sq. ft.) |  \n|--------------------|-------------------|---------------------|-------------------|  \n| Standing Seam      | 50+               | Sleek, modern       | $8\u2013$15            |  \n| Corrugated         | 30\u201350             | Industrial          | $4\u2013$8             |  \n| Metal Shingles     | 40\u201360             | High-end            | $10\u2013$20           |  \n| R-Panel            | 25\u201340             | Basic               | $3\u2013$6             |  \n\n### **Premium vs. Budget Options**  \n**Premium**: Standing seam, copper, or zinc-coated steel (higher corrosion resistance).  \n**Budget**: Galvanized corrugated or R-panel (lower upfront cost but shorter lifespan).  \n\n-- \n\n## **3.",
+        "sales_supply": "**  \n\n### **Material Procurement**  \nMost contractors order materials per project from metal roofing suppliers (e.g., ABC Supply, Bradbury Group).  \nSome keep limited stock of common gauges/colors for small repairs.  \n\n### **Markup & Profit Margins**  \nTypical markup: **30\u201350%** on materials, **50\u201370%** on labor.  \nProfit margins vary based on project size (larger jobs have lower margins due to bulk discounts).  \n\n### **Quoting Process**  \nQuotes include:  \n  Material costs (panels, underlayment, flashing).  \n  Labor (installation, tear-off if needed).  \n  Overhead (equipment, insurance, permits).  \nMost contractors avoid public pricing due to variability in project scope.  \n\n-- \n\n## **4.",
+        "advantages": "**  \n\n### **Key Selling Points**  \n**Longevity**: 40\u201370 years vs. 15\u201320 for asphalt.  \n**Durability**: Resists wind (up to 140 mph), fire (Class A rating), and hail.  \n**Low Maintenance**: No frequent repairs like shingle roofs.  \n**Energy Efficiency**: Reflective coatings reduce cooling costs by 10\u201325%.  \n\n### **Comparison to Alternatives**  \n**Asphalt Shingles**: Cheaper upfront but shorter lifespan.  \n**TPO/PVC**: Similar durability but less impact-resistant.  \n**Slate/Tile**: More expensive and heavier.  \n\n### **Insurance & Energy Benefits**  \nSome insurers offer discounts due to fire/wind resistance.  \nCool roof ratings (CRRC) may qualify for energy rebates.  \n\n-- \n\n## **5.",
+        "marketing": "**  \n\n### **Effective Marketing Strategies**  \n**Visuals**: Before/after photos, drone footage of installations.  \n**Demonstrations**: Show impact resistance (hail tests) vs. asphalt.  \n**Testimonials**: Highlight long-term savings for commercial clients.  \n\n### **Pricing Transparency**  \nMost contractors avoid public pricing due to customization needs but may provide ballpark estimates.  \n\n### **Common Customer Concerns**  \n**Noise**: Addressed with proper insulation.  \n**Dents**: High-grade metals resist hail damage.  \n**Cost Justification**: Emphasize ROI over time.  \n\n-- \n\n## **6.",
+        "warranty_maintenance": "**  \n\n### **Warranties**  \n**Material**: 20\u201350 years (varies by manufacturer).  \n**Workmanship**: 5\u201320 years (contractor-dependent).  \n\n### **Maintenance Requirements**  \nAnnual inspections for loose fasteners or sealant wear.  \nOccasional cleaning to prevent debris buildup.  \n\n### **Lifespan**  \n**Steel/Aluminum**: 40\u201370 years.  \n**Copper/Zinc**: 80+ years with proper care.  \n\n-- \n\nThis comprehensive guide provides roofing companies with authoritative content to educate customers and establish expertise in commercial metal roofing."
+      },
+      "blocks": [
+        {
+          "blockName": "HeroBlock",
+          "config": {
+            "title": "Commercial Metal Roofing Solutions",
+            "subtitle": "Durable, energy-efficient, and long-lasting metal roofing for your commercial property",
+            "backgroundOpacity": 0.6,
+            "buttonText": "Get a Free Quote",
+            "buttonUrl": "#contact"
+          },
+          "searchTerms": "commercial metal roofing installation",
+          "imagePath": "/assets/images/services/commercial/c3/block_1.jpg"
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "Why Choose Metal Roofing?",
+            "subtitle": "Discover the benefits of metal roofing for your commercial property"
+          },
+          "searchTerms": "",
+          "imagePath": "/assets/images/services/commercial/c3/block_2.jpg"
+        },
+        {
+          "blockName": "OverviewAndAdvantagesBlock",
+          "config": {
+            "overview": "Metal roofing offers unmatched durability, energy efficiency, and longevity for commercial buildings. With a lifespan of 40-70 years, it outperforms traditional roofing materials.",
+            "advantages": [
+              "Longevity: 40-70 years vs. 15-20 for asphalt",
+              "Durability: Resists wind, fire, and hail",
+              "Low Maintenance: No frequent repairs needed",
+              "Energy Efficiency: Reduces cooling costs by 10-25%"
+            ]
+          },
+          "searchTerms": "commercial metal roof benefits",
+          "imagePath": "/assets/images/services/commercial/c3/block_3.jpg"
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "Our Metal Roofing Options",
+            "subtitle": "Choose the perfect metal roofing system for your commercial property"
+          },
+          "searchTerms": "",
+          "imagePath": "/assets/images/services/commercial/c3/block_4.jpg"
+        },
+        {
+          "blockName": "ShingleSelectorBlock",
+          "config": {
+            "title": "Metal Roofing Types",
+            "items": [
+              {
+                "title": "Standing Seam",
+                "description": "Concealed fasteners, most durable, premium option.",
+                "imageUrl": "",
+                "price": "$8\u2013$15 per sq. ft."
+              },
+              {
+                "title": "Corrugated Metal",
+                "description": "Exposed fasteners, economical, common in agricultural/industrial buildings.",
+                "imageUrl": "",
+                "price": "$4\u2013$8 per sq. ft."
+              },
+              {
+                "title": "Metal Shingles/Tiles",
+                "description": "Mimic traditional shingles or slate, higher aesthetic appeal.",
+                "imageUrl": "",
+                "price": "$10\u2013$20 per sq. ft."
+              },
+              {
+                "title": "R-Panel/5V Crimp",
+                "description": "Budget-friendly, often used for warehouses.",
+                "imageUrl": "",
+                "price": "$3\u2013$6 per sq. ft."
+              }
+            ]
+          },
+          "searchTerms": "metal roofing types commercial",
+          "imagePath": "/assets/images/services/commercial/c3/block_5.jpg"
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "Our Installation Process",
+            "subtitle": "Professional and efficient metal roofing installation"
+          },
+          "searchTerms": "",
+          "imagePath": "/assets/images/services/commercial/c3/block_6.jpg"
+        },
+        {
+          "blockName": "GeneralList",
+          "config": {
+            "title": "Step-by-Step Installation",
+            "items": [
+              "Initial Assessment & Measurements",
+              "Removal of Old Roofing (if applicable)",
+              "Underlayment Installation",
+              "Flashing & Edge Metal Installation",
+              "Panel Installation",
+              "Sealing & Finishing",
+              "Final Inspection"
+            ]
+          },
+          "searchTerms": "metal roofing installation process",
+          "imagePath": "/assets/images/services/commercial/c3/block_7.jpg"
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "Ready to Upgrade Your Roof?",
+            "subtitle": "Contact us today for a free consultation and quote"
+          },
+          "searchTerms": "",
+          "imagePath": "/assets/images/services/commercial/c3/block_8.jpg"
+        },
+        {
+          "blockName": "ActionButtonBlock",
+          "config": {
+            "title": "Get Your Free Quote",
+            "buttonText": "Contact Us",
+            "buttonUrl": "#contact"
+          },
+          "searchTerms": "commercial roofing contractor",
+          "imagePath": "/assets/images/services/commercial/c3/block_9.jpg"
+        }
+      ],
+      "slug": "commercial-c3-commercial-metal-roofing-solutions"
+    },
+    {
+      "id": 4,
+      "name": "TPO Roofing",
+      "category": "commercial",
+      "research": {
+        "construction_process": "**  \n\n### **Step-by-Step Installation Process**  \n1. **Roof Inspection & Preparation** \u2013 Assess the existing roof structure, remove debris, and ensure the substrate (typically metal, concrete, or wood decking) is clean, dry, and structurally sound.  \n2. **Insulation Installation** \u2013 Lay down rigid insulation boards (polyiso, EPS, or XPS) to meet energy code requirements (R-value varies by climate).  \n3. **Vapor Barrier (if needed)** \u2013 A self-adhered membrane may be applied in high-humidity regions to prevent moisture migration.  \n4. **TPO Membrane Installation** \u2013  \n   **Mechanically Attached:** Fastened with plates and screws (common for high-wind areas).  \n   **Fully Adhered:** Glued to the substrate for superior wind resistance.  \n   **Ballasted:** Held in place with pavers or gravel (less common due to weight concerns).  \n5. **Seaming** \u2013 Heat-welded seams (using hot air welders) ensure watertight bonds.  \n6. **Flashing & Edge Details** \u2013 Install metal flashings, termination bars, and sealants at penetrations (vents, HVAC units, etc.).  \n7. **Final Inspection** \u2013 Check for proper adhesion, seam integrity, and drainage.  \n\n### **Materials & Specifications**  \n**TPO Membrane:** 45-80 mil thickness (60 mil is standard for commercial).  \n**Insulation:** Polyiso (R-6 per inch), EPS (R-4), or XPS (R-5).  \n**Fasteners:** Stainless steel screws and plates for wind uplift resistance.  \n**Adhesives:** Low-VOC, high-bonding TPO-specific adhesives (for adhered systems).  \n\n### **Safety & Building Codes**  \nOSHA fall protection (harnesses, guardrails) is mandatory.  \nFire ratings (ASTM E108 Class A/B) and wind uplift resistance (ASTM D6636) must meet local codes.  \nEnergy codes (ASHRAE 90.1) may dictate insulation R-values.  \n\n### **Timeline Estimates**  \n**Small projects (10,000 sq. ft):** 1-2 weeks  \n**Large warehouses (50,000+ sq. ft):** 3-6 weeks (weather-dependent).  \n\n---\n\n## **2.",
+        "variants": "**  \n\n### **Types of TPO Roofing**  \n**Standard TPO (60 mil):** Most common, balances cost and durability.  \n**Reinforced TPO (80 mil+):** Higher puncture resistance for heavy foot traffic.  \n**White vs. Light Gray:** White reflects more UV (better energy efficiency).  \n\n### **Durability, Appearance, & Cost**  \n| Variant | Durability | Appearance | Cost (per sq. ft) |  \n|---------|------------|------------|------------------|  \n| 45 mil  | Moderate   | Smooth     | $3.50 $5.00    |  \n| 60 mil  | High       | Textured   | $4.50 $6.50    |  \n| 80 mil  | Premium    | Heavy-duty | $6.00 $8.00    |  \n\n### **Premium vs. Budget Options**  \n**Budget:** 45-50 mil, mechanically attached (lower upfront cost, shorter lifespan).  \n**Premium:** 80 mil, fully adhered (better wind resistance, 30+ year lifespan).  \n\n---\n\n## **3.",
+        "sales_supply": "**  \n\n### **Procurement & Inventory**  \nMost contractors order TPO rolls (100-ft lengths) from distributors (e.g., ABC Supply, Beacon).  \nLarger companies may stock common thicknesses (60 mil).  \n\n### **Markup & Profit Margins**  \nMaterials: $3.50 $8.00/sq. ft  \nLabor: $2.50 $5.00/sq. ft  \n**Total installed cost:** $6.00 $13.00/sq. ft  \n**Typical markup:** 20-40% (varies by competition).  \n\n### **Quoting Process**  \n**Per sq. ft pricing** (based on membrane thickness, attachment method).  \nAdditional costs for insulation, flashing, and complex penetrations.  \n\n---\n\n## **4.",
+        "advantages": "**  \n\n### **Key Selling Points**  \n**Energy Efficiency:** White TPO reflects 85%+ of UV rays, reducing cooling costs.  \n**Durability:** Resists UV degradation, chemicals, and punctures.  \n**Cost-Effective:** Cheaper than PVC or EPDM with similar performance.  \n\n### **Comparison to Alternatives**  \n| Roofing Type | Lifespan | Cost | Energy Efficiency |  \n|-------------|----------|------|------------------|  \n| TPO         | 20-30 yrs | $$   | High (reflectivity) |  \n| EPDM        | 15-25 yrs | $$$  | Moderate |  \n| PVC         | 25-30 yrs | $$$$ | High |  \n\n### **Insurance & Tax Benefits**  \nSome insurers offer discounts for energy-efficient roofs.  \nPotential tax credits (e.g., Section 179D for commercial energy efficiency).  \n\n---\n\n## **5.",
+        "marketing": "**  \n\n### **Effective Marketing Strategies**  \n**Visuals:** Before/after shots, drone footage of large installations.  \n**Case Studies:** Highlight energy savings (e.g., \"Reduced HVAC costs by 20%\").  \n**Pricing Transparency:** Most contractors avoid public pricing (too many variables).  \n\n### **Common Customer Questions**  \n\"How long will it last?\" (20-30 years with maintenance)  \n\"Will it save me money on cooling?\" (Yes, up to 30% in some cases)  \n\"What\u2019s the warranty?\" (10-30 years, depending on installer & manufacturer).  \n\n---\n\n## **6.",
+        "warranty_maintenance": "**  \n\n### **Warranties Offered**  \n**Manufacturer:** 10-30 years (material defects).  \n**Contractor:** 5-10 years (workmanship).  \n\n### **Maintenance Requirements**  \nAnnual inspections (check seams, flashings).  \nClear debris to prevent ponding water.  \n\n### **Lifespan**  \n**Standard TPO (60 mil):** 20-25 years  \n**Premium TPO (80 mil):** 25-30 years  \n\n---\n\nThis guide provides a **comprehensive, contractor-level breakdown** of TPO roofing, ideal for creating **authoritative website content** that educates commercial clients. Let me know if you'd like any section expanded!"
+      },
+      "blocks": [
+        {
+          "blockName": "HeroBlock",
+          "config": {
+            "title": "Commercial TPO Roofing Solutions",
+            "subtitle": "Durable, energy-efficient roofing for your commercial property",
+            "backgroundOpacity": 0.6,
+            "buttonText": "Get a Free Quote",
+            "buttonUrl": "#contact"
+          },
+          "searchTerms": "commercial TPO roofing installation",
+          "imagePath": "/assets/images/services/commercial/c4/block_1.jpg"
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "Why Choose TPO Roofing?",
+            "subtitle": "Benefits and Advantages"
+          },
+          "searchTerms": "TPO roofing benefits",
+          "imagePath": "/assets/images/services/commercial/c4/block_2.jpg"
+        },
+        {
+          "blockName": "OverviewAndAdvantagesBlock",
+          "config": {
+            "overview": "TPO roofing is a popular choice for commercial properties due to its durability, energy efficiency, and cost-effectiveness.",
+            "advantages": [
+              "Energy Efficiency: Reflects 85%+ of UV rays, reducing cooling costs",
+              "Durability: Resists UV degradation, chemicals, and punctures",
+              "Cost-Effective: Cheaper than PVC or EPDM with similar performance"
+            ]
+          },
+          "searchTerms": "TPO roofing commercial benefits",
+          "imagePath": "/assets/images/services/commercial/c4/block_3.jpg"
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "Our TPO Roofing Process",
+            "subtitle": "Step-by-Step Installation"
+          },
+          "searchTerms": "TPO roofing installation process",
+          "imagePath": "/assets/images/services/commercial/c4/block_4.jpg"
+        },
+        {
+          "blockName": "GeneralList",
+          "config": {
+            "title": "Installation Steps",
+            "items": [
+              "Roof Inspection & Preparation",
+              "Insulation Installation",
+              "Vapor Barrier (if needed)",
+              "TPO Membrane Installation",
+              "Seaming",
+              "Flashing & Edge Details",
+              "Final Inspection"
+            ]
+          },
+          "searchTerms": "TPO roofing installation steps",
+          "imagePath": "/assets/images/services/commercial/c4/block_5.jpg"
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "TPO Roofing Options",
+            "subtitle": "Choose the Right Solution for Your Property"
+          },
+          "searchTerms": "TPO roofing options",
+          "imagePath": "/assets/images/services/commercial/c4/block_6.jpg"
+        },
+        {
+          "blockName": "PricingGrid",
+          "config": {
+            "title": "TPO Roofing Variants",
+            "subtitle": "Durability, Appearance, & Cost",
+            "items": [
+              {
+                "title": "45 mil",
+                "description": "Moderate durability, smooth appearance",
+                "price": "$3.50 - $5.00/sq. ft"
+              },
+              {
+                "title": "60 mil",
+                "description": "High durability, textured appearance",
+                "price": "$4.50 - $6.50/sq. ft"
+              },
+              {
+                "title": "80 mil",
+                "description": "Premium durability, heavy-duty appearance",
+                "price": "$6.00 - $8.00/sq. ft"
+              }
+            ]
+          },
+          "searchTerms": "TPO roofing thickness options",
+          "imagePath": "/assets/images/services/commercial/c4/block_7.jpg"
+        },
+        {
+          "blockName": "ActionButtonBlock",
+          "config": {
+            "title": "Ready to Upgrade Your Roof?",
+            "buttonText": "Contact Us Today",
+            "buttonUrl": "#contact"
+          },
+          "searchTerms": "commercial roofing contractor",
+          "imagePath": "/assets/images/services/commercial/c4/block_8.jpg"
+        }
+      ],
+      "slug": "commercial-c4-commercial-tpo-roofing-solutions"
+    }
+  ]
+}

@@ -3,33 +3,42 @@ import json
 import os
 import requests
 import time
+import dotenv
 from typing import Dict, List, Any
+from pathlib import Path
 
-# Replace with your actual DeepSeek API key
-DEEPSEEK_API_KEY = "YOUR_DEEPSEEK_API_KEY"
+# Load the DeepSeek API key from .env.deepseek file
+env_path = Path(__file__).parent / ".env.deepseek"
+dotenv.load_dotenv(env_path)
+
+# Get API key from environment variable
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 API_ENDPOINT = "https://api.deepseek.com/v1/chat/completions"
+
+if not DEEPSEEK_API_KEY:
+    print("WARNING: DeepSeek API key not found. Please set it in the .env.deepseek file.")
 
 # Default services to use if BBB data is not available
 DEFAULT_SERVICES = {
     "residential": [
-        {"id": "r1", "name": "Roof Shingling"},
-        {"id": "r2", "name": "Roof Repair"},
-        {"id": "r3", "name": "Siding Installation"},
-        {"id": "r4", "name": "Gutter Installation"}
+        {"id": 1, "name": "Roof Shingling"},
+        {"id": 2, "name": "Roof Repair"},
+        {"id": 3, "name": "Siding Installation"},
+        {"id": 4, "name": "Gutter Installation"}
     ],
     "commercial": [
-        {"id": "c1", "name": "Flat Roof Installation"},
-        {"id": "c2", "name": "Commercial Roof Repair"},
-        {"id": "c3", "name": "Metal Roofing"},
-        {"id": "c4", "name": "TPO Roofing"}
+        {"id": 1, "name": "Flat Roof Installation"},
+        {"id": 2, "name": "Commercial Roof Repair"},
+        {"id": 3, "name": "Metal Roofing"},
+        {"id": 4, "name": "TPO Roofing"}
     ]
 }
 
-def get_bbb_services() -> Dict[str, List[Dict[str, str]]]:
+def get_bbb_services() -> Dict[str, List[Dict[str, Any]]]:
     """Extract services from BBB profile data if available, otherwise use defaults."""
     try:
         # Try to load BBB profile data
-        with open("public/data/bbb_profile_data.json", "r") as f:
+        with open("public/data/scripts/bbb_profile_data.json", "r") as f:
             bbb_data = json.load(f)
         
         if not bbb_data or "services" not in bbb_data:
@@ -53,7 +62,8 @@ def get_bbb_services() -> Dict[str, List[Dict[str, str]]]:
             if service_name.lower() in ["and more", "other", "etc", "etc."]:
                 continue
                 
-            service_id = f"c{i+1}" if "commercial" in service_name.lower() else f"r{i+1}"
+            # Use numerical IDs now
+            service_id = i+1 if "commercial" not in service_name.lower() else i+1
             service_entry = {"id": service_id, "name": service_name}
             
             if "commercial" in service_name.lower():
@@ -74,12 +84,12 @@ def get_bbb_services() -> Dict[str, List[Dict[str, str]]]:
         residential_services = residential_services[:4]
         commercial_services = commercial_services[:4]
         
-        # Ensure IDs are properly sequenced
+        # Ensure IDs are properly sequenced as numerical values
         for i, service in enumerate(residential_services):
-            service["id"] = f"r{i+1}"
+            service["id"] = i+1
         
         for i, service in enumerate(commercial_services):
-            service["id"] = f"c{i+1}"
+            service["id"] = i+1
         
         return {
             "residential": residential_services,
@@ -157,32 +167,6 @@ def call_deepseek_api(prompt: str) -> str:
         print(response.text)
         return f"Error: {response.status_code} - {response.text}"
 
-def research_service(service: Dict[str, str], category: str) -> Dict[str, Any]:
-    """Research a service and return structured data."""
-    print(f"Researching {service['name']} ({category})...")
-    
-    # Call DeepSeek API
-    research_prompt = generate_research_prompt(service['name'], category)
-    research_results = call_deepseek_api(research_prompt)
-    
-    # Structure the results
-    enriched_service = {
-        "id": service['id'],
-        "name": service['name'],
-        "category": category,
-        "research": {
-            "construction_process": extract_section(research_results, "General Construction Process"),
-            "variants": extract_section(research_results, "Product/Service Variants"),
-            "sales_supply": extract_section(research_results, "Sales and Supply Chain"),
-            "advantages": extract_section(research_results, "Advantages and Benefits"),
-            "marketing": extract_section(research_results, "Marketing Considerations"),
-            "warranty_maintenance": extract_section(research_results, "Warranty and Maintenance")
-        },
-        "blocks": []  # This will be filled by the next script
-    }
-    
-    return enriched_service
-
 def extract_section(text: str, section_name: str) -> str:
     """Extract a section from the research results."""
     try:
@@ -216,6 +200,58 @@ def extract_section(text: str, section_name: str) -> str:
         print(f"Error extracting section {section_name}: {e}")
         return "Error extracting section"
 
+def research_service(service: Dict[str, Any], category: str) -> Dict[str, Any]:
+    """Research a service and return structured data."""
+    print(f"Researching {service['name']} ({category})...")
+    
+    # Call DeepSeek API
+    research_prompt = generate_research_prompt(service['name'], category)
+    research_results = call_deepseek_api(research_prompt)
+    
+    # Structure the results
+    enriched_service = {
+        "id": service['id'],
+        "name": service['name'],
+        "category": category,
+        "research": {
+            "construction_process": extract_section(research_results, "General Construction Process"),
+            "variants": extract_section(research_results, "Product/Service Variants"),
+            "sales_supply": extract_section(research_results, "Sales and Supply Chain"),
+            "advantages": extract_section(research_results, "Advantages and Benefits"),
+            "marketing": extract_section(research_results, "Marketing Considerations"),
+            "warranty_maintenance": extract_section(research_results, "Warranty and Maintenance")
+        },
+        "blocks": create_default_blocks(service['name'], category)
+    }
+    
+    # Generate a slug for the service
+    enriched_service["slug"] = f"{category}-{service['id']}-{category}-{service['name'].lower().replace(' ', '-')}"
+    
+    return enriched_service
+
+def create_default_blocks(service_name: str, category: str) -> List[Dict[str, Any]]:
+    """Create default blocks structure similar to the original services.json"""
+    # This is a placeholder function to create a basic blocks structure
+    # You would customize this based on the specific service and category
+    
+    # For now, just create a simple HeroBlock as a placeholder
+    blocks = [
+        {
+            "blockName": "HeroBlock",
+            "config": {
+                "title": f"{category.capitalize()} {service_name}",
+                "subtitle": f"Expert {service_name.lower()} services for your {category} property",
+                "backgroundOpacity": 0.6,
+                "buttonText": "Get a Free Quote",
+                "buttonUrl": "#contact"
+            },
+            "searchTerms": f"{category} {service_name.lower()}",
+            "imagePath": f"/assets/images/services/{category}/{service_name.lower().replace(' ', '_')}/block_1.jpg"
+        }
+    ]
+    
+    return blocks
+
 def main():
     """Main function to research all services and generate the JSON file."""
     # Get services from BBB data or use defaults
@@ -241,12 +277,12 @@ def main():
         time.sleep(2)  # Avoid rate limiting
     
     # Save to JSON file
-    with open("public/data/services_research.json", "w") as f:
+    with open("public/data/raw_data/services.json", "w") as f:
         json.dump(all_services, f, indent=2)
     
-    print("Research completed and saved to public/data/services_research.json")
+    print("Research completed and saved to public/data/raw_data/services.json")
 
 if __name__ == "__main__":
     # Make sure output directory exists
-    os.makedirs("public/data", exist_ok=True)
+    os.makedirs("public/data/raw_data", exist_ok=True)
     main() 
