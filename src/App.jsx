@@ -12,13 +12,14 @@ import {
 
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
-import Process from "./components/Process";
+import LoadingScreen from "./components/loadingScreen";
 
 // Lazy load components to improve initial load time
 const About = lazy(() => import("./components/About"));
 const OneForm = lazy(() => import("./components/OneForm"));
 const ServiceEditPage = lazy(() => import("./components/ServiceEditPage"));
 const ServicePage = lazy(() => import("./components/ServicePage"));
+const LegalAgreement = lazy(() => import("./components/LegalAgreement"));
 
 // --- Main Page Blocks ---
 // These components render different sections of the main page
@@ -45,14 +46,13 @@ const BeforeAfterBlock = lazy(
 const EmployeesBlock = lazy(
   () => import("./components/MainPageBlocks/EmployeesBlock")
 );
-
-// Import the loading screen component
-import LoadingScreen from "./components/loadingScreen";
+const ProcessBlock = lazy(
+  () => import("./components/MainPageBlocks/ProcessBlock")
+);
+const AboutBlock = lazy(() => import("./components/MainPageBlocks/AboutBlock"));
 
 // Utility for restoring scroll position when navigating
 import useScrollRestoration from "./components/usescrollrestoration";
-
-import LegalAgreement from "./components/LegalAgreement";
 
 /**
  * ScrollRestoration Component
@@ -65,6 +65,49 @@ function ScrollRestoration() {
   useScrollRestoration();
   return null;
 }
+
+/**
+ * AllServiceBlocksPage Component
+ *
+ * Special component that loads all service blocks from all_blocks_showcase.json
+ * This is used for easy editing and previewing of all blocks in one place
+ */
+const AllServiceBlocksPage = lazy(() =>
+  import("./components/ServicePage").then((module) => {
+    return {
+      default: (props) => {
+        // Component that fetches the showcase data and passes it to ServicePage
+        const [showcaseData, setShowcaseData] = useState(null);
+        const [loading, setLoading] = useState(true);
+
+        useEffect(() => {
+          const fetchShowcaseData = async () => {
+            try {
+              const response = await fetch("/data/all_blocks_showcase.json");
+              if (!response.ok)
+                throw new Error("Failed to fetch showcase data");
+
+              const data = await response.json();
+              setShowcaseData(data);
+              setLoading(false);
+            } catch (error) {
+              console.error("Error loading showcase data:", error);
+              setLoading(false);
+            }
+          };
+
+          fetchShowcaseData();
+        }, []);
+
+        if (loading) {
+          return <LoadingScreen />;
+        }
+
+        return <module.default forcedServiceData={showcaseData} {...props} />;
+      },
+    };
+  })
+);
 
 /**
  * AppRoutes Component
@@ -88,6 +131,8 @@ const AppRoutes = ({
   combinedPageCfg,
   beforeAfterConfig,
   employeesConfig,
+  processConfig,
+  aboutPageConfig,
 }) => {
   const location = useLocation();
 
@@ -104,7 +149,9 @@ const AppRoutes = ({
               </Suspense>
             </section>
             <section id="process">
-              <Process />
+              <Suspense fallback={<LoadingScreen />}>
+                <ProcessBlock readOnly processData={processConfig} />
+              </Suspense>
             </section>
             <section id="richtext">
               <Suspense fallback={<LoadingScreen />}>
@@ -148,6 +195,26 @@ const AppRoutes = ({
         }
       />
 
+      {/* About Page */}
+      <Route
+        path="/about"
+        element={
+          <Suspense fallback={<LoadingScreen />}>
+            <AboutBlock readOnly aboutData={aboutPageConfig} />
+          </Suspense>
+        }
+      />
+
+      {/* All Service Blocks Page route */}
+      <Route
+        path="/all-service-blocks"
+        element={
+          <Suspense fallback={<LoadingScreen />}>
+            <AllServiceBlocksPage />
+          </Suspense>
+        }
+      />
+
       {/* Service page routes */}
       <Route
         path="/services/:serviceSlug"
@@ -188,16 +255,6 @@ const AppRoutes = ({
         }
       />
 
-      {/* About page route */}
-      <Route
-        path="/about"
-        element={
-          <Suspense fallback={<LoadingScreen />}>
-            <About />
-          </Suspense>
-        }
-      />
-
       {/* Main OneForm editor route */}
       <Route
         path="/oneform"
@@ -227,6 +284,30 @@ const AppRoutes = ({
               initialData={heroConfig}
               blockName="hero"
               title="Hero Block Editor"
+            />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/edit/process"
+        element={
+          <Suspense fallback={<LoadingScreen />}>
+            <OneForm
+              initialData={processConfig}
+              blockName="process"
+              title="Process Block Editor"
+            />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/edit/about"
+        element={
+          <Suspense fallback={<LoadingScreen />}>
+            <OneForm
+              initialData={aboutPageConfig}
+              blockName="aboutPage"
+              title="About Page Editor"
             />
           </Suspense>
         }
@@ -369,6 +450,8 @@ const App = () => {
   const combinedPageCfg = pageData.combinedPage;
   const beforeAfterConfig = pageData.beforeAfter;
   const employeesConfig = pageData.employees;
+  const processConfig = pageData.process;
+  const aboutPageConfig = pageData.aboutPage;
 
   return (
     <Router>
@@ -385,6 +468,8 @@ const App = () => {
           combinedPageCfg={combinedPageCfg}
           beforeAfterConfig={beforeAfterConfig}
           employeesConfig={employeesConfig}
+          processConfig={processConfig}
+          aboutPageConfig={aboutPageConfig}
         />
       </main>
       <section id="footer">

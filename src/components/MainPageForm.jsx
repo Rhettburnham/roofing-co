@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import PropTypes from "prop-types";
 import BasicMapBlock from "./MainPageBlocks/BasicMapBlock";
 import RichTextBlock from "./MainPageBlocks/RichTextBlock";
 import HeroBlock from "./MainPageBlocks/HeroBlock";
@@ -7,23 +8,51 @@ import EmployeesBlock from "./MainPageBlocks/EmployeesBlock";
 import ButtonBlock from "./MainPageBlocks/ButtonBlock";
 import BookingBlock from "./MainPageBlocks/BookingBlock";
 import CombinedPageBlock from "./MainPageBlocks/CombinedPageBlock";
+import ProcessBlock from "./MainPageBlocks/ProcessBlock";
+
+// Edit overlay component
+const EditOverlay = ({ children, onClose }) => (
+  <div className="absolute inset-0 bg-black bg-opacity-80 z-50 flex flex-col overflow-auto">
+    <div className="flex justify-end p-2">
+      <button
+        type="button"
+        onClick={onClose}
+        className="bg-gray-800 rounded-full p-2 text-white hover:bg-gray-700"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth="1.5"
+          stroke="currentColor"
+          className="w-6 h-6"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M6 18L18 6M6 6l12 12"
+          />
+        </svg>
+      </button>
+    </div>
+    <div className="flex-1 overflow-auto p-4">{children}</div>
+  </div>
+);
+
+EditOverlay.propTypes = {
+  children: PropTypes.node.isRequired,
+  onClose: PropTypes.func.isRequired,
+};
 
 /**
  * MainPageForm is a presentational component for editing the main page.
  * It displays the UI and passes changes upward via setFormData.
  */
-const MainPageForm = ({ formData, setFormData }) => {
+const MainPageForm = ({ formData, setFormData, singleBlockMode }) => {
   // Toggles for each block
-  const [showHeroEdit, setShowHeroEdit] = useState(false);
-  const [showRichEdit, setShowRichEdit] = useState(false);
-  const [showButtonEdit, setShowButtonEdit] = useState(false);
-  const [showMapEditor, setShowMapEditor] = useState(false);
-  const [showBookingEdit, setShowBookingEdit] = useState(false);
-  const [showCombinedEdit, setShowCombinedEdit] = useState(false);
-  const [showBeforeAfterEdit, setShowBeforeAfterEdit] = useState(false);
-  const [showEmployeesEdit, setShowEmployeesEdit] = useState(false);
+  const [activeEditBlock, setActiveEditBlock] = useState(null);
 
-  // Callback functions remain unchanged
+  // Callback functions
   const handleHeroConfigChange = (newHeroConfig) => {
     setFormData((prev) => ({ ...prev, hero: newHeroConfig }));
   };
@@ -31,7 +60,7 @@ const MainPageForm = ({ formData, setFormData }) => {
     setFormData((prev) => ({ ...prev, richText: newRichTextConfig }));
   };
   const handleButtonConfigChange = (newButtonConfig) => {
-    setFormData((prev) => ({ ...prev, about: newButtonConfig }));
+    setFormData((prev) => ({ ...prev, button: newButtonConfig }));
   };
   const handleMapConfigChange = (newMapConfig) => {
     setFormData((prev) => ({ ...prev, map: newMapConfig }));
@@ -48,8 +77,11 @@ const MainPageForm = ({ formData, setFormData }) => {
   const handleEmployeesConfigChange = (newEmployeesConfig) => {
     setFormData((prev) => ({ ...prev, employees: newEmployeesConfig }));
   };
+  const handleProcessConfigChange = (newProcessConfig) => {
+    setFormData((prev) => ({ ...prev, process: newProcessConfig }));
+  };
 
-  // Reusable SVG icons for pencil and check mark
+  // SVG icons
   const PencilIcon = (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -67,224 +99,329 @@ const MainPageForm = ({ formData, setFormData }) => {
     </svg>
   );
 
-  const CheckIcon = (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      strokeWidth="1.5"
-      stroke="currentColor"
-      className="w-6 h-6"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M4.5 12.75l6 6 9-13.5"
-      />
-    </svg>
-  );
+  // Handle rendering for single block mode
+  if (singleBlockMode) {
+    // Only render the specified block
+    switch (singleBlockMode) {
+      case "hero":
+        return (
+          <div className="relative">
+            <HeroBlock
+              readOnly={false}
+              heroconfig={formData.hero}
+              onConfigChange={handleHeroConfigChange}
+            />
+          </div>
+        );
+      case "richText":
+        return (
+          <div className="relative">
+            <RichTextBlock
+              readOnly={false}
+              richTextData={formData.richText}
+              onConfigChange={handleRichTextConfigChange}
+            />
+          </div>
+        );
+      case "button":
+        return (
+          <div className="relative">
+            <ButtonBlock
+              readOnly={false}
+              buttonconfig={formData.button}
+              onConfigChange={handleButtonConfigChange}
+            />
+          </div>
+        );
+      case "map":
+        return (
+          <div className="relative">
+            <BasicMapBlock
+              readOnly={false}
+              mapData={formData.map}
+              onConfigChange={handleMapConfigChange}
+            />
+          </div>
+        );
+      case "booking":
+        return (
+          <div className="relative">
+            <BookingBlock
+              readOnly={false}
+              bookingData={formData.booking}
+              onConfigChange={handleBookingConfigChange}
+            />
+          </div>
+        );
+      case "combinedPage":
+        return (
+          <div className="relative">
+            <CombinedPageBlock
+              readOnly={false}
+              config={formData.combinedPage}
+              onConfigChange={handleCombinedConfigChange}
+            />
+          </div>
+        );
+      case "beforeAfter":
+        return (
+          <div className="relative">
+            <BeforeAfterBlock
+              readOnly={false}
+              beforeAfterData={formData.beforeAfter}
+              onConfigChange={handleBeforeConfigChange}
+            />
+          </div>
+        );
+      case "employees":
+        return (
+          <div className="relative">
+            <EmployeesBlock
+              readOnly={false}
+              employeesData={formData.employees}
+              onConfigChange={handleEmployeesConfigChange}
+            />
+          </div>
+        );
+      case "process":
+        return (
+          <div className="relative">
+            <ProcessBlock
+              readOnly={false}
+              processData={formData.process}
+              onConfigChange={handleProcessConfigChange}
+            />
+          </div>
+        );
+      default:
+        return null;
+    }
+  }
 
+  // Render all blocks with edit buttons
   return (
-    <div className="border border-gray-700 p-4 rounded space-y-6 text-white">
+    <div className="bg-gray-100">
       {/* HERO BLOCK */}
-      <div className="border p-3 rounded space-y-3">
-        <div className="flex justify-end">
+      <div className="relative">
+        <div className="absolute top-4 right-4 z-40">
           <button
             type="button"
-            className={`flex items-center justify-center w-10 h-10 rounded ${
-              showHeroEdit ? "bg-green-500" : "bg-red-500"
-            }`}
-            onClick={() => setShowHeroEdit((prev) => !prev)}
+            onClick={() => setActiveEditBlock("hero")}
+            className="bg-gray-800 text-white rounded-full p-2 shadow-lg"
           >
-            {showHeroEdit ? CheckIcon : PencilIcon}
+            {PencilIcon}
           </button>
         </div>
-        {showHeroEdit ? (
-          <HeroBlock
-            readOnly={false}
-            heroconfig={formData.hero}
-            onConfigChange={handleHeroConfigChange}
-          />
-        ) : (
-          <HeroBlock readOnly={true} heroconfig={formData.hero} />
+        <HeroBlock readOnly={true} heroconfig={formData.hero} />
+        {activeEditBlock === "hero" && (
+          <EditOverlay onClose={() => setActiveEditBlock(null)}>
+            <HeroBlock
+              readOnly={false}
+              heroconfig={formData.hero}
+              onConfigChange={handleHeroConfigChange}
+            />
+          </EditOverlay>
+        )}
+      </div>
+
+      {/* PROCESS BLOCK */}
+      <div className="relative">
+        <div className="absolute top-4 right-4 z-40">
+          <button
+            type="button"
+            onClick={() => setActiveEditBlock("process")}
+            className="bg-gray-800 text-white rounded-full p-2 shadow-lg"
+          >
+            {PencilIcon}
+          </button>
+        </div>
+        <ProcessBlock readOnly={true} processData={formData.process} />
+        {activeEditBlock === "process" && (
+          <EditOverlay onClose={() => setActiveEditBlock(null)}>
+            <ProcessBlock
+              readOnly={false}
+              processData={formData.process}
+              onConfigChange={handleProcessConfigChange}
+            />
+          </EditOverlay>
         )}
       </div>
 
       {/* RICHTEXT BLOCK */}
-      <div className="border p-3 rounded space-y-3">
-        <div className="flex justify-end">
+      <div className="relative">
+        <div className="absolute top-4 right-4 z-40">
           <button
             type="button"
-            className={`flex items-center justify-center w-10 h-10 rounded ${
-              showRichEdit ? "bg-green-500" : "bg-red-500"
-            }`}
-            onClick={() => setShowRichEdit((prev) => !prev)}
+            onClick={() => setActiveEditBlock("richText")}
+            className="bg-gray-800 text-white rounded-full p-2 shadow-lg"
           >
-            {showRichEdit ? CheckIcon : PencilIcon}
+            {PencilIcon}
           </button>
         </div>
-        {showRichEdit ? (
-          <RichTextBlock
-            readOnly={false}
-            richTextData={formData.richText}
-            onConfigChange={handleRichTextConfigChange}
-          />
-        ) : (
-          <RichTextBlock readOnly={true} richTextData={formData.richText} />
+        <RichTextBlock readOnly={true} richTextData={formData.richText} />
+        {activeEditBlock === "richText" && (
+          <EditOverlay onClose={() => setActiveEditBlock(null)}>
+            <RichTextBlock
+              readOnly={false}
+              richTextData={formData.richText}
+              onConfigChange={handleRichTextConfigChange}
+            />
+          </EditOverlay>
         )}
       </div>
 
       {/* ABOUT BUTTON BLOCK */}
-      <div className="border p-3 rounded space-y-3">
-        <div className="flex justify-end">
+      <div className="relative">
+        <div className="absolute top-4 right-4 z-40">
           <button
             type="button"
-            className={`flex items-center justify-center w-10 h-10 rounded ${
-              showButtonEdit ? "bg-green-500" : "bg-red-500"
-            }`}
-            onClick={() => setShowButtonEdit((prev) => !prev)}
+            onClick={() => setActiveEditBlock("button")}
+            className="bg-gray-800 text-white rounded-full p-2 shadow-lg"
           >
-            {showButtonEdit ? CheckIcon : PencilIcon}
+            {PencilIcon}
           </button>
         </div>
-        {showButtonEdit ? (
-          <ButtonBlock
-            readOnly={false}
-            buttonconfig={formData.about}
-            onConfigChange={handleButtonConfigChange}
-          />
-        ) : (
-          <ButtonBlock readOnly={true} buttonconfig={formData.about} />
+        <ButtonBlock readOnly={true} buttonconfig={formData.button} />
+        {activeEditBlock === "button" && (
+          <EditOverlay onClose={() => setActiveEditBlock(null)}>
+            <ButtonBlock
+              readOnly={false}
+              buttonconfig={formData.button}
+              onConfigChange={handleButtonConfigChange}
+            />
+          </EditOverlay>
         )}
       </div>
 
       {/* MAP & STATS BLOCK */}
-      <div className="border p-3 rounded space-y-3">
-        <div className="flex justify-end">
+      <div className="relative">
+        <div className="absolute top-4 right-4 z-40">
           <button
             type="button"
-            className={`flex items-center justify-center w-10 h-10 rounded ${
-              showMapEditor ? "bg-green-500" : "bg-red-500"
-            }`}
-            onClick={() => setShowMapEditor((prev) => !prev)}
+            onClick={() => setActiveEditBlock("map")}
+            className="bg-gray-800 text-white rounded-full p-2 shadow-lg"
           >
-            {showMapEditor ? CheckIcon : PencilIcon}
+            {PencilIcon}
           </button>
         </div>
-        {showMapEditor ? (
-          <BasicMapBlock
-            readOnly={false}
-            mapData={formData.map}
-            onConfigChange={handleMapConfigChange}
-          />
-        ) : (
-          <BasicMapBlock readOnly={true} mapData={formData.map} />
+        <BasicMapBlock readOnly={true} mapData={formData.map} />
+        {activeEditBlock === "map" && (
+          <EditOverlay onClose={() => setActiveEditBlock(null)}>
+            <BasicMapBlock
+              readOnly={false}
+              mapData={formData.map}
+              onConfigChange={handleMapConfigChange}
+            />
+          </EditOverlay>
         )}
       </div>
 
       {/* BOOKING BLOCK */}
-      <div className="border p-3 rounded space-y-3">
-        <div className="flex justify-end">
+      <div className="relative">
+        <div className="absolute top-4 right-4 z-40">
           <button
             type="button"
-            className={`flex items-center justify-center w-10 h-10 rounded ${
-              showBookingEdit ? "bg-green-500" : "bg-red-500"
-            }`}
-            onClick={() => setShowBookingEdit((prev) => !prev)}
+            onClick={() => setActiveEditBlock("booking")}
+            className="bg-gray-800 text-white rounded-full p-2 shadow-lg"
           >
-            {showBookingEdit ? CheckIcon : PencilIcon}
+            {PencilIcon}
           </button>
         </div>
-        {showBookingEdit ? (
-          <BookingBlock
-            readOnly={false}
-            bookingData={formData.booking}
-            onConfigChange={handleBookingConfigChange}
-          />
-        ) : (
-          <BookingBlock readOnly={true} bookingData={formData.booking} />
+        <BookingBlock readOnly={true} bookingData={formData.booking} />
+        {activeEditBlock === "booking" && (
+          <EditOverlay onClose={() => setActiveEditBlock(null)}>
+            <BookingBlock
+              readOnly={false}
+              bookingData={formData.booking}
+              onConfigChange={handleBookingConfigChange}
+            />
+          </EditOverlay>
         )}
       </div>
 
       {/* COMBINED PAGE BLOCK */}
-      <div className="border p-3 rounded space-y-3">
-        <div className="flex justify-end">
+      <div className="relative">
+        <div className="absolute top-4 right-4 z-40">
           <button
             type="button"
-            className={`flex items-center justify-center w-10 h-10 rounded ${
-              showCombinedEdit ? "bg-green-500" : "bg-red-500"
-            }`}
-            onClick={() => setShowCombinedEdit((prev) => !prev)}
+            onClick={() => setActiveEditBlock("combinedPage")}
+            className="bg-gray-800 text-white rounded-full p-2 shadow-lg"
           >
-            {showCombinedEdit ? CheckIcon : PencilIcon}
+            {PencilIcon}
           </button>
         </div>
-        {showCombinedEdit ? (
-          <CombinedPageBlock
-            readOnly={false}
-            config={formData.combinedPage}
-            onConfigChange={handleCombinedConfigChange}
-          />
-        ) : (
-          <CombinedPageBlock readOnly={true} config={formData.combinedPage} />
+        <CombinedPageBlock readOnly={true} config={formData.combinedPage} />
+        {activeEditBlock === "combinedPage" && (
+          <EditOverlay onClose={() => setActiveEditBlock(null)}>
+            <CombinedPageBlock
+              readOnly={false}
+              config={formData.combinedPage}
+              onConfigChange={handleCombinedConfigChange}
+            />
+          </EditOverlay>
         )}
       </div>
 
       {/* BEFORE & AFTER BLOCK */}
-      <div className="border p-3 rounded space-y-3">
-        <div className="flex justify-end">
+      <div className="relative">
+        <div className="absolute top-4 right-4 z-40">
           <button
             type="button"
-            className={`flex items-center justify-center w-10 h-10 rounded ${
-              showBeforeAfterEdit ? "bg-green-500" : "bg-red-500"
-            }`}
-            onClick={() => setShowBeforeAfterEdit((prev) => !prev)}
+            onClick={() => setActiveEditBlock("beforeAfter")}
+            className="bg-gray-800 text-white rounded-full p-2 shadow-lg"
           >
-            {showBeforeAfterEdit ? CheckIcon : PencilIcon}
+            {PencilIcon}
           </button>
         </div>
-        {showBeforeAfterEdit ? (
-          <BeforeAfterBlock
-            readOnly={false}
-            config={formData.beforeAfter}
-            onConfigChange={handleBeforeConfigChange}
-          />
-        ) : (
-          <BeforeAfterBlock
-            readOnly={true}
-            beforeAfterData={formData.beforeAfter}
-          />
+        <BeforeAfterBlock
+          readOnly={true}
+          beforeAfterData={formData.beforeAfter}
+        />
+        {activeEditBlock === "beforeAfter" && (
+          <EditOverlay onClose={() => setActiveEditBlock(null)}>
+            <BeforeAfterBlock
+              readOnly={false}
+              beforeAfterData={formData.beforeAfter}
+              onConfigChange={handleBeforeConfigChange}
+            />
+          </EditOverlay>
         )}
       </div>
 
       {/* EMPLOYEES BLOCK */}
-      <div className="border p-3 rounded space-y-3">
-        <div className="flex justify-end">
+      <div className="relative">
+        <div className="absolute top-4 right-4 z-40">
           <button
             type="button"
-            className={`flex items-center justify-center w-10 h-10 rounded ${
-              showEmployeesEdit ? "bg-green-500" : "bg-red-500"
-            }`}
-            onClick={() => setShowEmployeesEdit((prev) => !prev)}
+            onClick={() => setActiveEditBlock("employees")}
+            className="bg-gray-800 text-white rounded-full p-2 shadow-lg"
           >
-            {showEmployeesEdit ? CheckIcon : PencilIcon}
+            {PencilIcon}
           </button>
         </div>
-        {showEmployeesEdit ? (
-          <EmployeesBlock
-            readOnly={false}
-            employeesData={formData.employees}
-            onConfigChange={handleEmployeesConfigChange}
-          />
-        ) : (
-          <EmployeesBlock
-            readOnly={true}
-            employeesData={formData.employees}
-          />
+        <EmployeesBlock readOnly={true} employeesData={formData.employees} />
+        {activeEditBlock === "employees" && (
+          <EditOverlay onClose={() => setActiveEditBlock(null)}>
+            <EmployeesBlock
+              readOnly={false}
+              employeesData={formData.employees}
+              onConfigChange={handleEmployeesConfigChange}
+            />
+          </EditOverlay>
         )}
       </div>
     </div>
   );
+};
+
+MainPageForm.propTypes = {
+  formData: PropTypes.object.isRequired,
+  setFormData: PropTypes.func.isRequired,
+  singleBlockMode: PropTypes.string,
+};
+
+MainPageForm.defaultProps = {
+  singleBlockMode: null,
 };
 
 export default MainPageForm;

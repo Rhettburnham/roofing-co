@@ -12,16 +12,41 @@
  * for local editing of content without direct database access. The downloaded
  * ZIP file can be sent to the developer for permanent integration into the site.
  */
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 
 import ServiceEditPage, { getServicesData } from "./ServiceEditPage";
 import MainPageForm from "./MainPageForm";
+import AboutBlock from "./MainPageBlocks/AboutBlock";
+
+// Tab style button component
+const TabButton = ({ id, label, isActive, onClick }) => (
+  <button
+    onClick={onClick}
+    className={`px-6 py-3 font-medium transition-all duration-300 ${
+      isActive
+        ? "bg-blue text-white drop-shadow-[0_1.2px_1.2px_rgba(255,30,0,0.8)] border-t-2 border-blue"
+        : "bg-gray-700 text-gray-200 hover:bg-gray-600"
+    } rounded-t-lg`}
+    data-tab-id={id}
+  >
+    {label}
+  </button>
+);
+
+TabButton.propTypes = {
+  id: PropTypes.string.isRequired,
+  label: PropTypes.string.isRequired,
+  isActive: PropTypes.bool.isRequired,
+  onClick: PropTypes.func.isRequired,
+};
 
 const OneForm = ({ initialData, blockName, title }) => {
   const [formData, setFormData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("mainPage");
 
   // On mount, fetch combined_data.json to populate the form if no initialData is provided
   useEffect(() => {
@@ -48,6 +73,10 @@ const OneForm = ({ initialData, blockName, title }) => {
     fetchCombinedData();
   }, [initialData, blockName]);
 
+  const handleAboutConfigChange = (newAboutConfig) => {
+    setFormData((prev) => ({ ...prev, aboutPage: newAboutConfig }));
+  };
+
   /**
    * handleSubmit - Generates and downloads a ZIP file with all edited content
    *
@@ -62,76 +91,87 @@ const OneForm = ({ initialData, blockName, title }) => {
    * This allows website owners to make changes locally and send the
    * updated content to the developer for integration.
    */
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
+    try {
+      // Create a new ZIP archive
       const zip = new JSZip();
 
-    // Clone the formData to remove File objects before JSONifying
-    // This prevents circular references when stringifying
-      const clonedData = JSON.parse(JSON.stringify(formData));
+      // Clone the form data so we don't modify the original state
+      const dataClone = JSON.parse(JSON.stringify(formData));
 
-    // Clean up file references from all blocks
-    cleanupFileReferences(clonedData);
+      // Clean the data by replacing File objects with URLs
+      cleanFileReferences(dataClone);
 
-    // Add the complete combined_data.json to the ZIP
-      const combinedDataJson = JSON.stringify(clonedData, null, 2);
-      zip.file("combined_data.json", combinedDataJson);
+      // Add the combined_data.json to the root of the ZIP
+      zip.file("combined_data.json", JSON.stringify(dataClone, null, 2));
 
-    // Get the services data from ServiceEditPage
-    const servicesData = getServicesData();
-    if (servicesData) {
-      // Use the services data directly from ServiceEditPage
-      zip.file("services.json", JSON.stringify(servicesData, null, 2));
-    } else {
-      // Fallback to the services data from combined_data if available
-      const serviceDataOnly = {
-        commercial: clonedData.services?.commercial || [],
-        residential: clonedData.services?.residential || [],
-      };
-      zip.file("services.json", JSON.stringify(serviceDataOnly, null, 2));
-    }
-
-    // Gather all files from formData for inclusion in the ZIP
-      const filesToZip = [];
-
-    // Collect all image files from the form data
-    collectImageFiles(formData, filesToZip);
-
-    // Add all collected files to the ZIP
-    for (const item of filesToZip) {
-      try {
-        const arrayBuffer = await item.file.arrayBuffer();
-        zip.file(item.path, arrayBuffer);
-        console.log(`Added file to ZIP: ${item.path}`);
-      } catch (error) {
-        console.error(`Error adding file to ZIP: ${item.path}`, error);
+      // Fetch and add the services data if editing the main page
+      if (!blockName) {
+        const services = await getServicesData();
+        if (services) {
+          zip.file("services.json", JSON.stringify(services, null, 2));
+        }
       }
-    }
 
-    // Generate and download the ZIP file
-    const content = await zip.generateAsync({ type: "blob" });
-    saveAs(content, "website_data.zip");
+      // Collect all uploaded image and video files
+      const filesToZip = [];
+      collectFiles(formData, filesToZip);
+
+      // Add each file to the ZIP with the correct path
+      for (const { file, path } of filesToZip) {
+        if (file) {
+          // Convert File objects to array buffers
+          const arrayBuffer = await file.arrayBuffer();
+          zip.file(path, arrayBuffer);
+        }
+      }
+
+      // Generate the ZIP file
+      const content = await zip.generateAsync({ type: "blob" });
+
+      // Create a friendly file name with date
+      const date = new Date();
+      const dateStr = `${date.getFullYear()}-${String(
+        date.getMonth() + 1
+      ).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      const timeStr = `${String(date.getHours()).padStart(2, "0")}-${String(
+        date.getMinutes()
+      ).padStart(2, "0")}`;
+      const fileName = blockName
+        ? `${blockName}_edit_${dateStr}_${timeStr}.zip`
+        : `website_content_${dateStr}_${timeStr}.zip`;
+
+      // Download the ZIP file
+      saveAs(content, fileName);
+    } catch (error) {
+      console.error("Error creating ZIP file:", error);
+      alert("Error creating ZIP file. See console for details.");
+    }
   };
 
   /**
-   * cleanupFileReferences - Removes File objects from the data before stringifying
+   * cleanFileReferences - Recursively removes File objects from the data
+   * by replacing them with their URL properties
    *
    * @param {Object} data - The data object to clean
    */
-  const cleanupFileReferences = (data) => {
-    // Clean up file references from the logo
-    if (data.logo) {
-      delete data.logo.file;
+  const cleanFileReferences = (data) => {
+    if (!data) return;
+
+    // Process Block videos
+    if (data.process && data.process.steps) {
+      data.process.steps.forEach((step) => {
+        if (step.videoFile) {
+          step.videoSrc = `/assets/videos/our_process_videos/${step.fileName || "video.mp4"}`;
+          delete step.videoFile;
+          delete step.fileName;
+        }
+      });
     }
 
-    // Clean up file references from the main header
-    if (data.main_header) {
-      delete data.main_header.final_res_main_file;
-      delete data.main_header.final_com_main_file;
-    }
-
-    // Clean up file references from hero block
+    // Hero block images
     if (data.hero) {
+      // Residential image
       if (
         data.hero.residentialImage &&
         typeof data.hero.residentialImage === "object"
@@ -139,6 +179,8 @@ const OneForm = ({ initialData, blockName, title }) => {
         data.hero.residentialImage =
           data.hero.residentialImage.url || data.hero.residentialImage;
       }
+
+      // Commercial image
       if (
         data.hero.commercialImage &&
         typeof data.hero.commercialImage === "object"
@@ -148,37 +190,7 @@ const OneForm = ({ initialData, blockName, title }) => {
       }
     }
 
-    // Clean up file references from before/after block
-    if (data.beforeAfter && data.beforeAfter.items) {
-      data.beforeAfter.items.forEach((item) => {
-        if (item.before && typeof item.before === "object") {
-          item.before = item.before.url || item.before;
-        }
-        if (item.after && typeof item.after === "object") {
-          item.after = item.after.url || item.after;
-        }
-      });
-    }
-
-    // Clean up file references from employees block
-    if (data.employees && data.employees.employees) {
-      data.employees.employees.forEach((employee) => {
-        if (employee.image && typeof employee.image === "object") {
-          employee.image = employee.image.url || employee.image;
-        }
-      });
-    }
-
-    // Clean up file references from rich text block
-    if (
-      data.richText &&
-      data.richText.image &&
-      typeof data.richText.image === "object"
-    ) {
-      data.richText.image = data.richText.image.url || data.richText.image;
-    }
-
-    // Clean up file references from button block
+    // About block images
     if (
       data.about &&
       data.about.image &&
@@ -265,12 +277,25 @@ const OneForm = ({ initialData, blockName, title }) => {
   };
 
   /**
-   * collectImageFiles - Recursively collects all image files from the form data
+   * collectFiles - Recursively collects all image and video files from the form data
    *
    * @param {Object} data - The data object to collect files from
    * @param {Array} filesToZip - Array to store collected files
    */
-  const collectImageFiles = (data, filesToZip) => {
+  const collectFiles = (data, filesToZip) => {
+    // Add process videos if present
+    if (data.process && data.process.steps) {
+      data.process.steps.forEach((step, index) => {
+        if (step.videoFile) {
+          const fileName = step.fileName || `process_step_${index + 1}.mp4`;
+          filesToZip.push({
+            file: step.videoFile,
+            path: `assets/videos/our_process_videos/${fileName}`,
+          });
+        }
+      });
+    }
+
     // Add logo file if present
     if (data.logo && data.logo.file) {
       filesToZip.push({
@@ -312,143 +337,103 @@ const OneForm = ({ initialData, blockName, title }) => {
     // Add before/after block images
     if (data.beforeAfter && data.beforeAfter.items) {
       data.beforeAfter.items.forEach((item, index) => {
-        if (item.before && item.before.file) {
+        if (item.beforeImage && item.beforeImage.file) {
           filesToZip.push({
-            file: item.before.file,
-            path: `assets/images/beforeAfter/before_${index + 1}.${getFileExtension(item.before.file.name)}`,
+            file: item.beforeImage.file,
+            path: `assets/images/before_after/before_${index + 1}.${getFileExtension(
+              item.beforeImage.file.name
+            )}`,
           });
         }
-        if (item.after && item.after.file) {
+        if (item.afterImage && item.afterImage.file) {
           filesToZip.push({
-            file: item.after.file,
-            path: `assets/images/beforeAfter/after_${index + 1}.${getFileExtension(item.after.file.name)}`,
-          });
-        }
-      });
-    }
-
-    // Add employees block images
-    if (data.employees && data.employees.employees) {
-      data.employees.employees.forEach((employee, index) => {
-        if (employee.image && employee.image.file) {
-          filesToZip.push({
-            file: employee.image.file,
-            path: `assets/images/employees/employee_${index + 1}.${getFileExtension(employee.image.file.name)}`,
+            file: item.afterImage.file,
+            path: `assets/images/before_after/after_${index + 1}.${getFileExtension(
+              item.afterImage.file.name
+            )}`,
           });
         }
       });
     }
 
-    // Add rich text block image
-    if (data.richText && data.richText.image && data.richText.image.file) {
-      filesToZip.push({
-        file: data.richText.image.file,
-        path: `assets/images/richText/main_image.${getFileExtension(data.richText.image.file.name)}`,
+    // Add employee photos
+    if (data.employees && data.employees.items) {
+      data.employees.items.forEach((employee, index) => {
+        if (employee.photo && employee.photo.file) {
+          filesToZip.push({
+            file: employee.photo.file,
+            path: `assets/images/employees/employee_${index + 1}.${getFileExtension(
+              employee.photo.file.name
+            )}`,
+          });
+        }
       });
     }
 
-    // Add button block image
-    if (data.about && data.about.image && data.about.image.file) {
-      filesToZip.push({
-        file: data.about.image.file,
-        path: `assets/images/about/main_image.${getFileExtension(data.about.image.file.name)}`,
-      });
-    }
-
-    // Add booking block logo
-    if (data.booking && data.booking.logo && data.booking.logo.file) {
-      filesToZip.push({
-        file: data.booking.logo.file,
-        path: `assets/images/booking/logo.${getFileExtension(data.booking.logo.file.name)}`,
-      });
-    }
-
-    // Add combined page block images
-    if (data.combinedPage) {
-      if (data.combinedPage.image && data.combinedPage.image.file) {
-        filesToZip.push({
-          file: data.combinedPage.image.file,
-          path: `assets/images/combinedPage/main_image.${getFileExtension(data.combinedPage.image.file.name)}`,
-        });
-      }
-      if (data.combinedPage.items) {
-        data.combinedPage.items.forEach((item, index) => {
-          if (item.image && item.image.file) {
-            filesToZip.push({
-              file: item.image.file,
-              path: `assets/images/combinedPage/item_${index + 1}.${getFileExtension(item.image.file.name)}`,
-            });
-          }
-        });
-      }
-    }
-
-    // Include images from service blocks
+    // Add services blocks images
     if (data.services) {
-        ["commercial", "residential"].forEach((category) => {
-        data.services[category]?.forEach((page) => {
+      ["commercial", "residential"].forEach((category) => {
+        if (data.services[category]) {
+          data.services[category].forEach((page) => {
             if (page.blocks) {
               page.blocks.forEach((block, blockIndex) => {
-              const blockType = block.blockName || "unknown";
+                if (block.config) {
+                  Object.keys(block.config).forEach((key) => {
+                    const value = block.config[key];
 
-              // Process config object for image files
-              if (block.config) {
-                Object.keys(block.config).forEach((key) => {
-                  const value = block.config[key];
+                    // Handle single image file
+                    if (value && typeof value === "object" && value.file) {
+                      filesToZip.push({
+                        file: value.file,
+                        path: `assets/images/services/${category}/${page.id}/block_${blockIndex + 1}_${key}.${getFileExtension(
+                          value.file.name
+                        )}`,
+                      });
+                    }
 
-                  // Handle single image objects
-                  if (value && typeof value === "object" && value.file) {
-                    const fileName = `${category}_page_${page.id}_${blockType}_${blockIndex}_${key}.${getFileExtension(value.file.name)}`;
-                    filesToZip.push({
-                      file: value.file,
-                      path: `assets/images/services/${category}/${page.id}/${fileName}`,
-                    });
-                  }
+                    // Handle arrays that might contain image files
+                    if (Array.isArray(value)) {
+                      value.forEach((item, itemIndex) => {
+                        if (item && typeof item === "object" && item.file) {
+                          filesToZip.push({
+                            file: item.file,
+                            path: `assets/images/services/${category}/${page.id}/block_${blockIndex + 1}_${key}_${itemIndex + 1}.${getFileExtension(
+                              item.file.name
+                            )}`,
+                          });
+                        }
 
-                  // Handle arrays that might contain image objects
-                  if (Array.isArray(value)) {
-                    value.forEach((item, itemIndex) => {
-                      // Direct image objects in array
-                      if (item && typeof item === "object" && item.file) {
-                        const fileName = `${category}_page_${page.id}_${blockType}_${blockIndex}_${key}_${itemIndex}.${getFileExtension(item.file.name)}`;
-                        filesToZip.push({
-                          file: item.file,
-                          path: `assets/images/services/${category}/${page.id}/${fileName}`,
-                        });
-                      }
-
-                      // Objects with image properties (like before/after items)
-                      if (item && typeof item === "object") {
-                        Object.keys(item).forEach((itemKey) => {
-                          if (
-                            item[itemKey] &&
-                            typeof item[itemKey] === "object" &&
-                            item[itemKey].file
-                          ) {
-                            const fileName = `${category}_page_${page.id}_${blockType}_${blockIndex}_${key}_${itemIndex}_${itemKey}.${getFileExtension(item[itemKey].file.name)}`;
-                            filesToZip.push({
-                              file: item[itemKey].file,
-                              path: `assets/images/services/${category}/${page.id}/${fileName}`,
-                            });
-                          }
-                        });
-                      }
-                    });
-                  }
-                });
-              }
+                        // Handle objects with image properties
+                        if (item && typeof item === "object") {
+                          Object.keys(item).forEach((itemKey) => {
+                            if (
+                              item[itemKey] &&
+                              typeof item[itemKey] === "object" &&
+                              item[itemKey].file
+                            ) {
+                              filesToZip.push({
+                                file: item[itemKey].file,
+                                path: `assets/images/services/${category}/${page.id}/block_${blockIndex + 1}_${key}_${itemIndex + 1}_${itemKey}.${getFileExtension(
+                                  item[itemKey].file.name
+                                )}`,
+                              });
+                            }
+                          });
+                        }
+                      });
+                    }
+                  });
+                }
               });
             }
           });
-        });
-      }
+        }
+      });
+    }
   };
 
   /**
-   * getFileExtension - Extracts the file extension from a filename
-   *
-   * @param {string} filename - The filename to extract extension from
-   * @returns {string} - The file extension (without the dot)
+   * Helper function to get the file extension from a filename
    */
   const getFileExtension = (filename) => {
     return filename.split(".").pop().toLowerCase() || "png";
@@ -456,7 +441,7 @@ const OneForm = ({ initialData, blockName, title }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white text-black flex items-center justify-center">
+      <div className="min-h-screen bg-gray-100 text-black flex items-center justify-center">
         <p>Loading data...</p>
       </div>
     );
@@ -465,47 +450,105 @@ const OneForm = ({ initialData, blockName, title }) => {
   // If editing a specific block, render a simplified interface
   if (blockName && title) {
     return (
-      <div className="min-h-screen bg-white text-black p-6">
-        <h1 className="text-3xl font-bold mb-4">{title}</h1>
-        <div className="space-y-8">
+      <div className="min-h-screen bg-gray-100 text-black">
+        <div className="bg-gray-900 text-white p-3 shadow-md sticky top-0 z-50 flex justify-between items-center">
+          <h1 className="text-xl font-medium">{title}</h1>
+          <button
+            onClick={handleSubmit}
+            type="button"
+            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-white text-sm"
+          >
+            Download JSON
+          </button>
+        </div>
+        <div>
           <MainPageForm
             formData={formData}
             setFormData={setFormData}
             singleBlockMode={blockName}
           />
-          <div className="text-center">
-            <button
-              onClick={handleSubmit}
-              type="button"
-              className="px-6 py-3 bg-green-600 hover:bg-green-500 rounded text-white text-lg"
-            >
-              Download Updated JSON
-            </button>
-          </div>
         </div>
       </div>
     );
   }
 
+  // Render the tab header
+  const renderTabHeader = () => (
+    <div className="bg-gray-800 px-4 flex border-b border-gray-700 shadow-md">
+      <TabButton
+        id="mainPage"
+        label="Main Page"
+        isActive={activeTab === "mainPage"}
+        onClick={() => setActiveTab("mainPage")}
+      />
+      <TabButton
+        id="services"
+        label="Service Pages"
+        isActive={activeTab === "services"}
+        onClick={() => setActiveTab("services")}
+      />
+      <TabButton
+        id="about"
+        label="About Page"
+        isActive={activeTab === "about"}
+        onClick={() => setActiveTab("about")}
+      />
+    </div>
+  );
+
   // Otherwise, render the full editor interface
   return (
-    <div className="min-h-screen bg-white text-black p-6">
-      <h1 className="text-3xl font-bold mb-4">Master Editor</h1>
-      <div className="space-y-8">
-        <ServiceEditPage />
-        <MainPageForm formData={formData} setFormData={setFormData} />
-        <div className="text-center">
-          <button
-            onClick={handleSubmit}
-            type="button"
-            className="px-6 py-3 bg-green-600 hover:bg-green-500 rounded text-white text-lg"
-          >
-            Download ZIP (All Data + Images)
-          </button>
-        </div>
+    <div className="min-h-screen bg-gray-100 text-black">
+      <div className="bg-gray-900 text-white p-3 shadow-md sticky top-0 z-50 flex justify-between items-center">
+        <h1 className="text-xl font-medium">Content Editor</h1>
+        <button
+          onClick={handleSubmit}
+          type="button"
+          className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-white text-sm"
+        >
+          Download ZIP
+        </button>
+      </div>
+
+      {/* Tab Navigation */}
+      {renderTabHeader()}
+
+      {/* Tab Content - Only one is shown at a time */}
+      <div className="tab-content">
+        {activeTab === "mainPage" && (
+          <MainPageForm formData={formData} setFormData={setFormData} />
+        )}
+        {activeTab === "services" && <ServiceEditPage />}
+        {activeTab === "about" && (
+          <div className="container mx-auto px-4 py-6 bg-gray-100">
+            <div className="mb-4 bg-gray-800 text-white p-4 rounded">
+              <h1 className="text-2xl font-bold">About Page</h1>
+              <p className="text-gray-300 mt-1">Edit the about page content</p>
+            </div>
+            <div className="relative border border-gray-300 bg-white overflow-hidden">
+              <AboutBlock
+                readOnly={false}
+                aboutData={formData.aboutPage}
+                onConfigChange={handleAboutConfigChange}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
+};
+
+OneForm.propTypes = {
+  initialData: PropTypes.object,
+  blockName: PropTypes.string,
+  title: PropTypes.string,
+};
+
+OneForm.defaultProps = {
+  initialData: null,
+  blockName: null,
+  title: null,
 };
 
 export default OneForm;

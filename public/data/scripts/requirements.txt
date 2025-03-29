@@ -13,4 +13,12 @@ python-slugify==8.0.4
 markdown==3.5.2
 jinja2==3.1.3
 textblob==0.17.1
-colorthief==0.2.1 
+colorthief==0.2.1
+# Standard library modules below
+argparse
+logging
+typing
+datetime
+json
+threading
+queue
