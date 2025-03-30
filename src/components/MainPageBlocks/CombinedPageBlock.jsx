@@ -3,63 +3,37 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import StarRating from "../StarRating";
 
-// Icons for Services
-import { FaTools, FaFan, FaPaintRoller, FaTint } from "react-icons/fa";
+// Icons for Services - Make sure all icons are available
+import { 
+  FaTools, 
+  FaFan, 
+  FaPaintRoller, 
+  FaTint, 
+  FaHome, 
+  FaBuilding, 
+  FaWarehouse, 
+  // FaChimney might not be available, use an alternative
+  FaSmog, // Alternative to FaChimney 
+  FaBroom, 
+  FaHardHat 
+} from "react-icons/fa";
 import googleIcon from "/assets/images/googleimage.png";
 
 // Additional icons from lucide-react
 import { Home, Building2 } from "lucide-react";
 
 /**
- * Utility functions to build the service arrays from services.json.
- * Each service's title is dynamically extracted from the 'HeroBlock' (or falls back to the first block).
+ * Helper function to resolve icon name strings to React components
+ * @param {string} iconName - Name of the icon
+ * @returns {React.ComponentType} - The icon component
  */
-function buildResidentialArray(data) {
-  if (!data?.residential) return [];
-  const icons = [FaTools, FaFan, FaTint, FaPaintRoller];
-  return data.residential.map((service, index) => {
-    const heroBlock =
-      service.blocks.find((b) => b.blockName === "HeroBlock") ||
-      service.blocks[0];
-    const dynamicTitle = heroBlock?.config?.title || `Service ${service.id}`;
-
-    // Create a slug from title if not available
-    const slug =
-      service.slug ||
-      `residential-${service.id}-${dynamicTitle.toLowerCase().replace(/\s+/g, "-")}`;
-
-    console.log(`Built residential service link: /services/${slug}`);
-
-    return {
-      icon: icons[index % icons.length] || FaTools,
-      title: dynamicTitle,
-      link: `/services/${slug}`,
-    };
-  });
-}
-
-function buildCommercialArray(data) {
-  if (!data?.commercial) return [];
-  const icons = [FaTools, FaPaintRoller, FaTools, FaTools];
-  return data.commercial.map((service, index) => {
-    const heroBlock =
-      service.blocks.find((b) => b.blockName === "HeroBlock") ||
-      service.blocks[0];
-    const dynamicTitle = heroBlock?.config?.title || `Service ${service.id}`;
-
-    // Create a slug from title if not available
-    const slug =
-      service.slug ||
-      `commercial-${service.id}-${dynamicTitle.toLowerCase().replace(/\s+/g, "-")}`;
-
-    console.log(`Built commercial service link: /services/${slug}`);
-
-    return {
-      icon: icons[index % icons.length] || FaTools,
-      title: dynamicTitle,
-      link: `/services/${slug}`,
-    };
-  });
+function resolveIcon(iconName) {
+  const iconMap = {
+    FaTools, FaFan, FaPaintRoller, FaTint, FaHome, FaBuilding, 
+    FaWarehouse, FaSmog, FaBroom, FaHardHat
+  };
+  
+  return iconMap[iconName] || FaTools; // Default to FaTools if not found
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -176,46 +150,41 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
   console.log("CombinedPageBlock config:", config);
 
   useEffect(() => {
-    // Fetch services.json to build the services arrays.
-    fetch("/data/services.json")
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
-        console.log("Services data fetched:", data);
-        setResidentialServices(buildResidentialArray(data));
-        setCommercialServices(buildCommercialArray(data));
-      })
-      .catch((error) => {
-        console.error("Error fetching services data:", error);
-      });
+    // First try to use the provided config data for services
+    if (config && config.residentialServices && config.residentialServices.length > 0) {
+      console.log("Using config residentialServices:", config.residentialServices);
+      setResidentialServices(config.residentialServices);
+    } else {
+      // Warn about missing residential services in the config
+      console.warn("No residential services found in config, this shouldn't happen in production");
+      setResidentialServices([]);
+    }
 
-    // Fetch sentiment_reviews.json to get testimonials.
-    fetch("/data/sentiment_reviews.json")
-      .then((res) => res.json())
-      .then((data) => {
-        const processed = data
-          .filter(
-            (review) =>
-              review.sentiment && review.sentiment.toLowerCase() === "positive"
-          )
-          .map((review) => ({
-            name: review.name,
-            stars: parseInt(review.rating, 10),
-            date: review.date,
-            text: review.review_text,
-            logo: googleIcon,
-            link: "https://www.google.com/maps/place/Rhetts+Roofing/",
-          }))
-          .sort((a, b) => b.stars - a.stars)
-          .slice(0, 9);
-        setGoogleReviews(processed);
-      })
-      .catch((error) => {
-        console.error("Error fetching reviews JSON:", error);
-      });
-  }, []);
+    // Same for commercial services
+    if (config && config.commercialServices && config.commercialServices.length > 0) {
+      console.log("Using config commercialServices:", config.commercialServices);
+      setCommercialServices(config.commercialServices);
+    } else {
+      // Warn about missing commercial services in the config
+      console.warn("No commercial services found in config, this shouldn't happen in production");
+      setCommercialServices([]);
+    }
+
+    // For testimonials, use config data
+    if (config && config.googleReviews && config.googleReviews.length > 0) {
+      console.log("Using config googleReviews:", config.googleReviews);
+      setGoogleReviews(config.googleReviews);
+    } else {
+      // Warn about missing reviews data
+      console.warn("No Google reviews found in config, this shouldn't happen in production");
+      setGoogleReviews([]);
+    }
+
+    // Set initial isCommercial state from config if provided
+    if (config && config.isCommercial !== undefined) {
+      setIsCommercial(config.isCommercial);
+    }
+  }, [config]);
 
   // Choose which services to display based on the toggle.
   const currentServices = isCommercial
@@ -245,6 +214,8 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
   const handleResidentialClick = () => setIsCommercial(false);
   const handleCommercialClick = () => setIsCommercial(true);
 
+  console.log("Google Reviews for testimonials:", googleReviews);
+
   return (
     <div className="w-full bg-black mt-3">
       {/* ──────────────────────────────────────────────────────────
@@ -259,12 +230,12 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
             className="flex"
           >
             <img
-              src="/assets/images/main_img.jpg"
+              src={config.largeResidentialImg || "/assets/images/main_img.jpg"}
               alt="Residential Services"
               className="w-full h-auto"
             />
             <img
-              src="/assets/images/commercialservices.jpg"
+              src={config.largeCommercialImg || "/assets/images/commercialservices.jpg"}
               alt="Commercial Services"
               className="w-full h-auto"
             />
@@ -277,7 +248,7 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
           style={{ clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)" }}
         />
         <h2 className="absolute top-[2vh] left-1/2 transform -translate-x-1/2 text-white text-[10vw] font-rye drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)]">
-          Services
+          {config.title || "Services"}
         </h2>
 
         {/* SERVICES Buttons (staggered exit/enter) */}
@@ -356,7 +327,9 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
                         e.currentTarget.style.boxShadow = "none";
                       }}
                     >
-                      {React.createElement(service.icon)}
+                      {typeof service.icon === 'string' 
+                        ? React.createElement(resolveIcon(service.icon)) 
+                        : React.createElement(service.icon)}
                       <h3 className="mt-1 text-white text-[3vw] group-hover:text-gray-200 md:text-sm drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
                         {service.title}
                       </h3>
@@ -428,7 +401,7 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
         <div className="text-center">
           <div className="flex justify-center space-x-4">
             <a
-              href="https://www.google.com/maps/place/Rhetts+Roofing"
+              href={googleReviews[0]?.link || "https://www.google.com/maps"}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center px-3 py-1 bg-white rounded-full custom-circle-shadow hover:bg-gray-100 transition duration-300 text-xs font-sans"
@@ -449,19 +422,19 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
             className="flex w-[200%] h-full"
           >
             <img
-              src="/assets/images/main_image_expanded.jpg"
+              src={config.largeResidentialImg || "/assets/images/main_image_expanded.jpg"}
               alt="Residential Services"
               className="w-[100vw] h-full object-cover"
             />
             <img
-              src="/assets/images/commercialservices.jpg"
+              src={config.largeCommercialImg || "/assets/images/commercialservices.jpg"}
               alt="Commercial Services"
               className="w-[100vw] h-full object-cover"
             />
           </motion.div>
           <div className="absolute top-0 w-full flex justify-center">
             <h2 className="relative z-40 text-white text-[11.5vh] tracking-wider font-rye first:drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,1.8)]">
-              Services
+              {config.title || "Services"}
             </h2>
           </div>
           <div className="absolute bottom-[6vh] left-1/2 transform -translate-x-1/2 z-30">
@@ -537,7 +510,9 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
                           e.currentTarget.style.boxShadow = "none";
                         }}
                       >
-                        {React.createElement(service.icon)}
+                        {typeof service.icon === 'string' 
+                          ? React.createElement(resolveIcon(service.icon)) 
+                          : React.createElement(service.icon)}
                         <h3 className="mt-1 text-white text-lg drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
                           {service.title}
                         </h3>
@@ -607,7 +582,7 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
           <div className="py-3 text-center px-3">
             <div className="flex justify-center space-x-6">
               <a
-                href="https://www.google.com/maps/place/Rhetts+Roofing"
+                href={googleReviews[0]?.link || "https://www.google.com/maps"}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center px-4 py-2 bg-white rounded-full custom-circle-shadow hover:bg-gray-100 transition duration-300 text-sm font-sans"

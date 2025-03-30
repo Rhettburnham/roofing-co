@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -14,34 +14,9 @@ function ProcessPreview({ processData }) {
   const videoRefs = useRef([]);
   const [activeVideo, setActiveVideo] = useState(0);
   const [initialOrder, setInitialOrder] = useState([]);
-  const [videosLoaded, setVideosLoaded] = useState([]);
-  const [supportsMP4, setSupportsMP4] = useState(true);
 
   // Use processData if provided, or empty array to be loaded later
   const processSteps = processData?.steps || [];
-
-  // Function to check if a video format is supported
-  const canPlayType = (format) => {
-    const video = document.createElement('video');
-    return video.canPlayType(format) !== '';
-  };
-
-  // Check browser support for MP4 videos on mount
-  useEffect(() => {
-    const mp4Supported = canPlayType('video/mp4');
-    setSupportsMP4(mp4Supported !== '');
-    
-    if (!mp4Supported) {
-      console.warn('MP4 videos are not supported in this browser. Using fallback images.');
-    }
-  }, []);
-
-  // Track which videos have loaded successfully
-  useEffect(() => {
-    if (processSteps.length > 0) {
-      setVideosLoaded(Array(processSteps.length).fill(false));
-    }
-  }, [processSteps.length]);
 
   useEffect(() => {
     if (processSteps.length === 0) return;
@@ -51,119 +26,30 @@ function ProcessPreview({ processData }) {
     const shuffled = indices.sort(() => Math.random() - 0.5);
     setInitialOrder(shuffled);
 
-    // Only preload the first video and the next one
-    const preloadVideos = () => {
-      const nextIndex = (activeVideo + 1) % processSteps.length;
-      
-      // Preload only the active and next video
-      [activeVideo, nextIndex].forEach(idx => {
-        if (videoRefs.current[idx] && !videosLoaded[idx]) {
-          videoRefs.current[idx].load();
-        }
-      });
-    };
-    
-    preloadVideos();
-    
-    // Clean up and prepare all videos
+    // Reset all videos
     videoRefs.current.forEach((video, idx) => {
       if (video) {
-        // Only reset the current video
-        if (idx === activeVideo) {
-          video.currentTime = 0;
-          video.pause();
-        }
-        
-        // Add event listeners to track load state
-        if (!videosLoaded[idx]) {
-          video.addEventListener('loadeddata', () => {
-            setVideosLoaded(prev => {
-              const newState = [...prev];
-              newState[idx] = true;
-              return newState;
-            });
-          });
-        }
+        video.currentTime = 0;
+        video.pause();
       }
     });
 
     let timeouts = [];
 
-    const playActiveVideo = (idx) => {
-      const video = videoRefs.current[idx];
-      if (video) {
-        // Reset video to beginning
-        video.currentTime = 0;
-        
-        // Set video to low quality for better performance
-        video.playbackQuality = 'low';
-        
-        // Try to play the video
-        const playPromise = video.play();
-        
-        // Handle the play promise properly
-        if (playPromise !== undefined) {
-          playPromise
-            .then(() => {
-              // Video playback started successfully
-              setActiveVideo(idx);
-              console.log(`Playing video ${idx} successfully`);
-              
-              // Preload the next video
-              const nextIdx = (idx + 1) % processSteps.length;
-              if (videoRefs.current[nextIdx]) {
-                videoRefs.current[nextIdx].load();
-              }
-            })
-            .catch(error => {
-              // Autoplay was prevented
-              console.error(`Video ${idx} autoplay failed:`, error);
-              
-              // Check if we're on a mobile device
-              const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-              
-              if (isMobileDevice) {
-                // On mobile, we'll just set the active video without playing it
-                setActiveVideo(idx);
-                
-                // Show the first frame
-                if (video) {
-                  video.currentTime = 0.1;
-                }
-              } else {
-                // On desktop, retry with user interaction simulation
-                setActiveVideo(idx);
-              }
-            });
-        } else {
-          // Fallback for browsers that don't return a promise
-          setActiveVideo(idx);
-        }
-      } else {
-        // Retry loading the video if it's not available yet
-        const retryTimeout = setTimeout(() => {
-          if (videoRefs.current[idx]) {
-            videoRefs.current[idx].load();
-            setTimeout(() => playActiveVideo(idx), 500);
-          }
-        }, 200);
-        timeouts.push(retryTimeout);
-      }
-    };
-
     const playVideosSequentially = () => {
       processSteps.forEach((_, idx) => {
         const startDelay = idx * 4000;
-        const timeout = setTimeout(() => {
-          // Pause any currently playing videos first
-          videoRefs.current.forEach((v) => {
-            if (v) v.pause();
-          });
-          
-          playActiveVideo(idx);
+        const timeout1 = setTimeout(() => {
+          if (videoRefs.current[idx]) {
+            videoRefs.current[idx].currentTime = 0;
+            videoRefs.current[idx].play().catch((error) => {
+              console.error(`Video ${idx} autoplay failed:`, error);
+            });
+            setActiveVideo(idx);
+          }
         }, startDelay);
 
-        timeouts.push(timeout);
+        timeouts.push(timeout1);
       });
 
       const totalDuration = processSteps.length * 4000;
@@ -174,23 +60,18 @@ function ProcessPreview({ processData }) {
       timeouts.push(restartTimeout);
     };
 
-    // Start playing after a short delay to allow initial loading
-    const initialTimeout = setTimeout(() => {
-      playVideosSequentially();
-    }, 500);
-    
-    timeouts.push(initialTimeout);
+    // Start the sequence
+    playVideosSequentially();
 
     return () => {
       timeouts.forEach((timeout) => clearTimeout(timeout));
       videoRefs.current.forEach((video) => {
         if (video) {
           video.pause();
-          video.removeEventListener('loadeddata', () => {});
         }
       });
     };
-  }, [processSteps, videosLoaded]);
+  }, [processSteps]);
 
   // If no process steps provided, return placeholder or empty fragment
   if (processSteps.length === 0) {
@@ -217,12 +98,10 @@ function ProcessPreview({ processData }) {
                       type: "spring",
                       stiffness: 260,
                       damping: 20,
-                      delay: animationDelay,
+                      delay: animationDelay
                     }}
                     className={`flex flex-col items-center cursor-pointer transform transition-all duration-500 ${
-                      activeVideo === index
-                        ? "scale-110"
-                        : "scale-100 opacity-70"
+                      activeVideo === index ? "scale-110" : "scale-100 opacity-70"
                     }`}
                   >
                     <div
@@ -230,34 +109,19 @@ function ProcessPreview({ processData }) {
                         activeVideo === index ? "ring-2 ring-accent" : ""
                       }`}
                     >
-                      {supportsMP4 ? (
-                        <video
-                          ref={(el) => (videoRefs.current[index] = el)}
-                          src={step.videoSrc}
-                          className="object-cover"
-                          muted
-                          playsInline
-                          preload={index === 0 || index === 1 ? "auto" : "none"} 
-                          poster="/assets/images/fallback-process.jpg"
-                          style={{
-                            pointerEvents: "none",
-                            width: `${80 * (step.scale || 1)}%`,
-                            height: `${80 * (step.scale || 1)}%`,
-                          }}
-                          tabIndex={-1}
-                        />
-                      ) : (
-                        <img 
-                          src="/assets/images/fallback-process.jpg" 
-                          alt={step.title}
-                          className="object-cover"
-                          style={{
-                            pointerEvents: "none",
-                            width: `${80 * (step.scale || 1)}%`,
-                            height: `${80 * (step.scale || 1)}%`,
-                          }}
-                        />
-                      )}
+                      <video
+                        ref={(el) => (videoRefs.current[index] = el)}
+                        src={step.videoSrc}
+                        className="object-cover"
+                        muted
+                        playsInline
+                        style={{
+                          pointerEvents: "none",
+                          width: `${80 * (step.scale || 1)}%`,
+                          height: `${80 * (step.scale || 1)}%`,
+                        }}
+                        tabIndex={-1}
+                      />
                     </div>
                     <AnimatePresence>
                       {activeVideo === index && (
@@ -585,19 +449,21 @@ ProcessEditorPanel.propTypes = {
 ========================================================= */
 export default function ProcessBlock({
   readOnly = false,
-  processData,
-  onConfigChange,
+  processData = null,
+  onConfigChange = () => {}
 }) {
   const [localData, setLocalData] = useState(() => {
     // If no data provided, use empty object to be populated from fetch
     return processData || { steps: [] };
   });
-  const [combinedData, setCombinedData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Fetch combined_data.json when component mounts (if in read-only mode and no data is provided)
   useEffect(() => {
     if (readOnly && !processData) {
+      console.log('ProcessBlock: Fetching data from combined_data.json');
+      
+      // Fetch directly from data directory
       fetch('/data/combined_data.json')
         .then(response => {
           if (!response.ok) {
@@ -606,15 +472,14 @@ export default function ProcessBlock({
           return response.json();
         })
         .then(data => {
-          setCombinedData(data);
-          // If process data exists in combined_data.json, use it
+          console.log('ProcessBlock: Data fetched successfully', data.process);
           if (data.process) {
             setLocalData(data.process);
           }
           setLoading(false);
         })
         .catch(error => {
-          console.error('Error fetching combined data:', error);
+          console.error('ProcessBlock: Error fetching data:', error);
           setLoading(false);
         });
     } else {
@@ -650,7 +515,7 @@ export default function ProcessBlock({
 
   // Show loading indicator while fetching data
   if (loading) {
-    return <div className="h-[20vh] flex items-center justify-center">Loading...</div>;
+    return <div className="h-[20vh] flex items-center justify-center">Loading process data...</div>;
   }
 
   // If read-only mode, just show the preview with combined data if available
@@ -691,10 +556,4 @@ ProcessBlock.propTypes = {
     ),
   }),
   onConfigChange: PropTypes.func,
-};
-
-ProcessBlock.defaultProps = {
-  readOnly: false,
-  processData: null,
-  onConfigChange: null,
 };

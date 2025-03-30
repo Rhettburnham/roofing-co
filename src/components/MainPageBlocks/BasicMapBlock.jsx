@@ -12,6 +12,7 @@ import L from "leaflet";
 import { gsap } from "gsap";
 import * as FaIcons from "react-icons/fa";
 
+// to do this needs to be centered where the lat is currentl seem up and to the right
 const CustomMarkerIcon = L.icon({
   iconUrl: "/assets/images/clipped-cowboy.png",
   iconSize: [30, 30],
@@ -306,13 +307,15 @@ function BasicMapPreview({ mapData }) {
         <div
           className={`flex ${isSmallScreen ? "justify-center" : "justify-start pl-11"}`}
         >
-          <h1 className="text-[3vh] md:text-[5vh] font-normal text-black text-center font-serif">
+          {/* to do change this to be in the combined_data.json */}
+          {/* to do have the title animate from the left */} 
+          <h1 className="text-[3vh] md:text-[4vh] font-normal text-black text-center font-serif">
             Are we in your area?
           </h1>
         </div>
-        <div className="relative flex flex-col md:flex-row gap-4 px-10 md:px-8 h-auto md:h-[45vh]">
+        <div className="relative flex flex-col md:flex-row gap-4 px-10 md:px-8 h-auto md:h-[40vh]">
           {/* Left: Map */}
-          <div className="flex flex-col w-full md:w-[60%]">
+          <div className="flex flex-col w-full md:w-[55%]">
             <div className="relative h-[22vh] md:h-full w-full z-10">
               <div className="w-full h-full rounded-xl overflow-hidden shadow-lg border border-gray-300 relative">
                 <MapContainer
@@ -354,7 +357,7 @@ function BasicMapPreview({ mapData }) {
                   </div>
                 )}
                 {/* Bottom overlay: address + phone */}
-                <div className="absolute bottom-0 w-full bg-banner text-center text-white font-semibold z-10">
+                <div className="absolute bottom-0 w-full bg-banner text-center text-white font-semibold z-10 py-2">
                   <div className="font-semibold text-[2.5vw] md:text-[2vh] leading-tight">
                     {address}
                   </div>

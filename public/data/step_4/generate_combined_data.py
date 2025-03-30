@@ -316,8 +316,8 @@ class CombinedDataGenerator:
                 "lat": lat,
                 "lng": lng
             },
-            "zoomLevel": 9,
-            "circleRadius": 6047,  # 6047 meters (approx. 3.75 miles)
+            "zoomLevel": 11,
+            "circleRadius": 5047,  # 6047 meters (approx. 3.75 miles)
             "address": address,
             "telephone": phone,
             "serviceHours": formatted_hours,

@@ -12,6 +12,7 @@ import { FaTools, FaFan, FaPaintRoller, FaTint } from "react-icons/fa";
 import { X } from "lucide-react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import googleIcon from "/assets/images/googleimage.png";
 // import * as FaIcons from "react-icons/fa";
 
 // Register GSAP's ScrollTrigger plugin
@@ -40,13 +41,12 @@ const BookingPreview = memo(({ bookingData }) => {
   const [commercialServices, setCommercialServices] = useState([]);
   const [activeTab, setActiveTab] = useState("residential");
   const [isLoading, setIsLoading] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   // Refs for GSAP animations
   const bannerRef = useRef(null);
   const formContainerRef = useRef(null);
   const toggleButtonRef = useRef(null);
-  const leftNailRef = useRef(null);
-  const rightNailRef = useRef(null);
   const contentRef = useRef(null);
 
   // Memoize the icons array to prevent recreating it on every render
@@ -58,6 +58,23 @@ const BookingPreview = memo(({ bookingData }) => {
     () => [FaTools, FaPaintRoller, FaTint, FaFan],
     []
   );
+
+  // Check for mobile on mount and window resize
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    // Initial check
+    checkMobile();
+    
+    // Add resize listener
+    window.addEventListener('resize', checkMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+    };
+  }, []);
 
   // Fetch services from services.json with optimized loading
   useEffect(() => {
@@ -132,10 +149,30 @@ const BookingPreview = memo(({ bookingData }) => {
 
   // GSAP animations for banner reveal and nails
   useEffect(() => {
-    // Initial states
-    gsap.set(contentRef.current, { y: "-100%" });
-    gsap.set(leftNailRef.current, { x: "-100vw" });
-    gsap.set(rightNailRef.current, { x: "100vw" });
+    // Exit if no elements are available
+    if (!bannerRef.current || !contentRef.current || !formContainerRef.current) return;
+    
+    // Get nail elements
+    const leftNails = [
+      document.getElementById('left-nail-1'),
+      document.getElementById('left-nail-2'),
+      document.getElementById('left-nail-3')
+    ].filter(Boolean); // Filter out any null values
+    
+    const rightNails = [
+      document.getElementById('right-nail-1'),
+      document.getElementById('right-nail-2'),
+      document.getElementById('right-nail-3')
+    ].filter(Boolean); // Filter out any null values
+    
+    // Set initial positions
+    gsap.set(bannerRef.current, { y: "-120%", opacity: 0 });
+    gsap.set(contentRef.current, { opacity: 1 });
+    gsap.set(formContainerRef.current, { opacity: 0, scale: 0.95 });
+    
+    // Set initial positions for nails
+    gsap.set(leftNails, { x: "-330%" });  // Start completely off-screen to the left
+    gsap.set(rightNails, { x: "150%" });  // Start completely off-screen to the right
 
     const masterTimeline = gsap.timeline({
       scrollTrigger: {
@@ -147,23 +184,48 @@ const BookingPreview = memo(({ bookingData }) => {
       },
     });
 
-    // 1. Banner slides down
-    masterTimeline.to(contentRef.current, {
+    // 1. Banner falls from above with bounce effect
+    masterTimeline.to(bannerRef.current, {
       y: 0,
+      opacity: 1,
       duration: 0.8,
-      ease: "power2.out",
+      ease: "bounce.out",
     });
 
-    // 2. After a short delay, nails pierce from both sides
+    // 2. Form scales and fades in with slight delay
     masterTimeline.to(
-      [leftNailRef.current, rightNailRef.current],
+      formContainerRef.current, 
       {
-        x: 0,
+        opacity: 1,
+        scale: 1,
         duration: 0.6,
-        ease: "power2.out",
-        stagger: 0.1,
+        ease: "back.out(1.4)"
       },
-      "+=0.3"
+      "-=0.2" // Start slightly before banner animation finishes
+    );
+
+    // 3. After form is visible, animate left nails to slide in from left
+    masterTimeline.to(
+      leftNails,
+      {
+        x: "60%", // Move to final position
+        duration: 0.4,
+        ease: "power2.out",
+        stagger: 0.12,
+      },
+      "+=0.2"
+    );
+
+    // 4. Animate right nails to slide in from right
+    masterTimeline.to(
+      rightNails,
+      {
+        x: "-240%", // Move to final position
+        duration: 0.4,
+        ease: "power2.out",
+        stagger: 0.12,
+      },
+      "-=0.5" // Overlap with left nails animation
     );
 
     return () => {
@@ -173,9 +235,12 @@ const BookingPreview = memo(({ bookingData }) => {
 
   // GSAP animation for mobile toggle
   const toggleFormVisibility = useCallback(() => {
-    if (window.innerWidth < 768) {
+    if (isMobile) {
       // Only animate on mobile
       if (!isFormVisible) {
+        // Show the form container first
+        formContainerRef.current.style.display = "block";
+        
         // Animation to expand banner into form
         gsap.to(bannerRef.current, {
           height: "auto",
@@ -201,6 +266,10 @@ const BookingPreview = memo(({ bookingData }) => {
               height: "auto",
               duration: 0.5,
               ease: "power2.inOut",
+              onComplete: () => {
+                // Hide the form container after animation
+                formContainerRef.current.style.display = "none";
+              }
             });
           },
         });
@@ -208,7 +277,7 @@ const BookingPreview = memo(({ bookingData }) => {
     }
 
     setIsFormVisible((prev) => !prev);
-  }, [isFormVisible]);
+  }, [isFormVisible, isMobile]);
 
   const handleChange = useCallback((e) => {
     const { name, value } = e.target;
@@ -264,54 +333,134 @@ const BookingPreview = memo(({ bookingData }) => {
 
   // Format logo path for proper display
   const formattedLogo = logo
-    ? `/assets/images/${logo.split("/").pop() || "clipped-cowboy.png"}`
-    : logo || "/assets/images/clipped-cowboy.png";
+    ? `/assets/images/booking/${logo.split("/").pop() || "clipped.png"}`
+    : logo || "/assets/images/booking/clipped.png";
 
   return (
     <div className="flex flex-col items-center w-full px-6">
       {/* OUTER BOX WITH BANNER COLOR */}
       <div
         ref={bannerRef}
-        className="md:max-w-xl w-full bg-banner rounded-lg overflow-hidden shadow-lg relative"
+        className="md:max-w-xl w-full bg-banner rounded-lg shadow-lg relative"
       >
-        {/* Left Nail */}
-        <div
-          ref={leftNailRef}
-          className="absolute left-4 top-1/2 -translate-y-1/2 w-[20%] h-[4vh] hidden md:block"
-        >
-          <div
-            className="w-full h-full"
-            style={{
-              backgroundImage: "url('/assets/images/nail.png')",
-              backgroundPosition: "left center",
-              backgroundRepeat: "no-repeat",
-              backgroundSize: "contain",
-              transform: "scale(2)",
-              transformOrigin: "left center",
-            }}
-          />
+        {/* Left Nails */}
+        <div className="absolute left-0 top-0 h-full hidden md:flex flex-col -z-10 justify-between py-8 z-50 overflow-visible">
+          <div id="left-nail-1" className="w-[8vw] h-[2.5vh] relative">
+            <div
+              className="w-full h-full"
+              style={{
+                backgroundImage: "url('/assets/images/nail.png')",
+                backgroundPosition: "left center",
+                backgroundRepeat: "no-repeat",
+                backgroundSize: "contain",
+                transform: "scale(1.8)",
+                transformOrigin: "left center",
+                position: "absolute",
+                left: "-90%", // Position at final location
+                top: 0,
+                filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
+                zIndex: 60
+              }}
+            />
+          </div>
+          <div id="left-nail-2" className="w-[8vw] h-[2.5vh] relative">
+            <div
+              className="w-full h-full"
+              style={{
+                backgroundImage: "url('/assets/images/nail.png')",
+                backgroundPosition: "left center",
+                backgroundRepeat: "no-repeat",
+                backgroundSize: "contain",
+                transform: "scale(1.8)",
+                transformOrigin: "left center",
+                position: "absolute",
+                left: "-90%", // Position at final location
+                top: 0,
+                filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
+                zIndex: 60
+              }}
+            />
+          </div>
+          <div id="left-nail-3" className="w-[8vw] h-[2.5vh] relative">
+            <div
+              className="w-full h-full"
+              style={{
+                backgroundImage: "url('/assets/images/nail.png')",
+                backgroundPosition: "left center",
+                backgroundRepeat: "no-repeat",
+                backgroundSize: "contain",
+                transform: "scale(1.8)",
+                transformOrigin: "left center",
+                position: "absolute",
+                left: "-90%", // Position at final location
+                top: 0,
+                filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
+                zIndex: 60
+              }}
+            />
+          </div>
         </div>
 
-        {/* Right Nail */}
-        <div
-          ref={rightNailRef}
-          className="absolute right-4 top-1/2 -translate-y-1/2 w-[20%] h-[4vh] hidden md:block"
-        >
-          <div
-            className="w-full h-full"
-            style={{
-              backgroundImage: "url('/assets/images/nail.png')",
-              backgroundPosition: "right center",
-              backgroundRepeat: "no-repeat",
-              backgroundSize: "contain",
-              transform: "scale(2) scaleX(-1)",
-              transformOrigin: "right center",
-            }}
-          />
+        {/* Right Nails */}
+        <div className="absolute right-0 top-0 h-full hidden md:flex flex-col justify-between py-8 -z-10 overflow-visible">
+          <div id="right-nail-1" className="w-[8vw] h-[2.5vh] relative">
+            <div
+              className="w-full h-full"
+              style={{
+                backgroundImage: "url('/assets/images/nail.png')",
+                backgroundPosition: "right center",
+                backgroundRepeat: "no-repeat",
+                backgroundSize: "contain",
+                transform: "scale(1.8) scaleX(-1)",
+                transformOrigin: "right center",
+                position: "absolute",
+                right: "-90%", // Position at final location
+                top: 0,
+                filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
+                zIndex: 60
+              }}
+            />
+          </div>
+          <div id="right-nail-2" className="w-[8vw] h-[2.5vh] relative">
+            <div
+              className="w-full h-full"
+              style={{
+                backgroundImage: "url('/assets/images/nail.png')",
+                backgroundPosition: "right center",
+                backgroundRepeat: "no-repeat",
+                backgroundSize: "contain",
+                transform: "scale(1.8) scaleX(-1)",
+                transformOrigin: "right center",
+                position: "absolute",
+                right: "-90%", // Position at final location
+                top: 0,
+                filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
+                zIndex: 60
+              }}
+            />
+          </div>
+          <div id="right-nail-3" className="w-[8vw] h-[2.5vh] relative">
+            <div
+              className="w-full h-full"
+              style={{
+                backgroundImage: "url('/assets/images/nail.png')",
+                backgroundPosition: "right center",
+                backgroundRepeat: "no-repeat",
+                backgroundSize: "contain",
+                transform: "scale(1.8) scaleX(-1)",
+                transformOrigin: "right center",
+                position: "absolute",
+                right: "-90%", // Position at final location
+                top: 0,
+                filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
+                zIndex: 60
+              }}
+            />
+          </div>
         </div>
 
         {/* Content Container */}
-        <div ref={contentRef}>
+        <div ref={contentRef} className="relative z-10">
           {/* HEADER RIBBON WITH LOGO & TEXT */}
           <div className="relative py-3 px-4 flex flex-col items-center">
             <div className="flex items-center justify-center w-full">
@@ -354,7 +503,8 @@ const BookingPreview = memo(({ bookingData }) => {
           {/* INNER BOX WITH FORM (white background) */}
           <div
             ref={formContainerRef}
-            className={`${isFormVisible ? "block" : "hidden"} md:block w-full pb-2`}
+            className="w-full pb-2 md:block"
+            style={{ display: isFormVisible ? 'block' : isMobile ? 'none' : 'block' }}
           >
             <div className="bg-white rounded-lg p-3 shadow-inner mx-2">
               <form onSubmit={handleSubmit} className="w-full">

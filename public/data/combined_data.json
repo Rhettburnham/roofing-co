@@ -1,39 +1,52 @@
 {
+  "navbar": {
+    "navLinks": [
+      { "name": "About", "href": "/about" },
+      { "name": "Booking", "href": "/#book" },
+      { "name": "Services", "href": "/#services" },
+      { "name": "Contact", "href": "/#contact" }
+    ],
+    "logo": "/assets/images/hero/clipped-cowboy.png",
+    "whiteLogo": "/assets/images/hero/logo.svg"
+  },
   "hero": {
     "mainTitle": "CRAFT ROOFING",
     "subTitle": "COMPANY, LLC",
     "residential": {
       "subServices": [
         {
-          "title": "Asphalt Shingle Installation & Replacement"
+          "title": "Shingling"
         },
         {
-          "title": "Residential Roof Inspection & Maintenance"
+          "title": "Guttering"
         },
         {
-          "title": "Tile Roof Repair & Restoration"
+          "title": "Chimney"
         },
         {
-          "title": "Skylight Installation & Leak Repair"
+          "title": "Skylights"
         }
       ]
     },
     "commercial": {
       "subServices": [
         {
-          "title": "EPDM Flat Roof Installation & Repair"
+          "title": "Coating"
         },
         {
-          "title": "Commercial Roof Coating & Sealant Application"
+          "title": "Built-Up"
         },
         {
-          "title": "Metal Roof Panel Installation & Maintenance"
+          "title": "Metal Roof"
         },
         {
-          "title": "Commercial Roof Drainage System Repair"
+          "title": "Drainage"
         }
       ]
-    }
+    },
+    "logo": "/assets/images/hero/clipped-cowboy.png",
+    "residentialImage": "/assets/images/hero/residentialnight.jpg",
+    "commercialImage": "/assets/images/hero/commercialnight.jpg"
   },
   "process": {
     "steps": [
@@ -64,26 +77,26 @@
     ]
   },
   "aboutPage": {
-    "title": "Craft Roofing Company, LLC: Your Trusted Atlanta Roofing Experts",
-    "subtitle": "Quality Craftsmanship, Unmatched Reliability",
-    "history": "Founded in 2016, Craft Roofing Company, LLC has been proudly serving the Atlanta community for nearly a decade. What started as a small, family-owned business has grown into a trusted name in roofing, known for exceptional workmanship and customer satisfaction. Over the years, we've tackled everything from minor repairs to full roof replacements, earning a reputation for durability, precision, and integrity. Our deep roots in Atlanta drive our commitment to protecting homes and businesses with roofs built to withstand the region's unique weather challenges.",
-    "mission": "At Craft Roofing Company, LLC, our mission is to deliver superior roofing solutions with honesty, expertise, and a dedication to excellence. We strive to protect and enhance every property we serve, ensuring peace of mind for our customers through reliable service and lasting quality.",
+    "title": "Craft Roofing Company, LLC: Atlanta's Trusted Roofing Experts",
+    "subtitle": "Building Strong Roofs, Stronger Relationships",
+    "history": "Founded in 2016, Craft Roofing Company, LLC has been serving the Atlanta community with top-tier roofing solutions for nearly a decade. What started as a small, family-owned business has grown into a trusted name in the industry, known for quality craftsmanship and exceptional customer service. Over the years, we\u2019ve tackled everything from minor repairs to full roof replacements, earning a reputation for reliability and attention to detail. Our deep roots in Atlanta drive our commitment to protecting homes and businesses with durable, weather-resistant roofing systems tailored to the region\u2019s unique climate.",
+    "mission": "Our mission is to deliver superior roofing solutions with integrity, precision, and care. We strive to exceed expectations by combining expert craftsmanship with personalized service, ensuring every project\u2014big or small\u2014is built to last and backed by our unwavering commitment to quality.",
     "values": [
       {
-        "title": "Integrity",
-        "description": "We operate with transparency and honesty, ensuring fair pricing and clear communication in every project."
+        "title": "Quality Craftsmanship",
+        "description": "We take pride in every detail, using premium materials and proven techniques to ensure roofs that stand the test of time."
       },
       {
-        "title": "Quality",
-        "description": "From materials to installation, we uphold the highest standards to deliver roofs that stand the test of time."
+        "title": "Customer Trust",
+        "description": "Honesty and transparency guide every interaction, fostering long-term relationships built on reliability and respect."
       },
       {
-        "title": "Customer Focus",
-        "description": "Your satisfaction is our priority. We listen, adapt, and go above and beyond to meet your roofing needs."
+        "title": "Community Focus",
+        "description": "As Atlanta locals, we\u2019re invested in the safety and beauty of our neighborhoods, offering solutions that enhance homes and businesses alike."
       },
       {
-        "title": "Community",
-        "description": "As an Atlanta-based business, we\u2019re committed to strengthening our community through reliable service and local partnerships."
+        "title": "Innovation",
+        "description": "We stay ahead of industry trends and technologies to provide efficient, sustainable, and cutting-edge roofing options."
       }
     ],
     "team": [
@@ -106,24 +119,24 @@
       },
       {
         "title": "Completed Projects",
-        "value": 504,
+        "value": 522,
         "icon": "FaAward"
       },
       {
         "title": "Happy Clients",
-        "value": 403,
+        "value": 417,
         "icon": "FaUsers"
       },
       {
         "title": "Team Members",
-        "value": 5,
+        "value": 8,
         "icon": "FaHandshake"
       }
     ],
     "heroImage": "/assets/images/about/about-hero.jpg"
   },
   "booking": {
-    "logo": "/assets/images/logo/clipped.png",
+    "logo": "/assets/images/hero/clipped-cowboy.png",
     "headerText": "Call Us Today!",
     "phone": "(404) 227-5000"
   },
@@ -131,28 +144,34 @@
     "heroText": "Expert Roofs, Trusted Craftsmanship",
     "accredited": true,
     "years_in_business": "9 Years of Roofing Experience",
-    "bus_description": "Craft Roofing Company, LLC has been a trusted name in the roofing industry for 9 years, delivering exceptional craftsmanship and reliability. Specializing in residential and commercial roofing, we combine time-tested techniques with modern materials to ensure durable, weather-resistant roofs that stand the test of time.",
-    "bus_description_second": "Family-owned and operated, Craft Roofing takes pride in personalized service and attention to detail. Our team of licensed professionals is committed to transparency, fair pricing, and exceeding customer expectations\u2014treating every project as if it were our own home.",
+    "bus_description": "Craft Roofing Company, LLC has been a trusted name in the roofing industry for 9 years, delivering exceptional craftsmanship and reliability. Specializing in residential and commercial roofing, we combine time-tested techniques with modern materials to ensure durability, aesthetic appeal, and long-lasting protection for your property.",
+    "bus_description_second": "At Craft Roofing, we pride ourselves on personalized service and unwavering integrity. Our skilled team handles every project with meticulous attention to detail, from initial inspection to final installation. Customer satisfaction is our top priority, and we stand behind our work with industry-leading warranties and transparent communication.",
+    "overlayImages": [
+      "/assets/images/shake_img/1.png",
+      "/assets/images/shake_img/2.png",
+      "/assets/images/shake_img/3.png",
+      "/assets/images/shake_img/4.png"
+    ],
     "cards": [
       {
-        "title": "Licensed & Insured",
-        "desc": "Our team holds full licensing and comprehensive insurance, giving you peace of mind with every project.",
-        "icon": "Certificate"
+        "title": "Expert Craftsmanship",
+        "desc": "Our seasoned professionals bring 9+ years of expertise, ensuring precision and quality in every roof we install or repair.",
+        "icon": "Tools"
       },
       {
-        "title": "Quality Materials",
-        "desc": "We use premium, weather-resistant materials to ensure your roof withstands harsh conditions for decades.",
+        "title": "Trusted Warranties",
+        "desc": "We offer robust warranties on materials and labor, giving you peace of mind for years to come.",
         "icon": "Shield"
+      },
+      {
+        "title": "Personalized Service",
+        "desc": "From consultation to completion, we tailor solutions to fit your needs, budget, and timeline.",
+        "icon": "HeartHandshake"
       },
       {
         "title": "BBB Accredited",
         "desc": "Recognized for integrity, transparency and commitment to customer satisfaction by the Better Business Bureau.",
         "icon": "Certificate"
-      },
-      {
-        "title": "Timely Completion",
-        "desc": "We respect your time\u2014projects are completed efficiently without cutting corners on quality or safety.",
-        "icon": "Clock"
       }
     ],
     "images": [
@@ -195,8 +214,8 @@
   },
   "map": {
     "center": {
-      "lat": 33.61622658662084,
-      "lng": -84.26793626676401
+      "lat": 33.67671976442508,
+      "lng": -84.32647876462993
     },
     "zoomLevel": 9,
     "circleRadius": 6047,
@@ -254,7 +273,7 @@
         "icon": "FaCalendarAlt"
       }
     ],
-    "markerIcon": "/assets/images/logo/clipped.png"
+    "markerIcon": "/assets/images/hero/clipped-cowboy.png"
   },
   "combinedPage": {
     "isCommercial": false,
@@ -265,86 +284,92 @@
         "stars": 5,
         "date": "4 years ago",
         "text": "Excellent workmanship and fair pricing! They handled everything with the insurance company, showed up when they said they would and cleaned up after they were done. They even replaced shingles on my porch and replaced one of my gutters, despite these things not being covered by insurance payment. I highly recommend them!",
-        "logo": "/assets/images/googleimage.png"
+        "logo": "/assets/images/hero/logo.svg",
+        "link": "https://www.google.com/maps"
       },
       {
         "name": "Gloria Mitchum",
         "stars": 5,
         "date": "2 years ago",
         "text": "Mr Craft and his crew did a wonderful job replacing my roof. All of my questions were answered. Thank you so much & God bless",
-        "logo": "/assets/images/googleimage.png"
+        "logo": "/assets/images/hero/logo.svg",
+        "link": "https://www.google.com/maps"
       },
       {
         "name": "ral K",
         "stars": 5,
         "date": "4 years ago",
         "text": "Carl Craft and his company provided excellent, reliable, and quick service..he worked with insurance company, so our part was minimal. I would recommend him to anyone who is need of any type of roofing issues.",
-        "logo": "/assets/images/googleimage.png"
+        "logo": "/assets/images/hero/logo.svg",
+        "link": "https://www.google.com/maps"
       },
       {
         "name": "MELODY WILLIAMS",
         "stars": 5,
         "date": "3 years ago",
         "text": "Today I had a wonderful Roof inspection and minor repairs with Craft Roofing.  The Inspector was very knowledgeable about my roof and very informative.  I give the company a 5-star rating.",
-        "logo": "/assets/images/googleimage.png"
+        "logo": "/assets/images/hero/logo.svg",
+        "link": "https://www.google.com/maps"
       },
       {
         "name": "Dan Kile",
         "stars": 5,
         "date": "4 years ago",
         "text": "Carl was excellent to work with. His crew was in and out quickly and cleaned up their mess.   I would highly recommend Craft Roofing.",
-        "logo": "/assets/images/googleimage.png"
+        "logo": "/assets/images/hero/logo.svg",
+        "link": "https://www.google.com/maps"
       },
       {
         "name": "David Snyder",
         "stars": 5,
         "date": "4 years ago",
         "text": "I would like to share a review of my experience with Craft Roofing Company. I had my roof replaced by them, and the results were outstanding. The installers were on time and finished the job in a little more than one day. The roof looks \u2026",
-        "logo": "/assets/images/googleimage.png"
+        "logo": "/assets/images/hero/logo.svg",
+        "link": "https://www.google.com/maps"
       }
     ],
     "residentialServices": [
       {
         "icon": "FaHardHat",
         "title": "Asphalt Shingle Installation & Replacement",
-        "link": "/residential/asphalt-shingle-installation-&-replacement"
+        "link": "/services/residential-1-asphalt-shingle-installation-and-replacement"
       },
       {
         "icon": "FaHome",
         "title": "Residential Roof Inspection & Maintenance",
-        "link": "/residential/residential-roof-inspection-&-maintenance"
+        "link": "/services/residential-2-residential-roof-inspection-and-maintenance"
       },
       {
         "icon": "FaTools",
         "title": "Tile Roof Repair & Restoration",
-        "link": "/residential/tile-roof-repair-&-restoration"
+        "link": "/services/residential-3-tile-roof-repair-and-restoration"
       },
       {
         "icon": "FaBroom",
         "title": "Skylight Installation & Leak Repair",
-        "link": "/residential/skylight-installation-&-leak-repair"
+        "link": "/services/residential-4-skylight-installation-and-leak-repair"
       }
     ],
     "commercialServices": [
       {
         "icon": "FaPaintRoller",
         "title": "EPDM Flat Roof Installation & Repair",
-        "link": "/commercial/epdm-flat-roof-installation-&-repair"
+        "link": "/services/commercial-1-epdm-flat-roof-installation-and-repair"
       },
       {
         "icon": "FaBuilding",
         "title": "Commercial Roof Coating & Sealant Application",
-        "link": "/commercial/commercial-roof-coating-&-sealant-application"
+        "link": "/services/commercial-2-commercial-roof-coating-and-sealant-application"
       },
       {
         "icon": "FaWarehouse",
         "title": "Metal Roof Panel Installation & Maintenance",
-        "link": "/commercial/metal-roof-panel-installation-&-maintenance"
+        "link": "/services/commercial-3-metal-roof-panel-installation-and-maintenance"
       },
       {
         "icon": "FaChimney",
         "title": "Commercial Roof Drainage System Repair",
-        "link": "/commercial/commercial-roof-drainage-system-repair"
+        "link": "/services/commercial-4-commercial-roof-drainage-system-repair"
       }
     ],
     "teamTitle": "Leadership",
@@ -379,7 +404,7 @@
     ]
   },
   "employees": {
-    "sectionTitle": "MEET THE TEAM",
+    "sectionTitle": "TEAM MEMBERS",
     "employee": [
       {
         "name": "Mr. Luis Aguilar-Lopez",
@@ -419,42 +444,48 @@
       "stars": 5,
       "date": "4 years ago",
       "text": "Excellent workmanship and fair pricing! They handled everything with the insurance company, showed up when they said they would and cleaned up after they were done. They even replaced shingles on my porch and replaced one of my gutters, despite these things not being covered by insurance payment. I highly recommend them!",
-      "logo": "/assets/images/googleimage.png"
+      "logo": "/assets/images/hero/logo.svg",
+      "link": "https://www.google.com/maps"
     },
     {
       "name": "Gloria Mitchum",
       "stars": 5,
       "date": "2 years ago",
       "text": "Mr Craft and his crew did a wonderful job replacing my roof. All of my questions were answered. Thank you so much & God bless",
-      "logo": "/assets/images/googleimage.png"
+      "logo": "/assets/images/hero/logo.svg",
+      "link": "https://www.google.com/maps"
     },
     {
       "name": "ral K",
       "stars": 5,
       "date": "4 years ago",
       "text": "Carl Craft and his company provided excellent, reliable, and quick service..he worked with insurance company, so our part was minimal. I would recommend him to anyone who is need of any type of roofing issues.",
-      "logo": "/assets/images/googleimage.png"
+      "logo": "/assets/images/hero/logo.svg",
+      "link": "https://www.google.com/maps"
     },
     {
       "name": "MELODY WILLIAMS",
       "stars": 5,
       "date": "3 years ago",
       "text": "Today I had a wonderful Roof inspection and minor repairs with Craft Roofing.  The Inspector was very knowledgeable about my roof and very informative.  I give the company a 5-star rating.",
-      "logo": "/assets/images/googleimage.png"
+      "logo": "/assets/images/hero/logo.svg",
+      "link": "https://www.google.com/maps"
     },
     {
       "name": "Dan Kile",
       "stars": 5,
       "date": "4 years ago",
       "text": "Carl was excellent to work with. His crew was in and out quickly and cleaned up their mess.   I would highly recommend Craft Roofing.",
-      "logo": "/assets/images/googleimage.png"
+      "logo": "/assets/images/hero/logo.svg",
+      "link": "https://www.google.com/maps"
     },
     {
       "name": "David Snyder",
       "stars": 5,
       "date": "4 years ago",
       "text": "I would like to share a review of my experience with Craft Roofing Company. I had my roof replaced by them, and the results were outstanding. The installers were on time and finished the job in a little more than one day. The roof looks \u2026",
-      "logo": "/assets/images/googleimage.png"
+      "logo": "/assets/images/hero/logo.svg",
+      "link": "https://www.google.com/maps"
     }
   ]
 }

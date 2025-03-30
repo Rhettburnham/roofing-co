@@ -4,7 +4,7 @@ import { HashLink } from "react-router-hash-link";
 import { motion, AnimatePresence } from "framer-motion";
 
 const Process = () => {
-  const processSteps = [
+  const [processSteps, setProcessSteps] = useState([
     {
       title: "Book",
       videoSrc: "/assets/videos/our_process_videos/booking.mp4",
@@ -29,13 +29,38 @@ const Process = () => {
       href: "/#testimonials",
       scale: 0.9,
     },
-  ];
+  ]);
 
   const videoRefs = useRef([]);
   const [activeVideo, setActiveVideo] = useState(0);
   const [initialOrder, setInitialOrder] = useState([]);
+  const [dataLoaded, setDataLoaded] = useState(false);
+
+  // Fetch data from combined_data.json
+  useEffect(() => {
+    fetch('/data/combined_data.json')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log('Process: Data fetched successfully', data.process);
+        if (data.process && data.process.steps) {
+          setProcessSteps(data.process.steps);
+        }
+        setDataLoaded(true);
+      })
+      .catch(error => {
+        console.error('Process: Error fetching data:', error);
+        setDataLoaded(true); // Use default steps
+      });
+  }, []);
 
   useEffect(() => {
+    if (!dataLoaded) return; // Wait for data to be loaded
+    
     // Generate random initial animation order
     const indices = [...Array(processSteps.length).keys()];
     const shuffled = indices.sort(() => Math.random() - 0.5);
@@ -85,7 +110,7 @@ const Process = () => {
         }
       });
     };
-  }, []);
+  }, [dataLoaded, processSteps]);
 
   return (
     <>
@@ -93,13 +118,13 @@ const Process = () => {
       <section className="md:px-8 -mt-[28vh] md:-mt-[32vh] relative z-40 overflow-visible">
         <div className="flex justify-center items-center flex-wrap md:gap-4 translate-y-[5vh] mb-[8vh] md:mb-[12vh]">
           {processSteps.map((step, index) => {
-            const isHashLink = step.href.startsWith("/#");
+            const isHashLink = step.href && step.href.startsWith("/#");
             const LinkComponent = isHashLink ? HashLink : Link;
-            const animationDelay = initialOrder.indexOf(index) * 0.2;
+            const animationDelay = initialOrder.indexOf(index) * 0.2 || 0;
 
             return (
               <div key={index} className="flex items-center pt-1 md:pt-2">
-                <LinkComponent to={step.href}>
+                <LinkComponent to={step.href || "#"}>
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
@@ -126,8 +151,8 @@ const Process = () => {
                         playsInline
                         style={{
                           pointerEvents: "none",
-                          width: `${80 * step.scale}%`,
-                          height: `${80 * step.scale}%`,
+                          width: `${80 * (step.scale || 1)}%`,
+                          height: `${80 * (step.scale || 1)}%`,
                         }}
                         tabIndex={-1}
                       />

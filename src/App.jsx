@@ -422,7 +422,7 @@ const AppRoutes = ({
 const App = () => {
   const [loading, setLoading] = useState(true);
   const [pageData, setPageData] = useState(null);
-  const dataUrl = "/data/ignore/combined_data.json";
+  const dataUrl = "/data/raw_data/step_4/combined_data.json";
 
   // Fetch the combined_data.json file on component mount
   useEffect(() => {

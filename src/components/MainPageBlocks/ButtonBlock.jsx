@@ -373,8 +373,8 @@ ButtonEditorPanel.propTypes = {
 ========================================================= */
 export default function ButtonBlock({
   readOnly = false,
-  buttonconfig,
-  onConfigChange,
+  buttonconfig = null,
+  onConfigChange = () => {}
 }) {
   const [localButton, setLocalButton] = useState(() => {
     if (!buttonconfig) {
@@ -429,10 +429,4 @@ ButtonBlock.propTypes = {
     images: PropTypes.arrayOf(PropTypes.string),
   }),
   onConfigChange: PropTypes.func,
-};
-
-ButtonBlock.defaultProps = {
-  readOnly: false,
-  buttonconfig: null,
-  onConfigChange: null,
 };

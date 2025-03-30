@@ -7,16 +7,11 @@ import { FaQuestionCircle } from "react-icons/fa";
 =============================================
 1) RICH-TEXT PREVIEW (Read-Only)
 ---------------------------------------------
-Displays heroText, descriptions, "falling" 
-cards, and a simple slideshow. All data is passed via 
-props.richTextData.
-
-This component is part of the website's content management system
-that allows for local editing and saving of JSON data. The edited
-content can be downloaded and sent to the developer for permanent
-integration into the site.
+general info from step_4combined_data.json
 =============================================
 */
+
+// taking data from step_4/combined_data.json
 function RichTextPreview({ richTextData }) {
   const [currentImage, setCurrentImage] = useState(0);
   const {
@@ -44,13 +39,13 @@ function RichTextPreview({ richTextData }) {
       ? formattedImages
       : ["/assets/images/Richtext/roof_workers.jpg"];
 
-  // Split cards into left and right for layout
+  // little info card diff size vp logic
   const half = Math.ceil(cards.length / 2);
   const leftCards = cards.slice(0, half);
   const rightCards = cards.slice(half);
 
-  // Overlay images used for card backgrounds and visual effects - standardize paths
-  const overlayImages = [
+  // Overlay images used for card backgrounds and visual effects - use from data or fallback
+  const overlayImages = richTextData.overlayImages || [
     "/assets/images/shake_img/1.png",
     "/assets/images/shake_img/2.png",
     "/assets/images/shake_img/3.png",
@@ -80,60 +75,73 @@ function RichTextPreview({ richTextData }) {
   }) {
     const cardRef = useRef(null);
     const overlayRef = useRef(null);
-    const hasAnimated = useRef(false);
+    const [hasAnimated, setHasAnimated] = useState(false);
 
-    // Intersection Observer for scroll-based animations
     // Cards will "fall" into place when they come into view only once
     useEffect(() => {
-      const observer = new IntersectionObserver(
-        ([entry]) => {
-          if (entry.isIntersecting && !hasAnimated.current) {
-            hasAnimated.current = true;
-            const delay = index * 0.2;
-            entry.target.style.setProperty("--delay", `${delay}s`);
-            entry.target.classList.add("animate-card-fall");
-            if (overlayRef.current) {
-              overlayRef.current.style.setProperty(
-                "--overlay-delay",
-                `${delay + 0.8}s`
-              );
+      let observer;
+      
+      // Only set up the observer if animation hasn't happened yet
+      if (!hasAnimated) {
+        observer = new IntersectionObserver(
+          ([entry]) => {
+            if (entry.isIntersecting && !hasAnimated) {
+              setHasAnimated(true);
+              const delay = index * 0.2;
+              entry.target.style.setProperty("--delay", `${delay}s`);
+              entry.target.classList.add("animate-card-fall");
+              if (overlayRef.current) {
+                overlayRef.current.style.setProperty(
+                  "--overlay-delay",
+                  `${delay + 0.8}s`
+                );
+              }
+              observer.unobserve(entry.target);
             }
-            observer.unobserve(entry.target);
-          }
-        },
-        { threshold: 0.2 }
-      );
+          },
+          { threshold: 0.2, rootMargin: "0px 0px -50px 0px" }
+        );
 
-      // Handle animation completion to trigger overlay fade-out
+        if (cardRef.current) {
+          observer.observe(cardRef.current);
+        }
+      }
+
+      return () => {
+        if (observer && cardRef.current) {
+          observer.unobserve(cardRef.current);
+        }
+      };
+    }, [index, hasAnimated]);
+
+    // Handle animation completion to trigger overlay fade-out
+    useEffect(() => {
       const handleAnimationEnd = (e) => {
         if (e.animationName === "cardFall") {
           overlayRef.current?.classList.add("fade-overlay-out");
         }
       };
 
-      if (cardRef.current) {
-        observer.observe(cardRef.current);
-        cardRef.current.addEventListener("animationend", handleAnimationEnd);
+      const currentCard = cardRef.current;
+      if (currentCard) {
+        currentCard.addEventListener("animationend", handleAnimationEnd);
       }
 
       return () => {
-        if (cardRef.current) {
-          observer.unobserve(cardRef.current);
-          cardRef.current.removeEventListener(
-            "animationend",
-            handleAnimationEnd
-          );
+        if (currentCard) {
+          currentCard.removeEventListener("animationend", handleAnimationEnd);
         }
       };
-    }, [index]);
+    }, []);
 
     // Base styling for all card variants
     const baseClasses =
-      "relative bg-white p-2 rounded-lg shadow-lg flex flex-col items-center justify-center opacity-0";
+      "relative bg-white p-2 rounded-lg shadow-lg flex flex-col items-center justify-center";
 
-    // Add animation classes if not mobile or md variant
-    const animationClasses =
-      variant === "default" ? "transform-gpu -translate-x-full -rotate-90" : "";
+    // Add animation classes if not mobile or md variant and hasn't animated yet
+    const animationClasses = !hasAnimated && variant === "default" 
+      ? "transform-gpu -translate-x-full -rotate-90 opacity-0" 
+      : "opacity-100";
 
     return (
       <div
@@ -153,9 +161,9 @@ function RichTextPreview({ richTextData }) {
         />
 
         {/* Icon positioned in top-right corner */}
-        <div className="absolute top-0 right-0 w-8 h-8 md:w-10 md:h-10 z-30 flex items-center justify-center">
+        <div className="absolute -top-1 -right-1 w-8 h-8 md:w-10 md:h-10 z-30 flex items-center justify-center">
           {Icon && (
-            <Icon className="w-5 h-5 md:w-6 md:h-6 text-white drop-shadow-lg" />
+            <Icon className=" text-white drop-shadow-lg" />
           )}
         </div>
 
@@ -172,12 +180,12 @@ function RichTextPreview({ richTextData }) {
         {/* Title container */}
         <div className="flex flex-col">
           <div className="absolute inset-0 top-0 w-full ml-2 md:ml-3 md:mt-1 mt-2">
-            <h3 className="md:whitespace-nowrap z-40 text-[2.3vw] md:text-[1.8vh] font-bold text-gray-900 font-sans">
+            <h3 className="md:whitespace-nowrap z-40 ml-1 md:ml-2 text-[2.3vw] md:text-[1.6vh] font-bold text-gray-900 font-sans">
               {title}
             </h3>
           </div>
           {/* Description text - Adjusted for tighter vertical spacing */}
-          <p className="z-40 text-[2.2vw] md:text-[1.5vh] text-gray-700 text-left px-1 md:px-1 mr-4 md:mr-0 font-serif leading-tight mt-6 md:mt-5">
+          <p className="z-40 text-[2.2vw] md:text-[1.5vh] text-gray-700 text-left px-1 md:px-1 mr-4 md:mr-0 font-serif leading-tight mt-4 md:mt-3">
             {desc}
           </p>
         </div>
@@ -204,15 +212,16 @@ function RichTextPreview({ richTextData }) {
 
       {/* Medium screens and larger */}
       <div className="hidden md:flex flex-row px-2 mb-2 -mt-[5vh] md:-mt-[5vh]">
-        <div className="flex w-full h-[32vh] ">
+        <div className="flex w-full h-[30vh] ">
           {/* Left Column: Cards stacked vertically */}
+          {/* todo this should match the height and style of the right of the right column */}
           <div className="w-1/5 flex p-1 flex-col justify-between ">
             {leftCards.map((card, idx) => {
               const IconComp = Icons[card.icon] || Icons.Star;
               return (
                 <div
                   key={idx}
-                  className="flex-1 mb-2 last:mb-0 flex items-center justify-center"
+                  className="flex-1 mb-1 last:mb-0 flex items-center justify-center"
                 >
                   <AnimatedFeatureCard
                     variant="md"
@@ -255,13 +264,13 @@ function RichTextPreview({ richTextData }) {
               {/* Bus Descriptions: 1/3 width */}
               <div className="w-1/2 flex flex-col items-start justify-start">
                 <div className="px-1">
-                  <h2 className="text-[3.5vw] md:text-[2.5vh] text-center font-bold z-60 font-sans">
+                  <h2 className="text-[3.5vw] md:text-[2.1vh] text-center font-bold z-60 font-sans">
                     {heroText}
                   </h2>
-                  <p className="text-[2.5vw] md:text-[1.8vh] text-gray-700 pl-3 mt-1 font-serif">
+                  <p className="text-[2.5vw] md:text-[1.6vh] text-gray-700 pl-3 mt-0.5 font-serif leading-tight">
                     {bus_description}
                   </p>
-                  <p className="text-[2.5vw] md:text-[1.8vh] text-gray-700 pl-3 -mt-0.5 font-serif">
+                  <p className="text-[2.5vw] md:text-[1.6vh] text-gray-700 pl-3 mt-2 font-serif leading-tight">
                     {bus_description_second}
                   </p>
                 </div>
@@ -374,10 +383,14 @@ integration into the site.
 function RichTextEditorPanel({ localData, setLocalData, onSave }) {
   const {
     heroText = "",
-    bus_description = "",
+    accredited = false,
     years_in_business = "",
+    bus_description = "",
+    bus_description_second = "",
     cards = [],
     images = [],
+    imageUploads = [],
+    overlayImages = [],
   } = localData;
 
   // Add a new card with default values
@@ -611,16 +624,31 @@ export default function RichTextBlock({
     if (!richTextData) {
       return {
         heroText: "",
-        bus_description: "",
+        accredited: false,
         years_in_business: "",
+        bus_description: "",
+        bus_description_second: "",
         cards: [],
         images: [],
+        imageUploads: [],
+        overlayImages: [
+          "/assets/images/shake_img/1.png",
+          "/assets/images/shake_img/2.png",
+          "/assets/images/shake_img/3.png",
+          "/assets/images/shake_img/4.png"
+        ],
       };
     }
     return {
       ...richTextData,
       cards: richTextData.cards?.map((c) => ({ ...c })) || [],
       images: [...(richTextData.images || [])],
+      overlayImages: [...(richTextData.overlayImages || [
+        "/assets/images/shake_img/1.png",
+        "/assets/images/shake_img/2.png",
+        "/assets/images/shake_img/3.png",
+        "/assets/images/shake_img/4.png"
+      ])],
     };
   });
 
