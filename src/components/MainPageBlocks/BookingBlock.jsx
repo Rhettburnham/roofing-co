@@ -41,7 +41,7 @@ const BookingPreview = memo(({ bookingData }) => {
     service: "",
     message: "",
   });
-  const [isFormVisible, setIsFormVisible] = useState(false);
+  const [isFormVisible, setIsFormVisible] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [residentialServices, setResidentialServices] = useState([]);
   const [commercialServices, setCommercialServices] = useState([]);
@@ -93,7 +93,10 @@ const BookingPreview = memo(({ bookingData }) => {
     const fetchServices = async () => {
       try {
         setIsLoading(true);
-        const res = await fetch("/data/services.json", { signal });
+        const res = await fetch("/data/roofing_services.json", { 
+          signal,
+          credentials: 'same-origin' 
+        });
 
         if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
 
@@ -103,14 +106,10 @@ const BookingPreview = memo(({ bookingData }) => {
           // Process data outside of state updates to minimize render cycles
           const processedResServices = data.residential.map(
             (service, index) => {
-              const heroBlock =
-                service.blocks.find((b) => b.blockName === "HeroBlock") ||
-                service.blocks[0];
-              const title = heroBlock?.config?.title || `Service ${service.id}`;
               return {
                 icon:
                   residentialIcons[index % residentialIcons.length] || FaTools,
-                title,
+                title: service.name,
                 id: service.id,
                 category: "residential",
               };
@@ -118,13 +117,9 @@ const BookingPreview = memo(({ bookingData }) => {
           );
 
           const processedComServices = data.commercial.map((service, index) => {
-            const heroBlock =
-              service.blocks.find((b) => b.blockName === "HeroBlock") ||
-              service.blocks[0];
-            const title = heroBlock?.config?.title || `Service ${service.id}`;
             return {
               icon: commercialIcons[index % commercialIcons.length] || FaTools,
-              title,
+              title: service.name,
               id: service.id,
               category: "commercial",
             };
@@ -137,6 +132,19 @@ const BookingPreview = memo(({ bookingData }) => {
       } catch (error) {
         if (error.name !== "AbortError") {
           console.error("Error fetching services data:", error);
+          // Set fallback data
+          setResidentialServices([
+            { title: "Roof Repair", icon: FaTools, id: 1, category: "residential" },
+            { title: "Roof Replacement", icon: FaFan, id: 2, category: "residential" },
+            { title: "Roof Inspection", icon: FaTint, id: 3, category: "residential" },
+            { title: "Gutter Installation", icon: FaPaintRoller, id: 4, category: "residential" }
+          ]);
+          setCommercialServices([
+            { title: "Commercial Roofing", icon: FaTools, id: 1, category: "commercial" },
+            { title: "Flat Roof Repair", icon: FaPaintRoller, id: 2, category: "commercial" },
+            { title: "Industrial Roofing", icon: FaTint, id: 3, category: "commercial" },
+            { title: "Roof Maintenance", icon: FaFan, id: 4, category: "commercial" }
+          ]);
         }
       } finally {
         if (isMounted) {
@@ -245,7 +253,7 @@ const BookingPreview = memo(({ bookingData }) => {
     if (isMobile) {
       // Only animate on mobile
       if (!isFormVisible) {
-        // Show the form container first
+        // Ensure the form container is visible
         formContainerRef.current.style.display = "block";
 
         // Animation to expand banner into form
@@ -274,8 +282,8 @@ const BookingPreview = memo(({ bookingData }) => {
               duration: 0.5,
               ease: "power2.inOut",
               onComplete: () => {
-                // Hide the form container after animation
-                formContainerRef.current.style.display = "none";
+                // Don't hide the form container, just reduce opacity
+                formContainerRef.current.style.opacity = "0";
               },
             });
           },
@@ -568,7 +576,7 @@ const BookingPreview = memo(({ bookingData }) => {
             ref={formContainerRef}
             className="w-full pb-2 md:block"
             style={{
-              display: isFormVisible ? "block" : isMobile ? "none" : "block",
+              display: "block", // Always show the form
             }}
           >
             <div className="bg-white rounded-lg p-3 shadow-inner mx-2">

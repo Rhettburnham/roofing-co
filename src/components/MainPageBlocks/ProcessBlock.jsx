@@ -10,27 +10,59 @@ import { HashLink } from "react-router-hash-link";
    This component shows the process section as a preview.
    It uses the same animation and layout as the main Process component.
 ========================================================= */
-function ProcessPreview({ processData }) {
+function ProcessPreview() {
   const videoRefs = useRef([]);
   const [activeVideo, setActiveVideo] = useState(0);
   const [initialOrder, setInitialOrder] = useState([]);
+  
+  // Hardcoded process steps with correct paths for available videos
+  const processSteps = [
+    {
+      title: "Book",
+      videoSrc: "/assets/videos/our_process_videos/booking.mp4",
+      href: "/#booking",
+      scale: 0.8
+    },
+    {
+      title: "Inspection",
+      videoSrc: "/assets/videos/our_process_videos/repair.mp4", // Using repair.mp4 for inspection
+      href: "/inspection",
+      scale: 1.25
+    },
+    {
+      title: "Service",
+      videoSrc: "/assets/videos/our_process_videos/repair.mp4",
+      href: "/#packages",
+      scale: 1.1
+    },
+    {
+      title: "Review",
+      videoSrc: "/assets/videos/our_process_videos/approval.mp4",
+      href: "/#testimonials",
+      scale: 0.9
+    }
+  ];
 
-  // Use processData if provided, or empty array to be loaded later
-  const processSteps = processData?.steps || [];
-
+  // Generate random initial animation order ONLY ONCE on mount
   useEffect(() => {
-    if (processSteps.length === 0) return;
-    
-    // Generate random initial animation order
     const indices = [...Array(processSteps.length).keys()];
     const shuffled = indices.sort(() => Math.random() - 0.5);
     setInitialOrder(shuffled);
+  }, []);  // Empty dependency array means this runs once on mount
 
+  // Handle video playback with proper cleanup
+  useEffect(() => {
     // Reset all videos
     videoRefs.current.forEach((video, idx) => {
       if (video) {
-        video.currentTime = 0;
-        video.pause();
+        try {
+          video.currentTime = 0;
+          video.pause();
+          // Manually load the video to ensure it's ready for playback
+          video.load();
+        } catch (err) {
+          console.error(`Error resetting video ${idx}:`, err);
+        }
       }
     });
 
@@ -41,11 +73,27 @@ function ProcessPreview({ processData }) {
         const startDelay = idx * 4000;
         const timeout1 = setTimeout(() => {
           if (videoRefs.current[idx]) {
-            videoRefs.current[idx].currentTime = 0;
-            videoRefs.current[idx].play().catch((error) => {
-              console.error(`Video ${idx} autoplay failed:`, error);
-            });
-            setActiveVideo(idx);
+            try {
+              videoRefs.current[idx].currentTime = 0;
+              const playPromise = videoRefs.current[idx].play();
+              if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                  console.error(`Video ${idx} autoplay failed:`, error);
+                  // If play fails, try to load the video again before playing
+                  videoRefs.current[idx].load();
+                  setTimeout(() => {
+                    if (videoRefs.current[idx]) {
+                      videoRefs.current[idx].play().catch(e => 
+                        console.error(`Second attempt to play video ${idx} failed:`, e)
+                      );
+                    }
+                  }, 500);
+                });
+              }
+              setActiveVideo(idx);
+            } catch (err) {
+              console.error(`Error playing video ${idx}:`, err);
+            }
           }
         }, startDelay);
 
@@ -63,15 +111,22 @@ function ProcessPreview({ processData }) {
     // Start the sequence
     playVideosSequentially();
 
+    // Cleanup function
     return () => {
       timeouts.forEach((timeout) => clearTimeout(timeout));
       videoRefs.current.forEach((video) => {
         if (video) {
-          video.pause();
+          try {
+            video.pause();
+            video.src = "";
+            video.load();
+          } catch (err) {
+            console.error("Error cleaning up video:", err);
+          }
         }
       });
     };
-  }, [processSteps]);
+  }, []); // Empty dependency array means this runs once on mount
 
   // If no process steps provided, return placeholder or empty fragment
   if (processSteps.length === 0) {
@@ -86,7 +141,7 @@ function ProcessPreview({ processData }) {
           {processSteps.map((step, index) => {
             const isHashLink = step.href?.startsWith("/#");
             const LinkComponent = isHashLink ? HashLink : Link;
-            const animationDelay = initialOrder.indexOf(index) * 0.2;
+            const animationDelay = initialOrder.indexOf(index) * 0.2 || 0;
 
             return (
               <div key={index} className="flex items-center pt-1 md:pt-2">
@@ -115,10 +170,13 @@ function ProcessPreview({ processData }) {
                         className="object-cover"
                         muted
                         playsInline
+                        crossOrigin="anonymous"
+                        preload="auto"
                         style={{
                           pointerEvents: "none",
                           width: `${80 * (step.scale || 1)}%`,
                           height: `${80 * (step.scale || 1)}%`,
+                          display: "block",
                         }}
                         tabIndex={-1}
                       />
@@ -168,16 +226,7 @@ function ProcessPreview({ processData }) {
 }
 
 ProcessPreview.propTypes = {
-  processData: PropTypes.shape({
-    steps: PropTypes.arrayOf(
-      PropTypes.shape({
-        title: PropTypes.string,
-        videoSrc: PropTypes.string,
-        href: PropTypes.string,
-        scale: PropTypes.number,
-      })
-    ),
-  }),
+  // No props required anymore
 };
 
 /* ======================================================
@@ -449,43 +498,39 @@ ProcessEditorPanel.propTypes = {
 ========================================================= */
 export default function ProcessBlock({
   readOnly = false,
-  processData = null,
   onConfigChange = () => {}
 }) {
-  const [localData, setLocalData] = useState(() => {
-    // If no data provided, use empty object to be populated from fetch
-    return processData || { steps: [] };
-  });
-  const [loading, setLoading] = useState(true);
-
-  // Fetch combined_data.json when component mounts (if in read-only mode and no data is provided)
-  useEffect(() => {
-    if (readOnly && !processData) {
-      console.log('ProcessBlock: Fetching data from combined_data.json');
-      
-      // Fetch directly from data directory
-      fetch('/data/combined_data.json')
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Network response was not ok');
-          }
-          return response.json();
-        })
-        .then(data => {
-          console.log('ProcessBlock: Data fetched successfully', data.process);
-          if (data.process) {
-            setLocalData(data.process);
-          }
-          setLoading(false);
-        })
-        .catch(error => {
-          console.error('ProcessBlock: Error fetching data:', error);
-          setLoading(false);
-        });
-    } else {
-      setLoading(false);
+  // Hardcoded process steps with correct paths for available videos
+  const processSteps = [
+    {
+      title: "Book",
+      videoSrc: "/assets/videos/our_process_videos/booking.mp4",
+      href: "/#booking",
+      scale: 0.8
+    },
+    {
+      title: "Inspection",
+      videoSrc: "/assets/videos/our_process_videos/repair.mp4", // Using repair.mp4 for inspection
+      href: "/inspection",
+      scale: 1.25
+    },
+    {
+      title: "Service",
+      videoSrc: "/assets/videos/our_process_videos/repair.mp4",
+      href: "/#packages",
+      scale: 1.1
+    },
+    {
+      title: "Review",
+      videoSrc: "/assets/videos/our_process_videos/approval.mp4",
+      href: "/#testimonials",
+      scale: 0.9
     }
-  }, [readOnly, processData]);
+  ];
+
+  const [localData, setLocalData] = useState({
+    steps: processSteps
+  });
 
   const handleSave = () => {
     // Prepare data for saving - convert any file references to final paths
@@ -513,14 +558,9 @@ export default function ProcessBlock({
     }
   };
 
-  // Show loading indicator while fetching data
-  if (loading) {
-    return <div className="h-[20vh] flex items-center justify-center">Loading process data...</div>;
-  }
-
-  // If read-only mode, just show the preview with combined data if available
+  // If read-only mode, just show the preview with hardcoded data
   if (readOnly) {
-    return <ProcessPreview processData={localData} />;
+    return <ProcessPreview />;
   }
 
   // Otherwise show both editor and preview
@@ -529,7 +569,7 @@ export default function ProcessBlock({
       <div className="md:w-1/2 order-2 md:order-1">
         <h3 className="text-sm text-gray-400 mb-2">Preview:</h3>
         <div className="border border-gray-300 rounded overflow-hidden bg-white">
-          <ProcessPreview processData={localData} />
+          <ProcessPreview />
         </div>
       </div>
       <div className="md:w-1/2 order-1 md:order-2">
@@ -545,15 +585,5 @@ export default function ProcessBlock({
 
 ProcessBlock.propTypes = {
   readOnly: PropTypes.bool,
-  processData: PropTypes.shape({
-    steps: PropTypes.arrayOf(
-      PropTypes.shape({
-        title: PropTypes.string,
-        videoSrc: PropTypes.string,
-        href: PropTypes.string,
-        scale: PropTypes.number,
-      })
-    ),
-  }),
   onConfigChange: PropTypes.func,
 };

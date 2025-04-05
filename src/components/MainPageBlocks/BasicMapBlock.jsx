@@ -10,7 +10,11 @@ import { MapContainer, TileLayer, Marker, Circle, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import * as FaIcons from "react-icons/fa";
+
+// Register ScrollTrigger plugin with GSAP
+gsap.registerPlugin(ScrollTrigger);
 
 // to do this needs to be centered where the lat is currentl seem up and to the right
 const CustomMarkerIcon = L.icon({
@@ -260,6 +264,8 @@ function BasicMapPreview({ mapData }) {
   );
   const [mapActive, setMapActive] = useState(false);
   const statsDivRef = useRef(null);
+  const titleRef = useRef(null);
+  const sectionRef = useRef(null);
 
   const {
     center,
@@ -284,6 +290,70 @@ function BasicMapPreview({ mapData }) {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Title animation using ScrollTrigger
+  useEffect(() => {
+    if (!titleRef.current || !sectionRef.current) return;
+
+    // Clear any existing animations
+    ScrollTrigger.getAll().forEach(trigger => {
+      if (trigger.vars.id === 'titleAnimation') {
+        trigger.kill();
+      }
+    });
+
+    // Define different animations for small vs medium+ viewports
+    if (isSmallScreen) {
+      // Small viewport: Slide in from right when 30% from bottom of viewport
+      gsap.set(titleRef.current, { 
+        x: '100vw', // Start off-screen to the right
+        opacity: 0
+      });
+      
+      gsap.to(titleRef.current, {
+        x: 0,
+        opacity: 1,
+        duration: 1,
+        ease: "power3.out",
+        scrollTrigger: {
+          id: 'titleAnimation',
+          trigger: sectionRef.current,
+          start: "bottom 70%", // Trigger when bottom of section is 30% from bottom (70% down viewport)
+          toggleActions: "play none none none",
+          once: true,
+          // markers: true, // Uncomment for debugging
+        }
+      });
+    } else {
+      // Medium+ viewport: Animate from current left position to center when scrolled 40% down vp
+      const parentWidth = titleRef.current.parentNode.offsetWidth;
+      const titleWidth = titleRef.current.offsetWidth;
+      const targetX = (parentWidth / 2) - (titleWidth / 2) - 44; // Center position accounting for padding
+
+      gsap.to(titleRef.current, {
+        x: targetX,
+        duration: 1.2,
+        ease: "power2.inOut",
+        scrollTrigger: {
+          id: 'titleAnimation',
+          trigger: sectionRef.current,
+          start: "top 40%", // Trigger when top of section reaches 40% down the viewport
+          toggleActions: "play none none none",
+          once: true,
+          // markers: true, // Uncomment for debugging
+        }
+      });
+    }
+
+    return () => {
+      // Cleanup
+      ScrollTrigger.getAll().forEach(trigger => {
+        if (trigger.vars.id === 'titleAnimation') {
+          trigger.kill();
+        }
+      });
+    };
+  }, [isSmallScreen, titleRef, sectionRef]);
+
   const renderServiceHoursTable = () => (
     <table className="w-full rounded-xl border border-gray-300 bg-white text-center">
       <tbody>
@@ -302,14 +372,16 @@ function BasicMapPreview({ mapData }) {
   );
 
   return (
-    <section className="overflow-hidden">
+    <section className="overflow-hidden" ref={sectionRef}>
       <div className="pb-2">
         <div
           className={`flex ${isSmallScreen ? "justify-center" : "justify-start pl-11"}`}
         >
-          {/* to do change this to be in the combined_data.json */}
-          {/* to do have the title animate from the left */} 
-          <h1 className="text-[3vh] md:text-[4vh] font-normal text-black text-center font-serif">
+          {/* Title with animation */}
+          <h1 
+            ref={(el) => { titleRef.current = el; }}
+            className="text-[3vh] md:text-[4vh] font-normal text-black text-center font-serif title-animation"
+          >
             Are we in your area?
           </h1>
         </div>

@@ -1,5 +1,5 @@
 // src/components/MainPageBlocks/RichTextBlock.jsx
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import * as Icons from "lucide-react";
 import { FaQuestionCircle } from "react-icons/fa";
 import ProcessBlock from "./ProcessBlock"; // Import ProcessBlock component
@@ -12,14 +12,18 @@ general info from step_4combined_data.json
 =============================================
 */
 
+// Create a persistent flag at module level
+const ANIMATION_STATE = {
+  hasAnimated: false
+};
+
 // taking data from step_4/combined_data.json
-function RichTextPreview({ richTextData, processData }) {
+function RichTextPreview({ richTextData }) {
   const [currentImage, setCurrentImage] = useState(0);
-  const [animationApplied, setAnimationApplied] = useState(false);
-  // Ref to track which cards have been animated to prevent re-animation
-  const animatedCardsRef = useRef(new Set());
-  // Static flag to ensure animations only run once per session
-  const hasRunAnimations = useRef(false);
+  // Track whether animations should be applied (initialized from global state)
+  const [animationClass, setAnimationClass] = useState(
+    ANIMATION_STATE.hasAnimated ? "animated" : "pre-animation"
+  );
 
   const {
     heroText = "",
@@ -59,124 +63,37 @@ function RichTextPreview({ richTextData, processData }) {
     "/assets/images/shake_img/4.png",
   ];
 
-  /* 
-  =============================================
-  AnimatedFeatureCard Component
-  ---------------------------------------------
-  Displays a feature card with:
-  - Title on the left
-  - Icon in the clipped triangle on the right
-  - Description text below
-  - Animation effect when scrolled into view
-  
-  The card maintains a flexible aspect ratio and supports
-  different variants for responsive design.
-  =============================================
-  */
-  function AnimatedFeatureCard({
-    icon: Icon,
-    title,
-    desc,
-    index,
-    variant = "default",
-  }) {
-    const cardRef = useRef(null);
-    const overlayRef = useRef(null);
-    const [hasAnimated, setHasAnimated] = useState(false);
-    const uniqueCardId = `card-${index}-${title}`;
+  // Trigger animation once on first mount only
+  useEffect(() => {
+    // If we've already animated, don't do anything
+    if (ANIMATION_STATE.hasAnimated) return;
+    
+    // Set a small timeout to ensure DOM is fully ready
+    const timer = setTimeout(() => {
+      setAnimationClass("animated");
+      ANIMATION_STATE.hasAnimated = true;
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
-    // Cards will "fall" into place when they come into view only once
-    useEffect(() => {
-      // If global animations have run or this specific card has animated, skip
-      if (
-        hasRunAnimations.current ||
-        animatedCardsRef.current.has(uniqueCardId) ||
-        hasAnimated
-      ) {
-        setHasAnimated(true);
-        return;
-      }
-
-      let observer;
-
-      observer = new IntersectionObserver(
-        ([entry]) => {
-          if (
-            entry.isIntersecting &&
-            !hasAnimated &&
-            !animatedCardsRef.current.has(uniqueCardId) &&
-            !hasRunAnimations.current
-          ) {
-            setHasAnimated(true);
-            // Add this card to our Set of animated cards
-            animatedCardsRef.current.add(uniqueCardId);
-
-            const delay = index * 0.2;
-            entry.target.style.setProperty("--delay", `${delay}s`);
-            entry.target.classList.add("animate-card-fall");
-            if (overlayRef.current) {
-              overlayRef.current.style.setProperty(
-                "--overlay-delay",
-                `${delay + 0.8}s`
-              );
-            }
-            observer.unobserve(entry.target);
-          }
-        },
-        { threshold: 0.2, rootMargin: "0px 0px -50px 0px" }
-      );
-
-      if (cardRef.current) {
-        observer.observe(cardRef.current);
-      }
-
-      return () => {
-        if (observer && cardRef.current) {
-          observer.unobserve(cardRef.current);
-        }
-      };
-    }, [index, hasAnimated, uniqueCardId]);
-
-    // Handle animation completion to trigger overlay fade-out
-    useEffect(() => {
-      const handleAnimationEnd = (e) => {
-        if (e.animationName === "cardFall") {
-          overlayRef.current?.classList.add("fade-overlay-out");
-        }
-      };
-
-      const currentCard = cardRef.current;
-      if (currentCard) {
-        currentCard.addEventListener("animationend", handleAnimationEnd);
-      }
-
-      return () => {
-        if (currentCard) {
-          currentCard.removeEventListener("animationend", handleAnimationEnd);
-        }
-      };
-    }, []);
-
+  function FeatureCard({ icon: Icon, title, desc, index, variant = "default" }) {
     // Base styling for all card variants
-    const baseClasses =
-      "relative bg-white p-2 rounded-lg shadow-lg flex flex-col items-center justify-center";
-
-    // Add animation classes if not mobile or md variant and hasn't animated yet
-    const animationClasses =
-      !hasAnimated && variant === "default"
-        ? "transform-gpu -translate-x-full -rotate-90 opacity-0"
-        : "opacity-100";
+    const baseClasses = "relative bg-white p-2 rounded-lg shadow-lg flex flex-col items-center justify-center";
 
     // For md viewports, ensure square aspect ratio
     const sizeClasses =
       variant === "md"
         ? "md:w-[16vw] md:h-[16vw] w-[40vw] h-[22vw]"
-        : "w-[40vw] h-[22vw] md:w-[16vw] md:h-[13vh]";
+        : "w-[40vw] h-[22vw] md:w-[13vw] md:h-[13vh]";
+
+    // Calculate delay based on index to stagger animations
+    const delay = index * 0.15;
 
     return (
       <div
-        ref={cardRef}
-        className={`${baseClasses} ${animationClasses} ${sizeClasses}`}
+        className={`${baseClasses} ${sizeClasses} feature-card ${animationClass}`}
+        style={{ '--delay': `${delay}s` }}
       >
         {/* Decorative triangle in top-right corner */}
         <div
@@ -192,28 +109,29 @@ function RichTextPreview({ richTextData, processData }) {
 
         {/* Icon positioned in top-right corner */}
         <div className="absolute -top-1 -right-1 w-8 h-8 md:w-10 md:h-10 z-30 flex items-center justify-center">
-          {Icon && <Icon className=" text-white drop-shadow-lg" />}
+          {Icon && <Icon className="text-white drop-shadow-lg" />}
         </div>
 
         {/* Gradient overlay for visual effect */}
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-900/20 to-transparent z-30 rounded-lg" />
-        {/* Background image overlay that fades out after animation */}
-        <div
-          ref={overlayRef}
-          className="absolute inset-0 bg-center bg-cover z-50 rounded-lg"
-          style={{
-            backgroundImage: `url(${overlayImages[index % overlayImages.length]})`,
-          }}
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-900/20 to-transparent z-10 rounded-lg" />
+        
+        {/* Overlay image that fades away */}
+        <div className={`absolute inset-0 bg-center bg-cover z-20 rounded-lg overlay-image ${animationClass}`}
+             style={{ 
+               backgroundImage: `url(${overlayImages[index % overlayImages.length]})`,
+               '--delay': `${delay + 0.6}s`
+             }}
         />
+        
         {/* Title container */}
-        <div className="flex flex-col">
+        <div className="flex flex-col z-30">
           <div className="absolute inset-0 top-0 w-full ml-2 md:ml-3 md:mt-1 mt-2">
-            <h3 className="md:whitespace-nowrap z-40 ml-1 md:ml-2 text-[2.3vw] md:text-[1.6vh] font-bold text-gray-900 font-sans">
+            <h3 className="md:whitespace-nowrap z-30 ml-1 md:ml-2 text-[2.3vw] md:text-[1.6vh] font-bold text-gray-900 font-sans">
               {title}
             </h3>
           </div>
           {/* Description text - Adjusted for tighter vertical spacing */}
-          <p className="z-40 text-[2.2vw] md:text-[1.5vh] text-gray-700 text-left px-1 md:px-1 mr-4 md:mr-0 font-serif leading-tight mt-4 md:mt-3">
+          <p className="z-30 text-[2.2vw] md:text-[1.5vh] text-gray-700 text-left px-1 md:px-1 mr-4 md:mr-0 font-serif leading-tight mt-4 md:mt-3">
             {desc}
           </p>
         </div>
@@ -221,42 +139,58 @@ function RichTextPreview({ richTextData, processData }) {
     );
   }
 
-  // Apply animation styles only once when component mounts and ensure they never run again
-  useEffect(() => {
-    if (!animationApplied && !hasRunAnimations.current) {
-      setAnimationApplied(true);
-      // Set global animation flag
-      hasRunAnimations.current = true;
-    }
-  }, [animationApplied]);
-
   const animationStyles = `
-    @keyframes cardFall {
-      0% { transform: translateX(-100%) rotate3d(0,0,1,-90deg); opacity: 0; }
-      100% { transform: translateX(0) rotate3d(0,0,1,0deg); opacity: 1; }
+    /* Style that applies only before animation starts */
+    .feature-card.pre-animation {
+      transform: translateX(-100%) rotate(45deg);
+      opacity: 0;
     }
-    .animate-card-fall { animation: cardFall 0.8s ease-out forwards var(--delay, 0s); }
-    @keyframes overlayFadeOut {
-      0% { opacity: 1; }
-      100% { opacity: 0; pointer-events: none; }
+    
+    /* Animation that runs once */
+    .feature-card.animated {
+      transform: translateX(0) rotate(0);
+      opacity: 1;
+      transition: transform 0.8s ease-out, opacity 0.8s ease-out;
+      transition-delay: var(--delay, 0s);
     }
-    .fade-overlay-out { animation: overlayFadeOut 0.8s ease-out forwards var(--overlay-delay, 0s); }
+    
+    /* Overlay image that fades away after cards appear */
+    .overlay-image.pre-animation {
+      opacity: 1;
+    }
+    
+    .overlay-image.animated {
+      opacity: 0;
+      transition: opacity 0.5s ease-out;
+      transition-delay: var(--delay, 0s);
+    }
+    
+    /* Main slideshow image container */
+    .image-container.pre-animation {
+      opacity: 0;
+    }
+    
+    .image-container.animated {
+      opacity: 1;
+      transition: opacity 1s ease-in-out;
+      transition-delay: 0.5s;
+    }
   `;
 
   return (
     <div className="w-full">
-      {animationApplied && <style>{animationStyles}</style>}
+      <style>{animationStyles}</style>
 
       {/* Process Block positioned at the top */}
       <div className="w-full">
-        <ProcessBlock readOnly={true} processData={processData} />
+        <ProcessBlock readOnly={true} />
       </div>
 
       {/* Medium screens and larger */}
       <div className="hidden md:flex flex-row px-2 mb-2 -mt-[15vh]">
         <div className="flex w-full">
           {/* Left Column: Cards stacked vertically */}
-          <div className="w-1/6 flex p-1 flex-col justify-between -mt-10">
+          <div className="w-1/6 flex p-1 flex-col justify-between -mt-10 aspect-square ">
             {leftCards.map((card, idx) => {
               const IconComp = Icons[card.icon] || Icons.Star;
               return (
@@ -264,7 +198,7 @@ function RichTextPreview({ richTextData, processData }) {
                   key={idx}
                   className="flex-1 mb-1 last:mb-0 flex items-center justify-center"
                 >
-                  <AnimatedFeatureCard
+                  <FeatureCard
                     variant="md"
                     icon={IconComp}
                     title={card.title}
@@ -277,10 +211,10 @@ function RichTextPreview({ richTextData, processData }) {
           </div>
 
           {/* Center Column: Image on top, text below */}
-          <div className="relative flex mt-16">
+          <div className="relative flex mt-[10vh]">
             <div className="w-full flex">
               {/* Image Set: width increased */}
-              <div className="w-3/5 relative rounded-2xl shadow-md h-[30vh]">
+              <div className={`w-3/5 relative rounded-2xl shadow-md h-[30vh] image-container ${animationClass}`}>
                 <img
                   src={slideshowImages[currentImage]}
                   alt="Slideshow"
@@ -290,7 +224,7 @@ function RichTextPreview({ richTextData, processData }) {
                   {slideshowImages.map((_, sIdx) => (
                     <button
                       key={sIdx}
-                      onClick={() => setCurrentImage(sIdx)}
+                      onClick={() => setCurrentImage(sIdx)} 
                       className={`w-3 h-3 rounded-full ${
                         currentImage === sIdx
                           ? "bg-white scale-110"
@@ -317,8 +251,6 @@ function RichTextPreview({ richTextData, processData }) {
                 </div>
               </div>
             </div>
-
-            {/* Hero text moved below slideshow */}
           </div>
 
           {/* Right Column: Cards stacked vertically */}
@@ -331,7 +263,7 @@ function RichTextPreview({ richTextData, processData }) {
                   key={i}
                   className="flex-1 mb-2 last:mb-0 flex items-center justify-center"
                 >
-                  <AnimatedFeatureCard
+                  <FeatureCard
                     variant="md"
                     icon={IconComp}
                     title={card.title}
@@ -348,7 +280,7 @@ function RichTextPreview({ richTextData, processData }) {
       {/* Smaller than medium screens */}
       <div className="relative md:hidden flex flex-col px-[3vw] mb-1 mt-0">
         {/* Image Section - Moved to top */}
-        <div className="relative w-full rounded-lg shadow-md px-3">
+        <div className={`relative w-full rounded-lg shadow-md px-3 image-container ${animationClass}`}>
           <img
             src={slideshowImages[currentImage]}
             alt="Slideshow"
@@ -387,7 +319,7 @@ function RichTextPreview({ richTextData, processData }) {
             const IconComp = Icons[card.icon] || Icons.Star;
             return (
               <div key={idx}>
-                <AnimatedFeatureCard
+                <FeatureCard
                   variant="mobile"
                   icon={IconComp}
                   title={card.title}
