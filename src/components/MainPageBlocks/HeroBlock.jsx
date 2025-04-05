@@ -44,8 +44,10 @@ function HeroPreview({ heroconfig }) {
 
   // Simplified path handling - just use the paths directly or fall back to defaults
   const logoPath = logo || "/assets/images/hero/clipped-cowboy.png";
-  const residentialBgPath = residentialImage || "/assets/images/hero/residentialnight.jpg";
-  const commercialBgPath = commercialImage || "/assets/images/hero/commercialnight.jpg";
+  const residentialBgPath =
+    residentialImage || "/assets/images/hero/residentialnight.jpg";
+  const commercialBgPath =
+    commercialImage || "/assets/images/hero/commercialnight.jpg";
 
   useEffect(() => {
     // Trigger animation on first mount
@@ -64,7 +66,7 @@ function HeroPreview({ heroconfig }) {
       })
       .catch((error) => {
         console.error("HeroBlock: Error fetching from main directory:", error);
-        
+
         // Fallback to step_4 directory
         console.log("HeroBlock: Trying fallback location...");
         fetch("/data/raw_data/step_4/combined_data.json")
@@ -77,48 +79,55 @@ function HeroPreview({ heroconfig }) {
             processData(data);
           })
           .catch((fallbackError) => {
-            console.error("HeroBlock: Error fetching fallback data:", fallbackError);
+            console.error(
+              "HeroBlock: Error fetching fallback data:",
+              fallbackError
+            );
             useFallbackData();
           });
       });
-      
+
     // Function to process the fetched data
     const processData = (data) => {
       // Process residential services directly from combined_data.json
-      const residentialFromJson = data.hero.residential.subServices.map((service, idx) => {
-        const title = service.title || `Service ${idx + 1}`;
-        const slug = `residential-${idx + 1}-${title.toLowerCase().replace(/\s+/g, "-")}`;
-        
-        console.log(
-          `HeroBlock: Built residential service: ${title} with route: /services/${slug}`
-        );
+      const residentialFromJson = data.hero.residential.subServices.map(
+        (service, idx) => {
+          const title = service.title || `Service ${idx + 1}`;
+          const slug = `residential-${idx + 1}-${title.toLowerCase().replace(/\s+/g, "-")}`;
 
-        return {
-          label: title,
-          route: `/services/${slug}`,
-        };
-      });
+          console.log(
+            `HeroBlock: Built residential service: ${title} with route: /services/${slug}`
+          );
+
+          return {
+            label: title,
+            route: `/services/${slug}`,
+          };
+        }
+      );
 
       // Process commercial services directly from combined_data.json
-      const commercialFromJson = data.hero.commercial.subServices.map((service, idx) => {
-        const title = service.title || `Service ${idx + 1}`;
-        const slug = `commercial-${idx + 1}-${title.toLowerCase().replace(/\s+/g, "-")}`;
-        
-        console.log(
-          `HeroBlock: Built commercial service: ${title} with route: /services/${slug}`
-        );
+      const commercialFromJson = data.hero.commercial.subServices.map(
+        (service, idx) => {
+          const title = service.title || `Service ${idx + 1}`;
+          const slug = `commercial-${idx + 1}-${title.toLowerCase().replace(/\s+/g, "-")}`;
 
-        return {
-          label: title,
-          route: `/services/${slug}`,
-        };
-      });
+          console.log(
+            `HeroBlock: Built commercial service: ${title} with route: /services/${slug}`
+          );
+
+          return {
+            label: title,
+            route: `/services/${slug}`,
+          };
+        }
+      );
 
       setResidentialServices(residentialFromJson);
       setCommercialServices(commercialFromJson);
       setIsServicesLoading(false);
     };
-    
+
     // Function to use fallback data from props
     const useFallbackData = () => {
       console.warn("HeroBlock: Using fallback data from props");
@@ -267,7 +276,7 @@ function HeroPreview({ heroconfig }) {
       />
 
       {/* Hero Split Sections */}
-      <div className="relative w-full h-[50vw] md:h-[50vh]">
+      <div className="relative w-full h-[50vw] md:h-[50vh] overflow-hidden">
         {/* Residential half */}
         <motion.div
           className="absolute left-0 h-full w-1/2 cursor-pointer"
@@ -303,7 +312,7 @@ function HeroPreview({ heroconfig }) {
             <div className="absolute top-0 left-0 w-full h-full z-40 flex flex-col items-end justify-center">
               <div className="flex flex-col items-center mr-[8vh] md:mr-[13.2vw]">
                 {/* Combined container for icon and title - grouped for unified clicking */}
-                <div 
+                <div
                   className="flex flex-col items-center z-40 cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -400,7 +409,7 @@ function HeroPreview({ heroconfig }) {
             <div className="absolute top-0 right-0 w-full h-full z-20 flex flex-col items-start justify-center">
               <div className="flex flex-col items-center ml-[8vh] md:ml-[13.2vw]">
                 {/* Combined container for icon and title - grouped for unified clicking */}
-                <div 
+                <div
                   className="flex flex-col items-center z-40 cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -519,8 +528,11 @@ function HeroEditorPanel({ localData, setLocalData, onSave }) {
         processData(data);
       })
       .catch((error) => {
-        console.error("HeroEditorPanel: Error fetching from main directory:", error);
-        
+        console.error(
+          "HeroEditorPanel: Error fetching from main directory:",
+          error
+        );
+
         // Fallback to step_4 directory
         console.log("HeroEditorPanel: Trying fallback location...");
         fetch("/data/raw_data/step_4/combined_data.json")
@@ -533,38 +545,45 @@ function HeroEditorPanel({ localData, setLocalData, onSave }) {
             processData(data);
           })
           .catch((fallbackError) => {
-            console.error("HeroEditorPanel: Error fetching fallback data:", fallbackError);
+            console.error(
+              "HeroEditorPanel: Error fetching fallback data:",
+              fallbackError
+            );
             setIsServicesLoading(false);
           });
       });
-      
+
     // Function to process the fetched data
     const processData = (data) => {
       // Process residential services from combined_data
-      const residentialFromJson = data.hero.residential.subServices.map((service, idx) => {
-        const title = service.title || `Service ${idx + 1}`;
-        const slug = `residential-${idx + 1}-${title.toLowerCase().replace(/\s+/g, "-")}`;
-        
-        return {
-          id: idx + 1,
-          label: title,
-          route: `/services/${slug}`,
-          slug,
-        };
-      });
+      const residentialFromJson = data.hero.residential.subServices.map(
+        (service, idx) => {
+          const title = service.title || `Service ${idx + 1}`;
+          const slug = `residential-${idx + 1}-${title.toLowerCase().replace(/\s+/g, "-")}`;
+
+          return {
+            id: idx + 1,
+            label: title,
+            route: `/services/${slug}`,
+            slug,
+          };
+        }
+      );
 
       // Process commercial services from combined_data
-      const commercialFromJson = data.hero.commercial.subServices.map((service, idx) => {
-        const title = service.title || `Service ${idx + 1}`;
-        const slug = `commercial-${idx + 1}-${title.toLowerCase().replace(/\s+/g, "-")}`;
-        
-        return {
-          id: idx + 1,
-          label: title,
-          route: `/services/${slug}`,
-          slug,
-        };
-      });
+      const commercialFromJson = data.hero.commercial.subServices.map(
+        (service, idx) => {
+          const title = service.title || `Service ${idx + 1}`;
+          const slug = `commercial-${idx + 1}-${title.toLowerCase().replace(/\s+/g, "-")}`;
+
+          return {
+            id: idx + 1,
+            label: title,
+            route: `/services/${slug}`,
+            slug,
+          };
+        }
+      );
 
       setResidentialServices(residentialFromJson);
       setCommercialServices(commercialFromJson);
@@ -851,22 +870,40 @@ export default function HeroBlock({
     // If we're in edit mode, we might get object URLs or other temporary paths
     // This ensures that when saving, paths are properly formatted
     const updatedConfig = { ...config };
-    
+
     // Only process and update paths if they exist
-    if (updatedConfig.logo && !updatedConfig.logo.startsWith('/assets/images/hero/')) {
+    if (
+      updatedConfig.logo &&
+      !updatedConfig.logo.startsWith("/assets/images/hero/")
+    ) {
       // If it's an object URL or other temporary path, we'll need to handle it differently
       // For now, we'll just note that this path needs to be processed
-      console.log("Logo path might need server-side processing:", updatedConfig.logo);
+      console.log(
+        "Logo path might need server-side processing:",
+        updatedConfig.logo
+      );
     }
-    
-    if (updatedConfig.residentialImage && !updatedConfig.residentialImage.startsWith('/assets/images/hero/')) {
-      console.log("Residential image path might need server-side processing:", updatedConfig.residentialImage);
+
+    if (
+      updatedConfig.residentialImage &&
+      !updatedConfig.residentialImage.startsWith("/assets/images/hero/")
+    ) {
+      console.log(
+        "Residential image path might need server-side processing:",
+        updatedConfig.residentialImage
+      );
     }
-    
-    if (updatedConfig.commercialImage && !updatedConfig.commercialImage.startsWith('/assets/images/hero/')) {
-      console.log("Commercial image path might need server-side processing:", updatedConfig.commercialImage);
+
+    if (
+      updatedConfig.commercialImage &&
+      !updatedConfig.commercialImage.startsWith("/assets/images/hero/")
+    ) {
+      console.log(
+        "Commercial image path might need server-side processing:",
+        updatedConfig.commercialImage
+      );
     }
-    
+
     return updatedConfig;
   };
 
@@ -884,7 +921,7 @@ export default function HeroBlock({
         },
         logo: "/assets/images/hero/clipped-cowboy.png",
         residentialImage: "/assets/images/hero/residentialnight.jpg",
-        commercialImage: "/assets/images/hero/commercialnight.jpg"
+        commercialImage: "/assets/images/hero/commercialnight.jpg",
       };
     }
     return { ...heroconfig };

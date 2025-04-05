@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import * as Icons from "lucide-react";
 import { FaQuestionCircle } from "react-icons/fa";
+import ProcessBlock from "./ProcessBlock"; // Import ProcessBlock component
 
 /* 
 =============================================
@@ -12,8 +13,14 @@ general info from step_4combined_data.json
 */
 
 // taking data from step_4/combined_data.json
-function RichTextPreview({ richTextData }) {
+function RichTextPreview({ richTextData, processData }) {
   const [currentImage, setCurrentImage] = useState(0);
+  const [animationApplied, setAnimationApplied] = useState(false);
+  // Ref to track which cards have been animated to prevent re-animation
+  const animatedCardsRef = useRef(new Set());
+  // Static flag to ensure animations only run once per session
+  const hasRunAnimations = useRef(false);
+
   const {
     heroText = "",
     bus_description = "",
@@ -76,35 +83,51 @@ function RichTextPreview({ richTextData }) {
     const cardRef = useRef(null);
     const overlayRef = useRef(null);
     const [hasAnimated, setHasAnimated] = useState(false);
+    const uniqueCardId = `card-${index}-${title}`;
 
     // Cards will "fall" into place when they come into view only once
     useEffect(() => {
-      let observer;
-      
-      // Only set up the observer if animation hasn't happened yet
-      if (!hasAnimated) {
-        observer = new IntersectionObserver(
-          ([entry]) => {
-            if (entry.isIntersecting && !hasAnimated) {
-              setHasAnimated(true);
-              const delay = index * 0.2;
-              entry.target.style.setProperty("--delay", `${delay}s`);
-              entry.target.classList.add("animate-card-fall");
-              if (overlayRef.current) {
-                overlayRef.current.style.setProperty(
-                  "--overlay-delay",
-                  `${delay + 0.8}s`
-                );
-              }
-              observer.unobserve(entry.target);
-            }
-          },
-          { threshold: 0.2, rootMargin: "0px 0px -50px 0px" }
-        );
+      // If global animations have run or this specific card has animated, skip
+      if (
+        hasRunAnimations.current ||
+        animatedCardsRef.current.has(uniqueCardId) ||
+        hasAnimated
+      ) {
+        setHasAnimated(true);
+        return;
+      }
 
-        if (cardRef.current) {
-          observer.observe(cardRef.current);
-        }
+      let observer;
+
+      observer = new IntersectionObserver(
+        ([entry]) => {
+          if (
+            entry.isIntersecting &&
+            !hasAnimated &&
+            !animatedCardsRef.current.has(uniqueCardId) &&
+            !hasRunAnimations.current
+          ) {
+            setHasAnimated(true);
+            // Add this card to our Set of animated cards
+            animatedCardsRef.current.add(uniqueCardId);
+
+            const delay = index * 0.2;
+            entry.target.style.setProperty("--delay", `${delay}s`);
+            entry.target.classList.add("animate-card-fall");
+            if (overlayRef.current) {
+              overlayRef.current.style.setProperty(
+                "--overlay-delay",
+                `${delay + 0.8}s`
+              );
+            }
+            observer.unobserve(entry.target);
+          }
+        },
+        { threshold: 0.2, rootMargin: "0px 0px -50px 0px" }
+      );
+
+      if (cardRef.current) {
+        observer.observe(cardRef.current);
       }
 
       return () => {
@@ -112,7 +135,7 @@ function RichTextPreview({ richTextData }) {
           observer.unobserve(cardRef.current);
         }
       };
-    }, [index, hasAnimated]);
+    }, [index, hasAnimated, uniqueCardId]);
 
     // Handle animation completion to trigger overlay fade-out
     useEffect(() => {
@@ -139,14 +162,21 @@ function RichTextPreview({ richTextData }) {
       "relative bg-white p-2 rounded-lg shadow-lg flex flex-col items-center justify-center";
 
     // Add animation classes if not mobile or md variant and hasn't animated yet
-    const animationClasses = !hasAnimated && variant === "default" 
-      ? "transform-gpu -translate-x-full -rotate-90 opacity-0" 
-      : "opacity-100";
+    const animationClasses =
+      !hasAnimated && variant === "default"
+        ? "transform-gpu -translate-x-full -rotate-90 opacity-0"
+        : "opacity-100";
+
+    // For md viewports, ensure square aspect ratio
+    const sizeClasses =
+      variant === "md"
+        ? "md:w-[16vw] md:h-[16vw] w-[40vw] h-[22vw]"
+        : "w-[40vw] h-[22vw] md:w-[16vw] md:h-[13vh]";
 
     return (
       <div
         ref={cardRef}
-        className={`${baseClasses} ${animationClasses} w-[40vw] h-[22vw] md:w-[16vw] md:h-[13vh]`}
+        className={`${baseClasses} ${animationClasses} ${sizeClasses}`}
       >
         {/* Decorative triangle in top-right corner */}
         <div
@@ -162,9 +192,7 @@ function RichTextPreview({ richTextData }) {
 
         {/* Icon positioned in top-right corner */}
         <div className="absolute -top-1 -right-1 w-8 h-8 md:w-10 md:h-10 z-30 flex items-center justify-center">
-          {Icon && (
-            <Icon className=" text-white drop-shadow-lg" />
-          )}
+          {Icon && <Icon className=" text-white drop-shadow-lg" />}
         </div>
 
         {/* Gradient overlay for visual effect */}
@@ -193,6 +221,15 @@ function RichTextPreview({ richTextData }) {
     );
   }
 
+  // Apply animation styles only once when component mounts and ensure they never run again
+  useEffect(() => {
+    if (!animationApplied && !hasRunAnimations.current) {
+      setAnimationApplied(true);
+      // Set global animation flag
+      hasRunAnimations.current = true;
+    }
+  }, [animationApplied]);
+
   const animationStyles = `
     @keyframes cardFall {
       0% { transform: translateX(-100%) rotate3d(0,0,1,-90deg); opacity: 0; }
@@ -208,14 +245,18 @@ function RichTextPreview({ richTextData }) {
 
   return (
     <div className="w-full">
-      <style>{animationStyles}</style>
+      {animationApplied && <style>{animationStyles}</style>}
+
+      {/* Process Block positioned at the top */}
+      <div className="w-full">
+        <ProcessBlock readOnly={true} processData={processData} />
+      </div>
 
       {/* Medium screens and larger */}
-      <div className="hidden md:flex flex-row px-2 mb-2 -mt-[5vh] md:-mt-[5vh]">
-        <div className="flex w-full h-[30vh] ">
+      <div className="hidden md:flex flex-row px-2 mb-2 -mt-[15vh]">
+        <div className="flex w-full">
           {/* Left Column: Cards stacked vertically */}
-          {/* todo this should match the height and style of the right of the right column */}
-          <div className="w-1/5 flex p-1 flex-col justify-between ">
+          <div className="w-1/6 flex p-1 flex-col justify-between -mt-10">
             {leftCards.map((card, idx) => {
               const IconComp = Icons[card.icon] || Icons.Star;
               return (
@@ -236,10 +277,10 @@ function RichTextPreview({ richTextData }) {
           </div>
 
           {/* Center Column: Image on top, text below */}
-          <div className="relative flex">
+          <div className="relative flex mt-16">
             <div className="w-full flex">
-              {/* Image Set: 2/3 width */}
-              <div className="w-1/2 relative rounded-2xl shadow-md">
+              {/* Image Set: width increased */}
+              <div className="w-3/5 relative rounded-2xl shadow-md h-[30vh]">
                 <img
                   src={slideshowImages[currentImage]}
                   alt="Slideshow"
@@ -261,8 +302,8 @@ function RichTextPreview({ richTextData }) {
                 </div>
               </div>
 
-              {/* Bus Descriptions: 1/3 width */}
-              <div className="w-1/2 flex flex-col items-start justify-start">
+              {/* Bus Descriptions: width reduced slightly to balance the expanded image */}
+              <div className="w-2/5 flex flex-col items-start justify-start">
                 <div className="px-1">
                   <h2 className="text-[3.5vw] md:text-[2.1vh] text-center font-bold z-60 font-sans">
                     {heroText}
@@ -281,7 +322,7 @@ function RichTextPreview({ richTextData }) {
           </div>
 
           {/* Right Column: Cards stacked vertically */}
-          <div className="w-1/5 flex p-3 flex-col justify-between h-[28vh]">
+          <div className="w-1/6 flex p-3 flex-col justify-between -mt-10">
             {rightCards.map((card, idx) => {
               const i = idx + half;
               const IconComp = Icons[card.icon] || Icons.Star;
@@ -380,7 +421,7 @@ content can be downloaded and sent to the developer for permanent
 integration into the site.
 =============================================
 */
-function RichTextEditorPanel({ localData, setLocalData, onSave }) {
+function RichTextEditorPanel({ localData, setLocalData, onSave, processData }) {
   const {
     heroText = "",
     accredited = false,
@@ -446,6 +487,14 @@ function RichTextEditorPanel({ localData, setLocalData, onSave }) {
 
   return (
     <div className="bg-black text-white p-4 rounded max-h-[75vh] overflow-auto">
+      {/* Show ProcessBlock in editor mode too */}
+      <div className="mb-4">
+        <h3 className="text-lg font-semibold mb-2">Process Block Preview</h3>
+        <div className="bg-gray-200 p-2 rounded">
+          <ProcessBlock readOnly={true} processData={processData} />
+        </div>
+      </div>
+
       {/* Top row: Editor title + Save button */}
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl md:text-2xl font-semibold">RichText Editor</h1>
@@ -482,6 +531,24 @@ function RichTextEditorPanel({ localData, setLocalData, onSave }) {
             setLocalData((prev) => ({
               ...prev,
               bus_description: e.target.value,
+            }))
+          }
+        />
+      </div>
+
+      {/* Business Description Second */}
+      <div className="mb-4">
+        <label className="block text-sm mb-1">
+          Additional Business Description:
+        </label>
+        <textarea
+          className="w-full bg-gray-700 px-2 py-1 rounded"
+          rows={3}
+          value={bus_description_second}
+          onChange={(e) =>
+            setLocalData((prev) => ({
+              ...prev,
+              bus_description_second: e.target.value,
             }))
           }
         />
@@ -617,6 +684,7 @@ integration into the site.
 export default function RichTextBlock({
   readOnly = false,
   richTextData,
+  processData,
   onConfigChange,
 }) {
   // Initialize local state with the provided data or defaults
@@ -635,7 +703,7 @@ export default function RichTextBlock({
           "/assets/images/shake_img/1.png",
           "/assets/images/shake_img/2.png",
           "/assets/images/shake_img/3.png",
-          "/assets/images/shake_img/4.png"
+          "/assets/images/shake_img/4.png",
         ],
       };
     }
@@ -643,12 +711,14 @@ export default function RichTextBlock({
       ...richTextData,
       cards: richTextData.cards?.map((c) => ({ ...c })) || [],
       images: [...(richTextData.images || [])],
-      overlayImages: [...(richTextData.overlayImages || [
-        "/assets/images/shake_img/1.png",
-        "/assets/images/shake_img/2.png",
-        "/assets/images/shake_img/3.png",
-        "/assets/images/shake_img/4.png"
-      ])],
+      overlayImages: [
+        ...(richTextData.overlayImages || [
+          "/assets/images/shake_img/1.png",
+          "/assets/images/shake_img/2.png",
+          "/assets/images/shake_img/3.png",
+          "/assets/images/shake_img/4.png",
+        ]),
+      ],
     };
   });
 
@@ -659,7 +729,9 @@ export default function RichTextBlock({
 
   // Render the appropriate component based on mode
   if (readOnly) {
-    return <RichTextPreview richTextData={richTextData} />;
+    return (
+      <RichTextPreview richTextData={richTextData} processData={processData} />
+    );
   }
 
   return (
@@ -667,6 +739,7 @@ export default function RichTextBlock({
       localData={localData}
       setLocalData={setLocalData}
       onSave={handleSave}
+      processData={processData}
     />
   );
 }

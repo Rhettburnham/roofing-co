@@ -148,11 +148,7 @@ const AppRoutes = ({
                 <HeroBlock readOnly heroconfig={heroConfig} />
               </Suspense>
             </section>
-            <section id="process">
-              <Suspense fallback={<LoadingScreen />}>
-                <ProcessBlock readOnly processData={processConfig} />
-              </Suspense>
-            </section>
+
             <section id="richtext">
               <Suspense fallback={<LoadingScreen />}>
                 <RichTextBlock readOnly richTextData={richTextConfig} />

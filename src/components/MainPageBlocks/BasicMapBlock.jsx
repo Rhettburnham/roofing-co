@@ -376,6 +376,7 @@ function BasicMapPreview({ mapData }) {
               type="button"
               onClick={() => setIsServiceHoursVisible(!isServiceHoursVisible)}
               className="dark_button bg-gray-700 rounded-t-xl md:py-2 items-center justify-center text-white text-[2vh] transition-all duration-300 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] font-serif z-20 relative"
+              style={{ willChange: 'transform' }} /* Add this to prevent flickering */
             >
               {isServiceHoursVisible ? "Hide Hours" : "Show Hours"}
             </button>
@@ -408,6 +409,7 @@ function BasicMapPreview({ mapData }) {
                   h-full overflow-y-auto
                   ${isServiceHoursVisible ? "translate-y-0" : "translate-y-[-100%]"}
                 `}
+                style={{ willChange: 'transform' }} /* Add this to prevent flickering */
               >
                 <div className="h-full overflow-y-auto">
                   {renderServiceHoursTable()}
@@ -683,6 +685,7 @@ function BasicMapEditorPanel({ localMap, setLocalMap, onSave }) {
             <button
               onClick={() => setIsServiceHoursVisible(!isServiceHoursVisible)}
               className="bg-gray-600 hover:bg-gray-500 px-2 py-1 rounded text-xs relative z-20"
+              style={{ willChange: 'transform' }} /* Add this to prevent flickering */
             >
               {isServiceHoursVisible ? "Hide Hours" : "Show Hours"}
             </button>
@@ -700,6 +703,7 @@ function BasicMapEditorPanel({ localMap, setLocalMap, onSave }) {
                   transform transition-transform duration-500 ease-in-out
                   h-full
                 `}
+                style={{ willChange: 'transform' }} /* Add this to prevent flickering */
               >
                 {isServiceHoursVisible && (
                   <div className="h-full overflow-auto">

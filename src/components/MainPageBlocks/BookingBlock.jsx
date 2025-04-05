@@ -9,6 +9,12 @@ import React, {
 } from "react";
 import axios from "axios";
 import { FaTools, FaFan, FaPaintRoller, FaTint } from "react-icons/fa";
+import {
+  FaXTwitter,
+  FaLinkedin,
+  FaInstagram,
+  FaFacebook,
+} from "react-icons/fa6";
 import { X } from "lucide-react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -64,15 +70,15 @@ const BookingPreview = memo(({ bookingData }) => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    
+
     // Initial check
     checkMobile();
-    
+
     // Add resize listener
-    window.addEventListener('resize', checkMobile);
-    
+    window.addEventListener("resize", checkMobile);
+
     return () => {
-      window.removeEventListener('resize', checkMobile);
+      window.removeEventListener("resize", checkMobile);
     };
   }, []);
 
@@ -150,29 +156,30 @@ const BookingPreview = memo(({ bookingData }) => {
   // GSAP animations for banner reveal and nails
   useEffect(() => {
     // Exit if no elements are available
-    if (!bannerRef.current || !contentRef.current || !formContainerRef.current) return;
-    
+    if (!bannerRef.current || !contentRef.current || !formContainerRef.current)
+      return;
+
     // Get nail elements
     const leftNails = [
-      document.getElementById('left-nail-1'),
-      document.getElementById('left-nail-2'),
-      document.getElementById('left-nail-3')
+      document.getElementById("left-nail-1"),
+      document.getElementById("left-nail-2"),
+      document.getElementById("left-nail-3"),
     ].filter(Boolean); // Filter out any null values
-    
+
     const rightNails = [
-      document.getElementById('right-nail-1'),
-      document.getElementById('right-nail-2'),
-      document.getElementById('right-nail-3')
+      document.getElementById("right-nail-1"),
+      document.getElementById("right-nail-2"),
+      document.getElementById("right-nail-3"),
     ].filter(Boolean); // Filter out any null values
-    
+
     // Set initial positions
     gsap.set(bannerRef.current, { y: "-120%", opacity: 0 });
     gsap.set(contentRef.current, { opacity: 1 });
     gsap.set(formContainerRef.current, { opacity: 0, scale: 0.95 });
-    
+
     // Set initial positions for nails
-    gsap.set(leftNails, { x: "-330%" });  // Start completely off-screen to the left
-    gsap.set(rightNails, { x: "150%" });  // Start completely off-screen to the right
+    gsap.set(leftNails, { x: "-450%" }); // Start completely off-screen to the left
+    gsap.set(rightNails, { x: "450%" }); // Start completely off-screen to the right
 
     const masterTimeline = gsap.timeline({
       scrollTrigger: {
@@ -194,12 +201,12 @@ const BookingPreview = memo(({ bookingData }) => {
 
     // 2. Form scales and fades in with slight delay
     masterTimeline.to(
-      formContainerRef.current, 
+      formContainerRef.current,
       {
         opacity: 1,
         scale: 1,
         duration: 0.6,
-        ease: "back.out(1.4)"
+        ease: "back.out(1.4)",
       },
       "-=0.2" // Start slightly before banner animation finishes
     );
@@ -240,7 +247,7 @@ const BookingPreview = memo(({ bookingData }) => {
       if (!isFormVisible) {
         // Show the form container first
         formContainerRef.current.style.display = "block";
-        
+
         // Animation to expand banner into form
         gsap.to(bannerRef.current, {
           height: "auto",
@@ -269,7 +276,7 @@ const BookingPreview = memo(({ bookingData }) => {
               onComplete: () => {
                 // Hide the form container after animation
                 formContainerRef.current.style.display = "none";
-              }
+              },
             });
           },
         });
@@ -344,7 +351,7 @@ const BookingPreview = memo(({ bookingData }) => {
         className="md:max-w-xl w-full bg-banner rounded-lg shadow-lg relative"
       >
         {/* Left Nails */}
-        <div className="absolute left-0 top-0 h-full hidden md:flex flex-col -z-10 justify-between py-8 z-50 overflow-visible">
+        <div className="absolute left-0 top-0 h-full hidden md:flex flex-col -z-10 justify-between py-8 overflow-visible">
           <div id="left-nail-1" className="w-[8vw] h-[2.5vh] relative">
             <div
               className="w-full h-full"
@@ -356,10 +363,10 @@ const BookingPreview = memo(({ bookingData }) => {
                 transform: "scale(1.8)",
                 transformOrigin: "left center",
                 position: "absolute",
-                left: "-90%", // Position at final location
+                left: "-80%", // Position at final location
                 top: 0,
                 filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
-                zIndex: 60
+                zIndex: 5,
               }}
             />
           </div>
@@ -374,10 +381,10 @@ const BookingPreview = memo(({ bookingData }) => {
                 transform: "scale(1.8)",
                 transformOrigin: "left center",
                 position: "absolute",
-                left: "-90%", // Position at final location
+                left: "-80%", // Position at final location
                 top: 0,
                 filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
-                zIndex: 60
+                zIndex: 5,
               }}
             />
           </div>
@@ -392,12 +399,40 @@ const BookingPreview = memo(({ bookingData }) => {
                 transform: "scale(1.8)",
                 transformOrigin: "left center",
                 position: "absolute",
-                left: "-90%", // Position at final location
+                left: "-80%", // Position at final location
                 top: 0,
                 filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
-                zIndex: 60
+                zIndex: 5,
               }}
             />
+          </div>
+        </div>
+
+        {/* Left Social Icons */}
+        <div className="absolute -left-40 top-0 h-full hidden md:flex flex-col justify-between py-10 overflow-visible">
+          <div id="left-social-1" className="relative">
+            <a
+              href="https://twitter.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block"
+            >
+              <div className="bg-banner p-4 rounded-md transform transition-transform hover:scale-110">
+                <FaXTwitter className="w-10 h-10 text-white" />
+              </div>
+            </a>
+          </div>
+          <div id="left-social-2" className="relative">
+            <a
+              href="https://linkedin.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block"
+            >
+              <div className="bg-banner p-4 rounded-md transform transition-transform hover:scale-110">
+                <FaLinkedin className="w-10 h-10 text-white" />
+              </div>
+            </a>
           </div>
         </div>
 
@@ -414,10 +449,10 @@ const BookingPreview = memo(({ bookingData }) => {
                 transform: "scale(1.8) scaleX(-1)",
                 transformOrigin: "right center",
                 position: "absolute",
-                right: "-90%", // Position at final location
+                right: "-120%", // Position at final location
                 top: 0,
                 filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
-                zIndex: 60
+                zIndex: 5,
               }}
             />
           </div>
@@ -432,10 +467,10 @@ const BookingPreview = memo(({ bookingData }) => {
                 transform: "scale(1.8) scaleX(-1)",
                 transformOrigin: "right center",
                 position: "absolute",
-                right: "-90%", // Position at final location
+                right: "-120%", // Position at final location
                 top: 0,
                 filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
-                zIndex: 60
+                zIndex: 5,
               }}
             />
           </div>
@@ -450,19 +485,47 @@ const BookingPreview = memo(({ bookingData }) => {
                 transform: "scale(1.8) scaleX(-1)",
                 transformOrigin: "right center",
                 position: "absolute",
-                right: "-90%", // Position at final location
+                right: "-120%", // Position at final location
                 top: 0,
                 filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
-                zIndex: 60
+                zIndex: 5,
               }}
             />
+          </div>
+        </div>
+
+        {/* Right Social Icons */}
+        <div className="absolute -right-40 top-0 h-full hidden md:flex flex-col justify-between py-10 overflow-visible">
+          <div id="right-social-1" className="relative">
+            <a
+              href="https://instagram.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block"
+            >
+              <div className="bg-banner p-4 rounded-md transform transition-transform hover:scale-110">
+                <FaInstagram className="w-10 h-10 text-white" />
+              </div>
+            </a>
+          </div>
+          <div id="right-social-2" className="relative">
+            <a
+              href="https://facebook.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block"
+            >
+              <div className="bg-banner p-4 rounded-md transform transition-transform hover:scale-110">
+                <FaFacebook className="w-10 h-10 text-white" />
+              </div>
+            </a>
           </div>
         </div>
 
         {/* Content Container */}
         <div ref={contentRef} className="relative z-10">
           {/* HEADER RIBBON WITH LOGO & TEXT */}
-          <div className="relative py-3 px-4 flex flex-col items-center">
+          <div className="relative py-3 px-4 flex flex-col items-center z-30">
             <div className="flex items-center justify-center w-full">
               <img
                 src={formattedLogo}
@@ -504,7 +567,9 @@ const BookingPreview = memo(({ bookingData }) => {
           <div
             ref={formContainerRef}
             className="w-full pb-2 md:block"
-            style={{ display: isFormVisible ? 'block' : isMobile ? 'none' : 'block' }}
+            style={{
+              display: isFormVisible ? "block" : isMobile ? "none" : "block",
+            }}
           >
             <div className="bg-white rounded-lg p-3 shadow-inner mx-2">
               <form onSubmit={handleSubmit} className="w-full">
@@ -700,6 +765,9 @@ const BookingPreview = memo(({ bookingData }) => {
     </div>
   );
 });
+
+// Add display name to the component
+BookingPreview.displayName = "BookingPreview";
 
 /* ===============================================
    2) BOOKING EDITOR PANEL (Editing Mode)

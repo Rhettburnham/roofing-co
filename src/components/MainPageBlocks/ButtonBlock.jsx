@@ -4,7 +4,10 @@ import PropTypes from "prop-types";
 import gsap from "gsap";
 import { useNavigate } from "react-router-dom";
 
+// Add ticker registration to keep animations running during scrolling
 gsap.registerPlugin();
+// Force GSAP to use requestAnimationFrame which is more reliable during scrolling
+gsap.ticker.lagSmoothing(0);
 
 /* ======================================================
    READ-ONLY VIEW: ButtonPreview
@@ -16,100 +19,95 @@ gsap.registerPlugin();
 function ButtonPreview({ buttonconfig }) {
   const navigate = useNavigate();
   const sliderRef = useRef(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [visibleSlides, setVisibleSlides] = useState([]);
-  const slideDuration = 3.5;
-  const slideAnimationRef = useRef(null);
-  const intervalRef = useRef(null);
-  const [originalImages, setOriginalImages] = useState([]);
+  const [images, setImages] = useState([]);
+  // Adjust the duration to control the speed of continuous scrolling
+  const slideDuration = 60; // in seconds, adjust as needed
+  const animRef = useRef(null);
 
-  // Initialize defaults if no config is provided
+  // Format images from config
   useEffect(() => {
     if (!buttonconfig) return;
-
-    // Destructure the button config (using images rather than "slides")
     const { images = [] } = buttonconfig;
-
-    // Ensure image paths are properly formatted (with leading /)
     const formattedImages = images.map((img) =>
       img.startsWith("/") ? img : `/${img.replace(/^\.\//, "")}`
     );
-
-    // Store the original images array
-    setOriginalImages(formattedImages);
-
-    // Initialize with the first three images for efficiency
-    updateVisibleSlides(0, formattedImages);
+    setImages(formattedImages);
   }, [buttonconfig]);
 
-  // Update which slides are visible (keep only 3 at a time)
-  const updateVisibleSlides = (startIndex, images = originalImages) => {
-    if (!images.length) return;
-    
-    const slides = [];
-    // We need the current slide and the next two
-    for (let i = 0; i < 3; i++) {
-      const index = (startIndex + i) % images.length;
-      slides.push({
-        src: images[index],
-        position: i,
-      });
-    }
-    setVisibleSlides(slides);
-  };
-
-  // GSAP animation for carousel
-  const animateSlide = () => {
-    if (!sliderRef.current || !visibleSlides.length) return;
-    
-    // Kill any existing animation
-    if (slideAnimationRef.current) {
-      slideAnimationRef.current.kill();
-    }
-    
-    // Animate the slider to move left
-    slideAnimationRef.current = gsap.to(sliderRef.current, {
-      x: '-100%', // Move one full slide to the left
-      duration: slideDuration,
-      ease: "power2.inOut",
-      onComplete: () => {
-        // When animation completes, move to the next index and reset position
-        const nextIndex = (currentIndex + 1) % originalImages.length;
-        setCurrentIndex(nextIndex);
-        
-        // Reset slider position without animation
-        gsap.set(sliderRef.current, { x: '0%' });
-        
-        // Update visible slides to show the next set
-        updateVisibleSlides(nextIndex);
-      }
-    });
-  };
-
-  // Auto-advance the carousel
+  // Set up continuous scrolling animation
   useEffect(() => {
-    if (!visibleSlides.length) return;
-    
-    // Clear any existing interval
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
-    
-    // Start animation immediately
-    animateSlide();
-    
-    // Set interval for subsequent animations
-    intervalRef.current = setInterval(() => {
-      animateSlide();
-    }, (slideDuration + 0.5) * 1000); // Add a small buffer between animations
+    if (!images.length || !sliderRef.current) return;
+
+    // Create animation context that won't be affected by scroll
+    const ctx = gsap.context(() => {
+      // Wait until images are rendered and then get the width of one set of images
+      const totalWidth = sliderRef.current.scrollWidth;
+      // Because we duplicate the images for seamless looping,
+      // the width of one full set is half the scrollWidth.
+      const singleSetWidth = totalWidth / 2;
+
+      // Kill any previous animations
+      if (animRef.current) {
+        animRef.current.kill();
+      }
+
+      // Create animation with force3D to improve performance
+      animRef.current = gsap.to(sliderRef.current, {
+        x: `-=${singleSetWidth}`,
+        ease: "linear",
+        duration: slideDuration,
+        repeat: -1,
+        force3D: true,
+        // The modifier wraps the x value so that when it passes the width of one set,
+        // it starts again at 0, resulting in a continuous loop.
+        modifiers: {
+          x: (x) => {
+            const mod = parseFloat(x) % singleSetWidth;
+            return mod + "px";
+          },
+        },
+      });
+    });
+
+    // Proper cleanup
+    return () => {
+      if (animRef.current) {
+        animRef.current.kill();
+      }
+      ctx.revert(); // Clean up GSAP context
+    };
+  }, [images, slideDuration]);
+
+  // Add an intersection observer to pause/resume animation when out of view
+  useEffect(() => {
+    if (!sliderRef.current || !animRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            // Resume the animation when in view
+            if (animRef.current) {
+              animRef.current.play();
+            }
+          } else {
+            // Pause the animation when out of view (optional for performance)
+            // Remove this if you want animations to continue even when not visible
+            // if (animRef.current) {
+            //   animRef.current.pause();
+            // }
+          }
+        });
+      },
+      { threshold: 0.1 } // Trigger when at least 10% of the element is visible
+    );
+
+    observer.observe(sliderRef.current);
 
     return () => {
-      clearInterval(intervalRef.current);
-      if (slideAnimationRef.current) {
-        slideAnimationRef.current.kill();
-      }
+      observer.disconnect();
     };
-  }, [visibleSlides, originalImages.length]);
+  }, [sliderRef.current, animRef.current]);
 
   const handleClick = () => {
     if (buttonconfig && buttonconfig.buttonLink) {
@@ -155,15 +153,16 @@ function ButtonPreview({ buttonconfig }) {
           {/* Image Carousel Wrapper with fixed height */}
           <div className="relative h-[10vh] overflow-hidden">
             <div className="flex" ref={sliderRef}>
-              {visibleSlides.map((slide, i) => (
-                <div key={`slide-${currentIndex}-${i}`} className="flex-shrink-0">
+              {/* Duplicate the images array for seamless looping */}
+              {images.concat(images).map((src, index) => (
+                <div key={`slide-${index}`} className="flex-shrink-0">
                   <div className="relative sm:w-[70vw] w-[88vw] md:h-[24vh] sm:h-[20vh] h-[15vh]">
                     <div className="flex items-center justify-center overflow-hidden w-full h-full relative">
                       <img
-                        src={slide.src}
-                        alt={`Slide ${i}`}
+                        src={src}
+                        alt={`Slide ${index}`}
                         className="w-full h-full object-cover pointer-events-none"
-                        loading={i === 0 ? "eager" : "lazy"}
+                        loading={index < 3 ? "eager" : "lazy"}
                       />
                       {/* Grey Overlay */}
                       <div className="absolute top-0 left-0 w-full h-full bg-gray-800 opacity-60"></div>
@@ -374,7 +373,7 @@ ButtonEditorPanel.propTypes = {
 export default function ButtonBlock({
   readOnly = false,
   buttonconfig = null,
-  onConfigChange = () => {}
+  onConfigChange = () => {},
 }) {
   const [localButton, setLocalButton] = useState(() => {
     if (!buttonconfig) {

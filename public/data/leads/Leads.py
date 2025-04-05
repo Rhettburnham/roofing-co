@@ -342,7 +342,7 @@ if __name__ == "__main__":
         logging.getLogger('').addHandler(console)
 
     # 1) START DRIVER (Set headless=False if you want to watch)
-    driver = web_driver(headless=True)
+    driver = web_driver(headless=False)
 
     try:
         # 2) LOAD GOOGLE MAPS ONCE (KEEPING EXISTING PATH)
