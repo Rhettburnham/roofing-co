@@ -18,7 +18,7 @@ const ANIMATION_STATE = {
 };
 
 // taking data from step_4/combined_data.json
-function RichTextPreview({ richTextData }) {
+function RichTextPreview({ richTextData, processData }) {
   const [currentImage, setCurrentImage] = useState(0);
   // Track whether animations should be applied (initialized from global state)
   const [animationClass, setAnimationClass] = useState(
@@ -84,7 +84,7 @@ function RichTextPreview({ richTextData }) {
     // For md viewports, ensure square aspect ratio
     const sizeClasses =
       variant === "md"
-        ? "md:w-[12vw] md:h-[12vw] w-[40vw] h-[22vw]"
+        ? "md:w-[10vw] md:h-[10vw] w-[40vw] h-[22vw]"
         : "w-[40vw] h-[22vw] md:w-[13vw] md:h-[13vh]";
 
     // Calculate delay based on index to stagger animations
@@ -178,19 +178,19 @@ function RichTextPreview({ richTextData }) {
   `;
 
   return (
-    <div className="w-full">
+    <div className="w-full mx-auto">
       <style>{animationStyles}</style>
 
       {/* Process Block positioned at the top */}
       <div className="w-full">
-        <ProcessBlock readOnly={true} />
+        <ProcessBlock readOnly={true} processData={processData} />
       </div>
 
       {/* Medium screens and larger */}
       <div className="hidden md:flex flex-row px-2 mb-2 -mt-[15vh]">
         <div className="flex w-full">
           {/* Left Column: Cards stacked vertically */}
-          <div className="w-1/6 flex p-1 flex-col justify-between -mt-10 aspect-square ">
+          <div className="w-1/6 flex p-1 flex-col justify-between  aspect-square ">
             {leftCards.map((card, idx) => {
               const IconComp = Icons[card.icon] || Icons.Star;
               return (

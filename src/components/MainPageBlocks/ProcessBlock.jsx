@@ -10,13 +10,21 @@ import { HashLink } from "react-router-hash-link";
    This component shows the process section as a preview.
    It uses the same animation and layout as the main Process component.
 ========================================================= */
-function ProcessPreview() {
+function ProcessPreview({ processData }) {
   const videoRefs = useRef([]);
   const [activeVideo, setActiveVideo] = useState(0);
   const [initialOrder, setInitialOrder] = useState([]);
   
-  // Hardcoded process steps with correct paths for available videos
-  const processSteps = [
+  // Fallback videos to use when process steps don't have valid sources
+  const fallbackVideos = {
+    "Book": "/assets/videos/our_process_videos/booking.mp4",
+    "Inspection": "/assets/videos/our_process_videos/repair.mp4",
+    "Service": "/assets/videos/our_process_videos/repair.mp4",
+    "Review": "/assets/videos/our_process_videos/approval.mp4"
+  };
+  
+  // Use processData if provided, or fallback to hardcoded steps
+  const processSteps = processData?.steps || [
     {
       title: "Book",
       videoSrc: "/assets/videos/our_process_videos/booking.mp4",
@@ -43,9 +51,27 @@ function ProcessPreview() {
     }
   ];
 
+  // Ensure all process steps have valid video sources
+  const validatedSteps = processSteps.map(step => {
+    if (!step.videoSrc && fallbackVideos[step.title]) {
+      // If no videoSrc but we have a fallback for this title, use it
+      return {
+        ...step,
+        videoSrc: fallbackVideos[step.title]
+      };
+    } else if (!step.videoSrc) {
+      // If no videoSrc and no matching fallback, use a generic fallback
+      return {
+        ...step,
+        videoSrc: "/assets/videos/our_process_videos/booking.mp4" // Default fallback
+      };
+    }
+    return step;
+  });
+
   // Generate random initial animation order ONLY ONCE on mount
   useEffect(() => {
-    const indices = [...Array(processSteps.length).keys()];
+    const indices = [...Array(validatedSteps.length).keys()];
     const shuffled = indices.sort(() => Math.random() - 0.5);
     setInitialOrder(shuffled);
   }, []);  // Empty dependency array means this runs once on mount
@@ -69,17 +95,25 @@ function ProcessPreview() {
     let timeouts = [];
 
     const playVideosSequentially = () => {
-      processSteps.forEach((_, idx) => {
+      validatedSteps.forEach((step, idx) => {
         const startDelay = idx * 4000;
         const timeout1 = setTimeout(() => {
           if (videoRefs.current[idx]) {
             try {
+              // Check if video has a valid source before playing
+              if (!videoRefs.current[idx].src || videoRefs.current[idx].src === "") {
+                // If no source, set the fallback source first
+                videoRefs.current[idx].src = step.videoSrc;
+                videoRefs.current[idx].load();
+              }
+              
               videoRefs.current[idx].currentTime = 0;
               const playPromise = videoRefs.current[idx].play();
               if (playPromise !== undefined) {
                 playPromise.catch(error => {
                   console.error(`Video ${idx} autoplay failed:`, error);
-                  // If play fails, try to load the video again before playing
+                  // If play fails, try to set fallback source and play again
+                  videoRefs.current[idx].src = fallbackVideos[step.title] || "/assets/videos/our_process_videos/booking.mp4";
                   videoRefs.current[idx].load();
                   setTimeout(() => {
                     if (videoRefs.current[idx]) {
@@ -100,7 +134,7 @@ function ProcessPreview() {
         timeouts.push(timeout1);
       });
 
-      const totalDuration = processSteps.length * 4000;
+      const totalDuration = validatedSteps.length * 4000;
       const restartTimeout = setTimeout(() => {
         playVideosSequentially();
       }, totalDuration);
@@ -129,7 +163,7 @@ function ProcessPreview() {
   }, []); // Empty dependency array means this runs once on mount
 
   // If no process steps provided, return placeholder or empty fragment
-  if (processSteps.length === 0) {
+  if (validatedSteps.length === 0) {
     return <div className="h-[20vh]"></div>;
   }
 
@@ -138,7 +172,7 @@ function ProcessPreview() {
       <div className="h-[20vh] bg-gradient-to-b from-banner from-0% to-transparent" />
       <section className="md:px-8 -mt-[28vh] md:-mt-[32vh] relative z-40 overflow-visible">
         <div className="flex justify-center items-center flex-wrap md:gap-4 translate-y-[5vh] mb-[8vh] md:mb-[12vh]">
-          {processSteps.map((step, index) => {
+          {validatedSteps.map((step, index) => {
             const isHashLink = step.href?.startsWith("/#");
             const LinkComponent = isHashLink ? HashLink : Link;
             const animationDelay = initialOrder.indexOf(index) * 0.2 || 0;
@@ -196,7 +230,7 @@ function ProcessPreview() {
                   </motion.div>
                 </LinkComponent>
 
-                {index < processSteps.length - 1 && (
+                {index < validatedSteps.length - 1 && (
                   <div className="flex items-center mx-2">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -226,7 +260,18 @@ function ProcessPreview() {
 }
 
 ProcessPreview.propTypes = {
-  // No props required anymore
+  processData: PropTypes.shape({
+    steps: PropTypes.arrayOf(
+      PropTypes.shape({
+        title: PropTypes.string,
+        videoSrc: PropTypes.string,
+        videoFile: PropTypes.object,
+        fileName: PropTypes.string,
+        href: PropTypes.string,
+        scale: PropTypes.number,
+      })
+    ),
+  }),
 };
 
 /* ======================================================
@@ -498,10 +543,11 @@ ProcessEditorPanel.propTypes = {
 ========================================================= */
 export default function ProcessBlock({
   readOnly = false,
+  processData,
   onConfigChange = () => {}
 }) {
-  // Hardcoded process steps with correct paths for available videos
-  const processSteps = [
+  // Default process steps with correct paths for available videos
+  const defaultProcessSteps = [
     {
       title: "Book",
       videoSrc: "/assets/videos/our_process_videos/booking.mp4",
@@ -510,7 +556,7 @@ export default function ProcessBlock({
     },
     {
       title: "Inspection",
-      videoSrc: "/assets/videos/our_process_videos/repair.mp4", // Using repair.mp4 for inspection
+      videoSrc: "/assets/videos/our_process_videos/magnify.mp4", // Using repair.mp4 for inspection
       href: "/inspection",
       scale: 1.25
     },
@@ -528,9 +574,23 @@ export default function ProcessBlock({
     }
   ];
 
-  const [localData, setLocalData] = useState({
-    steps: processSteps
+  // Initialize local state with provided data or defaults
+  const [localData, setLocalData] = useState(() => {
+    // If processData is provided, use it; otherwise use default
+    if (processData?.steps) {
+      return processData;
+    }
+    return {
+      steps: defaultProcessSteps
+    };
   });
+
+  // When processData changes, update localData
+  useEffect(() => {
+    if (processData?.steps) {
+      setLocalData(processData);
+    }
+  }, [processData]);
 
   const handleSave = () => {
     // Prepare data for saving - convert any file references to final paths
@@ -558,9 +618,9 @@ export default function ProcessBlock({
     }
   };
 
-  // If read-only mode, just show the preview with hardcoded data
+  // If read-only mode, just show the preview with localData
   if (readOnly) {
-    return <ProcessPreview />;
+    return <ProcessPreview processData={localData} />;
   }
 
   // Otherwise show both editor and preview
@@ -569,7 +629,7 @@ export default function ProcessBlock({
       <div className="md:w-1/2 order-2 md:order-1">
         <h3 className="text-sm text-gray-400 mb-2">Preview:</h3>
         <div className="border border-gray-300 rounded overflow-hidden bg-white">
-          <ProcessPreview />
+          <ProcessPreview processData={localData} />
         </div>
       </div>
       <div className="md:w-1/2 order-1 md:order-2">
@@ -585,5 +645,15 @@ export default function ProcessBlock({
 
 ProcessBlock.propTypes = {
   readOnly: PropTypes.bool,
+  processData: PropTypes.shape({
+    steps: PropTypes.arrayOf(
+      PropTypes.shape({
+        title: PropTypes.string,
+        videoSrc: PropTypes.string,
+        href: PropTypes.string,
+        scale: PropTypes.number,
+      })
+    ),
+  }),
   onConfigChange: PropTypes.func,
 };

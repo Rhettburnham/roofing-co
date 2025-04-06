@@ -223,7 +223,7 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
       ────────────────────────────────────────────────────────── */}
       <div className="block md:hidden relative w-full">
         {/* Two images side-by-side, animate x for swap */}
-        <div className="overflow-hidden w-full relative">
+        <div className="overflow-hidden w-full relative h-[50vh]">
           <motion.div
             animate={{ x: isCommercial ? "-100vw" : "0%" }}
             transition={{ duration: 0.8 }}
@@ -232,12 +232,12 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
             <img
               src={config.largeResidentialImg || "/assets/images/main_img.jpg"}
               alt="Residential Services"
-              className="w-full h-auto"
+              className="w-full h-[50vh] object-cover" /* Increased height and added object-cover */
             />
             <img
               src={config.largeCommercialImg || "/assets/images/commercialservices.jpg"}
               alt="Commercial Services"
-              className="w-full h-auto"
+              className="w-full h-[50vh] object-cover" /* Increased height and added object-cover */
             />
           </motion.div>
         </div>
@@ -300,7 +300,7 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
         </div>
 
         {/* Staggered row of service icons */}
-        <div className="absolute inset-0 flex flex-col items-center justify-start pt-[23vh]">
+        <div className="absolute inset-0 flex flex-col items-center justify-start pt-[23vh] p-2">
           <AnimatePresence mode="wait">
             <motion.div
               key={isCommercial ? "commercial" : "residential"}
@@ -318,7 +318,7 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
                 >
                   <Link to={service.link}>
                     <div
-                      className="group whitespace-nowrap flex-col dark_button bg-banner w-[8vh] h-[8vh] md:w-24 md:h-24 rounded-full flex items-center justify-center text-white text-[5vw] hover:text-gray-200 hover:bg-gray-200 transition drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
+                      className="group whitespace-nowrap flex-col dark_button bg-banner w-[8vh] h-[8vh] p-4 md:w-24 md:h-24 rounded-full p-4 flex items-center justify-center text-white text-[5vw] hover:text-gray-200 hover:bg-gray-200 transition drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
                       onMouseEnter={(e) => {
                         e.currentTarget.style.boxShadow =
                           "inset 0 0 30px 10px rgba(0,0,0,0.8)";
