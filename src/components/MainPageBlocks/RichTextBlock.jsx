@@ -33,6 +33,7 @@ function RichTextPreview({ richTextData, processData }) {
     images = [],
   } = richTextData || {};
 
+
   if (!richTextData) {
     return <p className="text-center py-4">No RichText data found.</p>;
   }

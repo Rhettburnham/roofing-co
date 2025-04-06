@@ -18,7 +18,7 @@ function ProcessPreview({ processData }) {
   // Fallback videos to use when process steps don't have valid sources
   const fallbackVideos = {
     "Book": "/assets/videos/our_process_videos/booking.mp4",
-    "Inspection": "/assets/videos/our_process_videos/repair.mp4",
+    "Inspection": "/assets/videos/our_process_videos/magnify.mp4",
     "Service": "/assets/videos/our_process_videos/repair.mp4",
     "Review": "/assets/videos/our_process_videos/approval.mp4"
   };
@@ -33,7 +33,7 @@ function ProcessPreview({ processData }) {
     },
     {
       title: "Inspection",
-      videoSrc: "/assets/videos/our_process_videos/repair.mp4", // Using repair.mp4 for inspection
+      videoSrc: "/assets/videos/our_process_videos/magnify.mp4", // Using repair.mp4 for inspection
       href: "/inspection",
       scale: 1.25
     },
@@ -51,62 +51,49 @@ function ProcessPreview({ processData }) {
     }
   ];
 
-  // Ensure all process steps have valid video sources
-  const validatedSteps = processSteps.map(step => {
-    if (!step.videoSrc && fallbackVideos[step.title]) {
-      // If no videoSrc but we have a fallback for this title, use it
-      return {
-        ...step,
-        videoSrc: fallbackVideos[step.title]
-      };
-    } else if (!step.videoSrc) {
-      // If no videoSrc and no matching fallback, use a generic fallback
-      return {
-        ...step,
-        videoSrc: "/assets/videos/our_process_videos/booking.mp4" // Default fallback
-      };
-    }
-    return step;
-  });
-
-  // Generate random initial animation order ONLY ONCE on mount
   useEffect(() => {
-    const indices = [...Array(validatedSteps.length).keys()];
+    // Generate random initial animation order ONLY ONCE on mount
+    const indices = [...Array(processSteps.length).keys()];
     const shuffled = indices.sort(() => Math.random() - 0.5);
     setInitialOrder(shuffled);
+    
+    // Preload all videos immediately and make them ready to display
+    const preloadAllVideos = () => {
+      processSteps.forEach((step, idx) => {
+        // Create a temporary video element to preload
+        const tempVideo = document.createElement('video');
+        tempVideo.src = step.videoSrc || fallbackVideos[step.title] || fallbackVideos["Book"];
+        tempVideo.muted = true;
+        tempVideo.preload = "auto";
+        
+        // Force preload
+        tempVideo.load();
+        
+        // Listen for when it's loaded enough to display first frame
+        tempVideo.addEventListener('loadeddata', () => {
+          if (videoRefs.current[idx]) {
+            videoRefs.current[idx].src = tempVideo.src;
+            videoRefs.current[idx].load();
+            // Set to first frame
+            videoRefs.current[idx].currentTime = 0;
+          }
+        });
+      });
+    };
+    
+    preloadAllVideos();
   }, []);  // Empty dependency array means this runs once on mount
 
   // Handle video playback with proper cleanup
   useEffect(() => {
-    // Reset all videos
-    videoRefs.current.forEach((video, idx) => {
-      if (video) {
-        try {
-          video.currentTime = 0;
-          video.pause();
-          // Manually load the video to ensure it's ready for playback
-          video.load();
-        } catch (err) {
-          console.error(`Error resetting video ${idx}:`, err);
-        }
-      }
-    });
-
     let timeouts = [];
 
     const playVideosSequentially = () => {
-      validatedSteps.forEach((step, idx) => {
+      processSteps.forEach((step, idx) => {
         const startDelay = idx * 4000;
         const timeout1 = setTimeout(() => {
           if (videoRefs.current[idx]) {
             try {
-              // Check if video has a valid source before playing
-              if (!videoRefs.current[idx].src || videoRefs.current[idx].src === "") {
-                // If no source, set the fallback source first
-                videoRefs.current[idx].src = step.videoSrc;
-                videoRefs.current[idx].load();
-              }
-              
               videoRefs.current[idx].currentTime = 0;
               const playPromise = videoRefs.current[idx].play();
               if (playPromise !== undefined) {
@@ -115,6 +102,8 @@ function ProcessPreview({ processData }) {
                   // If play fails, try to set fallback source and play again
                   videoRefs.current[idx].src = fallbackVideos[step.title] || "/assets/videos/our_process_videos/booking.mp4";
                   videoRefs.current[idx].load();
+                  // Show the first frame immediately
+                  videoRefs.current[idx].currentTime = 0;
                   setTimeout(() => {
                     if (videoRefs.current[idx]) {
                       videoRefs.current[idx].play().catch(e => 
@@ -134,7 +123,7 @@ function ProcessPreview({ processData }) {
         timeouts.push(timeout1);
       });
 
-      const totalDuration = validatedSteps.length * 4000;
+      const totalDuration = processSteps.length * 4000;
       const restartTimeout = setTimeout(() => {
         playVideosSequentially();
       }, totalDuration);
@@ -163,7 +152,7 @@ function ProcessPreview({ processData }) {
   }, []); // Empty dependency array means this runs once on mount
 
   // If no process steps provided, return placeholder or empty fragment
-  if (validatedSteps.length === 0) {
+  if (processSteps.length === 0) {
     return <div className="h-[20vh]"></div>;
   }
 
@@ -172,7 +161,7 @@ function ProcessPreview({ processData }) {
       <div className="h-[20vh] bg-gradient-to-b from-banner from-0% to-transparent" />
       <section className="md:px-8 -mt-[28vh] md:-mt-[32vh] relative z-40 overflow-visible">
         <div className="flex justify-center items-center flex-wrap md:gap-4 translate-y-[5vh] mb-[8vh] md:mb-[12vh]">
-          {validatedSteps.map((step, index) => {
+          {processSteps.map((step, index) => {
             const isHashLink = step.href?.startsWith("/#");
             const LinkComponent = isHashLink ? HashLink : Link;
             const animationDelay = initialOrder.indexOf(index) * 0.2 || 0;
@@ -181,17 +170,17 @@ function ProcessPreview({ processData }) {
               <div key={index} className="flex items-center pt-1 md:pt-2">
                 <LinkComponent to={step.href || "#"}>
                   <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
+                    initial={{ opacity: 0.7, scale: 1 }}
+                    animate={{ 
+                      opacity: activeVideo === index ? 1 : 0.7,
+                      scale: activeVideo === index ? 1.1 : 1
+                    }}
                     transition={{
                       type: "spring",
                       stiffness: 260,
-                      damping: 20,
-                      delay: animationDelay
+                      damping: 20
                     }}
-                    className={`flex flex-col items-center cursor-pointer transform transition-all duration-500 ${
-                      activeVideo === index ? "scale-110" : "scale-100 opacity-70"
-                    }`}
+                    className="flex flex-col items-center cursor-pointer"
                   >
                     <div
                       className={`rounded-full overflow-hidden flex items-center justify-center drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.3)] md:w-[14.4vh] md:h-[14.4vh] w-[6.8vh] h-[6.8vh] bg-white ${
@@ -199,8 +188,23 @@ function ProcessPreview({ processData }) {
                       }`}
                     >
                       <video
-                        ref={(el) => (videoRefs.current[index] = el)}
-                        src={step.videoSrc}
+                        ref={(el) => {
+                          videoRefs.current[index] = el;
+                          // Immediately set current time to 0 to show first frame
+                          if (el) {
+                            el.currentTime = 0;
+                            // Force display of first frame
+                            const handleLoad = () => {
+                              el.currentTime = 0;
+                            };
+                            el.addEventListener('loadeddata', handleLoad);
+                            // Clean up event listener
+                            return () => {
+                              el.removeEventListener('loadeddata', handleLoad);
+                            };
+                          }
+                        }}
+                        src={step.videoSrc || fallbackVideos[step.title] || fallbackVideos["Book"]}
                         className="object-cover"
                         muted
                         playsInline
@@ -230,7 +234,7 @@ function ProcessPreview({ processData }) {
                   </motion.div>
                 </LinkComponent>
 
-                {index < validatedSteps.length - 1 && (
+                {index < processSteps.length - 1 && (
                   <div className="flex items-center mx-2">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"

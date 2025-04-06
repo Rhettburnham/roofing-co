@@ -101,11 +101,12 @@ function HeroPreview({ heroconfig }) {
       transition: { duration: 0.3 },
     },
   };
+
   const listVariants = {
     hidden: { opacity: 0, height: 0 },
     visible: {
       opacity: 1,
-      height: window.innerWidth >= 768 ? 200 : 130, // 200px for md screens, 150px for smaller screens
+      height: 100,
       transition: {
         staggerChildren: 0.1,
         duration: 0.3,

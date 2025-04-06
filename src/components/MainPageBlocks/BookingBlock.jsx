@@ -18,7 +18,7 @@ import {
 import { X } from "lucide-react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import googleIcon from "/assets/images/googleimage.png";
+
 // import * as FaIcons from "react-icons/fa";
 
 // Register GSAP's ScrollTrigger plugin
@@ -185,9 +185,9 @@ const BookingPreview = memo(({ bookingData }) => {
     gsap.set(contentRef.current, { opacity: 1 });
     gsap.set(formContainerRef.current, { opacity: 0, scale: 0.95 });
 
-    // Set initial positions for nails - start them far offscreen
-    gsap.set(leftNails, { x: "-150px" }); 
-    gsap.set(rightNails, { x: "150px" }); 
+    // Set initial positions for nails
+    gsap.set(leftNails, { x: "-100vw" }); // Start completely off-screen to the left
+    gsap.set(rightNails, { x: "100vw" }); // Start completely off-screen to the right
 
     const masterTimeline = gsap.timeline({
       scrollTrigger: {
@@ -223,19 +223,19 @@ const BookingPreview = memo(({ bookingData }) => {
     masterTimeline.to(
       leftNails,
       {
-        x: "0", // Move to final position exactly at their container
+        x: "40%", // Move to final position
         duration: 0.4,
         ease: "power2.out",
         stagger: 0.12,
       },
-      "+=0.2"
+      "+=0.5"
     );
 
     // 4. Animate right nails to slide in from right
     masterTimeline.to(
       rightNails,
       {
-        x: "0", // Move to final position exactly at their container
+        x: "-40%", // Move to final position
         duration: 0.4,
         ease: "power2.out",
         stagger: 0.12,
@@ -253,12 +253,8 @@ const BookingPreview = memo(({ bookingData }) => {
     if (isMobile) {
       // Only animate on mobile
       if (!isFormVisible) {
-        // Ensure the form container is visible before animating
-        gsap.set(formContainerRef.current, { 
-          display: "block", 
-          opacity: 0,
-          y: 20
-        });
+        // Ensure the form container is visible
+        formContainerRef.current.style.display = "block";
 
         // Animation to expand banner into form
         gsap.to(bannerRef.current, {
@@ -267,11 +263,11 @@ const BookingPreview = memo(({ bookingData }) => {
           ease: "power2.inOut",
           onComplete: () => {
             // Fade in form elements
-            gsap.to(formContainerRef.current, { 
-              opacity: 1, 
-              y: 0, 
-              duration: 0.3 
-            });
+            gsap.fromTo(
+              formContainerRef.current,
+              { opacity: 0, y: 20 },
+              { opacity: 1, y: 0, duration: 0.3 }
+            );
           },
         });
       } else {
@@ -282,12 +278,12 @@ const BookingPreview = memo(({ bookingData }) => {
           duration: 0.3,
           onComplete: () => {
             gsap.to(bannerRef.current, {
-              height: "auto", 
+              height: "auto",
               duration: 0.5,
               ease: "power2.inOut",
               onComplete: () => {
-                // Hide the form container completely
-                gsap.set(formContainerRef.current, { display: "none" });
+                // Don't hide the form container, just reduce opacity
+                formContainerRef.current.style.opacity = "0";
               },
             });
           },
@@ -356,54 +352,63 @@ const BookingPreview = memo(({ bookingData }) => {
     : logo || "/assets/images/booking/clipped.png";
 
   return (
-    <div className="flex flex-col items-center w-full px-6">
+    <div className="flex flex-col items-center justify-center w-full px-6">
       {/* OUTER BOX WITH BANNER COLOR */}
       <div
         ref={bannerRef}
-        className="md:max-w-xl w-full bg-banner rounded-lg shadow-lg relative mx-auto"
+        className="md:max-w-xl w-full bg-banner rounded-lg shadow-lg relative"
       >
         {/* Left Nails */}
-        <div className="absolute -left-16 top-0 h-full hidden md:flex flex-col -z-10 justify-between py-8 overflow-visible">
-          <div id="left-nail-1" className="relative">
+        <div className="absolute left-0  top-0 h-full hidden md:flex flex-col -z-10 justify-between py-8 overflow-visible">
+          <div id="left-nail-1" className="w-[8vw] h-[2.5vh] relative">
             <div
-              className="w-16 h-6"
+              className="w-full h-full"
               style={{
                 backgroundImage: "url('/assets/images/nail.png')",
                 backgroundPosition: "center",
                 backgroundRepeat: "no-repeat",
                 backgroundSize: "contain",
-                transform: "scale(1.5)",
-                transformOrigin: "center right",
+                transform: "scale(1.8)",
+                transformOrigin: " center",
+                position: "absolute",
+                left: "-70%", // Position at final location
+                top: 0,
                 filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
                 zIndex: 5,
               }}
             />
           </div>
-          <div id="left-nail-2" className="relative">
+          <div id="left-nail-2" className="w-[8vw] h-[2.5vh] relative">
             <div
-              className="w-16 h-6"
+              className="w-full h-full"
               style={{
                 backgroundImage: "url('/assets/images/nail.png')",
-                backgroundPosition: "center",
+                backgroundPosition: " center",
                 backgroundRepeat: "no-repeat",
                 backgroundSize: "contain",
-                transform: "scale(1.5)",
-                transformOrigin: "center right",
+                transform: "scale(1.8)",
+                transformOrigin: " center",
+                position: "absolute",
+                left: "-50%", // Position at final location
+                top: 0,
                 filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
                 zIndex: 5,
               }}
             />
           </div>
-          <div id="left-nail-3" className="relative">
+          <div id="left-nail-3" className="w-[8vw] h-[2.5vh] relative">
             <div
-              className="w-16 h-6"
+              className="w-full h-full"
               style={{
                 backgroundImage: "url('/assets/images/nail.png')",
                 backgroundPosition: "center",
                 backgroundRepeat: "no-repeat",
                 backgroundSize: "contain",
-                transform: "scale(1.5)",
-                transformOrigin: "center right",
+                transform: "scale(1.8)",
+                transformOrigin: " center",
+                position: "absolute",
+                left: "-40%", // Position at final location
+                top: 0,
                 filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
                 zIndex: 5,
               }}
@@ -412,7 +417,7 @@ const BookingPreview = memo(({ bookingData }) => {
         </div>
 
         {/* Left Social Icons */}
-        <div className="absolute -left-40 top-0 h-full hidden md:flex flex-col justify-between py-10 overflow-visible">
+        <div className="absolute -left-40 top-0 h-full hidden md:flex flex-col justify-between py-20 overflow-visible">
           <div id="left-social-1" className="relative">
             <a
               href="https://twitter.com"
@@ -420,8 +425,8 @@ const BookingPreview = memo(({ bookingData }) => {
               rel="noopener noreferrer"
               className="block"
             >
-              <div className="bg-banner p-4 rounded-md transform transition-transform hover:scale-110">
-                <FaXTwitter className="w-10 h-10 text-white" />
+              <div className="bg-accent p-2 rounded-md transform transition-transform hover:scale-110">
+                <FaXTwitter className="w-14 h-14 text-white" />
               </div>
             </a>
           </div>
@@ -432,55 +437,64 @@ const BookingPreview = memo(({ bookingData }) => {
               rel="noopener noreferrer"
               className="block"
             >
-              <div className="bg-banner p-4 rounded-md transform transition-transform hover:scale-110">
-                <FaLinkedin className="w-10 h-10 text-white" />
+              <div className="bg-accent p-2 rounded-md transform transition-transform hover:scale-110">
+                <FaLinkedin className="w-14 h-14 text-white" />
               </div>
             </a>
           </div>
         </div>
 
         {/* Right Nails */}
-        <div className="absolute -right-16 top-0 h-full hidden md:flex flex-col justify-between py-8 -z-10 overflow-visible">
-          <div id="right-nail-1" className="relative">
+        <div className="absolute right-0 top-0 h-full hidden md:flex flex-col -z-10 justify-between py-8 overflow-visible">
+          <div id="right-nail-1" className="w-[8vw] h-[2.5vh] relative">
             <div
-              className="w-16 h-6"
+              className="w-full h-full"
               style={{
                 backgroundImage: "url('/assets/images/nail.png')",
                 backgroundPosition: "center",
                 backgroundRepeat: "no-repeat",
                 backgroundSize: "contain",
-                transform: "scale(1.5) scaleX(-1)",
-                transformOrigin: "center left",
+                transform: "scale(1.8) scaleX(-1)",
+                transformOrigin: "center",
+                position: "absolute",
+                right: "-70%", // Position at final location
+                top: 0,
                 filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
                 zIndex: 5,
               }}
             />
           </div>
-          <div id="right-nail-2" className="relative">
+          <div id="right-nail-2" className="w-[8vw] h-[2.5vh] relative">
             <div
-              className="w-16 h-6"
+              className="w-full h-full"
               style={{
                 backgroundImage: "url('/assets/images/nail.png')",
-                backgroundPosition: "center",
+                backgroundPosition: " center",
                 backgroundRepeat: "no-repeat",
                 backgroundSize: "contain",
-                transform: "scale(1.5) scaleX(-1)",
-                transformOrigin: "center left",
+                transform: "scale(1.8) scaleX(-1)",
+                transformOrigin: " center",
+                position: "absolute",
+                right: "-50%", // Position at final location
+                top: 0,
                 filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
                 zIndex: 5,
               }}
             />
           </div>
-          <div id="right-nail-3" className="relative">
+          <div id="right-nail-3" className="w-[8vw] h-[2.5vh] relative">
             <div
-              className="w-16 h-6"
+              className="w-full h-full"
               style={{
                 backgroundImage: "url('/assets/images/nail.png')",
-                backgroundPosition: "center",
+                backgroundPosition: " center",
                 backgroundRepeat: "no-repeat",
                 backgroundSize: "contain",
-                transform: "scale(1.5) scaleX(-1)",
-                transformOrigin: "center left",
+                transform: "scale(1.8) scaleX(-1)",
+                transformOrigin: " center",
+                position: "absolute",
+                right: "-40%", // Position at final location
+                top: 0,
                 filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
                 zIndex: 5,
               }}
@@ -489,7 +503,7 @@ const BookingPreview = memo(({ bookingData }) => {
         </div>
 
         {/* Right Social Icons */}
-        <div className="absolute -right-40 top-0 h-full hidden md:flex flex-col justify-between py-10 overflow-visible">
+        <div className="absolute -right-40 top-0 h-full hidden md:flex flex-col justify-between py-20 overflow-visible">
           <div id="right-social-1" className="relative">
             <a
               href="https://instagram.com"
@@ -497,8 +511,8 @@ const BookingPreview = memo(({ bookingData }) => {
               rel="noopener noreferrer"
               className="block"
             >
-              <div className="bg-banner p-4 rounded-md transform transition-transform hover:scale-110">
-                <FaInstagram className="w-10 h-10 text-white" />
+              <div className="bg-accent p-2 rounded-md transform transition-transform hover:scale-110">
+                <FaInstagram className="w-14 h-14 text-white" />
               </div>
             </a>
           </div>
@@ -509,8 +523,8 @@ const BookingPreview = memo(({ bookingData }) => {
               rel="noopener noreferrer"
               className="block"
             >
-              <div className="bg-banner p-4 rounded-md transform transition-transform hover:scale-110">
-                <FaFacebook className="w-10 h-10 text-white" />
+              <div className="bg-accent p-2 rounded-md transform transition-transform hover:scale-110">
+                <FaFacebook className="w-14 h-14 text-white" />
               </div>
             </a>
           </div>
@@ -562,7 +576,7 @@ const BookingPreview = memo(({ bookingData }) => {
             ref={formContainerRef}
             className="w-full pb-2 md:block"
             style={{
-              display: isMobile && !isFormVisible ? "none" : "block", // Only hide on mobile when not visible
+              display: "block", // Always show the form
             }}
           >
             <div className="bg-white rounded-lg p-3 shadow-inner mx-2">
