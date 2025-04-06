@@ -23,18 +23,23 @@ function BeforeAfterPreview({ beforeAfterData }) {
   const nailRef = useRef(null);
   const textRef = useRef(null);
 
-  // Local states for modal
+  // Local states for modal and card flipping
   const [selectedImages, setSelectedImages] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [viewState, setViewState] = useState("before");
 
   // Safely destructure data and ensure paths are properly formatted
   const { sectionTitle = "BEFORE & AFTER", items = [] } = beforeAfterData || {};
-  
+
   // Format paths to ensure they start with / if they don't already
-  const formattedItems = items.map(item => ({
+  const formattedItems = items.map((item) => ({
     ...item,
-    before: item.before?.startsWith('/') ? item.before : `/${item.before?.replace(/^\.\//, '')}`,
-    after: item.after?.startsWith('/') ? item.after : `/${item.after?.replace(/^\.\//, '')}`
+    before: item.before?.startsWith("/")
+      ? item.before
+      : `/${item.before?.replace(/^\.\//, "")}`,
+    after: item.after?.startsWith("/")
+      ? item.after
+      : `/${item.after?.replace(/^\.\//, "")}`,
   }));
 
   const handleBoxClick = (images) => {
@@ -45,6 +50,10 @@ function BeforeAfterPreview({ beforeAfterData }) {
   const closeModal = () => {
     setShowModal(false);
     setSelectedImages(null);
+  };
+
+  const toggleViewState = () => {
+    setViewState((prev) => (prev === "before" ? "after" : "before"));
   };
 
   // GSAP animations
@@ -64,12 +73,12 @@ function BeforeAfterPreview({ beforeAfterData }) {
       x: "100%",
     });
 
-    // HeaderRef timeline
+    // HeaderRef timeline - trigger when header comes into view
     const masterTimeline = gsap.timeline({
       scrollTrigger: {
         trigger: headerRef.current,
-        start: "top 50%",
-        end: "top 65%",
+        start: "top 80%",
+        end: "top 50%",
         toggleActions: "play none none none",
         markers: false,
       },
@@ -163,7 +172,7 @@ function BeforeAfterPreview({ beforeAfterData }) {
         );
     });
 
-    // Card flip animations
+    // Initial setup for cards (without scroll trigger)
     boxEls.forEach((box) => {
       if (!box) return;
       const cardElement = box.querySelector(".card");
@@ -195,33 +204,6 @@ function BeforeAfterPreview({ beforeAfterData }) {
         rotationY: 180,
         zIndex: 1,
       });
-
-      // Flip timeline
-      gsap
-        .timeline({
-          scrollTrigger: {
-            trigger: box,
-            start: "top 60%",
-            end: "top 40%",
-            scrub: 0.5,
-            toggleActions: "restart pause reverse pause",
-            markers: false,
-          },
-        })
-        .to(beforeImage, {
-          rotationY: -180,
-          duration: 1,
-          ease: "none",
-        })
-        .to(
-          afterImage,
-          {
-            rotationY: 0,
-            duration: 1,
-            ease: "none",
-          },
-          0
-        );
     });
 
     // Cleanup on unmount
@@ -229,6 +211,46 @@ function BeforeAfterPreview({ beforeAfterData }) {
       ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
     };
   }, [items]);
+
+  // Handle view state changes for card flipping
+  useEffect(() => {
+    const boxEls = boxesRef.current.filter((box) => box !== null);
+
+    boxEls.forEach((box) => {
+      if (!box) return;
+      const cardElement = box.querySelector(".card");
+      if (!cardElement) return;
+
+      const beforeImage = cardElement.querySelector(".before");
+      const afterImage = cardElement.querySelector(".after");
+      if (!beforeImage || !afterImage) return;
+
+      // Create flip animation between states
+      if (viewState === "after") {
+        gsap.to(beforeImage, {
+          rotationY: -180,
+          duration: 0.4,
+          ease: "power2.inOut",
+        });
+        gsap.to(afterImage, {
+          rotationY: 0,
+          duration: 0.4,
+          ease: "power2.inOut",
+        });
+      } else {
+        gsap.to(beforeImage, {
+          rotationY: 0,
+          duration: 0.4,
+          ease: "power2.inOut",
+        });
+        gsap.to(afterImage, {
+          rotationY: 180,
+          duration: 0.4,
+          ease: "power2.inOut",
+        });
+      }
+    });
+  }, [viewState]);
 
   return (
     <>
@@ -254,10 +276,19 @@ function BeforeAfterPreview({ beforeAfterData }) {
               }}
             />
           </div>
-          <div ref={textRef} className="absolute left-1/2 z-10">
+          <div
+            ref={textRef}
+            className="absolute left-1/2 z-10 flex flex-row items-center"
+          >
             <h2 className="text-[6vw] md:text-[7vh] text-white font-normal font-condensed font-rye mt-2 py-3 z-30 text-center">
               {sectionTitle}
             </h2>
+            <button
+              onClick={toggleViewState}
+              className="absolute -right-80 mt-2 px-6 py-2  bg-banner text-white rounded-lg transition-all transform hover:scale-105 hover:shadow-lg border border-white"
+            >
+              {viewState === "before" ? "See After" : "See Before"}
+            </button>
           </div>
         </div>
 

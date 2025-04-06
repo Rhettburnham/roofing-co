@@ -38,34 +38,45 @@ function ButtonPreview({ buttonconfig }) {
   useEffect(() => {
     if (!images.length || !sliderRef.current) return;
 
-    // Create animation context that won't be affected by scroll
+    // Create a context for GSAP animations
     const ctx = gsap.context(() => {
-      // Wait until images are rendered and then get the width of one set of images
+      // Calculate the total width of the slider
       const totalWidth = sliderRef.current.scrollWidth;
-      // Because we duplicate the images for seamless looping,
-      // the width of one full set is half the scrollWidth.
+      // Get half width since we duplicate images for seamless looping
       const singleSetWidth = totalWidth / 2;
 
-      // Kill any previous animations
+      // Kill previous animation if exists
       if (animRef.current) {
         animRef.current.kill();
       }
 
-      // Create animation with force3D to improve performance
+      // Create a new animation that's resistant to scroll position changes
       animRef.current = gsap.to(sliderRef.current, {
         x: `-=${singleSetWidth}`,
-        ease: "linear",
+        ease: "none", // Linear motion for smooth continuous scrolling
         duration: slideDuration,
         repeat: -1,
-        force3D: true,
-        // The modifier wraps the x value so that when it passes the width of one set,
-        // it starts again at 0, resulting in a continuous loop.
+        force3D: true, // Hardware acceleration
+        overwrite: true,
+        // Use modifiers to create a seamless loop by resetting x position
         modifiers: {
           x: (x) => {
             const mod = parseFloat(x) % singleSetWidth;
             return mod + "px";
           },
         },
+        onUpdate: () => {
+          // This forces the animation to update on every frame
+          // which helps maintain the animation during scroll
+          gsap.ticker.tick();
+        },
+      });
+
+      // Set higher priority to this animation to prevent it from pausing
+      animRef.current.eventCallback("onUpdate", () => {
+        if (animRef.current.paused()) {
+          animRef.current.play();
+        }
       });
     });
 
@@ -78,36 +89,23 @@ function ButtonPreview({ buttonconfig }) {
     };
   }, [images, slideDuration]);
 
-  // Add an intersection observer to pause/resume animation when out of view
+  // Handle window resize events to ensure animation remains smooth
   useEffect(() => {
-    if (!sliderRef.current || !animRef.current) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            // Resume the animation when in view
-            if (animRef.current) {
-              animRef.current.play();
-            }
-          } else {
-            // Pause the animation when out of view (optional for performance)
-            // Remove this if you want animations to continue even when not visible
-            // if (animRef.current) {
-            //   animRef.current.pause();
-            // }
-          }
-        });
-      },
-      { threshold: 0.1 } // Trigger when at least 10% of the element is visible
-    );
-
-    observer.observe(sliderRef.current);
-
-    return () => {
-      observer.disconnect();
+    const handleResize = () => {
+      // Restart animation on resize to recalculate dimensions
+      if (animRef.current) {
+        animRef.current.restart(true);
+      }
     };
-  }, [sliderRef.current, animRef.current]);
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
+  // We remove the IntersectionObserver since we want the animation to continue
+  // even when scrolling, similar to the HeroBlock behavior
 
   const handleClick = () => {
     if (buttonconfig && buttonconfig.buttonLink) {

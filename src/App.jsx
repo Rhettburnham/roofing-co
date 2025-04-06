@@ -143,7 +143,7 @@ const AppRoutes = ({
         path="/"
         element={
           <>
-            <section id="hero">
+            <section id="hero" className="mt-[-3.5rem]">
               <Suspense fallback={<LoadingScreen />}>
                 <HeroBlock readOnly heroconfig={heroConfig} />
               </Suspense>

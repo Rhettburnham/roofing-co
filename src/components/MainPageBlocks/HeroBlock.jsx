@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Home, Building2 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -21,16 +21,20 @@ If a field is missing, a default is used.
 ====================================================
 */
 function HeroPreview({ heroconfig }) {
+  // Initialize state hooks first, before any conditionals
+  const [hasAnimated, setHasAnimated] = useState(false);
+  const [activeSection, setActiveSection] = useState("neutral");
+
+  // Effect hook must also be called before conditional returns
+  useEffect(() => {
+    // Trigger animation on first mount
+    setHasAnimated(true);
+  }, []);
+
+  // Now we can handle conditionals
   if (!heroconfig) {
     return <p>No data found.</p>;
   }
-
-  console.log("HeroBlock config:", heroconfig);
-
-  const [residentialServices, setResidentialServices] = useState([]);
-  const [commercialServices, setCommercialServices] = useState([]);
-  const [hasAnimated, setHasAnimated] = useState(false);
-  const [isServicesLoading, setIsServicesLoading] = useState(true);
 
   const {
     mainTitle,
@@ -43,134 +47,30 @@ function HeroPreview({ heroconfig }) {
   } = heroconfig;
 
   // Simplified path handling - just use the paths directly or fall back to defaults
-  const logoPath = logo || "/assets/images/hero/clipped-cowboy.png";
-  const residentialBgPath =
-    residentialImage || "/assets/images/hero/residentialnight.jpg";
-  const commercialBgPath =
-    commercialImage || "/assets/images/hero/commercialnight.jpg";
+  const logoPath = logo || "";
+  const residentialBgPath = residentialImage || "";
+  const commercialBgPath = commercialImage || "";
 
-  useEffect(() => {
-    // Trigger animation on first mount
-    setHasAnimated(true);
-    setIsServicesLoading(true);
+  // Generate service links directly from the provided data
+  const residentialServices = residential.subServices.map((service, idx) => {
+    const title = service.title || `Service ${idx + 1}`;
+    const slug = `residential-${idx + 1}-${title.toLowerCase().replace(/\s+/g, "-")}`;
 
-    // First try to fetch from the main data directory
-    fetch("/data/combined_data.json")
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
-        console.log("HeroBlock: Combined data fetched:", data);
-        processData(data);
-      })
-      .catch((error) => {
-        console.error("HeroBlock: Error fetching from main directory:", error);
-
-        // Fallback to step_4 directory
-        console.log("HeroBlock: Trying fallback location...");
-        fetch("/data/raw_data/step_4/combined_data.json")
-          .then((res) => {
-            if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
-            return res.json();
-          })
-          .then((data) => {
-            console.log("HeroBlock: Fallback data fetched:", data);
-            processData(data);
-          })
-          .catch((fallbackError) => {
-            console.error(
-              "HeroBlock: Error fetching fallback data:",
-              fallbackError
-            );
-            useFallbackData();
-          });
-      });
-
-    // Function to process the fetched data
-    const processData = (data) => {
-      // Process residential services directly from combined_data.json
-      const residentialFromJson = data.hero.residential.subServices.map(
-        (service, idx) => {
-          const title = service.title || `Service ${idx + 1}`;
-          const slug = `residential-${idx + 1}-${title.toLowerCase().replace(/\s+/g, "-")}`;
-
-          console.log(
-            `HeroBlock: Built residential service: ${title} with route: /services/${slug}`
-          );
-
-          return {
-            label: title,
-            route: `/services/${slug}`,
-          };
-        }
-      );
-
-      // Process commercial services directly from combined_data.json
-      const commercialFromJson = data.hero.commercial.subServices.map(
-        (service, idx) => {
-          const title = service.title || `Service ${idx + 1}`;
-          const slug = `commercial-${idx + 1}-${title.toLowerCase().replace(/\s+/g, "-")}`;
-
-          console.log(
-            `HeroBlock: Built commercial service: ${title} with route: /services/${slug}`
-          );
-
-          return {
-            label: title,
-            route: `/services/${slug}`,
-          };
-        }
-      );
-
-      setResidentialServices(residentialFromJson);
-      setCommercialServices(commercialFromJson);
-      setIsServicesLoading(false);
+    return {
+      label: title,
+      route: `/services/${slug}`,
     };
+  });
 
-    // Function to use fallback data from props
-    const useFallbackData = () => {
-      console.warn("HeroBlock: Using fallback data from props");
-      const residentialFallback = (residential.subServices || []).map(
-        (item, idx) => {
-          const slug =
-            item.slug ||
-            `residential-${idx + 1}-${(item.title || "").toLowerCase().replace(/\s+/g, "-")}`;
-          return {
-            label: item.title || "",
-            route: `/services/${slug}`,
-          };
-        }
-      );
+  const commercialServices = commercial.subServices.map((service, idx) => {
+    const title = service.title || `Service ${idx + 1}`;
+    const slug = `commercial-${idx + 1}-${title.toLowerCase().replace(/\s+/g, "-")}`;
 
-      const commercialFallback = (commercial.subServices || []).map(
-        (item, idx) => {
-          const slug =
-            item.slug ||
-            `commercial-${idx + 1}-${(item.title || "").toLowerCase().replace(/\s+/g, "-")}`;
-          return {
-            label: item.title || "",
-            route: `/services/${slug}`,
-          };
-        }
-      );
-
-      setResidentialServices(residentialFallback);
-      setCommercialServices(commercialFallback);
-      setIsServicesLoading(false);
+    return {
+      label: title,
+      route: `/services/${slug}`,
     };
-  }, [residential.subServices, commercial.subServices]);
-
-  const [activeSection, setActiveSection] = useState("neutral");
-  const handleSectionClick = (section) => {
-    setActiveSection((prev) => (prev === section ? "neutral" : section));
-  };
-
-  // Function to handle clicks on a section or its elements
-  const handleSectionElementClick = (e, section) => {
-    e.stopPropagation();
-    setActiveSection((prev) => (prev === section ? "neutral" : section));
-  };
+  });
 
   // Gentle sliding animation for default state
   const restingAnimation = {
@@ -214,7 +114,7 @@ function HeroPreview({ heroconfig }) {
     hidden: { opacity: 0, height: 0 },
     visible: {
       opacity: 1,
-      height: 400,
+      height: 200,
       transition: {
         staggerChildren: 0.1,
         duration: 0.3,
@@ -237,9 +137,9 @@ function HeroPreview({ heroconfig }) {
   return (
     <section className="relative">
       {/* Top white area - Controls distance from top via height */}
-      <div className="h-[6vh] md:h-[8vh] bg-white w-full relative z-10">
+      <div className="h-[6vh] md:h-[12vh] bg-white w-full relative z-10">
         {/* Logo & Titles - Controls vertical position via transform translate */}
-        <div className="absolute bottom-0 lef-0 right-0 transform translate-y-1/2 w-full z-40 flex flex-row items-center justify-center">
+        <div className="absolute -bottom-14 left-0 right-0 transform translate-y-1/2 w-full z-40 flex flex-row items-center justify-center">
           <motion.img
             initial={{ x: -100, opacity: 0 }}
             animate={hasAnimated ? { x: 0, opacity: 1 } : {}}
@@ -267,7 +167,7 @@ function HeroPreview({ heroconfig }) {
 
       {/* Gradient from white to transparent - overlay on top of images */}
       <div
-        className={`absolute top-[6vh] md:top-[8vh] left-0 right-0 bg-gradient-to-b from-white from-0% to-transparent ${
+        className={`absolute top-[6vh] md:top-[12vh] left-0 right-0 bg-gradient-to-b from-white from-0% to-transparent ${
           activeSection === "neutral"
             ? "h-[20vh] md:h-[25vh]"
             : "h-[10vh] md:h-[15vh]"
@@ -276,7 +176,7 @@ function HeroPreview({ heroconfig }) {
       />
 
       {/* Hero Split Sections */}
-      <div className="relative w-full h-[50vw] md:h-[50vh] overflow-hidden">
+      <div className="relative w-full h-[50vw] md:h-[45vh] overflow-hidden">
         {/* Residential half */}
         <motion.div
           className="absolute left-0 h-full w-1/2 cursor-pointer"
@@ -294,7 +194,7 @@ function HeroPreview({ heroconfig }) {
             duration: activeSection === "neutral" ? 5 : 0.5,
             ease: "easeInOut",
           }}
-          onClick={(e) =>
+          onClick={() =>
             setActiveSection((prev) =>
               prev === "residential" ? "neutral" : "residential"
             )
@@ -309,11 +209,11 @@ function HeroPreview({ heroconfig }) {
                 transformOrigin: "center center",
               }}
             />
-            <div className="absolute top-0 left-0 w-full h-full z-40 flex flex-col items-end justify-center">
+            <div className="absolute top-10 left-0 w-full h-full z-40 flex flex-col items-end justify-center">
               <div className="flex flex-col items-center mr-[8vh] md:mr-[13.2vw]">
                 {/* Combined container for icon and title - grouped for unified clicking */}
                 <div
-                  className="flex flex-col items-center z-40 cursor-pointer"
+                  className="flex flex-col items-center z-60 cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation();
                     setActiveSection((prev) =>
@@ -329,7 +229,7 @@ function HeroPreview({ heroconfig }) {
                     }
                     className="mb-1" // Reduced spacing
                   >
-                    <Home className="w-[8.5vw] h-[8.5vw] md:w-[10.5vh] md:h-[10.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)] text-amber-100" />
+                    <Home className="w-[8.5vw] h-[8.5vw] md:w-[7.5vh] md:h-[7.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)] text-amber-100" />
                   </motion.div>
 
                   {/* Title that moves up when active */}
@@ -338,7 +238,7 @@ function HeroPreview({ heroconfig }) {
                     animate={
                       activeSection === "residential" ? "active" : "default"
                     }
-                    className="text-[4.5vw] md:text-[4.2vh] font-semibold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.3)] text-amber-100 font-serif"
+                    className="text-[4.5vw] md:text-[3.2vh] font-semibold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.3)] text-amber-100 font-serif"
                   >
                     Residential
                   </motion.h2>
@@ -350,7 +250,7 @@ function HeroPreview({ heroconfig }) {
                     variants={listVariants}
                     initial="hidden"
                     animate="visible"
-                    className="text-white font-serif text-center space-y-1 md:space-y-2 text-[3vw] md:text-[2.4vh] font-bold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,3)] mt-2 z-50"
+                    className="text-white font-serif text-center space-y-1 md:space-y-0 text-[3vw] md:text-[2.4vh] font-bold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,3)]  z-60"
                   >
                     {residentialServices.map((service, idx) => (
                       <motion.li
@@ -361,7 +261,7 @@ function HeroPreview({ heroconfig }) {
                         <Link
                           to={service.route}
                           onClick={(e) => e.stopPropagation()}
-                          className="text-white font-serif py-1 rounded hover:underline"
+                          className="text-white font-serif rounded hover:underline"
                         >
                           {service.label}
                         </Link>
@@ -391,7 +291,7 @@ function HeroPreview({ heroconfig }) {
             duration: activeSection === "neutral" ? 5 : 0.5,
             ease: "easeInOut",
           }}
-          onClick={(e) =>
+          onClick={() =>
             setActiveSection((prev) =>
               prev === "commercial" ? "neutral" : "commercial"
             )
@@ -406,7 +306,7 @@ function HeroPreview({ heroconfig }) {
                 transformOrigin: "center center",
               }}
             />
-            <div className="absolute top-0 right-0 w-full h-full z-20 flex flex-col items-start justify-center">
+            <div className="absolute top-10 right-0 w-full h-full z-20 flex flex-col items-start justify-center">
               <div className="flex flex-col items-center ml-[8vh] md:ml-[13.2vw]">
                 {/* Combined container for icon and title - grouped for unified clicking */}
                 <div
@@ -426,7 +326,7 @@ function HeroPreview({ heroconfig }) {
                     }
                     className="mb-1" // Reduced spacing
                   >
-                    <Building2 className="w-[8.5vw] h-[8.5vw] md:w-[10.5vh] md:h-[10.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)] text-amber-100" />
+                    <Building2 className="w-[8.5vw] h-[8.5vw] md:w-[7.5vh] md:h-[7.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)] text-amber-100" />
                   </motion.div>
 
                   {/* Title that moves up when active */}
@@ -435,7 +335,7 @@ function HeroPreview({ heroconfig }) {
                     animate={
                       activeSection === "commercial" ? "active" : "default"
                     }
-                    className="text-[4.5vw] md:text-[4.2vh] font-semibold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.3)] text-amber-100 font-serif"
+                    className="text-[4.5vw] md:text-[3.2vh] font-semibold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.3)] text-amber-100 font-serif"
                   >
                     Commercial
                   </motion.h2>
@@ -447,7 +347,7 @@ function HeroPreview({ heroconfig }) {
                     variants={listVariants}
                     initial="hidden"
                     animate="visible"
-                    className="text-white font-serif text-center space-y-1 md:space-y-2 text-[3vw] md:text-[2.4vh] font-bold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,3)] mt-2 z-50"
+                    className="text-white font-serif text-center space-y-0 md:space-y-0 text-[3vw] md:text-[2.4vh] font-bold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,3)] z-50"
                   >
                     {commercialServices.map((service, idx) => (
                       <motion.li
@@ -458,7 +358,7 @@ function HeroPreview({ heroconfig }) {
                         <Link
                           to={service.route}
                           onClick={(e) => e.stopPropagation()}
-                          className="text-white font-serif py-1 rounded hover:underline"
+                          className="text-white font-serif rounded hover:underline"
                         >
                           {service.label}
                         </Link>
@@ -504,92 +404,10 @@ function HeroEditorPanel({ localData, setLocalData, onSave }) {
     commercialImage,
   } = localData;
 
-  const [residentialServices, setResidentialServices] = useState([]);
-  const [commercialServices, setCommercialServices] = useState([]);
-  const [isServicesLoading, setIsServicesLoading] = useState(true);
-
   // Simplified path display method
   const getDisplayPath = (imagePath) => {
     return imagePath || "";
   };
-
-  // Load services from combined_data.json
-  useEffect(() => {
-    setIsServicesLoading(true);
-
-    // First try to fetch from the main data directory
-    fetch("/data/combined_data.json")
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
-        console.log("HeroEditorPanel: Combined data fetched:", data);
-        processData(data);
-      })
-      .catch((error) => {
-        console.error(
-          "HeroEditorPanel: Error fetching from main directory:",
-          error
-        );
-
-        // Fallback to step_4 directory
-        console.log("HeroEditorPanel: Trying fallback location...");
-        fetch("/data/raw_data/step_4/combined_data.json")
-          .then((res) => {
-            if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
-            return res.json();
-          })
-          .then((data) => {
-            console.log("HeroEditorPanel: Fallback data fetched:", data);
-            processData(data);
-          })
-          .catch((fallbackError) => {
-            console.error(
-              "HeroEditorPanel: Error fetching fallback data:",
-              fallbackError
-            );
-            setIsServicesLoading(false);
-          });
-      });
-
-    // Function to process the fetched data
-    const processData = (data) => {
-      // Process residential services from combined_data
-      const residentialFromJson = data.hero.residential.subServices.map(
-        (service, idx) => {
-          const title = service.title || `Service ${idx + 1}`;
-          const slug = `residential-${idx + 1}-${title.toLowerCase().replace(/\s+/g, "-")}`;
-
-          return {
-            id: idx + 1,
-            label: title,
-            route: `/services/${slug}`,
-            slug,
-          };
-        }
-      );
-
-      // Process commercial services from combined_data
-      const commercialFromJson = data.hero.commercial.subServices.map(
-        (service, idx) => {
-          const title = service.title || `Service ${idx + 1}`;
-          const slug = `commercial-${idx + 1}-${title.toLowerCase().replace(/\s+/g, "-")}`;
-
-          return {
-            id: idx + 1,
-            label: title,
-            route: `/services/${slug}`,
-            slug,
-          };
-        }
-      );
-
-      setResidentialServices(residentialFromJson);
-      setCommercialServices(commercialFromJson);
-      setIsServicesLoading(false);
-    };
-  }, []);
 
   // Image upload handlers
   const handleLogoChange = (file) => {
@@ -612,13 +430,12 @@ function HeroEditorPanel({ localData, setLocalData, onSave }) {
   };
 
   // Handler for service selection/deselection
-  const handleServiceToggle = (serviceType, serviceId) => {
-    const services =
-      serviceType === "residential" ? residentialServices : commercialServices;
-    const selectedService = services.find((s) => s.id === serviceId);
-
-    if (!selectedService) return;
-
+  const handleServiceToggle = (
+    serviceType,
+    serviceId,
+    serviceTitle,
+    serviceSlug
+  ) => {
     const currentSubServices = localData[serviceType]?.subServices || [];
     const isSelected = currentSubServices.some((s) => s.id === serviceId);
 
@@ -632,8 +449,8 @@ function HeroEditorPanel({ localData, setLocalData, onSave }) {
         ...currentSubServices,
         {
           id: serviceId,
-          title: selectedService.label,
-          slug: selectedService.slug,
+          title: serviceTitle,
+          slug: serviceSlug,
         },
       ];
     }
@@ -654,6 +471,21 @@ function HeroEditorPanel({ localData, setLocalData, onSave }) {
       false
     );
   };
+
+  // Create standard service options to select from
+  const residentialServiceOptions = [
+    { id: 1, title: "Shingling" },
+    { id: 2, title: "Guttering" },
+    { id: 3, title: "Chimney" },
+    { id: 4, title: "Skylights" },
+  ];
+
+  const commercialServiceOptions = [
+    { id: 1, title: "Coatings" },
+    { id: 2, title: "Built-Up" },
+    { id: 3, title: "Metal Roof" },
+    { id: 4, title: "Drainage" },
+  ];
 
   return (
     <div className="bg-gray-900 text-white rounded-md overflow-hidden">
@@ -759,11 +591,10 @@ function HeroEditorPanel({ localData, setLocalData, onSave }) {
             <label className="block text-sm mb-2 text-gray-300">
               Available Services:
             </label>
-            {isServicesLoading ? (
-              <p className="text-gray-400 text-sm">Loading services...</p>
-            ) : (
-              <div className="space-y-1 max-h-60 overflow-y-auto pr-2">
-                {residentialServices.map((service) => (
+            <div className="space-y-1 max-h-60 overflow-y-auto pr-2">
+              {residentialServiceOptions.map((service) => {
+                const slug = `residential-${service.id}-${service.title.toLowerCase().replace(/\s+/g, "-")}`;
+                return (
                   <div
                     key={service.id}
                     className={`p-2 rounded-md cursor-pointer flex items-center ${
@@ -772,7 +603,12 @@ function HeroEditorPanel({ localData, setLocalData, onSave }) {
                         : "bg-gray-700 hover:bg-gray-600"
                     }`}
                     onClick={() =>
-                      handleServiceToggle("residential", service.id)
+                      handleServiceToggle(
+                        "residential",
+                        service.id,
+                        service.title,
+                        slug
+                      )
                     }
                   >
                     <input
@@ -781,11 +617,11 @@ function HeroEditorPanel({ localData, setLocalData, onSave }) {
                       onChange={() => {}}
                       className="mr-2"
                     />
-                    <span>{service.label}</span>
+                    <span>{service.title}</span>
                   </div>
-                ))}
-              </div>
-            )}
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -818,11 +654,10 @@ function HeroEditorPanel({ localData, setLocalData, onSave }) {
             <label className="block text-sm mb-2 text-gray-300">
               Available Services:
             </label>
-            {isServicesLoading ? (
-              <p className="text-gray-400 text-sm">Loading services...</p>
-            ) : (
-              <div className="space-y-1 max-h-60 overflow-y-auto pr-2">
-                {commercialServices.map((service) => (
+            <div className="space-y-1 max-h-60 overflow-y-auto pr-2">
+              {commercialServiceOptions.map((service) => {
+                const slug = `commercial-${service.id}-${service.title.toLowerCase().replace(/\s+/g, "-")}`;
+                return (
                   <div
                     key={service.id}
                     className={`p-2 rounded-md cursor-pointer flex items-center ${
@@ -831,7 +666,12 @@ function HeroEditorPanel({ localData, setLocalData, onSave }) {
                         : "bg-gray-700 hover:bg-gray-600"
                     }`}
                     onClick={() =>
-                      handleServiceToggle("commercial", service.id)
+                      handleServiceToggle(
+                        "commercial",
+                        service.id,
+                        service.title,
+                        slug
+                      )
                     }
                   >
                     <input
@@ -840,11 +680,11 @@ function HeroEditorPanel({ localData, setLocalData, onSave }) {
                       onChange={() => {}}
                       className="mr-2"
                     />
-                    <span>{service.label}</span>
+                    <span>{service.title}</span>
                   </div>
-                ))}
-              </div>
-            )}
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
@@ -911,7 +751,7 @@ export default function HeroBlock({
     // Use provided hero config or create a default one
     if (!heroconfig) {
       return {
-        mainTitle: "ROOFING COMPANY",
+        mainTitle: "",
         subTitle: "",
         residential: {
           subServices: [],
@@ -919,9 +759,9 @@ export default function HeroBlock({
         commercial: {
           subServices: [],
         },
-        logo: "/assets/images/hero/clipped-cowboy.png",
-        residentialImage: "/assets/images/hero/residentialnight.jpg",
-        commercialImage: "/assets/images/hero/commercialnight.jpg",
+        logo: "",
+        residentialImage: "",
+        commercialImage: "",
       };
     }
     return { ...heroconfig };

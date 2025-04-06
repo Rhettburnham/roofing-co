@@ -6,12 +6,19 @@ import gsap from "gsap";
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
+  const [isDesktopMenuOpen, setIsDesktopMenuOpen] = useState(false);
 
   // Refs for GSAP burger-menu animation
   const topBarRef = useRef(null);
   const middleBarRef = useRef(null);
   const bottomBarRef = useRef(null);
   const timelineRef = useRef(null);
+  
+  // Refs for desktop burger-menu animation
+  const desktopTopBarRef = useRef(null);
+  const desktopMiddleBarRef = useRef(null);
+  const desktopBottomBarRef = useRef(null);
+  const desktopTimelineRef = useRef(null);
 
   // Refs for logos
   const cowboyRef = useRef(null); // Cowboy logo (home page only)
@@ -21,11 +28,19 @@ const Navbar = () => {
 
   // 1) Set up the GSAP timeline for the hamburger menu
   useEffect(() => {
+    // Mobile menu animation
     const tl = gsap.timeline({ paused: true });
     tl.to(topBarRef.current, { y: 10, rotate: -45, duration: 0.3 })
       .to(middleBarRef.current, { opacity: 0, duration: 0.3 }, "<")
       .to(bottomBarRef.current, { y: -10, rotate: 45, duration: 0.3 }, "<");
     timelineRef.current = tl;
+    
+    // Desktop menu animation
+    const desktopTl = gsap.timeline({ paused: true });
+    desktopTl.to(desktopTopBarRef.current, { y: 10, rotate: -45, duration: 0.3 })
+      .to(desktopMiddleBarRef.current, { opacity: 0, duration: 0.3 }, "<")
+      .to(desktopBottomBarRef.current, { y: -10, rotate: 45, duration: 0.3 }, "<");
+    desktopTimelineRef.current = desktopTl;
   }, []);
 
   // 2) Play / reverse the GSAP timeline based on `isOpen`
@@ -36,6 +51,15 @@ const Navbar = () => {
       timelineRef.current.reverse();
     }
   }, [isOpen]);
+  
+  // 2b) Play / reverse the desktop GSAP timeline
+  useEffect(() => {
+    if (isDesktopMenuOpen) {
+      desktopTimelineRef.current.play();
+    } else {
+      desktopTimelineRef.current.reverse();
+    }
+  }, [isDesktopMenuOpen]);
 
   // 3) Logo visibility and animation
   useEffect(() => {
@@ -93,11 +117,11 @@ const Navbar = () => {
   return (
     <>
       <nav
-        className={`sticky top-0 z-50 w-full flex items-center justify-between 
+        className={`fixed top-0 z-50 w-full flex items-center justify-between 
         ${
           hasScrolled
             ? "bg-banner transition-all duration-300 h-14"
-            : "bg-white transition-all duration-300 h-10 md:h-14"
+            : "bg-transparent transition-all duration-300 h-14 "
         } 
         px-5 md:px-10`}
       >
@@ -124,29 +148,42 @@ const Navbar = () => {
           </Link>
         </div>
 
-        {/* Center: Navigation Links (Desktop) */}
-        <div className="hidden md:flex md:absolute md:left-1/2 md:transform md:-translate-x-1/2 md:top-0 md:h-full items-center justify-center space-x-8">
-          {navLinks.map((nav) => (
-            <HashLink
-              key={nav.name}
-              smooth
-              to={nav.href}
-              className={`text-base font-normal font-serif ${
-                hasScrolled
-                  ? "text-white hover:text-gray-200"
-                  : "text-gray-600 hover:text-gray-800"
-              } transition-colors duration-300`}
-            >
-              {nav.name}
-            </HashLink>
-          ))}
+        {/* Desktop Hamburger Menu (Right) */}
+        <div className="hidden md:flex md:items-center">
+          <button
+            onClick={() => setIsDesktopMenuOpen(!isDesktopMenuOpen)}
+            className="focus:outline-none relative z-30"
+            aria-label="Toggle Desktop Menu"
+          >
+            <div className={`relative w-5 h-5`}>
+              <span
+                ref={desktopTopBarRef}
+                className={`absolute top-0 left-0 w-full h-0.5 ${
+                  hasScrolled ? "bg-white" : "bg-black"
+                } transition-colors duration-300`}
+              />
+              <span
+                ref={desktopMiddleBarRef}
+                className={`absolute top-2 left-0 w-full h-0.5 ${
+                  hasScrolled ? "bg-white" : "bg-black"
+                } transition-colors duration-300`}
+              />
+              <span
+                ref={desktopBottomBarRef}
+                className={`absolute top-4 left-0 w-full h-0.5 ${
+                  hasScrolled ? "bg-white" : "bg-black"
+                } transition-colors duration-300`}
+              />
+            </div>
+          </button>
         </div>
 
-        {/* Right: Hamburger Menu (Mobile) */}
+        {/* Mobile Hamburger Menu */}
         <div className="flex items-center md:hidden">
           <button
             onClick={() => setIsOpen(!isOpen)}
             className="focus:outline-none"
+            aria-label="Toggle Mobile Menu"
           >
             <div
               className={`relative ${hasScrolled ? "w-5 h-5" : "w-4 h-4"} transition-all duration-300`}
@@ -154,19 +191,19 @@ const Navbar = () => {
               <span
                 ref={topBarRef}
                 className={`absolute top-0 left-0 w-full h-0.5 ${
-                  hasScrolled ? "bg-black" : "bg-white"
+                  hasScrolled ? "bg-white" : "bg-white"
                 } transition-colors duration-300`}
               />
               <span
                 ref={middleBarRef}
                 className={`absolute ${hasScrolled ? "top-2" : "top-1.5"} left-0 w-full h-0.5 ${
-                  hasScrolled ? "bg-black" : "bg-white"
+                  hasScrolled ? "bg-white" : "bg-white"
                 } transition-colors duration-300`}
               />
               <span
                 ref={bottomBarRef}
                 className={`absolute ${hasScrolled ? "top-4" : "top-3"} left-0 w-full h-0.5 ${
-                  hasScrolled ? "bg-black" : "bg-white"
+                  hasScrolled ? "bg-white" : "bg-white"
                 } transition-colors duration-300`}
               />
             </div>
@@ -178,7 +215,7 @@ const Navbar = () => {
       {isOpen && (
         <div
           className={`md:hidden flex flex-col items-center justify-center w-full fixed top-14 left-0 z-50 ${
-            hasScrolled ? "bg-white" : "bg-dark-below-header"
+            hasScrolled ? "bg-banner" : "bg-black bg-opacity-80"
           } shadow-lg transition-colors duration-300`}
         >
           {navLinks.map((nav) => (
@@ -187,11 +224,28 @@ const Navbar = () => {
               smooth
               to={nav.href}
               onClick={() => setIsOpen(false)}
-              className={`px-5 py-2 text-xs ${
-                hasScrolled
-                  ? "text-black hover:text-gray-700"
-                  : "text-white hover:text-gray-100"
-              } transition-all`}
+              className={`px-5 py-2 text-xs text-white hover:text-gray-300 transition-all`}
+            >
+              {nav.name}
+            </HashLink>
+          ))}
+        </div>
+      )}
+      
+      {/* Desktop Menu Dropdown */}
+      {isDesktopMenuOpen && (
+        <div
+          className={`hidden md:flex md:flex-col md:items-end w-48 fixed top-14 right-10 z-50 ${
+            hasScrolled ? "bg-banner" : "bg-black bg-opacity-80"
+          } shadow-lg rounded-b-lg transition-colors duration-300`}
+        >
+          {navLinks.map((nav) => (
+            <HashLink
+              key={nav.name}
+              smooth
+              to={nav.href}
+              onClick={() => setIsDesktopMenuOpen(false)}
+              className={`px-5 py-3 text-sm text-white hover:text-gray-300 w-full text-right`}
             >
               {nav.name}
             </HashLink>

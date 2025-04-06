@@ -41,7 +41,7 @@ function RichTextPreview({ richTextData }) {
   const formattedImages = images.map((img) =>
     img.startsWith("/")
       ? img
-      : `/assets/images/Richtext/${img.split("/").pop() || "roof_workers.jpg"}`
+      : `/assets/images/Richtext/${img.split("/").pop() || ""}`
   );
 
   // Use a default image if no images are provided
@@ -84,7 +84,7 @@ function RichTextPreview({ richTextData }) {
     // For md viewports, ensure square aspect ratio
     const sizeClasses =
       variant === "md"
-        ? "md:w-[16vw] md:h-[16vw] w-[40vw] h-[22vw]"
+        ? "md:w-[12vw] md:h-[12vw] w-[40vw] h-[22vw]"
         : "w-[40vw] h-[22vw] md:w-[13vw] md:h-[13vh]";
 
     // Calculate delay based on index to stagger animations
@@ -125,8 +125,8 @@ function RichTextPreview({ richTextData }) {
         
         {/* Title container */}
         <div className="flex flex-col z-30">
-          <div className="absolute inset-0 top-0 w-full ml-2 md:ml-3 md:mt-1 mt-2">
-            <h3 className="md:whitespace-nowrap z-30 ml-1 md:ml-2 text-[2.3vw] md:text-[1.6vh] font-bold text-gray-900 font-sans">
+          <div className="absolute inset-0 top-5 w-full ml-2 md:ml-1 md:mr-5">
+            <h3 className=" z-30 ml-1 md:ml-2 text-[2.3vw] md:text-[1.6vh] font-bold text-gray-900 font-sans">
               {title}
             </h3>
           </div>
