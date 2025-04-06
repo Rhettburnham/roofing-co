@@ -106,7 +106,7 @@ function HeroPreview({ heroconfig }) {
     hidden: { opacity: 0, height: 0 },
     visible: {
       opacity: 1,
-      height: 100,
+      height: window.innerWidth < 768 ? 150 : 300,
       transition: {
         staggerChildren: 0.1,
         duration: 0.3,
@@ -129,9 +129,9 @@ function HeroPreview({ heroconfig }) {
   return (
     <section className="relative">
       {/* Top white area - Controls distance from top via height */}
-      <div className="h-[14vh] md:h-[8vh] bg-white w-full relative z-10">
+      <div className="h-[14vh] md:h-[14vh] bg-white w-full relative z-10">
         {/* Logo & Titles - Controls vertical position via transform translate */}
-        <div className="absolute top-10 md:top-0 left-0 right-0 transform translate-y-1/2 w-full z-60 flex flex-row items-center justify-center">
+        <div className="absolute top-10 md:top-8 left-0 right-0 transform translate-y-1/2 w-full z-60 flex flex-row items-center justify-center">
           <motion.img
             initial={{ x: -100, opacity: 0 }}
             animate={hasAnimated ? { x: 0, opacity: 1 } : {}}
@@ -159,7 +159,7 @@ function HeroPreview({ heroconfig }) {
 
       {/* Gradient from white to transparent - overlay on top of images */}
       <div
-        className={`absolute top-[14vh] md:top-[8vh] left-0 right-0 bg-gradient-to-b z-40 from-white from-0% to-transparent pointer-events-none ${
+        className={`absolute top-[14vh] md:top-[14vh] left-0 right-0 bg-gradient-to-b z-40 from-white from-0% to-transparent pointer-events-none ${
           activeSection === "neutral"
             ? "h-[20vh] md:h-[25vh]"
             : "h-[10vh] md:h-[15vh]"

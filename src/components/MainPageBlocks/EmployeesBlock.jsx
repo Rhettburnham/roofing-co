@@ -86,7 +86,7 @@ function EmployeesPreview({ employeesData }) {
 
     // 1) Nail slides in (from 100vw to -7vw)
     masterTimeline.to(nailRef.current, {
-      x: "-7vw",
+      x: "10vw",
       duration: 0.8,
       ease: "power2.out",
     });
@@ -96,7 +96,7 @@ function EmployeesPreview({ employeesData }) {
       .to(
         nailRef.current,
         {
-          x: "-10vw",
+          x: "1vw",
           duration: 0.6,
           ease: "power2.inOut",
         },

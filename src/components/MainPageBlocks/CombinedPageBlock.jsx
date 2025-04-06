@@ -17,7 +17,7 @@ import {
   FaBroom, 
   FaHardHat 
 } from "react-icons/fa";
-import googleIcon from "/assets/images/googleimage.png";
+import googleIcon from "/assets/images/hero/googleimage.png";
 
 // Additional icons from lucide-react
 import { Home, Building2 } from "lucide-react";

@@ -231,6 +231,7 @@ const BookingPreview = memo(({ bookingData }) => {
       "+=0.5"
     );
 
+
     // 4. Animate right nails to slide in from right
     masterTimeline.to(
       rightNails,
@@ -242,6 +243,31 @@ const BookingPreview = memo(({ bookingData }) => {
       },
       "-=0.5" // Overlap with left nails animation
     );
+
+    masterTimeline.to(
+      leftNails,
+      {
+        x: "80%", // Move to final position
+        duration: 0.4,
+        ease: "power2.out",
+        stagger: 0.12,
+      },
+      "+=0.5"
+    );
+
+
+        // 4. Animate right nails to slide in from right
+    masterTimeline.to(
+      rightNails,
+      {
+        x: "-80%", // Move to final position
+        duration: 0.4,
+        ease: "power2.out",
+        stagger: 0.12,
+      },
+      "-=0.5" // Overlap with left nails animation
+    );
+
 
     return () => {
       ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
@@ -356,7 +382,7 @@ const BookingPreview = memo(({ bookingData }) => {
       {/* OUTER BOX WITH BANNER COLOR */}
       <div
         ref={bannerRef}
-        className="md:max-w-xl w-full bg-banner rounded-lg shadow-lg relative"
+        className="md:max-w-xl w-full bg-banner rounded-lg shadow-lg relative z-30"
       >
         {/* Left Nails */}
         <div className="absolute left-0  top-0 h-full hidden md:flex flex-col -z-10 justify-between py-8 overflow-visible">
@@ -371,7 +397,7 @@ const BookingPreview = memo(({ bookingData }) => {
                 transform: "scale(1.8)",
                 transformOrigin: " center",
                 position: "absolute",
-                left: "-70%", // Position at final location
+                left: "-60%", // Position at final location
                 top: 0,
                 filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
                 zIndex: 5,
@@ -389,7 +415,7 @@ const BookingPreview = memo(({ bookingData }) => {
                 transform: "scale(1.8)",
                 transformOrigin: " center",
                 position: "absolute",
-                left: "-50%", // Position at final location
+                left: "-54%", // Position at final location
                 top: 0,
                 filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
                 zIndex: 5,
@@ -407,7 +433,7 @@ const BookingPreview = memo(({ bookingData }) => {
                 transform: "scale(1.8)",
                 transformOrigin: " center",
                 position: "absolute",
-                left: "-40%", // Position at final location
+                left: "-56%", // Position at final location
                 top: 0,
                 filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
                 zIndex: 5,
@@ -417,7 +443,7 @@ const BookingPreview = memo(({ bookingData }) => {
         </div>
 
         {/* Left Social Icons */}
-        <div className="absolute -left-40 top-0 h-full hidden md:flex flex-col justify-between py-20 overflow-visible">
+        <div className="absolute -left-60 top-0 h-full hidden md:flex flex-col justify-between py-20 overflow-visible">
           <div id="left-social-1" className="relative">
             <a
               href="https://twitter.com"
@@ -457,7 +483,7 @@ const BookingPreview = memo(({ bookingData }) => {
                 transform: "scale(1.8) scaleX(-1)",
                 transformOrigin: "center",
                 position: "absolute",
-                right: "-70%", // Position at final location
+                right: "-60%", // Position at final location
                 top: 0,
                 filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
                 zIndex: 5,
@@ -475,7 +501,7 @@ const BookingPreview = memo(({ bookingData }) => {
                 transform: "scale(1.8) scaleX(-1)",
                 transformOrigin: " center",
                 position: "absolute",
-                right: "-50%", // Position at final location
+                right: "-54%", // Position at final location
                 top: 0,
                 filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
                 zIndex: 5,
@@ -493,7 +519,7 @@ const BookingPreview = memo(({ bookingData }) => {
                 transform: "scale(1.8) scaleX(-1)",
                 transformOrigin: " center",
                 position: "absolute",
-                right: "-40%", // Position at final location
+                right: "-56%", // Position at final location
                 top: 0,
                 filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
                 zIndex: 5,
@@ -503,7 +529,7 @@ const BookingPreview = memo(({ bookingData }) => {
         </div>
 
         {/* Right Social Icons */}
-        <div className="absolute -right-40 top-0 h-full hidden md:flex flex-col justify-between py-20 overflow-visible">
+        <div className="absolute -right-60 top-0 h-full hidden md:flex flex-col justify-between py-20 overflow-visible">
           <div id="right-social-1" className="relative">
             <a
               href="https://instagram.com"
@@ -531,7 +557,7 @@ const BookingPreview = memo(({ bookingData }) => {
         </div>
 
         {/* Content Container */}
-        <div ref={contentRef} className="relative z-10">
+        <div ref={contentRef} className="relative z-20">
           {/* HEADER RIBBON WITH LOGO & TEXT */}
           <div className="relative py-3 px-4 flex flex-col items-center z-30">
             <div className="flex items-center justify-center w-full">
