@@ -35,11 +35,22 @@ const Navbar = () => {
       .to(bottomBarRef.current, { y: -10, rotate: 45, duration: 0.3 }, "<");
     timelineRef.current = tl;
     
-    // Desktop menu animation
+    // Desktop menu animation - using same approach as mobile menu
     const desktopTl = gsap.timeline({ paused: true });
-    desktopTl.to(desktopTopBarRef.current, { y: 10, rotate: -45, duration: 0.3 })
-      .to(desktopMiddleBarRef.current, { opacity: 0, duration: 0.3 }, "<")
-      .to(desktopBottomBarRef.current, { y: -10, rotate: 45, duration: 0.3 }, "<");
+    desktopTl.to(desktopTopBarRef.current, { 
+        y: 8, 
+        rotate: -45, 
+        duration: 0.3 
+      })
+      .to(desktopMiddleBarRef.current, { 
+        opacity: 0, 
+        duration: 0.3 
+      }, "<")
+      .to(desktopBottomBarRef.current, { 
+        y: -8, 
+        rotate: 45, 
+        duration: 0.3 
+      }, "<");
     desktopTimelineRef.current = desktopTl;
   }, []);
 
@@ -131,7 +142,7 @@ const Navbar = () => {
             {location.pathname === "/" ? (
               <img
                 ref={cowboyRef}
-                src="/assets/images/clipped-cowboy.png"
+                src="/assets/images/hero/clipped.png"
                 alt="Cowboy Logo"
                 className="h-7 md:h-10 opacity-0 transition-opacity duration-500"
                 style={{ filter: "invert(1)" }}
@@ -149,13 +160,13 @@ const Navbar = () => {
         </div>
 
         {/* Desktop Hamburger Menu (Right) */}
-        <div className="hidden md:flex md:items-center">
+        <div className="hidden md:flex md:items-center mr-5">
           <button
             onClick={() => setIsDesktopMenuOpen(!isDesktopMenuOpen)}
             className="focus:outline-none relative z-30"
             aria-label="Toggle Desktop Menu"
           >
-            <div className={`relative w-5 h-5`}>
+            <div className="relative w-5 h-5">
               <span
                 ref={desktopTopBarRef}
                 className={`absolute top-0 left-0 w-full h-0.5 ${

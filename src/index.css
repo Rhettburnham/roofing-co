@@ -592,3 +592,8 @@ canvas {
 .bg-banner {
   background-color: var(--banner-color);
 }
+
+/* Marker icon inversion for maps */
+.invert-icon {
+  filter: invert(1);
+}

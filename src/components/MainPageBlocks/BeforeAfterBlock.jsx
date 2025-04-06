@@ -22,6 +22,7 @@ function BeforeAfterPreview({ beforeAfterData }) {
   const headerRef = useRef(null);
   const nailRef = useRef(null);
   const textRef = useRef(null);
+  const buttonRef = useRef(null);
 
   // Local states for modal and card flipping
   const [selectedImages, setSelectedImages] = useState(null);
@@ -62,6 +63,7 @@ function BeforeAfterPreview({ beforeAfterData }) {
 
     const nailElement = nailRef.current;
     const textElement = textRef.current;
+    const buttonElement = buttonRef.current;
 
     // Initial states
     gsap.set(nailElement, {
@@ -69,18 +71,22 @@ function BeforeAfterPreview({ beforeAfterData }) {
       opacity: 1,
     });
     gsap.set(textElement, {
-      opacity: 0,
+    opacity: 0,
       x: "100%",
     });
+    gsap.set(buttonElement, {
+      opacity: 0,
+    });
 
-    // HeaderRef timeline - trigger when header comes into view
+    // HeaderRef timeline - trigger when header is at 20% of viewport
     const masterTimeline = gsap.timeline({
       scrollTrigger: {
         trigger: headerRef.current,
-        start: "top 80%",
-        end: "top 50%",
-        toggleActions: "play none none none",
+        start: "top 50%", // Changed from 80% to 20% to trigger when div appears at 20% of viewport
+        end: "top 50%",   // Adjusted to match new trigger approach
+        toggleActions: "play none none none", // Play once when entering trigger area
         markers: false,
+        once: true,       // Added to ensure it only plays once
       },
     });
 
@@ -106,8 +112,16 @@ function BeforeAfterPreview({ beforeAfterData }) {
           ease: "power2.inOut",
         },
         "+=0.3"
+      )
+      .to(
+        buttonElement,
+        {
+          opacity: 1,
+          delay: 1.5,
+          duration: 0.5,
+        },
+        "+=0.3"
       );
-
     // Box animations
     const boxEls = boxesRef.current.filter((box) => box !== null);
 
@@ -258,7 +272,7 @@ function BeforeAfterPreview({ beforeAfterData }) {
         {/* Header / Title */}
         <div
           ref={headerRef}
-          className="relative flex items-center py-6 md:py-8 md:pb-14 w-full overflow-hidden"
+          className="relative flex items-center py-6 md:py-8 md:pb-14 w-full "
         >
           <div
             ref={nailRef}
@@ -280,16 +294,18 @@ function BeforeAfterPreview({ beforeAfterData }) {
             ref={textRef}
             className="absolute left-1/2 z-10 flex flex-row items-center"
           >
-            <h2 className="text-[6vw] md:text-[7vh] text-white font-normal font-condensed font-rye mt-2 py-3 z-30 text-center">
+            <h2 className="text-[6vw] md:text-[4vh] text-white font-normal font-condensed font-rye mt-2 py-3 z-30 text-center">
               {sectionTitle}
             </h2>
-            <button
-              onClick={toggleViewState}
-              className="absolute -right-80 mt-2 px-6 py-2  bg-banner text-white rounded-lg transition-all transform hover:scale-105 hover:shadow-lg border border-white"
-            >
-              {viewState === "before" ? "See After" : "See Before"}
-            </button>
           </div>
+          <button
+            ref={buttonRef}
+            onClick={toggleViewState}
+            className="absolute right-40 mt-2 px-6 py-2  bg-banner text-white rounded-lg transition-all transform hover:scale-105 hover:shadow-lg border border-white"
+          >
+            {viewState === "before" ? "See After" : "See Before"}
+          </button>
+
         </div>
 
         {/* Gallery Grid - Now always 3 columns */}

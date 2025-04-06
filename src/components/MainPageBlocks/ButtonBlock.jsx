@@ -22,7 +22,7 @@ function ButtonPreview({ buttonconfig }) {
   const [images, setImages] = useState([]);
   // Get the slide duration from config or use default - force a much slower value
   console.log("ButtonConfig slide duration:", buttonconfig?.slideDuration);
-  const slideDuration = buttonconfig?.slideDuration || 40; // in seconds, significantly slower
+  const slideDuration = buttonconfig?.slideDuration || 120; // in seconds, significantly slower
   console.log("Using slide duration:", slideDuration);
   const animRef = useRef(null);
 

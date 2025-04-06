@@ -76,11 +76,12 @@ function EmployeesPreview({ employeesData }) {
     const masterTimeline = gsap.timeline({
       scrollTrigger: {
         trigger: headerRef.current,
-        start: "top 75%",
-        toggleActions: "play none none none",
+        start: "top 90%", // Changed from 80% to 20% to trigger when div appears at 20% of viewport
+        end: "top 90%",   // Adjusted to match new trigger approach
+        toggleActions: "play none none none", // Play once when entering trigger area
         markers: false,
-        once: true,
-      },      
+        once: true,       // Added to ensure it only plays once
+      },     
     });
 
     // 1) Nail slides in (from 100vw to -7vw)
@@ -122,12 +123,12 @@ function EmployeesPreview({ employeesData }) {
       {/* Header Section with animated nail and title */}
       <div
         ref={headerRef}
-        className="relative flex items-center w-full overflow-hidden py-8 md:py-10"
+        className="relative flex items-center w-full py-8 md:py-10"
       >
         {/* Nail element (animated from the right) */}
         <div
           ref={nailRef}
-          className="absolute right-[17vw] md:right-[17%] w-[30%] h-[6vh] md:h-[5vh]"
+          className="absolute right-[17vw] md:right-[17%] w-[30%] h-[6vh] md:h-[4vh]"
 
         >
           <div
@@ -144,7 +145,7 @@ function EmployeesPreview({ employeesData }) {
         </div>
         {/* Section title (animated from the left) */}
         <div ref={textRef} className="absolute left-1/2 z-30">
-          <h2 className="text-[6vw] md:text-[7vh] text-black font-normal font-ultra-condensed font-rye pt-3">
+          <h2 className="text-[6vw] md:text-[4vh] text-black font-normal font-ultra-condensed font-rye pt-3">
             {sectionTitle}
           </h2>
         </div>
@@ -180,11 +181,11 @@ function EmployeesPreview({ employeesData }) {
                       }}
                     />
                   </div>
-                  <div className="flex flex-col -space-y-1 items-center mt-1">
-                    <p className="whitespace-nowrap text-[1.4vw] md:text-[2vh] text-black font-semibold text-center">
+                  <div className="flex flex-col  items-center mt-1">
+                    <p className="whitespace-nowrap text-[1.4vw] md:text-[1.5vh] text-black font-semibold text-center">
                       {employee.name}
                     </p>
-                    <p className=" whitespace-nowrap text-[1.4vw] md:text-[1.5vh] font-semibold text-black text-center">
+                    <p className=" whitespace-nowrap text-[1.4vw] md:text-[1.5vh] font-semibold -mt-2 text-black text-center">
                       {employee.role}
                     </p>
                   </div>

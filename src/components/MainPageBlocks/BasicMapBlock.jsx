@@ -20,8 +20,9 @@ gsap.registerPlugin(ScrollTrigger);
 const CustomMarkerIcon = L.icon({
   iconUrl: "/assets/images/clipped-cowboy.png",
   iconSize: [30, 30],
-  iconAnchor: [10, 20],
+  iconAnchor: [15, 15], // Center the icon properly
   popupAnchor: [0, -20],
+  className: "invert-icon", // Add class to make it white
 });
 
 const DropMarker = memo(({ position }) => {
@@ -48,7 +49,7 @@ const DropMarker = memo(({ position }) => {
       position={position}
       icon={CustomMarkerIcon}
       ref={markerRef}
-      style={{ filter: "invert(1)" }}
+      style={{ filter: "invert(0)" }}
     />
   );
 });
@@ -355,20 +356,32 @@ function BasicMapPreview({ mapData }) {
   }, [isSmallScreen, titleRef, sectionRef]);
 
   const renderServiceHoursTable = () => (
-    <table className="w-full rounded-xl border border-gray-300 bg-white text-center">
-      <tbody>
-        {serviceHours.map((item, idx) => (
-          <tr key={idx} className={idx % 2 === 0 ? "faint-color" : ""}>
-            <td className="py-1 md:py-2 px-1 md:px-2 border border-gray-300 text-[2.2vw] md:text-sm whitespace-nowrap">
-              {item.day}
-            </td>
-            <td className="py-1 md:py-2 px-1 md:px-2 border border-gray-300 text-[2.2vw] md:text-sm whitespace-nowrap">
-              {item.time}
-            </td>
+    <div className="w-full h-full flex items-center justify-center overflow-auto bg-white p-1 md:p-0">
+      <table className="w-full border-collapse border border-gray-300 shadow-sm">
+        <thead className="bg-gray-700 sticky top-0">
+          <tr>
+            <th className="py-1 md:py-2 px-2 md:px-4 text-white text-[2.5vw] md:text-sm font-semibold">
+              Day
+            </th>
+            <th className="py-1 md:py-2 px-2 md:px-4 text-white text-[2.5vw] md:text-sm font-semibold">
+              Hours
+            </th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody className="text-center">
+          {serviceHours.map((item, idx) => (
+            <tr key={idx} className={idx % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+              <td className="py-[0.8vh] md:py-[1.2vh] px-2 md:px-4 border border-gray-300 text-[2.8vw] md:text-sm font-medium text-gray-800">
+                {item.day}
+              </td>
+              <td className="py-[0.8vh] md:py-[1.2vh] px-2 md:px-4 border border-gray-300 text-[2.8vw] md:text-sm text-gray-800">
+                {item.time}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 
   return (
@@ -385,7 +398,7 @@ function BasicMapPreview({ mapData }) {
             Are we in your area?
           </h1>
         </div>
-        <div className="relative flex flex-col md:flex-row gap-4 px-10 md:px-8 h-auto md:h-[40vh]">
+        <div className="relative flex flex-col md:flex-row gap-4 px-10 md:px-6 h-auto md:h-[40vh] md:justify-between w-full">
           {/* Left: Map */}
           <div className="flex flex-col w-full md:w-[55%]">
             <div className="relative h-[22vh] md:h-full w-full z-10">
@@ -443,23 +456,24 @@ function BasicMapPreview({ mapData }) {
             </div>
           </div>
           {/* Right: Stats + Service Hours */}
-          <div className="flex flex-col w-full md:w-[40%]">
+          <div className="flex flex-col w-full md:w-[43%]">
             <button
               type="button"
               onClick={() => setIsServiceHoursVisible(!isServiceHoursVisible)}
-              className="dark_button bg-gray-700 rounded-t-xl md:py-2 items-center justify-center text-white text-[2vh] transition-all duration-300 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] font-serif z-20 relative"
-              style={{ willChange: 'transform' }} /* Add this to prevent flickering */
+              className="dark_button bg-gray-700 rounded-t-xl py-1 md:py-2 items-center justify-center text-white text-[2vh] transition-all duration-300 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] font-serif z-30 relative"
+              style={{ willChange: 'transform' }}
             >
               {isServiceHoursVisible ? "Hide Hours" : "Show Hours"}
             </button>
             <div
-              className="relative h-[30vh] md:h-[calc(45vh-2.5rem)] rounded-b-xl overflow-hidden"
+              className="relative h-[30vh] md:h-[calc(40vh-2.5rem)] rounded-b-xl overflow-hidden"
               ref={statsDivRef}
             >
               <WindowStrings
                 isVisible={isServiceHoursVisible}
                 isSmallScreen={isSmallScreen}
               />
+              {/* Stats background and content */}
               <div className="absolute inset-0 z-10">
                 <div className="absolute inset-0">
                   <img
@@ -473,19 +487,18 @@ function BasicMapPreview({ mapData }) {
                   <StatsPanel isSmallScreen={isSmallScreen} stats={stats} />
                 </div>
               </div>
+              
+              {/* Service hours overlay */}
               <div
                 className={`
                   absolute inset-0 z-20
-                  bg-white border-t border-gray-300
+                  bg-white rounded-b-xl
                   transition-transform duration-500 ease-in-out
-                  h-full overflow-y-auto
-                  ${isServiceHoursVisible ? "translate-y-0" : "translate-y-[-100%]"}
+                  ${isServiceHoursVisible ? "translate-y-0" : "translate-y-[-101%]"}
                 `}
-                style={{ willChange: 'transform' }} /* Add this to prevent flickering */
+                style={{ willChange: 'transform' }}
               >
-                <div className="h-full overflow-y-auto">
-                  {renderServiceHoursTable()}
-                </div>
+                {renderServiceHoursTable()}
               </div>
             </div>
           </div>
@@ -575,20 +588,32 @@ function BasicMapEditorPanel({ localMap, setLocalMap, onSave }) {
   }, []);
 
   const renderServiceHoursTable = () => (
-    <table className="w-full rounded-xl border border-gray-300 bg-white text-center">
-      <tbody>
-        {localMap.serviceHours.map((item, idx) => (
-          <tr key={idx} className={idx % 2 === 0 ? "faint-color" : ""}>
-            <td className="py-1 md:py-2 px-1 md:px-2 border border-gray-300 text-[2.2vw] md:text-sm whitespace-nowrap">
-              {item.day}
-            </td>
-            <td className="py-1 md:py-2 px-1 md:px-2 border border-gray-300 text-[2.2vw] md:text-sm whitespace-nowrap">
-              {item.time}
-            </td>
+    <div className="w-full h-full flex items-center justify-center overflow-auto bg-white p-1 md:p-0">
+      <table className="w-full border-collapse border border-gray-300 shadow-sm">
+        <thead className="bg-gray-700 sticky top-0">
+          <tr>
+            <th className="py-1 md:py-2 px-2 md:px-4 text-white text-[2.5vw] md:text-sm font-semibold">
+              Day
+            </th>
+            <th className="py-1 md:py-2 px-2 md:px-4 text-white text-[2.5vw] md:text-sm font-semibold">
+              Hours
+            </th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody className="text-center">
+          {localMap.serviceHours.map((item, idx) => (
+            <tr key={idx} className={idx % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+              <td className="py-[0.8vh] md:py-[1.2vh] px-2 md:px-4 border border-gray-300 text-[2.8vw] md:text-sm font-medium text-gray-800">
+                {item.day}
+              </td>
+              <td className="py-[0.8vh] md:py-[1.2vh] px-2 md:px-4 border border-gray-300 text-[2.8vw] md:text-sm text-gray-800">
+                {item.time}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 
   const handleStatChange = (i, newStat) => {
@@ -756,32 +781,26 @@ function BasicMapEditorPanel({ localMap, setLocalMap, onSave }) {
           <div className="bg-gray-800 p-3 rounded relative">
             <button
               onClick={() => setIsServiceHoursVisible(!isServiceHoursVisible)}
-              className="bg-gray-600 hover:bg-gray-500 px-2 py-1 rounded text-xs relative z-20"
-              style={{ willChange: 'transform' }} /* Add this to prevent flickering */
+              className="bg-gray-600 hover:bg-gray-500 px-2 py-1 rounded text-xs relative z-30"
+              style={{ willChange: 'transform' }}
             >
               {isServiceHoursVisible ? "Hide Hours" : "Show Hours"}
             </button>
-            <div
-              className="relative overflow-hidden h-[30vh] md:h-[50vh]"
-              ref={statsDivRef}
-            >
+            <div className="relative overflow-hidden h-[30vh] md:h-[40vh]" ref={statsDivRef}>
               <WindowStrings
                 isVisible={isServiceHoursVisible}
                 isSmallScreen={isSmallScreen}
               />
               <div
                 className={`
-                  ${isServiceHoursVisible ? "translate-y-0" : "translate-y-[-100%]"}
-                  transform transition-transform duration-500 ease-in-out
-                  h-full
+                  absolute inset-0 z-20
+                  bg-white rounded
+                  transition-transform duration-500 ease-in-out
+                  ${isServiceHoursVisible ? "translate-y-0" : "translate-y-[-101%]"}
                 `}
-                style={{ willChange: 'transform' }} /* Add this to prevent flickering */
+                style={{ willChange: 'transform' }}
               >
-                {isServiceHoursVisible && (
-                  <div className="h-full overflow-auto">
-                    {renderServiceHoursTable()}
-                  </div>
-                )}
+                {renderServiceHoursTable()}
               </div>
             </div>
           </div>
