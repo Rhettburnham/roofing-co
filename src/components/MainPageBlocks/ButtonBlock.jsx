@@ -20,8 +20,10 @@ function ButtonPreview({ buttonconfig }) {
   const navigate = useNavigate();
   const sliderRef = useRef(null);
   const [images, setImages] = useState([]);
-  // Adjust the duration to control the speed of continuous scrolling
-  const slideDuration = 60; // in seconds, adjust as needed
+  // Get the slide duration from config or use default - force a much slower value
+  console.log("ButtonConfig slide duration:", buttonconfig?.slideDuration);
+  const slideDuration = buttonconfig?.slideDuration || 40; // in seconds, significantly slower
+  console.log("Using slide duration:", slideDuration);
   const animRef = useRef(null);
 
   // Format images from config
@@ -122,11 +124,6 @@ function ButtonPreview({ buttonconfig }) {
 
   return (
     <div className="flex flex-col relative w-full mt-0 pt-0">
-      {/* Top gradient: transparent to black */}
-      <div className="relative h-[1vh] z-30 w-full mt-0 pt-0">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black" />
-      </div>
-
       {/* Main content */}
       <div className="z-40">
         <div className="relative overflow-hidden z-30">
@@ -150,6 +147,11 @@ function ButtonPreview({ buttonconfig }) {
 
           {/* Image Carousel Wrapper with fixed height */}
           <div className="relative h-[10vh] overflow-hidden">
+            {/* Top gradient inside the carousel: black to transparent */}
+            <div className="absolute top-0 left-0 w-full h-[1vh] z-20">
+              <div className="absolute inset-0 bg-gradient-to-b from-black to-transparent" />
+            </div>
+
             <div className="flex" ref={sliderRef}>
               {/* Duplicate the images array for seamless looping */}
               {images.concat(images).map((src, index) => (
@@ -169,13 +171,13 @@ function ButtonPreview({ buttonconfig }) {
                 </div>
               ))}
             </div>
+
+            {/* Bottom gradient inside the carousel: black to transparent */}
+            <div className="absolute bottom-0 left-0 w-full h-[1vh] z-20">
+              <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent" />
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* Bottom gradient: black to transparent */}
-      <div className="relative h-[1vh] z-30 w-full">
-        <div className="absolute inset-0 bg-gradient-to-t from-transparent to-black" />
       </div>
     </div>
   );
@@ -185,6 +187,7 @@ ButtonPreview.propTypes = {
   buttonconfig: PropTypes.shape({
     text: PropTypes.string,
     buttonLink: PropTypes.string,
+    slideDuration: PropTypes.number,
     images: PropTypes.arrayOf(PropTypes.string),
   }),
 };
@@ -278,6 +281,30 @@ function ButtonEditorPanel({ localButton, setLocalButton, onSave }) {
         </div>
       </div>
 
+      {/* Editable Slide Duration */}
+      <div className="mb-6">
+        <label className="block text-sm mb-1 font-medium">
+          Slide Duration (seconds):
+        </label>
+        <input
+          type="number"
+          min="1"
+          max="30"
+          step="0.5"
+          className="w-full bg-gray-700 px-2 py-2 rounded text-white"
+          value={localButton.slideDuration || 10}
+          onChange={(e) =>
+            setLocalButton((prev) => ({
+              ...prev,
+              slideDuration: parseFloat(e.target.value),
+            }))
+          }
+        />
+        <div className="text-xs text-gray-400 mt-1">
+          Lower values = faster slides. Higher values = slower slides.
+        </div>
+      </div>
+
       {/* Editable Images List */}
       <div>
         <h2 className="text-lg font-medium mb-2">Background Images</h2>
@@ -354,6 +381,7 @@ ButtonEditorPanel.propTypes = {
   localButton: PropTypes.shape({
     text: PropTypes.string,
     buttonLink: PropTypes.string,
+    slideDuration: PropTypes.number,
     images: PropTypes.arrayOf(PropTypes.string),
   }),
   setLocalButton: PropTypes.func.isRequired,
@@ -378,13 +406,18 @@ export default function ButtonBlock({
       return {
         text: "About Us",
         buttonLink: "/about",
+        slideDuration: 40, // Set default to 40 seconds here too
         images: [
           "/assets/images/placeholder.png",
           "/assets/images/placeholder.png",
         ],
       };
     }
-    return { ...buttonconfig };
+    // Force update slideDuration if not present in existing config
+    return { 
+      ...buttonconfig,
+      slideDuration: buttonconfig.slideDuration || 40
+    };
   });
 
   const handleSave = () => {
@@ -423,6 +456,7 @@ ButtonBlock.propTypes = {
   buttonconfig: PropTypes.shape({
     text: PropTypes.string,
     buttonLink: PropTypes.string,
+    slideDuration: PropTypes.number,
     images: PropTypes.arrayOf(PropTypes.string),
   }),
   onConfigChange: PropTypes.func,
