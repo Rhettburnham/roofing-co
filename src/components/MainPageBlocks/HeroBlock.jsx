@@ -106,7 +106,7 @@ function HeroPreview({ heroconfig }) {
     hidden: { opacity: 0, height: 0 },
     visible: {
       opacity: 1,
-      height: window.innerWidth < 768 ? 150 : 300,
+      height: window.innerWidth < 768 ? 150 : 220,
       transition: {
         staggerChildren: 0.1,
         duration: 0.3,
@@ -129,7 +129,7 @@ function HeroPreview({ heroconfig }) {
   return (
     <section className="relative">
       {/* Top white area - Controls distance from top via height */}
-      <div className="h-[14vh] md:h-[14vh] bg-white w-full relative z-10">
+      <div className="h-[14vh] md:h-[21vh] bg-white w-full relative z-10">
         {/* Logo & Titles - Controls vertical position via transform translate */}
         <div className="absolute top-10 md:top-8 left-0 right-0 transform translate-y-1/2 w-full z-60 flex flex-row items-center justify-center">
           <motion.img
@@ -159,16 +159,16 @@ function HeroPreview({ heroconfig }) {
 
       {/* Gradient from white to transparent - overlay on top of images */}
       <div
-        className={`absolute top-[14vh] md:top-[14vh] left-0 right-0 bg-gradient-to-b z-40 from-white from-0% to-transparent pointer-events-none ${
+        className={`absolute top-[14vh] md:top-[21vh] left-0 right-0 bg-gradient-to-b z-40 from-white from-0% to-transparent pointer-events-none ${
           activeSection === "neutral"
-            ? "h-[20vh] md:h-[25vh]"
-            : "h-[10vh] md:h-[15vh]"
+            ? "h-[18vh] md:h-[18vh]"
+            : "h-[10vh] md:h-[10vh]"
         }`}
         style={{ transition: "height 0.3s ease-out 0.4s", zIndex: 5 }}
       />
 
       {/* Hero Split Sections */}
-      <div className="relative w-full h-[50vw] md:h-[50vh] overflow-hidden">
+      <div className="relative w-full h-[50vw] md:h-[55vh] overflow-hidden">
         {/* Residential half */}
         <motion.div
           className="absolute left-0 h-full w-1/2 cursor-pointer"
@@ -215,7 +215,7 @@ function HeroPreview({ heroconfig }) {
               <div className="flex flex-col items-center ">
                 {/* Combined container for icon and title - grouped for unified clicking */}
                 <div
-                  className="flex flex-col items-center z-70 cursor-pointer"
+                  className="flex flex-col items-center z-70 cursor-pointer "
                   onClick={(e) => {
                     e.stopPropagation();
                     setActiveSection((prev) =>
@@ -230,7 +230,7 @@ function HeroPreview({ heroconfig }) {
                       activeSection === "residential" ? "active" : "default"
                     }
                   >
-                    <Home className="w-[6.5vw] h-[6.5vw] md:w-[10.5vh] md:h-[10.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)] text-amber-100" />
+                    <Home className="w-[6.5vw] h-[6.5vw] md:w-[12.5vh] md:h-[12.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)] text-amber-100 bg-banner rounded-full p-4" />
                   </motion.div>
 
                   {/* Title that moves up when active */}
@@ -239,7 +239,7 @@ function HeroPreview({ heroconfig }) {
                     animate={
                       activeSection === "residential" ? "active" : "default"
                     }
-                    className="text-[3.2vw] md:text-[4.2vh] font-semibold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.3)] text-amber-100 font-serif"
+                    className="text-[3.2vw] md:text-[3.2vh] md:-mt-2 font-semibold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.3)] text-amber-100 font-serif"
                   >
                     Residential
                   </motion.h2>
@@ -328,7 +328,7 @@ function HeroPreview({ heroconfig }) {
                       activeSection === "commercial" ? "active" : "default"
                     }
                   >
-                    <Building2 className="w-[6.5vw] h-[6.5vw] md:w-[10.5vh] md:h-[10.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)] text-amber-100" />
+                    <Building2 className="w-[6.5vw] h-[6.5vw] md:w-[12.5vh] md:h-[12.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)] text-amber-100 bg-banner rounded-full p-4" />
                   </motion.div>
 
                   {/* Title that moves up when active */}
@@ -337,7 +337,7 @@ function HeroPreview({ heroconfig }) {
                     animate={
                       activeSection === "commercial" ? "active" : "default"
                     }
-                    className="text-[3.2vw] md:text-[4.2vh] font-semibold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.3)] text-amber-100 font-serif"
+                    className="text-[3.2vw] md:text-[3.2vh] md-mt-2 font-semibold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.3)] text-amber-100 font-serif"
                   >
                     Commercial
                   </motion.h2>
@@ -377,8 +377,8 @@ function HeroPreview({ heroconfig }) {
         <div
           className={`absolute bottom-0 left-0 right-0 pointer-events-none bg-gradient-to-t from-banner from-10% to-transparent z-30 ${
             activeSection === "neutral"
-              ? "h-[20vh] md:h-[22vh]"
-              : "h-[10vh] md:h-[15vh]"
+              ? "h-[15vh] md:h-[18vh]"
+              : "h-[9vh] md:h-[10vh]"
           }`}
           style={{ transition: "height 0.3s ease-out 0.4s" }}
         />

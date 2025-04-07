@@ -414,9 +414,9 @@ export default function ButtonBlock({
       };
     }
     // Force update slideDuration if not present in existing config
-    return { 
+    return {
       ...buttonconfig,
-      slideDuration: buttonconfig.slideDuration || 40
+      slideDuration: buttonconfig.slideDuration || 40,
     };
   });
 

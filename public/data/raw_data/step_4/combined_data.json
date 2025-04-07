@@ -49,34 +49,7 @@
     "residentialImage": "/assets/images/hero/residentialnight.png",
     "commercialImage": "/assets/images/hero/commercialnight.png"
   },
-  "process": {
-    "steps": [
-      {
-        "title": "Book", 
-        "videoSrc": "/assets/videos/our_process_videos/booking.mp4",
-        "href": "/#booking",
-        "scale": 0.8
-      },
-      {
-        "title": "Inspection",
-        "videoSrc": "/assets/videos/our_process_videos/magnify.mp4",
-        "href": "/inspection",
-        "scale": 1.25
-      },
-      {
-        "title": "Service",
-        "videoSrc": "/assets/videos/our_process_videos/repair.mp4",
-        "href": "/#packages",
-        "scale": 1.1
-      },
-      {
-        "title": "Review",
-        "videoSrc": "/assets/videos/our_process_videos/approval.mp4",
-        "href": "/#testimonials",
-        "scale": 0.9
-      }
-    ]
-  },
+
   "aboutPage": {
     "title": "Craft Roofing Company, LLC: Atlanta's Trusted Roofing Experts",
     "subtitle": "Building Strong Roofs, Stronger Relationships",
@@ -134,7 +107,33 @@
         "icon": "FaHandshake"
       }
     ],
-    "heroImage": "/assets/images/about/about-hero.jpg"
+    "heroImage": "/assets/images/about/about-hero.jpg",
+    "steps": [
+      {
+        "title": "Book", 
+        "videoSrc": "/assets/videos/our_process_videos/booking.mp4",
+        "href": "/#booking",
+        "scale": 0.8
+      },
+      {
+        "title": "Inspection",
+        "videoSrc": "/assets/videos/our_process_videos/magnify.mp4",
+        "href": "/inspection",
+        "scale": 1.25
+      },
+      {
+        "title": "Service",
+        "videoSrc": "/assets/videos/our_process_videos/repair.mp4",
+        "href": "/#packages",
+        "scale": 1.1
+      },
+      {
+        "title": "Review",
+        "videoSrc": "/assets/videos/our_process_videos/approval.mp4",
+        "href": "/#testimonials",
+        "scale": 0.9
+      }
+    ]
   },
   "booking": {
     "logo": "/assets/images/hero/clipped.png",
@@ -173,6 +172,11 @@
       "/assets/images/Richtext/roof_workers.jpg",
       "/assets/images/Richtext/roof_workers2.jpg",
       "/assets/images/Richtext/roof_workers3.webp"
+    ],
+    "description for the images": [
+      "a roofer working on a roof",
+      "a group of workers inspecting a roof",
+      "a roofer climbing a ladder to inspect a roof"
     ]
   },
   "button": {
@@ -191,7 +195,14 @@
       "/assets/images/roof_slideshow/i10.webp",
       "/assets/images/roof_slideshow/i11.jpeg",
       "/assets/images/roof_slideshow/i12.webp"
+    ],
+    "description for the images": [
+      "a house with a victorian chimney",
+      "a shingled roof close up",
+      "a roof being coated",
+      "a roof being repaired"
     ]
+
   },
   "map": {
     "center": {
@@ -359,7 +370,13 @@
       "Mr. Carl Craft, President/Owner"
     ],
     "largeResidentialImg": "/assets/images/main_image_expanded.jpg",
-    "largeCommercialImg": "/assets/images/commercialservices.jpg"
+    "description for the image 1": [
+      " An image of a residential neighborhood"
+    ],
+    "largeCommercialImg": "/assets/images/commercialservices.jpg",
+    "description for the image 2": [
+      "An image of a city skyline"
+    ]
   },
   "before_after": {
     "sectionTitle": "GALLERY",

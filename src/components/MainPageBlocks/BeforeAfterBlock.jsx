@@ -71,7 +71,7 @@ function BeforeAfterPreview({ beforeAfterData }) {
       opacity: 1,
     });
     gsap.set(textElement, {
-    opacity: 0,
+      opacity: 0,
       x: "100%",
     });
     gsap.set(buttonElement, {
@@ -83,10 +83,10 @@ function BeforeAfterPreview({ beforeAfterData }) {
       scrollTrigger: {
         trigger: headerRef.current,
         start: "top 50%", // Changed from 80% to 20% to trigger when div appears at 20% of viewport
-        end: "top 50%",   // Adjusted to match new trigger approach
+        end: "top 50%", // Adjusted to match new trigger approach
         toggleActions: "play none none none", // Play once when entering trigger area
         markers: false,
-        once: true,       // Added to ensure it only plays once
+        once: true, // Added to ensure it only plays once
       },
     });
 
@@ -305,7 +305,6 @@ function BeforeAfterPreview({ beforeAfterData }) {
           >
             {viewState === "before" ? "See After" : "See Before"}
           </button>
-
         </div>
 
         {/* Gallery Grid - Now always 3 columns */}

@@ -46,9 +46,6 @@ const BeforeAfterBlock = lazy(
 const EmployeesBlock = lazy(
   () => import("./components/MainPageBlocks/EmployeesBlock")
 );
-const ProcessBlock = lazy(
-  () => import("./components/MainPageBlocks/ProcessBlock")
-);
 const AboutBlock = lazy(() => import("./components/MainPageBlocks/AboutBlock"));
 
 // Utility for restoring scroll position when navigating
@@ -131,7 +128,6 @@ const AppRoutes = ({
   combinedPageCfg,
   beforeAfterConfig,
   employeesConfig,
-  processConfig,
   aboutPageConfig,
 }) => {
   const location = useLocation();
@@ -280,18 +276,6 @@ const AppRoutes = ({
               initialData={heroConfig}
               blockName="hero"
               title="Hero Block Editor"
-            />
-          </Suspense>
-        }
-      />
-      <Route
-        path="/edit/process"
-        element={
-          <Suspense fallback={<LoadingScreen />}>
-            <OneForm
-              initialData={processConfig}
-              blockName="process"
-              title="Process Block Editor"
             />
           </Suspense>
         }
@@ -467,7 +451,6 @@ const App = () => {
   const combinedPageCfg = pageData.combinedPage;
   const beforeAfterConfig = pageData.before_after;
   const employeesConfig = pageData.employees;
-  const processConfig = pageData.process;
   const aboutPageConfig = pageData.aboutPage;
 
   return (
@@ -485,7 +468,6 @@ const App = () => {
           combinedPageCfg={combinedPageCfg}
           beforeAfterConfig={beforeAfterConfig}
           employeesConfig={employeesConfig}
-          processConfig={processConfig}
           aboutPageConfig={aboutPageConfig}
         />
       </main>

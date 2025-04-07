@@ -13,7 +13,7 @@ const Navbar = () => {
   const middleBarRef = useRef(null);
   const bottomBarRef = useRef(null);
   const timelineRef = useRef(null);
-  
+
   // Refs for desktop burger-menu animation
   const desktopTopBarRef = useRef(null);
   const desktopMiddleBarRef = useRef(null);
@@ -34,23 +34,32 @@ const Navbar = () => {
       .to(middleBarRef.current, { opacity: 0, duration: 0.3 }, "<")
       .to(bottomBarRef.current, { y: -10, rotate: 45, duration: 0.3 }, "<");
     timelineRef.current = tl;
-    
+
     // Desktop menu animation - using same approach as mobile menu
     const desktopTl = gsap.timeline({ paused: true });
-    desktopTl.to(desktopTopBarRef.current, { 
-        y: 8, 
-        rotate: -45, 
-        duration: 0.3 
+    desktopTl
+      .to(desktopTopBarRef.current, {
+        y: 8,
+        rotate: -45,
+        duration: 0.3,
       })
-      .to(desktopMiddleBarRef.current, { 
-        opacity: 0, 
-        duration: 0.3 
-      }, "<")
-      .to(desktopBottomBarRef.current, { 
-        y: -8, 
-        rotate: 45, 
-        duration: 0.3 
-      }, "<");
+      .to(
+        desktopMiddleBarRef.current,
+        {
+          opacity: 0,
+          duration: 0.3,
+        },
+        "<"
+      )
+      .to(
+        desktopBottomBarRef.current,
+        {
+          y: -8,
+          rotate: 45,
+          duration: 0.3,
+        },
+        "<"
+      );
     desktopTimelineRef.current = desktopTl;
   }, []);
 
@@ -62,7 +71,7 @@ const Navbar = () => {
       timelineRef.current.reverse();
     }
   }, [isOpen]);
-  
+
   // 2b) Play / reverse the desktop GSAP timeline
   useEffect(() => {
     if (isDesktopMenuOpen) {
@@ -131,8 +140,8 @@ const Navbar = () => {
         className={`fixed top-0 z-50 w-full flex items-center justify-between 
         ${
           hasScrolled
-            ? "bg-banner transition-all duration-300 h-14"
-            : "bg-transparent transition-all duration-300 h-14 "
+            ? "bg-banner transition-all  h-[10vh] duration-300 "
+            : "bg-transparent transition-all h-[16vh] duration-300  "
         } 
         px-5 md:px-10`}
       >
@@ -242,7 +251,7 @@ const Navbar = () => {
           ))}
         </div>
       )}
-      
+
       {/* Desktop Menu Dropdown */}
       {isDesktopMenuOpen && (
         <div
