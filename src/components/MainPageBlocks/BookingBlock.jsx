@@ -93,9 +93,9 @@ const BookingPreview = memo(({ bookingData }) => {
     const fetchServices = async () => {
       try {
         setIsLoading(true);
-        const res = await fetch("/data/roofing_services.json", { 
+        const res = await fetch("/data/roofing_services.json", {
           signal,
-          credentials: 'same-origin' 
+          credentials: "same-origin",
         });
 
         if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
@@ -134,16 +134,56 @@ const BookingPreview = memo(({ bookingData }) => {
           console.error("Error fetching services data:", error);
           // Set fallback data
           setResidentialServices([
-            { title: "Roof Repair", icon: FaTools, id: 1, category: "residential" },
-            { title: "Roof Replacement", icon: FaFan, id: 2, category: "residential" },
-            { title: "Roof Inspection", icon: FaTint, id: 3, category: "residential" },
-            { title: "Gutter Installation", icon: FaPaintRoller, id: 4, category: "residential" }
+            {
+              title: "Roof Repair",
+              icon: FaTools,
+              id: 1,
+              category: "residential",
+            },
+            {
+              title: "Roof Replacement",
+              icon: FaFan,
+              id: 2,
+              category: "residential",
+            },
+            {
+              title: "Roof Inspection",
+              icon: FaTint,
+              id: 3,
+              category: "residential",
+            },
+            {
+              title: "Gutter Installation",
+              icon: FaPaintRoller,
+              id: 4,
+              category: "residential",
+            },
           ]);
           setCommercialServices([
-            { title: "Commercial Roofing", icon: FaTools, id: 1, category: "commercial" },
-            { title: "Flat Roof Repair", icon: FaPaintRoller, id: 2, category: "commercial" },
-            { title: "Industrial Roofing", icon: FaTint, id: 3, category: "commercial" },
-            { title: "Roof Maintenance", icon: FaFan, id: 4, category: "commercial" }
+            {
+              title: "Commercial Roofing",
+              icon: FaTools,
+              id: 1,
+              category: "commercial",
+            },
+            {
+              title: "Flat Roof Repair",
+              icon: FaPaintRoller,
+              id: 2,
+              category: "commercial",
+            },
+            {
+              title: "Industrial Roofing",
+              icon: FaTint,
+              id: 3,
+              category: "commercial",
+            },
+            {
+              title: "Roof Maintenance",
+              icon: FaFan,
+              id: 4,
+              category: "commercial",
+            },
           ]);
         }
       } finally {
@@ -231,7 +271,6 @@ const BookingPreview = memo(({ bookingData }) => {
       "+=0.5"
     );
 
-
     // 4. Animate right nails to slide in from right
     masterTimeline.to(
       rightNails,
@@ -247,7 +286,7 @@ const BookingPreview = memo(({ bookingData }) => {
     masterTimeline.to(
       leftNails,
       {
-        x: "80%", // Move to final position
+        x: "50%", // Move to final position
         duration: 0.4,
         ease: "power2.out",
         stagger: 0.12,
@@ -255,19 +294,17 @@ const BookingPreview = memo(({ bookingData }) => {
       "+=0.5"
     );
 
-
-        // 4. Animate right nails to slide in from right
+    // 4. Animate right nails to slide in from right
     masterTimeline.to(
       rightNails,
       {
-        x: "-80%", // Move to final position
+        x: "-50%", // Move to final position
         duration: 0.4,
         ease: "power2.out",
         stagger: 0.12,
       },
       "-=0.5" // Overlap with left nails animation
     );
-
 
     return () => {
       ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
@@ -378,7 +415,7 @@ const BookingPreview = memo(({ bookingData }) => {
     : logo || "/assets/images/booking/clipped.png";
 
   return (
-    <div className="flex flex-col items-center justify-center w-full px-6">
+    <div className="flex flex-col items-center justify-center w-full px-6 overflow-hidden">
       {/* OUTER BOX WITH BANNER COLOR */}
       <div
         ref={bannerRef}

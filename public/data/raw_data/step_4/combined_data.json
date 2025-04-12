@@ -40,7 +40,6 @@
           "title": "Metal Roof"
         },
         {
-          
           "title": "Drainage"
         }
       ]
@@ -110,7 +109,7 @@
     "heroImage": "/assets/images/about/about-hero.jpg",
     "steps": [
       {
-        "title": "Book", 
+        "title": "Book",
         "videoSrc": "/assets/videos/our_process_videos/booking.mp4",
         "href": "/#booking",
         "scale": 0.8
@@ -143,7 +142,7 @@
   "richText": {
     "heroText": "Expert Roofs, Trusted Craftsmanship",
     "accredited": true,
-    "years_in_business": "9 Years of Roofing Experience",
+    "years_in_iness": "9 Years of Roofing Experience",
     "bus_description": "Craft Roofing Company, LLC has been a trusted name in the roofing industry for 9 years, delivering exceptional craftsmanship and reliability. Specializing in residential and commercial roofing, we combine time-tested techniques with modern materials to ensure durability, aesthetic appeal, and long-lasting protection for your property.",
     "bus_description_second": "At Craft Roofing, we pride ourselves on personalized service and unwavering integrity. Our skilled team handles every project with meticulous attention to detail, from initial inspection to final installation. Customer satisfaction is our top priority, and we stand behind our work with industry-leading warranties and transparent communication.",
     "cards": [
@@ -177,6 +176,32 @@
       "a roofer working on a roof",
       "a group of workers inspecting a roof",
       "a roofer climbing a ladder to inspect a roof"
+    ],
+    "steps": [
+      {
+        "title": "Book",
+        "videoSrc": "/assets/videos/our_process_videos/booking.mp4",
+        "href": "/#booking",
+        "scale": 0.8
+      },
+      {
+        "title": "Inspection",
+        "videoSrc": "/assets/videos/our_process_videos/magnify.mp4",
+        "href": "/inspection",
+        "scale": 1.25
+      },
+      {
+        "title": "Service",
+        "videoSrc": "/assets/videos/our_process_videos/repair.mp4",
+        "href": "/#packages",
+        "scale": 1.1
+      },
+      {
+        "title": "Review",
+        "videoSrc": "/assets/videos/our_process_videos/approval.mp4",
+        "href": "/#testimonials",
+        "scale": 0.9
+      }
     ]
   },
   "button": {
@@ -202,7 +227,6 @@
       "a roof being coated",
       "a roof being repaired"
     ]
-
   },
   "map": {
     "center": {
@@ -370,13 +394,9 @@
       "Mr. Carl Craft, President/Owner"
     ],
     "largeResidentialImg": "/assets/images/main_image_expanded.jpg",
-    "description for the image 1": [
-      " An image of a residential neighborhood"
-    ],
+    "description for the image 1": [" An image of a residential neighborhood"],
     "largeCommercialImg": "/assets/images/commercialservices.jpg",
-    "description for the image 2": [
-      "An image of a city skyline"
-    ]
+    "description for the image 2": ["An image of a city skyline"]
   },
   "before_after": {
     "sectionTitle": "GALLERY",

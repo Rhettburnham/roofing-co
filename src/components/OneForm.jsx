@@ -43,7 +43,7 @@ TabButton.propTypes = {
   onClick: PropTypes.func.isRequired,
 };
 
-const OneForm = ({ initialData, blockName, title }) => {
+const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   const [formData, setFormData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("mainPage");
@@ -52,19 +52,44 @@ const OneForm = ({ initialData, blockName, title }) => {
   useEffect(() => {
     const fetchCombinedData = async () => {
       try {
-        // If initialData is provided, use it directly
+        // If initialData is provided, use it directly within the appropriate block structure
         if (initialData) {
-          setFormData({ [blockName]: initialData });
+          if (blockName) {
+            // For editing a specific block, structure the data properly
+            setFormData({ [blockName]: initialData });
+          } else {
+            // For editing the entire form, use the data directly
+            setFormData(initialData);
+          }
           setLoading(false);
           return;
         }
 
-        // Otherwise, create a default configuration
+        // Otherwise, try to fetch the full combined_data.json first
+        try {
+          const combinedResponse = await fetch(
+            "/data/raw_data/step_4/combined_data.json"
+          );
+          if (combinedResponse.ok) {
+            const combinedData = await combinedResponse.json();
+            console.log("Loaded combined data:", combinedData);
+            setFormData(combinedData);
+            setLoading(false);
+            return;
+          }
+        } catch (combinedError) {
+          console.error("Error loading combined data:", combinedError);
+          // Continue to fallback if combined data fetch fails
+        }
+
+        // Fallback: Create a default configuration
         try {
           // Fetch colors from colors_output.json
-          const colorsResponse = await fetch("/data/raw_data/step_2/colors_output.json");
+          const colorsResponse = await fetch(
+            "/data/raw_data/step_2/colors_output.json"
+          );
           const colorData = await colorsResponse.json();
-          
+
           // Create a basic default form data
           const defaultData = {
             hero: {
@@ -74,56 +99,90 @@ const OneForm = ({ initialData, blockName, title }) => {
               buttonUrl: "#contact",
               residentialImage: "/assets/images/residential-roof.jpg",
               commercialImage: "/assets/images/commercial-roof.jpg",
-              accentColor: colorData.accent || "#2B4C7E"
+              accentColor: colorData.accent || "#2B4C7E",
             },
-            // Add other basic block configurations as needed
             richText: {
               title: "About Our Services",
-              content: "We provide professional roofing services for both residential and commercial properties."
+              content:
+                "We provide professional roofing services for both residential and commercial properties.",
+              heroText: "Expert Roofs, Trusted Craftsmanship",
+              bus_description: "Professional roofing services description",
+              bus_description_second: "Additional description text",
+              cards: [],
+              images: [],
+              steps: [
+                {
+                  title: "Book",
+                  videoSrc: "/assets/videos/our_process_videos/booking.mp4",
+                  href: "/#booking",
+                  scale: 0.8,
+                },
+                {
+                  title: "Inspection",
+                  videoSrc: "/assets/videos/our_process_videos/magnify.mp4",
+                  href: "/inspection",
+                  scale: 1.25,
+                },
+              ],
             },
             button: {
               text: "Contact Us",
-              url: "#contact"
+              url: "#contact",
             },
             map: {
               title: "Find Us",
-              location: "Your Location"
+              location: "Your Location",
+              center: {
+                lat: 33.67671976442508,
+                lng: -84.32647876462993,
+              },
+              zoomLevel: 12,
+              circleRadius: 6000,
+              address: "123 Main Street, Atlanta, GA",
+              telephone: "(404) 555-1234",
+              serviceHours: [],
             },
             booking: {
-              title: "Book an Appointment"
+              title: "Book an Appointment",
             },
             combinedPage: {
-              title: "Our Services"
+              title: "Our Services",
+              residentialServices: [],
+              commercialServices: [],
+              googleReviews: [],
             },
             before_after: {
-              title: "Before & After"
+              title: "Before & After",
+              items: [],
             },
             employees: {
-              title: "Our Team"
-            },
-            process: {
-              title: "Our Process"
+              title: "Our Team",
+              items: [],
             },
             aboutPage: {
-              title: "About Us"
-            }
+              title: "About Us",
+            },
           };
-          
+
           setFormData(defaultData);
+          console.log("Using default data:", defaultData);
         } catch (colorError) {
           console.error("Error loading color data:", colorError);
-          
+
           // Fallback to very basic data if color fetch fails
-          setFormData({
+          const basicData = {
             hero: {
               title: "Welcome",
               subtitle: "Professional Services",
               buttonText: "Contact Us",
-              buttonUrl: "#contact"
-            }
-          });
+              buttonUrl: "#contact",
+            },
+          };
+
+          setFormData(basicData);
+          console.log("Using basic fallback data:", basicData);
         }
-        
+
         setLoading(false);
       } catch (error) {
         console.error("Error loading form data:", error);
@@ -135,6 +194,7 @@ const OneForm = ({ initialData, blockName, title }) => {
   }, [initialData, blockName]);
 
   const handleAboutConfigChange = (newAboutConfig) => {
+    console.log("About config changed:", newAboutConfig);
     setFormData((prev) => ({ ...prev, aboutPage: newAboutConfig }));
   };
 
@@ -154,11 +214,29 @@ const OneForm = ({ initialData, blockName, title }) => {
    */
   const handleSubmit = async () => {
     try {
+      console.log("Creating ZIP with data:", formData);
+
+      // Copy process steps from aboutPage to richText if they exist and richText doesn't have them
+      const dataToZip = { ...formData };
+
+      if (
+        dataToZip.aboutPage &&
+        dataToZip.aboutPage.steps &&
+        dataToZip.richText &&
+        (!dataToZip.richText.steps || dataToZip.richText.steps.length === 0)
+      ) {
+        console.log("Copying process steps from aboutPage to richText");
+        dataToZip.richText = {
+          ...dataToZip.richText,
+          steps: dataToZip.aboutPage.steps,
+        };
+      }
+
       // Create a new ZIP archive
       const zip = new JSZip();
 
       // Clone the form data so we don't modify the original state
-      const dataClone = JSON.parse(JSON.stringify(formData));
+      const dataClone = JSON.parse(JSON.stringify(dataToZip));
 
       // Clean the data by replacing File objects with URLs
       cleanFileReferences(dataClone);
@@ -176,7 +254,7 @@ const OneForm = ({ initialData, blockName, title }) => {
 
       // Collect all uploaded image and video files
       const filesToZip = [];
-      collectFiles(formData, filesToZip);
+      collectFiles(dataClone, filesToZip);
 
       // Add each file to the ZIP with the correct path
       for (const { file, path } of filesToZip) {
@@ -219,9 +297,9 @@ const OneForm = ({ initialData, blockName, title }) => {
   const cleanFileReferences = (data) => {
     if (!data) return;
 
-    // Process Block videos
-    if (data.process && data.process.steps) {
-      data.process.steps.forEach((step) => {
+    // Process videos in RichText block
+    if (data.richText && data.richText.steps) {
+      data.richText.steps.forEach((step) => {
         if (step.videoFile) {
           step.videoSrc = `/assets/videos/our_process_videos/${step.fileName || "video.mp4"}`;
           delete step.videoFile;
@@ -344,9 +422,9 @@ const OneForm = ({ initialData, blockName, title }) => {
    * @param {Array} filesToZip - Array to store collected files
    */
   const collectFiles = (data, filesToZip) => {
-    // Add process videos if present
-    if (data.process && data.process.steps) {
-      data.process.steps.forEach((step, index) => {
+    // Add process videos from RichText if present
+    if (data.richText && data.richText.steps) {
+      data.richText.steps.forEach((step, index) => {
         if (step.videoFile) {
           const fileName = step.fileName || `process_step_${index + 1}.mp4`;
           filesToZip.push({
@@ -510,6 +588,7 @@ const OneForm = ({ initialData, blockName, title }) => {
 
   // If editing a specific block, render a simplified interface
   if (blockName && title) {
+    console.log(`Editing specific block: ${blockName}`, formData);
     return (
       <div className="min-h-screen bg-gray-100 text-black">
         <div className="bg-gray-900 text-white p-3 shadow-md sticky top-0 z-50 flex justify-between items-center">
@@ -558,6 +637,7 @@ const OneForm = ({ initialData, blockName, title }) => {
   );
 
   // Otherwise, render the full editor interface
+  console.log("Rendering full editor with data:", formData);
   return (
     <div className="min-h-screen bg-gray-100 text-black">
       <div className="bg-gray-900 text-white p-3 shadow-md sticky top-0 z-50 flex justify-between items-center">
@@ -604,12 +684,6 @@ OneForm.propTypes = {
   initialData: PropTypes.object,
   blockName: PropTypes.string,
   title: PropTypes.string,
-};
-
-OneForm.defaultProps = {
-  initialData: null,
-  blockName: null,
-  title: null,
 };
 
 export default OneForm;

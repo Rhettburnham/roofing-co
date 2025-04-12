@@ -1,7 +1,7 @@
 // src/components/MainPageBlocks/RichTextBlock.jsx
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import * as Icons from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { HashLink } from "react-router-hash-link";
 import PropTypes from "prop-types";
@@ -20,40 +20,18 @@ const ANIMATION_STATE = {
 };
 
 // taking data from step_4/combined_data.json
-function RichTextPreview({ richTextData, processData }) {
+function RichTextPreview({ richTextData }) {
+  // Initialize hooks at the top to avoid conditional hook calls
   const [currentImage, setCurrentImage] = useState(0);
-  // Track whether animations should be applied (initialized from global state)
   const [animationClass, setAnimationClass] = useState(
     ANIMATION_STATE.hasAnimated ? "animated" : "pre-animation"
   );
-
-  // Process Block state
   const videoRefs = useRef([]);
   const [activeVideo, setActiveVideo] = useState(0);
-  const [initialOrder, setInitialOrder] = useState([]);
+  const [videosLoaded, setVideosLoaded] = useState(false);
 
-  const {
-    heroText = "",
-    bus_description = "",
-    bus_description_second = "",
-    cards = [],
-    images = [],
-  } = richTextData || {};
-
-  if (!richTextData) {
-    return <p className="text-center py-4">No RichText data found.</p>;
-  }
-
-  // Fallback videos to use when process steps don't have valid sources
-  const fallbackVideos = {
-    Book: "/assets/videos/our_process_videos/booking.mp4",
-    Inspection: "/assets/videos/our_process_videos/magnify.mp4",
-    Service: "/assets/videos/our_process_videos/repair.mp4",
-    Review: "/assets/videos/our_process_videos/approval.mp4",
-  };
-
-  // Use processData if provided, or fallback to hardcoded steps
-  const processSteps = processData?.steps || [
+  // Hard-coded process steps instead of using richTextData.steps
+  const processedSteps = [
     {
       title: "Book",
       videoSrc: "/assets/videos/our_process_videos/booking.mp4",
@@ -79,6 +57,109 @@ function RichTextPreview({ richTextData, processData }) {
       scale: 0.9,
     },
   ];
+
+  // Trigger animation once on first mount only
+  useEffect(() => {
+    // If we've already animated, don't do anything
+    if (ANIMATION_STATE.hasAnimated) return;
+
+    // Set a small timeout to ensure DOM is fully ready
+    const timer = setTimeout(() => {
+      setAnimationClass("animated");
+      ANIMATION_STATE.hasAnimated = true;
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Initialize and preload all videos on component mount
+  useEffect(() => {
+    const loadVideos = async () => {
+      try {
+        // Ensure all video elements are set first frame
+        const promises = processedSteps.map((step, idx) => {
+          return new Promise((resolve) => {
+            if (videoRefs.current[idx]) {
+              // Set to first frame and pause
+              videoRefs.current[idx].currentTime = 0;
+              videoRefs.current[idx].pause();
+              // Mark as loaded when metadata is available
+              videoRefs.current[idx].onloadedmetadata = () => resolve();
+              // Also resolve if there's an error to prevent hanging
+              videoRefs.current[idx].onerror = () => resolve();
+            } else {
+              resolve();
+            }
+          });
+        });
+
+        // Wait for all videos to be ready
+        await Promise.all(promises);
+        setVideosLoaded(true);
+      } catch (error) {
+        console.error("Error preloading videos:", error);
+        // Mark as loaded even if there's an error
+        setVideosLoaded(true);
+      }
+    };
+
+    loadVideos();
+  }, []);
+
+  // Handle video playback control
+  useEffect(() => {
+    if (!videosLoaded) return;
+
+    let timeouts = [];
+
+    const playCurrentVideo = () => {
+      // Pause all videos except the active one
+      videoRefs.current.forEach((video, idx) => {
+        if (!video) return;
+
+        // Make sure all videos are visible (first frame)
+        video.currentTime = 0;
+
+        if (idx === activeVideo) {
+          // Play the active video
+          video.play().catch((error) => {
+            console.error(`Video ${activeVideo} playback failed:`, error);
+          });
+        } else {
+          // Pause other videos
+          video.pause();
+        }
+      });
+
+      // Set up the next video after a delay
+      const nextIndex = (activeVideo + 1) % processedSteps.length;
+      const timeout = setTimeout(() => {
+        setActiveVideo(nextIndex);
+      }, 4000);
+
+      timeouts.push(timeout);
+    };
+
+    playCurrentVideo();
+
+    return () => {
+      timeouts.forEach((timeout) => clearTimeout(timeout));
+    };
+  }, [activeVideo, videosLoaded, processedSteps.length]);
+
+  // Return early if no data
+  if (!richTextData) {
+    return <p className="text-center py-4">No RichText data found.</p>;
+  }
+
+  // Extract data from richTextData
+  const {
+    heroText = "",
+    bus_description = "",
+    bus_description_second = "",
+    cards = [],
+    images = [],
+  } = richTextData || {};
 
   // Format image paths to ensure they're standardized
   const formattedImages = images.map((img) =>
@@ -106,129 +187,6 @@ function RichTextPreview({ richTextData, processData }) {
     "/assets/images/shake_img/4.png",
   ];
 
-  // Trigger animation once on first mount only
-  useEffect(() => {
-    // If we've already animated, don't do anything
-    if (ANIMATION_STATE.hasAnimated) return;
-
-    // Set a small timeout to ensure DOM is fully ready
-    const timer = setTimeout(() => {
-      setAnimationClass("animated");
-      ANIMATION_STATE.hasAnimated = true;
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Process steps effect - Generate random initial animation order
-  useEffect(() => {
-    // Generate random initial animation order ONLY ONCE on mount
-    const indices = [...Array(processSteps.length).keys()];
-    const shuffled = indices.sort(() => Math.random() - 0.5);
-    setInitialOrder(shuffled);
-
-    // Preload all videos immediately and make them ready to display
-    const preloadAllVideos = () => {
-      processSteps.forEach((step, idx) => {
-        // Create a temporary video element to preload
-        const tempVideo = document.createElement("video");
-        tempVideo.src =
-          step.videoSrc || fallbackVideos[step.title] || fallbackVideos["Book"];
-        tempVideo.muted = true;
-        tempVideo.preload = "auto";
-
-        // Force preload
-        tempVideo.load();
-
-        // Listen for when it's loaded enough to display first frame
-        tempVideo.addEventListener("loadeddata", () => {
-          if (videoRefs.current[idx]) {
-            videoRefs.current[idx].src = tempVideo.src;
-            videoRefs.current[idx].load();
-            // Set to first frame
-            videoRefs.current[idx].currentTime = 0;
-          }
-        });
-      });
-    };
-
-    preloadAllVideos();
-  }, []);
-
-  // Handle video playback with proper cleanup
-  useEffect(() => {
-    let timeouts = [];
-
-    const playVideosSequentially = () => {
-      processSteps.forEach((step, idx) => {
-        const startDelay = idx * 4000;
-        const timeout1 = setTimeout(() => {
-          if (videoRefs.current[idx]) {
-            try {
-              videoRefs.current[idx].currentTime = 0;
-              const playPromise = videoRefs.current[idx].play();
-              if (playPromise !== undefined) {
-                playPromise.catch((error) => {
-                  console.error(`Video ${idx} autoplay failed:`, error);
-                  // If play fails, try to set fallback source and play again
-                  videoRefs.current[idx].src =
-                    fallbackVideos[step.title] ||
-                    "/assets/videos/our_process_videos/booking.mp4";
-                  videoRefs.current[idx].load();
-                  // Show the first frame immediately
-                  videoRefs.current[idx].currentTime = 0;
-                  setTimeout(() => {
-                    if (videoRefs.current[idx]) {
-                      videoRefs.current[idx]
-                        .play()
-                        .catch((e) =>
-                          console.error(
-                            `Second attempt to play video ${idx} failed:`,
-                            e
-                          )
-                        );
-                    }
-                  }, 500);
-                });
-              }
-              setActiveVideo(idx);
-            } catch (err) {
-              console.error(`Error playing video ${idx}:`, err);
-            }
-          }
-        }, startDelay);
-
-        timeouts.push(timeout1);
-      });
-
-      const totalDuration = processSteps.length * 4000;
-      const restartTimeout = setTimeout(() => {
-        playVideosSequentially();
-      }, totalDuration);
-
-      timeouts.push(restartTimeout);
-    };
-
-    // Start the sequence
-    playVideosSequentially();
-
-    // Cleanup function
-    return () => {
-      timeouts.forEach((timeout) => clearTimeout(timeout));
-      videoRefs.current.forEach((video) => {
-        if (video) {
-          try {
-            video.pause();
-            video.src = "";
-            video.load();
-          } catch (err) {
-            console.error("Error cleaning up video:", err);
-          }
-        }
-      });
-    };
-  }, []);
-
   function FeatureCard({
     icon: Icon,
     title,
@@ -243,8 +201,8 @@ function RichTextPreview({ richTextData, processData }) {
     // For md viewports, ensure square aspect ratio
     const sizeClasses =
       variant === "md"
-        ? "md:w-[13vw] md:h-[13vw] w-[40vw] h-[22vw]"
-        : "w-[40vw] h-[22vw] md:w-[13vw] md:h-[13vh]";
+        ? "md:w-[12vw] md:h-[12vw] w-[40vw] h-[22vw]"
+        : "w-[40vw] h-[22vw] md:w-[12vw] md:h-[12vw]";
 
     // Calculate delay based on index to stagger animations
     const delay = index * 0.15;
@@ -285,7 +243,7 @@ function RichTextPreview({ richTextData, processData }) {
 
         {/* Title container */}
         <div className="flex flex-col z-30">
-          <div className="absolute inset-0 top-1 w-full ">
+          <div className="absolute inset-0 top-1 md:top-3 w-full ">
             <h3 className=" z-30 ml-1 md:ml-2 mr-10 leading-tight text-[2.3vw] md:text-[1.9vh] font-semibold text-gray-900 font-sans">
               {title}
             </h3>
@@ -345,18 +303,17 @@ function RichTextPreview({ richTextData, processData }) {
     }
   `;
 
-  // Render Process Steps
+  // Render Process Steps - simplified following Process.jsx pattern
   const RenderProcessSteps = () => {
-    if (processSteps.length === 0) {
-      return null;
+    if (!processedSteps || processedSteps.length === 0) {
+      return <div className="text-center py-4">No process steps available</div>;
     }
 
     return (
       <div className="flex justify-center items-center flex-wrap md:gap-4 mb-[4vh] md:mb-[8vh]">
-        {processSteps.map((step, index) => {
+        {processedSteps.map((step, index) => {
           const isHashLink = step.href?.startsWith("/#");
           const LinkComponent = isHashLink ? HashLink : Link;
-          const animationDelay = initialOrder.indexOf(index) * 0.2 || 0;
 
           return (
             <div key={index} className="flex items-center pt-1 md:pt-2">
@@ -373,6 +330,7 @@ function RichTextPreview({ richTextData, processData }) {
                     damping: 20,
                   }}
                   className="flex flex-col items-center cursor-pointer"
+                  onClick={() => setActiveVideo(index)}
                 >
                   <div
                     className={`rounded-full overflow-hidden flex items-center justify-center drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.3)] md:w-[14.4vh] md:h-[14.4vh] w-[6.8vh] h-[6.8vh] bg-white ${
@@ -380,57 +338,35 @@ function RichTextPreview({ richTextData, processData }) {
                     }`}
                   >
                     <video
-                      ref={(el) => {
-                        videoRefs.current[index] = el;
-                        // Immediately set current time to 0 to show first frame
-                        if (el) {
-                          el.currentTime = 0;
-                          // Force display of first frame
-                          const handleLoad = () => {
-                            el.currentTime = 0;
-                          };
-                          el.addEventListener("loadeddata", handleLoad);
-                          // Clean up event listener
-                          return () => {
-                            el.removeEventListener("loadeddata", handleLoad);
-                          };
-                        }
-                      }}
-                      src={
-                        step.videoSrc ||
-                        fallbackVideos[step.title] ||
-                        fallbackVideos["Book"]
-                      }
-                      className="object-cover"
+                      ref={(el) => (videoRefs.current[index] = el)}
+                      src={step.videoSrc}
                       muted
                       playsInline
-                      crossOrigin="anonymous"
-                      preload="auto"
+                      loop={index === activeVideo}
+                      className="object-contain"
+                      poster={`/assets/videos/our_process_videos/posters/${step.title.toLowerCase()}.jpg`}
                       style={{
                         pointerEvents: "none",
                         width: `${80 * (step.scale || 1)}%`,
                         height: `${80 * (step.scale || 1)}%`,
+                        opacity: 1,
                         display: "block",
                       }}
                       tabIndex={-1}
+                      preload="auto"
                     />
                   </div>
-                  <AnimatePresence>
-                    {activeVideo === index && (
-                      <motion.p
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 10 }}
-                        className="text-center text-[3vw] md:text-lg font-semibold text-accent"
-                      >
-                        {step.title}
-                      </motion.p>
-                    )}
-                  </AnimatePresence>
+                  <p
+                    className={`text-center text-[3vw] md:text-lg font-semibold ${
+                      activeVideo === index ? "text-accent" : "text-gray-500"
+                    }`}
+                  >
+                    {step.title}
+                  </p>
                 </motion.div>
               </LinkComponent>
 
-              {index < processSteps.length - 1 && (
+              {index < processedSteps.length - 1 && (
                 <div className="flex items-center mx-2">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -470,7 +406,7 @@ function RichTextPreview({ richTextData, processData }) {
 
         <div className="flex w-full ">
           {/* Left Column: Cards stacked vertically */}
-          <div className="w-1/6 hidden md:flex p-1 flex-col justify-between -space-y-12 aspect-square -mt-[5vh]">
+          <div className="w-1/6 hidden md:flex p-1 flex-col justify-between -space-y-[12vh] aspect-square -mt-[9vh]">
             {leftCards.map((card, idx) => {
               const IconComp = Icons[card.icon] || Icons.Star;
               return (
@@ -523,10 +459,10 @@ function RichTextPreview({ richTextData, processData }) {
               {/* Bus Descriptions */}
               <div className="w-1/2 pl-6 ">
                 <div className="px-3 md:px-1">
-                  <h2 className="text-[4vw] md:text-[2.1vh] text-left text-white first-line:font-bold z-60 font-sans">
+                  <h2 className="text-[4vw] md:text-[2.5vh] text-left text-white first-line:font-bold z-60 font-sans">
                     {heroText}
                   </h2>
-                  <p className="text-[2.8vw] md:text-[1.6vh] text-black  font-serif leading-tight mt-6">
+                  <p className="text-[2.8vw] md:text-[1.9vh] text-black  font-serif leading-tight mt-4">
                     {bus_description}
                   </p>
                   <p className="text-[2.8vw] md:text-[1.9vh] text-black mt-2 font-serif leading-tight">
@@ -542,7 +478,7 @@ function RichTextPreview({ richTextData, processData }) {
           </div>
 
           {/* Right Column: Cards stacked vertically */}
-          <div className="w-1/6 hidden md:flex p-1 flex-col justify-between -mt-[5vh] -space-y-12">
+          <div className="w-1/6 hidden md:flex p-1 flex-col justify-between -mt-[9vh] -space-y-[12vh]">
             {rightCards.map((card, idx) => {
               const i = idx + half;
               const IconComp = Icons[card.icon] || Icons.Star;
@@ -630,31 +566,14 @@ function RichTextPreview({ richTextData, processData }) {
   );
 }
 
-// Add PropTypes validation
 RichTextPreview.propTypes = {
   richTextData: PropTypes.shape({
     heroText: PropTypes.string,
     bus_description: PropTypes.string,
     bus_description_second: PropTypes.string,
-    cards: PropTypes.arrayOf(
-      PropTypes.shape({
-        title: PropTypes.string,
-        desc: PropTypes.string,
-        icon: PropTypes.string,
-      })
-    ),
-    images: PropTypes.arrayOf(PropTypes.string),
-    overlayImages: PropTypes.arrayOf(PropTypes.string),
-  }),
-  processData: PropTypes.shape({
-    steps: PropTypes.arrayOf(
-      PropTypes.shape({
-        title: PropTypes.string,
-        videoSrc: PropTypes.string,
-        href: PropTypes.string,
-        scale: PropTypes.number,
-      })
-    ),
+    cards: PropTypes.array,
+    images: PropTypes.array,
+    overlayImages: PropTypes.array,
   }),
 };
 
@@ -668,7 +587,7 @@ Allows editing of:
 - years_in_business
 - cards[] (title, desc, icon)
 - images[] (slideshow images via file upload)
-- steps[] (process steps with videos, inherited from processData)
+- steps[] (process steps with videos)
 Bubbles changes up via onSave()
 
 This editor is part of the website's content management system
@@ -677,7 +596,7 @@ content can be downloaded and sent to the developer for permanent
 integration into the site.
 =============================================
 */
-function RichTextEditorPanel({ localData, setLocalData, onSave, processData }) {
+function RichTextEditorPanel({ localData, setLocalData, onSave }) {
   const {
     heroText = "",
     accredited = false,
@@ -687,12 +606,9 @@ function RichTextEditorPanel({ localData, setLocalData, onSave, processData }) {
     cards = [],
     images = [],
     imageUploads = [],
-    overlayImages = [],
-    steps = processData?.steps || [],
   } = localData;
 
   const [validationError, setValidationError] = useState("");
-  const [previewVideos, setPreviewVideos] = useState([]);
 
   // Add a new card with default values
   const handleAddCard = () => {
@@ -745,30 +661,6 @@ function RichTextEditorPanel({ localData, setLocalData, onSave, processData }) {
   };
 
   // Process Steps Methods
-  useEffect(() => {
-    // Create object URLs for video previews
-    const newPreviews = [];
-    if (localData.steps) {
-      localData.steps.forEach((step) => {
-        if (step.videoFile) {
-          newPreviews.push(URL.createObjectURL(step.videoFile));
-        } else {
-          newPreviews.push(step.videoSrc);
-        }
-      });
-    }
-    setPreviewVideos(newPreviews);
-
-    // Clean up URLs on unmount
-    return () => {
-      previewVideos.forEach((url) => {
-        if (url && url.startsWith("blob:")) {
-          URL.revokeObjectURL(url);
-        }
-      });
-    };
-  }, [localData.steps]);
-
   const handleAddStep = () => {
     setLocalData((prev) => ({
       ...prev,
@@ -831,17 +723,6 @@ function RichTextEditorPanel({ localData, setLocalData, onSave, processData }) {
 
   return (
     <div className="bg-black text-white p-4 rounded max-h-[75vh] overflow-auto">
-      {/* Show ProcessBlock in editor mode too */}
-      <div className="mb-4">
-        <h3 className="text-lg font-semibold mb-2">Process Block Preview</h3>
-        <div className="bg-gray-200 p-2 rounded">
-          <ProcessBlock
-            readOnly={true}
-            processData={{ steps: localData.steps }}
-          />
-        </div>
-      </div>
-
       {/* Top row: Editor title + Save button */}
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl md:text-2xl font-semibold">RichText Editor</h1>
@@ -917,115 +798,7 @@ function RichTextEditorPanel({ localData, setLocalData, onSave, processData }) {
         />
       </div>
 
-      {/* Process Steps Editor */}
-      <div className="space-y-6 mb-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-lg font-medium">Process Steps</h2>
-          <button
-            onClick={handleAddStep}
-            className="bg-blue-600 hover:bg-blue-500 px-3 py-1 rounded text-white text-sm"
-          >
-            + Add Step
-          </button>
-        </div>
-
-        {/* Validation error message */}
-        {validationError && (
-          <div className="bg-red-500 text-white p-2 mb-4 rounded">
-            {validationError}
-          </div>
-        )}
-
-        {/* Steps List */}
-        {localData.steps?.map((step, index) => (
-          <div
-            key={index}
-            className="bg-gray-700 p-4 rounded border border-gray-600"
-          >
-            <div className="flex justify-between mb-3">
-              <h3 className="text-lg font-medium">Step {index + 1}</h3>
-              <button
-                onClick={() => handleRemoveStep(index)}
-                className="bg-red-600 hover:bg-red-500 px-2 py-1 rounded text-white text-sm"
-                disabled={localData.steps.length <= 1}
-              >
-                Remove
-              </button>
-            </div>
-
-            {/* Step Title */}
-            <div className="mb-3">
-              <label className="block text-sm mb-1">Title:</label>
-              <input
-                type="text"
-                value={step.title || ""}
-                onChange={(e) =>
-                  handleStepChange(index, "title", e.target.value)
-                }
-                className="w-full bg-gray-600 px-3 py-2 rounded text-white"
-              />
-            </div>
-
-            {/* Video Upload */}
-            <div className="mb-3">
-              <label className="block text-sm mb-1">Video:</label>
-              <input
-                type="file"
-                accept="video/mp4"
-                onChange={(e) => handleVideoUpload(index, e)}
-                className="w-full bg-gray-600 px-3 py-2 rounded text-white"
-              />
-              {(step.videoSrc || previewVideos[index]) && (
-                <div className="mt-2 border border-gray-500 rounded p-2">
-                  <p className="text-sm text-gray-300 mb-2">
-                    Current video: {step.fileName || step.videoSrc}
-                  </p>
-                  <video
-                    src={previewVideos[index] || step.videoSrc}
-                    className="w-full max-h-48 object-contain mt-2"
-                    controls
-                    muted
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Link URL */}
-            <div className="mb-3">
-              <label className="block text-sm mb-1">
-                Link URL: (use /# prefix for page anchors)
-              </label>
-              <input
-                type="text"
-                value={step.href || ""}
-                onChange={(e) =>
-                  handleStepChange(index, "href", e.target.value)
-                }
-                className="w-full bg-gray-600 px-3 py-2 rounded text-white"
-                placeholder="e.g., /#booking or /about"
-              />
-            </div>
-
-            {/* Scale Factor */}
-            <div className="mb-3">
-              <label className="block text-sm mb-1">
-                Scale Factor: {step.scale || 1.0}
-              </label>
-              <input
-                type="range"
-                min="0.5"
-                max="2.0"
-                step="0.1"
-                value={step.scale || 1.0}
-                onChange={(e) =>
-                  handleStepChange(index, "scale", parseFloat(e.target.value))
-                }
-                className="w-full bg-gray-600 rounded"
-              />
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* Process Steps Editor - Removed since we're hard-coding steps */}
 
       {/* Feature Cards */}
       <div className="">
@@ -1128,21 +901,15 @@ function RichTextEditorPanel({ localData, setLocalData, onSave, processData }) {
 RichTextEditorPanel.propTypes = {
   localData: PropTypes.shape({
     heroText: PropTypes.string,
-    accredited: PropTypes.bool,
     years_in_business: PropTypes.string,
     bus_description: PropTypes.string,
     bus_description_second: PropTypes.string,
     cards: PropTypes.array,
     images: PropTypes.array,
-    imageUploads: PropTypes.array,
     overlayImages: PropTypes.array,
-    steps: PropTypes.array,
   }),
   setLocalData: PropTypes.func.isRequired,
   onSave: PropTypes.func.isRequired,
-  processData: PropTypes.shape({
-    steps: PropTypes.array,
-  }),
 };
 
 /* 
@@ -1162,12 +929,11 @@ integration into the site.
 export default function RichTextBlock({
   readOnly = false,
   richTextData,
-  processData,
   onConfigChange,
 }) {
   // Initialize local state with the provided data or defaults
   const [localData, setLocalData] = useState(() => {
-    // Merge processData steps into richTextData if available
+    // Use richTextData or defaults
     const initialData = !richTextData
       ? {
           heroText: "",
@@ -1178,7 +944,6 @@ export default function RichTextBlock({
           cards: [],
           images: [],
           imageUploads: [],
-          steps: processData?.steps || [],
           overlayImages: [
             "/assets/images/shake_img/1.png",
             "/assets/images/shake_img/2.png",
@@ -1190,7 +955,6 @@ export default function RichTextBlock({
           ...richTextData,
           cards: richTextData.cards?.map((c) => ({ ...c })) || [],
           images: [...(richTextData.images || [])],
-          steps: richTextData.steps || processData?.steps || [],
           overlayImages: [
             ...(richTextData.overlayImages || [
               "/assets/images/shake_img/1.png",
@@ -1206,34 +970,14 @@ export default function RichTextBlock({
 
   // Save changes back to the parent component
   const handleSave = () => {
-    // Prepare data for saving - convert any file references to final paths
+    // Prepare data for saving
     const dataToSave = { ...localData };
-
-    // For any step with a file upload, update the videoSrc path
-    if (dataToSave.steps) {
-      dataToSave.steps = dataToSave.steps.map((step) => {
-        if (step.videoFile && step.fileName) {
-          // Create a proper asset path for the video
-          return {
-            ...step,
-            videoSrc: `/assets/videos/our_process_videos/${step.fileName}`,
-            // Remove videoFile from the saved data
-            videoFile: undefined,
-            fileName: undefined,
-          };
-        }
-        return step;
-      });
-    }
-
     onConfigChange?.(dataToSave);
   };
 
   // Render the appropriate component based on mode
   if (readOnly) {
-    return (
-      <RichTextPreview richTextData={richTextData} processData={processData} />
-    );
+    return <RichTextPreview richTextData={richTextData} />;
   }
 
   return (
@@ -1241,7 +985,6 @@ export default function RichTextBlock({
       localData={localData}
       setLocalData={setLocalData}
       onSave={handleSave}
-      processData={processData}
     />
   );
 }
@@ -1250,6 +993,5 @@ export default function RichTextBlock({
 RichTextBlock.propTypes = {
   readOnly: PropTypes.bool,
   richTextData: PropTypes.object,
-  processData: PropTypes.object,
   onConfigChange: PropTypes.func,
 };

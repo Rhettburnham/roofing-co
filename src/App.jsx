@@ -2,20 +2,15 @@
 // This application loads data from JSON files and allows for local editing
 // of content. The edited content can be downloaded as JSON files and sent
 // to the developer for permanent integration into the site.
-import React, { useState, useEffect, lazy, Suspense } from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  useLocation,
-} from "react-router-dom";
+import { useState, useEffect, lazy, Suspense } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import PropTypes from "prop-types";
 
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import LoadingScreen from "./components/loadingScreen";
 
 // Lazy load components to improve initial load time
-const About = lazy(() => import("./components/About"));
 const OneForm = lazy(() => import("./components/OneForm"));
 const ServiceEditPage = lazy(() => import("./components/ServiceEditPage"));
 const ServicePage = lazy(() => import("./components/ServicePage"));
@@ -71,38 +66,36 @@ function ScrollRestoration() {
  */
 const AllServiceBlocksPage = lazy(() =>
   import("./components/ServicePage").then((module) => {
-    return {
-      default: (props) => {
-        // Component that fetches the showcase data and passes it to ServicePage
-        const [showcaseData, setShowcaseData] = useState(null);
-        const [loading, setLoading] = useState(true);
+    const AllBlocksWrapper = (props) => {
+      const [showcaseData, setShowcaseData] = useState(null);
+      const [loading, setLoading] = useState(true);
 
-        useEffect(() => {
-          const fetchShowcaseData = async () => {
-            try {
-              const response = await fetch("/data/all_blocks_showcase.json");
-              if (!response.ok)
-                throw new Error("Failed to fetch showcase data");
+      useEffect(() => {
+        const fetchShowcaseData = async () => {
+          try {
+            const response = await fetch("/data/all_blocks_showcase.json");
+            if (!response.ok) throw new Error("Failed to fetch showcase data");
 
-              const data = await response.json();
-              setShowcaseData(data);
-              setLoading(false);
-            } catch (error) {
-              console.error("Error loading showcase data:", error);
-              setLoading(false);
-            }
-          };
+            const data = await response.json();
+            setShowcaseData(data);
+            setLoading(false);
+          } catch (error) {
+            console.error("Error loading showcase data:", error);
+            setLoading(false);
+          }
+        };
 
-          fetchShowcaseData();
-        }, []);
+        fetchShowcaseData();
+      }, []);
 
-        if (loading) {
-          return <LoadingScreen />;
-        }
+      if (loading) {
+        return <LoadingScreen />;
+      }
 
-        return <module.default forcedServiceData={showcaseData} {...props} />;
-      },
+      return <module.default forcedServiceData={showcaseData} {...props} />;
     };
+
+    return { default: AllBlocksWrapper };
   })
 );
 
@@ -130,8 +123,6 @@ const AppRoutes = ({
   employeesConfig,
   aboutPageConfig,
 }) => {
-  const location = useLocation();
-
   return (
     <Routes>
       {/* Main page route */}
@@ -381,6 +372,18 @@ const AppRoutes = ({
       <Route path="/legal" element={<LegalAgreement />} />
     </Routes>
   );
+};
+
+AppRoutes.propTypes = {
+  heroConfig: PropTypes.object,
+  richTextConfig: PropTypes.object,
+  buttonconfig: PropTypes.object,
+  mapConfig: PropTypes.object,
+  bookingConfig: PropTypes.object,
+  combinedPageCfg: PropTypes.object,
+  beforeAfterConfig: PropTypes.object,
+  employeesConfig: PropTypes.object,
+  aboutPageConfig: PropTypes.object,
 };
 
 /**
