@@ -14,7 +14,7 @@
     },
     {
       "id": 4,
-      "name": "Repairs"
+      "name": "Skylights"
     }
   ],
   "commercial": [
@@ -32,7 +32,7 @@
     },
     {
       "id": 4,
-      "name": "Maintenance"
+      "name": "Drainage"
     }
   ]
 }

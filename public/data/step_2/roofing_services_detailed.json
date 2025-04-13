@@ -1,0 +1,118 @@
+{
+  "residential": [
+    {
+      "id": 1,
+      "name": "Shingle Roofing",
+      "category": "residential",
+      "slug": "residential-shingle-roofing",
+      "research": {
+        "installation": "Section not found",
+        "maintenance": "Section not found",
+        "repair": "Section not found",
+        "variants": "**  \n\nSection placeholder for variants",
+        "advantages": "**  \n\nSection placeholder for advantages",
+        "general_info": "Section not found"
+      }
+    },
+    {
+      "id": 2,
+      "name": "Leak Repair",
+      "category": "residential",
+      "slug": "residential-leak-repair",
+      "research": {
+        "installation": "Section not found",
+        "maintenance": "Section not found",
+        "repair": "Section not found",
+        "variants": "**  \n\nSection placeholder for variants",
+        "advantages": "**  \n\nSection placeholder for advantages",
+        "general_info": "Section not found"
+      }
+    },
+    {
+      "id": 3,
+      "name": "Roof Inspections",
+      "category": "residential",
+      "slug": "residential-roof-inspections",
+      "research": {
+        "installation": "Section not found",
+        "maintenance": "Section not found",
+        "repair": "Section not found",
+        "variants": "**  \n\nSection placeholder for variants",
+        "advantages": "**  \n\nSection placeholder for advantages",
+        "general_info": "Section not found"
+      }
+    },
+    {
+      "id": 4,
+      "name": "Skylight Installation",
+      "category": "residential",
+      "slug": "residential-skylight-installation",
+      "research": {
+        "installation": "Section not found",
+        "maintenance": "Section not found",
+        "repair": "Section not found",
+        "variants": "**  \n\nSection placeholder for variants",
+        "advantages": "**  \n\nSection placeholder for advantages",
+        "general_info": "Section not found"
+      }
+    }
+  ],
+  "commercial": [
+    {
+      "id": 1,
+      "name": "TPO Roofing",
+      "category": "commercial",
+      "slug": "commercial-tpo-roofing",
+      "research": {
+        "installation": "Section not found",
+        "maintenance": "Section not found",
+        "repair": "Section not found",
+        "variants": "**  \n\nSection placeholder for variants",
+        "advantages": "**  \n\nSection placeholder for advantages",
+        "general_info": "Section not found"
+      }
+    },
+    {
+      "id": 2,
+      "name": "Roof Restoration",
+      "category": "commercial",
+      "slug": "commercial-roof-restoration",
+      "research": {
+        "installation": "Section not found",
+        "maintenance": "Section not found",
+        "repair": "Section not found",
+        "variants": "**  \n\nSection placeholder for variants",
+        "advantages": "**  \n\nSection placeholder for advantages",
+        "general_info": "Section not found"
+      }
+    },
+    {
+      "id": 3,
+      "name": "Membrane Roofing",
+      "category": "commercial",
+      "slug": "commercial-membrane-roofing",
+      "research": {
+        "installation": "Section not found",
+        "maintenance": "Section not found",
+        "repair": "Section not found",
+        "variants": "**  \n\nSection placeholder for variants",
+        "advantages": "**  \n\nSection placeholder for advantages",
+        "general_info": "Section not found"
+      }
+    },
+    {
+      "id": 4,
+      "name": "Commercial Maintenance",
+      "category": "commercial",
+      "slug": "commercial-commercial-maintenance",
+      "research": {
+        "installation": "Section not found",
+        "maintenance": "Section not found",
+        "repair": "Section not found",
+        "variants": "**  \n\nSection placeholder for variants",
+        "advantages": "**  \n\nSection placeholder for advantages",
+        "general_info": "Section not found"
+      }
+    }
+  ]
+}
