@@ -43,13 +43,19 @@ function HeroPreview({ heroconfig }) {
 
   useEffect(() => {
     setHasAnimated(true);
-    setResidentialServices(residential.subServices.map((service, idx) => ({
+    
+    // Map residential services
+    setResidentialServices(residential.subServices.map((service) => ({
       label: service.title,
-      route: `/services/residential-${idx + 1}-${service.title.toLowerCase().replace(/\s+/g, "-")}`
+      // Use the slug from services.json
+      route: `/services/${service.slug}`
     })));
-    setCommercialServices(commercial.subServices.map((service, idx) => ({
+
+    // Map commercial services
+    setCommercialServices(commercial.subServices.map((service) => ({
       label: service.title,
-      route: `/services/commercial-${idx + 1}-${service.title.toLowerCase().replace(/\s+/g, "-")}`
+      // Use the slug from services.json
+      route: `/services/${service.slug}`
     })));
   }, [residential.subServices, commercial.subServices]);
 

@@ -198,7 +198,7 @@ const AppRoutes = ({
         }
       />
 
-      {/* Service page routes */}
+      {/* Modern service routes */}
       <Route
         path="/services/:serviceSlug"
         element={
@@ -208,7 +208,7 @@ const AppRoutes = ({
         }
       />
 
-      {/* Fallback for older service paths */}
+      {/* Legacy service routes - for backward compatibility */}
       <Route
         path="/service/:category/:id"
         element={

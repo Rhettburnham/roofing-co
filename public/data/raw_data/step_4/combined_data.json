@@ -15,32 +15,40 @@
     "residential": {
       "subServices": [
         {
-          "title": "Shingling"
+          "title": "Shingling",
+          "slug": "residential-1-shingling"
         },
         {
-          "title": "Guttering"
+          "title": "Guttering",
+          "slug": "residential-2-guttering"
         },
         {
-          "title": "Chimney"
+          "title": "Chimney",
+          "slug": "residential-3-chimney"
         },
         {
-          "title": "Skylights"
+          "title": "Skylights",
+          "slug": "residential-4-skylights"
         }
       ]
     },
     "commercial": {
       "subServices": [
         {
-          "title": "Coatings"
+          "title": "Coatings",
+          "slug": "commercial-1-coatings"
         },
         {
-          "title": "Built-Up"
+          "title": "Built-Up",
+          "slug": "commercial-2-built-up"
         },
         {
-          "title": "Metal Roof"
+          "title": "Metal Roof",
+          "slug": "commercial-3-metal-roof"
         },
         {
-          "title": "Drainage"
+          "title": "Drainage",
+          "slug": "commercial-4-drainage"
         }
       ]
     },
@@ -348,44 +356,44 @@
       {
         "icon": "FaHardHat",
         "title": "Shingling",
-        "link": "/services/residential-1-asphalt-shingle-installation-and-replacement"
+        "link": "/services/residential-1-shingling"
       },
       {
         "icon": "FaHome",
         "title": "Guttering",
-        "link": "/services/residential-2-residential-roof-inspection-and-maintenance"
+        "link": "/services/residential-2-guttering"
       },
       {
         "icon": "FaTools",
         "title": "Chimney",
-        "link": "/services/residential-3-tile-roof-repair-and-restoration"
+        "link": "/services/residential-3-chimney"
       },
       {
         "icon": "FaBroom",
         "title": "Skylights",
-        "link": "/services/residential-4-skylight-installation-and-leak-repair"
+        "link": "/services/residential-4-skylights"
       }
     ],
     "commercialServices": [
       {
         "icon": "FaPaintRoller",
         "title": "Coatings",
-        "link": "/services/commercial-1-epdm-flat-roof-installation-and-repair"
+        "link": "/services/commercial-1-coatings"
       },
       {
         "icon": "FaBuilding",
         "title": "Built-Up",
-        "link": "/services/commercial-2-commercial-roof-coating-and-sealant-application"
+        "link": "/services/commercial-2-built-up"
       },
       {
         "icon": "FaWarehouse",
         "title": "Metal Roof",
-        "link": "/services/commercial-3-metal-roof-panel-installation-and-maintenance"
+        "link": "/services/commercial-3-metal-roof"
       },
       {
         "icon": "FaChimney",
         "title": "Drainage",
-        "link": "/services/commercial-4-commercial-roof-drainage-system-repair"
+        "link": "/services/commercial-4-drainage"
       }
     ],
     "teamTitle": "Leadership",

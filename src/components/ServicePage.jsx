@@ -62,49 +62,29 @@ const ServicePage = ({ forcedServiceData = null }) => {
 
         // Handle legacy URL formats
         if (params.category && params.id) {
-          serviceIdentifier = `${params.category.toLowerCase()}_${params.id}`;
-        } else if (params.id && !params.serviceSlug) {
-          // Handle /Residential_service_X or /Commercial_service_X format
-          if (location.pathname.includes("Residential_service_")) {
-            serviceIdentifier = `residential_${params.id}`;
-          } else if (location.pathname.includes("Commercial_service_")) {
-            serviceIdentifier = `commercial_${params.id}`;
-          }
+          serviceIdentifier = `${params.category}-${params.id}`;
         }
 
         if (!serviceIdentifier) {
           throw new Error("Invalid service identifier");
         }
 
-        // Step 2: Fetch the services.json data
-        const servicesResponse = await fetch("/data/raw_data/step_2/roofing_services.json");
+        // Step 2: Fetch the services.json data from the correct path
+        const servicesResponse = await fetch("/data/raw_data/step_4/services.json");
         if (!servicesResponse.ok) {
           throw new Error(`HTTP error! Status: ${servicesResponse.status}`);
         }
         const servicesData = await servicesResponse.json();
 
-        // Step 3: Find the service by slug or legacy identifier
+        // Step 3: Find the service by slug
         let foundService = null;
 
-        // Check all categories (residential, commercial, and potentially showcase)
-        for (const category in servicesData) {
-          const categoryServices = servicesData[category];
-          if (Array.isArray(categoryServices)) {
-            // Try to find by slug (modern format)
-            foundService = categoryServices.find(
-              (service) => service.slug === serviceIdentifier
-            );
-
-            // If not found by slug, try legacy identifier formats
-            if (!foundService) {
-              const legacyId = serviceIdentifier.split("_").pop();
-              foundService = categoryServices.find(
-                (service) => service.id == legacyId
-              );
-            }
-
-            if (foundService) break;
-          }
+        // Check both residential and commercial categories
+        for (const category of ['residential', 'commercial']) {
+          foundService = servicesData[category]?.find(
+            (service) => service.slug === serviceIdentifier
+          );
+          if (foundService) break;
         }
 
         if (!foundService) {
@@ -189,6 +169,23 @@ const ServicePage = ({ forcedServiceData = null }) => {
   // Render page title for showcase pages
   const isShowcasePage =
     forcedServiceData || serviceData?.id === "all-blocks-showcase";
+
+  const resolveServicePath = (params) => {
+    // Handle modern slug format
+    if (params.serviceSlug) {
+      return params.serviceSlug;
+    }
+    
+    // Handle legacy format
+    if (params.category && params.id) {
+      return `${params.category}-${params.id}`;
+    }
+    
+    return null;
+  };
+
+  // Use in the component
+  const servicePath = resolveServicePath(params);
 
   return (
     <div className="service-page">
