@@ -25,6 +25,11 @@ function HeroPreview({ heroconfig }) {
     return <p>No data found.</p>;
   }
 
+  // CSS variables for consistent styling
+  const bannerStyles = {
+    "--banner-color": "#1e293b", // Match the banner color from tailwind.config.js
+  };
+
   console.log("HeroBlock config:", heroconfig);
 
   const [residentialServices, setResidentialServices] = useState([]);
@@ -133,7 +138,7 @@ function HeroPreview({ heroconfig }) {
   };
 
   return (
-    <section className="relative">
+    <section className="relative" style={bannerStyles}>
       {/* Top white area - Controls distance from top via height */}
       <div className="h-[14vh] md:h-[21vh] bg-white w-full relative z-10">
         {/* Logo & Titles - Controls vertical position via transform translate */}
@@ -221,7 +226,8 @@ function HeroPreview({ heroconfig }) {
               <div className="flex flex-col items-center ">
                 {/* Combined container for icon and title - grouped for unified clicking */}
                 <div
-                  className="flex flex-col items-center z-70 cursor-pointer "
+                  className="flex flex-col items-center z-70 cursor-pointer rounded-lg p-1 bg-banner"
+
                   onClick={(e) => {
                     e.stopPropagation();
                     setActiveSection((prev) =>
@@ -236,7 +242,9 @@ function HeroPreview({ heroconfig }) {
                       activeSection === "residential" ? "active" : "default"
                     }
                   >
-                    <Home className="w-[6.5vw] h-[6.5vw] md:w-[12.5vh] md:h-[12.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)] text-amber-100 bg-banner rounded-full p-4" />
+                    <Home 
+                      className="w-[6.5vw] h-[6.5vw] md:w-[6.5vh] md:h-[6.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)] text-amber-100 rounded-full p-0" 
+                    />
                   </motion.div>
 
                   {/* Title that moves up when active */}
@@ -245,7 +253,7 @@ function HeroPreview({ heroconfig }) {
                     animate={
                       activeSection === "residential" ? "active" : "default"
                     }
-                    className="text-[3.2vw] md:text-[3.2vh] md:-mt-2 font-semibold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.3)] text-amber-100 font-serif"
+                    className="text-[3.2vw] md:text-[2.2vh] md:-mt-2 font-semibold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.3)] text-amber-100 font-serif"
                   >
                     Residential
                   </motion.h2>
@@ -319,7 +327,7 @@ function HeroPreview({ heroconfig }) {
               <div className="flex flex-col items-center ml-[8vh] md:ml-[13.2vw]">
                 {/* Combined container for icon and title - grouped for unified clicking */}
                 <div
-                  className="flex flex-col items-center z-50 cursor-pointer"
+                  className="flex flex-col items-center z-50 cursor-pointer rounded-lg p-1 bg-banner"
                   onClick={(e) => {
                     e.stopPropagation();
                     setActiveSection((prev) =>
@@ -334,7 +342,9 @@ function HeroPreview({ heroconfig }) {
                       activeSection === "commercial" ? "active" : "default"
                     }
                   >
-                    <Building2 className="w-[6.5vw] h-[6.5vw] md:w-[12.5vh] md:h-[12.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)] text-amber-100 bg-banner rounded-full p-4" />
+                    <Building2 
+                      className="w-[6.5vw] h-[6.5vw] md:w-[12.5vh] md:h-[12.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)] text-amber-100 rounded-full p-4" 
+                    />
                   </motion.div>
 
                   {/* Title that moves up when active */}
