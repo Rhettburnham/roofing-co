@@ -533,7 +533,7 @@ def scrape_bbb_profile(url, headless=True):
 
 if __name__ == "__main__":
    TARGET_URL = (
-       "https://www.bbb.org/us/ga/atlanta/profile/roofing-contractors/craft-roofing-company-llc-0443-27604141"
+       "https://www.bbb.org/us/ga/sharpsburg/profile/roofing-contractors/cowboys-vaqueros-construction-0443-28157863"
    )
   
    # Scrape BBB profile

@@ -214,7 +214,7 @@ def scrape_google_maps_reviews(url, headless=True, max_reviews=50):
 # example complete code "https://www.google.com/maps/place/Su's+Chinese+Cuisine/@33.7965679,-84.3735687,17z/data=!3m1!5s0x88f50436a5b9d505:0xebc3274b663fcac7!4m18!1m9!3m8!1s0x88f505e262e394d5:0xba8cbf84b539def8!2sSu's+Chinese+Cuisine!8m2!3d33.7965679!4d-84.3709938!9m1!1b1!16s%2Fg%2F11mtfm60_1!3m7!1s0x88f505e262e394d5:0xba8cbf84b539def8!8m2!3d33.7965679!4d-84.3709938!9m1!1b1!16s%2Fg%2F11mtfm60_1?entry=ttu&g_ep=EgoyMDI1MDEwOC4wIKXMDSoASAFQAw%3D%3D"
 if __name__ == "__main__":
     TARGET_URL = (
-        "https://www.google.com/maps/place/Craft+Roofing+Company/@34.1702728,-84.5808208,17z/data=!4m8!3m7!1s0x88f5684c5c01aaab:0x4ebec0a0e6c12ea7!8m2!3d34.1702728!4d-84.5782459!9m1!1b1!16s%2Fg%2F11fk0bhkdq?entry=ttu&g_ep=EgoyMDI1MDMyNS4xIKXMDSoASAFQAw%3D%3D"
+        "https://www.google.com/maps/place/Cowboys+Construction/@33.4224202,-84.6409058,17z/data=!4m8!3m7!1s0x88f4c38a8b36c047:0xce9384a70f8a8f54!8m2!3d33.4224202!4d-84.6409058!9m1!1b1!16s%2Fg%2F11jnxrwqxz?authuser=0&hl=en&entry=ttu&g_ep=EgoyMDI1MDQxNi4xIKXMDSoASAFQAw%3D%3D"
     )
     
     # Scrape reviews

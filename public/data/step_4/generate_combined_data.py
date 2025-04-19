@@ -5,7 +5,8 @@ import json
 import logging
 import time
 import random
-from typing import Dict, Any, List, Optional
+import re
+from typing import Dict, Any, List, Optional, Tuple
 from dotenv import load_dotenv
 from deepseek_utils import query_deepseek_api
 
@@ -20,6 +21,7 @@ class CombinedDataGenerator:
     """
     Class to generate comprehensive combined_data.json that powers the roofing website.
     Uses BBB profile data, sentiment reviews, and DeepSeek AI to create comprehensive content.
+    Uses a template approach where placeholder variables are replaced with actual data.
     """
     
     def __init__(self, bbb_profile_path: str, reviews_path: str, insights_path: str = None):
@@ -52,8 +54,11 @@ class CombinedDataGenerator:
         # Load services from the shared roofing_services.json
         self.services = self._load_services()
         
-        # Set output file path relative to project root
+        # Load template file
         script_dir = os.path.dirname(os.path.abspath(__file__))
+        self.template_file = os.path.join(script_dir, "template_data.json")
+        
+        # Set output file path relative to project root
         data_dir = os.path.dirname(script_dir)
         self.output_file = os.path.join(data_dir, "combined_data.json")
         logger.info(f"Output file will be saved to: {self.output_file}")
@@ -67,16 +72,16 @@ class CombinedDataGenerator:
         # Default services in case the file doesn't exist
         default_services = {
             "residential": [
-                {"id": 1, "name": "Asphalt Shingle Roofing"},
-                {"id": 2, "name": "Metal Roof Installation"},
-                {"id": 3, "name": "Roof Leak Repair"},
-                {"id": 4, "name": "Roof Inspection & Maintenance"}
+                {"id": 1, "name": "Shingling"},
+                {"id": 2, "name": "Guttering"},
+                {"id": 3, "name": "Chimney"},
+                {"id": 4, "name": "Skylights"}
             ],
             "commercial": [
-                {"id": 1, "name": "Flat Roof Systems"},
-                {"id": 2, "name": "TPO Membrane Roofing"},
-                {"id": 3, "name": "Commercial Roof Restoration"},
-                {"id": 4, "name": "Industrial Roof Maintenance"}
+                {"id": 1, "name": "Coatings"},
+                {"id": 2, "name": "Built-Up"},
+                {"id": 3, "name": "Metal Roof"},
+                {"id": 4, "name": "Drainage"}
             ]
         }
         
@@ -121,7 +126,7 @@ class CombinedDataGenerator:
             json.dump(data, f, indent=2)
         logger.info(f"Combined data saved to {self.output_file}")
     
-    def _extract_business_name(self) -> tuple:
+    def _extract_business_name(self) -> Tuple[str, str]:
         """
         Extract business name and intelligently split it into main title and subtitle based on DeepSeek analysis.
         If the name is short, don't use a subtitle.
@@ -172,7 +177,7 @@ class CombinedDataGenerator:
             # Fallback to simple logic if JSON parsing fails
             return self._simple_business_name_split(business_name)
             
-    def _simple_business_name_split(self, business_name: str) -> tuple:
+    def _simple_business_name_split(self, business_name: str) -> Tuple[str, str]:
         """Simple fallback method to split business name."""
         parts = business_name.split()
         if len(parts) <= 2:
@@ -208,414 +213,408 @@ class CombinedDataGenerator:
                 "stars": int(float(review.get('rating', 5))),
                 "date": review.get('date', ''),
                 "text": review.get('review_text', ''),
-                "logo": "/assets/images/googleimage.png"
+                "logo": "/assets/images/hero/googleimage.png",
+                "link": "https://www.google.com/maps"
             }
             formatted_reviews.append(formatted_review)
             
         return formatted_reviews
     
-    def _generate_hero_section(self) -> Dict[str, Any]:
-        """Generate the hero section data with services from the shared services data."""
-        main_title, sub_title = self._extract_business_name()
-        
-        # Get services from the shared services data
-        residential_services = self.services.get('residential', [])
-        commercial_services = self.services.get('commercial', [])
-        
-        # Format the services for the hero section
-        residential_sub_services = [{"title": service.get('name', '')} for service in residential_services]
-        commercial_sub_services = [{"title": service.get('name', '')} for service in commercial_services]
-        
-        return {
-            "mainTitle": main_title.upper(),
-            "subTitle": sub_title.upper(),
-            "residential": {
-                "subServices": residential_sub_services
-            },
-            "commercial": {
-                "subServices": commercial_sub_services
-            }
-        }
+    def _generate_rich_text_hero(self, business_name: str) -> str:
+        """Generate hero text for rich text section."""
+        templates = [
+            f"Expert Roofs, Trusted Craftsmanship",
+            f"Quality Roofing Solutions by {business_name}",
+            f"Protecting Your Home with Excellence",
+            f"Reliable Roofing for Every Season"
+        ]
+        return random.choice(templates)
     
-    def _generate_booking_section(self) -> Dict[str, Any]:
-        """Generate the booking section info with a logo from the BBB profile."""
-        logger.info("Generating booking section")
+    def _get_geocoordinates_from_address(self, address: str) -> Tuple[float, float]:
+        """
+        Get geocoordinates (latitude, longitude) from address using DeepSeek API.
         
-        # Get phone number from BBB profile or use a default
-        phone = self.bbb_profile.get('phone', "(404) 227-5000")
-            
-        # Format phone number if needed here
-            
-        return {
-            "logo": "/assets/images/logo/clipped.png",
-            "headerText": "Call Us Today!",
-            "phone": phone
-        }
-    
-    def _generate_map_section(self) -> Dict[str, Any]:
-        """Generate the map section with BBB profile data."""
+        Since we don't have direct access to mapping APIs, we'll use DeepSeek to
+        estimate the coordinates based on the address.
+        """
+        prompt = f"""
+        Please provide latitude and longitude coordinates for this address: {address}
         
-        # Get business address and service area from BBB profile
-        address = self.bbb_profile.get('address', "123 Main St, Anytown, USA")
+        Return only the coordinates as a JSON with 'lat' and 'lng' keys.
+        Example: {{"lat": 33.7490, "lng": -84.3880}}
         
-        if address.strip() == "":
-            address = "40 Tipperary TrlSharpsburg, GA 30277-3502"  # Default address if not provided
+        Do not include any additional information or explanation, just the JSON.
+        """
         
-        # Get coordinates (lat, lng) from address
-        lat, lng = self._get_geocoordinates_from_address(address)
+        response = query_deepseek_api(prompt)
         
-        # Get service hours from BBB profile
-        hours = self.bbb_profile.get('service_hours', [])
-        
-        # Format service hours or use defaults
-        formatted_hours = []
-        if hours and isinstance(hours, list):
-            # Loop through existing hours and format them
-            formatted_hours = hours
-        else:
-            # Default hours if none found
-            formatted_hours = [
-                {"day": "Mon", "time": "08:00 AM - 6:00 PM"},
-                {"day": "Tue", "time": "08:00 AM - 6:00 PM"},
-                {"day": "Wed", "time": "08:00 AM - 6:00 PM"},
-                {"day": "Thu", "time": "08:00 AM - 6:00 PM"},
-                {"day": "Fri", "time": "08:00 AM - 6:00 PM"},
-                {"day": "Sat", "time": "08:00 AM - 6:00 PM"},
-                {"day": "Sun", "time": "CLOSED"}
-            ]
-        
-        # Generate stats based on business data
-        years_in_business = self.bbb_profile.get('years_in_business', 10)
-        if isinstance(years_in_business, str) and ":" in years_in_business:
-            # Extract just the number if it's in format "Years in Business: 10"
-            try:
-                years_in_business = int(years_in_business.split(":")[-1].strip())
-            except:
-                years_in_business = 10
+        try:
+            # Extract JSON from response
+            if '{' in response and '}' in response:
+                json_str = response[response.find('{'):response.rfind('}')+1]
+                result = json.loads(json_str)
                 
-        # Round up customers served and roofs repaired based on years
-        customers_served = round(years_in_business * 50, -1)  # approx 50 customers per year, rounded to nearest 10
-        roofs_repaired = round(years_in_business * 30, -1)  # approx 30 roofs per year, rounded to nearest 10
+                lat = result.get('lat', 33.7490)  # Default to Atlanta coordinates
+                lng = result.get('lng', -84.3880)
+                
+                return lat, lng
+            else:
+                # Default to Atlanta coordinates if parsing fails
+                return 33.7490, -84.3880
+        except:
+            # Default to Atlanta coordinates if any error occurs
+            return 33.7490, -84.3880
+    
+    def _extract_city_from_address(self, address: str) -> str:
+        """Extract city from address string."""
+        # Try simple pattern matching for city extraction
+        city_pattern = r'(?:,\s*|\s+)([A-Za-z\s]+)(?:,\s*[A-Z]{2}|$)'
+        match = re.search(city_pattern, address)
+        if match:
+            city = match.group(1).strip()
+            if city and len(city) > 2:  # Ensure we have a reasonable city name
+                return city
         
-        # Map stats with years of experience
-        stats = [
-            {"title": "Years of Service", "value": years_in_business, "icon": "FaCalendarAlt"},
-            {"title": "Customers Served", "value": customers_served, "icon": "FaHandshake"},
-            {"title": "Roofs Repaired", "value": roofs_repaired, "icon": "FaHome"},
-            {"title": "Years of Experience", "value": years_in_business, "icon": "FaCalendarAlt"}
+        # Default city if extraction fails
+        return "Atlanta"
+    
+    def _generate_about_history(self, business_name: str, years: int, city: str) -> str:
+        """Generate company history paragraph for about page."""
+        current_year = 2023  # Hardcoded for consistency, can be updated to use datetime
+        founded_year = current_year - years
+        
+        history = f"Founded in {founded_year}, {business_name} has been serving the {city} community with top-tier roofing solutions for nearly a decade. What started as a small, family-owned business has grown into a trusted name in the industry, known for quality craftsmanship and exceptional customer service. Over the years, we've tackled everything from minor repairs to full roof replacements, earning a reputation for reliability and attention to detail. Our deep roots in {city} drive our commitment to protecting homes and businesses with durable, weather-resistant roofing systems tailored to the region's unique climate."
+        
+        return history
+    
+    def _generate_about_mission(self, business_name: str) -> str:
+        """Generate mission statement for about page."""
+        mission = f"Our mission is to deliver superior roofing solutions with integrity, precision, and care. We strive to exceed expectations by combining expert craftsmanship with personalized service, ensuring every project—big or small—is built to last and backed by our unwavering commitment to quality."
+        
+        return mission
+    
+    def _format_employee_data(self) -> List[Dict[str, Any]]:
+        """Format employee data from BBB profile."""
+        formatted_employees = []
+        
+        # Extract employee names from BBB profile
+        employee_names = []
+        if 'employee_names' in self.bbb_profile and isinstance(self.bbb_profile['employee_names'], list):
+            employee_names = self.bbb_profile['employee_names']
+        
+        # Default photos to use
+        photos = [
+            "/assets/images/team/roofer.png",
+            "/assets/images/team/foreman.png",
+            "/assets/images/team/estimator.png",
+            "/assets/images/team/salesrep.png",
+            "/assets/images/team/manager.png",
+            "/assets/images/team/inspector.png"
         ]
         
-        # Get phone number
-        phone = self.bbb_profile.get('phone', "(404) 227-5000")
+        # Default positions if not included in the employee name
+        positions = ["Owner", "Manager", "Estimator", "Sales Rep", "Inspector", "Foreman"]
         
-        # Map marker/pin icon
-        marker_icon = "/assets/images/logo/clipped.png"
+        # Format each employee
+        for i, name in enumerate(employee_names[:6]):  # Limit to 6 employees
+            # Try to extract position from name if it contains a comma
+            position = positions[i % len(positions)]
+            if ',' in name:
+                name_parts = name.split(',', 1)
+                employee_name = name_parts[0].strip()
+                # Use position from the name if available, otherwise use default
+                if len(name_parts) > 1 and name_parts[1].strip():
+                    position = name_parts[1].strip()
+            else:
+                employee_name = name
+            
+            formatted_employees.append({
+                "name": employee_name,
+                "role": position,
+                "image": photos[i % len(photos)]
+            })
         
-        return {
-            "center": {
-                "lat": lat,
-                "lng": lng
-            },
-            "zoomLevel": 11,
-            "circleRadius": 5047,  # 6047 meters (approx. 3.75 miles)
-            "address": address,
-            "telephone": phone,
-            "serviceHours": formatted_hours,
-            "stats": stats,
-            "markerIcon": marker_icon
-        }
+        # If no employees found, add default placeholders
+        if not formatted_employees:
+            formatted_employees = [
+                {
+                    "name": "John Smith",
+                    "role": "Owner",
+                    "image": "/assets/images/team/roofer.png"
+                },
+                {
+                    "name": "Jane Doe",
+                    "role": "Manager",
+                    "image": "/assets/images/team/foreman.png"
+                }
+            ]
+        
+        return formatted_employees
     
-    def _generate_combined_page_section(self) -> Dict[str, Any]:
-        """Generate combined page section with review and service data from shared services file."""
-        logger.info("Generating combined page section")
+    def _format_and_add_slugs_to_services(self, services_data: Dict[str, List[Dict[str, Any]]]) -> Dict[str, Dict[str, List[Dict[str, Any]]]]:
+        """
+        Format services data and add slugs for the hero section and combined page.
+        Returns data formatted for both hero section and combined page.
+        """
+        result = {
+            "hero": {
+                "residential": [],
+                "commercial": []
+            },
+            "combined": {
+                "residential": [],
+                "commercial": []
+            }
+        }
         
-        # Extract the best reviews
-        reviews = self._extract_best_reviews()
-        
-        # Get services from the shared services data
-        residential_services = self.services.get('residential', [])
-        commercial_services = self.services.get('commercial', [])
-        
-        # Add icons and links to services
+        # Icons for combined page
         residential_icons = ["FaHardHat", "FaHome", "FaTools", "FaBroom"]
         commercial_icons = ["FaPaintRoller", "FaBuilding", "FaWarehouse", "FaChimney"]
         
         # Process residential services
-        residential_with_icons = []
-        for idx, service in enumerate(residential_services):
+        for idx, service in enumerate(services_data.get("residential", [])):
+            service_id = service.get("id", idx + 1)
+            service_name = service.get("name", f"Service {service_id}")
+            
+            # Create slug - replace spaces with hyphens and make lowercase
+            slug = f"residential-{service_id}-{service_name.lower().replace(' ', '-')}"
+            
+            # Add to hero format
+            result["hero"]["residential"].append({
+                "title": service_name,
+                "slug": slug
+            })
+            
+            # Add to combined page format with icon
             icon = residential_icons[idx % len(residential_icons)]
-            service_name = service.get('name', '')
-            slug = service_name.lower().replace(' ', '-')
-            residential_with_icons.append({
+            result["combined"]["residential"].append({
                 "icon": icon,
                 "title": service_name,
-                "link": f"/residential/{slug}"
+                "link": f"/services/{slug}"
             })
         
         # Process commercial services
-        commercial_with_icons = []
-        for idx, service in enumerate(commercial_services):
-            icon = commercial_icons[idx % len(commercial_icons)]
-            service_name = service.get('name', '')
-            slug = service_name.lower().replace(' ', '-')
-            commercial_with_icons.append({
-                "icon": icon,
+        for idx, service in enumerate(services_data.get("commercial", [])):
+            service_id = service.get("id", idx + 1)
+            service_name = service.get("name", f"Service {service_id}")
+            
+            # Create slug
+            slug = f"commercial-{service_id}-{service_name.lower().replace(' ', '-')}"
+            
+            # Add to hero format
+            result["hero"]["commercial"].append({
                 "title": service_name,
-                "link": f"/commercial/{slug}"
+                "slug": slug
             })
             
-        # Get employee names for team section
-        employee_names = []
-        if 'employee_names' in self.bbb_profile and isinstance(self.bbb_profile['employee_names'], list):
-            employee_names = self.bbb_profile['employee_names']
-            
-        # If we have no employee names, use placeholders
-        if not employee_names:
-            employee_names = ["John Smith, Owner", "Jane Doe, Project Manager"]
-            
-        return {
-            "isCommercial": False,
-            "title": "Services",
-            "googleReviews": reviews,
-            "residentialServices": residential_with_icons,
-            "commercialServices": commercial_with_icons,
-            "teamTitle": "Leadership",
-            "teamMembers": employee_names,
-            "largeResidentialImg": "/assets/images/main_image_expanded.jpg",
-            "largeCommercialImg": "/assets/images/commercialservices.jpg"
-        }
+            # Add to combined page format with icon
+            icon = commercial_icons[idx % len(commercial_icons)]
+            result["combined"]["commercial"].append({
+                "icon": icon,
+                "title": service_name,
+                "link": f"/services/{slug}"
+            })
+        
+        return result
     
-    def _generate_rich_text_section(self) -> Dict[str, Any]:
-        """Generate rich text section content including standardized image paths."""
-        logger.info("Generating rich text section")
-        
-        # Extract business info
-        business_name = self.bbb_profile.get('business_name', 'Roofing Company')
-        
-        # Handle years_in_business correctly - can be either a number or a string like "Years in Business: 11"
-        years_data = self.bbb_profile.get('years_in_business', 10)
-        if isinstance(years_data, str) and "Years in Business:" in years_data:
-            # Extract just the number from the string
-            try:
-                years = int(years_data.split(":")[-1].strip())
-            except ValueError:
-                # Fallback if parsing fails
-                years = 10
-                logger.warning(f"Could not parse years from '{years_data}', using default value of {years}")
-        else:
-            # Either already a number or a string that's just a number
-            try:
-                years = int(years_data)
-            except (ValueError, TypeError):
-                years = 10
-                logger.warning(f"Could not convert '{years_data}' to an integer, using default value of {years}")
-        
-        city = self.bbb_profile.get('city', '')
-        accredited = self.bbb_profile.get('accredited', True)
-        
-        # Standardized image paths for rich text section
-        rich_text_images = [
-            "/assets/images/Richtext/roof_workers.jpg",
-            "/assets/images/Richtext/roof_workers2.jpg",
-            "/assets/images/Richtext/roof_workers3.webp"
+    def _generate_booking_header(self) -> str:
+        """Generate a short, 1-3 word booking header text."""
+        options = [
+            "Call Us Today!",
+            "Contact Us",
+            "Get a Quote",
+            "Free Estimate",
+            "Roof Help?",
+            "Need Service?"
         ]
-        
-        # Make sure the images property is properly set to ensure slideshow functionality
-        imageUploads = [
-            {"file": None, "fileName": ""},
-            {"file": None, "fileName": ""},
-            {"file": None, "fileName": ""}
+        return random.choice(options)
+    
+    def _generate_gallery_title(self) -> str:
+        """Generate a 1-2 word variation for the gallery section title."""
+        options = [
+            "GALLERY",
+            "PORTFOLIO",
+            "SHOWCASE",
+            "OUR WORK",
+            "PROJECTS"
         ]
+        return random.choice(options)
+    
+    def _generate_team_section_title(self) -> str:
+        """Generate a 1-2 word variation for the team members section title."""
+        options = [
+            "TEAM MEMBERS",
+            "OUR TEAM",
+            "CREW",
+            "EXPERTS",
+            "PROFESSIONALS"
+        ]
+        return random.choice(options)
+    
+    def generate(self):
+        """Generate the combined data by populating the template with actual data."""
+        logger.info("Starting generation of combined data")
         
         try:
-            # Generate content with DeepSeek
-            prompt = f"""
-            Create rich text content for a roofing company website. The company is called '{business_name}' and has been in business for {years} years in {city}.
+            # Load template
+            if not os.path.exists(self.template_file):
+                logger.error(f"Template file not found: {self.template_file}")
+                return
             
-            Create:
-            1) Two descriptive paragraphs (30-50 words each) about the company
-            2) At least 4 cards highlighting benefits of choosing this company
+            with open(self.template_file, 'r', encoding='utf-8') as f:
+                template_data = json.load(f)
             
-            Return the result as a JSON with:
-            - "description1": first paragraph
-            - "description2": second paragraph 
-            - "cards": array of objects with "title", "desc" (25-40 words), and "icon" (choose from: Certificate, Search, Cloud, ThermometerSnowflake, HeartHandshake, Shield, Clock, Tools, GraduationCap)
+            logger.info("Template loaded successfully")
             
-            Make it sound authentic and unique to this business. Each description should focus on different aspects.
-            """
+            # Extract data from BBB profile and other sources
+            business_name = self.bbb_profile.get('business_name', 'Roofing Company')
+            main_title, sub_title = self._extract_business_name()
+            address = self.bbb_profile.get('address', "123 Main St, Atlanta, GA")
+            city = self._extract_city_from_address(address)
+            phone = self.bbb_profile.get('telephone', "(404) 227-5000")
+            accredited = self.bbb_profile.get('accredited', True)
             
-            response = query_deepseek_api(prompt)
+            # Parse years in business
+            years_data = self.bbb_profile.get('years_in_business', 10)
+            if isinstance(years_data, str) and ":" in years_data:
+                try:
+                    years = int(years_data.split(":")[-1].strip())
+                except ValueError:
+                    years = 10
+            else:
+                try:
+                    years = int(years_data)
+                except (ValueError, TypeError):
+                    years = 10
             
-            try:
-                # Extract JSON from response
-                if '{' in response and '}' in response:
-                    json_str = response[response.find('{'):response.rfind('}')+1]
-                    content = json.loads(json_str)
-                    
-                    description1 = content.get('description1', "")
-                    description2 = content.get('description2', "")
-                    cards = content.get('cards', [])
-                    
-                    # Ensure we have exactly 4 cards
-                    cards = cards[:4]  # Limit to 4 cards
-                    
-                    # If accredited, replace least important card with BBB card
-                    if accredited and len(cards) == 4:
-                        # Ask DeepSeek which card to replace
-                        cards_text = "\n".join([f"{i+1}. {card.get('title')} - {card.get('desc')}" for i, card in enumerate(cards)])
-                        replace_prompt = f"""
-                        Here are the current benefit cards for a roofing business website:
-                        
-                        {cards_text}
-                        
-                        The business is BBB accredited, which is important to highlight. Which card (by number) should be replaced with a BBB accreditation card? Choose the least impactful card to remove.
-                        Return just the number (1-4) of the card to replace.
-                        """
-                        
-                        replace_response = query_deepseek_api(replace_prompt).strip()
-                        
-                        try:
-                            # Try to get the card number to replace
-                            card_to_replace = int(replace_response) - 1
-                            if 0 <= card_to_replace < len(cards):
-                                cards[card_to_replace] = {
-                                    "title": "BBB Accredited",
-                                    "desc": "Recognized for integrity, transparency and commitment to customer satisfaction by the Better Business Bureau.",
-                                    "icon": "Certificate"
-                                }
-                        except:
-                            # If parsing fails, replace the last card
-                            cards[-1] = {
-                                "title": "BBB Accredited",
-                                "desc": "Recognized for integrity, transparency and commitment to customer satisfaction by the Better Business Bureau.",
-                                "icon": "Certificate"
-                            }
-                else:
-                    # If JSON parsing fails, use default content
-                    description1 = f"{business_name} specializes in premium residential and commercial roofing solutions, offering expert installation, repair, and maintenance services tailored to your specific needs."
-                    description2 = f"Our licensed and insured team uses only top-grade materials backed by manufacturer warranties, ensuring your property receives superior protection against the elements for years to come."
-                    
-                    # Default cards
-                    cards = [
-                        {
-                            "title": "BBB Accredited",
-                            "desc": "Recognized for integrity, transparency and commitment to customer satisfaction by the Better Business Bureau.",
-                            "icon": "Certificate"
-                        },
-                        {
-                            "title": "Expert Inspections",
-                            "desc": "Comprehensive roof assessments to identify damage, leaks, and structural issues before they become costly problems.",
-                            "icon": "Search"
-                        },
-                        {
-                            "title": "Weather Protection",
-                            "desc": f"Storm-resistant installations designed to withstand high winds, heavy rain, and harsh {city} weather conditions.",
-                            "icon": "Cloud"
-                        },
-                        {
-                            "title": "Energy Efficiency",
-                            "desc": "Smart roofing solutions that improve insulation and ventilation, reducing your energy costs year-round.",
-                            "icon": "ThermometerSnowflake"
+            # Get geocoordinates
+            lat, lng = self._get_geocoordinates_from_address(address)
+            
+            # Calculate stats
+            customers_served = round(years * 50, -1)
+            roofs_repaired = round(years * 30, -1)
+            completed_projects = round(years * 55, -1)
+            happy_clients = round(years * 45, -1)
+            team_members_count = min(8, 2 + years // 2)  # Scale team size with years
+            
+            # Format services
+            formatted_services = self._format_and_add_slugs_to_services(self.services)
+            
+            # Extract reviews
+            reviews = self._extract_best_reviews()
+            
+            # Generate about page content
+            about_history = self._generate_about_history(business_name, years, city)
+            about_mission = self._generate_about_mission(business_name)
+            
+            # Generate rich text content
+            rich_text_hero = self._generate_rich_text_hero(business_name)
+            rich_text_desc1 = f"{business_name} has been a trusted name in the roofing industry for {years} years, delivering exceptional craftsmanship and reliability. Specializing in residential and commercial roofing, we combine time-tested techniques with modern materials to ensure durability, aesthetic appeal, and long-lasting protection for your property."
+            rich_text_desc2 = f"At {business_name}, we pride ourselves on personalized service and unwavering integrity. Our skilled team handles every project with meticulous attention to detail, from initial inspection to final installation. Customer satisfaction is our top priority, and we stand behind our work with industry-leading warranties and transparent communication."
+            
+            # Format employees for team sections
+            employee_data = self._format_employee_data()
+            
+            # Generate section titles variations
+            booking_header = self._generate_booking_header()
+            gallery_title = self._generate_gallery_title()
+            team_section_title = self._generate_team_section_title()
+            
+            # Apply all replacements to the template data
+            
+            # 1. Hero section
+            template_data["hero"]["mainTitle"] = main_title.upper()
+            template_data["hero"]["subTitle"] = sub_title.upper()
+            template_data["hero"]["residential"]["subServices"] = formatted_services["hero"]["residential"]
+            template_data["hero"]["commercial"]["subServices"] = formatted_services["hero"]["commercial"]
+            
+            # 2. About page
+            template_data["aboutPage"]["title"] = f"{business_name}: {city}'s Trusted Roofing Experts"
+            template_data["aboutPage"]["history"] = about_history
+            template_data["aboutPage"]["mission"] = about_mission
+            # Update city in Community Focus value
+            for value in template_data["aboutPage"]["values"]:
+                if value["title"] == "Community Focus":
+                    value["description"] = value["description"].replace("{{CITY}}", city)
+            # Update stats
+            for stat in template_data["aboutPage"]["stats"]:
+                if stat["title"] == "Years in Business":
+                    stat["value"] = years
+                elif stat["title"] == "Completed Projects":
+                    stat["value"] = completed_projects
+                elif stat["title"] == "Happy Clients":
+                    stat["value"] = happy_clients
+                elif stat["title"] == "Team Members":
+                    stat["value"] = team_members_count
+            # Add team members
+            template_data["aboutPage"]["team"] = employee_data[:2]  # Just use the first two for leadership
+            
+            # 3. Booking section
+            template_data["booking"]["phone"] = phone
+            template_data["booking"]["headerText"] = booking_header
+            
+            # 4. Rich text section
+            template_data["richText"]["heroText"] = rich_text_hero
+            template_data["richText"]["accredited"] = accredited
+            template_data["richText"]["years_in_business"] = f"{years} Years of Roofing Experience"
+            template_data["richText"]["bus_description"] = rich_text_desc1
+            template_data["richText"]["bus_description_second"] = rich_text_desc2
+            # Update years in Expert Craftsmanship card
+            for card in template_data["richText"]["cards"]:
+                if card["title"] == "Expert Craftsmanship":
+                    card["desc"] = card["desc"].replace("{{YEARS_IN_BUSINESS}}", str(years))
+            
+            # If accredited, make sure BBB card is included, otherwise replace it
+            if not accredited:
+                # Find and replace the BBB card with an alternative
+                for i, card in enumerate(template_data["richText"]["cards"]):
+                    if card["title"] == "BBB Accredited":
+                        template_data["richText"]["cards"][i] = {
+                            "title": "Satisfaction Guaranteed",
+                            "desc": "Our commitment to excellence means we stand behind every project, ensuring your complete satisfaction with our workmanship.",
+                            "icon": "ThumbsUp"
                         }
-                    ]
-            except:
-                # Default content if JSON parsing fails
-                description1 = f"{business_name} specializes in premium residential and commercial roofing solutions, offering expert installation, repair, and maintenance services tailored to your specific needs."
-                description2 = f"Our licensed and insured team uses only top-grade materials backed by manufacturer warranties, ensuring your property receives superior protection against the elements for years to come."
-                
-                # Default cards
-                cards = [
-                    {
-                        "title": "BBB Accredited",
-                        "desc": "Recognized for integrity, transparency and commitment to customer satisfaction by the Better Business Bureau.",
-                        "icon": "Certificate"
-                    },
-                    {
-                        "title": "Expert Inspections",
-                        "desc": "Comprehensive roof assessments to identify damage, leaks, and structural issues before they become costly problems.",
-                        "icon": "Search"
-                    },
-                    {
-                        "title": "Weather Protection",
-                        "desc": f"Storm-resistant installations designed to withstand high winds, heavy rain, and harsh {city} weather conditions.",
-                        "icon": "Cloud"
-                    },
-                    {
-                        "title": "Energy Efficiency",
-                        "desc": "Smart roofing solutions that improve insulation and ventilation, reducing your energy costs year-round.",
-                        "icon": "ThermometerSnowflake"
-                    }
-                ]
-        except:
-            # Fallback if API fails completely
-            description1 = f"{business_name} specializes in premium residential and commercial roofing solutions, offering expert installation, repair, and maintenance services tailored to your specific needs."
-            description2 = f"Our licensed and insured team uses only top-grade materials backed by manufacturer warranties, ensuring your property receives superior protection against the elements for years to come."
+                        break
             
-            # Default cards
-            cards = [
-                {
-                    "title": "BBB Accredited",
-                    "desc": "Recognized for integrity, transparency and commitment to customer satisfaction by the Better Business Bureau.",
-                    "icon": "Certificate"
-                },
-                {
-                    "title": "Expert Inspections",
-                    "desc": "Comprehensive roof assessments to identify damage, leaks, and structural issues before they become costly problems.",
-                    "icon": "Search"
-                },
-                {
-                    "title": "Weather Protection",
-                    "desc": f"Storm-resistant installations designed to withstand high winds, heavy rain, and harsh {city} weather conditions.",
-                    "icon": "Cloud"
-                },
-                {
-                    "title": "Energy Efficiency",
-                    "desc": "Smart roofing solutions that improve insulation and ventilation, reducing your energy costs year-round.",
-                    "icon": "ThermometerSnowflake"
-                }
-            ]
-        
-        return {
-            "heroText": self._generate_hero_text(business_name, city, years),
-            "accredited": accredited,
-            "years_in_business": f"{years} Years of Roofing Experience",
-            "bus_description": description1,
-            "bus_description_second": description2,
-            "cards": cards[:4],  # Ensure exactly 4 cards
-            "images": rich_text_images,
-            "imageUploads": [
-                {"file": None, "fileName": ""},
-                {"file": None, "fileName": ""},
-                {"file": None, "fileName": ""}
-            ]
-        }
-    
-    def _generate_before_after_section(self) -> Dict[str, Any]:
-        """Generate the before/after gallery section with standardized image paths."""
-        logger.info("Generating before/after gallery section")
-        return {
-            "sectionTitle": "GALLERY",
-            "items": [
-                {
-                    "before": "/assets/images/beforeafter/a1.jpeg",
-                    "after": "/assets/images/beforeafter/b1.JPG",
-                    "shingle": "Asphalt Shingle",
-                    "sqft": "2000 sqft"
-                },
-                {
-                    "before": "/assets/images/beforeafter/b2.jpeg",
-                    "after": "/assets/images/beforeafter/a2.jpeg",
-                    "shingle": "Metal Roofing",
-                    "sqft": "1800 sqft"
-                },
-                {
-                    "before": "/assets/images/beforeafter/b3.jpeg",
-                    "after": "/assets/images/beforeafter/a3.jpeg",
-                    "shingle": "Composite Shingle",
-                    "sqft": "2200 sqft"
-                }
-            ]
-        }
+            # 5. Map section
+            template_data["map"]["center"]["lat"] = lat
+            template_data["map"]["center"]["lng"] = lng
+            template_data["map"]["address"] = address
+            template_data["map"]["telephone"] = phone
+            for stat in template_data["map"]["stats"]:
+                if stat["title"] == "Years of Service" or stat["title"] == "Years of Experience":
+                    stat["value"] = years
+                elif stat["title"] == "Customers Served":
+                    stat["value"] = customers_served
+                elif stat["title"] == "Roofs Repaired":
+                    stat["value"] = roofs_repaired
+            
+            # 6. Combined page section
+            template_data["combinedPage"]["googleReviews"] = reviews
+            template_data["combinedPage"]["residentialServices"] = formatted_services["combined"]["residential"]
+            template_data["combinedPage"]["commercialServices"] = formatted_services["combined"]["commercial"]
+            template_data["combinedPage"]["teamMembers"] = [member["name"] for member in employee_data[:2]]
+            
+            # 7. Employees section
+            template_data["employees"]["employee"] = employee_data
+            template_data["employees"]["sectionTitle"] = team_section_title
+            
+            # 8. Before/After section
+            template_data["before_after"]["sectionTitle"] = gallery_title
+            
+            # 9. Button section - shuffle images
+            random.shuffle(template_data["button"]["images"])
+            
+            # 10. Reviews section
+            template_data["reviews"] = reviews
+            
+            # Save the final combined data
+            self._save_combined_data(template_data)
+            logger.info("Combined data generation completed successfully")
+            
+        except Exception as e:
+            logger.error(f"Error generating combined data: {e}")
+            raise
 
 def main():
     """Main entry point for the script."""

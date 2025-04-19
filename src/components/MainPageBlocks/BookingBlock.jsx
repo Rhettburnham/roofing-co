@@ -41,7 +41,8 @@ const BookingPreview = memo(({ bookingData }) => {
     service: "",
     message: "",
   });
-  const [isFormVisible, setIsFormVisible] = useState(true);
+  const [isFormVisible, setIsFormVisible] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [residentialServices, setResidentialServices] = useState([]);
   const [commercialServices, setCommercialServices] = useState([]);
@@ -313,49 +314,47 @@ const BookingPreview = memo(({ bookingData }) => {
 
   // GSAP animation for mobile toggle
   const toggleFormVisibility = useCallback(() => {
-    if (isMobile) {
-      // Only animate on mobile
+    if (!isMobile) return; // Exit early if not mobile
+    
+    if (!isAnimating) {
+      setIsAnimating(true);
+      
       if (!isFormVisible) {
-        // Ensure the form container is visible
-        formContainerRef.current.style.display = "block";
-
-        // Animation to expand banner into form
+        // Expanding: First expand banner, then show form
         gsap.to(bannerRef.current, {
           height: "auto",
-          duration: 0.5,
+          duration: 0.4,
           ease: "power2.inOut",
           onComplete: () => {
-            // Fade in form elements
-            gsap.fromTo(
-              formContainerRef.current,
-              { opacity: 0, y: 20 },
-              { opacity: 1, y: 0, duration: 0.3 }
-            );
-          },
+            gsap.to(formContainerRef.current, {
+              opacity: 1,
+              duration: 0.3,
+              onComplete: () => {
+                setIsAnimating(false);
+              }
+            });
+          }
         });
       } else {
-        // Animation to collapse form back to banner
+        // Collapsing: First hide form, then collapse banner
         gsap.to(formContainerRef.current, {
           opacity: 0,
-          y: 20,
           duration: 0.3,
           onComplete: () => {
             gsap.to(bannerRef.current, {
-              height: "auto",
-              duration: 0.5,
+              height: "140px", // Set to exact height
+              duration: 0.4,
               ease: "power2.inOut",
               onComplete: () => {
-                // Don't hide the form container, just reduce opacity
-                formContainerRef.current.style.opacity = "0";
-              },
+                setIsAnimating(false);
+              }
             });
-          },
+          }
         });
       }
+      setIsFormVisible(prev => !prev);
     }
-
-    setIsFormVisible((prev) => !prev);
-  }, [isFormVisible, isMobile]);
+  }, [isFormVisible, isMobile, isAnimating]);
 
   const handleChange = useCallback((e) => {
     const { name, value } = e.target;
@@ -419,7 +418,8 @@ const BookingPreview = memo(({ bookingData }) => {
       {/* OUTER BOX WITH BANNER COLOR */}
       <div
         ref={bannerRef}
-        className="md:max-w-xl w-full bg-banner rounded-lg shadow-lg relative z-30"
+        className={`md:max-w-xl w-full bg-banner rounded-lg shadow-lg relative z-30 transition-all duration-300 ease-in-out md:h-auto
+          ${isFormVisible ? 'h-auto' : 'h-[140px]'}`}
       >
         {/* Left Nails */}
         <div className="absolute left-0  top-0 h-full hidden md:flex flex-col -z-10 justify-between py-8 overflow-visible">
@@ -480,7 +480,7 @@ const BookingPreview = memo(({ bookingData }) => {
         </div>
 
         {/* Left Social Icons */}
-        <div className="absolute -left-60 top-0 h-full hidden md:flex flex-col justify-between py-20 overflow-visible">
+        <div className="absolute -left-60 top-0 h-full hidden md:flex flex-col justify-between py-20 overflow-visible drop-shadow-lg">
           <div id="left-social-1" className="relative">
             <a
               href="https://twitter.com"
@@ -566,7 +566,7 @@ const BookingPreview = memo(({ bookingData }) => {
         </div>
 
         {/* Right Social Icons */}
-        <div className="absolute -right-60 top-0 h-full hidden md:flex flex-col justify-between py-20 overflow-visible">
+        <div className="absolute -right-60 top-0 h-full hidden md:flex flex-col justify-between py-20 overflow-visible drop-shadow-lg">
           <div id="right-social-1" className="relative">
             <a
               href="https://instagram.com"
@@ -618,17 +618,20 @@ const BookingPreview = memo(({ bookingData }) => {
             <button
               ref={toggleButtonRef}
               onClick={toggleFormVisibility}
-              className="md:hidden mt-2 px-4 rounded-md shadow-lg relative"
+              disabled={isAnimating}
+              className={`md:hidden mt-2 px-6 py-2 rounded-md shadow-lg relative transition-all duration-300 
+                ${isAnimating ? 'opacity-50' : 'opacity-100'}
+                ${isFormVisible ? 'bg-white/20' : 'bg-white/10 hover:bg-white/20'}`}
             >
               {isFormVisible ? (
-                <div className="relative z-40 flex space-x-1 justify-center p-1">
+                <div className="relative z-40 flex space-x-1 justify-center">
                   <div className="w-2 h-2 rounded-full bg-white"></div>
                   <div className="w-2 h-2 rounded-full bg-white"></div>
                   <div className="w-2 h-2 rounded-full bg-white"></div>
                 </div>
               ) : (
-                <span className="relative z-40 text-white text-md font-semibold px-4 py-1">
-                  Book
+                <span className="relative z-40 text-white text-md font-semibold">
+                  Book Now
                 </span>
               )}
             </button>
@@ -637,12 +640,13 @@ const BookingPreview = memo(({ bookingData }) => {
           {/* INNER BOX WITH FORM (white background) */}
           <div
             ref={formContainerRef}
-            className="w-full pb-2 md:block"
+            className={`w-full pb-2 md:block md:opacity-100
+              ${isMobile ? `transition-opacity duration-300 ease-in-out ${isFormVisible ? 'opacity-100' : 'opacity-0'}` : ''}`}
             style={{
-              display: "block", // Always show the form
+              display: !isMobile || isFormVisible ? 'block' : 'none'
             }}
           >
-            <div className="bg-white rounded-lg p-3 shadow-inner mx-2">
+            <div className="bg-white rounded-lg p-3 shadow-inner mx-2 mt-2">
               <form onSubmit={handleSubmit} className="w-full">
                 <div className="grid grid-cols-1 gap-4">
                   {/* First Name */}

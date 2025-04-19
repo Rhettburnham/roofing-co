@@ -394,9 +394,10 @@ AppRoutes.propTypes = {
  * 2. Extracts configuration for each block
  * 3. Sets up the router with all application routes
  *
- * The application uses two main JSON files:
+ * The application uses three main JSON files:
  * - combined_data.json: Configuration for the main page blocks
  * - services.json: Configuration for all service pages
+ * - about_page.json: Configuration for the about page (loaded separately)
  *
  * The application allows for local editing of these JSON files through
  * dedicated editor interfaces. The edited content can be downloaded and
@@ -405,9 +406,11 @@ AppRoutes.propTypes = {
 const App = () => {
   const [loading, setLoading] = useState(true);
   const [pageData, setPageData] = useState(null);
+  const [aboutPageData, setAboutPageData] = useState(null);
   const dataUrl = "/data/raw_data/step_4/combined_data.json";
+  const aboutDataUrl = "/data/raw_data/step_3/about_page.json";
 
-  // Fetch the combined_data.json file on component mount
+  // Fetch the combined_data.json and about_page.json files on component mount
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -420,6 +423,24 @@ const App = () => {
 
         const data = await response.json();
         setPageData(data);
+
+        // Fetch and parse the about_page.json file
+        try {
+          const aboutResponse = await fetch(aboutDataUrl);
+          if (aboutResponse.ok) {
+            const aboutData = await aboutResponse.json();
+            setAboutPageData(aboutData);
+          } else {
+            // If about_page.json doesn't exist yet, use aboutPage from combined_data as fallback
+            setAboutPageData(data.aboutPage || {});
+            console.warn("About page data not found, using fallback data");
+          }
+        } catch (aboutError) {
+          console.error("Error loading about page data:", aboutError);
+          // Use aboutPage from combined_data as fallback
+          setAboutPageData(data.aboutPage || {});
+        }
+
         setLoading(false);
       } catch (error) {
         console.error("Error loading data:", error);
@@ -427,7 +448,7 @@ const App = () => {
       }
     };
     fetchData();
-  }, [dataUrl]);
+  }, [dataUrl, aboutDataUrl]);
 
   if (loading) {
     return (
@@ -454,7 +475,9 @@ const App = () => {
   const combinedPageCfg = pageData.combinedPage;
   const beforeAfterConfig = pageData.before_after;
   const employeesConfig = pageData.employees;
-  const aboutPageConfig = pageData.aboutPage;
+  
+  // Use separately loaded about page data instead of pageData.aboutPage
+  const aboutPageConfig = aboutPageData || {};
 
   return (
     <Router>

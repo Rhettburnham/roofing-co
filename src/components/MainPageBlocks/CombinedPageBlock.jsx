@@ -80,12 +80,12 @@ const TestimonialItem = ({ testimonial }) => {
   // Show truncated text on small screens unless expanded
   const truncated =
     testimonial.text.length > 100
-      ? testimonial.text.slice(0, 100) + "..."
+      ? testimonial.text.slice(0, 250) + "..."
       : testimonial.text;
 
   return (
     <div
-      className="p-4 bg-white rounded-lg custom-circle-shadow relative cursor-pointer"
+      className="p-2 md:p-4 bg-white rounded-lg custom-circle-shadow relative cursor-pointer"
       onClick={handleExpandClick}
     >
       {/* Name, rating, date with logo to the left */}
@@ -102,7 +102,7 @@ const TestimonialItem = ({ testimonial }) => {
             <img
               src={testimonial.logo}
               alt="Logo"
-              className="w-8 h-8 md:w-10 md:h-10"
+              className="w-6 h-6 md:w-12 md:h-12"
             />
           </a>
         )}
@@ -110,27 +110,27 @@ const TestimonialItem = ({ testimonial }) => {
         {/* Name and date in column with reduced spacing */}
         <div className="flex-grow">
           <div className="flex items-center justify-between gap-1">
-            <p className="text-[2.5vw] md:text-[2vh] font-bold text-black font-sans truncate">
+            <p className="text-[3vw] md:text-[1.8vh] font-semibold text-black font-sans truncate">
               {testimonial.name}
             </p>
             <div className="flex-shrink-0">
               <StarRating rating={testimonial.stars} />
             </div>
           </div>
-          <p className="text-gray-500 text-[2vw] md:text-[1.6vh] -mt-1">
+          <p className="text-gray-700 text-[2vw] md:text-[1.4vh] md:-mt-2">
             {testimonial.date}
           </p>
         </div>
       </div>
 
       {/* Text */}
-      <p className="text-gray-800">
-        <span className="text-[2.4vw] md:text-[2.2vh] block md:hidden font-serif">
-          {isExpanded ? testimonial.text : truncated}
-        </span>
-        <span className="md:text-xs hidden md:block font-serif">
-          {testimonial.text}
-        </span>
+      <p className="text-gray-800 indent-4">
+          <span className="text-[2.8vw] md:text-[2.2vh] block md:hidden font-serif">
+              {isExpanded ? testimonial.text : truncated}
+          </span>
+          <span className="md:text-xs hidden md:block font-serif">
+              {testimonial.text}
+          </span>
       </p>
     </div>
   );
@@ -223,7 +223,7 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
       ────────────────────────────────────────────────────────── */}
       <div className="block md:hidden relative w-full">
         {/* Two images side-by-side, animate x for swap */}
-        <div className="overflow-hidden w-full relative h-[50vh]">
+        <div className="overflow-hidden w-full relative h-[40vh]">
           <motion.div
             animate={{ x: isCommercial ? "-100vw" : "0%" }}
             transition={{ duration: 0.8 }}
@@ -247,7 +247,7 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
           className="absolute bottom-0 left-0 w-full h-[9.5vh] bg-black z-0 pointer-events-none"
           style={{ clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)" }}
         />
-        <h2 className="absolute top-[2vh] left-1/2 transform -translate-x-1/2 text-white text-[10vw] font-rye drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)]">
+        <h2 className="absolute top-[1vh] left-1/2 transform -translate-x-1/2 text-white text-[10vw] font-rye drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)]">
           {config.title || "Services"}
         </h2>
 
@@ -293,7 +293,7 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
                   "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0,0,0 / 0.1)";
               }}
             >
-              <Building2 className="mr-2" size={16} />
+              <FaWarehouse className="mr-2" size={16} />
               <p className="text-[3vw] font-sans">Commercial</p>
             </button>
           </div>
@@ -318,7 +318,7 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
                 >
                   <Link to={service.link}>
                     <div
-                      className="group whitespace-nowrap flex-col dark_button bg-banner w-[8vh] h-[8vh] p-4 md:w-24 md:h-24 rounded-full p-4 flex items-center justify-center text-white text-[5vw] hover:text-gray-200 hover:bg-gray-200 transition drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
+                      className="group whitespace-nowrap flex-col dark_button bg-banner w-[9vh] h-[9vh] p-2 md:w-24 md:h-24 rounded-full p-2 flex items-center justify-around text-white text-[5vw] hover:text-gray-200 hover:bg-gray-200 transition drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]"
                       onMouseEnter={(e) => {
                         e.currentTarget.style.boxShadow =
                           "inset 0 0 30px 10px rgba(0,0,0,0.8)";
@@ -328,9 +328,9 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
                       }}
                     >
                       {typeof service.icon === 'string' 
-                        ? React.createElement(resolveIcon(service.icon)) 
-                        : React.createElement(service.icon)}
-                      <h3 className="mt-1 text-white text-[3vw] group-hover:text-gray-200 md:text-sm drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
+                        ? React.createElement(resolveIcon(service.icon), { className: 'w-[8vw] h-[8vw] md:w-10 md:h-10' }) 
+                        : React.createElement(service.icon, { className: 'w-[5vw] h-[5vw] md:w-10 md:h-10' })}
+                      <h3 className=" text-white text-[3.6vw] group-hover:text-gray-200 md:text-sm drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
                         {service.title}
                       </h3>
                     </div>
@@ -511,8 +511,8 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
                         }}
                       >
                         {typeof service.icon === 'string' 
-                          ? React.createElement(resolveIcon(service.icon)) 
-                          : React.createElement(service.icon)}
+                          ? React.createElement(resolveIcon(service.icon), { className: 'w-[5vw] h-[5vw] md:w-10 md:h-10' }) 
+                          : React.createElement(service.icon, { className: 'w-[5vw] h-[5vw] md:w-10 md:h-10' })}
                         <h3 className="mt-1 text-white text-lg drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
                           {service.title}
                         </h3>

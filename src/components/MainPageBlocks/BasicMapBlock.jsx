@@ -17,16 +17,19 @@ import * as FaIcons from "react-icons/fa";
 gsap.registerPlugin(ScrollTrigger);
 
 // to do this needs to be centered where the lat is currentl seem up and to the right
-const CustomMarkerIcon = L.icon({
-  iconUrl: "/assets/images/clipped-cowboy.png",
+const CustomMarkerIcon = (iconUrl) => L.icon({
+  iconUrl: iconUrl || "/assets/images/hero/clipped.png",
   iconSize: [30, 30],
   iconAnchor: [15, 15], // Center the icon properly
   popupAnchor: [0, -20],
   className: "invert-icon", // Add class to make it white
 });
 
-const DropMarker = memo(({ position }) => {
+const DropMarker = memo(({ position, iconUrl }) => {
   const markerRef = useRef(null);
+  
+  // Debug log for icon URL
+  console.log("Using marker icon:", iconUrl);
 
   useEffect(() => {
     if (markerRef.current) {
@@ -47,7 +50,7 @@ const DropMarker = memo(({ position }) => {
   return (
     <Marker
       position={position}
-      icon={CustomMarkerIcon}
+      icon={CustomMarkerIcon(iconUrl)}
       ref={markerRef}
       style={{ filter: "invert(0)" }}
     />
@@ -121,14 +124,14 @@ const StatItem = memo(({ iconName, title, value }) => {
 
   return (
     <div className="flex flex-col items-center justify-center text-center">
-      <div className="flex flex-row justify-center items-center text-[5.5vhw] md:text-[6.5vh] text-gray-50/80">
+      <div className="flex flex-row justify-center items-center text-gray-50/80">
         <IconComp className="w-full h-full" />
-        <p className="ml-2 text-xs md:text-base font-semibold text-yellow-100">
+        <p className="ml-2  font-semibold text-yellow-100">
           {count}
         </p>
       </div>
       <div className="flex gap-1">
-        <p className="whitespace-nowrap text-sm md:text-sm font-semibold text-white mt-1">
+        <p className="whitespace-nowrap  font-semibold text-white mt-1">
           {title}
         </p>
       </div>
@@ -168,11 +171,11 @@ const StatsPanel = memo(({ isSmallScreen, stats }) => {
             key={index}
             className="flex flex-col items-center justify-center bg-white/30 rounded-lg p-1 shadow-md h-full"
           >
-            <IconComponent className="w-4 h-4 md:w-6 md:h-6 mb-0.5 md:mb-1 text-white" />
-            <div className="text-sm md:text-lg font-bold text-white">
+            <IconComponent className="w-8 h-8 md:w-6 md:h-6  md:mb-1 text-white" />
+            <div className="text-lg md:text-lg font-bold text-white">
               {stat.value}
             </div>
-            <div className="text-[1.8vw] md:text-sm text-white font-medium line-clamp-1">
+            <div className="text-[3vw] md:text-sm text-white font-medium line-clamp-1">
               {stat.title || stat.label}
             </div>
           </div>
@@ -276,6 +279,7 @@ function BasicMapPreview({ mapData }) {
     telephone,
     serviceHours = [],
     stats = [],
+    markerIcon,
   } = mapData;
 
   useEffect(() => {
@@ -311,7 +315,8 @@ function BasicMapPreview({ mapData }) {
       });
       
       gsap.to(titleRef.current, {
-        x: 0,
+        x: '50%', // Center horizontally
+        xPercent: -50, // Adjust for width of element
         opacity: 1,
         duration: 1,
         ease: "power3.out",
@@ -321,17 +326,19 @@ function BasicMapPreview({ mapData }) {
           start: "bottom 70%", // Trigger when bottom of section is 30% from bottom (70% down viewport)
           toggleActions: "play none none none",
           once: true,
-          // markers: true, // Uncomment for debugging
         }
       });
     } else {
-      // Medium+ viewport: Animate from current left position to center when scrolled 40% down vp
-      const parentWidth = titleRef.current.parentNode.offsetWidth;
-      const titleWidth = titleRef.current.offsetWidth;
-      const targetX = (parentWidth / 2) - (titleWidth / 2) - 44; // Center position accounting for padding
-
+      // Medium+ viewport: Center the title
+      gsap.set(titleRef.current, {
+        x: 0,
+        opacity: 0
+      });
+      
       gsap.to(titleRef.current, {
-        x: targetX,
+        x: '50%',
+        xPercent: -50, // Center horizontally by offsetting half of the element's width
+        opacity: 1,
         duration: 1.2,
         ease: "power2.inOut",
         scrollTrigger: {
@@ -340,7 +347,6 @@ function BasicMapPreview({ mapData }) {
           start: "top 40%", // Trigger when top of section reaches 40% down the viewport
           toggleActions: "play none none none",
           once: true,
-          // markers: true, // Uncomment for debugging
         }
       });
     }
@@ -387,13 +393,11 @@ function BasicMapPreview({ mapData }) {
   return (
     <section className="overflow-hidden" ref={sectionRef}>
       <div className="pb-2">
-        <div
-          className={`flex ${isSmallScreen ? "justify-center" : "justify-start pl-11"}`}
-        >
-          {/* Title with animation */}
+        <div className="flex justify-center">
+          {/* Title with animation - changed to always be centered parent */}
           <h1 
             ref={(el) => { titleRef.current = el; }}
-            className="text-[3vh] md:text-[4vh] font-normal text-black text-center font-serif title-animation"
+            className="text-[3vh] md:text-[4vh] font-normal text-black font-serif title-animation"
           >
             Are we in your area?
           </h1>
@@ -424,7 +428,7 @@ function BasicMapPreview({ mapData }) {
                       fillOpacity: 0.2,
                     }}
                   />
-                  <DropMarker position={center} />
+                  <DropMarker position={center} iconUrl={markerIcon} />
                   <MapInteractionHandler mapActive={mapActive} />
                 </MapContainer>
                 {!mapActive && (
@@ -573,6 +577,9 @@ function BasicMapEditorPanel({ localMap, setLocalMap, onSave }) {
     typeof window !== "undefined" ? window.innerWidth <= 768 : false
   );
   const statsDivRef = useRef(null);
+  
+  // Debug log for marker icon in editor
+  console.log("Editor marker icon:", localMap.markerIcon);
 
   useEffect(() => {
     const handleResize = () => {
@@ -695,6 +702,21 @@ function BasicMapEditorPanel({ localMap, setLocalMap, onSave }) {
             </label>
           </div>
 
+          {/* Icon URL input */}
+          <div className="flex flex-col md:flex-row gap-2">
+            <label className="block w-full">
+              <span className="block text-sm mb-1">Marker Icon URL:</span>
+              <input
+                type="text"
+                className="bg-gray-700 px-2 py-1 rounded w-full"
+                value={localMap.markerIcon || ""}
+                onChange={(e) =>
+                  setLocalMap((p) => ({ ...p, markerIcon: e.target.value }))
+                }
+              />
+            </label>
+          </div>
+
           {/* Editable map preview */}
           <div className="relative h-[40vh] md:h-[50vh] w-full">
             <div className="w-full h-full rounded-xl overflow-hidden shadow-lg border border-gray-300 relative">
@@ -721,7 +743,7 @@ function BasicMapEditorPanel({ localMap, setLocalMap, onSave }) {
                     }}
                   />
                 )}
-                {localMap.center && <DropMarker position={localMap.center} />}
+                {localMap.center && <DropMarker position={localMap.center} iconUrl={localMap.markerIcon} />}
                 <MapInteractionHandler mapActive={mapActive} />
               </MapContainer>
 
@@ -820,6 +842,9 @@ export default function BasicMapBlock({
   mapData,
   onConfigChange,
 }) {
+  // Add console log to debug incoming mapData
+  console.log("Received mapData:", mapData);
+  
   // Initialize local editor state
   const [localMapData, setLocalMapData] = useState(() => {
     if (!mapData) {
@@ -831,6 +856,7 @@ export default function BasicMapBlock({
         telephone: "",
         serviceHours: [],
         stats: [],
+        markerIcon: "",
       };
     }
     return {

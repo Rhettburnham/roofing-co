@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Home, Building2 } from "lucide-react";
+import { Home } from "lucide-react";
 import { Link } from "react-router-dom";
+import { FaWarehouse } from "react-icons/fa";
 
 /* 
 ====================================================
@@ -170,12 +171,12 @@ function HeroPreview({ heroconfig }) {
 
       {/* Gradient from white to transparent - overlay on top of images */}
       <div
-        className={`absolute top-[14vh] md:top-[21vh] left-0 right-0 bg-gradient-to-b z-40 from-white from-0% to-transparent pointer-events-none ${
+        className={`absolute top-[14vh] md:top-[21vh] left-0 right-0 bg-gradient-to-b from-white from-0% to-transparent pointer-events-none ${
           activeSection === "neutral"
             ? "h-[18vh] md:h-[18vh]"
             : "h-[10vh] md:h-[10vh]"
         }`}
-        style={{ transition: "height 0.3s ease-out 0.4s", zIndex: 5 }}
+        style={{ transition: "height 0.3s ease-out 0.4s", zIndex: 1 }}
       />
 
       {/* Hero Split Sections */}
@@ -222,12 +223,14 @@ function HeroPreview({ heroconfig }) {
                 transformOrigin: "right center",
               }}
             />
-            <div className="absolute top-0 left-0 w-full h-full z-40 flex flex-col items-center justify-center">
-              <div className="flex flex-col items-center ">
+            {/* Absolutely positioned container for Residential content */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
+              <div className="flex flex-col items-center pointer-events-auto">
                 {/* Combined container for icon and title - grouped for unified clicking */}
                 <div
-                  className="flex flex-col items-center z-70 cursor-pointer rounded-lg p-1 bg-banner"
-
+                  className={`flex flex-col items-center cursor-pointer rounded-lg p-1 ${
+                    activeSection !== "residential" ? "bg-banner" : ""
+                  }`}
                   onClick={(e) => {
                     e.stopPropagation();
                     setActiveSection((prev) =>
@@ -243,7 +246,7 @@ function HeroPreview({ heroconfig }) {
                     }
                   >
                     <Home 
-                      className="w-[6.5vw] h-[6.5vw] md:w-[6.5vh] md:h-[6.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)] text-amber-100 rounded-full p-0" 
+                      className="w-[6.5vw] h-[6.5vw] md:w-[7.5vh] md:h-[7.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)] text-amber-100 rounded-full p-1" 
                     />
                   </motion.div>
 
@@ -253,7 +256,7 @@ function HeroPreview({ heroconfig }) {
                     animate={
                       activeSection === "residential" ? "active" : "default"
                     }
-                    className="text-[3.2vw] md:text-[2.2vh] md:-mt-2 font-semibold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.3)] text-amber-100 font-serif"
+                    className="text-[3.2vw] md:text-[2.4vh] font-semibold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.3)] text-amber-100 font-serif"
                   >
                     Residential
                   </motion.h2>
@@ -265,7 +268,7 @@ function HeroPreview({ heroconfig }) {
                     variants={listVariants}
                     initial="hidden"
                     animate="visible"
-                    className="text-white font-serif text-center -space-y-2 md:space-y-0 text-[2.3vw] md:text-[2.4vh] font-normal drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,3)] z-50"
+                    className="text-white font-serif text-center -space-y-2 md:space-y-0 text-[2.3vw] md:text-[2.4vh] font-normal drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,3)]"
                   >
                     {residentialServices.map((service, idx) => (
                       <motion.li
@@ -323,11 +326,14 @@ function HeroPreview({ heroconfig }) {
                 transformOrigin: "left center",
               }}
             />
-            <div className="absolute top-0 right-0 w-full h-full z-40 flex flex-col items-start justify-center">
-              <div className="flex flex-col items-center ml-[8vh] md:ml-[13.2vw]">
+            {/* Absolutely positioned container for Commercial content */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50" >
+              <div className="flex flex-col items-center pointer-events-auto ">
                 {/* Combined container for icon and title - grouped for unified clicking */}
                 <div
-                  className="flex flex-col items-center z-50 cursor-pointer rounded-lg p-1 bg-banner"
+                  className={`flex flex-col items-center cursor-pointer rounded-lg p-1 ${
+                    activeSection !== "commercial" ? "bg-banner" : ""
+                  }`}
                   onClick={(e) => {
                     e.stopPropagation();
                     setActiveSection((prev) =>
@@ -342,8 +348,8 @@ function HeroPreview({ heroconfig }) {
                       activeSection === "commercial" ? "active" : "default"
                     }
                   >
-                    <Building2 
-                      className="w-[6.5vw] h-[6.5vw] md:w-[12.5vh] md:h-[12.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)] text-amber-100 rounded-full p-4" 
+                    <FaWarehouse 
+                      className="w-[6.5vw] h-[6.5vw] md:w-[7.5vh] md:h-[7.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)] text-amber-100 rounded-full p-1" 
                     />
                   </motion.div>
 
@@ -353,7 +359,7 @@ function HeroPreview({ heroconfig }) {
                     animate={
                       activeSection === "commercial" ? "active" : "default"
                     }
-                    className="text-[3.2vw] md:text-[3.2vh] md-mt-2 font-semibold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.3)] text-amber-100 font-serif"
+                    className="text-[3.2vw] md:text-[2.4vh] font-semibold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.3)] text-amber-100 font-serif"
                   >
                     Commercial
                   </motion.h2>
@@ -365,7 +371,7 @@ function HeroPreview({ heroconfig }) {
                     variants={listVariants}
                     initial="hidden"
                     animate="visible"
-                    className="text-white font-serif text-center -space-y-2 md:space-y-0 text-[2.3vw] md:text-[2.4vh] font-normal drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,3)]  z-50"
+                    className="text-white font-serif text-center -space-y-2 md:space-y-0 text-[2.3vw] md:text-[2.4vh] font-normal drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,3)]"
                   >
                     {commercialServices.map((service, idx) => (
                       <motion.li
@@ -391,12 +397,12 @@ function HeroPreview({ heroconfig }) {
 
         {/* Dark red gradient at the bottom - overlay only on the images */}
         <div
-          className={`absolute bottom-0 left-0 right-0 pointer-events-none bg-gradient-to-t from-banner from-10% to-transparent z-30 ${
+          className={`absolute bottom-0 left-0 right-0 pointer-events-none bg-gradient-to-t from-banner from-10% to-transparent ${
             activeSection === "neutral"
               ? "h-[15vh] md:h-[18vh]"
               : "h-[9vh] md:h-[10vh]"
           }`}
-          style={{ transition: "height 0.3s ease-out 0.4s" }}
+          style={{ transition: "height 0.3s ease-out 0.4s", zIndex: 1 }}
         />
       </div>
     </section>

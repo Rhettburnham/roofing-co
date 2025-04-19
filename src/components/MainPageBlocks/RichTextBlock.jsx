@@ -30,33 +30,25 @@ function RichTextPreview({ richTextData }) {
   const [activeVideo, setActiveVideo] = useState(0);
   const [videosLoaded, setVideosLoaded] = useState(false);
 
-  // Hard-coded process steps instead of using richTextData.steps
-  const processedSteps = [
-    {
-      title: "Book",
-      videoSrc: "/assets/videos/our_process_videos/booking.mp4",
-      href: "/#booking",
-      scale: 0.8,
-    },
-    {
-      title: "Inspection",
-      videoSrc: "/assets/videos/our_process_videos/magnify.mp4",
-      href: "/inspection",
-      scale: 1.25,
-    },
-    {
-      title: "Service",
-      videoSrc: "/assets/videos/our_process_videos/repair.mp4",
-      href: "/#packages",
-      scale: 1.1,
-    },
-    {
-      title: "Review",
-      videoSrc: "/assets/videos/our_process_videos/approval.mp4",
-      href: "/#testimonials",
-      scale: 0.9,
-    },
-  ];
+  // Debug richTextData
+  useEffect(() => {
+    console.log("RichTextPreview received data:", richTextData);
+  }, [richTextData]);
+
+  // Return early if no data
+  if (!richTextData) {
+    return <p className="text-center py-4">No RichText data found.</p>;
+  }
+
+  // Extract data from richTextData
+  const {
+    heroText = "",
+    bus_description = "",
+    bus_description_second = "",
+    cards = [],
+    images = [],
+    steps = [],
+  } = richTextData || {};
 
   // Trigger animation once on first mount only
   useEffect(() => {
@@ -74,92 +66,177 @@ function RichTextPreview({ richTextData }) {
 
   // Initialize and preload all videos on component mount
   useEffect(() => {
+    // For debugging - log the steps array
+    console.log("Steps data:", steps);
+    
+    // Create video elements early
+    steps.forEach((_, idx) => {
+      if (!videoRefs.current[idx]) {
+        videoRefs.current[idx] = document.createElement('video');
+      }
+    });
+
     const loadVideos = async () => {
       try {
-        // Ensure all video elements are set first frame
-        const promises = processedSteps.map((step, idx) => {
+        // Set up each video element with proper loading attributes
+        const promises = steps.map((step, idx) => {
           return new Promise((resolve) => {
-            if (videoRefs.current[idx]) {
-              // Set to first frame and pause
-              videoRefs.current[idx].currentTime = 0;
-              videoRefs.current[idx].pause();
-              // Mark as loaded when metadata is available
-              videoRefs.current[idx].onloadedmetadata = () => resolve();
-              // Also resolve if there's an error to prevent hanging
-              videoRefs.current[idx].onerror = () => resolve();
-            } else {
+            const video = videoRefs.current[idx];
+            if (!video) {
               resolve();
+              return;
             }
+            
+            // Set video loading attributes
+            video.muted = true;
+            video.playsInline = true;
+            video.preload = "auto"; // Force preloading
+            
+            // Remove the leading slash if it exists
+            const normalizedPath = step.videoSrc.startsWith('/') 
+              ? step.videoSrc.substring(1) 
+              : step.videoSrc;
+            
+            // Set the video source
+            video.src = normalizedPath;
+            
+            // Load the video data (important for preloading)
+            video.load();
+            
+            // Set up event handlers for loading
+            video.onloadeddata = () => {
+              console.log(`Video ${idx} data loaded`);
+              resolve();
+            };
+            
+            video.oncanplaythrough = () => {
+              console.log(`Video ${idx} can play through`);
+              resolve();
+            };
+            
+            video.onerror = (e) => {
+              console.error(`Error loading video for step ${idx}:`, step, e);
+              resolve();
+            };
+            
+            // Timeout in case loading takes too long
+            setTimeout(resolve, 5000);
           });
         });
 
         // Wait for all videos to be ready
         await Promise.all(promises);
+        console.log("All videos preloaded");
         setVideosLoaded(true);
       } catch (error) {
         console.error("Error preloading videos:", error);
-        // Mark as loaded even if there's an error
         setVideosLoaded(true);
       }
     };
 
     loadVideos();
-  }, []);
+
+    // Clean up video refs when component unmounts
+    return () => {
+      videoRefs.current.forEach(video => {
+        if (video) {
+          try {
+            video.pause();
+            video.src = "";
+            video.load();
+          } catch (e) {
+            console.warn("Error cleaning up video:", e);
+          }
+        }
+      });
+      videoRefs.current = [];
+    };
+  }, [steps]);
 
   // Handle video playback control
   useEffect(() => {
-    if (!videosLoaded) return;
+    if (!videosLoaded || !steps || steps.length === 0) return;
 
     let timeouts = [];
+    let isComponentMounted = true;
 
     const playCurrentVideo = () => {
+      // Get the real index (remove the highlighting flag)
+      const currentIndex = activeVideo % 100;
+      const isHighlighted = activeVideo < 100;
+      
       // Pause all videos except the active one
       videoRefs.current.forEach((video, idx) => {
         if (!video) return;
 
-        // Make sure all videos are visible (first frame)
-        video.currentTime = 0;
+        try {
+          // Check if video is actually a video element
+          // (it might have been replaced by an image)
+          if (video.tagName?.toLowerCase() !== 'video') {
+            return;
+          }
 
-        if (idx === activeVideo) {
-          // Play the active video
-          video.play().catch((error) => {
-            console.error(`Video ${activeVideo} playback failed:`, error);
-          });
-        } else {
-          // Pause other videos
-          video.pause();
+          // Check if video has a valid source
+          if (!video.src) {
+            console.warn(`Video ${idx} has no source`);
+            return;
+          }
+
+          // Force preloading by calling load() before play
+          if (idx === currentIndex) {
+            // Force preload and reset to beginning
+            video.currentTime = 0;
+            video.muted = true;
+            video.load();
+            
+            // Simple play without setTimeout
+            console.log(`Playing video ${idx}`);
+            try {
+              video.play().catch(error => {
+                console.warn(`Video ${idx} play failed:`, error.name);
+              });
+            } catch (error) {
+              console.warn("Video play error:", error);
+            }
+          } else {
+            // Pause other videos
+            video.pause();
+          }
+        } catch (error) {
+          console.warn(`Error controlling video ${idx}:`, error);
         }
       });
 
-      // Set up the next video after a delay
-      const nextIndex = (activeVideo + 1) % processedSteps.length;
-      const timeout = setTimeout(() => {
-        setActiveVideo(nextIndex);
-      }, 4000);
+      // If currently highlighted, schedule unhighlight after 2.5 seconds
+      if (isHighlighted) {
+        const highlightTimeout = setTimeout(() => {
+          if (isComponentMounted) {
+            // Remove highlight but keep the video playing (add 100 to mark as unhighlighted)
+            setActiveVideo(currentIndex + 100);
+          }
+        }, 2500); // 2.5 seconds for highlight
+        timeouts.push(highlightTimeout);
+      }
 
-      timeouts.push(timeout);
+      // Set up the next video after a total of 6 seconds
+      const nextIndex = (currentIndex + 1) % steps.length;
+      const videoTimeout = setTimeout(() => {
+        if (isComponentMounted) {
+          // Set to the next index with highlighting (pure index without +100)
+          setActiveVideo(nextIndex);
+        }
+      }, 6000); // 6 seconds for video playback
+
+      timeouts.push(videoTimeout);
     };
 
     playCurrentVideo();
 
     return () => {
+      isComponentMounted = false;
       timeouts.forEach((timeout) => clearTimeout(timeout));
     };
-  }, [activeVideo, videosLoaded, processedSteps.length]);
-
-  // Return early if no data
-  if (!richTextData) {
-    return <p className="text-center py-4">No RichText data found.</p>;
-  }
-
-  // Extract data from richTextData
-  const {
-    heroText = "",
-    bus_description = "",
-    bus_description_second = "",
-    cards = [],
-    images = [],
-  } = richTextData || {};
+  }, [activeVideo, videosLoaded, steps]);
 
   // Format image paths to ensure they're standardized
   const formattedImages = images.map((img) =>
@@ -301,28 +378,82 @@ function RichTextPreview({ richTextData }) {
       transition: opacity 1s ease-in-out;
       transition-delay: 0.5s;
     }
+    
+    /* Mobile process section optimizations */
+    .mobile-process-section .rounded-full {
+      width: 8vh !important;
+      height: 8vh !important;
+    }
+    
+    .mobile-process-section p {
+      font-size: 0.85rem !important;
+    }
+    
+    .mobile-process-section svg {
+      width: 0.75rem;
+      height: 0.75rem;
+      margin: 0 0.25rem;
+    }
+
+    /* Ensure process steps stay in a single row */
+    .mobile-process-section > div {
+      display: flex;
+      flex-wrap: nowrap;
+      width: 100%;
+      padding-bottom: 10px;
+    }
+    
+    .mobile-process-section > div > div {
+      flex-shrink: 0;
+    }
   `;
 
   // Render Process Steps - simplified following Process.jsx pattern
   const RenderProcessSteps = () => {
-    if (!processedSteps || processedSteps.length === 0) {
+    if (!steps || steps.length === 0) {
       return <div className="text-center py-4">No process steps available</div>;
     }
 
+    // For debugging - show video paths
+    console.log("Rendering process steps with video paths:", steps.map(s => s.videoSrc));
+    
+    // Helper function to check if a step is currently highlighted
+    const isStepHighlighted = (index) => {
+      // A step is highlighted if activeVideo equals its index (no +100)
+      return activeVideo === index;
+    };
+    
+    // Helper function to check if a step's video is currently playing
+    const isVideoPlaying = (index) => {
+      // The video is playing if either:
+      // 1. The step is highlighted (activeVideo === index)
+      // 2. The step is unhighlighted but still playing (activeVideo === index + 100)
+      return activeVideo === index || activeVideo === index + 100;
+    };
+
     return (
-      <div className="flex justify-center items-center flex-wrap md:gap-4 mb-[4vh] md:mb-[8vh]">
-        {processedSteps.map((step, index) => {
+      <div className="flex justify-center items-center flex-nowrap md:gap-4 mb-[4vh] md:mb-[8vh] w-full">
+        {steps.map((step, index) => {
           const isHashLink = step.href?.startsWith("/#");
           const LinkComponent = isHashLink ? HashLink : Link;
 
+          // Fix the video path to ensure it points to the correct location
+          // Remove the leading slash to make the path relative to the public folder
+          const videoSrc = step.videoSrc.startsWith('/') 
+            ? step.videoSrc.substring(1) 
+            : step.videoSrc;
+
+          // Create a fallback image path based on the video title
+          const fallbackImage = `/assets/images/our_process_images/${step.title.toLowerCase()}.jpg`;
+
           return (
-            <div key={index} className="flex items-center pt-1 md:pt-2">
+            <div key={index} className="flex items-center pt-1 md:pt-2 shrink-0">
               <LinkComponent to={step.href || "#"}>
                 <motion.div
                   initial={{ opacity: 0.7, scale: 1 }}
                   animate={{
-                    opacity: activeVideo === index ? 1 : 0.7,
-                    scale: activeVideo === index ? 1.1 : 1,
+                    opacity: isStepHighlighted(index) ? 1 : 0.7,
+                    scale: isStepHighlighted(index) ? 1.1 : 1,
                   }}
                   transition={{
                     type: "spring",
@@ -330,21 +461,29 @@ function RichTextPreview({ richTextData }) {
                     damping: 20,
                   }}
                   className="flex flex-col items-center cursor-pointer"
-                  onClick={() => setActiveVideo(index)}
+                  onClick={() => {
+                    // Set to exact index to activate highlight
+                    setActiveVideo(index);
+                  }}
                 >
                   <div
                     className={`rounded-full overflow-hidden flex items-center justify-center drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.3)] md:w-[14.4vh] md:h-[14.4vh] w-[6.8vh] h-[6.8vh] bg-white ${
-                      activeVideo === index ? "ring-2 ring-accent" : ""
+                      isStepHighlighted(index) ? "ring-2 ring-accent" : ""
                     }`}
                   >
                     <video
-                      ref={(el) => (videoRefs.current[index] = el)}
-                      src={step.videoSrc}
+                      ref={(el) => {
+                        // Only set the ref if it's a new element
+                        if (el && !videoRefs.current[index]) {
+                          videoRefs.current[index] = el;
+                        }
+                      }}
+                      src={videoSrc}
                       muted
                       playsInline
-                      loop={index === activeVideo}
+                      autoPlay={isVideoPlaying(index)}
+                      loop={isVideoPlaying(index)}
                       className="object-contain"
-                      poster={`/assets/videos/our_process_videos/posters/${step.title.toLowerCase()}.jpg`}
                       style={{
                         pointerEvents: "none",
                         width: `${80 * (step.scale || 1)}%`,
@@ -354,11 +493,34 @@ function RichTextPreview({ richTextData }) {
                       }}
                       tabIndex={-1}
                       preload="auto"
+                      onError={(e) => {
+                        console.error(`Video ${index} load error:`, e);
+                        // Try to set a fallback image if the video fails to load
+                        if (e.target) {
+                          try {
+                            // Create an image element instead
+                            const img = document.createElement('img');
+                            img.src = fallbackImage;
+                            img.alt = step.title;
+                            img.style.width = `${80 * (step.scale || 1)}%`;
+                            img.style.height = `${80 * (step.scale || 1)}%`;
+                            img.style.objectFit = 'contain';
+                            
+                            // Replace the video with the image
+                            const parent = e.target.parentNode;
+                            if (parent) {
+                              parent.replaceChild(img, e.target);
+                            }
+                          } catch (imgError) {
+                            console.warn("Failed to replace video with image:", imgError);
+                          }
+                        }
+                      }}
                     />
                   </div>
                   <p
                     className={`text-center text-[3vw] md:text-lg font-semibold ${
-                      activeVideo === index ? "text-accent" : "text-gray-500"
+                      isStepHighlighted(index) ? "text-accent" : "text-white"
                     }`}
                   >
                     {step.title}
@@ -366,12 +528,12 @@ function RichTextPreview({ richTextData }) {
                 </motion.div>
               </LinkComponent>
 
-              {index < processedSteps.length - 1 && (
-                <div className="flex items-center mx-2">
+              {index < steps.length - 1 && (
+                <div className="flex items-center mx-2 shrink-0">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className={`relative w-4 h-4 md:w-10 md:h-10 md:mx-2 transition-all duration-300 ${
-                      activeVideo === index ? "text-accent" : "text-gray-500"
+                    className={`relative w-4 h-4 md:w-6 md:h-6 md:mx-2 transition-all duration-300 ${
+                      isStepHighlighted(index) ? "text-accent" : "text-white"
                     }`}
                     fill="none"
                     viewBox="0 0 24 24"
@@ -393,6 +555,20 @@ function RichTextPreview({ richTextData }) {
     );
   };
 
+  useEffect(() => {
+    // Check if autoplay is available in this browser
+    const checkAutoplaySupport = async () => {
+      try {
+        const video = document.createElement('video');
+        video.muted = true;
+        video.playsInline = true;
+        video.preload = "auto";
+      } catch (error) {
+        console.error("Error checking autoplay support:", error);
+      }
+    };
+  }, []);
+
   return (
     <div className="w-full mx-auto">
       <style>{animationStyles}</style>
@@ -400,13 +576,13 @@ function RichTextPreview({ richTextData }) {
       {/* Process Gradient Background */}
       <div className="h-[20vh] bg-gradient-to-b from-banner from-10% to-transparent z-10" />
 
-      {/* Medium screens and larger */}
-      <div className="md:flex flex-col -mt-[28vh] md:-mt-[20vh] z-30">
+      {/* Medium screens and larger - HIDDEN on small screens */}
+      <div className="hidden md:flex md:flex-col -mt-[28vh] md:-mt-[20vh] z-30">
         {/* Process Steps Section - now integrated directly */}
 
         <div className="flex w-full ">
           {/* Left Column: Cards stacked vertically */}
-          <div className="w-1/6 hidden md:flex p-1 flex-col justify-between -space-y-[12vh] aspect-square -mt-[9vh]">
+          <div className="w-1/6 hidden md:flex p-1 flex-col justify-between -space-y-[12vh] aspect-square -mt-[9vh] z-30">
             {leftCards.map((card, idx) => {
               const IconComp = Icons[card.icon] || Icons.Star;
               return (
@@ -462,10 +638,10 @@ function RichTextPreview({ richTextData }) {
                   <h2 className="text-[4vw] md:text-[2.5vh] text-left text-white first-line:font-bold z-60 font-sans">
                     {heroText}
                   </h2>
-                  <p className="text-[2.8vw] md:text-[1.9vh] text-black  font-serif leading-tight mt-4">
+                  <p className="text-[2.8vw] md:text-[1.9vh] text-black font-serif leading-tight mt-4 indent-8">
                     {bus_description}
                   </p>
-                  <p className="text-[2.8vw] md:text-[1.9vh] text-black mt-2 font-serif leading-tight">
+                  <p className="text-[2.8vw] md:text-[1.9vh] text-black mt-2 font-serif leading-tight indent-8">
                     {bus_description_second}
                   </p>
                 </div>
@@ -478,7 +654,7 @@ function RichTextPreview({ richTextData }) {
           </div>
 
           {/* Right Column: Cards stacked vertically */}
-          <div className="w-1/6 hidden md:flex p-1 flex-col justify-between -mt-[9vh] -space-y-[12vh]">
+          <div className="w-1/6 hidden md:flex p-1 flex-col justify-between -mt-[9vh] -space-y-[12vh] z-30">
             {rightCards.map((card, idx) => {
               const i = idx + half;
               const IconComp = Icons[card.icon] || Icons.Star;
@@ -502,15 +678,17 @@ function RichTextPreview({ richTextData }) {
       </div>
 
       {/* Smaller than medium screens - mobile view */}
-      <div className="md:hidden flex flex-col px-[3vw] mb-1 mt-[-2vh]">
-        {/* Process display for mobile */}
-        <div className="py-4">
-          <RenderProcessSteps />
-        </div>
+      <div className="md:hidden flex flex-col px-[3vw] -mt-[20vh] mb-1 mt-[-2vh]">
+        {/* Process Steps Section for mobile */}
+        <section className="relative z-40 overflow-visible mb-4">
+          <div className="mobile-process-section w-full">
+            <RenderProcessSteps />
+          </div>
+        </section>
 
         {/* Image Section */}
         <div
-          className={`relative w-full rounded-lg shadow-md px-3 image-container ${animationClass}`}
+          className={`relative w-full rounded-lg shadow-md px-3 -mt-[4vh] image-container ${animationClass}`}
         >
           <img
             src={slideshowImages[currentImage]}
@@ -527,21 +705,19 @@ function RichTextPreview({ richTextData }) {
               />
             ))}
           </div>
-          {/* Text Section */}
-          <div className="mt-1 px-3">
-            <h2 className="whitespace-nowrap relative text-[4vw] text-center font-bold z-60 px-[3vw] overflow-visible font-sans">
-              {heroText}
-            </h2>
-          </div>
+        </div>
 
-          <div>
-            <p className="text-[2.8vw] text-gray-700 my-1 font-sans">
-              {bus_description}
-            </p>
-            <p className="text-[2.8vw] text-gray-700 mb-2 font-sans">
-              {bus_description_second}
-            </p>
-          </div>
+        {/* Text Section - Separated from Image Section */}
+        <div className="mt-3 px-3">
+          <h2 className="whitespace-nowrap relative text-[4vw] text-center font-bold z-60 px-[3vw] overflow-visible font-sans">
+            {heroText}
+          </h2>
+          <p className="text-[2.8vw] text-gray-700 my-1 font-sans indent-6">
+            {bus_description}
+          </p>
+          <p className="text-[2.8vw] text-gray-700 mb-2 font-sans indent-6">
+            {bus_description_second}
+          </p>
         </div>
 
         {/* Cards in a 2x2 (or more) grid */}

@@ -1,0 +1,223 @@
+{
+  "navbar": {
+    "navLinks": [
+      { "name": "About", "href": "/about" },
+      { "name": "Booking", "href": "/#book" },
+      { "name": "Services", "href": "/#services" },
+      { "name": "Contact", "href": "/#contact" }
+    ],
+    "logo": "/assets/images/hero/clipped.png",
+    "whiteLogo": "/assets/images/hero/logo.svg"
+  },
+  "hero": {
+    "mainTitle": "{{BUSINESS_NAME_MAIN}}",
+    "subTitle": "{{BUSINESS_NAME_SUB}}",
+    "residential": {
+      "subServices": []
+    },
+    "commercial": {
+      "subServices": []
+    },
+    "logo": "/assets/images/hero/clipped.png",
+    "residentialImage": "/assets/images/hero/residentialnight.png",
+    "commercialImage": "/assets/images/hero/commercialnight.png"
+  },
+  "booking": {
+    "logo": "/assets/images/hero/clipped.png",
+    "headerText": "{{BOOKING_HEADER_TEXT}}",
+    "phone": "{{PHONE_NUMBER}}"
+  },
+  "richText": {
+    "heroText": "{{RICH_TEXT_HERO}}",
+    "accredited": "{{IS_ACCREDITED}}",
+    "years_in_business": "{{YEARS_IN_BUSINESS}} Years of Roofing Experience",
+    "bus_description": "{{RICH_TEXT_DESC1}}",
+    "bus_description_second": "{{RICH_TEXT_DESC2}}",
+    "cards": [
+      {
+        "title": "Expert Craftsmanship",
+        "desc": "Our seasoned professionals bring {{YEARS_IN_BUSINESS}}+ years of expertise, ensuring precision and quality in every roof we install or repair.",
+        "icon": "Tools"
+      },
+      {
+        "title": "Trusted Warranties",
+        "desc": "We offer robust warranties on materials and labor, giving you peace of mind for years to come.",
+        "icon": "Shield"
+      },
+      {
+        "title": "Personalized Service",
+        "desc": "From consultation to completion, we tailor solutions to fit your needs, budget, and timeline.",
+        "icon": "HeartHandshake"
+      },
+      {
+        "title": "BBB Accredited",
+        "desc": "Recognized for integrity, transparency and commitment to customer satisfaction by the Better Business Bureau.",
+        "icon": "Certificate"
+      }
+    ],
+    "images": [
+      "/assets/images/Richtext/roof_workers.jpg",
+      "/assets/images/Richtext/roof_workers2.jpg",
+      "/assets/images/Richtext/roof_workers3.webp"
+    ],
+    "description for the images": [
+      "a roofer working on a roof",
+      "a group of workers inspecting a roof",
+      "a roofer climbing a ladder to inspect a roof"
+    ],
+    "steps": [
+      {
+        "title": "Book",
+        "videoSrc": "/assets/videos/our_process_videos/booking.mp4",
+        "href": "/#booking",
+        "scale": 0.8
+      },
+      {
+        "title": "Inspection",
+        "videoSrc": "/assets/videos/our_process_videos/magnify.mp4",
+        "href": "/inspection",
+        "scale": 1.25
+      },
+      {
+        "title": "Service",
+        "videoSrc": "/assets/videos/our_process_videos/repair.mp4",
+        "href": "/#packages",
+        "scale": 1.1
+      },
+      {
+        "title": "Review",
+        "videoSrc": "/assets/videos/our_process_videos/approval.mp4",
+        "href": "/#testimonials",
+        "scale": 0.9
+      }
+    ]
+  },
+  "button": {
+    "text": "Services",
+    "buttonLink": "/about",
+    "images": [
+      "/assets/images/roof_slideshow/i1.jpeg",
+      "/assets/images/roof_slideshow/i2.jpeg",
+      "/assets/images/roof_slideshow/i3.jpeg",
+      "/assets/images/roof_slideshow/i4.jpeg",
+      "/assets/images/roof_slideshow/i5.jpeg",
+      "/assets/images/roof_slideshow/i6.jpeg",
+      "/assets/images/roof_slideshow/i7.webp",
+      "/assets/images/roof_slideshow/i8.webp",
+      "/assets/images/roof_slideshow/i9.jpeg",
+      "/assets/images/roof_slideshow/i10.webp",
+      "/assets/images/roof_slideshow/i11.jpeg",
+      "/assets/images/roof_slideshow/i12.webp"
+    ],
+    "description for the images": [
+      "a house with a victorian chimney",
+      "a shingled roof close up",
+      "a roof being coated",
+      "a roof being repaired"
+    ]
+  },
+  "map": {
+    "center": {
+      "lat": "{{MAP_LAT}}",
+      "lng": "{{MAP_LNG}}"
+    },
+    "zoomLevel": 11,
+    "circleRadius": 5047,
+    "address": "{{FULL_ADDRESS}}",
+    "telephone": "{{PHONE_NUMBER}}",
+    "markerIcon": "/assets/images/hero/clipped.png",
+    "serviceHours": [
+      {
+        "day": "Mon",
+        "time": "08:00 AM - 6:00 PM"
+      },
+      {
+        "day": "Tue",
+        "time": "08:00 AM - 6:00 PM"
+      },
+      {
+        "day": "Wed",
+        "time": "08:00 AM - 6:00 PM"
+      },
+      {
+        "day": "Thu",
+        "time": "08:00 AM - 6:00 PM"
+      },
+      {
+        "day": "Fri",
+        "time": "08:00 AM - 6:00 PM"
+      },
+      {
+        "day": "Sat",
+        "time": "08:00 AM - 6:00 PM"
+      },
+      {
+        "day": "Sun",
+        "time": "CLOSED"
+      }
+    ],
+    "stats": [
+      {
+        "title": "Years of Service",
+        "value": "{{YEARS_IN_BUSINESS}}",
+        "icon": "FaCalendarAlt"
+      },
+      {
+        "title": "Customers Served",
+        "value": "{{CUSTOMERS_SERVED}}",
+        "icon": "FaHandshake"
+      },
+      {
+        "title": "Roofs Repaired",
+        "value": "{{ROOFS_REPAIRED}}",
+        "icon": "FaHome"
+      },
+      {
+        "title": "Years of Experience",
+        "value": "{{YEARS_IN_BUSINESS}}",
+        "icon": "FaCalendarAlt"
+      }
+    ]
+  },
+  "combinedPage": {
+    "isCommercial": false,
+    "title": "Services",
+    "googleReviews": [],
+    "residentialServices": [],
+    "commercialServices": [],
+    "teamTitle": "Leadership",
+    "teamMembers": [],
+    "largeResidentialImg": "/assets/images/main_image_expanded.jpg",
+    "description for the image 1": [" An image of a residential neighborhood"],
+    "largeCommercialImg": "/assets/images/commercialservices.jpg",
+    "description for the image 2": ["An image of a city skyline"]
+  },
+  "before_after": {
+    "sectionTitle": "{{GALLERY_TITLE}}",
+    "items": [
+      {
+        "before": "/assets/images/beforeafter/a1.jpeg",
+        "after": "/assets/images/beforeafter/b1.JPG",
+        "shingle": "Asphalt Shingle",
+        "sqft": "2000 sqft"
+      },
+      {
+        "before": "/assets/images/beforeafter/b2.jpeg",
+        "after": "/assets/images/beforeafter/a2.jpeg",
+        "shingle": "Metal Roofing",
+        "sqft": "1800 sqft"
+      },
+      {
+        "before": "/assets/images/beforeafter/b3.jpeg",
+        "after": "/assets/images/beforeafter/a3.jpeg",
+        "shingle": "Composite Shingle",
+        "sqft": "2200 sqft"
+      }
+    ]
+  },
+  "employees": {
+    "sectionTitle": "{{TEAM_SECTION_TITLE}}",
+    "employee": []
+  },
+  "reviews": []
+} 
