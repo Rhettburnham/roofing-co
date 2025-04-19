@@ -21,6 +21,62 @@ if not DEEPSEEK_API_KEY:
     print("WARNING: DeepSeek API key not found. Please set it in the .env.deepseek file in the public/data directory.")
     print(f"Looking for .env.deepseek at: {env_path}")
 
+# These are shorter service options matching the combined_data.json format
+# Services are 1-3 words max as required
+ROOFING_SERVICE_OPTIONS = {
+    "residential": [
+        "Shingling",
+        "Guttering",
+        "Chimney",
+        "Skylights",
+        "Siding",
+        "Ventilation",
+        "Insulation",
+        "Waterproofing",
+        "Repairs",
+        "Inspection",
+        "Metal Roof",
+        "Ridge Vents",
+        "Attic Fans",
+        "Fascia",
+        "Flashing",
+        "Soffits"
+    ],
+    "commercial": [
+        "Coatings",
+        "Built-Up",
+        "Metal Roof",
+        "Drainage",
+        "TPO Systems",
+        "EPDM",
+        "PVC Membrane",
+        "Modified Bitumen",
+        "Restoration",
+        "Maintenance",
+        "Flat Roof",
+        "Roof Deck",
+        "Green Roof",
+        "Solar Panels",
+        "Sheet Metal",
+        "Ventilation"
+    ]
+}
+
+# Default services from combined_data.json to use as fallbacks
+DEFAULT_SERVICES = {
+    "residential": [
+        {"id": 1, "name": "Shingling"},
+        {"id": 2, "name": "Guttering"},
+        {"id": 3, "name": "Chimney"},
+        {"id": 4, "name": "Skylights"}
+    ],
+    "commercial": [
+        {"id": 1, "name": "Coatings"},
+        {"id": 2, "name": "Built-Up"},
+        {"id": 3, "name": "Metal Roof"},
+        {"id": 4, "name": "Drainage"}
+    ]
+}
 
 def slugify(text):
     """Convert text to URL-friendly slug"""
@@ -421,46 +477,239 @@ def create_placeholder_research(service_name):
 
 
 def get_bbb_services() -> Dict[str, List[Dict[str, Any]]]:
-    """Get services from BBB profile data or use defaults."""
-    # Default services to use if no BBB data is found
-    default_services = {
-        "residential": [
-            {"id": 1, "name": "Shingling"},
-            {"id": 2, "name": "Guttering"},
-            {"id": 3, "name": "Chimney"},
-            {"id": 4, "name": "Skylights"}
-        ],
-        "commercial": [
-            {"id": 1, "name": "Coatings"},
-            {"id": 2, "name": "Built-Up"},
-            {"id": 3, "name": "Metal Roof"},
-            {"id": 4, "name": "Drainage"}
-        ]
-    }
-    
+    """Extract services from BBB profile data if available, otherwise use fallbacks."""
     try:
-        # Try to load BBB profile data
+        # Fix the path to look in raw_data/step_1 for BBB profile data
         bbb_data_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 
                                     "raw_data", "step_1", "bbb_profile_data.json")
         
         print(f"Looking for BBB data at: {bbb_data_path}")
         
-        if os.path.exists(bbb_data_path):
-            with open(bbb_data_path, "r") as f:
-                bbb_data = json.load(f)
-                if bbb_data:
-                    print("Found BBB data, generating services...")
-                    # Here you could analyze BBB data to suggest services
-                    # For now, we'll use defaults
-                    return default_services
+        # Try to load BBB profile data
+        with open(bbb_data_path, "r") as f:
+            bbb_data = json.load(f)
         
-        print("No BBB data found, using default services")
-        return default_services
+        if not bbb_data:
+            print("BBB data exists but is empty. Using default services.")
+            return DEFAULT_SERVICES
         
+        # Extract additional services from BBB data
+        additional_services = bbb_data.get('additional_services', [])
+        business_name = bbb_data.get('business_name', 'Roofing Company')
+        
+        if not additional_services:
+            print("No additional services found in BBB data. Using default services.")
+            return DEFAULT_SERVICES
+        
+        # Print the additional services we found
+        print(f"Found additional services in BBB data:")
+        for service in additional_services:
+            print(f"  - {service}")
+        
+        # Generate appropriate services using AI if DeepSeek key is available
+        if DEEPSEEK_API_KEY:
+            print("Using DeepSeek API to generate services based on BBB profile data...")
+            generated_services = generate_services_from_bbb(bbb_data, additional_services)
+            if generated_services:
+                return generated_services
+            else:
+                print("Failed to generate services with DeepSeek. Using default services.")
+                return DEFAULT_SERVICES
+        else:
+            print("DeepSeek API key not available. Using default services.")
+            return DEFAULT_SERVICES
+            
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        print(f"Error loading BBB data: {e}. Using default services.")
+        return DEFAULT_SERVICES
+
+
+def generate_services_from_bbb(bbb_data: Dict[str, Any], additional_services: List[str]) -> Dict[str, List[Dict[str, Any]]]:
+    """Generate specific, realistic services based on BBB profile data."""
+    business_name = bbb_data.get('business_name', 'Roofing Company')
+    service_hints = ', '.join(additional_services) if additional_services else "Roofing Services, Construction Services"
+    
+    print(f"Generating services for {business_name} based on: {service_hints}")
+    
+    # Convert the options to JSON string
+    residential_options = json.dumps(ROOFING_SERVICE_OPTIONS["residential"])
+    commercial_options = json.dumps(ROOFING_SERVICE_OPTIONS["commercial"])
+    
+    prompt = f"""
+    You are a professional roofing consultant. Based on the services provided by "{business_name}", 
+    select 8 specific roofing services that would make sense for this company.
+    
+    The company provides these services: {service_hints}
+    
+    Here are the available service options:
+    
+    RESIDENTIAL OPTIONS:
+    {residential_options}
+    
+    COMMERCIAL OPTIONS:
+    {commercial_options}
+    
+    Rules:
+    1. Select 4 residential services from the residential options
+    2. Select 4 commercial services from the commercial options
+    3. Choose services that match or complement the company's existing offerings
+    4. All service names must be 1-3 words maximum and be selected from the provided options lists
+    5. Make selections appropriate for a company named "{business_name}" 
+       that offers these services: {service_hints}
+    
+    Return JSON only in this format with no additional text:
+    {{
+      "residential": [
+        {{"id": 1, "name": "Service 1"}},
+        {{"id": 2, "name": "Service 2"}},
+        {{"id": 3, "name": "Service 3"}},
+        {{"id": 4, "name": "Service 4"}}
+      ],
+      "commercial": [
+        {{"id": 1, "name": "Service 1"}},
+        {{"id": 2, "name": "Service 2"}},
+        {{"id": 3, "name": "Service 3"}},
+        {{"id": 4, "name": "Service 4"}}
+      ]
+    }}
+    
+    The service names must be exactly as they appear in the options lists above, with no modifications.
+    """
+    
+    try:
+        print("Calling DeepSeek API to select services based on company's offerings...")
+        response = call_deepseek_api(prompt)
+        
+        # Extract JSON from response
+        json_start = response.find('{')
+        json_end = response.rfind('}') + 1
+        
+        if json_start >= 0 and json_end > json_start:
+            json_str = response[json_start:json_end]
+            try:
+                services = json.loads(json_str)
+                
+                # Validate the structure 
+                if ('residential' in services and 'commercial' in services and
+                        len(services['residential']) == 4 and len(services['commercial']) == 4):
+                    
+                    # Verify all selected residential services are in the options list
+                    for service in services['residential']:
+                        if service['name'] not in ROOFING_SERVICE_OPTIONS['residential']:
+                            print(f"Warning: '{service['name']}' is not in the valid residential options. Replacing with a default service.")
+                            service['name'] = DEFAULT_SERVICES["residential"][service['id'] - 1]["name"]
+                    
+                    # Verify all selected commercial services are in the options list
+                    for service in services['commercial']:
+                        if service['name'] not in ROOFING_SERVICE_OPTIONS['commercial']:
+                            print(f"Warning: '{service['name']}' is not in the valid commercial options. Replacing with a default service.")
+                            service['name'] = DEFAULT_SERVICES["commercial"][service['id'] - 1]["name"]
+                    
+                    print("Successfully selected services:")
+                    for category, service_list in services.items():
+                        print(f"\n{category.upper()} SERVICES:")
+                        for service in service_list:
+                            print(f"  - {service['name']}")
+                    return services
+                else:
+                    print("Generated services have incorrect structure.")
+            except json.JSONDecodeError as e:
+                print(f"Failed to parse JSON from DeepSeek API response: {e}")
+        else:
+            print("Could not find valid JSON in DeepSeek API response.")
+        
+        print("Failed to generate services with DeepSeek. Using default services.")
+        return DEFAULT_SERVICES
     except Exception as e:
-        print(f"Error loading BBB data: {e}")
-        print("Using default services")
-        return default_services
+        print(f"Error generating services: {e}. Using default services.")
+        return DEFAULT_SERVICES
+
+
+def update_template_with_services(services):
+    """Update the template_data.json file with the selected services."""
+    try:
+        # Find the template_data.json file
+        template_file_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                                        "step_4", "template_data.json")
+        
+        if not os.path.exists(template_file_path):
+            print(f"Template file not found at {template_file_path}")
+            return False
+        
+        # Load the template data
+        with open(template_file_path, 'r') as f:
+            template_data = json.load(f)
+        
+        print(f"Updating template data at: {template_file_path}")
+        
+        # Update the hero section with subServices
+        template_data["hero"]["residential"]["subServices"] = []
+        template_data["hero"]["commercial"]["subServices"] = []
+        
+        # Format residential services for hero section
+        for service in services["residential"]:
+            service_name = service["name"]
+            service_id = service["id"]
+            slug = f"residential-r{service_id}-{service_name.lower().replace(' ', '-')}"
+            
+            template_data["hero"]["residential"]["subServices"].append({
+                "id": service_id,
+                "title": service_name,
+                "href": f"/services/{slug}"
+            })
+        
+        # Format commercial services for hero section
+        for service in services["commercial"]:
+            service_name = service["name"]
+            service_id = service["id"]
+            slug = f"commercial-c{service_id}-{service_name.lower().replace(' ', '-')}"
+            
+            template_data["hero"]["commercial"]["subServices"].append({
+                "id": service_id,
+                "title": service_name,
+                "href": f"/services/{slug}"
+            })
+        
+        # Update the combinedPage section with services
+        template_data["combinedPage"]["residentialServices"] = []
+        template_data["combinedPage"]["commercialServices"] = []
+        
+        # Format residential services for combinedPage section
+        for service in services["residential"]:
+            service_name = service["name"]
+            service_id = service["id"]
+            slug = f"residential-r{service_id}-{service_name.lower().replace(' ', '-')}"
+            
+            template_data["combinedPage"]["residentialServices"].append({
+                "id": service_id,
+                "name": service_name,
+                "slug": slug,
+                "description": f"Professional {service_name.lower()} services for your residential property."
+            })
+        
+        # Format commercial services for combinedPage section
+        for service in services["commercial"]:
+            service_name = service["name"]
+            service_id = service["id"]
+            slug = f"commercial-c{service_id}-{service_name.lower().replace(' ', '-')}"
+            
+            template_data["combinedPage"]["commercialServices"].append({
+                "id": service_id,
+                "name": service_name,
+                "slug": slug,
+                "description": f"Expert {service_name.lower()} solutions for commercial buildings."
+            })
+        
+        # Save the updated template data
+        with open(template_file_path, 'w') as f:
+            json.dump(template_data, f, indent=2)
+        
+        print(f"Template data updated successfully with services!")
+        return True
+    
+    except Exception as e:
+        print(f"Error updating template data: {e}")
+        return False
 
 
 def main():
@@ -468,25 +717,26 @@ def main():
     print("Starting research_services.py script...")
     
     try:
-        # First, determine services using BBB data
-        bbb_data_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 
-                                    "raw_data", "bbb_profile_data.json")
+        # Get services based on BBB data
+        services = get_bbb_services()
         
-        with open(bbb_data_path, 'r') as f:
-            bbb_data = json.load(f)
-            
-        business_name = bbb_data.get('business_name', 'Default Business Name')
-        print(f"Generating services for: {business_name}")
+        # Update the template_data.json file with the services
+        update_template_with_services(services)
         
-        # Get services list from DeepSeek
-        services = get_bbb_services()  # This function remains unchanged
-        
-        # Save basic services list
-        services_output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
-                                          "roofing_services.json")
+        # Save services to shared file for other scripts to use
+        services_output_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 
+                                         "roofing_services.json")
         with open(services_output_path, 'w') as f:
             json.dump(services, f, indent=2)
-        print(f"\nSaved services list to {services_output_path}")
+        print(f"Saved services list to {services_output_path}")
+        
+        # Also save to raw_data/step_2 directory for easier access
+        step2_services_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                                         "raw_data", "step_2", "roofing_services.json")
+        os.makedirs(os.path.dirname(step2_services_path), exist_ok=True)
+        with open(step2_services_path, 'w') as f:
+            json.dump(services, f, indent=2)
+        print(f"Also saved services list to {step2_services_path}")
         
         # Research each service
         research_data = {
@@ -516,10 +766,17 @@ def main():
         
         # Save research data
         research_output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
-                                          "services_research.json")
+                                         "services_research.json")
         with open(research_output_path, 'w') as f:
             json.dump(research_data, f, indent=2)
         print(f"\nSaved research data to {research_output_path}")
+        
+        # Also save detailed research to raw_data/step_2
+        detailed_output_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                                         "raw_data", "step_2", "roofing_services_detailed.json")
+        with open(detailed_output_path, 'w') as f:
+            json.dump(research_data, f, indent=2)
+        print(f"Also saved detailed research to {detailed_output_path}")
         
         print("\nScript completed successfully!")
         
