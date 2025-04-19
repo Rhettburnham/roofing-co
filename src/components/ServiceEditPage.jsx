@@ -110,7 +110,7 @@ const ServiceEditPage = () => {
 
   // Fetch services.json on mount
   useEffect(() => {
-    fetch("/data/raw_data/step_2/roofing_services.json")
+    fetch("/data/ignore/services.json")
       .then((res) => res.json())
       .then((data) => {
         setServicesData(data);
@@ -131,6 +131,33 @@ const ServiceEditPage = () => {
       setCurrentPage(page);
     }
   }, [selectedCategory, selectedPageId, servicesData]);
+
+  /* 
+  =============================================
+  handleDownloadJSON
+  ---------------------------------------------
+  Downloads the edited services data as a JSON file
+  =============================================
+  */
+  const handleDownloadJSON = () => {
+    if (!servicesData) return;
+
+    const dataStr = JSON.stringify(servicesData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'services.json';
+    document.body.appendChild(link);
+    link.click();
+    
+    // Clean up
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+      document.body.removeChild(link);
+    }, 100);
+  };
 
   /* 
   =============================================
@@ -896,11 +923,19 @@ const ServiceEditPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-6 bg-gray-100">
-      <div className="mb-4 bg-gray-800 text-white p-4 rounded">
-        <h1 className="text-2xl font-bold">Service Pages</h1>
-        <p className="text-gray-300 mt-1">
-          Edit individual service pages and their blocks
-        </p>
+      <div className="mb-4 flex justify-between items-center bg-gray-800 text-white p-4 rounded">
+        <div>
+          <h1 className="text-2xl font-bold">Service Pages</h1>
+          <p className="text-gray-300 mt-1">
+            Edit individual service pages and their blocks
+          </p>
+        </div>
+        <button
+          onClick={handleDownloadJSON}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        >
+          Download JSON
+        </button>
       </div>
 
       {renderPageButtons()}

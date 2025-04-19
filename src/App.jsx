@@ -3,7 +3,7 @@
 // of content. The edited content can be downloaded as JSON files and sent
 // to the developer for permanent integration into the site.
 import { useState, useEffect, lazy, Suspense } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import PropTypes from "prop-types";
 
 import Navbar from "./components/Navbar";
@@ -94,6 +94,22 @@ const AllServiceBlocksPage = (props) => {
   }
 
   return <ServicePage forcedServiceData={showcaseData} {...props} />;
+};
+
+/**
+ * NavbarWrapper Component
+ *
+ * Conditionally renders the Navbar based on the current route
+ * Hides the navbar on edit routes and OneForm
+ */
+const NavbarWrapper = () => {
+  const location = useLocation();
+  const isEditRoute = location.pathname.includes('/edit/') || location.pathname === '/oneform';
+  
+  // Don't render navbar on edit routes
+  if (isEditRoute) return null;
+  
+  return <Navbar />;
 };
 
 /**
@@ -462,7 +478,7 @@ const App = () => {
       }}
     >
       <ScrollRestoration />
-      <Navbar />
+      <NavbarWrapper />
       <main className="bg-white">
         {/* Pass all block configurations to AppRoutes */}
         <AppRoutes
