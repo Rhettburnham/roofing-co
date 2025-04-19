@@ -15,12 +15,21 @@ const preloadLinks = [
     href: "/data/combined_data.json",
     as: "fetch",
     type: "application/json",
+    crossorigin: "anonymous"
   },
   {
     rel: "preload",
     href: "/data/services.json",
     as: "fetch",
     type: "application/json",
+    crossorigin: "anonymous"
+  },
+  {
+    rel: "preload",
+    href: "/data/ignore/services.json",
+    as: "fetch",
+    type: "application/json",
+    crossorigin: "anonymous"
   },
   // Add common images that should be loaded early
   { rel: "preload", href: "/assets/images/logo.svg", as: "image" },

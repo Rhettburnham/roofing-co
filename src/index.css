@@ -93,14 +93,11 @@
   }
 }
 
+/* Removing the :root color variables that conflict with tailwind.config.js */
 :root {
-  --accent-color: #60a5fa;
-  --banner-color: #1e293b;
-  --second-accent: #FFF8E1;
   --dark-below-header-color: #1e293b;
   --dark-button-color: #1e293b;
   --dark-color: #374151;
-  --faint-color: #f9fafb;
   --hover-color: #2563eb;
 }
 
@@ -118,8 +115,9 @@
       rgba(65, 179, 149, 0) 70%);
 }
 
+/* Using Tailwind classes instead of custom properties for these */
 .bright-gradient {
-  background: linear-gradient(to bottom, var(--faint-color) 0%);
+  @apply bg-faint-color;
 }
 
 .dark_button {
@@ -134,8 +132,9 @@
   background-color: var(--dark-color);
 }
 
+/* Remove these classes that duplicate Tailwind functionality */
 .faint-color {
-  background-color: var(--faint-color);
+  @apply bg-faint-color;
 }
 
 .hover-color {
@@ -143,7 +142,7 @@
 }
 
 .second-accent {
-  background-color: var(--second-accent);
+  @apply bg-second-accent;
 }
 
 .button_gradient {
@@ -175,7 +174,7 @@
 }
 
 .custom-text-shadow-mini {
-  text-shadow: -1px 1px 2px var(--faint-color);
+  text-shadow: -1px 1px 2px theme('colors.faint-color');
 }
 
 .perspective {
@@ -556,42 +555,32 @@ canvas {
   z-index: 5;
 }
 
+/* Remove these custom classes that duplicate Tailwind functionality */
 .banner {
-  background-color: var(--banner-color);
+  @apply bg-banner;
 }
 
 .banner-gradient {
   background: linear-gradient(
     to top,
-    var(--banner-color) 0%,
+    theme('colors.banner') 0%,
     transparent 100%
   );
 }
 
 .accent-gradient {
-  background: linear-gradient(to bottom, var(--accent-color) 0%);
+  background: linear-gradient(to bottom, theme('colors.accent') 0%);
 }
 
 .accent {
-  background-color: var(--accent-color);
+  @apply bg-accent;
 }
 
 .text-shadow-accent {
-  text-shadow: -1px 1px 2px var(--accent-color);
+  text-shadow: -1px 1px 2px theme('colors.accent');
 }
 
-/* Explicit background color classes for when Tailwind isn't recognizing them */
-.bg-second-accent {
-  background-color: var(--second-accent);
-}
-
-.bg-accent {
-  background-color: var(--accent-color);
-}
-
-.bg-banner {
-  background-color: var(--banner-color);
-}
+/* Remove explicit background color classes since Tailwind already provides these */
 
 /* Marker icon inversion for maps */
 .invert-icon {

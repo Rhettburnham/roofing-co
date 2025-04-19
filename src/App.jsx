@@ -3,17 +3,20 @@
 // of content. The edited content can be downloaded as JSON files and sent
 // to the developer for permanent integration into the site.
 import { useState, useEffect, lazy, Suspense } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import PropTypes from "prop-types";
 
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import LoadingScreen from "./components/loadingScreen";
+import ServicePage from "./components/ServicePage";
+
+// Import the new ServicePageCreator component
+const ServicePageCreator = lazy(() => import("./components/ServicePageCreator"));
 
 // Lazy load components to improve initial load time
 const OneForm = lazy(() => import("./components/OneForm"));
 const ServiceEditPage = lazy(() => import("./components/ServiceEditPage"));
-const ServicePage = lazy(() => import("./components/ServicePage"));
 const LegalAgreement = lazy(() => import("./components/LegalAgreement"));
 
 // --- Main Page Blocks ---
@@ -64,40 +67,34 @@ function ScrollRestoration() {
  * Special component that loads all service blocks from all_blocks_showcase.json
  * This is used for easy editing and previewing of all blocks in one place
  */
-const AllServiceBlocksPage = lazy(() =>
-  import("./components/ServicePage").then((module) => {
-    const AllBlocksWrapper = (props) => {
-      const [showcaseData, setShowcaseData] = useState(null);
-      const [loading, setLoading] = useState(true);
+const AllServiceBlocksPage = (props) => {
+  const [showcaseData, setShowcaseData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-      useEffect(() => {
-        const fetchShowcaseData = async () => {
-          try {
-            const response = await fetch("/data/all_blocks_showcase.json");
-            if (!response.ok) throw new Error("Failed to fetch showcase data");
+  useEffect(() => {
+    const fetchShowcaseData = async () => {
+      try {
+        const response = await fetch("/data/all_blocks_showcase.json");
+        if (!response.ok) throw new Error("Failed to fetch showcase data");
 
-            const data = await response.json();
-            setShowcaseData(data);
-            setLoading(false);
-          } catch (error) {
-            console.error("Error loading showcase data:", error);
-            setLoading(false);
-          }
-        };
-
-        fetchShowcaseData();
-      }, []);
-
-      if (loading) {
-        return <LoadingScreen />;
+        const data = await response.json();
+        setShowcaseData(data);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error loading showcase data:", error);
+        setLoading(false);
       }
-
-      return <module.default forcedServiceData={showcaseData} {...props} />;
     };
 
-    return { default: AllBlocksWrapper };
-  })
-);
+    fetchShowcaseData();
+  }, []);
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
+  return <ServicePage forcedServiceData={showcaseData} {...props} />;
+};
 
 /**
  * AppRoutes Component
@@ -191,51 +188,29 @@ const AppRoutes = ({
       {/* All Service Blocks Page route */}
       <Route
         path="/all-service-blocks"
+        element={<AllServiceBlocksPage />}
+      />
+
+      {/* New Service Routes using ServicePageCreator */}
+      <Route
+        path="/service/:serviceType/:serviceId"
         element={
           <Suspense fallback={<LoadingScreen />}>
-            <AllServiceBlocksPage />
+            <ServicePageCreator />
           </Suspense>
         }
       />
 
-      {/* Modern service routes */}
+      {/* Service routes - only keeping the modern format (for backward compatibility) */}
+      <Route
+        path="/services/:serviceType/:serviceName"
+        element={<ServicePage />}
+      />
+
+      {/* Backward compatibility for old service routes */}
       <Route
         path="/services/:serviceSlug"
-        element={
-          <Suspense fallback={<LoadingScreen />}>
-            <ServicePage />
-          </Suspense>
-        }
-      />
-
-      {/* Legacy service routes - for backward compatibility */}
-      <Route
-        path="/service/:category/:id"
-        element={
-          <Suspense fallback={<LoadingScreen />}>
-            <ServicePage />
-          </Suspense>
-        }
-      />
-
-      {/* Fallback for Residential_service_X old format */}
-      <Route
-        path="/Residential_service_:id"
-        element={
-          <Suspense fallback={<LoadingScreen />}>
-            <ServicePage />
-          </Suspense>
-        }
-      />
-
-      {/* Fallback for Commercial_service_X old format */}
-      <Route
-        path="/Commercial_service_:id"
-        element={
-          <Suspense fallback={<LoadingScreen />}>
-            <ServicePage />
-          </Suspense>
-        }
+        element={<Navigate to="/" replace />}
       />
 
       {/* Main OneForm editor route */}
@@ -480,7 +455,12 @@ const App = () => {
   const aboutPageConfig = aboutPageData || {};
 
   return (
-    <Router>
+    <Router
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true
+      }}
+    >
       <ScrollRestoration />
       <Navbar />
       <main className="bg-white">

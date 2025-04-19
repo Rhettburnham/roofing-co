@@ -2,13 +2,16 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { FaCheckCircle } from "react-icons/fa";
+import ReactMarkdown from 'react-markdown';
 
 /**
  * GeneralList
  * 
  * config: {
+ *   title: string, // alternative to sectionTitle
  *   sectionTitle: string,
  *   items: [
+ *     // Can be structured items
  *     {
  *       id: number,
  *       name: string,
@@ -18,12 +21,24 @@ import { FaCheckCircle } from "react-icons/fa";
  *       installationTime?: string,
  *       pictures: string[]
  *     },
+ *     // Or can be simple strings
+ *     "Item 1",
+ *     "Item 2",
  *     ...
- *   ]
+ *   ],
+ *   listStyle?: "bullet" | "numbered" | "none"
  * }
  */
 const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
-  const { sectionTitle = "Select a Siding Type", items = [] } = config;
+  const { 
+    sectionTitle = "Select a Siding Type", 
+    title,
+    items = [],
+    listStyle = "none" 
+  } = config;
+
+  // Use title as a fallback if sectionTitle is not provided
+  const displayTitle = sectionTitle || title || "Service List";
 
   // For readOnly mode, we track which item is selected
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -36,22 +51,83 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
     return null;
   };
 
+  // Check if the items are strings or objects
+  const hasStructuredItems = items.length > 0 && typeof items[0] === "object";
+
   // ---------- READONLY MODE -----------
   if (readOnly) {
+    // For simple string items list
+    if (!hasStructuredItems) {
+      return (
+        <section className="my-6 container mx-auto px-4 md:px-16">
+          <h2 className="text-2xl md:text-3xl font-semibold mb-4 text-center">
+            {displayTitle}
+          </h2>
+          
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            {listStyle === "numbered" ? (
+              <ol className="list-decimal pl-5 space-y-2">
+                {items.map((item, index) => (
+                  <li key={index} className="text-gray-700 text-lg">
+                    <div className="markdown-content">
+                      {typeof ReactMarkdown !== 'undefined' ? (
+                        <ReactMarkdown>{item}</ReactMarkdown>
+                      ) : (
+                        <p>{item}</p>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            ) : listStyle === "bullet" ? (
+              <ul className="list-disc pl-5 space-y-2">
+                {items.map((item, index) => (
+                  <li key={index} className="text-gray-700 text-lg">
+                    <div className="markdown-content">
+                      {typeof ReactMarkdown !== 'undefined' ? (
+                        <ReactMarkdown>{item}</ReactMarkdown>
+                      ) : (
+                        <p>{item}</p>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="space-y-4">
+                {items.map((item, index) => (
+                  <div key={index} className="text-gray-700">
+                    <div className="markdown-content">
+                      {typeof ReactMarkdown !== 'undefined' ? (
+                        <ReactMarkdown>{item}</ReactMarkdown>
+                      ) : (
+                        <p>{item}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      );
+    }
+
+    // Original structured items display
     const activeItem = items[selectedIndex] || {};
 
     return (
       <section className="my-2 md:my-4 px-4 md:px-16">
         {/* Title */}
         <h2 className="flex justify-center text-[3.5vh] font-semibold mb-0.5 text-center">
-          {sectionTitle}
+          {displayTitle}
         </h2>
 
-        {/* “Siding selection” buttons */}
+        {/* "Siding selection" buttons */}
         <div className="flex flex-wrap justify-center mt-2">
           {items.map((item, index) => (
             <button
-              key={item.id}
+              key={item.id || index}
               onClick={() => setSelectedIndex(index)}
               className={`mx-2 my-1 md:px-4 px-2 py-1 md:py-2 text-[3vw] md:text-[2vh] 
                 rounded-full font-semibold shadow-lg ${
@@ -76,7 +152,7 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
 
         {/* Display selected item */}
         <motion.div
-          key={activeItem.id}
+          key={activeItem.id || selectedIndex}
           className="flex flex-col items-start bg-white rounded-2xl shadow-lg p-6 transition-all duration-500 mx-4 md:mx-16 md:mt-4"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -164,6 +240,76 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
     });
   };
 
+  // For the edit mode, if we have string items, convert to simple editor
+  if (!hasStructuredItems) {
+    return (
+      <div className="p-2 bg-gray-700 rounded text-white">
+        <h3 className="font-bold mb-2">Simple List Editor</h3>
+        
+        {/* Title */}
+        <label className="block text-sm mb-2">
+          List Title:
+          <input
+            type="text"
+            value={displayTitle}
+            onChange={(e) => handleFieldChange("title", e.target.value)}
+            className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
+          />
+        </label>
+        
+        {/* List Style */}
+        <label className="block text-sm mb-2">
+          List Style:
+          <select
+            value={listStyle}
+            onChange={(e) => handleFieldChange("listStyle", e.target.value)}
+            className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
+          >
+            <option value="none">None</option>
+            <option value="bullet">Bullet Points</option>
+            <option value="numbered">Numbered List</option>
+          </select>
+        </label>
+        
+        {/* Items */}
+        <label className="block text-sm font-semibold mb-1">Items:</label>
+        {items.map((item, index) => (
+          <div key={index} className="flex mb-1">
+            <textarea
+              rows={2}
+              value={item}
+              onChange={(e) => {
+                const updatedItems = [...items];
+                updatedItems[index] = e.target.value;
+                handleFieldChange("items", updatedItems);
+              }}
+              className="flex-grow px-2 py-1 bg-gray-600 text-white rounded-l border border-gray-500"
+              placeholder="Item text (markdown supported)"
+            />
+            <button
+              className="bg-red-600 text-white px-2 py-1 rounded-r border border-red-700"
+              onClick={() => {
+                const updatedItems = [...items];
+                updatedItems.splice(index, 1);
+                handleFieldChange("items", updatedItems);
+              }}
+            >
+              &times;
+            </button>
+          </div>
+        ))}
+        
+        <button
+          className="bg-blue-600 text-white px-3 py-2 rounded font-semibold mt-2"
+          onClick={() => handleFieldChange("items", [...items, ""])}
+        >
+          Add Item
+        </button>
+      </div>
+    );
+  }
+
+  // Standard structured items editor - original code below
   // Updaters for items array
   const addItem = () => {
     const newItem = {
@@ -202,9 +348,9 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
   const updateAdvantage = (id, idx, newVal) => {
     const updated = items.map((i) => {
       if (i.id === id) {
-        const adv = [...i.advantages];
-        adv[idx] = newVal;
-        return { ...i, advantages: adv };
+        const advantages = [...i.advantages];
+        advantages[idx] = newVal;
+        return { ...i, advantages };
       }
       return i;
     });
@@ -214,9 +360,9 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
   const removeAdvantage = (id, idx) => {
     const updated = items.map((i) => {
       if (i.id === id) {
-        const adv = [...i.advantages];
-        adv.splice(idx, 1);
-        return { ...i, advantages: adv };
+        const advantages = [...i.advantages];
+        advantages.splice(idx, 1);
+        return { ...i, advantages };
       }
       return i;
     });
@@ -233,9 +379,9 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
   const updatePicture = (id, idx, newVal) => {
     const updated = items.map((i) => {
       if (i.id === id) {
-        const pics = [...i.pictures];
-        pics[idx] = newVal;
-        return { ...i, pictures: pics };
+        const pictures = [...i.pictures];
+        pictures[idx] = newVal;
+        return { ...i, pictures };
       }
       return i;
     });
@@ -245,9 +391,9 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
   const removePicture = (id, idx) => {
     const updated = items.map((i) => {
       if (i.id === id) {
-        const pics = [...i.pictures];
-        pics.splice(idx, 1);
-        return { ...i, pictures: pics };
+        const pictures = [...i.pictures];
+        pictures.splice(idx, 1);
+        return { ...i, pictures };
       }
       return i;
     });
@@ -260,58 +406,55 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
     // Create a URL for display
     const fileURL = URL.createObjectURL(file);
 
-    // Update the pictures array with just the URL
-    const updatedItems = [...items];
-    if (!updatedItems[itemIndex].pictures) {
-      updatedItems[itemIndex].pictures = [];
+    // Update the picture item
+    const targetItem = items.find((_, i) => i === itemIndex);
+    if (targetItem) {
+      updatePicture(targetItem.id, picIndex, fileURL);
     }
-
-    if (picIndex === undefined) {
-      // Add new image
-      updatedItems[itemIndex].pictures.push(fileURL);
-    } else {
-      // Replace existing image
-      updatedItems[itemIndex].pictures[picIndex] = fileURL;
-    }
-
-    handleFieldChange("items", updatedItems);
   };
 
+  // Original editor code
   return (
-    <div className="p-2 bg-gray-700 rounded text-white">
-      <h3 className="font-bold mb-2">General List Block Editor</h3>
+    <div className="p-2 bg-gray-700 rounded text-white overflow-auto max-h-[80vh]">
+      <h3 className="font-bold mb-2">Siding Options Editor</h3>
+
       {/* Section Title */}
       <label className="block text-sm mb-2">
         Section Title:
         <input
           type="text"
-          value={sectionTitle}
+          value={displayTitle}
           onChange={(e) => handleFieldChange("sectionTitle", e.target.value)}
           className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
         />
       </label>
 
-      {/* Items Editor */}
-      <div className="mt-2 space-y-4">
-        {items.map((item, index) => (
-          <div key={item.id} className="border border-gray-600 rounded p-2">
+      {/* Items */}
+      <div className="mt-4">
+        <h4 className="font-semibold text-sm mb-2">Options</h4>
+        {items.map((item) => (
+          <div
+            key={item.id}
+            className="border border-gray-600 p-3 rounded mb-3"
+          >
             <div className="flex justify-between items-center mb-2">
-              <span className="font-semibold">Item {index + 1}</span>
+              <h5 className="font-semibold">
+                {item.name || "Unnamed Option"}
+              </h5>
               <button
-                type="button"
                 onClick={() => removeItem(item.id)}
-                className="bg-red-600 text-white px-2 py-1 rounded"
+                className="text-red-400 hover:text-red-300"
               >
                 Remove
               </button>
             </div>
 
             {/* Name */}
-            <label className="block text-sm mb-1">
+            <label className="block text-sm mb-2">
               Name:
               <input
                 type="text"
-                value={item.name}
+                value={item.name || ""}
                 onChange={(e) =>
                   updateItemField(item.id, "name", e.target.value)
                 }
@@ -320,11 +463,11 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
             </label>
 
             {/* Description */}
-            <label className="block text-sm mb-1">
+            <label className="block text-sm mb-2">
               Description:
               <textarea
-                rows={2}
-                value={item.description}
+                rows="2"
+                value={item.description || ""}
                 onChange={(e) =>
                   updateItemField(item.id, "description", e.target.value)
                 }
@@ -333,101 +476,129 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
             </label>
 
             {/* Advantages */}
-            <div className="mb-1">
-              <h4 className="font-semibold">Advantages:</h4>
-              {item.advantages.map((adv, advIdx) => (
-                <div key={advIdx} className="flex items-center mb-1">
-                  <input
-                    type="text"
-                    value={adv}
-                    onChange={(e) =>
-                      updateAdvantage(item.id, advIdx, e.target.value)
-                    }
-                    className="w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
-                  />
-                  <button
-                    onClick={() => removeAdvantage(item.id, advIdx)}
-                    className="ml-2 text-red-300 hover:text-red-500"
-                  >
-                    X
-                  </button>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => addAdvantage(item.id)}
-                className="px-2 py-1 bg-blue-600 text-white rounded"
-              >
-                + Add Advantage
-              </button>
+            <div className="mt-2">
+              <label className="block text-sm mb-1">Advantages:</label>
+              <div className="ml-3">
+                {item.advantages?.map((adv, idx) => (
+                  <div key={idx} className="flex items-center mb-1">
+                    <input
+                      type="text"
+                      value={adv}
+                      onChange={(e) =>
+                        updateAdvantage(item.id, idx, e.target.value)
+                      }
+                      className="flex-grow px-2 py-1 bg-gray-600 text-white text-sm rounded border border-gray-500"
+                    />
+                    <button
+                      onClick={() => removeAdvantage(item.id, idx)}
+                      className="ml-2 text-red-400 hover:text-red-300"
+                    >
+                      &times;
+                    </button>
+                  </div>
+                ))}
+                <button
+                  onClick={() => addAdvantage(item.id)}
+                  className="text-xs bg-blue-600 text-white px-2 py-1 rounded"
+                >
+                  Add Advantage
+                </button>
+              </div>
             </div>
 
-            {/* colorPossibilities */}
-            <label className="block text-sm mb-1">
+            {/* Color Possibilities */}
+            <label className="block text-sm mt-2 mb-1">
               Color Possibilities:
               <input
                 type="text"
-                value={item.colorPossibilities}
+                value={item.colorPossibilities || ""}
                 onChange={(e) =>
-                  updateItemField(item.id, "colorPossibilities", e.target.value)
+                  updateItemField(
+                    item.id,
+                    "colorPossibilities",
+                    e.target.value
+                  )
                 }
-                className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
+                className="mt-1 w-full px-2 py-1 bg-gray-600 text-white text-sm rounded border border-gray-500"
               />
             </label>
 
-            {/* installationTime */}
-            <label className="block text-sm mb-1">
+            {/* Installation Time */}
+            <label className="block text-sm mt-2 mb-1">
               Installation Time:
               <input
                 type="text"
-                value={item.installationTime}
+                value={item.installationTime || ""}
                 onChange={(e) =>
-                  updateItemField(item.id, "installationTime", e.target.value)
+                  updateItemField(
+                    item.id,
+                    "installationTime",
+                    e.target.value
+                  )
                 }
-                className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
+                className="mt-1 w-full px-2 py-1 bg-gray-600 text-white text-sm rounded border border-gray-500"
               />
             </label>
 
             {/* Pictures */}
-            <div>
-              <h4 className="font-semibold">Pictures:</h4>
-              {item.pictures.map((pic, picIdx) => (
-                <div key={picIdx} className="flex items-center mb-1">
-                  <input
-                    type="text"
-                    value={pic}
-                    onChange={(e) =>
-                      updatePicture(item.id, picIdx, e.target.value)
-                    }
-                    className="w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
-                  />
-                  <button
-                    onClick={() => removePicture(item.id, picIdx)}
-                    className="ml-2 text-red-300 hover:text-red-500"
-                  >
-                    X
-                  </button>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => addPicture(item.id)}
-                className="px-2 py-1 bg-blue-600 text-white rounded"
-              >
-                + Add Picture
-              </button>
+            <div className="mt-2">
+              <label className="block text-sm mb-1">Pictures:</label>
+              <div className="ml-3">
+                {item.pictures?.map((pic, idx) => (
+                  <div key={idx} className="flex items-center mb-1">
+                    <div className="flex-grow flex items-center">
+                      <input
+                        type="text"
+                        value={pic}
+                        onChange={(e) =>
+                          updatePicture(item.id, idx, e.target.value)
+                        }
+                        className="flex-grow px-2 py-1 bg-gray-600 text-white text-sm rounded-l border border-gray-500"
+                      />
+                      <label className="bg-gray-500 px-2 py-1 cursor-pointer text-xs border-t border-r border-b border-gray-500 rounded-r">
+                        Browse
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              handleImageUpload(
+                                items.findIndex((i) => i.id === item.id),
+                                idx,
+                                file
+                              );
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
+                    <button
+                      onClick={() => removePicture(item.id, idx)}
+                      className="ml-2 text-red-400 hover:text-red-300"
+                    >
+                      &times;
+                    </button>
+                  </div>
+                ))}
+                <button
+                  onClick={() => addPicture(item.id)}
+                  className="text-xs bg-blue-600 text-white px-2 py-1 rounded"
+                >
+                  Add Picture
+                </button>
+              </div>
             </div>
           </div>
         ))}
+        <button
+          onClick={addItem}
+          className="mt-2 bg-blue-600 text-white px-3 py-1 rounded font-medium"
+        >
+          Add Option
+        </button>
       </div>
-
-      <button
-        type="button"
-        onClick={addItem}
-        className="mt-2 px-3 py-1 bg-green-600 text-white rounded"
-      >
-        + Add New Item
-      </button>
     </div>
   );
 };

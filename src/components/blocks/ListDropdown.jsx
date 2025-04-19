@@ -1,17 +1,21 @@
 // src/components/blocks/ListDropdown.jsx
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import ReactMarkdown from 'react-markdown'; // Make sure this is installed or comment it out if not
 
 /**
  * ListDropdown
  * 
  * config = {
+ *   title: string,
  *   items: [
  *     {
  *       title: string,
- *       causes: string,
- *       impact: string,
- *       diagnosis: string[],
+ *       content: string,
+ *       // Legacy properties still supported:
+ *       causes?: string,
+ *       impact?: string,
+ *       diagnosis?: string[],
  *     },
  *     ...
  *   ],
@@ -24,6 +28,7 @@ const ListDropdown = ({
   onConfigChange,
 }) => {
   const {
+    title = "Maintenance Guide",
     items = [],
     textColor = "#000000",
   } = config;
@@ -42,6 +47,10 @@ const ListDropdown = ({
   if (readOnly) {
     return (
       <div className="container mx-auto w-full px-4 pb-4 md:pb-8">
+        {title && (
+          <h2 className="text-2xl font-semibold mb-4 text-center">{title}</h2>
+        )}
+        
         {items.map((item, idx) => (
           <div key={idx} className="border rounded-lg overflow-hidden shadow-lg mb-2">
             <button
@@ -89,21 +98,41 @@ const ListDropdown = ({
                     className="px-4 md:px-6 py-2 md:py-4 bg-white text-sm md:text-base"
                     style={{ color: textColor }}
                   >
-                    <p className="mt-1">
-                      <strong>Causes:</strong> {item.causes}
-                    </p>
-                    <p className="mt-1">
-                      <strong>Impact:</strong> {item.impact}
-                    </p>
-                    {item.diagnosis?.length > 0 && (
-                      <div className="mt-1">
-                        <strong>Diagnosis:</strong>
-                        <ul className="list-disc list-inside ml-5 mt-1">
-                          {item.diagnosis.map((d, dIdx) => (
-                            <li key={dIdx}>{d}</li>
-                          ))}
-                        </ul>
+                    {/* Content section - try to use markdown rendering if available */}
+                    {item.content && (
+                      <div className="content">
+                        {typeof ReactMarkdown !== 'undefined' ? (
+                          <ReactMarkdown>{item.content}</ReactMarkdown>
+                        ) : (
+                          <p>{item.content}</p>
+                        )}
                       </div>
+                    )}
+                    
+                    {/* Legacy properties support */}
+                    {!item.content && (
+                      <>
+                        {item.causes && (
+                          <p className="mt-1">
+                            <strong>Causes:</strong> {item.causes}
+                          </p>
+                        )}
+                        {item.impact && (
+                          <p className="mt-1">
+                            <strong>Impact:</strong> {item.impact}
+                          </p>
+                        )}
+                        {item.diagnosis?.length > 0 && (
+                          <div className="mt-1">
+                            <strong>Diagnosis:</strong>
+                            <ul className="list-disc list-inside ml-5 mt-1">
+                              {item.diagnosis.map((d, dIdx) => (
+                                <li key={dIdx}>{d}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </motion.div>
@@ -126,6 +155,7 @@ const ListDropdown = ({
   const addItem = () => {
     const newItem = {
       title: "",
+      content: "",
       causes: "",
       impact: "",
       diagnosis: [],
@@ -147,18 +177,27 @@ const ListDropdown = ({
 
   const addDiagnosis = (index) => {
     const updated = [...items];
+    if (!updated[index].diagnosis) {
+      updated[index].diagnosis = [];
+    }
     updated[index].diagnosis.push("");
     handleChange("items", updated);
   };
 
   const updateDiagnosis = (index, dIndex, val) => {
     const updated = [...items];
+    if (!updated[index].diagnosis) {
+      updated[index].diagnosis = [];
+    }
     updated[index].diagnosis[dIndex] = val;
     handleChange("items", updated);
   };
 
   const removeDiagnosis = (index, dIndex) => {
     const updated = [...items];
+    if (!updated[index].diagnosis) {
+      updated[index].diagnosis = [];
+    }
     updated[index].diagnosis.splice(dIndex, 1);
     handleChange("items", updated);
   };
@@ -166,6 +205,17 @@ const ListDropdown = ({
   return (
     <div className="p-2 bg-gray-700 rounded text-white">
       <h3 className="font-bold mb-2">ListDropdown Editor</h3>
+
+      {/* Title */}
+      <label className="block text-sm mb-2">
+        Block Title:
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => handleChange("title", e.target.value)}
+          className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
+        />
+      </label>
 
       {/* textColor */}
       <label className="block text-sm mb-2">
@@ -196,68 +246,84 @@ const ListDropdown = ({
             Title:
             <input
               type="text"
-              value={item.title}
+              value={item.title || ""}
               onChange={(e) => updateItemField(idx, "title", e.target.value)}
               className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
             />
           </label>
 
-          {/* Causes */}
+          {/* Content */}
           <label className="block text-sm mb-1">
-            Causes:
+            Content:
             <textarea
-              rows={2}
-              value={item.causes}
-              onChange={(e) => updateItemField(idx, "causes", e.target.value)}
+              rows={4}
+              value={item.content || ""}
+              onChange={(e) => updateItemField(idx, "content", e.target.value)}
               className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
+              placeholder="Enter content with markdown support"
             />
           </label>
 
-          {/* Impact */}
-          <label className="block text-sm mb-1">
-            Impact:
-            <textarea
-              rows={2}
-              value={item.impact}
-              onChange={(e) => updateItemField(idx, "impact", e.target.value)}
-              className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
-            />
-          </label>
+          {/* Legacy Fields - show collapsible section */}
+          <details className="mt-2 mb-2">
+            <summary className="text-sm font-semibold cursor-pointer">Legacy Fields (Optional)</summary>
+            <div className="pl-2 mt-2 border-l-2 border-gray-600">
+              {/* Causes */}
+              <label className="block text-sm mb-1">
+                Causes:
+                <textarea
+                  rows={2}
+                  value={item.causes || ""}
+                  onChange={(e) => updateItemField(idx, "causes", e.target.value)}
+                  className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
+                />
+              </label>
 
-          {/* Diagnosis */}
-          <label className="block text-sm font-semibold mb-1">Diagnosis:</label>
-          {item.diagnosis?.map((d, dIndex) => (
-            <div key={dIndex} className="flex items-center mb-1">
-              <input
-                type="text"
-                value={d}
-                onChange={(e) => updateDiagnosis(idx, dIndex, e.target.value)}
-                className="w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
-              />
+              {/* Impact */}
+              <label className="block text-sm mb-1">
+                Impact:
+                <textarea
+                  rows={2}
+                  value={item.impact || ""}
+                  onChange={(e) => updateItemField(idx, "impact", e.target.value)}
+                  className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
+                />
+              </label>
+
+              {/* Diagnosis */}
+              <label className="block text-sm font-semibold mb-1 mt-2">Diagnosis:</label>
+              {(item.diagnosis || []).map((d, dIndex) => (
+                <div key={dIndex} className="flex mb-1">
+                  <input
+                    type="text"
+                    value={d}
+                    onChange={(e) => updateDiagnosis(idx, dIndex, e.target.value)}
+                    className="flex-grow px-2 py-1 bg-gray-600 text-white rounded-l border border-gray-500"
+                  />
+                  <button
+                    className="bg-red-600 text-white px-2 py-1 rounded-r border border-red-700"
+                    onClick={() => removeDiagnosis(idx, dIndex)}
+                  >
+                    &times;
+                  </button>
+                </div>
+              ))}
               <button
-                onClick={() => removeDiagnosis(idx, dIndex)}
-                className="ml-2 text-red-300 hover:text-red-500"
+                className="bg-blue-600 text-white px-2 py-1 rounded text-sm"
+                onClick={() => addDiagnosis(idx)}
               >
-                X
+                Add Diagnosis
               </button>
             </div>
-          ))}
-          <button
-            type="button"
-            onClick={() => addDiagnosis(idx)}
-            className="bg-blue-600 text-white px-2 py-1 rounded text-sm"
-          >
-            + Add Diagnosis
-          </button>
+          </details>
         </div>
       ))}
 
       <button
-        type="button"
+        className="bg-blue-600 text-white px-3 py-2 rounded font-semibold"
         onClick={addItem}
-        className="bg-green-600 text-white px-2 py-1 rounded text-sm"
       >
-        + Add New Item
+        Add Item
       </button>
     </div>
   );

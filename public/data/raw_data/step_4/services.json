@@ -328,7 +328,7 @@
           "blockName": "GridImageTextBlock",
           "config": {
             "title": "Repair Services",
-            "items": [
+          "items": [
               {
                 "title": "Professional Repairs",
                 "content": "**Common Repair Scenarios:**\n- Cracked mortar joints (spalling).\n- Damaged flashing or leaks.",

@@ -18,7 +18,7 @@
         "href": "/#contact"
       }
     ],
-    "logo": "/Users/rhettburnham/Desktop/Roof_Template_copy/public/data/raw_data/clipped.png",
+    "logo": "/data/raw_data/clipped.png",
     "whiteLogo": "/assets/images/hero/logo.svg"
   },
   "hero": {
@@ -72,12 +72,12 @@
         }
       ]
     },
-    "logo": "/Users/rhettburnham/Desktop/Roof_Template_copy/public/data/raw_data/clipped.png",
+    "logo": "/data/raw_data/clipped.png",
     "residentialImage": "/assets/images/hero/residentialnight.png",
     "commercialImage": "/assets/images/hero/commercialnight.png"
   },
   "booking": {
-    "logo": "/Users/rhettburnham/Desktop/Roof_Template_copy/public/data/raw_data/clipped.png",
+    "logo": "/data/raw_data/clipped.png",
     "headerText": "{{BOOKING_HEADER_TEXT}}",
     "phone": "{{PHONE_NUMBER}}"
   },
@@ -179,7 +179,7 @@
     "circleRadius": 5047,
     "address": "{{FULL_ADDRESS}}",
     "telephone": "{{PHONE_NUMBER}}",
-    "markerIcon": "/Users/rhettburnham/Desktop/Roof_Template_copy/public/data/raw_data/clipped.png",
+    "markerIcon": "/data/raw_data/clipped.png",
     "serviceHours": [
       {
         "day": "Mon",

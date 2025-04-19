@@ -366,7 +366,7 @@
         {
           "blockName": "GeneralList",
           "config": {
-            "sectionTitle": "Select a Siding Type",
+            "sectionTitle": "Select a Siding Types",
             "items": [
               {
                 "id": 1,

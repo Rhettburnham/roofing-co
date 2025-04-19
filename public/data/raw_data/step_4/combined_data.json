@@ -18,7 +18,7 @@
         "href": "/#contact"
       }
     ],
-    "logo": "/Users/rhettburnham/Desktop/Roof_Template_copy/public/data/raw_data/clipped.png",
+    "logo": "/data/raw_data/clipped.png",
     "whiteLogo": "/assets/images/hero/logo.svg"
   },
   "hero": {
@@ -64,12 +64,12 @@
         }
       ]
     },
-    "logo": "/Users/rhettburnham/Desktop/Roof_Template_copy/public/data/raw_data/clipped.png",
+    "logo": "/data/raw_data/clipped.png",
     "residentialImage": "/assets/images/hero/residentialnight.png",
     "commercialImage": "/assets/images/hero/commercialnight.png"
   },
   "booking": {
-    "logo": "/Users/rhettburnham/Desktop/Roof_Template_copy/public/data/raw_data/clipped.png",
+    "logo": "/data/raw_data/clipped.png",
     "headerText": "Contact Us",
     "phone": "(404) 227-5000"
   },
@@ -171,7 +171,7 @@
     "circleRadius": 5047,
     "address": "40 Tipperary TrlSharpsburg, GA 30277-3502",
     "telephone": "(404) 227-5000",
-    "markerIcon": "/Users/rhettburnham/Desktop/Roof_Template_copy/public/data/raw_data/clipped.png",
+    "markerIcon": "/data/raw_data/clipped.png",
     "serviceHours": [
       {
         "day": "Mon",

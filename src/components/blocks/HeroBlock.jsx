@@ -17,13 +17,19 @@ import { motion } from "framer-motion";
  *  - onConfigChange: function => called in edit mode to update config
  */
 const HeroBlock = ({ config = {}, readOnly = false, onConfigChange }) => {
+  // Update destructuring to handle empty strings
   const {
-    backgroundImage = "/assets/images/growth/hero_growth.jpg",
+    backgroundImage: rawBackgroundImage = "/assets/images/growth/hero_growth.jpg",
     title = "Siding Options",
     shrinkAfterMs = 1000,
     initialHeight = "40vh",
     finalHeight = "20vh",
   } = config;
+  
+  // Only use default if backgroundImage is empty string, null, or undefined
+  const backgroundImage = rawBackgroundImage && rawBackgroundImage.trim() !== "" 
+    ? rawBackgroundImage 
+    : "/assets/images/growth/hero_growth.jpg";
 
   // For the "shrinking" effect
   const [isShrunk, setIsShrunk] = useState(false);
@@ -47,8 +53,7 @@ const HeroBlock = ({ config = {}, readOnly = false, onConfigChange }) => {
   };
 
   // Get the actual background image URL to display
-  const displayBackgroundImage =
-    getDisplayUrl(backgroundImage) || "/assets/images/growth/hero_growth.jpg";
+  const displayBackgroundImage = getDisplayUrl(backgroundImage);
 
   // RENDER: READONLY => replicate the snippet
   if (readOnly) {

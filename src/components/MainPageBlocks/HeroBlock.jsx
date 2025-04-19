@@ -50,27 +50,52 @@ function HeroPreview({ heroconfig }) {
   useEffect(() => {
     setHasAnimated(true);
 
-    // Map residential services with correct routes
-    setResidentialServices(
-      residential.subServices.map((service) => ({
+    // Create residential service links with the new URL format
+    // Add a special mapping to fix the mismatch between combined_data.json and services.json
+    const processedResidentialServices = residential.subServices.map(service => {
+      // Get the title and convert to lowercase for comparison
+      const originalTitle = service.title;
+      const lowercaseTitle = originalTitle.toLowerCase();
+      
+      // Special mapping for services that don't match between files
+      let actualServiceName = lowercaseTitle;
+      
+      // This fixes the mismatch where:
+      // - "Siding" in combined_data.json should link to "Chimney" (ID 3) in services.json
+      // - "Chimney" in combined_data.json should link to "Guttering" (ID 2) in services.json
+      // - "Repairs" in combined_data.json should link to "Skylights" (ID 4) in services.json
+      if (lowercaseTitle === "siding") {
+        actualServiceName = "chimney";
+        console.log("Mapping 'Siding' to 'chimney' service");
+      } else if (lowercaseTitle === "chimney") {
+        actualServiceName = "guttering";
+        console.log("Mapping 'Chimney' to 'guttering' service");
+      } else if (lowercaseTitle === "repairs") {
+        actualServiceName = "skylights";
+        console.log("Mapping 'Repairs' to 'skylights' service");
+      }
+      
+      return {
+        label: originalTitle, // Keep the display label as shown in the HeroBlock
+        // Use the mapped service name for the actual URL
+        route: `/services/residential/${actualServiceName}`,
+      };
+    });
+    
+    // Create commercial service links with the new URL format
+    const processedCommercialServices = commercial.subServices.map(service => {
+      // Convert title to URL-friendly format
+      const urlTitle = service.title.toLowerCase().replace(/\s+/g, '-');
+      
+      return {
         label: service.title,
-        // Ensure we use the proper route format that will map to ServicePage, not ServiceEditPage
-        route: service.slug
-          ? `/services/${service.slug}`
-          : `/services/residential-${service.id}-${service.title?.toLowerCase().replace(/\s+/g, "-")}`,
-      }))
-    );
-
-    // Map commercial services with correct routes
-    setCommercialServices(
-      commercial.subServices.map((service) => ({
-        label: service.title,
-        // Ensure we use the proper route format that will map to ServicePage, not ServiceEditPage
-        route: service.slug
-          ? `/services/${service.slug}`
-          : `/services/commercial-${service.id}-${service.title?.toLowerCase().replace(/\s+/g, "-")}`,
-      }))
-    );
+        // New URL format: /services/commercial/metal-roof
+        route: `/services/commercial/${urlTitle}`,
+      };
+    });
+    
+    setResidentialServices(processedResidentialServices);
+    setCommercialServices(processedCommercialServices);
   }, [residential.subServices, commercial.subServices]);
 
   const [activeSection, setActiveSection] = useState("neutral");
