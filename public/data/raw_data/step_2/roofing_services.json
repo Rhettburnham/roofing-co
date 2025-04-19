@@ -6,11 +6,11 @@
     },
     {
       "id": 2,
-      "name": "Guttering"
+      "name": "Chimney"
     },
     {
       "id": 3,
-      "name": "Chimney"
+      "name": "Siding"
     },
     {
       "id": 4,
@@ -20,15 +20,15 @@
   "commercial": [
     {
       "id": 1,
-      "name": "Coatings"
+      "name": "Metal Roof"
     },
     {
       "id": 2,
-      "name": "Built-Up"
+      "name": "Flat Roof"
     },
     {
       "id": 3,
-      "name": "Metal Roof"
+      "name": "Restoration"
     },
     {
       "id": 4,

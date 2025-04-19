@@ -70,7 +70,9 @@ const ServicePage = ({ forcedServiceData = null }) => {
         }
 
         // Step 2: Fetch the services.json data from the correct path
-        const servicesResponse = await fetch("/data/raw_data/step_4/services.json");
+        const servicesResponse = await fetch(
+          "/data/raw_data/step_4/services.json"
+        );
         if (!servicesResponse.ok) {
           throw new Error(`HTTP error! Status: ${servicesResponse.status}`);
         }
@@ -80,7 +82,7 @@ const ServicePage = ({ forcedServiceData = null }) => {
         let foundService = null;
 
         // Check both residential and commercial categories
-        for (const category of ['residential', 'commercial']) {
+        for (const category of ["residential", "commercial"]) {
           foundService = servicesData[category]?.find(
             (service) => service.slug === serviceIdentifier
           );
@@ -123,7 +125,8 @@ const ServicePage = ({ forcedServiceData = null }) => {
 
     try {
       // Render the appropriate component for this block
-      return <BlockComponent key={index} {...config} />;
+      // Pass readOnly=true to ensure blocks render in view mode, not edit mode
+      return <BlockComponent key={index} readOnly={true} {...config} />;
     } catch (error) {
       console.error(`Error rendering ${blockName}:`, error);
       return (
@@ -175,12 +178,12 @@ const ServicePage = ({ forcedServiceData = null }) => {
     if (params.serviceSlug) {
       return params.serviceSlug;
     }
-    
+
     // Handle legacy format
     if (params.category && params.id) {
       return `${params.category}-${params.id}`;
     }
-    
+
     return null;
   };
 

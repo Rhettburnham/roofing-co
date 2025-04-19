@@ -49,20 +49,28 @@ function HeroPreview({ heroconfig }) {
 
   useEffect(() => {
     setHasAnimated(true);
-    
-    // Map residential services
-    setResidentialServices(residential.subServices.map((service) => ({
-      label: service.title,
-      // Use the slug from services.json
-      route: `/services/${service.slug}`
-    })));
 
-    // Map commercial services
-    setCommercialServices(commercial.subServices.map((service) => ({
-      label: service.title,
-      // Use the slug from services.json
-      route: `/services/${service.slug}`
-    })));
+    // Map residential services with correct routes
+    setResidentialServices(
+      residential.subServices.map((service) => ({
+        label: service.title,
+        // Ensure we use the proper route format that will map to ServicePage, not ServiceEditPage
+        route: service.slug
+          ? `/services/${service.slug}`
+          : `/services/residential-${service.id}-${service.title?.toLowerCase().replace(/\s+/g, "-")}`,
+      }))
+    );
+
+    // Map commercial services with correct routes
+    setCommercialServices(
+      commercial.subServices.map((service) => ({
+        label: service.title,
+        // Ensure we use the proper route format that will map to ServicePage, not ServiceEditPage
+        route: service.slug
+          ? `/services/${service.slug}`
+          : `/services/commercial-${service.id}-${service.title?.toLowerCase().replace(/\s+/g, "-")}`,
+      }))
+    );
   }, [residential.subServices, commercial.subServices]);
 
   const [activeSection, setActiveSection] = useState("neutral");
@@ -245,9 +253,7 @@ function HeroPreview({ heroconfig }) {
                       activeSection === "residential" ? "active" : "default"
                     }
                   >
-                    <Home 
-                      className="w-[6.5vw] h-[6.5vw] md:w-[7.5vh] md:h-[7.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)] text-amber-100 rounded-full p-1" 
-                    />
+                    <Home className="w-[6.5vw] h-[6.5vw] md:w-[7.5vh] md:h-[7.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)] text-amber-100 rounded-full p-1" />
                   </motion.div>
 
                   {/* Title that moves up when active */}
@@ -327,7 +333,7 @@ function HeroPreview({ heroconfig }) {
               }}
             />
             {/* Absolutely positioned container for Commercial content */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50" >
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
               <div className="flex flex-col items-center pointer-events-auto ">
                 {/* Combined container for icon and title - grouped for unified clicking */}
                 <div
@@ -348,9 +354,7 @@ function HeroPreview({ heroconfig }) {
                       activeSection === "commercial" ? "active" : "default"
                     }
                   >
-                    <FaWarehouse 
-                      className="w-[6.5vw] h-[6.5vw] md:w-[7.5vh] md:h-[7.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)] text-amber-100 rounded-full p-1" 
-                    />
+                    <FaWarehouse className="w-[6.5vw] h-[6.5vw] md:w-[7.5vh] md:h-[7.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)] text-amber-100 rounded-full p-1" />
                   </motion.div>
 
                   {/* Title that moves up when active */}

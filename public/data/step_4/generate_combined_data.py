@@ -8,14 +8,16 @@ import random
 import re
 from typing import Dict, Any, List, Optional, Tuple
 from dotenv import load_dotenv
+from pathlib import Path
 from deepseek_utils import query_deepseek_api
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Load environment variables
-load_dotenv('.env')
+# Load environment variables from .env.deepseek file
+env_path = Path(__file__).parent.parent / ".env.deepseek"
+load_dotenv(env_path)
 
 class CombinedDataGenerator:
     """
@@ -278,21 +280,6 @@ class CombinedDataGenerator:
         # Default city if extraction fails
         return "Atlanta"
     
-    def _generate_about_history(self, business_name: str, years: int, city: str) -> str:
-        """Generate company history paragraph for about page."""
-        current_year = 2023  # Hardcoded for consistency, can be updated to use datetime
-        founded_year = current_year - years
-        
-        history = f"Founded in {founded_year}, {business_name} has been serving the {city} community with top-tier roofing solutions for nearly a decade. What started as a small, family-owned business has grown into a trusted name in the industry, known for quality craftsmanship and exceptional customer service. Over the years, we've tackled everything from minor repairs to full roof replacements, earning a reputation for reliability and attention to detail. Our deep roots in {city} drive our commitment to protecting homes and businesses with durable, weather-resistant roofing systems tailored to the region's unique climate."
-        
-        return history
-    
-    def _generate_about_mission(self, business_name: str) -> str:
-        """Generate mission statement for about page."""
-        mission = f"Our mission is to deliver superior roofing solutions with integrity, precision, and care. We strive to exceed expectations by combining expert craftsmanship with personalized service, ensuring every project—big or small—is built to last and backed by our unwavering commitment to quality."
-        
-        return mission
-    
     def _format_employee_data(self) -> List[Dict[str, Any]]:
         """Format employee data from BBB profile."""
         formatted_employees = []
@@ -503,10 +490,6 @@ class CombinedDataGenerator:
             # Extract reviews
             reviews = self._extract_best_reviews()
             
-            # Generate about page content
-            about_history = self._generate_about_history(business_name, years, city)
-            about_mission = self._generate_about_mission(business_name)
-            
             # Generate rich text content
             rich_text_hero = self._generate_rich_text_hero(business_name)
             rich_text_desc1 = f"{business_name} has been a trusted name in the roofing industry for {years} years, delivering exceptional craftsmanship and reliability. Specializing in residential and commercial roofing, we combine time-tested techniques with modern materials to ensure durability, aesthetic appeal, and long-lasting protection for your property."
@@ -528,32 +511,11 @@ class CombinedDataGenerator:
             template_data["hero"]["residential"]["subServices"] = formatted_services["hero"]["residential"]
             template_data["hero"]["commercial"]["subServices"] = formatted_services["hero"]["commercial"]
             
-            # 2. About page
-            template_data["aboutPage"]["title"] = f"{business_name}: {city}'s Trusted Roofing Experts"
-            template_data["aboutPage"]["history"] = about_history
-            template_data["aboutPage"]["mission"] = about_mission
-            # Update city in Community Focus value
-            for value in template_data["aboutPage"]["values"]:
-                if value["title"] == "Community Focus":
-                    value["description"] = value["description"].replace("{{CITY}}", city)
-            # Update stats
-            for stat in template_data["aboutPage"]["stats"]:
-                if stat["title"] == "Years in Business":
-                    stat["value"] = years
-                elif stat["title"] == "Completed Projects":
-                    stat["value"] = completed_projects
-                elif stat["title"] == "Happy Clients":
-                    stat["value"] = happy_clients
-                elif stat["title"] == "Team Members":
-                    stat["value"] = team_members_count
-            # Add team members
-            template_data["aboutPage"]["team"] = employee_data[:2]  # Just use the first two for leadership
-            
-            # 3. Booking section
+            # 2. Booking section
             template_data["booking"]["phone"] = phone
             template_data["booking"]["headerText"] = booking_header
             
-            # 4. Rich text section
+            # 3. Rich text section
             template_data["richText"]["heroText"] = rich_text_hero
             template_data["richText"]["accredited"] = accredited
             template_data["richText"]["years_in_business"] = f"{years} Years of Roofing Experience"
@@ -576,7 +538,7 @@ class CombinedDataGenerator:
                         }
                         break
             
-            # 5. Map section
+            # 4. Map section
             template_data["map"]["center"]["lat"] = lat
             template_data["map"]["center"]["lng"] = lng
             template_data["map"]["address"] = address
@@ -589,23 +551,23 @@ class CombinedDataGenerator:
                 elif stat["title"] == "Roofs Repaired":
                     stat["value"] = roofs_repaired
             
-            # 6. Combined page section
+            # 5. Combined page section
             template_data["combinedPage"]["googleReviews"] = reviews
             template_data["combinedPage"]["residentialServices"] = formatted_services["combined"]["residential"]
             template_data["combinedPage"]["commercialServices"] = formatted_services["combined"]["commercial"]
             template_data["combinedPage"]["teamMembers"] = [member["name"] for member in employee_data[:2]]
             
-            # 7. Employees section
+            # 6. Employees section
             template_data["employees"]["employee"] = employee_data
             template_data["employees"]["sectionTitle"] = team_section_title
             
-            # 8. Before/After section
+            # 7. Before/After section
             template_data["before_after"]["sectionTitle"] = gallery_title
             
-            # 9. Button section - shuffle images
+            # 8. Button section - shuffle images
             random.shuffle(template_data["button"]["images"])
             
-            # 10. Reviews section
+            # 9. Reviews section
             template_data["reviews"] = reviews
             
             # Save the final combined data

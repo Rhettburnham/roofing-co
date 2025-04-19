@@ -1,29 +1,83 @@
 {
   "navbar": {
     "navLinks": [
-      { "name": "About", "href": "/about" },
-      { "name": "Booking", "href": "/#book" },
-      { "name": "Services", "href": "/#services" },
-      { "name": "Contact", "href": "/#contact" }
+      {
+        "name": "About",
+        "href": "/about"
+      },
+      {
+        "name": "Booking",
+        "href": "/#book"
+      },
+      {
+        "name": "Services",
+        "href": "/#services"
+      },
+      {
+        "name": "Contact",
+        "href": "/#contact"
+      }
     ],
-    "logo": "/assets/images/hero/clipped.png",
+    "logo": "/Users/rhettburnham/Desktop/Roof_Template_copy/public/data/raw_data/clipped.png",
     "whiteLogo": "/assets/images/hero/logo.svg"
   },
   "hero": {
     "mainTitle": "{{BUSINESS_NAME_MAIN}}",
     "subTitle": "{{BUSINESS_NAME_SUB}}",
     "residential": {
-      "subServices": []
+      "subServices": [
+        {
+          "id": 1,
+          "title": "Shingling",
+          "href": "/services/residential-r1-shingling"
+        },
+        {
+          "id": 2,
+          "title": "Chimney",
+          "href": "/services/residential-r2-chimney"
+        },
+        {
+          "id": 3,
+          "title": "Siding",
+          "href": "/services/residential-r3-siding"
+        },
+        {
+          "id": 4,
+          "title": "Repairs",
+          "href": "/services/residential-r4-repairs"
+        }
+      ]
     },
     "commercial": {
-      "subServices": []
+      "subServices": [
+        {
+          "id": 1,
+          "title": "Metal Roof",
+          "href": "/services/commercial-c1-metal-roof"
+        },
+        {
+          "id": 2,
+          "title": "Flat Roof",
+          "href": "/services/commercial-c2-flat-roof"
+        },
+        {
+          "id": 3,
+          "title": "Restoration",
+          "href": "/services/commercial-c3-restoration"
+        },
+        {
+          "id": 4,
+          "title": "Maintenance",
+          "href": "/services/commercial-c4-maintenance"
+        }
+      ]
     },
-    "logo": "/assets/images/hero/clipped.png",
+    "logo": "/Users/rhettburnham/Desktop/Roof_Template_copy/public/data/raw_data/clipped.png",
     "residentialImage": "/assets/images/hero/residentialnight.png",
     "commercialImage": "/assets/images/hero/commercialnight.png"
   },
   "booking": {
-    "logo": "/assets/images/hero/clipped.png",
+    "logo": "/Users/rhettburnham/Desktop/Roof_Template_copy/public/data/raw_data/clipped.png",
     "headerText": "{{BOOKING_HEADER_TEXT}}",
     "phone": "{{PHONE_NUMBER}}"
   },
@@ -125,7 +179,7 @@
     "circleRadius": 5047,
     "address": "{{FULL_ADDRESS}}",
     "telephone": "{{PHONE_NUMBER}}",
-    "markerIcon": "/assets/images/hero/clipped.png",
+    "markerIcon": "/Users/rhettburnham/Desktop/Roof_Template_copy/public/data/raw_data/clipped.png",
     "serviceHours": [
       {
         "day": "Mon",
@@ -183,8 +237,58 @@
     "isCommercial": false,
     "title": "Services",
     "googleReviews": [],
-    "residentialServices": [],
-    "commercialServices": [],
+    "residentialServices": [
+      {
+        "id": 1,
+        "name": "Shingling",
+        "slug": "residential-r1-shingling",
+        "description": "Professional shingling services for your residential property."
+      },
+      {
+        "id": 2,
+        "name": "Chimney",
+        "slug": "residential-r2-chimney",
+        "description": "Professional chimney services for your residential property."
+      },
+      {
+        "id": 3,
+        "name": "Siding",
+        "slug": "residential-r3-siding",
+        "description": "Professional siding services for your residential property."
+      },
+      {
+        "id": 4,
+        "name": "Repairs",
+        "slug": "residential-r4-repairs",
+        "description": "Professional repairs services for your residential property."
+      }
+    ],
+    "commercialServices": [
+      {
+        "id": 1,
+        "name": "Metal Roof",
+        "slug": "commercial-c1-metal-roof",
+        "description": "Expert metal roof solutions for commercial buildings."
+      },
+      {
+        "id": 2,
+        "name": "Flat Roof",
+        "slug": "commercial-c2-flat-roof",
+        "description": "Expert flat roof solutions for commercial buildings."
+      },
+      {
+        "id": 3,
+        "name": "Restoration",
+        "slug": "commercial-c3-restoration",
+        "description": "Expert restoration solutions for commercial buildings."
+      },
+      {
+        "id": 4,
+        "name": "Maintenance",
+        "slug": "commercial-c4-maintenance",
+        "description": "Expert maintenance solutions for commercial buildings."
+      }
+    ],
     "teamTitle": "Leadership",
     "teamMembers": [],
     "largeResidentialImg": "/assets/images/main_image_expanded.jpg",
@@ -220,4 +324,4 @@
     "employee": []
   },
   "reviews": []
-} 
+}

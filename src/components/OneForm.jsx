@@ -248,6 +248,25 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
       if (!blockName) {
         const services = await getServicesData();
         if (services) {
+          // Make sure service slugs are properly formatted
+          if (services.residential) {
+            services.residential.forEach((service) => {
+              if (!service.slug && service.id && service.name) {
+                // Generate slug if missing
+                service.slug = `residential-${service.id}-${service.name.toLowerCase().replace(/\s+/g, "-")}`;
+              }
+            });
+          }
+
+          if (services.commercial) {
+            services.commercial.forEach((service) => {
+              if (!service.slug && service.id && service.name) {
+                // Generate slug if missing
+                service.slug = `commercial-${service.id}-${service.name.toLowerCase().replace(/\s+/g, "-")}`;
+              }
+            });
+          }
+
           zip.file("services.json", JSON.stringify(services, null, 2));
         }
       }

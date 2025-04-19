@@ -6,8 +6,14 @@ import json
 import logging
 import time
 import random
+from pathlib import Path
+from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
+
+# Load environment variables from .env.deepseek file
+env_path = Path(__file__).parent.parent / ".env.deepseek"
+load_dotenv(env_path)
 
 # Fallback text for testing when API key is not available
 FALLBACK_TEXTS = [

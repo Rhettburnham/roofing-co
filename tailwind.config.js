@@ -11,7 +11,13 @@ let customColors = {
   "faint-color": "#E0F7FA", // Light blue
 };
 
-const jsonPath = path.join(__dirname, "public", "data", "colors_output.json");
+const jsonPath = path.join(
+  __dirname,
+  "public",
+  "data",
+  "step_2",
+  "colors_output.json"
+);
 try {
   const raw = fs.readFileSync(jsonPath, "utf-8");
   const parsed = JSON.parse(raw);
@@ -36,9 +42,10 @@ module.exports = {
       },
       colors: {
         // Use our website's color scheme
-        accent: "#E0F7FA", // Light blue
-        banner: "#1e293b", // Dark blue for banner/header backgrounds
-        "second-accent": "#FFF8E1", // Amber 100 equivalent
+        accent: customColors.accent,
+        banner: customColors.banner,
+        "second-accent": customColors["second-accent"],
+        "faint-color": customColors["faint-color"],
         // Add utility colors
         blue: {
           DEFAULT: "#2997FF",

@@ -4,18 +4,18 @@ import { motion, AnimatePresence } from "framer-motion";
 import StarRating from "../StarRating";
 
 // Icons for Services - Make sure all icons are available
-import { 
-  FaTools, 
-  FaFan, 
-  FaPaintRoller, 
-  FaTint, 
-  FaHome, 
-  FaBuilding, 
-  FaWarehouse, 
+import {
+  FaTools,
+  FaFan,
+  FaPaintRoller,
+  FaTint,
+  FaHome,
+  FaBuilding,
+  FaWarehouse,
   // FaChimney might not be available, use an alternative
-  FaSmog, // Alternative to FaChimney 
-  FaBroom, 
-  FaHardHat 
+  FaSmog, // Alternative to FaChimney
+  FaBroom,
+  FaHardHat,
 } from "react-icons/fa";
 import googleIcon from "/assets/images/hero/googleimage.png";
 
@@ -29,10 +29,18 @@ import { Home, Building2 } from "lucide-react";
  */
 function resolveIcon(iconName) {
   const iconMap = {
-    FaTools, FaFan, FaPaintRoller, FaTint, FaHome, FaBuilding, 
-    FaWarehouse, FaSmog, FaBroom, FaHardHat
+    FaTools,
+    FaFan,
+    FaPaintRoller,
+    FaTint,
+    FaHome,
+    FaBuilding,
+    FaWarehouse,
+    FaSmog,
+    FaBroom,
+    FaHardHat,
   };
-  
+
   return iconMap[iconName] || FaTools; // Default to FaTools if not found
 }
 
@@ -125,12 +133,12 @@ const TestimonialItem = ({ testimonial }) => {
 
       {/* Text */}
       <p className="text-gray-800 indent-4">
-          <span className="text-[2.8vw] md:text-[2.2vh] block md:hidden font-serif">
-              {isExpanded ? testimonial.text : truncated}
-          </span>
-          <span className="md:text-xs hidden md:block font-serif">
-              {testimonial.text}
-          </span>
+        <span className="text-[2.8vw] md:text-[2.2vh] block md:hidden font-serif">
+          {isExpanded ? testimonial.text : truncated}
+        </span>
+        <span className="md:text-xs hidden md:block font-serif">
+          {testimonial.text}
+        </span>
       </p>
     </div>
   );
@@ -151,22 +159,58 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
 
   useEffect(() => {
     // First try to use the provided config data for services
-    if (config && config.residentialServices && config.residentialServices.length > 0) {
-      console.log("Using config residentialServices:", config.residentialServices);
-      setResidentialServices(config.residentialServices);
+    if (
+      config &&
+      config.residentialServices &&
+      config.residentialServices.length > 0
+    ) {
+      console.log(
+        "Using config residentialServices:",
+        config.residentialServices
+      );
+
+      // Map residential services with proper slug-based links
+      const mappedResidentialServices = config.residentialServices.map(
+        (service) => ({
+          ...service,
+          link: service.slug ? `/services/${service.slug}` : service.link,
+        })
+      );
+
+      setResidentialServices(mappedResidentialServices);
     } else {
       // Warn about missing residential services in the config
-      console.warn("No residential services found in config, this shouldn't happen in production");
+      console.warn(
+        "No residential services found in config, this shouldn't happen in production"
+      );
       setResidentialServices([]);
     }
 
     // Same for commercial services
-    if (config && config.commercialServices && config.commercialServices.length > 0) {
-      console.log("Using config commercialServices:", config.commercialServices);
-      setCommercialServices(config.commercialServices);
+    if (
+      config &&
+      config.commercialServices &&
+      config.commercialServices.length > 0
+    ) {
+      console.log(
+        "Using config commercialServices:",
+        config.commercialServices
+      );
+
+      // Map commercial services with proper slug-based links
+      const mappedCommercialServices = config.commercialServices.map(
+        (service) => ({
+          ...service,
+          link: service.slug ? `/services/${service.slug}` : service.link,
+        })
+      );
+
+      setCommercialServices(mappedCommercialServices);
     } else {
       // Warn about missing commercial services in the config
-      console.warn("No commercial services found in config, this shouldn't happen in production");
+      console.warn(
+        "No commercial services found in config, this shouldn't happen in production"
+      );
       setCommercialServices([]);
     }
 
@@ -176,7 +220,9 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
       setGoogleReviews(config.googleReviews);
     } else {
       // Warn about missing reviews data
-      console.warn("No Google reviews found in config, this shouldn't happen in production");
+      console.warn(
+        "No Google reviews found in config, this shouldn't happen in production"
+      );
       setGoogleReviews([]);
     }
 
@@ -235,7 +281,10 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
               className="w-full h-[50vh] object-cover" /* Increased height and added object-cover */
             />
             <img
-              src={config.largeCommercialImg || "/assets/images/commercialservices.jpg"}
+              src={
+                config.largeCommercialImg ||
+                "/assets/images/commercialservices.jpg"
+              }
               alt="Commercial Services"
               className="w-full h-[50vh] object-cover" /* Increased height and added object-cover */
             />
@@ -327,9 +376,13 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
                         e.currentTarget.style.boxShadow = "none";
                       }}
                     >
-                      {typeof service.icon === 'string' 
-                        ? React.createElement(resolveIcon(service.icon), { className: 'w-[8vw] h-[8vw] md:w-10 md:h-10' }) 
-                        : React.createElement(service.icon, { className: 'w-[5vw] h-[5vw] md:w-10 md:h-10' })}
+                      {typeof service.icon === "string"
+                        ? React.createElement(resolveIcon(service.icon), {
+                            className: "w-[8vw] h-[8vw] md:w-10 md:h-10",
+                          })
+                        : React.createElement(service.icon, {
+                            className: "w-[5vw] h-[5vw] md:w-10 md:h-10",
+                          })}
                       <h3 className=" text-white text-[3.6vw] group-hover:text-gray-200 md:text-sm drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
                         {service.title}
                       </h3>
@@ -422,12 +475,18 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
             className="flex w-[200%] h-full"
           >
             <img
-              src={config.largeResidentialImg || "/assets/images/main_image_expanded.jpg"}
+              src={
+                config.largeResidentialImg ||
+                "/assets/images/main_image_expanded.jpg"
+              }
               alt="Residential Services"
               className="w-[100vw] h-full object-cover"
             />
             <img
-              src={config.largeCommercialImg || "/assets/images/commercialservices.jpg"}
+              src={
+                config.largeCommercialImg ||
+                "/assets/images/commercialservices.jpg"
+              }
               alt="Commercial Services"
               className="w-[100vw] h-full object-cover"
             />
@@ -510,9 +569,13 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
                           e.currentTarget.style.boxShadow = "none";
                         }}
                       >
-                        {typeof service.icon === 'string' 
-                          ? React.createElement(resolveIcon(service.icon), { className: 'w-[5vw] h-[5vw] md:w-10 md:h-10' }) 
-                          : React.createElement(service.icon, { className: 'w-[5vw] h-[5vw] md:w-10 md:h-10' })}
+                        {typeof service.icon === "string"
+                          ? React.createElement(resolveIcon(service.icon), {
+                              className: "w-[5vw] h-[5vw] md:w-10 md:h-10",
+                            })
+                          : React.createElement(service.icon, {
+                              className: "w-[5vw] h-[5vw] md:w-10 md:h-10",
+                            })}
                         <h3 className="mt-1 text-white text-lg drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
                           {service.title}
                         </h3>

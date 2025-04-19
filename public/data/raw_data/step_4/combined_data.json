@@ -1,17 +1,29 @@
 {
   "navbar": {
     "navLinks": [
-      { "name": "About", "href": "/about" },
-      { "name": "Booking", "href": "/#book" },
-      { "name": "Services", "href": "/#services" },
-      { "name": "Contact", "href": "/#contact" }
+      {
+        "name": "About",
+        "href": "/about"
+      },
+      {
+        "name": "Booking",
+        "href": "/#book"
+      },
+      {
+        "name": "Services",
+        "href": "/#services"
+      },
+      {
+        "name": "Contact",
+        "href": "/#contact"
+      }
     ],
-    "logo": "/assets/images/hero/clipped.png",
+    "logo": "/Users/rhettburnham/Desktop/Roof_Template_copy/public/data/raw_data/clipped.png",
     "whiteLogo": "/assets/images/hero/logo.svg"
   },
   "hero": {
-    "mainTitle": "CRAFT ROOING",
-    "subTitle": "COMPANY, LLC",
+    "mainTitle": "COWBOYS-VAQUEROS",
+    "subTitle": "CONSTRUCTION",
     "residential": {
       "subServices": [
         {
@@ -19,144 +31,58 @@
           "slug": "residential-1-shingling"
         },
         {
-          "title": "Guttering",
-          "slug": "residential-2-guttering"
-        },
-        {
           "title": "Chimney",
-          "slug": "residential-3-chimney"
+          "slug": "residential-2-chimney"
         },
         {
-          "title": "Skylights",
-          "slug": "residential-4-skylights"
+          "title": "Siding",
+          "slug": "residential-3-siding"
+        },
+        {
+          "title": "Repairs",
+          "slug": "residential-4-repairs"
         }
       ]
     },
     "commercial": {
       "subServices": [
         {
-          "title": "Coatings",
-          "slug": "commercial-1-coatings"
-        },
-        {
-          "title": "Built-Up",
-          "slug": "commercial-2-built-up"
-        },
-        {
           "title": "Metal Roof",
-          "slug": "commercial-3-metal-roof"
+          "slug": "commercial-1-metal-roof"
         },
         {
-          "title": "Drainage",
-          "slug": "commercial-4-drainage"
+          "title": "Flat Roof",
+          "slug": "commercial-2-flat-roof"
+        },
+        {
+          "title": "Restoration",
+          "slug": "commercial-3-restoration"
+        },
+        {
+          "title": "Maintenance",
+          "slug": "commercial-4-maintenance"
         }
       ]
     },
-    "logo": "/assets/images/hero/clipped.png",
+    "logo": "/Users/rhettburnham/Desktop/Roof_Template_copy/public/data/raw_data/clipped.png",
     "residentialImage": "/assets/images/hero/residentialnight.png",
     "commercialImage": "/assets/images/hero/commercialnight.png"
   },
-
-  "aboutPage": {
-    "title": "Craft Roofing Company, LLC: Atlanta's Trusted Roofing Experts",
-    "subtitle": "Building Strong Roofs, Stronger Relationships",
-    "history": "Founded in 2016, Craft Roofing Company, LLC has been serving the Atlanta community with top-tier roofing solutions for nearly a decade. What started as a small, family-owned business has grown into a trusted name in the industry, known for quality craftsmanship and exceptional customer service. Over the years, we\u2019ve tackled everything from minor repairs to full roof replacements, earning a reputation for reliability and attention to detail. Our deep roots in Atlanta drive our commitment to protecting homes and businesses with durable, weather-resistant roofing systems tailored to the region\u2019s unique climate.",
-    "mission": "Our mission is to deliver superior roofing solutions with integrity, precision, and care. We strive to exceed expectations by combining expert craftsmanship with personalized service, ensuring every project\u2014big or small\u2014is built to last and backed by our unwavering commitment to quality.",
-    "values": [
-      {
-        "title": "Quality Craftsmanship",
-        "description": "We take pride in every detail, using premium materials and proven techniques to ensure roofs that stand the test of time."
-      },
-      {
-        "title": "Customer Trust",
-        "description": "Honesty and transparency guide every interaction, fostering long-term relationships built on reliability and respect."
-      },
-      {
-        "title": "Community Focus",
-        "description": "As Atlanta locals, we\u2019re invested in the safety and beauty of our neighborhoods, offering solutions that enhance homes and businesses alike."
-      },
-      {
-        "title": "Innovation",
-        "description": "We stay ahead of industry trends and technologies to provide efficient, sustainable, and cutting-edge roofing options."
-      }
-    ],
-    "team": [
-      {
-        "name": "Mr. Carl Craft, President",
-        "position": "Owner",
-        "photo": "/assets/images/team/roofer.png"
-      },
-      {
-        "name": "Mr. Carl Craft, President/Owner",
-        "position": "Manager",
-        "photo": "/assets/images/team/foreman.png"
-      }
-    ],
-    "stats": [
-      {
-        "title": "Years in Business",
-        "value": 9,
-        "icon": "FaHistory"
-      },
-      {
-        "title": "Completed Projects",
-        "value": 522,
-        "icon": "FaAward"
-      },
-      {
-        "title": "Happy Clients",
-        "value": 417,
-        "icon": "FaUsers"
-      },
-      {
-        "title": "Team Members",
-        "value": 8,
-        "icon": "FaHandshake"
-      }
-    ],
-    "heroImage": "/assets/images/about/about-hero.jpg",
-    "steps": [
-      {
-        "title": "Book",
-        "videoSrc": "/assets/videos/our_process_videos/booking.mp4",
-        "href": "/#booking",
-        "scale": 0.8
-      },
-      {
-        "title": "Inspection",
-        "videoSrc": "/assets/videos/our_process_videos/magnify.mp4",
-        "href": "/inspection",
-        "scale": 1.25
-      },
-      {
-        "title": "Service",
-        "videoSrc": "/assets/videos/our_process_videos/repair.mp4",
-        "href": "/#packages",
-        "scale": 1.1
-      },
-      {
-        "title": "Review",
-        "videoSrc": "/assets/videos/our_process_videos/approval.mp4",
-        "href": "/#testimonials",
-        "scale": 0.9
-      }
-    ]
-  },
   "booking": {
-    "logo": "/assets/images/hero/clipped.png",
-    "headerText": "Call Us Today!",
+    "logo": "/Users/rhettburnham/Desktop/Roof_Template_copy/public/data/raw_data/clipped.png",
+    "headerText": "Contact Us",
     "phone": "(404) 227-5000"
   },
   "richText": {
-    "heroText": "Expert Roofs, Trusted Craftsmanship",
+    "heroText": "Protecting Your Home with Excellence",
     "accredited": true,
-    "years_in_iness": "9 Years of Roofing Experience",
-    "bus_description": "Craft Roofing Company, LLC has been a trusted name in the roofing industry for 9 years, delivering exceptional craftsmanship and reliability. Specializing in residential and commercial roofing, we combine time-tested techniques with modern materials to ensure durability, aesthetic appeal, and long-lasting protection for your property.",
-    "bus_description_second": "At Craft Roofing, we pride ourselves on personalized service and unwavering integrity. Our skilled team handles every project with meticulous attention to detail, from initial inspection to final installation. Customer satisfaction is our top priority, and we stand behind our work with industry-leading warranties and transparent communication.",
+    "years_in_business": "11 Years of Roofing Experience",
+    "bus_description": "Cowboys-Vaqueros Construction has been a trusted name in the roofing industry for 11 years, delivering exceptional craftsmanship and reliability. Specializing in residential and commercial roofing, we combine time-tested techniques with modern materials to ensure durability, aesthetic appeal, and long-lasting protection for your property.",
+    "bus_description_second": "At Cowboys-Vaqueros Construction, we pride ourselves on personalized service and unwavering integrity. Our skilled team handles every project with meticulous attention to detail, from initial inspection to final installation. Customer satisfaction is our top priority, and we stand behind our work with industry-leading warranties and transparent communication.",
     "cards": [
       {
         "title": "Expert Craftsmanship",
-        "desc": "Our seasoned professionals bring 9+ years of expertise, ensuring precision and quality in every roof we install or repair.",
+        "desc": "Our seasoned professionals bring 11+ years of expertise, ensuring precision and quality in every roof we install or repair.",
         "icon": "Tools"
       },
       {
@@ -216,18 +142,18 @@
     "text": "Services",
     "buttonLink": "/about",
     "images": [
-      "/assets/images/roof_slideshow/i1.jpeg",
-      "/assets/images/roof_slideshow/i2.jpeg",
-      "/assets/images/roof_slideshow/i3.jpeg",
       "/assets/images/roof_slideshow/i4.jpeg",
+      "/assets/images/roof_slideshow/i8.webp",
       "/assets/images/roof_slideshow/i5.jpeg",
       "/assets/images/roof_slideshow/i6.jpeg",
-      "/assets/images/roof_slideshow/i7.webp",
-      "/assets/images/roof_slideshow/i8.webp",
+      "/assets/images/roof_slideshow/i2.jpeg",
+      "/assets/images/roof_slideshow/i3.jpeg",
       "/assets/images/roof_slideshow/i9.jpeg",
       "/assets/images/roof_slideshow/i10.webp",
+      "/assets/images/roof_slideshow/i7.webp",
       "/assets/images/roof_slideshow/i11.jpeg",
-      "/assets/images/roof_slideshow/i12.webp"
+      "/assets/images/roof_slideshow/i12.webp",
+      "/assets/images/roof_slideshow/i1.jpeg"
     ],
     "description for the images": [
       "a house with a victorian chimney",
@@ -238,13 +164,14 @@
   },
   "map": {
     "center": {
-      "lat": 33.67671976442508,
-      "lng": -84.32647876462993
+      "lat": 33.5407,
+      "lng": -84.6519
     },
     "zoomLevel": 11,
-    "circleRadius": 6047,
-    "address": "1201 Peachtree StreetSuite 345Atlanta, GA 30361",
+    "circleRadius": 5047,
+    "address": "40 Tipperary TrlSharpsburg, GA 30277-3502",
     "telephone": "(404) 227-5000",
+    "markerIcon": "/Users/rhettburnham/Desktop/Roof_Template_copy/public/data/raw_data/clipped.png",
     "serviceHours": [
       {
         "day": "Mon",
@@ -278,26 +205,25 @@
     "stats": [
       {
         "title": "Years of Service",
-        "value": 9,
+        "value": 11,
         "icon": "FaCalendarAlt"
       },
       {
         "title": "Customers Served",
-        "value": 450,
+        "value": 550,
         "icon": "FaHandshake"
       },
       {
         "title": "Roofs Repaired",
-        "value": 270,
+        "value": 330,
         "icon": "FaHome"
       },
       {
         "title": "Years of Experience",
-        "value": 9,
+        "value": 11,
         "icon": "FaCalendarAlt"
       }
-    ],
-    "markerIcon": "/assets/images/hero/clipped.png"
+    ]
   },
   "combinedPage": {
     "isCommercial": false,
@@ -360,54 +286,51 @@
       },
       {
         "icon": "FaHome",
-        "title": "Guttering",
-        "link": "/services/residential-2-guttering"
+        "title": "Chimney",
+        "link": "/services/residential-2-chimney"
       },
       {
         "icon": "FaTools",
-        "title": "Chimney",
-        "link": "/services/residential-3-chimney"
+        "title": "Siding",
+        "link": "/services/residential-3-siding"
       },
       {
         "icon": "FaBroom",
-        "title": "Skylights",
-        "link": "/services/residential-4-skylights"
+        "title": "Repairs",
+        "link": "/services/residential-4-repairs"
       }
     ],
     "commercialServices": [
       {
         "icon": "FaPaintRoller",
-        "title": "Coatings",
-        "link": "/services/commercial-1-coatings"
+        "title": "Metal Roof",
+        "link": "/services/commercial-1-metal-roof"
       },
       {
         "icon": "FaBuilding",
-        "title": "Built-Up",
-        "link": "/services/commercial-2-built-up"
+        "title": "Flat Roof",
+        "link": "/services/commercial-2-flat-roof"
       },
       {
         "icon": "FaWarehouse",
-        "title": "Metal Roof",
-        "link": "/services/commercial-3-metal-roof"
+        "title": "Restoration",
+        "link": "/services/commercial-3-restoration"
       },
       {
         "icon": "FaChimney",
-        "title": "Drainage",
-        "link": "/services/commercial-4-drainage"
+        "title": "Maintenance",
+        "link": "/services/commercial-4-maintenance"
       }
     ],
     "teamTitle": "Leadership",
-    "teamMembers": [
-      "Mr. Carl Craft, President",
-      "Mr. Carl Craft, President/Owner"
-    ],
+    "teamMembers": ["Mr. Luis Aguilar-Lopez", "Ms. Erika Salinas"],
     "largeResidentialImg": "/assets/images/main_image_expanded.jpg",
     "description for the image 1": [" An image of a residential neighborhood"],
     "largeCommercialImg": "/assets/images/commercialservices.jpg",
     "description for the image 2": ["An image of a city skyline"]
   },
   "before_after": {
-    "sectionTitle": "GALLERY",
+    "sectionTitle": "PORTFOLIO",
     "items": [
       {
         "before": "/assets/images/beforeafter/a1.jpeg",
@@ -430,7 +353,7 @@
     ]
   },
   "employees": {
-    "sectionTitle": "TEAM MEMBERS",
+    "sectionTitle": "CREW",
     "employee": [
       {
         "name": "Mr. Luis Aguilar-Lopez",
@@ -441,26 +364,6 @@
         "name": "Ms. Erika Salinas",
         "role": "Manager",
         "image": "/assets/images/team/foreman.png"
-      },
-      {
-        "name": "Frank",
-        "role": "Estimator",
-        "image": "/assets/images/team/estimator.png"
-      },
-      {
-        "name": "Diana",
-        "role": "Sales Rep",
-        "image": "/assets/images/team/salesrep.png"
-      },
-      {
-        "name": "Garret",
-        "role": "Manager",
-        "image": "/assets/images/team/manager.png"
-      },
-      {
-        "name": "Drew",
-        "role": "Inspector",
-        "image": "/assets/images/team/inspector.png"
       }
     ]
   },

@@ -83,36 +83,96 @@ def adjust_brightness(rgb, factor):
     return (int(r*255), int(g*255), int(b*255))
 
 def generate_color_combinations(dominant_rgb, palette_rgb):
-    """Generate multiple color combinations based on color theory."""
-    darker = adjust_brightness(dominant_rgb, 0.7)
-    lighter = adjust_brightness(dominant_rgb, 1.3)
+    """Generate multiple color combinations based on color theory.
+    This function creates completely different colors, not just variations 
+    of the dominant color."""
     
-    # Generate several options for the main colors
     options = []
     
-    # Option 1: Based on dominant color
-    options.append({
-        "accent": rgb_to_hex(dominant_rgb),
-        "banner": rgb_to_hex(darker),
-        "faint-color": rgb_to_hex(lighter),
-        "second-accent": rgb_to_hex(palette_rgb[1] if len(palette_rgb) > 1 else adjust_brightness(dominant_rgb, 1.2))
-    })
-    
-    # Option 2: Using complementary color if available
-    if len(palette_rgb) > 1:
+    # Generate Option 1: Use completely different colors from palette if available
+    if len(palette_rgb) >= 4:
+        # If we have at least 4 colors in the palette, use them directly
         options.append({
             "accent": rgb_to_hex(palette_rgb[0]),
             "banner": rgb_to_hex(palette_rgb[1]),
-            "faint-color": rgb_to_hex(adjust_brightness(palette_rgb[0], 1.3)),
-            "second-accent": rgb_to_hex(palette_rgb[2] if len(palette_rgb) > 2 else adjust_brightness(palette_rgb[0], 0.8))
+            "faint-color": rgb_to_hex(palette_rgb[2]),
+            "second-accent": rgb_to_hex(palette_rgb[3])
+        })
+    elif len(palette_rgb) >= 2:
+        # If we have at least 2 colors, use them and create complementary colors
+        # Get complementary colors by hue rotation (180 degrees in HSL space)
+        color1 = palette_rgb[0]
+        color2 = palette_rgb[1]
+        
+        # Create complementary colors for the other two
+        h1, l1, s1 = colorsys.rgb_to_hls(color1[0]/255.0, color1[1]/255.0, color1[2]/255.0)
+        h2, l2, s2 = colorsys.rgb_to_hls(color2[0]/255.0, color2[1]/255.0, color2[2]/255.0)
+        
+        # Complementary colors (shift hue by 0.5 = 180 degrees)
+        comp_h1 = (h1 + 0.5) % 1.0
+        comp_h2 = (h2 + 0.33) % 1.0  # Shift by 120 degrees instead for triadic
+        
+        r1, g1, b1 = colorsys.hls_to_rgb(comp_h1, l1, s1)
+        r2, g2, b2 = colorsys.hls_to_rgb(comp_h2, l2, s2)
+        
+        comp_color1 = (int(r1*255), int(g1*255), int(b1*255))
+        comp_color2 = (int(r2*255), int(g2*255), int(b2*255))
+        
+        options.append({
+            "accent": rgb_to_hex(color1),
+            "banner": rgb_to_hex(color2),
+            "faint-color": rgb_to_hex(comp_color1),
+            "second-accent": rgb_to_hex(comp_color2)
+        })
+    else:
+        # If we have just the dominant color, create a color scheme using color theory
+        # Convert to HSL for easier color manipulation
+        h, l, s = colorsys.rgb_to_hls(dominant_rgb[0]/255.0, dominant_rgb[1]/255.0, dominant_rgb[2]/255.0)
+        
+        # Create complementary, triadic and quadratic colors
+        # Complementary (opposite on color wheel)
+        comp_h = (h + 0.5) % 1.0
+        # Triadic (120 degrees on color wheel)
+        triadic_h1 = (h + 0.33) % 1.0
+        # Quadratic (90 degrees on color wheel)
+        quadratic_h = (h + 0.25) % 1.0
+        
+        # Convert back to RGB
+        comp_rgb = colorsys.hls_to_rgb(comp_h, l, s)
+        triadic_rgb = colorsys.hls_to_rgb(triadic_h1, l, s)
+        quadratic_rgb = colorsys.hls_to_rgb(quadratic_h, l, s)
+        
+        # Convert to integers
+        comp_color = (int(comp_rgb[0]*255), int(comp_rgb[1]*255), int(comp_rgb[2]*255))
+        triadic_color = (int(triadic_rgb[0]*255), int(triadic_rgb[1]*255), int(triadic_rgb[2]*255))
+        quadratic_color = (int(quadratic_rgb[0]*255), int(quadratic_rgb[1]*255), int(quadratic_rgb[2]*255))
+        
+        options.append({
+            "accent": rgb_to_hex(dominant_rgb),
+            "banner": rgb_to_hex(comp_color),
+            "faint-color": rgb_to_hex(triadic_color),
+            "second-accent": rgb_to_hex(quadratic_color)
         })
     
-    # Option 3: Monochromatic scheme
+    # Option 2: Create a high-contrast scheme with tetradic colors (4 evenly spaced on color wheel)
+    h, l, s = colorsys.rgb_to_hls(dominant_rgb[0]/255.0, dominant_rgb[1]/255.0, dominant_rgb[2]/255.0)
+    
+    # Create 4 colors evenly spaced around the color wheel (90 degrees apart)
+    colors = []
+    for i in range(4):
+        new_h = (h + i * 0.25) % 1.0
+        # Vary lightness and saturation slightly for better contrast
+        new_l = min(max(l + (i * 0.1 - 0.15), 0.3), 0.7)
+        new_s = min(max(s + (i * 0.05 - 0.075), 0.3), 0.9)
+        
+        rgb = colorsys.hls_to_rgb(new_h, new_l, new_s)
+        colors.append((int(rgb[0]*255), int(rgb[1]*255), int(rgb[2]*255)))
+    
     options.append({
-        "accent": rgb_to_hex(dominant_rgb),
-        "banner": rgb_to_hex(adjust_brightness(dominant_rgb, 0.6)),
-        "faint-color": rgb_to_hex(adjust_brightness(dominant_rgb, 1.4)),
-        "second-accent": rgb_to_hex(adjust_brightness(dominant_rgb, 1.1))
+        "accent": rgb_to_hex(colors[0]),
+        "banner": rgb_to_hex(colors[1]),
+        "faint-color": rgb_to_hex(colors[2]),
+        "second-accent": rgb_to_hex(colors[3])
     })
     
     return options
@@ -120,9 +180,12 @@ def generate_color_combinations(dominant_rgb, palette_rgb):
 def select_best_combination(options, business_name):
     """Use color theory and business context to select the best combination."""
     logger.info(f"Selecting best color combination for {business_name}")
-    # For simplicity, using the first option as default
-    # This could be enhanced with DeepSeek API in the future
-    return options[0]
+    
+    # Use option 2 if available (for more contrast), otherwise default to option 0
+    selected_option = options[1] if len(options) > 1 else options[0]
+    
+    logger.info(f"Selected color option with accent: {selected_option['accent']}, banner: {selected_option['banner']}")
+    return selected_option
 
 def main():
     logger.info("Starting color extraction process")

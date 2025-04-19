@@ -1,24 +1,31 @@
 {
     "accredited": true,
-    "logo_url": "https://m.bbb.org/prod/ProfileImages/d417e5a1-10b3-4eea-84ef-d89af8ff130e.jpeg?tx=w_200",
+    "logo_url": "https://m.bbb.org/prod/ProfileImages/2023/eacf6652-37f9-4d0f-977f-a64260a444c3.jpg?tx=w_200",
     "logo_filename": "logo.png",
-    "website": "https://www.linkedin.com/in/carl-craft-50656b111/",
-    "telephone": "(470) 242-6903",
+    "website": "https://www.yelp.com/biz/cowboys-vaqueros-construction-sharpsburg-7",
+    "telephone": "(404) 227-5000",
     "email": "Email Business",
-    "business_name": "Craft Roofing Company, LLC",
-    "address": "1201 Peachtree StreetSuite 345Atlanta, GA 30361",
-    "date_of_accreditation": "BBB Accredited Since: 2/21/2025",
-    "years_in_business": "Years in Business: 9",
-    "payment_methods": "Craft Roofing Company, LLC accepts most major credit cards.",
+    "business_name": "Cowboys-Vaqueros Construction",
+    "address": "40 Tipperary TrlSharpsburg, GA 30277-3502",
+    "date_of_accreditation": "BBB Accredited Since: 6/30/2021",
+    "years_in_business": "Years in Business: 11",
+    "payment_methods": "Cowboys-Vaqueros Construction accepts debit and credit card payments.",
     "bbb_rating": "A+",
+    "description": "Cowboys-Vaqueros Construction provides the following services:",
+    "services": [
+        "Roof Leak Specialist.Chimney Leak Specialist.Roof Replacement.Roof Repairs.Siding Repairs.Mason"
+    ],
     "additional_services": [
-        "Roofing Services",
-        "Construction Services"
+        "Roof Leak Specialist Services",
+        "Chimney Leak Specialist Services",
+        "Roof Replacement Services",
+        "Roof Repairs",
+        "Siding Repairs Services"
     ],
     "employee_names": [
-        "Mr. Carl Craft, President",
-        "Mr. Carl Craft, President/Owner"
+        "Mr. Luis Aguilar-Lopez, Owner",
+        "Ms. Erika Salinas, Manager"
     ],
     "number_of_employees": "1",
-    "business_email": "/us/ga/atlanta/profile/roofing-contractors/craft-roofing-company-llc-0443-27604141/email-this-business?email=primary"
+    "business_email": "/us/ga/sharpsburg/profile/roofing-contractors/cowboys-vaqueros-construction-0443-28157863/email-this-business?email=primary"
 }
