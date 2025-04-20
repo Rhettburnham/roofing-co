@@ -201,6 +201,7 @@ ButtonPreview.propTypes = {
 ========================================================= */
 function ButtonEditorPanel({ localButton, setLocalButton, onSave }) {
   const [validationError, setValidationError] = useState("");
+  const [activeTab, setActiveTab] = useState("general");
 
   const handleSaveClick = () => {
     // Validate the localButton data
@@ -224,6 +225,35 @@ function ButtonEditorPanel({ localButton, setLocalButton, onSave }) {
     onSave();
   };
 
+  // Image upload handler
+  const handleImageUpload = (index) => (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Create a URL for display
+    const fileURL = URL.createObjectURL(file);
+    
+    const updated = [...localButton.images];
+    updated[index] = {
+      file: file,
+      url: fileURL,
+      name: file.name,
+    };
+    
+    setLocalButton(prev => ({
+      ...prev,
+      images: updated
+    }));
+  };
+
+  // Gets the display URL from either a string URL or an object with a URL property
+  const getDisplayUrl = (value) => {
+    if (!value) return null;
+    if (typeof value === "string") return value;
+    if (typeof value === "object" && value.url) return value.url;
+    return null;
+  };
+
   return (
     <div className="bg-gray-800 text-white p-4 rounded-lg max-h-[75vh] overflow-auto">
       {/* Top bar with "Save" button */}
@@ -232,7 +262,7 @@ function ButtonEditorPanel({ localButton, setLocalButton, onSave }) {
         <button
           type="button"
           onClick={handleSaveClick}
-          className="bg-gray-600 hover:bg-gray-500 px-4 py-2 rounded text-white font-medium"
+          className="bg-green-600 hover:bg-green-500 px-4 py-2 rounded text-white font-medium"
         >
           Save
         </button>
@@ -245,134 +275,169 @@ function ButtonEditorPanel({ localButton, setLocalButton, onSave }) {
         </div>
       )}
 
-      {/* Editable Button Text */}
-      <div className="mb-6">
-        <label className="block text-sm mb-1 font-medium">Button Text:</label>
-        <input
-          type="text"
-          className="w-full bg-gray-700 px-2 py-2 rounded text-white"
-          value={localButton.text || ""}
-          onChange={(e) =>
-            setLocalButton((prev) => ({
-              ...prev,
-              text: e.target.value,
-            }))
-          }
-        />
-      </div>
-
-      {/* Editable Button Link */}
-      <div className="mb-6">
-        <label className="block text-sm mb-1 font-medium">Button Link:</label>
-        <input
-          type="text"
-          className="w-full bg-gray-700 px-2 py-2 rounded text-white"
-          value={localButton.buttonLink || ""}
-          onChange={(e) =>
-            setLocalButton((prev) => ({
-              ...prev,
-              buttonLink: e.target.value,
-            }))
-          }
-        />
-        <div className="text-xs text-gray-400 mt-1">
-          Example: /about for internal page or https://example.com for external
-          site
-        </div>
-      </div>
-
-      {/* Editable Slide Duration */}
-      <div className="mb-6">
-        <label className="block text-sm mb-1 font-medium">
-          Slide Duration (seconds):
-        </label>
-        <input
-          type="number"
-          min="1"
-          max="30"
-          step="0.5"
-          className="w-full bg-gray-700 px-2 py-2 rounded text-white"
-          value={localButton.slideDuration || 10}
-          onChange={(e) =>
-            setLocalButton((prev) => ({
-              ...prev,
-              slideDuration: parseFloat(e.target.value),
-            }))
-          }
-        />
-        <div className="text-xs text-gray-400 mt-1">
-          Lower values = faster slides. Higher values = slower slides.
-        </div>
-      </div>
-
-      {/* Editable Images List */}
-      <div>
-        <h2 className="text-lg font-medium mb-2">Background Images</h2>
-        <p className="text-sm text-gray-400 mb-3">
-          Add background images for the carousel. These images will scroll
-          behind the button.
-        </p>
-
-        {localButton.images &&
-          localButton.images.map((img, index) => (
-            <div key={index} className="bg-gray-700 p-3 rounded mb-3 relative">
-              <button
-                onClick={() => {
-                  const updated = [...localButton.images];
-                  updated.splice(index, 1);
-                  setLocalButton((prev) => ({
-                    ...prev,
-                    images: updated,
-                  }));
-                }}
-                className="bg-red-600 text-white text-xs px-2 py-1 rounded absolute top-2 right-2 hover:bg-red-500"
-              >
-                Remove
-              </button>
-              <label className="block text-sm mb-1 font-medium">
-                Image URL:
-                <input
-                  type="text"
-                  className="w-full bg-gray-600 px-2 py-2 rounded mt-1 text-white"
-                  value={img || ""}
-                  onChange={(e) => {
-                    const updated = [...localButton.images];
-                    updated[index] = e.target.value;
-                    setLocalButton((prev) => ({ ...prev, images: updated }));
-                  }}
-                />
-              </label>
-              {img && (
-                <div className="mt-2 border border-gray-600 rounded overflow-hidden">
-                  <img
-                    src={
-                      img.startsWith("/") ? img : `/${img.replace(/^\.\//, "")}`
-                    }
-                    alt={`Background ${index + 1}`}
-                    className="w-full h-24 object-cover"
-                    onError={(e) => {
-                      e.target.src = "/assets/images/placeholder.png";
-                      e.target.alt = "Image not found";
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-          ))}
-
+      {/* Tabs for navigating between settings */}
+      <div className="flex border-b border-gray-700 mb-4">
         <button
-          onClick={() => {
-            const updated = [
-              ...(localButton.images || []),
-              "/assets/images/placeholder.png",
-            ];
-            setLocalButton((prev) => ({ ...prev, images: updated }));
-          }}
-          className="bg-gray-600 text-white text-sm px-3 py-2 rounded font-medium hover:bg-gray-500"
+          className={`px-4 py-2 ${activeTab === 'general' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'} rounded-t`}
+          onClick={() => setActiveTab('general')}
         >
-          + Add Image
+          General
+        </button>
+        <button
+          className={`px-4 py-2 ${activeTab === 'images' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'} rounded-t`}
+          onClick={() => setActiveTab('images')}
+        >
+          Images
         </button>
       </div>
+
+      {/* General Settings */}
+      {activeTab === 'general' && (
+        <>
+          {/* Editable Button Text */}
+          <div className="mb-6">
+            <label className="block text-sm mb-1 font-medium">Button Text:</label>
+            <input
+              type="text"
+              className="w-full bg-gray-700 px-2 py-2 rounded text-white"
+              value={localButton.text || ""}
+              onChange={(e) =>
+                setLocalButton((prev) => ({
+                  ...prev,
+                  text: e.target.value,
+                }))
+              }
+            />
+          </div>
+
+          {/* Editable Button Link */}
+          <div className="mb-6">
+            <label className="block text-sm mb-1 font-medium">Button Link:</label>
+            <input
+              type="text"
+              className="w-full bg-gray-700 px-2 py-2 rounded text-white"
+              value={localButton.buttonLink || ""}
+              onChange={(e) =>
+                setLocalButton((prev) => ({
+                  ...prev,
+                  buttonLink: e.target.value,
+                }))
+              }
+            />
+            <div className="text-xs text-gray-400 mt-1">
+              Example: /about for internal page or https://example.com for external
+              site
+            </div>
+          </div>
+
+          {/* Editable Slide Duration */}
+          <div className="mb-6">
+            <label className="block text-sm mb-1 font-medium">
+              Slide Duration (seconds):
+            </label>
+            <input
+              type="number"
+              min="1"
+              max="200"
+              step="1"
+              className="w-full bg-gray-700 px-2 py-2 rounded text-white"
+              value={localButton.slideDuration || 40}
+              onChange={(e) =>
+                setLocalButton((prev) => ({
+                  ...prev,
+                  slideDuration: parseFloat(e.target.value),
+                }))
+              }
+            />
+            <div className="text-xs text-gray-400 mt-1">
+              Lower values = faster slides. Higher values = slower slides.
+              Recommended: 40-120 for a slow, subtle effect.
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Image Settings */}
+      {activeTab === 'images' && (
+        <div>
+          <h2 className="text-lg font-medium mb-2">Background Images</h2>
+          <p className="text-sm text-gray-400 mb-3">
+            Add background images for the carousel. These images will scroll
+            behind the button.
+          </p>
+
+          {localButton.images &&
+            localButton.images.map((img, index) => (
+              <div key={index} className="bg-gray-700 p-3 rounded mb-3 relative">
+                <button
+                  onClick={() => {
+                    const updated = [...localButton.images];
+                    updated.splice(index, 1);
+                    setLocalButton((prev) => ({
+                      ...prev,
+                      images: updated,
+                    }));
+                  }}
+                  className="bg-red-600 text-white text-xs px-2 py-1 rounded absolute top-2 right-2 hover:bg-red-500"
+                >
+                  Remove
+                </button>
+                
+                <div className="mb-3">
+                  <label className="block text-sm mb-1 font-medium">Image:</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload(index)}
+                    className="mb-2"
+                  />
+                  <div className="mt-1">
+                    <label className="block text-sm mb-1 font-medium">
+                      Or enter image URL:
+                      <input
+                        type="text"
+                        className="w-full bg-gray-600 px-2 py-2 rounded mt-1 text-white"
+                        value={typeof img === 'string' ? img : (img.name || '')}
+                        onChange={(e) => {
+                          const updated = [...localButton.images];
+                          updated[index] = e.target.value;
+                          setLocalButton((prev) => ({ ...prev, images: updated }));
+                        }}
+                      />
+                    </label>
+                  </div>
+                </div>
+                
+                {img && (
+                  <div className="mt-2 border border-gray-600 rounded overflow-hidden">
+                    <img
+                      src={typeof img === 'string' ? img : (img.url || img)}
+                      alt={`Background ${index + 1}`}
+                      className="w-full h-24 object-cover"
+                      onError={(e) => {
+                        e.target.src = "/assets/images/placeholder.png";
+                        e.target.alt = "Image not found";
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
+
+          <button
+            onClick={() => {
+              const updated = [
+                ...(localButton.images || []),
+                "/assets/images/placeholder.png",
+              ];
+              setLocalButton((prev) => ({ ...prev, images: updated }));
+            }}
+            className="bg-blue-600 hover:bg-blue-500 text-white text-sm px-3 py-2 rounded font-medium"
+          >
+            + Add Image
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -431,23 +496,13 @@ export default function ButtonBlock({
     return <ButtonPreview buttonconfig={buttonconfig} />;
   }
 
-  // Otherwise show both editor and preview
+  // Otherwise show just the editor
   return (
-    <div className="flex flex-col md:flex-row gap-4">
-      <div className="md:w-1/2 order-2 md:order-1">
-        <h3 className="text-sm text-gray-400 mb-2">Preview:</h3>
-        <div className="border border-gray-300 rounded overflow-hidden">
-          <ButtonPreview buttonconfig={localButton} />
-        </div>
-      </div>
-      <div className="md:w-1/2 order-1 md:order-2">
-        <ButtonEditorPanel
-          localButton={localButton}
-          setLocalButton={setLocalButton}
-          onSave={handleSave}
-        />
-      </div>
-    </div>
+    <ButtonEditorPanel
+      localButton={localButton}
+      setLocalButton={setLocalButton}
+      onSave={handleSave}
+    />
   );
 }
 

@@ -145,15 +145,504 @@ const TestimonialItem = ({ testimonial }) => {
 };
 
 /* ─────────────────────────────────────────────────────────────
+   EDITOR PANEL COMPONENT
+   This component handles the editing interface for CombinedPageBlock
+───────────────────────────────────────────────────────────── */
+function CombinedPageEditorPanel({ localData, setLocalData, onSave }) {
+  const [activeTab, setActiveTab] = useState("residential");
+  
+  // Helper to create URL paths for image uploads
+  const getDisplayUrl = (value) => {
+    if (!value) return null;
+    if (typeof value === "string") return value;
+    if (typeof value === "object" && value.url) return value.url;
+    return null;
+  };
+
+  // Image upload handler
+  const handleImageUpload = (fieldName) => (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Create a URL for display
+    const fileURL = URL.createObjectURL(file);
+    
+    setLocalData((prev) => ({
+      ...prev,
+      [fieldName]: {
+        file: file,
+        url: fileURL,
+        name: file.name,
+      },
+    }));
+  };
+
+  // Add new testimonial
+  const handleAddTestimonial = () => {
+    setLocalData(prev => ({
+      ...prev,
+      googleReviews: [
+        ...prev.googleReviews || [],
+        {
+          name: "New Customer",
+          stars: 5,
+          date: "1 month ago",
+          text: "Add your testimonial text here...",
+          logo: "/assets/images/hero/googleimage.png",
+          link: "https://www.google.com/maps"
+        }
+      ]
+    }));
+  };
+
+  // Remove testimonial
+  const handleRemoveTestimonial = (index) => {
+    setLocalData(prev => {
+      const updatedReviews = [...prev.googleReviews];
+      updatedReviews.splice(index, 1);
+      return {
+        ...prev,
+        googleReviews: updatedReviews
+      };
+    });
+  };
+
+  // Update testimonial fields
+  const handleTestimonialChange = (index, field, value) => {
+    setLocalData(prev => {
+      const updatedReviews = [...prev.googleReviews];
+      updatedReviews[index] = {
+        ...updatedReviews[index],
+        [field]: field === 'stars' ? Number(value) : value
+      };
+      return {
+        ...prev,
+        googleReviews: updatedReviews
+      };
+    });
+  };
+
+  // Add new service
+  const handleAddService = (serviceType) => {
+    const serviceList = serviceType === 'residential' ? 'residentialServices' : 'commercialServices';
+    const iconOptions = ['FaTools', 'FaFan', 'FaPaintRoller', 'FaTint', 'FaHome', 'FaBuilding', 'FaWarehouse', 'FaSmog', 'FaBroom', 'FaHardHat'];
+    
+    setLocalData(prev => ({
+      ...prev,
+      [serviceList]: [
+        ...prev[serviceList] || [],
+        {
+          icon: iconOptions[Math.floor(Math.random() * iconOptions.length)],
+          title: `New ${serviceType === 'residential' ? 'Residential' : 'Commercial'} Service`,
+          link: "#"
+        }
+      ]
+    }));
+  };
+
+  // Remove service
+  const handleRemoveService = (serviceType, index) => {
+    const serviceList = serviceType === 'residential' ? 'residentialServices' : 'commercialServices';
+    
+    setLocalData(prev => {
+      const updatedServices = [...prev[serviceList]];
+      updatedServices.splice(index, 1);
+      return {
+        ...prev,
+        [serviceList]: updatedServices
+      };
+    });
+  };
+
+  // Update service fields
+  const handleServiceChange = (serviceType, index, field, value) => {
+    const serviceList = serviceType === 'residential' ? 'residentialServices' : 'commercialServices';
+    
+    setLocalData(prev => {
+      const updatedServices = [...prev[serviceList]];
+      updatedServices[index] = {
+        ...updatedServices[index],
+        [field]: value
+      };
+      return {
+        ...prev,
+        [serviceList]: updatedServices
+      };
+    });
+  };
+
+  return (
+    <div className="bg-gray-800 text-white p-4 rounded-lg max-h-[75vh] overflow-auto">
+      {/* Header with tabs */}
+      <div className="flex flex-col mb-4">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">Services & Testimonials Editor</h2>
+          <button
+            onClick={onSave}
+            className="bg-green-600 hover:bg-green-500 px-4 py-2 rounded text-white font-medium"
+          >
+            Save Changes
+          </button>
+        </div>
+        
+        {/* Tabs for different sections */}
+        <div className="flex border-b border-gray-700 mb-4">
+          <button
+            className={`px-4 py-2 ${activeTab === 'residential' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'} rounded-t`}
+            onClick={() => setActiveTab('residential')}
+          >
+            Residential Services
+          </button>
+          <button
+            className={`px-4 py-2 ${activeTab === 'commercial' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'} rounded-t`}
+            onClick={() => setActiveTab('commercial')}
+          >
+            Commercial Services
+          </button>
+          <button
+            className={`px-4 py-2 ${activeTab === 'testimonials' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'} rounded-t`}
+            onClick={() => setActiveTab('testimonials')}
+          >
+            Testimonials
+          </button>
+          <button
+            className={`px-4 py-2 ${activeTab === 'images' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'} rounded-t`}
+            onClick={() => setActiveTab('images')}
+          >
+            Images
+          </button>
+        </div>
+      </div>
+
+      {/* Section Title */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium mb-1">Section Title:</label>
+        <input
+          type="text"
+          className="w-full bg-gray-700 px-3 py-2 rounded text-white"
+          value={localData.title || "Services"}
+          onChange={(e) => setLocalData(prev => ({ ...prev, title: e.target.value }))}
+        />
+      </div>
+      
+      {/* Residential Services */}
+      {activeTab === 'residential' && (
+        <div>
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-lg font-medium">Residential Services</h3>
+            <button
+              onClick={() => handleAddService('residential')}
+              className="bg-blue-600 hover:bg-blue-500 px-3 py-1 rounded text-white text-sm"
+            >
+              + Add Service
+            </button>
+          </div>
+          
+          {localData.residentialServices?.map((service, index) => (
+            <div key={index} className="bg-gray-700 p-3 rounded mb-3 relative">
+              <button
+                onClick={() => handleRemoveService('residential', index)}
+                className="absolute top-2 right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
+                title="Remove service"
+              >
+                ×
+              </button>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-sm mb-1">Icon:</label>
+                  <select
+                    className="w-full bg-gray-600 px-2 py-1 rounded"
+                    value={service.icon || "FaTools"}
+                    onChange={(e) => handleServiceChange('residential', index, 'icon', e.target.value)}
+                  >
+                    <option value="FaTools">Tools</option>
+                    <option value="FaFan">Fan</option>
+                    <option value="FaPaintRoller">Paint Roller</option>
+                    <option value="FaTint">Water Drop</option>
+                    <option value="FaHome">Home</option>
+                    <option value="FaBuilding">Building</option>
+                    <option value="FaWarehouse">Warehouse</option>
+                    <option value="FaSmog">Smog/Chimney</option>
+                    <option value="FaBroom">Broom</option>
+                    <option value="FaHardHat">Hard Hat</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm mb-1">Title:</label>
+                  <input
+                    type="text"
+                    className="w-full bg-gray-600 px-2 py-1 rounded"
+                    value={service.title || ""}
+                    onChange={(e) => handleServiceChange('residential', index, 'title', e.target.value)}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm mb-1">Link:</label>
+                  <input
+                    type="text"
+                    className="w-full bg-gray-600 px-2 py-1 rounded"
+                    value={service.link || ""}
+                    onChange={(e) => handleServiceChange('residential', index, 'link', e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      
+      {/* Commercial Services */}
+      {activeTab === 'commercial' && (
+        <div>
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-lg font-medium">Commercial Services</h3>
+            <button
+              onClick={() => handleAddService('commercial')}
+              className="bg-blue-600 hover:bg-blue-500 px-3 py-1 rounded text-white text-sm"
+            >
+              + Add Service
+            </button>
+          </div>
+          
+          {localData.commercialServices?.map((service, index) => (
+            <div key={index} className="bg-gray-700 p-3 rounded mb-3 relative">
+              <button
+                onClick={() => handleRemoveService('commercial', index)}
+                className="absolute top-2 right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
+                title="Remove service"
+              >
+                ×
+              </button>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-sm mb-1">Icon:</label>
+                  <select
+                    className="w-full bg-gray-600 px-2 py-1 rounded"
+                    value={service.icon || "FaTools"}
+                    onChange={(e) => handleServiceChange('commercial', index, 'icon', e.target.value)}
+                  >
+                    <option value="FaTools">Tools</option>
+                    <option value="FaFan">Fan</option>
+                    <option value="FaPaintRoller">Paint Roller</option>
+                    <option value="FaTint">Water Drop</option>
+                    <option value="FaHome">Home</option>
+                    <option value="FaBuilding">Building</option>
+                    <option value="FaWarehouse">Warehouse</option>
+                    <option value="FaSmog">Smog/Chimney</option>
+                    <option value="FaBroom">Broom</option>
+                    <option value="FaHardHat">Hard Hat</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm mb-1">Title:</label>
+                  <input
+                    type="text"
+                    className="w-full bg-gray-600 px-2 py-1 rounded"
+                    value={service.title || ""}
+                    onChange={(e) => handleServiceChange('commercial', index, 'title', e.target.value)}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm mb-1">Link:</label>
+                  <input
+                    type="text"
+                    className="w-full bg-gray-600 px-2 py-1 rounded"
+                    value={service.link || ""}
+                    onChange={(e) => handleServiceChange('commercial', index, 'link', e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      
+      {/* Testimonials */}
+      {activeTab === 'testimonials' && (
+        <div>
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-lg font-medium">Google Reviews</h3>
+            <button
+              onClick={handleAddTestimonial}
+              className="bg-blue-600 hover:bg-blue-500 px-3 py-1 rounded text-white text-sm"
+            >
+              + Add Testimonial
+            </button>
+          </div>
+          
+          {localData.googleReviews?.map((review, index) => (
+            <div key={index} className="bg-gray-700 p-3 rounded mb-4 relative">
+              <button
+                onClick={() => handleRemoveTestimonial(index)}
+                className="absolute top-2 right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
+                title="Remove testimonial"
+              >
+                ×
+              </button>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                <div>
+                  <label className="block text-sm mb-1">Name:</label>
+                  <input
+                    type="text"
+                    className="w-full bg-gray-600 px-2 py-1 rounded"
+                    value={review.name || ""}
+                    onChange={(e) => handleTestimonialChange(index, 'name', e.target.value)}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm mb-1">Date:</label>
+                  <input
+                    type="text"
+                    className="w-full bg-gray-600 px-2 py-1 rounded"
+                    value={review.date || ""}
+                    onChange={(e) => handleTestimonialChange(index, 'date', e.target.value)}
+                  />
+                </div>
+              </div>
+              
+              <div className="mb-3">
+                <label className="block text-sm mb-1">Rating (1-5):</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="5"
+                  className="w-full bg-gray-600 px-2 py-1 rounded"
+                  value={review.stars || 5}
+                  onChange={(e) => handleTestimonialChange(index, 'stars', e.target.value)}
+                />
+              </div>
+              
+              <div className="mb-3">
+                <label className="block text-sm mb-1">Review Text:</label>
+                <textarea
+                  className="w-full bg-gray-600 px-2 py-1 rounded h-20"
+                  value={review.text || ""}
+                  onChange={(e) => handleTestimonialChange(index, 'text', e.target.value)}
+                />
+              </div>
+              
+              <div className="mb-3">
+                <label className="block text-sm mb-1">Link:</label>
+                <input
+                  type="text"
+                  className="w-full bg-gray-600 px-2 py-1 rounded"
+                  value={review.link || ""}
+                  onChange={(e) => handleTestimonialChange(index, 'link', e.target.value)}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm mb-1">Logo:</label>
+                <input
+                  type="text"
+                  className="w-full bg-gray-600 px-2 py-1 rounded"
+                  value={review.logo || ""}
+                  onChange={(e) => handleTestimonialChange(index, 'logo', e.target.value)}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      
+      {/* Images */}
+      {activeTab === 'images' && (
+        <div>
+          <h3 className="text-lg font-medium mb-3">Banner Images</h3>
+          
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Residential Image:</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload('largeResidentialImg')}
+              className="mb-2"
+            />
+            {getDisplayUrl(localData.largeResidentialImg) && (
+              <div className="mt-2 border border-gray-600 rounded overflow-hidden h-32">
+                <img
+                  src={getDisplayUrl(localData.largeResidentialImg)}
+                  alt="Residential banner"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+            <input
+              type="text"
+              className="w-full bg-gray-700 px-3 py-2 mt-2 rounded text-white"
+              value={typeof localData.largeResidentialImg === 'string' ? localData.largeResidentialImg : ''}
+              placeholder="Or enter image URL"
+              onChange={(e) => setLocalData(prev => ({ 
+                ...prev, 
+                largeResidentialImg: e.target.value 
+              }))}
+            />
+          </div>
+          
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Commercial Image:</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload('largeCommercialImg')}
+              className="mb-2"
+            />
+            {getDisplayUrl(localData.largeCommercialImg) && (
+              <div className="mt-2 border border-gray-600 rounded overflow-hidden h-32">
+                <img
+                  src={getDisplayUrl(localData.largeCommercialImg)}
+                  alt="Commercial banner"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+            <input
+              type="text"
+              className="w-full bg-gray-700 px-3 py-2 mt-2 rounded text-white"
+              value={typeof localData.largeCommercialImg === 'string' ? localData.largeCommercialImg : ''}
+              placeholder="Or enter image URL"
+              onChange={(e) => setLocalData(prev => ({ 
+                ...prev, 
+                largeCommercialImg: e.target.value 
+              }))}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
    COMBINEDPAGE COMPONENT
    (All styling, no Yelp toggles — only Google data)
 ───────────────────────────────────────────────────────────── */
-export default function CombinedPageBlock({ readOnly = false, config = {} }) {
+export default function CombinedPageBlock({ readOnly = false, config = {}, onConfigChange }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isCommercial, setIsCommercial] = useState(false);
   const [residentialServices, setResidentialServices] = useState([]);
   const [commercialServices, setCommercialServices] = useState([]);
   const [googleReviews, setGoogleReviews] = useState([]);
+  const [localData, setLocalData] = useState(() => {
+    return { 
+      ...config,
+      isCommercial: config.isCommercial || false,
+      title: config.title || "Services",
+      googleReviews: config.googleReviews || [],
+      residentialServices: config.residentialServices || [],
+      commercialServices: config.commercialServices || [],
+      largeResidentialImg: config.largeResidentialImg || "/assets/images/main_image_expanded.jpg",
+      largeCommercialImg: config.largeCommercialImg || "/assets/images/commercialservices.jpg",
+    };
+  });
 
   console.log("CombinedPageBlock config:", config);
 
@@ -262,6 +751,25 @@ export default function CombinedPageBlock({ readOnly = false, config = {} }) {
 
   console.log("Google Reviews for testimonials:", googleReviews);
 
+  // Handle save button click
+  const handleSave = () => {
+    if (onConfigChange) {
+      onConfigChange(localData);
+    }
+  };
+
+  // If we're in edit mode, show the editor panel
+  if (!readOnly) {
+    return (
+      <CombinedPageEditorPanel 
+        localData={localData} 
+        setLocalData={setLocalData} 
+        onSave={handleSave} 
+      />
+    );
+  }
+
+  // READ-ONLY MODE - Continue with the existing component's render logic
   return (
     <div className="w-full bg-black mt-3">
       {/* ──────────────────────────────────────────────────────────

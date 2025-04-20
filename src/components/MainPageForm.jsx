@@ -241,7 +241,7 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
   return (
     <div className="bg-gray-100">
       {/* HERO BLOCK */}
-      <div className="relative bg-white rounded-lg shadow-md mb-8 overflow-hidden">
+      <div className="relative bg-white overflow-hidden">
         <div className="absolute top-4 right-4 z-40">
           <button
             type="button"
@@ -266,7 +266,7 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
       </div>
 
       {/* RICHTEXT BLOCK */}
-      <div className="relative bg-white rounded-lg shadow-md mb-8 overflow-hidden">
+      <div className="relative bg-white overflow-hidden">
         <div className="absolute top-4 right-4 z-40">
           <button
             type="button"
@@ -291,7 +291,7 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
       </div>
 
       {/* ABOUT BUTTON BLOCK */}
-      <div className="relative bg-white rounded-lg shadow-md mb-8 overflow-hidden">
+      <div className="relative bg-white overflow-hidden">
         <div className="absolute top-4 right-4 z-40">
           <button
             type="button"
@@ -316,7 +316,7 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
       </div>
 
       {/* MAP & STATS BLOCK */}
-      <div className="relative bg-white rounded-lg shadow-md mb-8 overflow-hidden">
+      <div className="relative bg-white overflow-hidden">
         <div className="absolute top-4 right-4 z-40">
           <button
             type="button"
@@ -341,7 +341,7 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
       </div>
 
       {/* BOOKING BLOCK */}
-      <div className="relative bg-white rounded-lg shadow-md mb-8 overflow-hidden">
+      <div className="relative bg-white overflow-hidden">
         <div className="absolute top-4 right-4 z-40">
           <button
             type="button"
@@ -366,7 +366,7 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
       </div>
 
       {/* COMBINED PAGE BLOCK */}
-      <div className="relative bg-white rounded-lg shadow-md mb-8 overflow-hidden">
+      <div className="relative bg-white overflow-hidden">
         <div className="absolute top-4 right-4 z-40">
           <button
             type="button"
@@ -391,7 +391,7 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
       </div>
 
       {/* BEFORE & AFTER BLOCK */}
-      <div className="relative bg-white rounded-lg shadow-md mb-8 overflow-hidden">
+      <div className="relative bg-white overflow-hidden">
         <div className="absolute top-4 right-4 z-40">
           <button
             type="button"
@@ -419,7 +419,7 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
       </div>
 
       {/* EMPLOYEES BLOCK */}
-      <div className="relative bg-white rounded-lg shadow-md mb-8 overflow-hidden">
+      <div className="relative bg-white overflow-hidden">
         <div className="absolute top-4 right-4 z-40">
           <button
             type="button"
