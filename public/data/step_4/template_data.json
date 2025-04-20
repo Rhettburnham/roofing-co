@@ -73,8 +73,7 @@
       ]
     },
     "logo": "/data/raw_data/clipped.png",
-    "residentialImage": "/assets/images/hero/residentialnight.png",
-    "commercialImage": "/assets/images/hero/commercialnight.png"
+    "heroImage": "/assets/images/hero/hero.png"
   },
   "booking": {
     "logo": "/data/raw_data/clipped.png",

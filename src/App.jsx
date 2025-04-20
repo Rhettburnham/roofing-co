@@ -217,18 +217,6 @@ const AppRoutes = ({
         }
       />
 
-      {/* Service routes - only keeping the modern format (for backward compatibility) */}
-      <Route
-        path="/services/:serviceType/:serviceName"
-        element={<ServicePage />}
-      />
-
-      {/* Backward compatibility for old service routes */}
-      <Route
-        path="/services/:serviceSlug"
-        element={<Navigate to="/" replace />}
-      />
-
       {/* Main OneForm editor route */}
       <Route
         path="/oneform"

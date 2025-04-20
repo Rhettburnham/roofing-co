@@ -411,7 +411,7 @@ function RichTextPreview({ richTextData }) {
   // Render Process Steps - simplified following Process.jsx pattern
   const RenderProcessSteps = () => {
     if (!steps || steps.length === 0) {
-      return <div className="text-center py-4">No process steps available</div>;
+      return <div className="text-center md:py-2">No process steps available</div>;
     }
 
     // For debugging - show video paths
@@ -432,7 +432,7 @@ function RichTextPreview({ richTextData }) {
     };
 
     return (
-      <div className="flex justify-center items-center flex-nowrap md:gap-4 mb-[4vh] md:mb-[8vh] w-full">
+      <div className="flex justify-center items-center flex-nowrap md:gap-4 mb-[2.5vh] md:mb-[6vh] w-full">
         {steps.map((step, index) => {
           const isHashLink = step.href?.startsWith("/#");
           const LinkComponent = isHashLink ? HashLink : Link;
@@ -520,7 +520,7 @@ function RichTextPreview({ richTextData }) {
                   </div>
                   <p
                     className={`text-center text-[3vw] md:text-lg font-semibold ${
-                      isStepHighlighted(index) ? "text-accent" : "text-white"
+                      isStepHighlighted(index) ? "text-accent" : "text-black"
                     }`}
                   >
                     {step.title}
@@ -532,7 +532,7 @@ function RichTextPreview({ richTextData }) {
                 <div className="flex items-center mx-2 shrink-0">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className={`relative w-4 h-4 md:w-6 md:h-6 md:mx-2 transition-all duration-300 ${
+                    className={`relative w-7 h-7 md:w-6 md:h-6 md:mx-2 transition-all duration-300 ${
                       isStepHighlighted(index) ? "text-accent" : "text-white"
                     }`}
                     fill="none"
@@ -577,7 +577,7 @@ function RichTextPreview({ richTextData }) {
       <div className="h-[20vh] bg-gradient-to-b from-banner from-10% to-transparent z-10" />
 
       {/* Medium screens and larger - HIDDEN on small screens */}
-      <div className="hidden md:flex md:flex-col -mt-[28vh] md:-mt-[20vh] z-30">
+      <div className="hidden md:flex md:flex-col md:-mt-[20vh] z-30">
         {/* Process Steps Section - now integrated directly */}
 
         <div className="flex w-full ">
@@ -680,7 +680,7 @@ function RichTextPreview({ richTextData }) {
       {/* Smaller than medium screens - mobile view */}
       <div className="md:hidden flex flex-col px-[3vw] -mt-[20vh] mb-1 mt-[-2vh]">
         {/* Process Steps Section for mobile */}
-        <section className="relative z-40 overflow-visible mb-4">
+        <section className="relative z-40 overflow-visible mb-4 -mt-[20vh]">
           <div className="mobile-process-section w-full">
             <RenderProcessSteps />
           </div>

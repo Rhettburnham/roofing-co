@@ -15,7 +15,8 @@ Uses a `heroconfig` prop with (at minimum):
   residential: { subServices: [{ title: string }, ...] },
   commercial:  { subServices: [{ title: string }, ...] },
   logo: string,              // URL for logo image
-  heroImage: string,         // URL for hero background image
+  residentialImage: string,  // URL for residential background
+  commercialImage: string    // URL for commercial background
 }
 If a field is missing, a default is used.
 ====================================================
@@ -42,7 +43,8 @@ function HeroPreview({ heroconfig }) {
     residential = { subServices: [] },
     commercial = { subServices: [] },
     logo,
-    heroImage,
+    residentialImage,
+    commercialImage,
   } = heroconfig;
 
   useEffect(() => {
@@ -107,6 +109,16 @@ function HeroPreview({ heroconfig }) {
     setActiveSection((prev) => (prev === section ? "neutral" : section));
   };
 
+  // Gentle sliding animation for default state
+  const restingAnimation = {
+    x: [-10, 20, -10],
+    transition: {
+      duration: 5,
+      repeat: Infinity,
+      ease: "linear",
+    },
+  };
+
   // Modified animation variants
   const iconVariants = {
     active: {
@@ -162,10 +174,37 @@ function HeroPreview({ heroconfig }) {
   return (
     <section className="relative" style={bannerStyles}>
       {/* Top white area - Controls distance from top via height */}
+      <div className="h-[14vh] md:h-[21vh] bg-white w-full relative z-10">
+        {/* Logo & Titles - Controls vertical position via transform translate */}
+        <div className="absolute top-10 md:top-8 left-0 right-0 transform translate-y-1/2 w-full z-60 flex flex-row items-center justify-center">
+          <motion.img
+            initial={{ x: -100, opacity: 0 }}
+            animate={hasAnimated ? { x: 0, opacity: 1 } : {}}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            src={logo}
+            alt="hero-logo"
+            className="w-[15vw] md:w-[14vh] h-auto mr-5 md:mr-10 z-50"
+            style={{ filter: "invert(0)" }}
+          />
+          <motion.div
+            initial={{ x: 100, opacity: 0 }}
+            animate={hasAnimated ? { x: 0, opacity: 1 } : {}}
+            transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
+            className="relative flex flex-col items-center justify-center z-50 -space-y-[1vh] md:-space-y-[5vh]"
+          >
+            <span className="whitespace-nowrap text-[6vw] md:text-[7vh] text-white text-center drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:6px_black ] font-rye font-normal font-ultra-condensed">
+              {mainTitle}
+            </span>
+            <span className="text-[4vw] md:text-[4vh] md:pt-[2.5vh] text-left drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:1px_black ] text-gray-500 font-serif">
+              {subTitle}
+            </span>
+          </motion.div>
+        </div>
+      </div>
 
       {/* Gradient from white to transparent - overlay on top of images */}
       <div
-        className={`absolute top-[4vh] md:top-[4vh] left-0 right-0 bg-gradient-to-b from-white from-0% to-transparent pointer-events-none ${
+        className={`absolute top-[14vh] md:top-[21vh] left-0 right-0 bg-gradient-to-b from-white from-0% to-transparent pointer-events-none ${
           activeSection === "neutral"
             ? "h-[18vh] md:h-[18vh]"
             : "h-[10vh] md:h-[10vh]"
@@ -174,46 +213,53 @@ function HeroPreview({ heroconfig }) {
       />
 
       {/* Hero Split Sections */}
-      <div className="relative w-full h-[50vw] md:h-[55vh] ">
-        {/* Single background image container */}
+      <div className="relative w-full h-[50vw] md:h-[55vh] overflow-hidden">
+        {/* Residential half */}
         <motion.div
-          className="absolute inset-0 w-full h-full"
+          className="absolute left-0 h-full w-1/2 cursor-pointer"
           initial={{ x: 0 }}
           animate={{
-            x: activeSection === "commercial" 
-              ? "-20vw" 
-              : activeSection === "residential" 
-                ? "20vw" 
-                : "0vw"
+            x:
+              activeSection === "commercial"
+                ? " -20vw"
+                : activeSection === "residential"
+                  ? "20vw"
+                  : "0vw",
+            ...(activeSection === "neutral" ? restingAnimation : {}),
           }}
           transition={{
-            duration: 0.5,
+            duration: activeSection === "neutral" ? 5 : 0.5,
             ease: "easeInOut",
           }}
+          onClick={(e) =>
+            setActiveSection((prev) =>
+              prev === "residential" ? "neutral" : "residential"
+            )
+          }
         >
-          <div
-            className="absolute inset-0 w-[100vw] h-full"
-            style={{
-              background: `url('${heroImage}') no-repeat center center`,
-              backgroundSize: "cover",
-              transformOrigin: "center center",
-            }}
-          />
-        </motion.div>
-
-        {/* Interactive sections overlay */}
-        <div className="relative w-full h-full flex">
-          {/* Residential section */}
-          <div 
-            className="w-1/2 h-full cursor-pointer"
-            onClick={() =>
-              setActiveSection((prev) =>
-                prev === "residential" ? "neutral" : "residential"
-              )
-            }
-          >
-            <div className="absolute inset-0 left-0 right-1/2 flex items-center justify-center pointer-events-none z-50">
+          <div className="relative w-full h-full">
+            {console.log("Residential image path:", residentialImage)}
+            <div
+              className="absolute top-0 right-0 w-[100vw] h-full -z-10"
+              style={{
+                background: `url('${residentialImage}') no-repeat center center`,
+                backgroundSize: "cover",
+                transformOrigin: "center center",
+              }}
+            />
+            <div
+              className="absolute top-0 right-0 w-[100vw] h-full"
+              style={{
+                background: `url('${residentialImage}') no-repeat center center`,
+                backgroundSize: "cover",
+                backgroundPosition: "right center",
+                transformOrigin: "right center",
+              }}
+            />
+            {/* Absolutely positioned container for Residential content */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
               <div className="flex flex-col items-center pointer-events-auto">
+                {/* Combined container for icon and title - grouped for unified clicking */}
                 <div
                   className={`flex flex-col items-center cursor-pointer rounded-lg p-1 ${
                     activeSection !== "residential" ? "bg-banner" : ""
@@ -225,6 +271,7 @@ function HeroPreview({ heroconfig }) {
                     );
                   }}
                 >
+                  {/* Icon that fades out when active */}
                   <motion.div
                     variants={iconVariants}
                     animate={
@@ -234,6 +281,7 @@ function HeroPreview({ heroconfig }) {
                     <Home className="w-[6.5vw] h-[6.5vw] md:w-[7.5vh] md:h-[7.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)] text-amber-100 rounded-full p-1" />
                   </motion.div>
 
+                  {/* Title that moves up when active */}
                   <motion.h2
                     variants={titleVariants}
                     animate={
@@ -245,6 +293,7 @@ function HeroPreview({ heroconfig }) {
                   </motion.h2>
                 </div>
 
+                {/* Services list that appears below */}
                 {activeSection === "residential" && (
                   <motion.ul
                     variants={listVariants}
@@ -272,18 +321,46 @@ function HeroPreview({ heroconfig }) {
               </div>
             </div>
           </div>
+        </motion.div>
 
-          {/* Commercial section */}
-          <div 
-            className="w-1/2 h-full cursor-pointer"
-            onClick={() =>
-              setActiveSection((prev) =>
-                prev === "commercial" ? "neutral" : "commercial"
-              )
-            }
-          >
-            <div className="absolute inset-0 left-1/2 right-0 flex items-center justify-center pointer-events-none z-50">
-              <div className="flex flex-col items-center pointer-events-auto">
+        {/* Commercial half */}
+        <motion.div
+          className="absolute right-0 h-full w-1/2 cursor-pointer"
+          initial={{ x: 0 }}
+          animate={{
+            x:
+              activeSection === "commercial"
+                ? "-20vw"
+                : activeSection === "residential"
+                  ? "20vw"
+                  : "0vw",
+            ...(activeSection === "neutral" ? restingAnimation : {}),
+          }}
+          transition={{
+            duration: activeSection === "neutral" ? 5 : 0.5,
+            ease: "easeInOut",
+          }}
+          onClick={(e) =>
+            setActiveSection((prev) =>
+              prev === "commercial" ? "neutral" : "commercial"
+            )
+          }
+        >
+          <div className="relative w-full h-full">
+            {console.log("Commercial image path:", commercialImage)}
+            <div
+              className="absolute top-0 left-0 w-[100vw] h-full"
+              style={{
+                background: `url('${commercialImage}') no-repeat center center`,
+                backgroundSize: "cover",
+                backgroundPosition: "left center",
+                transformOrigin: "left center",
+              }}
+            />
+            {/* Absolutely positioned container for Commercial content */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
+              <div className="flex flex-col items-center pointer-events-auto ">
+                {/* Combined container for icon and title - grouped for unified clicking */}
                 <div
                   className={`flex flex-col items-center cursor-pointer rounded-lg p-1 ${
                     activeSection !== "commercial" ? "bg-banner" : ""
@@ -295,6 +372,7 @@ function HeroPreview({ heroconfig }) {
                     );
                   }}
                 >
+                  {/* Icon that fades out when active */}
                   <motion.div
                     variants={iconVariants}
                     animate={
@@ -304,6 +382,7 @@ function HeroPreview({ heroconfig }) {
                     <FaWarehouse className="w-[6.5vw] h-[6.5vw] md:w-[7.5vh] md:h-[7.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)] text-amber-100 rounded-full p-1" />
                   </motion.div>
 
+                  {/* Title that moves up when active */}
                   <motion.h2
                     variants={titleVariants}
                     animate={
@@ -315,6 +394,7 @@ function HeroPreview({ heroconfig }) {
                   </motion.h2>
                 </div>
 
+                {/* Services list that appears below */}
                 {activeSection === "commercial" && (
                   <motion.ul
                     variants={listVariants}
@@ -342,14 +422,14 @@ function HeroPreview({ heroconfig }) {
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Dark red gradient at the bottom - overlay only on the images */}
         <div
           className={`absolute bottom-0 left-0 right-0 pointer-events-none bg-gradient-to-t from-banner from-10% to-transparent ${
             activeSection === "neutral"
-              ? "h-[15vh] md:h-[18vh]"
-              : "h-[9vh] md:h-[10vh]"
+              ? "h-[13vh] md:h-[13vh]"
+              : "h-[9vh] md:h-[9vh]"
           }`}
           style={{ transition: "height 0.3s ease-out 0.4s", zIndex: 1 }}
         />
@@ -373,7 +453,8 @@ function HeroEditorPanel({ localData, setLocalData, onSave }) {
     residential = { subServices: [] },
     commercial = { subServices: [] },
     logo,
-    heroImage,
+    residentialImage,
+    commercialImage,
   } = localData;
 
   const [residentialServices, setResidentialServices] = useState([]);
@@ -471,10 +552,16 @@ function HeroEditorPanel({ localData, setLocalData, onSave }) {
     }
   };
 
-  const handleHeroImageChange = (file) => {
+  const handleResidentialImageChange = (file) => {
     if (!file) return;
     const fileURL = URL.createObjectURL(file);
-    setLocalData((prev) => ({ ...prev, heroImage: fileURL }));
+    setLocalData((prev) => ({ ...prev, residentialImage: fileURL }));
+  };
+
+  const handleCommercialImageChange = (file) => {
+    if (!file) return;
+    const fileURL = URL.createObjectURL(file);
+    setLocalData((prev) => ({ ...prev, commercialImage: fileURL }));
   };
 
   // Handler for service selection/deselection
@@ -522,7 +609,7 @@ function HeroEditorPanel({ localData, setLocalData, onSave }) {
   };
 
   return (
-    <div className="bg-gray-900 text-white rounded-md ">
+    <div className="bg-gray-900 text-white rounded-md overflow-hidden">
       {/* Title Bar with Save Button */}
       <div className="flex items-center justify-between bg-banner p-4">
         <h2 className="text-xl font-semibold">Hero Block Editor</h2>
@@ -600,6 +687,27 @@ function HeroEditorPanel({ localData, setLocalData, onSave }) {
             Residential
           </h3>
 
+          <div className="mb-4">
+            <label className="block text-sm mb-1 text-gray-300">
+              Background Image:
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) =>
+                handleResidentialImageChange(e.target.files?.[0])
+              }
+              className="w-full bg-gray-700 text-sm rounded-md border border-gray-600 p-2"
+            />
+            {getDisplayPath(residentialImage) && (
+              <img
+                src={getDisplayPath(residentialImage)}
+                alt="Residential Background"
+                className="mt-2 h-24 w-full object-cover rounded-md"
+              />
+            )}
+          </div>
+
           <div className="mt-4">
             <label className="block text-sm mb-2 text-gray-300">
               Available Services:
@@ -640,6 +748,25 @@ function HeroEditorPanel({ localData, setLocalData, onSave }) {
             Commercial
           </h3>
 
+          <div className="mb-4">
+            <label className="block text-sm mb-1 text-gray-300">
+              Background Image:
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleCommercialImageChange(e.target.files?.[0])}
+              className="w-full bg-gray-700 text-sm rounded-md border border-gray-600 p-2"
+            />
+            {getDisplayPath(commercialImage) && (
+              <img
+                src={getDisplayPath(commercialImage)}
+                alt="Commercial Background"
+                className="mt-2 h-24 w-full object-cover rounded-md"
+              />
+            )}
+          </div>
+
           <div className="mt-4">
             <label className="block text-sm mb-2 text-gray-300">
               Available Services:
@@ -672,31 +799,6 @@ function HeroEditorPanel({ localData, setLocalData, onSave }) {
               </div>
             )}
           </div>
-        </div>
-      </div>
-
-      {/* Hero Background Image Section */}
-      <div className="p-4 bg-gray-800 border-t border-gray-700">
-        <h3 className="text-lg font-semibold mb-3 text-amber-100">
-          Hero Background Image
-        </h3>
-        <div className="mb-4">
-          <label className="block text-sm mb-1 text-gray-300">
-            Background Image:
-          </label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => handleHeroImageChange(e.target.files?.[0])}
-            className="w-full bg-gray-700 text-sm rounded-md border border-gray-600 p-2"
-          />
-          {getDisplayPath(heroImage) && (
-            <img
-              src={getDisplayPath(heroImage)}
-              alt="Hero Background"
-              className="mt-2 h-24 w-full object-cover rounded-md"
-            />
-          )}
         </div>
       </div>
     </div>
@@ -736,12 +838,22 @@ export default function HeroBlock({
     }
 
     if (
-      updatedConfig.heroImage &&
-      !updatedConfig.heroImage.startsWith("/assets/images/hero/")
+      updatedConfig.residentialImage &&
+      !updatedConfig.residentialImage.startsWith("/assets/images/hero/")
     ) {
       console.log(
-        "Hero image path might need server-side processing:",
-        updatedConfig.heroImage
+        "Residential image path might need server-side processing:",
+        updatedConfig.residentialImage
+      );
+    }
+
+    if (
+      updatedConfig.commercialImage &&
+      !updatedConfig.commercialImage.startsWith("/assets/images/hero/")
+    ) {
+      console.log(
+        "Commercial image path might need server-side processing:",
+        updatedConfig.commercialImage
       );
     }
 
@@ -761,7 +873,8 @@ export default function HeroBlock({
           subServices: [],
         },
         logo: "",
-        heroImage: "",
+        residentialImage: "",
+        commercialImage: "",
       };
     }
     return { ...heroconfig };
