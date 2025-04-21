@@ -118,10 +118,6 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
 
     return (
       <section className="my-2 md:my-4 px-4 md:px-16">
-        {/* Title */}
-        <h2 className="flex justify-center text-[3.5vh] font-semibold mb-0.5 text-center">
-          {displayTitle}
-        </h2>
 
         {/* "Siding selection" buttons */}
         <div className="flex flex-wrap justify-center mt-2">
@@ -132,13 +128,13 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
               className={`mx-2 my-1 md:px-4 px-2 py-1 md:py-2 text-[3vw] md:text-[2vh] 
                 rounded-full font-semibold shadow-lg ${
                   selectedIndex === index
-                    ? "dark_button text-white font-semibold shadow-2xl"
+                    ? "bg-white text-black font-semibold shadow-2xl"
                     : "bg-gray-200 text-black"
                 }`}
               style={{ transition: "box-shadow 0.3s ease" }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.boxShadow =
-                  "inset 0 0 15px 1px rgba(0,0,0,0.8)";
+                  "0 0 15px 3px rgba(0,0,0,0.5)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.boxShadow =
@@ -149,6 +145,10 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
             </button>
           ))}
         </div>
+        {/* Title */}
+        <h2 className="flex justify-center text-[2.5vh] font-semibold mb-0.5 text-center">
+          {displayTitle}
+        </h2>
 
         {/* Display selected item */}
         <motion.div

@@ -59,7 +59,7 @@ const HeroBlock = ({ config = {}, readOnly = false, onConfigChange }) => {
   if (readOnly) {
     return (
       <motion.section
-        className="relative overflow-hidden"
+        className="relative overflow-hidden bg-banner"
         initial={{ height: initialHeight }}
         animate={{ height: isShrunk ? finalHeight : initialHeight }}
         transition={{ duration: 1 }}
@@ -71,14 +71,12 @@ const HeroBlock = ({ config = {}, readOnly = false, onConfigChange }) => {
             backgroundAttachment: "fixed",
           }}
         ></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-banner via-transparent to-transparent"></div>
-
         <div className="relative z-10 h-full flex items-center justify-center custom-circle-shadow">
           <motion.h1
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 1 }}
-            className="text-center text-[10vw] md:text-[8vh] font-extrabold text-second-accent tracking-wider"
+            className="text-center text-[10vw] md:text-[8vh] font-extrabold text-gray-50 tracking-wider"
           >
             {title}
           </motion.h1>

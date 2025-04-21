@@ -170,7 +170,7 @@
     "circleRadius": 5047,
     "address": "40 Tipperary TrlSharpsburg, GA 30277-3502",
     "telephone": "(404) 227-5000",
-    "markerIcon": "/data/raw_data/clipped.png",
+    "markerIcon": "/assets/images/hero/clipped.png",
     "serviceHours": [
       {
         "day": "Mon",

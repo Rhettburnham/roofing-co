@@ -1,14 +1,12 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { HashLink } from "react-router-hash-link";
 import gsap from "gsap";
-import { motion } from "framer-motion";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
   const [isDesktopMenuOpen, setIsDesktopMenuOpen] = useState(false);
-  const [hasAnimated, setHasAnimated] = useState(false);
   const [lastScrollPosition, setLastScrollPosition] = useState(0);
   const [isHomePage, setIsHomePage] = useState(true);
 
@@ -17,7 +15,7 @@ const Navbar = () => {
   const middleBarRef = useRef(null);
   const bottomBarRef = useRef(null);
   const timelineRef = useRef(null);
-  
+
   // Refs for desktop burger-menu animation
   const desktopTopBarRef = useRef(null);
   const desktopMiddleBarRef = useRef(null);
@@ -31,14 +29,14 @@ const Navbar = () => {
   const mainTitleRef = useRef(null);
   const subTitleRef = useRef(null);
   const navbarRef = useRef(null);
-//homosexual 
+  //homosexual
   const location = useLocation();
   const navigate = useNavigate();
 
   // Track if we're on the home page
   useEffect(() => {
     setIsHomePage(location.pathname === "/");
-    
+
     // When route changes, save current scroll position if leaving home page
     if (location.pathname === "/") {
       setLastScrollPosition(0);
@@ -56,32 +54,33 @@ const Navbar = () => {
       .to(middleBarRef.current, { opacity: 0, duration: 0.3 }, "<")
       .to(bottomBarRef.current, { y: -6, rotate: 45, duration: 0.3 }, "<");
     timelineRef.current = tl;
-    
+
     // Desktop menu animation
     const desktopTl = gsap.timeline({ paused: true });
     desktopTl
       .to(desktopTopBarRef.current, { y: 8, rotate: -45, duration: 0.3 })
       .to(desktopMiddleBarRef.current, { opacity: 0, duration: 0.3 }, "<")
-      .to(desktopBottomBarRef.current, { y: -8, rotate: 45, duration: 0.3 }, "<");
+      .to(
+        desktopBottomBarRef.current,
+        { y: -8, rotate: 45, duration: 0.3 },
+        "<"
+      );
     desktopTimelineRef.current = desktopTl;
-    
-    // Set animation flag to true after component mounts
-    setHasAnimated(true);
   }, []);
 
   // Handle logo click to navigate home and restore scroll position
   const handleLogoClick = (e) => {
     e.preventDefault();
-    
+
     // Navigate to home first
     navigate("/");
-    
+
     // If we have a saved scroll position, restore it after navigation
     if (lastScrollPosition > 0) {
       setTimeout(() => {
         window.scrollTo({
           top: lastScrollPosition,
-          behavior: 'smooth'
+          behavior: "smooth",
         });
       }, 100);
     }
@@ -123,7 +122,7 @@ const Navbar = () => {
       } else {
         setHasScrolled(false);
       }
-      
+
       // Update last scroll position if on home page
       if (isHomePage) {
         setLastScrollPosition(window.scrollY);
@@ -131,104 +130,55 @@ const Navbar = () => {
     };
 
     window.addEventListener("scroll", handleScroll);
-    
+
     // Initial check
     handleScroll();
-    
+
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
   }, [isHomePage]);
 
-  // Setup logo and text animations when scrolling or changing routes
+  // GSAP: background switch, logo scale/slide, title slide, subtitle fade
   useEffect(() => {
-    // Check if we're on home page
-    const isOnHomePage = location.pathname === "/";
-    
-    // Cowboy logo (for home page)
-    if (cowboyLogoRef.current) {
-      gsap.to(cowboyLogoRef.current, { 
-        opacity: isOnHomePage ? 1 : 0,
-        duration: 0.5 
-      });
-    }
-    
-    // Roofing logo (for other pages)
-    if (roofingLogoRef.current) {
-      gsap.to(roofingLogoRef.current, { 
-        opacity: isOnHomePage ? 0 : 1,
-        duration: 0.5 
-      });
-    }
-    
-    // Title container animations
-    if (isOnHomePage) {
-      if (!hasScrolled) {
-        // Home page at top - centered logo and text
-        gsap.to(cowboyLogoRef.current, { 
-          x: 0, 
-          scale: 1.5,
-          duration: 0.5 
-        });
-        
-        gsap.to(titleContainerRef.current, {
-          x: 0,
-          opacity: 1,
-          marginTop: "8vh", // Maintain the top margin when at the top
-          duration: 0.5
-        });
-        
-        gsap.to(mainTitleRef.current, {
-          fontSize: "7vh", 
-          duration: 0.5
-        });
-        
-        gsap.to(subTitleRef.current, {
-          fontSize: "4vh",
-          opacity: 1,
-          duration: 0.5
-        });
-      } else {
-        // Home page but scrolled down - move to left and shrink
-        gsap.to(cowboyLogoRef.current, { 
-          x: "-25vw", 
-          scale: 0.7,
-          duration: 0.5 
-        });
-        
-        gsap.to(titleContainerRef.current, {
-          x: "-25vw",
-          opacity: 1,
-          marginTop: 0, // Reduce margin to zero when shrinking
-          duration: 0.5
-        });
-        
-        gsap.to(mainTitleRef.current, {
-          fontSize: "5vh",
-          duration: 0.5
-        });
-        
-        gsap.to(subTitleRef.current, {
-          fontSize: "2.5vh",
-          opacity: 0, // Make subtitle fade out completely
-          duration: 0.5
-        });
-      }
-    } else {
-      // Not on home page - hide title text and set margin to zero
-      gsap.to(titleContainerRef.current, {
-        opacity: 0,
-        marginTop: 0,
-        duration: 0.3
-      });
-      
-      // Ensure subtitle is completely hidden
-      gsap.to(subTitleRef.current, {
-        opacity: 0,
-        duration: 0.3
-      });
-    }
-  }, [location, hasScrolled]);
+    const effective = hasScrolled || !isHomePage;
+    const tl = gsap.timeline();
+    // background change first
+    tl.set(navbarRef.current, {
+      backgroundColor: effective ? "#F5A623" : "#ffffff",
+    });
+    // logo scale & slide
+    tl.to(
+      cowboyLogoRef.current,
+      {
+        x: effective ? "-25vw" : "0",
+        scale: effective ? 0.8 : 1,
+        duration: 0.3,
+        ease: "power2.out",
+      },
+      0
+    );
+    // title container slide (no scale)
+    tl.to(
+      titleContainerRef.current,
+      {
+        x: effective ? "-25vw" : "0",
+        duration: 0.3,
+        ease: "power2.out",
+      },
+      0
+    );
+    // subtitle fade only
+    tl.to(
+      subTitleRef.current,
+      {
+        opacity: effective ? 0 : 1,
+        duration: 0.3,
+        ease: "power2.out",
+      },
+      0
+    );
+  }, [hasScrolled, isHomePage]);
 
   const navLinks = [
     { name: "About", href: "/about" },
@@ -240,65 +190,58 @@ const Navbar = () => {
     <>
       <nav
         ref={navbarRef}
-        className={`fixed top-0 z-50 w-full flex items-center justify-center 
-        ${
-          hasScrolled 
-            ? "bg-banner transition-all h-[10vh] duration-300" 
-            : "bg-white transition-all h-[16vh] duration-300"
-        }`}
+        className={`fixed top-0 z-50 w-full flex items-center justify-center ${hasScrolled ? "h-[10vh]" : "h-[16vh]"}`}
       >
         {/* Center container for logo and title */}
         <div className="w-full flex items-center justify-center">
           {/* Logo container with both logos */}
-          <div className="relative w-[15vw] md:w-[14vh] h-auto mr-5 md:mr-10 z-50 cursor-pointer" onClick={handleLogoClick}>
+          <div
+            className="relative flex items-center justify-center w-[15vw] md:w-[14vh] mr-5 md:mr-10 z-50 cursor-pointer"
+            onClick={handleLogoClick}
+          >
             {/* Cowboy Logo (For home page) */}
-            <motion.img
+            <img
               ref={cowboyLogoRef}
-              initial={{ x: -100, opacity: isHomePage ? 1 : 0 }}
-              animate={hasAnimated ? { x: 0 } : {}}
-              transition={{ duration: 0.8, ease: "easeOut" }}
               src="/assets/images/hero/clipped.png"
               alt="Cowboy Logo"
-              className="w-full h-auto absolute top-0 left-0"
-              style={{ filter: hasScrolled ? "invert(1)" : "invert(0)" }}
+              className="w-full object-contain absolute top-1/2 left-0 transform -translate-y-1/2"
+              style={{
+                filter: hasScrolled ? "invert(1)" : "invert(0)",
+                opacity: isHomePage ? 1 : 0,
+              }}
             />
-            
+
             {/* Roofing Logo (For other pages) */}
-            <motion.img
+            <img
               ref={roofingLogoRef}
-              initial={{ opacity: isHomePage ? 0 : 1 }}
               src="/assets/images/logo.svg"
               alt="Roofing Logo"
-              className="w-full h-auto absolute top-0 left-0"
-              style={{ 
+              className="w-full object-contain absolute top-1/2 left-0 transform -translate-y-1/2"
+              style={{
                 filter: hasScrolled ? "invert(1)" : "invert(0)",
-                maxWidth: "50px",
-                maxHeight: "50px"
+                opacity: !isHomePage ? 1 : 0,
               }}
             />
           </div>
-          
+
           {/* Title container */}
-          <motion.div
+          <div
             ref={titleContainerRef}
-            initial={{ x: 100, opacity: isHomePage ? 1 : 0 }}
-            animate={hasAnimated ? { x: 0 } : {}}
-            transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-            className="relative flex flex-col items-center justify-center z-50 -space-y-[1vh] md:-space-y-[5vh] mt-[8vh]"
+            className="relative flex flex-col items-center justify-center z-50 -space-y-[1vh] md:-space-y-[5vh]"
           >
-            <span 
+            <span
               ref={mainTitleRef}
               className="whitespace-nowrap text-[6vw] md:text-[7vh] text-white text-center drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:6px_black ] font-rye font-normal font-ultra-condensed"
             >
               COWBOYS-VAQUEROS
             </span>
-            <span 
+            <span
               ref={subTitleRef}
-              className="text-[4vw] md:text-[4vh] md:pt-[2.5vh] text- drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:1px_black ] text-gray-500 font-serif"
+              className="text-[4vw] md:text-[4vh] md:pt-[2.5vh] drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:1px_black ] text-gray-500 font-serif"
             >
               CONSTRUCTION
             </span>
-          </motion.div>
+          </div>
         </div>
 
         {/* Desktop Hamburger Menu (Right) */}
@@ -363,7 +306,9 @@ const Navbar = () => {
       </nav>
 
       {/* Spacer div to prevent content from being hidden under navbar */}
-      <div className={`w-full ${hasScrolled ? "h-[10vh]" : "h-[16vh]"} transition-all duration-300`}></div>
+      <div
+        className={`w-full ${hasScrolled ? "h-[10vh]" : "h-[16vh]"} transition-all duration-300`}
+      ></div>
 
       {/* Mobile Menu */}
       {isOpen && (
