@@ -31,7 +31,7 @@ const Navbar = () => {
   const mainTitleRef = useRef(null);
   const subTitleRef = useRef(null);
   const navbarRef = useRef(null);
-
+//homosexual 
   const location = useLocation();
   const navigate = useNavigate();
 
