@@ -165,7 +165,7 @@ function HeroPreview({ heroconfig }) {
 
       {/* Gradient from white to transparent - overlay on top of images */}
       <div
-        className={`absolute top-[4vh] md:top-[4vh] left-0 right-0 bg-gradient-to-b from-white from-0% to-transparent pointer-events-none ${
+        className={`absolute top-[4vh] md:top-[0vh] left-0 right-0 bg-gradient-to-b from-white from-0% to-transparent pointer-events-none ${
           activeSection === "neutral"
             ? "h-[18vh] md:h-[18vh]"
             : "h-[10vh] md:h-[10vh]"
@@ -174,7 +174,7 @@ function HeroPreview({ heroconfig }) {
       />
 
       {/* Hero Split Sections */}
-      <div className="relative w-full h-[50vw] md:h-[55vh] ">
+      <div className="relative w-full h-[50vw] md:h-[45vh] ">
         {/* Single background image container */}
         <motion.div
           className="absolute inset-0 w-full h-full"
@@ -216,7 +216,7 @@ function HeroPreview({ heroconfig }) {
               <div className="flex flex-col items-center pointer-events-auto">
                 <div
                   className={`flex flex-col items-center cursor-pointer rounded-lg p-1 ${
-                    activeSection !== "residential" ? "bg-banner" : ""
+                    activeSection !== "residential" ? "" : ""
                   }`}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -231,7 +231,7 @@ function HeroPreview({ heroconfig }) {
                       activeSection === "residential" ? "active" : "default"
                     }
                   >
-                    <Home className="w-[6.5vw] h-[6.5vw] md:w-[7.5vh] md:h-[7.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)] text-amber-100 rounded-full p-1" />
+                    <Home className="w-[6.5vw] h-[6.5vw] md:w-[6.5vh] md:h-[6.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)] text-gray-50" />
                   </motion.div>
 
                   <motion.h2
@@ -239,7 +239,7 @@ function HeroPreview({ heroconfig }) {
                     animate={
                       activeSection === "residential" ? "active" : "default"
                     }
-                    className="text-[3.2vw] md:text-[2.4vh] font-semibold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.3)] text-amber-100 font-serif"
+                    className="text-[3.2vw] md:text-[2.4vh] font-semibold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.3)] text-gray-50 font-serif -mt-3"
                   >
                     Residential
                   </motion.h2>
@@ -285,8 +285,8 @@ function HeroPreview({ heroconfig }) {
             <div className="absolute inset-0 left-1/2 right-0 flex items-center justify-center pointer-events-none z-50">
               <div className="flex flex-col items-center pointer-events-auto">
                 <div
-                  className={`flex flex-col items-center cursor-pointer rounded-lg p-1 ${
-                    activeSection !== "commercial" ? "bg-banner" : ""
+                  className={`flex flex-col items-center cursor-pointer ${
+                    activeSection !== "commercial" ? "" : ""
                   }`}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -301,7 +301,7 @@ function HeroPreview({ heroconfig }) {
                       activeSection === "commercial" ? "active" : "default"
                     }
                   >
-                    <FaWarehouse className="w-[6.5vw] h-[6.5vw] md:w-[7.5vh] md:h-[7.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)] text-amber-100 rounded-full p-1" />
+                    <FaWarehouse className="w-[6.5vw] h-[6.5vw] md:w-[6.5vh] md:h-[6.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)] text-gray-50 " />
                   </motion.div>
 
                   <motion.h2
@@ -309,7 +309,7 @@ function HeroPreview({ heroconfig }) {
                     animate={
                       activeSection === "commercial" ? "active" : "default"
                     }
-                    className="text-[3.2vw] md:text-[2.4vh] font-semibold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.3)] text-amber-100 font-serif"
+                    className="text-[3.2vw] md:text-[2.4vh] font-semibold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.3)] text-gray-50 font-serif -mt-3"
                   >
                     Commercial
                   </motion.h2>
@@ -595,8 +595,8 @@ function HeroEditorPanel({ localData, setLocalData, onSave }) {
       {/* Split Section for Residential and Commercial */}
       <div className="flex flex-col md:flex-row">
         {/* Residential Side */}
-        <div className="w-full md:w-1/2 p-4 bg-gray-800 border-r border-gray-700">
-          <h3 className="text-lg font-semibold mb-3 text-amber-100">
+        <div className="w-full md:w-1/2 p-4 bg-gray-800 border-r border-gray-700 ">
+          <h3 className="text-lg font-semibold mb-3 text-amber-100 -mt-3">
             Residential
           </h3>
 
