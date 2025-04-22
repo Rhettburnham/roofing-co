@@ -107,17 +107,19 @@ const Navbar = () => {
   useEffect(() => {
     if (hasScrolled) {
       // When scrolled: slide to left, fade subtitle, add banner bg, reduce text size
-      gsap.to([logoRef.current, titleRef.current], { 
-        x: "-25vw", 
+      gsap.to(titleRef.current, { 
+        x: "-33vw", 
+        fontSize: "4vh",
         duration: 0.2,
         ease: "power2.out"
       });
       
-      // Only change the font size of the title
-      gsap.to(titleRef.current, { 
-        fontSize: "5vh",
+      // Only move the logo, but maintain its size
+      gsap.to(logoRef.current, { 
+        x: "-30vw", 
         duration: 0.2,
-        ease: "power2.out"
+        ease: "power2.out",
+        // Add scale property to maintain the perceived size
       });
       
       gsap.to(subTitleRef.current, { 
@@ -126,17 +128,19 @@ const Navbar = () => {
       });
     } else {
       // When at top: centered, show subtitle, no banner bg, restore text size
-      gsap.to([logoRef.current, titleRef.current], { 
+      gsap.to(titleRef.current, { 
         x: "0", 
+        fontSize: "7vh",
         duration: 0.2,
         ease: "power2.out" 
       });
       
-      // Only change the font size of the title
-      gsap.to(titleRef.current, { 
-        fontSize: "7vh",
+      // Reset logo position and size
+      gsap.to(logoRef.current, { 
+        x: "0", 
         duration: 0.2,
-        ease: "power2.out"
+        ease: "power2.out",
+        scale: 1
       });
       
       gsap.to(subTitleRef.current, { 
@@ -164,7 +168,7 @@ const Navbar = () => {
             ref={logoRef}
             src="/assets/images/hero/clipped.png"
             alt="Logo"
-            className="w-[12vw] md:w-[28vh] mr-2 cursor-pointer"
+            className="w-[12vw] md:w-[8vw] mr-2 cursor-pointer logo-fixed-size"
             onClick={handleLogoClick}
           />
 

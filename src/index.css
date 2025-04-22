@@ -29,7 +29,6 @@
 }
 
 /* Add more weights/styles as needed */
-
 .image {
   position: relative;
   cursor: pointer;
@@ -327,12 +326,6 @@ canvas {
   border-radius: 50%;
 }
 
-.logo-img {
-  width: 100%;
-  height: auto;
-  object-fit: cover;
-  filter: brightness(0) invert(1);
-}
 
 .social-icon {
   width: 3.2rem;
