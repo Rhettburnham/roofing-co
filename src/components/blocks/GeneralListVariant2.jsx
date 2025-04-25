@@ -51,20 +51,20 @@ const GeneralListVariant2 = ({
 
     return (
       <section className="my-2 md:my-4 px-4 md:px-16">
-        <h2 className="text-center text-[4vw] md:text-3xl font-bold mb-2">
+        <h2 className="text-center text-[4vw] md:text-[3vh] font-bold mb-2">
           {title}
         </h2>
 
         {/* Buttons */}
-        <div className="flex flex-wrap justify-center mb-3">
+        <div className="flex flex-wrap justify-center mb-1">
           {items.map((item, idx) => (
             <button
               key={item.id || idx}
               onClick={() => setSelectedIndex(idx)}
-              className={`m-2 px-2 py-1 md:px-4 md:py-2 rounded-full font-semibold shadow-lg ${
+              className={`m-2 px-2 py-1 md:px-2 md:py-1 rounded-full font-semibold shadow-lg ${
                 selectedIndex === idx
-                  ? "dark_button text-white shadow-2xl"
-                  : "bg-gray-200 text-black"
+                  ? "bg-second-accent text-white shadow-2xl"
+                  : "bg-accent text-black"
               }`}
               style={{ transition: "box-shadow 0.3s ease" }}
               onMouseEnter={(e) => {
@@ -90,11 +90,11 @@ const GeneralListVariant2 = ({
           animate="visible"
           exit="hidden"
         >
-          <h3 className="text-xl font-bold mb-2 text-gray-800">
+          <h3 className="text-[3.5vh] font-bold mb-2 text-gray-800 text-center">
             {current.name}
           </h3>
           {current.description && (
-            <p className="text-gray-700 mb-2">{current.description}</p>
+            <p className="text-gray-700 mb-1">{current.description}</p>
           )}
 
           <div className="flex flex-col md:flex-row gap-6">
@@ -106,7 +106,7 @@ const GeneralListVariant2 = ({
                   <h4 className="text-lg font-semibold text-gray-800 mb-1">
                     Features:
                   </h4>
-                  <ul className="space-y-1">
+                  <ul className="space-y-0">
                     {current.features.map((feat, i) => (
                       <li key={i} className="flex items-start space-x-2">
                         <FaCheckCircle className="text-green-600 mt-1" />

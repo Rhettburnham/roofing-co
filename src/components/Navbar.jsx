@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { HashLink } from "react-router-hash-link";
 import gsap from "gsap";
 
@@ -7,7 +7,6 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
   const [isDesktopMenuOpen, setIsDesktopMenuOpen] = useState(false);
-  const [isHomePage, setIsHomePage] = useState(true);
 
   // Refs for mobile burger-menu animation
   const topBarRef = useRef(null);
@@ -26,14 +25,9 @@ const Navbar = () => {
   const titleRef = useRef(null);
   const subTitleRef = useRef(null);
   const navbarRef = useRef(null);
-  
-  const location = useLocation();
-  const navigate = useNavigate();
+  const titleContainerRef = useRef(null);
 
-  // Track if we're on the home page
-  useEffect(() => {
-    setIsHomePage(location.pathname === "/");
-  }, [location]);
+  const navigate = useNavigate();
 
   // Set up GSAP timelines for hamburger menus
   useEffect(() => {
@@ -49,7 +43,11 @@ const Navbar = () => {
     desktopTl
       .to(desktopTopBarRef.current, { y: 8, rotate: -45, duration: 0.3 })
       .to(desktopMiddleBarRef.current, { opacity: 0, duration: 0.3 }, "<")
-      .to(desktopBottomBarRef.current, { y: -8, rotate: 45, duration: 0.3 }, "<");
+      .to(
+        desktopBottomBarRef.current,
+        { y: -8, rotate: 45, duration: 0.3 },
+        "<"
+      );
     desktopTimelineRef.current = desktopTl;
   }, []);
 
@@ -86,10 +84,11 @@ const Navbar = () => {
     }
   }, [isDesktopMenuOpen]);
 
-  // Add scroll event listener to change navbar appearance on scroll
+  // Add scroll event listener to check if we're at the top of the page
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 10) {
+      // Only use a simple check - are we at the top (or very close to it)?
+      if (window.scrollY > 1) {
         setHasScrolled(true);
       } else {
         setHasScrolled(false);
@@ -103,50 +102,105 @@ const Navbar = () => {
     };
   }, []);
 
-  // Handle the state transitions with GSAP
+  // Modified animation sequence per new requirements
   useEffect(() => {
+    // Use a single timeline for better performance
+    const tl = gsap.timeline();
+
     if (hasScrolled) {
-      // When scrolled: slide to left, fade subtitle, add banner bg, reduce text size
-      gsap.to(titleRef.current, { 
-        x: "-33vw", 
-        fontSize: "4vh",
+      // Clear any in-progress animations
+      gsap.killTweensOf([
+        titleRef.current,
+        logoRef.current,
+        subTitleRef.current,
+      ]);
+
+      // NEW ORDER:
+      // 1. Subtitle fades out (bg-banner appears via CSS classes in the render)
+      tl.to(subTitleRef.current, {
+        opacity: 0,
         duration: 0.2,
-        ease: "power2.out"
       });
-      
-      // Only move the logo, but maintain its size
-      gsap.to(logoRef.current, { 
-        x: "-30vw", 
-        duration: 0.2,
-        ease: "power2.out",
-        // Add scale property to maintain the perceived size
-      });
-      
-      gsap.to(subTitleRef.current, { 
-        opacity: 0, 
-        duration: 0.2 
-      });
+
+      // 2. Logo and title slide together
+      tl.to(
+        [logoRef.current, titleRef.current],
+        {
+          x: "-30vw", // Both move the same amount
+          duration: 0.2,
+          ease: "power1.out",
+        },
+        "+=0.1"
+      );
+
+      // 3. Title font size shrinks last
+      tl.to(
+        titleRef.current,
+        {
+          fontSize: "4vh",
+          duration: 0.2,
+          ease: "power1.out",
+        },
+        "+=0.1"
+      );
+
+      // Ensure title is vertically centered
+      tl.to(
+        titleContainerRef.current,
+        {
+          alignItems: "center",
+          duration: 0.1,
+        },
+        "<"
+      ); // At the same time as the font size change
     } else {
-      // When at top: centered, show subtitle, no banner bg, restore text size
-      gsap.to(titleRef.current, { 
-        x: "0", 
+      // Clear any in-progress animations
+      gsap.killTweensOf([
+        titleRef.current,
+        logoRef.current,
+        subTitleRef.current,
+        titleContainerRef.current,
+      ]);
+
+      // CORRECTED REVERSE SEQUENCE:
+      // 1. Title font size grows first
+      tl.to(titleRef.current, {
         fontSize: "7vh",
         duration: 0.2,
-        ease: "power2.out" 
+        ease: "power1.out",
       });
-      
-      // Reset logo position and size
-      gsap.to(logoRef.current, { 
-        x: "0", 
-        duration: 0.2,
-        ease: "power2.out",
-        scale: 1
-      });
-      
-      gsap.to(subTitleRef.current, { 
-        opacity: 1, 
-        duration: 0.2 
-      });
+
+      // Reset vertical alignment to top
+      tl.to(
+        titleContainerRef.current,
+        {
+          alignItems: "flex-start",
+          duration: 0.1,
+        },
+        "<"
+      ); // At the same time as the font size change
+
+      // 2. Logo and title slide back together
+      tl.to(
+        [logoRef.current, titleRef.current],
+        {
+          x: "0",
+          duration: 0.2,
+          ease: "power1.out",
+        },
+        "+=0.1"
+      );
+
+      // 3. Subtitle fades in last (after the slide)
+      // This should happen after the slide, as bg change is CSS-based and will happen at this time
+      tl.to(
+        subTitleRef.current,
+        {
+          opacity: 1,
+          duration: 0.2,
+        },
+        "+=0.1"
+      );
     }
   }, [hasScrolled]);
 
@@ -168,26 +222,32 @@ const Navbar = () => {
             ref={logoRef}
             src="/assets/images/hero/clipped.png"
             alt="Logo"
-            className="w-[12vw] md:w-[8vw] mr-2 cursor-pointer logo-fixed-size"
+            className="w-[12vw] md:w-[8vw] mr-2 cursor-pointer logo-fixed-size transform-gpu"
             onClick={handleLogoClick}
           />
 
-          {/* Title Container - Flexbox for vertical centering */}
-          <div className={`flex flex-col ${hasScrolled ? "justify-center" : "justify-start"} h-[10vh] transition-all duration-300`}>
-            <h1 
+          {/* Title Container - Using ref to control alignment in GSAP */}
+          <div
+            ref={titleContainerRef}
+            className={`flex flex-col h-[10vh] transition-all duration-300`}
+            style={{
+              alignItems: hasScrolled ? "center" : "flex-start",
+              justifyContent: "center",
+            }}
+          >
+            <h1
               ref={titleRef}
-              className="whitespace-nowrap text-[6vw] md:text-[7vh] text-white text-center drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:6px_black ] font-rye font-normal font-ultra-condensed origin-left transition-transform duration-300"
+              className="whitespace-nowrap text-[6vw] md:text-[7vh] text-white text-center drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:6px_black ] font-rye font-normal font-ultra-condensed origin-left transform-gpu"
             >
               COWBOYS-VAQUEROS
             </h1>
-            {!hasScrolled && (
-              <span
-                ref={subTitleRef}
-                className="text-[4vw] md:text-[4vh] -mt-[2vh] text-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:1px_black ] text-gray-500 font-serif transition-opacity duration-300"
-              >
-                CONSTRUCTION
-              </span>
-            )}
+            <span
+              ref={subTitleRef}
+              className="text-[4vw] md:text-[4vh] -mt-[2vh] text-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:1px_black ] text-gray-500 font-serif"
+              style={{ opacity: hasScrolled ? 0 : 1 }}
+            >
+              CONSTRUCTION
+            </span>
           </div>
         </div>
 
@@ -241,11 +301,15 @@ const Navbar = () => {
       </nav>
 
       {/* Spacer div to prevent content from being hidden under navbar */}
-      <div className={`w-full ${hasScrolled ? "h-[10vh]" : "h-[16vh]"} transition-all duration-300`}></div>
+      <div
+        className={`w-full ${hasScrolled ? "h-[10vh]" : "h-[16vh]"} transition-all duration-300`}
+      ></div>
 
       {/* Mobile Menu */}
       {isOpen && (
-        <div className={`md:hidden flex flex-col items-center justify-center w-full fixed top-[10vh] left-0 z-40 shadow-lg transition-colors duration-300 ${hasScrolled ? "bg-banner" : "bg-black bg-opacity-80"}`}>
+        <div
+          className={`md:hidden flex flex-col items-center justify-center w-full fixed top-[10vh] left-0 z-40 shadow-lg transition-colors duration-300 ${hasScrolled ? "bg-banner" : "bg-black bg-opacity-80"}`}
+        >
           {navLinks.map((nav) => (
             <HashLink
               key={nav.name}
@@ -262,7 +326,9 @@ const Navbar = () => {
 
       {/* Desktop Menu Dropdown */}
       {isDesktopMenuOpen && (
-        <div className={`hidden md:flex md:flex-col md:items-end w-48 fixed top-[10vh] right-10 z-40 shadow-lg rounded-b-lg transition-colors duration-300 ${hasScrolled ? "bg-banner" : "bg-black bg-opacity-80"}`}>
+        <div
+          className={`hidden md:flex md:flex-col md:items-end w-48 fixed top-[10vh] right-10 z-40 shadow-lg rounded-b-lg transition-colors duration-300 ${hasScrolled ? "bg-banner" : "bg-black bg-opacity-80"}`}
+        >
           {navLinks.map((nav) => (
             <HashLink
               key={nav.name}

@@ -2,11 +2,11 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { FaCheckCircle } from "react-icons/fa";
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown from "react-markdown";
 
 /**
  * GeneralList
- * 
+ *
  * config: {
  *   title: string, // alternative to sectionTitle
  *   sectionTitle: string,
@@ -30,11 +30,11 @@ import ReactMarkdown from 'react-markdown';
  * }
  */
 const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
-  const { 
-    sectionTitle = "Select a Siding Type", 
+  const {
+    sectionTitle = "Select a Siding Type",
     title,
     items = [],
-    listStyle = "none" 
+    listStyle = "none",
   } = config;
 
   // Use title as a fallback if sectionTitle is not provided
@@ -60,17 +60,17 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
     if (!hasStructuredItems) {
       return (
         <section className="my-6 container mx-auto px-4 md:px-16">
-          <h2 className="text-2xl md:text-3xl font-semibold mb-4 text-center">
+          <h2 className="text-2xl md:text-3xl font-semibold mb-0 text-center">
             {displayTitle}
           </h2>
-          
+
           <div className="bg-white rounded-lg shadow-lg p-6">
             {listStyle === "numbered" ? (
               <ol className="list-decimal pl-5 space-y-2">
                 {items.map((item, index) => (
                   <li key={index} className="text-gray-700 text-lg">
                     <div className="markdown-content">
-                      {typeof ReactMarkdown !== 'undefined' ? (
+                      {typeof ReactMarkdown !== "undefined" ? (
                         <ReactMarkdown>{item}</ReactMarkdown>
                       ) : (
                         <p>{item}</p>
@@ -84,7 +84,7 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
                 {items.map((item, index) => (
                   <li key={index} className="text-gray-700 text-lg">
                     <div className="markdown-content">
-                      {typeof ReactMarkdown !== 'undefined' ? (
+                      {typeof ReactMarkdown !== "undefined" ? (
                         <ReactMarkdown>{item}</ReactMarkdown>
                       ) : (
                         <p>{item}</p>
@@ -98,7 +98,7 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
                 {items.map((item, index) => (
                   <div key={index} className="text-gray-700">
                     <div className="markdown-content">
-                      {typeof ReactMarkdown !== 'undefined' ? (
+                      {typeof ReactMarkdown !== "undefined" ? (
                         <ReactMarkdown>{item}</ReactMarkdown>
                       ) : (
                         <p>{item}</p>
@@ -118,18 +118,17 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
 
     return (
       <section className="my-2 md:my-4 px-4 md:px-16">
-
         {/* "Siding selection" buttons */}
         <div className="flex flex-wrap justify-center mt-2">
           {items.map((item, index) => (
             <button
               key={item.id || index}
               onClick={() => setSelectedIndex(index)}
-              className={`mx-2 my-1 md:px-4 px-2 py-1 md:py-2 text-[3vw] md:text-[2vh] 
+              className={`mx-2 my-1 md:px-2 px-1 py-1 md:py-1 text-[vw] md:text-[2vh] 
                 rounded-full font-semibold shadow-lg ${
                   selectedIndex === index
-                    ? "bg-white text-black font-semibold shadow-2xl"
-                    : "bg-gray-200 text-black"
+                    ? "bg-second-accent text-white font-semibold shadow-2xl"
+                    : "bg-accent text-black"
                 }`}
               style={{ transition: "box-shadow 0.3s ease" }}
               onMouseEnter={(e) => {
@@ -146,7 +145,7 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
           ))}
         </div>
         {/* Title */}
-        <h2 className="flex justify-center text-[2.5vh] font-semibold mb-0.5 text-center">
+        <h2 className="flex justify-center text-[3.5vw] md:text-[2.5vh] font-semibold mb-0.5 text-center">
           {displayTitle}
         </h2>
 
@@ -161,12 +160,12 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
           <div className="w-full">
             {/* Name & Description */}
             {activeItem.name && (
-              <h3 className="text-[5.5vw] md:text-2xl font-semibold mb-1 md:mb-4 text-gray-800">
+              <h3 className="text-[4.5vw] md:text-2xl font-semibold mb-1 md:mb-4 text-gray-800 text-center">
                 {activeItem.name}
               </h3>
             )}
             {activeItem.description && (
-              <p className="text-gray-700 text-[2.9vw] md:text-xl">
+              <p className="text-gray-700 text-[2.5vw] md:text-xl first-line:indent-8">
                 {activeItem.description}
               </p>
             )}
@@ -183,7 +182,7 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
                       key={i}
                       className="flex items-start text-[3vw] md:text-lg text-gray-700 mb-1"
                     >
-                      <FaCheckCircle className="text-green-600 mr-2 mt-[3px]" />
+                      <FaCheckCircle className="text-green-600 mr-2 mt-[3px] text-lg flex-shrink-0" />
                       <span>{adv}</span>
                     </li>
                   ))}
@@ -222,8 +221,8 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
                     src={typeof pic === "string" ? pic : pic.url}
                     alt={`${activeItem.name} - Image ${picIdx + 1}`}
                     className="w-full h-48 object-cover rounded-lg shadow-md"
-                    />
-                  ))}
+                  />
+                ))}
               </div>
             )}
           </div>
@@ -245,7 +244,7 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
     return (
       <div className="p-2 bg-gray-700 rounded text-white">
         <h3 className="font-bold mb-2">Simple List Editor</h3>
-        
+
         {/* Title */}
         <label className="block text-sm mb-2">
           List Title:
@@ -256,7 +255,7 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
             className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
           />
         </label>
-        
+
         {/* List Style */}
         <label className="block text-sm mb-2">
           List Style:
@@ -270,7 +269,7 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
             <option value="numbered">Numbered List</option>
           </select>
         </label>
-        
+
         {/* Items */}
         <label className="block text-sm font-semibold mb-1">Items:</label>
         {items.map((item, index) => (
@@ -298,7 +297,7 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
             </button>
           </div>
         ))}
-        
+
         <button
           className="bg-blue-600 text-white px-3 py-2 rounded font-semibold mt-2"
           onClick={() => handleFieldChange("items", [...items, ""])}
@@ -438,9 +437,7 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
             className="border border-gray-600 p-3 rounded mb-3"
           >
             <div className="flex justify-between items-center mb-2">
-              <h5 className="font-semibold">
-                {item.name || "Unnamed Option"}
-              </h5>
+              <h5 className="font-semibold">{item.name || "Unnamed Option"}</h5>
               <button
                 onClick={() => removeItem(item.id)}
                 className="text-red-400 hover:text-red-300"
@@ -513,11 +510,7 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
                 type="text"
                 value={item.colorPossibilities || ""}
                 onChange={(e) =>
-                  updateItemField(
-                    item.id,
-                    "colorPossibilities",
-                    e.target.value
-                  )
+                  updateItemField(item.id, "colorPossibilities", e.target.value)
                 }
                 className="mt-1 w-full px-2 py-1 bg-gray-600 text-white text-sm rounded border border-gray-500"
               />
@@ -530,11 +523,7 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
                 type="text"
                 value={item.installationTime || ""}
                 onChange={(e) =>
-                  updateItemField(
-                    item.id,
-                    "installationTime",
-                    e.target.value
-                  )
+                  updateItemField(item.id, "installationTime", e.target.value)
                 }
                 className="mt-1 w-full px-2 py-1 bg-gray-600 text-white text-sm rounded border border-gray-500"
               />

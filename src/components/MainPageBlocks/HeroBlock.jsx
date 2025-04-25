@@ -50,48 +50,52 @@ function HeroPreview({ heroconfig }) {
 
     // Create residential service links with the new URL format
     // Add a special mapping to fix the mismatch between combined_data.json and services.json
-    const processedResidentialServices = residential.subServices.map(service => {
-      // Get the title and convert to lowercase for comparison
-      const originalTitle = service.title;
-      const lowercaseTitle = originalTitle.toLowerCase();
-      
-      // Special mapping for services that don't match between files
-      let actualServiceName = lowercaseTitle;
-      
-      // This fixes the mismatch where:
-      // - "Siding" in combined_data.json should link to "Chimney" (ID 3) in services.json
-      // - "Chimney" in combined_data.json should link to "Guttering" (ID 2) in services.json
-      // - "Repairs" in combined_data.json should link to "Skylights" (ID 4) in services.json
-      if (lowercaseTitle === "siding") {
-        actualServiceName = "chimney";
-        console.log("Mapping 'Siding' to 'chimney' service");
-      } else if (lowercaseTitle === "chimney") {
-        actualServiceName = "guttering";
-        console.log("Mapping 'Chimney' to 'guttering' service");
-      } else if (lowercaseTitle === "repairs") {
-        actualServiceName = "skylights";
-        console.log("Mapping 'Repairs' to 'skylights' service");
+    const processedResidentialServices = residential.subServices.map(
+      (service) => {
+        // Get the title and convert to lowercase for comparison
+        const originalTitle = service.title;
+        const lowercaseTitle = originalTitle.toLowerCase();
+
+        // Special mapping for services that don't match between files
+        let actualServiceName = lowercaseTitle;
+
+        // This fixes the mismatch where:
+        // - "Siding" in combined_data.json should link to "Chimney" (ID 3) in services.json
+        // - "Chimney" in combined_data.json should link to "Guttering" (ID 2) in services.json
+        // - "Repairs" in combined_data.json should link to "Skylights" (ID 4) in services.json
+        if (lowercaseTitle === "siding") {
+          actualServiceName = "chimney";
+          console.log("Mapping 'Siding' to 'chimney' service");
+        } else if (lowercaseTitle === "chimney") {
+          actualServiceName = "guttering";
+          console.log("Mapping 'Chimney' to 'guttering' service");
+        } else if (lowercaseTitle === "repairs") {
+          actualServiceName = "skylights";
+          console.log("Mapping 'Repairs' to 'skylights' service");
+        }
+
+        return {
+          label: originalTitle, // Keep the display label as shown in the HeroBlock
+          // Use the mapped service name for the actual URL
+          route: `/services/residential/${actualServiceName}`,
+        };
       }
-      
-      return {
-        label: originalTitle, // Keep the display label as shown in the HeroBlock
-        // Use the mapped service name for the actual URL
-        route: `/services/residential/${actualServiceName}`,
-      };
-    });
-    
+    );
+
     // Create commercial service links with the new URL format
-    const processedCommercialServices = commercial.subServices.map(service => {
-      // Convert title to URL-friendly format
-      const urlTitle = service.title.toLowerCase().replace(/\s+/g, '-');
-      
-      return {
-        label: service.title,
-        // New URL format: /services/commercial/metal-roof
-        route: `/services/commercial/${urlTitle}`,
-      };
-    });
-    
+    const processedCommercialServices = commercial.subServices.map(
+      (service) => {
+        // Convert title to URL-friendly format
+        const urlTitle = service.title.toLowerCase().replace(/\s+/g, "-");
+
+        return {
+          label: service.title,
+          // New URL format: /services/commercial/metal-roof
+          route: `/services/commercial/${urlTitle}`,
+        };
+      }
+    );
+
     setResidentialServices(processedResidentialServices);
     setCommercialServices(processedCommercialServices);
   }, [residential.subServices, commercial.subServices]);
@@ -160,7 +164,7 @@ function HeroPreview({ heroconfig }) {
   };
 
   return (
-    <section className="relative" style={bannerStyles}>
+    <section className="relative overflow-y-hidden" style={bannerStyles}>
       {/* Top white area - Controls distance from top via height */}
 
       {/* Gradient from white to transparent - overlay on top of images */}
@@ -177,14 +181,21 @@ function HeroPreview({ heroconfig }) {
       <div className="relative w-full h-[50vw] md:h-[45vh] ">
         {/* Single background image container */}
         <motion.div
-          className="absolute inset-0 w-full h-full"
-          initial={{ x: 0 }}
+          className="absolute inset-0 w-full h-full overflow-hidden"
+          initial={{ x: 0, scale: 1 }}
           animate={{
-            x: activeSection === "commercial" 
-              ? "-20vw" 
-              : activeSection === "residential" 
-                ? "20vw" 
-                : "0vw"
+            x:
+              activeSection === "commercial"
+                ? "-20vw"
+                : activeSection === "residential"
+                  ? "20vw"
+                  : "0vw",
+            scale:
+              activeSection === "commercial"
+                ? 1.35
+                : activeSection === "residential"
+                  ? 1.3
+                  : 1,
           }}
           transition={{
             duration: 0.5,
@@ -192,11 +203,17 @@ function HeroPreview({ heroconfig }) {
           }}
         >
           <div
-            className="absolute inset-0 w-[100vw] h-full"
+            className="absolute inset-0 w-[100vw] h-full left-[-0vw]"
             style={{
               background: `url('${heroImage}') no-repeat center center`,
               backgroundSize: "cover",
-              transformOrigin: "center center",
+              transformOrigin:
+                activeSection === "residential"
+                  ? "25% center"
+                  : activeSection === "commercial"
+                    ? "75% center"
+                    : "center center",
+              transition: "transform-origin 0.5s ease-in-out",
             }}
           />
         </motion.div>
@@ -204,7 +221,7 @@ function HeroPreview({ heroconfig }) {
         {/* Interactive sections overlay */}
         <div className="relative w-full h-full flex">
           {/* Residential section */}
-          <div 
+          <div
             className="w-1/2 h-full cursor-pointer"
             onClick={() =>
               setActiveSection((prev) =>
@@ -274,7 +291,7 @@ function HeroPreview({ heroconfig }) {
           </div>
 
           {/* Commercial section */}
-          <div 
+          <div
             className="w-1/2 h-full cursor-pointer"
             onClick={() =>
               setActiveSection((prev) =>

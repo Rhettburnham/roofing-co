@@ -19,17 +19,19 @@ import { motion } from "framer-motion";
 const HeroBlock = ({ config = {}, readOnly = false, onConfigChange }) => {
   // Update destructuring to handle empty strings
   const {
-    backgroundImage: rawBackgroundImage = "/assets/images/growth/hero_growth.jpg",
+    backgroundImage:
+      rawBackgroundImage = "/assets/images/growth/hero_growth.jpg",
     title = "Siding Options",
     shrinkAfterMs = 1000,
     initialHeight = "40vh",
     finalHeight = "20vh",
   } = config;
-  
+
   // Only use default if backgroundImage is empty string, null, or undefined
-  const backgroundImage = rawBackgroundImage && rawBackgroundImage.trim() !== "" 
-    ? rawBackgroundImage 
-    : "/assets/images/growth/hero_growth.jpg";
+  const backgroundImage =
+    rawBackgroundImage && rawBackgroundImage.trim() !== ""
+      ? rawBackgroundImage
+      : "/assets/images/growth/hero_growth.jpg";
 
   // For the "shrinking" effect
   const [isShrunk, setIsShrunk] = useState(false);
@@ -59,7 +61,7 @@ const HeroBlock = ({ config = {}, readOnly = false, onConfigChange }) => {
   if (readOnly) {
     return (
       <motion.section
-        className="relative overflow-hidden bg-banner"
+        className="relative bg-banner"
         initial={{ height: initialHeight }}
         animate={{ height: isShrunk ? finalHeight : initialHeight }}
         transition={{ duration: 1 }}
@@ -68,7 +70,12 @@ const HeroBlock = ({ config = {}, readOnly = false, onConfigChange }) => {
           className="absolute inset-0 bg-cover bg-center"
           style={{
             backgroundImage: `url('${displayBackgroundImage}')`,
-            backgroundAttachment: "fixed",
+            backgroundSize: "120%", // Expanded image size
+            backgroundPosition: "center",
+            width: "100%",
+            height: "100%",
+            transition: "background-position 1s ease",
+            backgroundPosition: isShrunk ? "center right" : "center left",
           }}
         ></div>
         <div className="relative z-10 h-full flex items-center justify-center custom-circle-shadow">
