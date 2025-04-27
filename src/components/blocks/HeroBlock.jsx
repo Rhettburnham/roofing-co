@@ -62,6 +62,7 @@ const HeroBlock = ({ config = {}, readOnly = false, onConfigChange }) => {
     return (
       <motion.section
         className="relative bg-banner"
+        style={{ zIndex: 20 }} // Setting z-index lower than Navbar (z-50) but still high
         initial={{ height: initialHeight }}
         animate={{ height: isShrunk ? finalHeight : initialHeight }}
         transition={{ duration: 1 }}
