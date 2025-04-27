@@ -3,155 +3,126 @@ import React from "react";
 
 /**
  * HeaderBannerBlock
- * 
+ *
+ * A full width banner with heading and subheading
+ *
  * config = {
- *   title: "Gutter Options",
- *   textAlign: "center" | "left" | "right",
- *   fontSize: "text-2xl",
- *   textColor: "#ffffff",
- *   bannerHeight: "h-16",
- *   paddingY: "py-4",
- *   backgroundImage: "/assets/images/growth/hero_growth.jpg",
+ *   title: string,
+ *   subtitle: string,
+ *   backgroundImage: string
  * }
  */
-const HeaderBannerBlock = ({
-  config = {},
-  readOnly = false,
-  onConfigChange,
-}) => {
+const HeaderBannerBlock = ({ config = {}, readOnly = false, onConfigChange }) => {
   const {
-    title = "Header Title",
-    textAlign = "center",
-    fontSize = "text-2xl",
-    textColor = "#ffffff",
-    bannerHeight = "h-16",
-    paddingY = "py-4",
-    backgroundImage = "/assets/images/growth/hero_growth.jpg",
+    title = "Welcome",
+    subtitle = "Explore our services",
+    backgroundImage = "",
   } = config;
 
-  // READ ONLY
+  // Helper function to get display URL
+  const getDisplayUrl = (value) => {
+    if (!value) return null;
+    if (typeof value === "string") return value;
+    if (typeof value === "object" && value.url) return value.url;
+    return null;
+  };
+
+  // Get the actual background image URL to display
+  const displayBackground = getDisplayUrl(backgroundImage) || "/assets/images/default-banner.jpg";
+
+  // READONLY
   if (readOnly) {
     return (
-      <div className={`relative ${bannerHeight} mb-6 ${paddingY}`}>
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: `url('${backgroundImage}')`,
-            backgroundAttachment: "fixed",
-          }}
-        ></div>
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-banner"></div>
-        <div className="relative z-10 h-full flex items-center justify-center">
-          <h2
-            className={`${fontSize} font-semibold`}
-            style={{ color: textColor, textAlign }}
-          >
+      <section 
+        className="relative w-full py-4 md:py-6 lg:py-8 flex items-center justify-center bg-cover bg-center bg-no-repeat overflow-hidden"
+        style={{
+          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7)), url('${displayBackground}')`,
+        }}
+      >
+        <div className="container mx-auto px-4 text-center">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 md:mb-6">
             {title}
-          </h2>
+          </h1>
+          {subtitle && (
+            <p className="text-base sm:text-lg md:text-xl text-gray-200 max-w-2xl mx-auto">
+              {subtitle}
+            </p>
+          )}
         </div>
-      </div>
+      </section>
     );
   }
 
   // EDIT MODE
-  const handleChange = (field, value) => {
+  const handleFieldChange = (field, value) => {
     onConfigChange?.({
       ...config,
       [field]: value,
     });
   };
 
+  const handleImageUpload = (field, file) => {
+    if (!file) return;
+
+    // Create a URL for display
+    const fileURL = URL.createObjectURL(file);
+
+    // Store just the URL for display
+    handleFieldChange(field, fileURL);
+  };
+
   return (
-    <div className="p-2 bg-gray-700 rounded text-white">
-      <h3 className="font-bold mb-2">Header Banner Editor</h3>
+    <div className="p-4 bg-gray-700 rounded text-white">
+      <h3 className="font-bold text-lg mb-4">Header Banner Editor</h3>
 
       {/* Title */}
-      <label className="block text-sm mb-1">
-        Title:
+      <label className="block text-sm mb-3">
+        Banner Title:
         <input
           type="text"
           value={title}
-          onChange={(e) => handleChange("title", e.target.value)}
+          onChange={(e) => handleFieldChange("title", e.target.value)}
           className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
         />
       </label>
 
-      {/* Text Alignment */}
-      <label className="block text-sm mb-1">
-        Text Alignment:
-        <select
-          value={textAlign}
-          onChange={(e) => handleChange("textAlign", e.target.value)}
-          className="mt-1 w-full bg-gray-600 text-white rounded border border-gray-500"
-        >
-          <option value="left">Left</option>
-          <option value="center">Center</option>
-          <option value="right">Right</option>
-        </select>
-      </label>
-
-      {/* Font Size */}
-      <label className="block text-sm mb-1">
-        Font Size:
-        <select
-          value={fontSize}
-          onChange={(e) => handleChange("fontSize", e.target.value)}
-          className="mt-1 w-full bg-gray-600 text-white rounded border border-gray-500"
-        >
-          <option value="text-lg">text-lg</option>
-          <option value="text-xl">text-xl</option>
-          <option value="text-2xl">text-2xl</option>
-          <option value="text-3xl">text-3xl</option>
-          <option value="text-4xl">text-4xl</option>
-        </select>
-      </label>
-
-      {/* Text Color */}
-      <label className="block text-sm mb-1">
-        Text Color:
-        <input
-          type="color"
-          value={textColor}
-          onChange={(e) => handleChange("textColor", e.target.value)}
-          className="mt-1 w-16 h-8 border border-gray-500 rounded"
-        />
-      </label>
-
-      {/* Banner Height */}
-      <label className="block text-sm mb-1">
-        Banner Height (Tailwind class):
-        <input
-          type="text"
-          value={bannerHeight}
-          onChange={(e) => handleChange("bannerHeight", e.target.value)}
+      {/* Subtitle */}
+      <label className="block text-sm mb-3">
+        Banner Subtitle:
+        <textarea
+          rows={2}
+          value={subtitle}
+          onChange={(e) => handleFieldChange("subtitle", e.target.value)}
           className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
-          placeholder="e.g. h-16, h-20, etc."
-        />
-      </label>
-
-      {/* Vertical Padding */}
-      <label className="block text-sm mb-1">
-        Vertical Padding (Tailwind class):
-        <input
-          type="text"
-          value={paddingY}
-          onChange={(e) => handleChange("paddingY", e.target.value)}
-          className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
-          placeholder="e.g. py-4"
         />
       </label>
 
       {/* Background Image */}
-      <label className="block text-sm mb-1">
-        Background Image URL:
+      <label className="block text-sm mb-3">
+        Background Image:
         <input
-          type="text"
-          value={backgroundImage}
-          onChange={(e) => handleChange("backgroundImage", e.target.value)}
+          type="file"
+          accept="image/*"
+          onChange={(e) => {
+            if (e.target.files && e.target.files[0]) {
+              handleImageUpload("backgroundImage", e.target.files[0]);
+            }
+          }}
           className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
         />
       </label>
+
+      {/* Image Preview */}
+      {displayBackground && (
+        <div className="mt-2">
+          <p className="text-sm mb-1">Background Preview:</p>
+          <img
+            src={displayBackground}
+            alt="Banner background preview"
+            className="w-full h-32 object-cover rounded"
+          />
+        </div>
+      )}
     </div>
   );
 };

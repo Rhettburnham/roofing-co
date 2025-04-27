@@ -28,7 +28,7 @@ const ShingleSelectorBlock = ({
     shingleOptions = [],
   } = config;
 
-  // Local state for readOnly “selected index”
+  // Local state for readOnly "selected index"
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   // READ ONLY
@@ -36,23 +36,22 @@ const ShingleSelectorBlock = ({
     const current = shingleOptions[selectedIndex] || {};
 
     return (
-      <section className="my-4 px-[6vw] md:px-[10vw] bg-white">
-        <h2 className="text-[4vw] md:text-3xl font-bold text-center text-gray-800 pb-2">
+      <section className="my-4 px-4 sm:px-8 md:px-12 lg:px-16 bg-white">
+        <h2 className="text-2xl sm:text-2xl md:text-3xl font-bold text-center text-gray-800 pb-2">
           {sectionTitle}
         </h2>
 
         {/* Buttons */}
-        <div className="flex flex-wrap justify-center">
+        <div className="flex flex-wrap justify-center gap-2">
           {shingleOptions.map((option, idx) => (
             <button
               key={idx}
               onClick={() => setSelectedIndex(idx)}
-              className={`mx-2 my-1 md:px-4 px-2 py-1 md:py-2 text-[3vw] md:text-[2vh] rounded-full font-semibold shadow-lg ${
+              className={`px-3 py-1 sm:px-4 sm:py-2 text-sm sm:text-base rounded-full font-semibold shadow-lg transition-all duration-300 ${
                 selectedIndex === idx
-                  ? "dark_button text-white font-semibold shadow-2xl"
+                  ? "dark_button text-white font-semibold shadow-xl"
                   : "text-black"
               }`}
-              style={{ transition: "box-shadow 0.3s ease" }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.boxShadow =
                   "inset 0 0 15px 1px rgba(0,0,0,0.8)";
@@ -70,18 +69,18 @@ const ShingleSelectorBlock = ({
         {/* Detail panel */}
         <motion.div
           key={selectedIndex}
-          className="bg-white rounded-lg shadow-lg p-6 mb-8 mt-4"
+          className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-8 mt-4"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <h3 className="text-[5vw] md:text-2xl font-semibold text-gray-800 mb-4">
+          <h3 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-3 sm:mb-4">
             {current.title}
           </h3>
-          <p className="text-[3.5vw] md:text-base text-gray-600">
+          <p className="text-sm sm:text-base text-gray-600">
             {current.description}
           </p>
-          <p className="text-[3.5vw] md:text-base mt-2 text-blue-500 font-semibold">
+          <p className="text-sm sm:text-base mt-2 text-blue-500 font-semibold">
             {current.benefit}
           </p>
         </motion.div>

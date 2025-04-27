@@ -1,252 +1,277 @@
 // src/components/blocks/ListImageVerticalBlock.jsx
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
+import { FaCheck } from "react-icons/fa";
 
 /**
  * ListImageVerticalBlock
  * 
+ * Showcases a group of items with benefits and images in a vertical layout
+ * 
  * config = {
- *   title: "Our Installation Process",
+ *   listTitle: string,
  *   items: [
  *     {
- *       number: string,  // e.g. "1"
+ *       id: number,
  *       title: string,
  *       description: string,
- *       image: string,
- *       icon?: maybe an svg or icon name
+ *       benefits: string[],
+ *       image: string or {url: string}
  *     }
  *   ]
- *   enableAnimation?: boolean
  * }
  */
-const ListImageVerticalBlock = ({
-  config = {},
-  readOnly = false,
-  onConfigChange,
-}) => {
-  const {
-    title = "Our Steps",
-    items = [],
-    enableAnimation = false,
-  } = config;
+const ListImageVerticalBlock = ({ config = {}, readOnly = false, onConfigChange }) => {
+  const { listTitle = "Our Services", items = [] } = config;
+  const [selectedItem, setSelectedItem] = useState(0);
 
-  // Simple variants if we want a stagger animation
-  const listVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.2 },
-    },
-  };
-  const itemVariants = {
-    hidden: { opacity: 0, y: 40 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.4 },
-    },
+  // Helper function to get display URL
+  const getDisplayUrl = (value) => {
+    if (!value) return null;
+    if (typeof value === "string") return value;
+    if (typeof value === "object" && value.url) return value.url;
+    return null;
   };
 
-  // READ ONLY
   if (readOnly) {
     return (
-      <section className="pb-6">
-        <h2 className="text-2xl font-semibold text-center my-4">{title}</h2>
-
-        {enableAnimation ? (
-          <motion.div
-            className="space-y-8 px-4 md:px-10 pt-6"
-            initial="hidden"
-            animate="visible"
-            variants={listVariants}
-          >
-            {items.map((step, index) => (
-              <motion.div
-                key={index}
-                className="flex flex-col md:flex-row items-center md:items-start md:space-x-10"
-                variants={itemVariants}
-              >
-                {/* Step Image */}
-                {step.image && (
-                  <img
-                    src={step.image}
-                    alt={step.title}
-                    className="w-full md:w-auto object-cover rounded-md shadow-md mb-2 md:mb-0 h-[22vh] md:h-40"
+      <section className="py-6 px-4 md:px-8 lg:px-16">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-6 md:mb-8 text-gray-800">
+          {listTitle}
+        </h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+          {items.map((item, index) => (
+            <div 
+              key={item.id || index}
+              className="bg-white rounded-lg shadow-lg overflow-hidden flex flex-col h-full transition-transform duration-300 hover:scale-[1.02]"
+            >
+              {/* Image at top */}
+              {getDisplayUrl(item.image) && (
+                <div className="aspect-video w-full overflow-hidden">
+                  <img 
+                    src={getDisplayUrl(item.image)} 
+                    alt={item.title} 
+                    className="w-full h-full object-cover"
                   />
-                )}
-                {/* Step Text */}
-                <div className="md:w-2/3">
-                  <div className="flex items-center space-x-2 mb-2">
-                    {step.number && (
-                      <div className="text-lg md:text-2xl font-bold text-gray-700">
-                        {step.number}
-                      </div>
-                    )}
-                    <h3 className="text-lg md:text-2xl font-semibold text-gray-700">
-                      {step.title}
-                    </h3>
-                  </div>
-                  <p className="text-sm md:text-base text-gray-600">
-                    {step.description}
-                  </p>
                 </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        ) : (
-          <div className="space-y-8 px-4 md:px-10 pt-6">
-            {items.map((step, index) => (
-              <div
-                key={index}
-                className="flex flex-col md:flex-row items-center md:items-start md:space-x-10"
-              >
-                {step.image && (
-                  <img
-                    src={step.image}
-                    alt={step.title}
-                    className="w-full md:w-auto object-cover rounded-md shadow-md mb-2 md:mb-0 h-[22vh] md:h-40"
-                  />
-                )}
-                <div className="md:w-2/3">
-                  <div className="flex items-center space-x-2 mb-2">
-                    {step.number && (
-                      <div className="text-lg md:text-2xl font-bold text-gray-700">
-                        {step.number}
-                      </div>
-                    )}
-                    <h3 className="text-lg md:text-2xl font-semibold text-gray-700">
-                      {step.title}
-                    </h3>
+              )}
+              
+              <div className="p-4 sm:p-6 flex-grow @container">
+                <h3 className="text-xl @md:text-2xl font-semibold mb-2 text-gray-800">
+                  {item.title}
+                </h3>
+                
+                <p className="text-sm @md:text-base text-gray-600 mb-4">
+                  {item.description}
+                </p>
+                
+                {item.benefits && item.benefits.length > 0 && (
+                  <div className="mt-auto">
+                    <h4 className="text-base @md:text-lg font-semibold mb-2 text-gray-700">
+                      Benefits:
+                    </h4>
+                    <ul className="space-y-1">
+                      {item.benefits.map((benefit, idx) => (
+                        <li key={idx} className="flex items-start text-sm @md:text-base text-gray-700">
+                          <FaCheck className="text-green-500 mt-1 mr-2 flex-shrink-0" />
+                          <span>{benefit}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <p className="text-sm md:text-base text-gray-600">
-                    {step.description}
-                  </p>
-                </div>
+                )}
               </div>
-            ))}
-          </div>
-        )}
+            </div>
+          ))}
+        </div>
       </section>
     );
   }
 
-  // EDIT MODE
-  const handleChange = (field, value) => {
+  // EDIT MODE - structured editor
+  const handleFieldChange = (field, value) => {
     onConfigChange?.({
       ...config,
       [field]: value,
     });
   };
 
-  const updateItemField = (idx, field, val) => {
+  const updateItem = (index, field, value) => {
     const newItems = [...items];
-    newItems[idx][field] = val;
-    handleChange("items", newItems);
+    newItems[index] = {
+      ...newItems[index],
+      [field]: value,
+    };
+    handleFieldChange("items", newItems);
   };
 
   const addItem = () => {
     const newItems = [
       ...items,
-      { number: "", title: "", description: "", image: "" },
+      {
+        id: Date.now(),
+        title: "New Service",
+        description: "Service description",
+        benefits: ["Benefit 1"],
+        image: ""
+      }
     ];
-    handleChange("items", newItems);
+    handleFieldChange("items", newItems);
   };
 
-  const removeItem = (idx) => {
+  const removeItem = (index) => {
     const newItems = [...items];
-    newItems.splice(idx, 1);
-    handleChange("items", newItems);
+    newItems.splice(index, 1);
+    handleFieldChange("items", newItems);
   };
 
-  return (
-    <div className="p-2 bg-gray-700 rounded text-white">
-      <h3 className="font-bold mb-2">ListImageVertical Editor</h3>
+  const addBenefit = (itemIndex) => {
+    const newItems = [...items];
+    newItems[itemIndex].benefits = [
+      ...(newItems[itemIndex].benefits || []),
+      "New benefit"
+    ];
+    handleFieldChange("items", newItems);
+  };
 
-      {/* Title */}
-      <label className="block text-sm mb-1">
-        Title:
+  const updateBenefit = (itemIndex, benefitIndex, value) => {
+    const newItems = [...items];
+    newItems[itemIndex].benefits[benefitIndex] = value;
+    handleFieldChange("items", newItems);
+  };
+
+  const removeBenefit = (itemIndex, benefitIndex) => {
+    const newItems = [...items];
+    newItems[itemIndex].benefits.splice(benefitIndex, 1);
+    handleFieldChange("items", newItems);
+  };
+
+  const handleImageUpload = (itemIndex, file) => {
+    if (!file) return;
+    // Create a URL for display
+    const fileURL = URL.createObjectURL(file);
+    // Update the item with the new image URL
+    updateItem(itemIndex, "image", fileURL);
+  };
+  
+  // Render the edit mode
+  return (
+    <div className="p-4 bg-gray-700 rounded text-white">
+      <h3 className="font-bold text-lg mb-4">List Image Vertical Block Editor</h3>
+      
+      {/* List Title */}
+      <label className="block text-sm mb-2">
+        List Title:
         <input
           type="text"
-          value={title}
-          onChange={(e) => handleChange("title", e.target.value)}
+          value={listTitle}
+          onChange={(e) => handleFieldChange("listTitle", e.target.value)}
           className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
         />
       </label>
-
-      {/* enableAnimation */}
-      <label className="inline-flex items-center text-sm mb-2">
-        <input
-          type="checkbox"
-          checked={enableAnimation}
-          onChange={(e) => handleChange("enableAnimation", e.target.checked)}
-          className="mr-1"
-        />
-        Enable Animation
-      </label>
-
+      
       {/* Items */}
-      <div className="mt-2 space-y-2">
-        {items.map((step, idx) => (
-          <div key={idx} className="border border-gray-600 p-2 rounded">
-            <div className="flex justify-between items-center mb-1">
-              <span className="font-semibold">Step {idx + 1}</span>
+      <div className="mt-4 space-y-4">
+        {items.map((item, itemIndex) => (
+          <div key={item.id || itemIndex} className="border border-gray-500 rounded p-3">
+            <div className="flex justify-between items-center mb-2">
+              <h4 className="font-semibold text-base">Item {itemIndex + 1}</h4>
               <button
-                type="button"
-                onClick={() => removeItem(idx)}
+                onClick={() => removeItem(itemIndex)}
                 className="bg-red-600 text-white px-2 py-1 rounded text-sm"
               >
                 Remove
               </button>
             </div>
-            {/* number */}
-            <label className="block text-sm mb-1">
-              Step Number:
-              <input
-                type="text"
-                value={step.number}
-                onChange={(e) => updateItemField(idx, "number", e.target.value)}
-                className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
-              />
-            </label>
-            {/* title */}
-            <label className="block text-sm mb-1">
+            
+            {/* Item Title */}
+            <label className="block text-sm mb-2">
               Title:
               <input
                 type="text"
-                value={step.title}
-                onChange={(e) => updateItemField(idx, "title", e.target.value)}
+                value={item.title || ''}
+                onChange={(e) => updateItem(itemIndex, "title", e.target.value)}
                 className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
               />
             </label>
-            {/* description */}
-            <label className="block text-sm mb-1">
+            
+            {/* Description */}
+            <label className="block text-sm mb-2">
               Description:
               <textarea
                 rows={2}
-                value={step.description}
-                onChange={(e) => updateItemField(idx, "description", e.target.value)}
+                value={item.description || ''}
+                onChange={(e) => updateItem(itemIndex, "description", e.target.value)}
                 className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
               />
             </label>
-            {/* image */}
-            <label className="block text-sm mb-1">
-              Image URL:
+            
+            {/* Image Upload */}
+            <label className="block text-sm mb-2">
+              Image:
               <input
-                type="text"
-                value={step.image}
-                onChange={(e) => updateItemField(idx, "image", e.target.value)}
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) {
+                    handleImageUpload(itemIndex, e.target.files[0]);
+                  }
+                }}
                 className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
               />
             </label>
+            
+            {getDisplayUrl(item.image) && (
+              <div className="my-2">
+                <img
+                  src={getDisplayUrl(item.image)}
+                  alt={item.title || `Item ${itemIndex}`}
+                  className="h-20 object-cover rounded"
+                />
+              </div>
+            )}
+            
+            {/* Benefits */}
+            <div className="mt-2">
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-sm font-medium">Benefits:</label>
+                <button
+                  onClick={() => addBenefit(itemIndex)}
+                  className="text-xs bg-blue-600 text-white px-2 py-1 rounded"
+                >
+                  Add Benefit
+                </button>
+              </div>
+              
+              <div className="space-y-2">
+                {(item.benefits || []).map((benefit, benefitIndex) => (
+                  <div key={benefitIndex} className="flex items-center">
+                    <input
+                      type="text"
+                      value={benefit}
+                      onChange={(e) => updateBenefit(itemIndex, benefitIndex, e.target.value)}
+                      className="flex-grow px-2 py-1 bg-gray-600 text-white rounded-l border border-gray-500"
+                    />
+                    <button
+                      onClick={() => removeBenefit(itemIndex, benefitIndex)}
+                      className="bg-red-600 text-white px-2 py-1 rounded-r border border-red-700"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         ))}
       </div>
+      
       <button
-        type="button"
         onClick={addItem}
-        className="mt-2 bg-blue-600 text-white px-2 py-1 rounded text-sm"
+        className="mt-4 bg-blue-600 text-white px-3 py-2 rounded"
       >
-        + Add Step
+        Add New Item
       </button>
     </div>
   );

@@ -73,20 +73,16 @@ const VideoCTA = ({
               whileInView={{ scale: 1, opacity: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 1 }}
-              className={`text-[5vw] md:text-4xl font-bold mb-3 md:mb-6 ${chosenTextClass}`}
+              className={`text-[5vw] md:text-4xl font-bold mb-2 md:mb-6 ${chosenTextClass}`}
             >
               {title}
             </motion.h2>
             <p
-              className={`text-[3.5vw] md:text-xl mb-5 md:mb-8 ${chosenTextClass}`}
+              className={`text-[3.5vw] md:text-xl text-semibold mb-5 md:mb-4 px-12 md:px-12 ${chosenTextClass}`}
             >
               {description}
             </p>
-            <HashLink
-              to={buttonLink}
-              className="px-3 py-2 md:px-8 md:py-4 dark_button text-white font-semibold rounded-full hover:bg-white hover:text-black transition duration-300"
-            >
-              {buttonText}
+            <HashLink to={buttonLink} className="absolute bottom-5 left-1/2 -translate-x-1/2 px-3 py-2 md:px-8 md:py-4 bg-accent hover:bg-banner hover:text-white font-semibold rounded-full text-black transition duration-300 whitespace-nowrap">{buttonText}
             </HashLink>
           </div>
         </div>

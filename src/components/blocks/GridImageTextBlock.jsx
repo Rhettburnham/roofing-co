@@ -21,22 +21,40 @@ const GridImageTextBlock = ({
   // Default image to use when no image is provided
   const defaultImage = "/assets/images/placeholder.jpg";
 
+  // Helper function to get display URL
+  const getDisplayUrl = (value) => {
+    if (!value) return null;
+    if (typeof value === "string") return value;
+    if (typeof value === "object" && value.url) return value.url;
+    return null;
+  };
+
   // READ ONLY version
   if (readOnly) {
     // Set a reasonable default for columns that's responsive
-    const colClass = `grid grid-cols-1 md:grid-cols-${Math.min(columns, 3)}`;
+    // Using template literals for dynamic class generation is not recommended
+    // Instead, create conditional logic to determine the class
+    const getColClass = () => {
+      const safeCols = Math.min(columns, 3);
+      switch(safeCols) {
+        case 1: return "grid-cols-1";
+        case 2: return "grid-cols-2 sm:grid-cols-2 md:grid-cols-2";
+        case 3: return "grid-cols-2 sm:grid-cols-2 md:grid-cols-3";
+        default: return "grid-cols-2 sm:grid-cols-2 md:grid-cols-2";
+      }
+    };
 
     return (
       <section className="w-full py-0">
-        <div className="container mx-auto">
-          <div className={`${colClass} gap-4`}>
+        <div className="container mx-auto px-4">
+          <div className={`grid ${getColClass()} gap-4 @container`}>
             {items.map((item, idx) => (
               <div
                 key={idx}
                 className="bg-white shadow-md rounded overflow-hidden h-full flex flex-col"
               >
                 {getDisplayUrl(item.image) && (
-                  <div className="w-full h-48 overflow-hidden">
+                  <div className="w-full aspect-video overflow-hidden">
                     <img
                       src={getDisplayUrl(item.image)}
                       alt={item.alt || item.title || "Feature"}
@@ -46,10 +64,10 @@ const GridImageTextBlock = ({
                 )}
                 <div className="p-4 flex-grow">
                   {item.title && (
-                    <h3 className="text-xl font-semibold mb-2">{item.title}</h3>
+                    <h3 className="text-lg @md:text-xl font-semibold mb-2">{item.title}</h3>
                   )}
                   {item.description && (
-                    <p className="text-gray-700">{item.description}</p>
+                    <p className="text-gray-700 text-sm @md:text-base">{item.description}</p>
                   )}
                 </div>
               </div>
@@ -91,25 +109,6 @@ const GridImageTextBlock = ({
     handleFieldChange("items", newItems);
   };
 
-  /**
-   * Gets the display URL from either a string URL or an object with a URL property
-   *
-   * @param {string|Object} value - The value to extract URL from
-   * @returns {string|null} - The URL to display
-   */
-  const getDisplayUrl = (value) => {
-    if (!value) return null;
-    if (typeof value === "string") return value;
-    if (typeof value === "object" && value.url) return value.url;
-    return null;
-  };
-
-  /**
-   * Handles image upload for an item
-   *
-   * @param {number} idx - The index of the item
-   * @param {File} file - The uploaded file
-   */
   const handleImageUpload = (idx, file) => {
     if (!file) return;
 

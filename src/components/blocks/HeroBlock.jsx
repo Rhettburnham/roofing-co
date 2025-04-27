@@ -68,23 +68,19 @@ const HeroBlock = ({ config = {}, readOnly = false, onConfigChange }) => {
         transition={{ duration: 1 }}
       >
         <div
-          className="absolute inset-0 bg-cover bg-center"
+          className="absolute inset-0 bg-cover bg-center w-full h-full transition-all duration-1000"
           style={{
             backgroundImage: `url('${displayBackgroundImage}')`,
             backgroundSize: "120%", // Expanded image size
-            backgroundPosition: "center",
-            width: "100%",
-            height: "100%",
-            transition: "background-position 1s ease",
             backgroundPosition: isShrunk ? "center right" : "center left",
           }}
         ></div>
-        <div className="relative z-10 h-full flex items-center justify-center custom-circle-shadow">
+        <div className="relative z-10 h-full flex items-center justify-center">
           <motion.h1
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 1 }}
-            className="text-center text-[10vw] md:text-[8vh] font-extrabold text-gray-50 tracking-wider"
+            className="text-center text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-50 tracking-wider"
           >
             {title}
           </motion.h1>

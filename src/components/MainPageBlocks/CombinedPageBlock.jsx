@@ -1150,13 +1150,13 @@ export default function CombinedPageBlock({ readOnly = false, config = {}, onCon
               )}
             </div>
           </div>
-          <div className="py-3 text-center px-3">
+          <div className="py-1 text-center px-3">
             <div className="flex justify-center space-x-6">
               <a
                 href={googleReviews[0]?.link || "https://www.google.com/maps"}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center px-4 py-2 bg-white rounded-full custom-circle-shadow hover:bg-gray-100 transition duration-300 text-sm font-sans"
+                className="flex items-center px-4 py-1 bg-white rounded-full custom-circle-shadow hover:bg-gray-100 transition duration-300 text-sm md:text-lg font-sans"
               >
                 <img src={googleIcon} alt="Google" className="w-6 h-6 mr-2" />
                 <span>Review us on Google</span>

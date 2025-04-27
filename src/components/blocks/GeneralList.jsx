@@ -119,18 +119,20 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
     return (
       <section className="my-2 md:my-4 px-4 md:px-16">
         {/* "Siding selection" buttons */}
-        <div className="flex flex-wrap justify-center mt-2">
+        <h2 className="text-center text-xl sm:text-2xl md:text-3xl font-semibold mb-2 mt-3">
+          {displayTitle}
+        </h2>
+        <div className="flex flex-wrap justify-center mt-2 gap-2 mb-2 ">
           {items.map((item, index) => (
             <button
               key={item.id || index}
               onClick={() => setSelectedIndex(index)}
-              className={`mx-2 my-1 md:px-2 px-1 py-1 md:py-1 text-[vw] md:text-[2vh] 
-                rounded-full font-semibold shadow-lg ${
+              className={`px-3 py-1 sm:px-4 sm:py-2 text-sm sm:text-base 
+                rounded-full font-semibold shadow-lg transition-all duration-300 ${
                   selectedIndex === index
-                    ? "bg-second-accent text-white font-semibold shadow-2xl"
+                    ? "bg-second-accent text-white font-semibold shadow-xl"
                     : "bg-accent text-black"
                 }`}
-              style={{ transition: "box-shadow 0.3s ease" }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.boxShadow =
                   "0 0 15px 3px rgba(0,0,0,0.5)";
@@ -144,15 +146,12 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
             </button>
           ))}
         </div>
-        {/* Title */}
-        <h2 className="flex justify-center text-[3.5vw] md:text-[2.5vh] font-semibold mb-0.5 text-center">
-          {displayTitle}
-        </h2>
+
 
         {/* Display selected item */}
         <motion.div
           key={activeItem.id || selectedIndex}
-          className="flex flex-col items-start bg-white rounded-2xl shadow-lg p-6 transition-all duration-500 mx-4 md:mx-16 md:mt-4"
+          className="flex flex-col items-start bg-white rounded-2xl shadow-lg p-4 sm:p-6 transition-all duration-500 mx-4 md:mx-16 md:mt-4 @container"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -160,29 +159,33 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
           <div className="w-full">
             {/* Name & Description */}
             {activeItem.name && (
-              <h3 className="text-[4.5vw] md:text-2xl font-semibold mb-1 md:mb-4 text-gray-800 text-center">
+              <h3 className="md:ml-10 text-xl sm:text-2xl md:text-[4vh] font-bold mb-2 md:mb-4 text-gray-800 md:text-left ml-0 text-center">
                 {activeItem.name}
               </h3>
             )}
             {activeItem.description && (
-              <p className="text-gray-700 text-[2.5vw] md:text-xl first-line:indent-8">
+              <p 
+                className="text-gray-700 text-sm sm:text-base md:text-lg" 
+                //style={{ textIndent: '2rem' }}
+              >
                 {activeItem.description}
               </p>
             )}
 
+
             {/* Advantages */}
             {activeItem.advantages && activeItem.advantages.length > 0 && (
-              <div className="mt-2 md:mt-4">
-                <h4 className="text-[3.5vw] md:text-2xl font-semibold mb-2 text-gray-800">
-                  Advantages:
+              <div className="mt-3 md:mt-6">
+                <h4 className="text-lg sm:text-xl md:text-2xl text-left md:text-center font-bold mb-2 text-gray-800">
+                  Advantages
                 </h4>
-                <ul className="list-none pl-0">
+                <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 md:gap-y-2 pl-0">
                   {activeItem.advantages.map((adv, i) => (
                     <li
                       key={i}
-                      className="flex items-start text-[3vw] md:text-lg text-gray-700 mb-1"
+                      className="flex items-start text-base md:text-lg text-gray-700"
                     >
-                      <FaCheckCircle className="text-green-600 mr-2 mt-[3px] text-lg flex-shrink-0" />
+                      <FaCheckCircle className="text-green-600 mr-2 mt-1 flex-shrink-0" />
                       <span>{adv}</span>
                     </li>
                   ))}
@@ -190,39 +193,40 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
               </div>
             )}
 
-            {/* Additional Info */}
+            {/* Pictures */}
+            {activeItem.pictures && activeItem.pictures.length > 0 && (
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-5">
+                {activeItem.pictures.map((pic, picIdx) => (
+                  <div key={picIdx} className="aspect-video overflow-hidden rounded-lg shadow-md">
+                    <img
+                      src={typeof pic === "string" ? pic : pic.url}
+                      alt={`${activeItem.name} - Image ${picIdx + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {/* Additional Info - moved below the pictures */}
             {(activeItem.colorPossibilities || activeItem.installationTime) && (
-              <div className="mt-2 md:mt-4">
+              <div className="mt-4 md:mt-6">
                 {activeItem.colorPossibilities && (
-                  <p className="text-gray-700 mb-2 text-[3vw] md:text-xl">
-                    <strong className="text-[3.5vw] md:text-xl">
+                  <p className="text-gray-700 mb-2 text-sm sm:text-base md:text-lg">
+                    <strong className="text-sm sm:text-base md:text-lg">
                       Color Possibilities:{" "}
                     </strong>
                     {activeItem.colorPossibilities}
                   </p>
                 )}
                 {activeItem.installationTime && (
-                  <p className="text-gray-700 text-[3vw] md:text-xl">
-                    <strong className="text-[3.5vw] md:text-xl">
+                  <p className="text-gray-700 text-sm sm:text-base md:text-lg">
+                    <strong className="text-sm sm:text-base md:text-lg">
                       Installation Time:{" "}
                     </strong>
                     {activeItem.installationTime}
                   </p>
                 )}
-              </div>
-            )}
-
-            {/* Pictures */}
-            {activeItem.pictures && activeItem.pictures.length > 0 && (
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                {activeItem.pictures.map((pic, picIdx) => (
-                  <img
-                    key={picIdx}
-                    src={typeof pic === "string" ? pic : pic.url}
-                    alt={`${activeItem.name} - Image ${picIdx + 1}`}
-                    className="w-full h-48 object-cover rounded-lg shadow-md"
-                  />
-                ))}
               </div>
             )}
           </div>
@@ -251,7 +255,7 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
           <input
             type="text"
             value={displayTitle}
-            onChange={(e) => handleFieldChange("title", e.target.value)}
+            onChange={(e) => handleFieldChange("sectionTitle", e.target.value)}
             className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
           />
         </label>
@@ -271,39 +275,45 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange }) => {
         </label>
 
         {/* Items */}
-        <label className="block text-sm font-semibold mb-1">Items:</label>
-        {items.map((item, index) => (
-          <div key={index} className="flex mb-1">
-            <textarea
-              rows={2}
-              value={item}
-              onChange={(e) => {
-                const updatedItems = [...items];
-                updatedItems[index] = e.target.value;
-                handleFieldChange("items", updatedItems);
-              }}
-              className="flex-grow px-2 py-1 bg-gray-600 text-white rounded-l border border-gray-500"
-              placeholder="Item text (markdown supported)"
-            />
-            <button
-              className="bg-red-600 text-white px-2 py-1 rounded-r border border-red-700"
-              onClick={() => {
-                const updatedItems = [...items];
-                updatedItems.splice(index, 1);
-                handleFieldChange("items", updatedItems);
-              }}
-            >
-              &times;
-            </button>
+        <div className="mt-2">
+          <h4 className="font-semibold mb-1">List Items:</h4>
+          <div className="space-y-2">
+            {items.map((item, idx) => (
+              <div key={idx} className="flex items-start">
+                <textarea
+                  rows={2}
+                  value={item}
+                  onChange={(e) => {
+                    const newItems = [...items];
+                    newItems[idx] = e.target.value;
+                    handleFieldChange("items", newItems);
+                  }}
+                  className="flex-grow px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newItems = [...items];
+                    newItems.splice(idx, 1);
+                    handleFieldChange("items", newItems);
+                  }}
+                  className="ml-2 bg-red-600 text-white px-2 py-1 rounded"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
           </div>
-        ))}
-
-        <button
-          className="bg-blue-600 text-white px-3 py-2 rounded font-semibold mt-2"
-          onClick={() => handleFieldChange("items", [...items, ""])}
-        >
-          Add Item
-        </button>
+          <button
+            type="button"
+            onClick={() => {
+              handleFieldChange("items", [...items, "New item"]);
+            }}
+            className="mt-2 bg-blue-600 text-white px-2 py-1 rounded text-sm"
+          >
+            + Add Item
+          </button>
+        </div>
       </div>
     );
   }

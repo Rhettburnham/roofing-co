@@ -301,7 +301,7 @@ function BeforeAfterPreview({ beforeAfterData }) {
           <button
             ref={buttonRef}
             onClick={toggleViewState}
-            className="absolute right-40 mt-2 px-6 py-2  bg-banner text-white rounded-lg transition-all transform hover:scale-105 hover:shadow-lg border border-white"
+            className="absolute right-10 md:right-[20%]  px-2 text-[1vh] md:text-[2vh] md:px-6 py-1 md:py-2  md:mt-2 bg-banner text-white rounded-lg transition-all transform hover:scale-105 hover:shadow-lg border border-white"
           >
             {viewState === "before" ? "See After" : "See Before"}
           </button>
