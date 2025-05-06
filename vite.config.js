@@ -39,8 +39,18 @@ export default defineConfig({
   },
   // Add performance prefetch for dynamic imports
   server: {
+    host: '0.0.0.0',  // This allows external access
+    port: 5173,       // Default Vite port
     hmr: {
-      overlay: false,
+      overlay: true,
     },
+    watch: {
+      usePolling: true,
+      interval: 1000,
+    },
+    fs: {
+      strict: false,
+      allow: ['..']
+    }
   },
 });
