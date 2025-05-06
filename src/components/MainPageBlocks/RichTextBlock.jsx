@@ -278,10 +278,9 @@ function RichTextPreview({ richTextData }) {
     // For md viewports, ensure square aspect ratio
     const sizeClasses =
       variant === "md"
-        ? "md:w-[12vw] md:h-[12vw] w-[40vw] h-[22vw]"
-        : "w-[40vw] h-[22vw] md:w-[12vw] md:h-[12vw]";
-
-    // Calculate delay based on index to stagger animations
+        ? "md:w-[12vw] w-[40vw] w-full max-w-[12vw] h-auto min-h-[18vw] md:min-h-[14vw] lg:min-h-[12vw]"
+        : "w-[40vw] md:w-[12vw] h-auto min-h-[18vw] md:min-h-[14vw] lg:min-h-[12vw]";
+        // Calculate delay based on index to stagger animations
     const delay = index * 0.15;
 
     return (
@@ -578,103 +577,86 @@ function RichTextPreview({ richTextData }) {
 
       {/* Medium screens and larger - HIDDEN on small screens */}
       <div className="hidden md:flex md:flex-col md:-mt-[20vh] z-30">
-        {/* Process Steps Section - now integrated directly */}
+      <div className="flex w-full">
+        {/* Left Column */}
+        <div className="w-1/6 hidden md:flex flex-col gap-y-6 p-1 z-3">
+          {leftCards.map((card, idx) => (
+            <FeatureCard
+              key={idx}
+              variant="md"
+              icon={Icons[card.icon] || Icons.Star}
+              title={card.title}
+              desc={card.desc}
+              index={idx}
+            />
+          ))}
+        </div>
 
-        <div className="flex w-full ">
-          {/* Left Column: Cards stacked vertically */}
-          <div className="w-1/6 hidden md:flex p-1 flex-col justify-between -space-y-[12vh] aspect-square -mt-[9vh] z-30">
-            {leftCards.map((card, idx) => {
-              const IconComp = Icons[card.icon] || Icons.Star;
-              return (
-                <div
-                  key={idx}
-                  className="flex-1 mb-1 last:mb-0 flex items-center justify-center"
-                >
-                  <FeatureCard
-                    variant="md"
-                    icon={IconComp}
-                    title={card.title}
-                    desc={card.desc}
-                    index={idx}
-                  />
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Center Column: Image and text side by side */}
-          <div className="md:w-4/6 w-full flex flex-col">
-            <div className="flex flex-row w-full">
-              {/* Image Set */}
-              <div className="w-1/2">
-                <div
-                  className={`w-full relative rounded-2xl shadow-md h-[30vw] md:h-[30vh] image-container ${animationClass}`}
-                >
-                  <img
-                    src={slideshowImages[currentImage]}
-                    alt="Slideshow"
-                    className="w-full h-full object-cover rounded-lg"
-                  />
-                  <div className="absolute bottom-2 rounded-lg left-1/2 transform -translate-x-1/2 flex gap-2 z-10">
-                    {slideshowImages.map((_, sIdx) => (
-                      <button
-                        key={sIdx}
-                        onClick={() => setCurrentImage(sIdx)}
-                        className={`w-3 h-3 rounded-full ${
-                          currentImage === sIdx
-                            ? "bg-white scale-110"
-                            : "bg-white/50"
-                        }`}
-                        aria-label={`Go to image ${sIdx + 1}`}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Bus Descriptions */}
-              <div className="w-1/2 pl-6 ">
-                <div className="px-3 md:px-1">
-                  <h2 className="text-[4vw] md:text-[2.5vh] text-left text-white first-line:font-bold z-60 font-sans">
-                    {heroText}
-                  </h2>
-                  <p className="text-[2.8vw] md:text-[1.9vh] text-black font-serif leading-tight mt-4 indent-8">
-                    {bus_description}
-                  </p>
-                  <p className="text-[2.8vw] md:text-[1.9vh] text-black mt-2 font-serif leading-tight indent-8">
-                    {bus_description_second}
-                  </p>
+        {/* Center Column */}
+        <div className="md:w-4/6 w-full flex flex-col">
+          {/* 1) Side-by-side row */}
+          <div className="flex w-full">
+            {/* Image (always visible) */}
+            <div className="w-1/2">
+              <div className={`relative rounded-2xl shadow-md h-[30vw] md:h-[30vh] image-container ${animationClass}`}>
+                <img
+                  src={slideshowImages[currentImage]}
+                  alt="Slideshow"
+                  className="w-full h-full object-cover rounded-lg"
+                />
+                <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-2 z-10">
+                  {slideshowImages.map((_, sIdx) => (
+                    <button
+                      key={sIdx}
+                      onClick={() => setCurrentImage(sIdx)}
+                      className={`w-3 h-3 rounded-full ${
+                        currentImage === sIdx ? "bg-white scale-110" : "bg-white/50"
+                      }`}
+                      aria-label={`Go to image ${sIdx + 1}`}
+                    />
+                  ))}
                 </div>
               </div>
             </div>
 
-            <section className="md:px-8 relative z-40 overflow-visible mt-3">
-              <RenderProcessSteps />
-            </section>
+            {/* Primary text block: shows only on md+ */}
+            <div className="w-1/2 pl-6">
+              <h2 className="text-[4vw] md:text-[2.5vh] text-white font-sans font-bold mb-4">
+                {heroText}
+              </h2>
+              {/* Always show the first paragraph */}
+              <p className="text-[2.8vw] md:text-[1.9vh] text-black font-serif leading-tight indent-8">
+                {bus_description}
+              </p>
+              {/* Hide the second paragraph here on smaller than lg */}
+              <p className="hidden lg:block text-[2.8vw] md:text-[1.9vh] text-black font-serif leading-tight indent-8 mt-2">
+                {bus_description_second}
+              </p>
+            </div>
           </div>
 
-          {/* Right Column: Cards stacked vertically */}
-          <div className="w-1/6 hidden md:flex p-1 flex-col justify-between -mt-[9vh] -space-y-[12vh] z-30">
-            {rightCards.map((card, idx) => {
-              const i = idx + half;
-              const IconComp = Icons[card.icon] || Icons.Star;
-              return (
-                <div
-                  key={i}
-                  className="flex-1 mb-2 last:mb-0 flex items-center justify-center"
-                >
-                  <FeatureCard
-                    variant="md"
-                    icon={IconComp}
-                    title={card.title}
-                    desc={card.desc}
-                    index={i}
-                  />
-                </div>
-              );
-            })}
+          {/* 2) Spillover row: full-width, only on screens < lg */}
+          <div className="w-full block lg:hidden mt-4 px-6">
+            <p className="text-[2.8vw] md:text-[1.9vh] text-black font-serif leading-tight indent-8">
+              {bus_description_second}
+            </p>
           </div>
         </div>
+
+        {/* Right Column */}
+        <div className="w-1/6 hidden md:flex flex-col gap-y-6 p-1 z-3">
+          {rightCards.map((card, idx) => (
+            <FeatureCard
+              key={idx + half}
+              variant="md"
+              icon={Icons[card.icon] || Icons.Star}
+              title={card.title}
+              desc={card.desc}
+              index={idx + half}
+            />
+          ))}
+        </div>
+      </div>
       </div>
 
       {/* Smaller than medium screens - mobile view */}
