@@ -1,6 +1,7 @@
-torch>=2.0.0
-transformers>=4.36.0
-bitsandbytes>=0.41.0
 python-dotenv>=1.0.0
 requests>=2.31.0
-accelerate>=0.25.0 
+textblob>=0.17.1
+opencv-python-headless>=4.11.0
+
+#pip install opencv-python-headless
+
