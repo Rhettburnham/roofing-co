@@ -214,7 +214,7 @@ const Navbar = () => {
     <>
       <nav
         ref={navbarRef}
-        className={`fixed top-0 z-999 w-full flex items-center justify-center transition-all duration-300 ${hasScrolled ? "bg-banner h-[10vh]" : "h-[16vh]"}`}
+        className={`fixed top-0 z-[9999] w-full flex items-center justify-center transition-all duration-300 ${hasScrolled ? "bg-banner h-[10vh]" : "h-[16vh]"}`}
       >
         <div className="w-full max-w-6xl flex items-center justify-center">
           {/* Logo */}
@@ -308,7 +308,7 @@ const Navbar = () => {
       {/* Mobile Menu */}
       {isOpen && (
         <div
-          className={`md:hidden flex flex-col items-center justify-center w-full fixed top-[10vh] left-0 z-990 shadow-lg transition-colors duration-300 ${hasScrolled ? "bg-banner" : "bg-black bg-opacity-80"}`}
+          className={`md:hidden flex flex-col items-center justify-center w-full fixed top-[10vh] left-0 z-[9998] shadow-lg transition-colors duration-300 ${hasScrolled ? "bg-banner" : "bg-black bg-opacity-80"}`}
         >
           {navLinks.map((nav) => (
             <HashLink
@@ -327,7 +327,7 @@ const Navbar = () => {
       {/* Desktop Menu Dropdown */}
       {isDesktopMenuOpen && (
         <div
-          className={`hidden md:flex md:flex-col md:items-end w-48 fixed top-[10vh] right-10 z-990 shadow-lg rounded-b-lg transition-colors duration-300 ${hasScrolled ? "bg-banner" : "bg-black bg-opacity-80"}`}
+          className={`hidden md:flex md:flex-col md:items-end w-48 fixed top-[10vh] right-10 z-[9998] shadow-lg rounded-b-lg transition-colors duration-300 ${hasScrolled ? "bg-banner" : "bg-black bg-opacity-80"}`}
         >
           {navLinks.map((nav) => (
             <HashLink

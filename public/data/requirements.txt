@@ -1,7 +1,4 @@
 python-dotenv>=1.0.0
-requests>=2.31.0
 textblob>=0.17.1
+requests>=2.31.0
 opencv-python-headless>=4.11.0
-
-#pip install opencv-python-headless
-
