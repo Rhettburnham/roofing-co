@@ -9,14 +9,14 @@ import ButtonBlock from "./MainPageBlocks/ButtonBlock";
 import BookingBlock from "./MainPageBlocks/BookingBlock";
 import CombinedPageBlock from "./MainPageBlocks/CombinedPageBlock";
 
-// Sliding Edit Panel component - replaces overlay to slide underneath instead
+// Sliding Edit Panel component - Will NOT be used for RichTextBlock anymore
 const SlidingEditPanel = ({ children, onClose }) => (
   <div className="w-full transition-all duration-300 mt-4">
     <div className="bg-gray-800 p-4 rounded-lg shadow-lg">
       <div className="flex justify-end mb-2">
         <button
           type="button"
-          onClick={onClose}
+          onClick={onClose} // This will now also trigger save for RichTextBlock
           className="bg-gray-700 text-white rounded-full p-2 hover:bg-gray-600"
         >
           <svg
@@ -50,50 +50,30 @@ SlidingEditPanel.propTypes = {
  * It displays the UI and passes changes upward via setFormData.
  */
 const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
-  // Toggles for each block
   const [activeEditBlock, setActiveEditBlock] = useState(null);
 
-  // Keep track of the data structure for debugging
   useEffect(() => {
     console.log("MainPageForm received formData:", formData);
     console.log("Current singleBlockMode:", singleBlockMode);
   }, [formData, singleBlockMode]);
 
-  // Helper function to get the correct data for a block
   const getBlockData = (blockKey) => {
-    // If we're in single block mode, the data might be directly in formData[blockKey]
-    // or nested if it came from OneForm with a specific blockName
     if (singleBlockMode) {
-      // If formData[singleBlockMode] exists and we're requesting that block, use it directly
       if (formData[singleBlockMode] && blockKey === singleBlockMode) {
         return formData[singleBlockMode];
       }
-      // Otherwise, we're likely trying to access a different block property
       return formData[blockKey];
     }
-
-    // In full form mode, just return the block data directly
     return formData[blockKey];
   };
 
-  // Callback functions
   const handleHeroConfigChange = (newHeroConfig) => {
     console.log("Hero config changed:", newHeroConfig);
-
-    if (singleBlockMode === "hero") {
-      // In single block mode for this specific block
-      setFormData((prev) => ({
-        ...prev,
-        hero: newHeroConfig,
-      }));
-    } else {
-      // Normal mode
-      setFormData((prev) => ({ ...prev, hero: newHeroConfig }));
-    }
+    setFormData((prev) => ({ ...prev, hero: newHeroConfig }));
   };
 
   const handleRichTextConfigChange = (newRichTextConfig) => {
-    console.log("RichText config changed:", newRichTextConfig);
+    console.log("RichText config changed (auto-saved):", newRichTextConfig);
     setFormData((prev) => ({ ...prev, richText: newRichTextConfig }));
   };
 
@@ -127,7 +107,6 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
     setFormData((prev) => ({ ...prev, employees: newEmployeesConfig }));
   };
 
-  // SVG icons
   const PencilIcon = (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -145,10 +124,45 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
     </svg>
   );
 
-  // Handle rendering for single block mode
+  const CloseIcon = (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth="1.5"
+      stroke="currentColor"
+      className="w-6 h-6"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  );
+  
+  const CheckIcon = ( // Using a Check icon for "Done Editing" or "Save"
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      fill="none" 
+      viewBox="0 0 24 24" 
+      strokeWidth="1.5" 
+      stroke="currentColor" 
+      className="w-6 h-6"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+    </svg>
+  );
+
+  // Handle toggling edit mode for RichTextBlock specifically
+  const toggleRichTextEdit = () => {
+    if (activeEditBlock === 'richText') {
+      // Closing RichText editor - changes are already auto-saved by RichTextBlock via onConfigChange
+      console.log("Closing RichText editor. Data should be up-to-date in formData.");
+      setActiveEditBlock(null);
+    } else {
+      setActiveEditBlock('richText');
+    }
+  };
+
   if (singleBlockMode) {
     console.log(`Rendering single block mode for: ${singleBlockMode}`);
-    // Only render the specified block
     switch (singleBlockMode) {
       case "hero":
         return (
@@ -164,7 +178,7 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
         return (
           <div className="relative">
             <RichTextBlock
-              readOnly={false}
+              readOnly={false} // Always editable in single block mode for RichText
               richTextData={getBlockData("richText")}
               onConfigChange={handleRichTextConfigChange}
             />
@@ -236,7 +250,6 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
     }
   }
 
-  // Render all blocks with edit buttons for the main page editor
   console.log("Rendering all blocks for main page editor");
   return (
     <div className="bg-gray-100">
@@ -245,15 +258,15 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
         <div className="absolute top-4 right-4 z-40">
           <button
             type="button"
-            onClick={() => setActiveEditBlock("hero")}
-            className="bg-gray-800 text-white rounded-full p-2 shadow-lg"
+            onClick={() => setActiveEditBlock(activeEditBlock === "hero" ? null : "hero")}
+            className="bg-gray-800 text-white rounded-full p-2 shadow-lg hover:bg-gray-700 transition-colors"
+            aria-label={activeEditBlock === "hero" ? "Close Hero Editor" : "Edit Hero Block"}
           >
-            {PencilIcon}
+            {activeEditBlock === "hero" ? CloseIcon : PencilIcon}
           </button>
         </div>
-        <HeroBlock readOnly={true} heroconfig={formData.hero} />
+        <HeroBlock readOnly={activeEditBlock !== "hero"} heroconfig={formData.hero} />
 
-        {/* Sliding editor panel */}
         {activeEditBlock === "hero" && (
           <SlidingEditPanel onClose={() => setActiveEditBlock(null)}>
             <HeroBlock
@@ -265,45 +278,40 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
         )}
       </div>
 
-      {/* RICHTEXT BLOCK */}
-      <div className="relative bg-white overflow-hidden">
+      {/* RICHTEXT BLOCK - Inline Editing Toggle, No SlidingEditPanel */}
+      <div className="relative bg-white overflow-hidden py-4"> {/* Added some padding for better spacing with editor panel */} 
         <div className="absolute top-4 right-4 z-40">
           <button
             type="button"
-            onClick={() => setActiveEditBlock("richText")}
-            className="bg-gray-800 text-white rounded-full p-2 shadow-lg"
+            onClick={toggleRichTextEdit} // Use the dedicated toggle function
+            className="bg-gray-800 text-white rounded-full p-2 shadow-lg hover:bg-gray-700 transition-colors"
+            aria-label={activeEditBlock === "richText" ? "Done Editing Rich Text" : "Edit Rich Text Block"}
           >
-            {PencilIcon}
+            {activeEditBlock === "richText" ? CheckIcon : PencilIcon} 
           </button>
         </div>
-        <RichTextBlock readOnly={true} richTextData={formData.richText} />
-
-        {/* Sliding editor panel */}
-        {activeEditBlock === "richText" && (
-          <SlidingEditPanel onClose={() => setActiveEditBlock(null)}>
-            <RichTextBlock
-              readOnly={false}
-              richTextData={formData.richText}
-              onConfigChange={handleRichTextConfigChange}
-            />
-          </SlidingEditPanel>
-        )}
+        <RichTextBlock 
+          readOnly={activeEditBlock !== 'richText'}
+          richTextData={formData.richText} 
+          onConfigChange={handleRichTextConfigChange} 
+        />
+        {/* The RichTextEditorPanel for images is now part of RichTextBlock itself when readOnly is false */}
       </div>
 
       {/* ABOUT BUTTON BLOCK */}
       <div className="relative bg-white overflow-hidden">
         <div className="absolute top-4 right-4 z-40">
-          <button
+           <button
             type="button"
-            onClick={() => setActiveEditBlock("button")}
-            className="bg-gray-800 text-white rounded-full p-2 shadow-lg"
+            onClick={() => setActiveEditBlock(activeEditBlock === "button" ? null : "button")}
+            className="bg-gray-800 text-white rounded-full p-2 shadow-lg hover:bg-gray-700 transition-colors"
+            aria-label={activeEditBlock === "button" ? "Close Button Editor" : "Edit Button Block"}
           >
-            {PencilIcon}
+            {activeEditBlock === "button" ? CloseIcon : PencilIcon}
           </button>
         </div>
-        <ButtonBlock readOnly={true} buttonconfig={formData.button} />
+        <ButtonBlock readOnly={activeEditBlock !== "button"} buttonconfig={formData.button} />
 
-        {/* Sliding editor panel */}
         {activeEditBlock === "button" && (
           <SlidingEditPanel onClose={() => setActiveEditBlock(null)}>
             <ButtonBlock
@@ -320,15 +328,15 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
         <div className="absolute top-4 right-4 z-40">
           <button
             type="button"
-            onClick={() => setActiveEditBlock("map")}
-            className="bg-gray-800 text-white rounded-full p-2 shadow-lg"
+            onClick={() => setActiveEditBlock(activeEditBlock === "map" ? null : "map")}
+            className="bg-gray-800 text-white rounded-full p-2 shadow-lg hover:bg-gray-700 transition-colors"
+            aria-label={activeEditBlock === "map" ? "Close Map Editor" : "Edit Map Block"}
           >
-            {PencilIcon}
+            {activeEditBlock === "map" ? CloseIcon : PencilIcon}
           </button>
         </div>
-        <BasicMapBlock readOnly={true} mapData={formData.map} />
+        <BasicMapBlock readOnly={activeEditBlock !== "map"} mapData={formData.map} />
 
-        {/* Sliding editor panel */}
         {activeEditBlock === "map" && (
           <SlidingEditPanel onClose={() => setActiveEditBlock(null)}>
             <BasicMapBlock
@@ -345,15 +353,15 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
         <div className="absolute top-4 right-4 z-40">
           <button
             type="button"
-            onClick={() => setActiveEditBlock("booking")}
-            className="bg-gray-800 text-white rounded-full p-2 shadow-lg"
+            onClick={() => setActiveEditBlock(activeEditBlock === "booking" ? null : "booking")}
+            className="bg-gray-800 text-white rounded-full p-2 shadow-lg hover:bg-gray-700 transition-colors"
+            aria-label={activeEditBlock === "booking" ? "Close Booking Editor" : "Edit Booking Block"}
           >
-            {PencilIcon}
+            {activeEditBlock === "booking" ? CloseIcon : PencilIcon}
           </button>
         </div>
-        <BookingBlock readOnly={true} bookingData={formData.booking} />
+        <BookingBlock readOnly={activeEditBlock !== "booking"} bookingData={formData.booking} />
 
-        {/* Sliding editor panel */}
         {activeEditBlock === "booking" && (
           <SlidingEditPanel onClose={() => setActiveEditBlock(null)}>
             <BookingBlock
@@ -370,15 +378,15 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
         <div className="absolute top-4 right-4 z-40">
           <button
             type="button"
-            onClick={() => setActiveEditBlock("combinedPage")}
-            className="bg-gray-800 text-white rounded-full p-2 shadow-lg"
+            onClick={() => setActiveEditBlock(activeEditBlock === "combinedPage" ? null : "combinedPage")}
+            className="bg-gray-800 text-white rounded-full p-2 shadow-lg hover:bg-gray-700 transition-colors"
+            aria-label={activeEditBlock === "combinedPage" ? "Close Combined Page Editor" : "Edit Combined Page Block"}
           >
-            {PencilIcon}
+            {activeEditBlock === "combinedPage" ? CloseIcon : PencilIcon}
           </button>
         </div>
-        <CombinedPageBlock readOnly={true} config={formData.combinedPage} />
+        <CombinedPageBlock readOnly={activeEditBlock !== "combinedPage"} config={formData.combinedPage} />
 
-        {/* Sliding editor panel */}
         {activeEditBlock === "combinedPage" && (
           <SlidingEditPanel onClose={() => setActiveEditBlock(null)}>
             <CombinedPageBlock
@@ -395,18 +403,18 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
         <div className="absolute top-4 right-4 z-40">
           <button
             type="button"
-            onClick={() => setActiveEditBlock("beforeAfter")}
-            className="bg-gray-800 text-white rounded-full p-2 shadow-lg"
+            onClick={() => setActiveEditBlock(activeEditBlock === "beforeAfter" ? null : "beforeAfter")}
+            className="bg-gray-800 text-white rounded-full p-2 shadow-lg hover:bg-gray-700 transition-colors"
+            aria-label={activeEditBlock === "beforeAfter" ? "Close Before/After Editor" : "Edit Before/After Block"}
           >
-            {PencilIcon}
+            {activeEditBlock === "beforeAfter" ? CloseIcon : PencilIcon}
           </button>
         </div>
         <BeforeAfterBlock
-          readOnly={true}
+          readOnly={activeEditBlock !== "beforeAfter"}
           beforeAfterData={formData.before_after}
         />
 
-        {/* Sliding editor panel */}
         {activeEditBlock === "beforeAfter" && (
           <SlidingEditPanel onClose={() => setActiveEditBlock(null)}>
             <BeforeAfterBlock
@@ -423,15 +431,15 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
         <div className="absolute top-4 right-4 z-40">
           <button
             type="button"
-            onClick={() => setActiveEditBlock("employees")}
-            className="bg-gray-800 text-white rounded-full p-2 shadow-lg"
+            onClick={() => setActiveEditBlock(activeEditBlock === "employees" ? null : "employees")}
+            className="bg-gray-800 text-white rounded-full p-2 shadow-lg hover:bg-gray-700 transition-colors"
+            aria-label={activeEditBlock === "employees" ? "Close Employees Editor" : "Edit Employees Block"}
           >
-            {PencilIcon}
+            {activeEditBlock === "employees" ? CloseIcon : PencilIcon}
           </button>
         </div>
-        <EmployeesBlock readOnly={true} employeesData={formData.employees} />
+        <EmployeesBlock readOnly={activeEditBlock !== "employees"} employeesData={formData.employees} />
 
-        {/* Sliding editor panel */}
         {activeEditBlock === "employees" && (
           <SlidingEditPanel onClose={() => setActiveEditBlock(null)}>
             <EmployeesBlock

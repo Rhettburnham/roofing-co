@@ -422,7 +422,7 @@ const BookingPreview = memo(({ bookingData }) => {
           ${isFormVisible ? 'h-auto' : 'h-[140px]'}`}
       >
         {/* Left Nails */}
-        <div className="absolute left-0  top-0 h-full hidden md:flex flex-col -z-10 justify-between py-8 overflow-visible">
+        <div className="absolute left-0  top-0 h-full hidden md:flex flex-col z-10 justify-between py-8 overflow-visible">
           <div id="left-nail-1" className="w-[8vw] h-[2.5vh] relative">
             <div
               className="w-full h-full"
@@ -437,7 +437,6 @@ const BookingPreview = memo(({ bookingData }) => {
                 left: "-60%", // Position at final location
                 top: 0,
                 filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
-                zIndex: 5,
               }}
             />
           </div>
@@ -455,7 +454,6 @@ const BookingPreview = memo(({ bookingData }) => {
                 left: "-54%", // Position at final location
                 top: 0,
                 filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
-                zIndex: 5,
               }}
             />
           </div>
@@ -473,7 +471,6 @@ const BookingPreview = memo(({ bookingData }) => {
                 left: "-56%", // Position at final location
                 top: 0,
                 filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
-                zIndex: 5,
               }}
             />
           </div>
@@ -508,7 +505,7 @@ const BookingPreview = memo(({ bookingData }) => {
         </div>
 
         {/* Right Nails */}
-        <div className="absolute right-0 top-0 h-full hidden md:flex flex-col -z-10 justify-between py-8 overflow-visible">
+        <div className="absolute right-0 top-0 h-full hidden md:flex flex-col z-10 justify-between py-8 overflow-visible">
           <div id="right-nail-1" className="w-[8vw] h-[2.5vh] relative">
             <div
               className="w-full h-full"
@@ -523,7 +520,6 @@ const BookingPreview = memo(({ bookingData }) => {
                 right: "-60%", // Position at final location
                 top: 0,
                 filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
-                zIndex: 5,
               }}
             />
           </div>
@@ -541,7 +537,6 @@ const BookingPreview = memo(({ bookingData }) => {
                 right: "-54%", // Position at final location
                 top: 0,
                 filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
-                zIndex: 5,
               }}
             />
           </div>
@@ -559,7 +554,6 @@ const BookingPreview = memo(({ bookingData }) => {
                 right: "-56%", // Position at final location
                 top: 0,
                 filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
-                zIndex: 5,
               }}
             />
           </div>

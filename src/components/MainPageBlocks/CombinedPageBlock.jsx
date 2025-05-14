@@ -93,7 +93,7 @@ const TestimonialItem = ({ testimonial }) => {
 
   return (
     <div
-      className="p-2 md:p-4 bg-white rounded-lg custom-circle-shadow relative cursor-pointer"
+      className="p-2 md:p- bg-white rounded-lg custom-circle-shadow relative cursor-pointer"
       onClick={handleExpandClick}
     >
       {/* Name, rating, date with logo to the left */}
@@ -110,7 +110,7 @@ const TestimonialItem = ({ testimonial }) => {
             <img
               src={testimonial.logo}
               alt="Logo"
-              className="w-6 h-6 md:w-12 md:h-12"
+              className="w-6 h-6 md:w-9 md:h-9"
             />
           </a>
         )}
@@ -121,19 +121,19 @@ const TestimonialItem = ({ testimonial }) => {
             <p className="text-[3vw] md:text-[1.8vh] font-semibold text-black font-sans truncate">
               {testimonial.name}
             </p>
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 ">
               <StarRating rating={testimonial.stars} />
             </div>
           </div>
-          <p className="text-gray-700 text-[2vw] md:text-[1.4vh] md:-mt-2">
+          <p className="text-gray-700 text-[3vw] md:text-[1.4vh] md:-mt-2">
             {testimonial.date}
           </p>
         </div>
       </div>
 
       {/* Text */}
-      <p className="text-gray-800 indent-4">
-        <span className="text-[2.8vw] md:text-[2.2vh] block md:hidden font-serif">
+      <p className="text-gray-800 indent-3">
+        <span className="text-[3.2vw] md:text-[2.2vh] block md:hidden">
           {isExpanded ? testimonial.text : truncated}
         </span>
         <span className="md:text-xs hidden md:block font-serif">
@@ -904,9 +904,9 @@ export default function CombinedPageBlock({ readOnly = false, config = {}, onCon
       </div>
 
       {/* TESTIMONIALS (SMALL SCREEN) */}
-      <div className="block md:hidden -mt-[5vh] relative z-20 px-[6vw] pb-6">
+      <div className="block md:hidden -mt-[5vh] relative z-20 px-[2vw] pb-6">
         <div className="flex items-center justify-center px-4">
-          <h2 className="text-[7.5vw] text-white md:text-[6vh] md:text-5xl font-serif mr-2 mt-3">
+          <h2 className="text-[7.5vw] text-white md:text-[6vh] md:text-5xl font-serif mt-3">
             Testimonials
           </h2>
         </div>

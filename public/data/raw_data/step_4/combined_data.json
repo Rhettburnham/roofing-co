@@ -23,7 +23,7 @@
   },
   "hero": {
     "mainTitle": "COWBOYS-VAQUEROS",
-    "subTitle": "CONSTRUCTION",
+    "subTitle": "CONSTRUTION",
     "residential": {
       "subServices": [
         {
@@ -68,7 +68,7 @@
     "heroImage": "/assets/images/hero/hero.png"
   },
   "booking": {
-    "logo": "/data/raw_data/clipped.png",
+    "logo": "/assets/images/hero/clipped.png",
     "headerText": "Contact Us",
     "phone": "(404) 227-5000"
   },

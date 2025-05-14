@@ -8,9 +8,9 @@ import PropTypes from "prop-types";
 
 /* 
 =============================================
-1) RICH-TEXT PREVIEW (Read-Only)
+1) RICH-TEXT PREVIEW (Read-Only or Editable)
 ---------------------------------------------
-general info from step_4combined_data.json
+Displays content. If not readOnly, allows inline editing of text fields.
 =============================================
 */
 
@@ -20,7 +20,7 @@ const ANIMATION_STATE = {
 };
 
 // taking data from step_4/combined_data.json
-function RichTextPreview({ richTextData }) {
+function RichTextPreview({ richTextData, readOnly, onInlineChange }) {
   // Initialize hooks at the top to avoid conditional hook calls
   const [currentImage, setCurrentImage] = useState(0);
   const [animationClass, setAnimationClass] = useState(
@@ -32,15 +32,15 @@ function RichTextPreview({ richTextData }) {
 
   // Debug richTextData
   useEffect(() => {
-    console.log("RichTextPreview received data:", richTextData);
-  }, [richTextData]);
+    console.log("RichTextPreview received data:", richTextData, "readOnly:", readOnly);
+  }, [richTextData, readOnly]);
 
   // Return early if no data
   if (!richTextData) {
     return <p className="text-center py-4">No RichText data found.</p>;
   }
 
-  // Extract data from richTextData
+  // Extract data from richTextData (which is localData when editing)
   const {
     heroText = "",
     bus_description = "",
@@ -48,6 +48,7 @@ function RichTextPreview({ richTextData }) {
     cards = [],
     images = [],
     steps = [],
+    // years_in_business is edited in the panel, so not directly needed here for display
   } = richTextData || {};
 
   // Trigger animation once on first mount only
@@ -238,18 +239,24 @@ function RichTextPreview({ richTextData }) {
     };
   }, [activeVideo, videosLoaded, steps]);
 
-  // Format image paths to ensure they're standardized
-  const formattedImages = images.map((img) =>
-    img.startsWith("/")
-      ? img
-      : `/assets/images/Richtext/${img.split("/").pop() || ""}`
-  );
+  // Smartly determine slideshow image sources
+  const slideshowImageSources = images.map(img => {
+    if (typeof img === 'string') {
+      if (img.startsWith('blob:')) {
+        return img; // It's a blob URL, use directly
+      } else if (img.startsWith('/')) {
+        return img; // It's an absolute path, use directly
+      } else {
+        // Assume it's a relative path needing the Richtext folder prefix
+        return `/assets/images/Richtext/${img.split('/').pop() || ''}`;
+      }
+    }
+    return ''; // Fallback for non-string or invalid entries
+  }).filter(img => img); // Remove any empty strings
 
-  // Use a default image if no images are provided
-  const slideshowImages =
-    formattedImages?.length > 0
-      ? formattedImages
-      : ["/assets/images/Richtext/roof_workers.jpg"];
+  const displaySlideshowImages = slideshowImageSources.length > 0
+    ? slideshowImageSources
+    : ["/assets/images/Richtext/roof_workers.jpg"]; // Default if no valid images
 
   // little info card diff size vp logic
   const half = Math.ceil(cards.length / 2);
@@ -405,6 +412,27 @@ function RichTextPreview({ richTextData }) {
     .mobile-process-section > div > div {
       flex-shrink: 0;
     }
+
+    /* Styling for inline editable textareas */
+    .inline-editable {
+      background-color: rgba(200, 200, 255, 0.2); /* Light blueish semi-transparent background for visibility */
+      border: 1px dashed #aaa;
+      padding: 4px;
+      resize: vertical; 
+      width: 100%;
+      box-sizing: border-box;
+      border-radius: 4px;
+    }
+    .inline-editable-hero {
+      font-weight: bold;
+      color: white; 
+      background-color: rgba(0, 0, 50, 0.25); /* Darker blueish for hero on dark bg */
+    }
+     .inline-editable-desc {
+      color: black; 
+      font-family: serif;
+      background-color: rgba(220, 220, 255, 0.25); /* Lighter blueish for desc on light bg */
+    }
   `;
 
   // Render Process Steps - simplified following Process.jsx pattern
@@ -555,7 +583,6 @@ function RichTextPreview({ richTextData }) {
   };
 
   useEffect(() => {
-    // Check if autoplay is available in this browser
     const checkAutoplaySupport = async () => {
       try {
         const video = document.createElement('video');
@@ -566,6 +593,7 @@ function RichTextPreview({ richTextData }) {
         console.error("Error checking autoplay support:", error);
       }
     };
+    checkAutoplaySupport(); 
   }, []);
 
   return (
@@ -600,12 +628,12 @@ function RichTextPreview({ richTextData }) {
             <div className="w-1/2">
               <div className={`relative rounded-2xl shadow-md h-[30vw] md:h-[30vh] image-container ${animationClass}`}>
                 <img
-                  src={slideshowImages[currentImage]}
+                  src={displaySlideshowImages[currentImage]}
                   alt="Slideshow"
                   className="w-full h-full object-cover rounded-lg"
                 />
                 <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-2 z-10">
-                  {slideshowImages.map((_, sIdx) => (
+                  {displaySlideshowImages.map((_, sIdx) => (
                     <button
                       key={sIdx}
                       onClick={() => setCurrentImage(sIdx)}
@@ -621,25 +649,59 @@ function RichTextPreview({ richTextData }) {
 
             {/* Primary text block: shows only on md+ */}
             <div className="w-1/2 pl-6">
-              <h2 className="text-[4vw] md:text-[2.5vh] text-white font-sans font-bold mb-4">
-                {heroText}
-              </h2>
-              {/* Always show the first paragraph */}
-              <p className="text-[2.8vw] md:text-[1.9vh] text-black font-serif leading-tight indent-8">
-                {bus_description}
-              </p>
-              {/* Hide the second paragraph here on smaller than lg */}
-              <p className="hidden lg:block text-[2.8vw] md:text-[1.9vh] text-black font-serif leading-tight indent-8 mt-2">
-                {bus_description_second}
-              </p>
+              {readOnly ? (
+                <h2 className="text-[4vw] md:text-[2.5vh] text-white font-sans font-bold mb-4">
+                  {heroText}
+                </h2>
+              ) : (
+                <textarea
+                  value={heroText}
+                  onChange={(e) => onInlineChange('heroText', e.target.value)}
+                  className="text-[4vw] md:text-[2.5vh] font-sans mb-4 inline-editable inline-editable-hero"
+                  rows={2}
+                />
+              )}
+              {readOnly ? (
+                <p className="text-[2.8vw] md:text-[1.9vh] text-black font-serif leading-tight indent-8">
+                  {bus_description}
+                </p>
+              ) : (
+                <textarea
+                  value={bus_description}
+                  onChange={(e) => onInlineChange('bus_description', e.target.value)}
+                  className="text-[2.8vw] md:text-[1.9vh] leading-tight indent-8 inline-editable inline-editable-desc"
+                  rows={4}
+                />
+              )}
+              {readOnly ? (
+                 <p className="hidden lg:block text-[2.8vw] md:text-[1.9vh] text-black font-serif leading-tight indent-8 mt-2">
+                   {bus_description_second}
+                 </p>
+              ) : (
+                <textarea
+                  value={bus_description_second}
+                  onChange={(e) => onInlineChange('bus_description_second', e.target.value)}
+                  className="hidden lg:block text-[2.8vw] md:text-[1.9vh] leading-tight indent-8 mt-2 inline-editable inline-editable-desc"
+                  rows={4}
+                />
+              )}
             </div>
           </div>
 
           {/* 2) Spillover row: full-width, only on screens < lg */}
           <div className="w-full block lg:hidden mt-4 px-6">
-            <p className="text-[2.8vw] md:text-[1.9vh] text-black font-serif leading-tight indent-8">
-              {bus_description_second}
-            </p>
+            {readOnly ? (
+              <p className="text-[2.8vw] md:text-[1.9vh] text-black font-serif leading-tight indent-8">
+                {bus_description_second}
+              </p>
+            ) : (
+               <textarea
+                  value={bus_description_second}
+                  onChange={(e) => onInlineChange('bus_description_second', e.target.value)}
+                  className="text-[2.8vw] md:text-[1.9vh] leading-tight indent-8 inline-editable inline-editable-desc"
+                  rows={4}
+                />
+            )}
           </div>
         </div>
 
@@ -673,12 +735,12 @@ function RichTextPreview({ richTextData }) {
           className={`relative w-full rounded-lg shadow-md px-3 -mt-[4vh] image-container ${animationClass}`}
         >
           <img
-            src={slideshowImages[currentImage]}
+            src={displaySlideshowImages[currentImage]}
             alt="Slideshow"
             className="w-full h-[30vw] object-cover rounded-lg"
           />
           <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-2 z-10">
-            {slideshowImages.map((_, sIdx) => (
+            {displaySlideshowImages.map((_, sIdx) => (
               <button
                 key={sIdx}
                 onClick={() => setCurrentImage(sIdx)}
@@ -691,15 +753,42 @@ function RichTextPreview({ richTextData }) {
 
         {/* Text Section - Separated from Image Section */}
         <div className="mt-3 px-3">
-          <h2 className="whitespace-nowrap relative text-[4vw] text-center font-bold z-60 px-[3vw] overflow-visible font-sans">
-            {heroText}
-          </h2>
-          <p className="text-[2.8vw] text-gray-700 my-1 font-sans indent-6">
-            {bus_description}
-          </p>
-          <p className="text-[2.8vw] text-gray-700 mb-2 font-sans indent-6">
-            {bus_description_second}
-          </p>
+          {readOnly ? (
+            <h2 className="whitespace-nowrap relative text-[4vw] text-center font-bold z-60 px-[3vw] overflow-visible font-sans">
+              {heroText}
+            </h2>
+          ) : (
+            <textarea
+              value={heroText}
+              onChange={(e) => onInlineChange('heroText', e.target.value)}
+              className="whitespace-nowrap relative text-[4vw] text-center font-bold z-60 px-[3vw] overflow-visible font-sans inline-editable inline-editable-hero"
+              rows={1}
+            />
+          )}
+          {readOnly ? (
+            <p className="text-[2.8vw] text-gray-700 my-1 font-sans indent-6">
+              {bus_description}
+            </p>
+          ) : (
+            <textarea
+              value={bus_description}
+              onChange={(e) => onInlineChange('bus_description', e.target.value)}
+              className="text-[2.8vw] text-gray-700 my-1 font-sans indent-6 inline-editable inline-editable-desc"
+              rows={3}
+            />
+          )}
+          {readOnly ? (
+            <p className="text-[2.8vw] text-gray-700 mb-2 font-sans indent-6">
+              {bus_description_second}
+            </p>
+          ) : (
+             <textarea
+              value={bus_description_second}
+              onChange={(e) => onInlineChange('bus_description_second', e.target.value)}
+              className="text-[2.8vw] text-gray-700 mb-2 font-sans indent-6 inline-editable inline-editable-desc"
+              rows={3}
+            />
+          )}
         </div>
 
         {/* Cards in a 2x2 (or more) grid */}
@@ -732,424 +821,249 @@ RichTextPreview.propTypes = {
     cards: PropTypes.array,
     images: PropTypes.array,
     overlayImages: PropTypes.array,
+    steps: PropTypes.array,
   }),
+  readOnly: PropTypes.bool.isRequired,
+  onInlineChange: PropTypes.func,
 };
 
 /* 
 =============================================
-2) RICH-TEXT EDITOR PANEL (Editing Mode)
+2) RICH-TEXT EDITOR PANEL (Image Editing Only)
 ---------------------------------------------
 Allows editing of:
-- heroText
-- bus_description
-- years_in_business
-- cards[] (title, desc, icon)
 - images[] (slideshow images via file upload)
-- steps[] (process steps with videos)
-Bubbles changes up via onSave()
 
-This editor is part of the website's content management system
-that allows for local editing and saving of JSON data. The edited
-content can be downloaded and sent to the developer for permanent
-integration into the site.
+Other fields are edited inline or not at all.
 =============================================
 */
-function RichTextEditorPanel({ localData, setLocalData, onSave }) {
+function RichTextEditorPanel({ localData, setLocalDataForPanel }) { 
   const {
-    heroText = "",
-    accredited = false,
-    years_in_business = "",
-    bus_description = "",
-    bus_description_second = "",
-    cards = [],
     images = [],
-    imageUploads = [],
   } = localData;
 
-  const [validationError, setValidationError] = useState("");
+  const [validationError, setValidationError] = useState(""); 
 
-  // Add a new card with default values
-  const handleAddCard = () => {
-    setLocalData((prev) => ({
-      ...prev,
-      cards: [
-        ...prev.cards,
-        { title: "New Title", desc: "New Desc", icon: "Star" },
-      ],
-    }));
-  };
-
-  // Remove a card at the specified index
-  const handleRemoveCard = (index) => {
-    const updated = [...cards];
-    updated.splice(index, 1);
-    setLocalData((prev) => ({ ...prev, cards: updated }));
-  };
-
-  // Update a specific field of a card at the specified index
-  const handleChangeCard = (index, field, value) => {
-    const updated = [...cards];
-    updated[index] = { ...updated[index], [field]: value };
-    setLocalData((prev) => ({ ...prev, cards: updated }));
-  };
-
-  // Add a new empty image entry to the slideshow
   const handleAddImage = () => {
-    setLocalData((prev) => ({
+    setLocalDataForPanel((prev) => ({
       ...prev,
-      images: [...prev.images, ""],
+      images: [...prev.images, ""], 
+      imageUploads: [...(prev.imageUploads || []), null] 
     }));
   };
 
-  // Remove an image at the specified index
   const handleRemoveImage = (index) => {
-    const updated = [...images];
-    updated.splice(index, 1);
-    setLocalData((prev) => ({ ...prev, images: updated }));
+    const updatedImages = [...images];
+    updatedImages.splice(index, 1);
+    
+    const updatedImageUploads = localData.imageUploads ? [...localData.imageUploads] : [];
+    if (updatedImageUploads.length > index) {
+      updatedImageUploads.splice(index,1);
+    }
+    setLocalDataForPanel((prev) => ({ 
+        ...prev, 
+        images: updatedImages,
+        imageUploads: updatedImageUploads 
+    }));
   };
 
-  // Update an image at the specified index with a new file
   const handleChangeImage = (index, file) => {
     if (file) {
-      const fileURL = URL.createObjectURL(file);
-      const updated = [...images];
-      updated[index] = fileURL;
-      setLocalData((prev) => ({ ...prev, images: updated }));
+      const fileURL = URL.createObjectURL(file); 
+      
+      const updatedImages = [...images];
+      updatedImages[index] = fileURL; 
+
+      const updatedImageUploads = localData.imageUploads ? [...localData.imageUploads] : new Array(images.length).fill(null);
+      while(updatedImageUploads.length <= index) {
+        updatedImageUploads.push(null);
+      }
+      updatedImageUploads[index] = { file, fileName: file.name }; 
+
+      setLocalDataForPanel((prev) => ({
+        ...prev,
+        images: updatedImages,
+        imageUploads: updatedImageUploads,
+      }));
     }
-  };
-
-  // Process Steps Methods
-  const handleAddStep = () => {
-    setLocalData((prev) => ({
-      ...prev,
-      steps: [
-        ...(prev.steps || []),
-        {
-          title: "New Step",
-          videoSrc: "/assets/videos/our_process_videos/booking.mp4",
-          href: "#",
-          scale: 1.0,
-        },
-      ],
-    }));
-  };
-
-  const handleRemoveStep = (index) => {
-    const updatedSteps = [...localData.steps];
-    updatedSteps.splice(index, 1);
-    setLocalData((prev) => ({
-      ...prev,
-      steps: updatedSteps,
-    }));
-  };
-
-  const handleStepChange = (index, field, value) => {
-    const updatedSteps = [...localData.steps];
-    updatedSteps[index] = {
-      ...updatedSteps[index],
-      [field]: value,
-    };
-    setLocalData((prev) => ({
-      ...prev,
-      steps: updatedSteps,
-    }));
-  };
-
-  const handleVideoUpload = (index, e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    // Validate that it's an MP4 file
-    if (!file.type.includes("video/mp4")) {
-      setValidationError("Only MP4 videos are supported");
-      return;
-    }
-
-    const updatedSteps = [...localData.steps];
-    updatedSteps[index] = {
-      ...updatedSteps[index],
-      videoFile: file,
-      // Store the file name for the saved file path
-      fileName: file.name,
-    };
-
-    setLocalData((prev) => ({
-      ...prev,
-      steps: updatedSteps,
-    }));
   };
 
   return (
-    <div className="bg-black text-white p-4 rounded max-h-[75vh] overflow-auto">
-      {/* Top row: Editor title + Save button */}
+    <div className="p-4 mt-4"> {/* Removed distinct background and border */}
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl md:text-2xl font-semibold">RichText Editor</h1>
-        <button
-          type="button"
-          onClick={onSave}
-          className="bg-green-600 hover:bg-green-500 px-4 py-2 rounded text-white font-semibold"
-        >
-          Save
-        </button>
+        <h1 className="text-xl md:text-2xl font-semibold text-gray-700">Slideshow Image Editor</h1>
       </div>
-
-      {/* Hero Text */}
-      <div className="mb-4">
-        <label className="block text-sm mb-1">Hero Text:</label>
-        <input
-          type="text"
-          className="w-full bg-gray-700 px-2 py-1 rounded"
-          value={heroText}
-          onChange={(e) =>
-            setLocalData((prev) => ({ ...prev, heroText: e.target.value }))
-          }
-        />
-      </div>
-
-      {/* Business Description */}
-      <div className="mb-4">
-        <label className="block text-sm mb-1">Business Description:</label>
-        <textarea
-          className="w-full bg-gray-700 px-2 py-1 rounded"
-          rows={3}
-          value={bus_description}
-          onChange={(e) =>
-            setLocalData((prev) => ({
-              ...prev,
-              bus_description: e.target.value,
-            }))
-          }
-        />
-      </div>
-
-      {/* Business Description Second */}
-      <div className="mb-4">
-        <label className="block text-sm mb-1">
-          Additional Business Description:
-        </label>
-        <textarea
-          className="w-full bg-gray-700 px-2 py-1 rounded"
-          rows={3}
-          value={bus_description_second}
-          onChange={(e) =>
-            setLocalData((prev) => ({
-              ...prev,
-              bus_description_second: e.target.value,
-            }))
-          }
-        />
-      </div>
-
-      {/* Years in Business */}
-      <div className="mb-4">
-        <label className="block text-sm mb-1">Years in Business:</label>
-        <input
-          type="text"
-          className="w-full bg-gray-700 px-2 py-1 rounded"
-          value={years_in_business}
-          onChange={(e) =>
-            setLocalData((prev) => ({
-              ...prev,
-              years_in_business: e.target.value,
-            }))
-          }
-        />
-      </div>
-
-      {/* Process Steps Editor - Removed since we're hard-coding steps */}
-
-      {/* Feature Cards */}
-      <div className="">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-lg font-semibold">Feature Cards</h2>
-          <button
-            onClick={handleAddCard}
-            className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-2 py-1 rounded"
-          >
-            + Add Card
-          </button>
-        </div>
-        {cards.map((card, idx) => (
-          <div key={idx} className="bg-gray-800 p-3 rounded mb-2 relative">
-            <button
-              onClick={() => handleRemoveCard(idx)}
-              className="bg-red-600 text-white text-xs px-2 py-1 rounded absolute top-2 right-2"
-            >
-              Remove
-            </button>
-            <label className="block text-sm mb-1">
-              Title:
-              <input
-                type="text"
-                className="w-full bg-gray-700 px-2 py-1 rounded mt-1"
-                value={card.title || ""}
-                onChange={(e) => handleChangeCard(idx, "title", e.target.value)}
-              />
-            </label>
-            <label className="block text-sm mb-1">
-              Description:
-              <textarea
-                className="w-full bg-gray-700 px-2 py-1 rounded mt-1"
-                rows={2}
-                value={card.desc || ""}
-                onChange={(e) => handleChangeCard(idx, "desc", e.target.value)}
-              />
-            </label>
-            <label className="block text-sm mb-1">
-              Icon (lucide-react):
-              <input
-                type="text"
-                className="w-full bg-gray-700 px-2 py-1 rounded mt-1"
-                value={card.icon || ""}
-                onChange={(e) => handleChangeCard(idx, "icon", e.target.value)}
-              />
-            </label>
-          </div>
-        ))}
-      </div>
-
-      {/* Slideshow Images */}
       <div>
         <div className="flex items-center justify-between mb-2 ">
-          <h2 className="text-lg font-semibold">Slideshow Images</h2>
+          <h2 className="text-lg font-semibold text-gray-600">Edit Slideshow Images</h2>
           <button
             onClick={handleAddImage}
-            className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-2 py-1 rounded"
+            type="button" 
+            className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1.5 rounded shadow"
           >
-            + Add Image
+            + Add Image Slot
           </button>
         </div>
-        {images.map((img, idx) => (
-          <div key={idx} className="bg-gray-800 p-3 rounded mb-2 relative">
-            <button
-              onClick={() => handleRemoveImage(idx)}
-              className="bg-red-600 text-white text-xs px-2 py-1 rounded absolute top-2 right-2"
-            >
-              Remove
-            </button>
-            <label className="block text-sm mb-1">
-              Upload Image:
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    handleChangeImage(idx, file);
-                  }
-                }}
-                className="w-full bg-gray-700 px-2 py-1 rounded mt-1"
-              />
-            </label>
-            {img && (
-              <img
-                src={img}
-                alt={`Slideshow ${idx + 1}`}
-                className="mt-2 h-24 rounded shadow"
-              />
-            )}
-          </div>
-        ))}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {images.map((imgSrc, idx) => { // imgSrc is localData.images[idx]
+            const currentUpload = localData.imageUploads && localData.imageUploads[idx];
+            const previewUrl = currentUpload && currentUpload.file ? URL.createObjectURL(currentUpload.file) : imgSrc;
+
+            return (
+              <div key={idx} className="bg-gray-100 p-3 rounded shadow-md relative flex flex-col">
+                <button
+                  onClick={() => handleRemoveImage(idx)}
+                  type="button" 
+                  className="bg-red-500 text-white text-xs px-2 py-1 rounded absolute top-2 right-2 hover:bg-red-600"
+                >
+                  Remove
+                </button>
+                <label className="block text-sm mb-1 font-medium text-gray-700">
+                  Image Slot {idx + 1}:
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      handleChangeImage(idx, file);
+                    }
+                  }}
+                  className="w-full bg-white border border-gray-300 px-2 py-1 rounded mt-1 text-sm focus:ring-blue-500 focus:border-blue-500"
+                />
+                {previewUrl ? (
+                  <img
+                    src={previewUrl}
+                    alt={`Preview ${idx + 1}`}
+                    className="mt-2 h-24 w-full object-contain rounded border border-gray-200 bg-gray-50"
+                    onLoad={() => {
+                      // Revoke object URL only if it was created from a File object for this specific preview
+                      if (currentUpload && currentUpload.file && previewUrl.startsWith('blob:')) {
+                        URL.revokeObjectURL(previewUrl);
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="mt-2 h-24 w-full flex items-center justify-center bg-gray-100 border border-dashed border-gray-300 rounded text-gray-400 text-xs">Preview</div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
+      {validationError && <p className="text-red-500 mt-2 text-sm">{validationError}</p>}
     </div>
   );
 }
 
-// Add PropTypes validation
 RichTextEditorPanel.propTypes = {
   localData: PropTypes.shape({
-    heroText: PropTypes.string,
-    years_in_business: PropTypes.string,
-    bus_description: PropTypes.string,
-    bus_description_second: PropTypes.string,
-    cards: PropTypes.array,
     images: PropTypes.array,
-    overlayImages: PropTypes.array,
-  }),
-  setLocalData: PropTypes.func.isRequired,
-  onSave: PropTypes.func.isRequired,
+    imageUploads: PropTypes.array, 
+  }).isRequired,
+  setLocalDataForPanel: PropTypes.func.isRequired,
+  // onSave prop is removed as it's no longer used by a button within this panel
 };
 
 /* 
 =============================================
 3) MAIN EXPORT: RichTextBlock
 ---------------------------------------------
-- If readOnly=true, shows RichTextPreview
-- If false, shows RichTextEditorPanel
-- onConfigChange(updatedData) bubbles changes up.
-
-This component is part of the website's content management system
-that allows for local editing and saving of JSON data. The edited
-content can be downloaded and sent to the developer for permanent
-integration into the site.
+- If readOnly=true, shows RichTextPreview (display only)
+- If false (edit mode):
+    - Shows RichTextPreview (for inline text editing)
+    - Shows RichTextEditorPanel (for image editing)
+- onConfigChange(updatedData) bubbles ALL changes up (auto-save model).
 =============================================
 */
 export default function RichTextBlock({
   readOnly = false,
-  richTextData,
+  richTextData, 
   onConfigChange,
 }) {
-  // Initialize local state with the provided data or defaults
   const [localData, setLocalData] = useState(() => {
-    // Use richTextData or defaults
-    const initialData = !richTextData
-      ? {
-          heroText: "",
-          accredited: false,
-          years_in_business: "",
-          bus_description: "",
-          bus_description_second: "",
-          cards: [],
-          images: [],
-          imageUploads: [],
-          overlayImages: [
+    const initial = richTextData || {};
+    return {
+      heroText: initial.heroText || "",
+      accredited: initial.accredited || false, 
+      years_in_business: initial.years_in_business || "", 
+      bus_description: initial.bus_description || "",
+      bus_description_second: initial.bus_description_second || "",
+      cards: initial.cards?.map((c) => ({ ...c })) || [], 
+      images: [...(initial.images || [])],
+      imageUploads: initial.images?.map(img => img && typeof img === 'object' && img.file ? {file: img.file, fileName: img.fileName} : null) || [], 
+      overlayImages: [
+        ...(initial.overlayImages || [
+          "/assets/images/shake_img/1.png",
+          "/assets/images/shake_img/2.png",
+          "/assets/images/shake_img/3.png",
+          "/assets/images/shake_img/4.png",
+        ]),
+      ],
+      steps: initial.steps || [], 
+    };
+  });
+
+  useEffect(() => {
+    if (richTextData) {
+      setLocalData(prevData => ({
+        ...prevData, 
+        ...richTextData,
+        cards: richTextData.cards?.map((c) => ({ ...c })) || prevData.cards || [],
+        images: [...(richTextData.images || prevData.images || [])],
+        imageUploads: richTextData.imageUploads || prevData.imageUploads || richTextData.images?.map(img => img && typeof img === 'object' && img.file ? {file: img.file, fileName: img.fileName} : null) || [],
+        overlayImages: richTextData.overlayImages || prevData.overlayImages || [
             "/assets/images/shake_img/1.png",
             "/assets/images/shake_img/2.png",
             "/assets/images/shake_img/3.png",
             "/assets/images/shake_img/4.png",
-          ],
-        }
-      : {
-          ...richTextData,
-          cards: richTextData.cards?.map((c) => ({ ...c })) || [],
-          images: [...(richTextData.images || [])],
-          overlayImages: [
-            ...(richTextData.overlayImages || [
-              "/assets/images/shake_img/1.png",
-              "/assets/images/shake_img/2.png",
-              "/assets/images/shake_img/3.png",
-              "/assets/images/shake_img/4.png",
-            ]),
-          ],
-        };
+        ],
+        steps: richTextData.steps || prevData.steps || [],
+      }));
+    }
+  }, [richTextData]);
 
-    return initialData;
-  });
-
-  // Save changes back to the parent component
-  const handleSave = () => {
-    // Prepare data for saving
-    const dataToSave = { ...localData };
-    onConfigChange?.(dataToSave);
+  // Wrapper for setLocalData to also call onConfigChange for auto-saving panel changes
+  const setLocalDataAndPropagate = (updater) => {
+    const newData = typeof updater === 'function' ? updater(localData) : updater;
+    setLocalData(newData);
+    if (onConfigChange) {
+      onConfigChange(newData);
+    }
+    console.log("RichTextBlock: Data updated and propagated via onConfigChange", newData);
   };
 
-  // Render the appropriate component based on mode
+  const handleInlineChange = (field, value) => {
+    const updatedData = { ...localData, [field]: value };
+    setLocalData(updatedData);
+    if (onConfigChange) {
+      onConfigChange(updatedData); 
+    }
+    console.log("Inline change, auto-saving field:", field, "value:", value, "New data:", updatedData);
+  };
+
   if (readOnly) {
-    return <RichTextPreview richTextData={richTextData} />;
+    return <RichTextPreview richTextData={richTextData} readOnly={true} />;
   }
 
   return (
-    <RichTextEditorPanel
-      localData={localData}
-      setLocalData={setLocalData}
-      onSave={handleSave}
-    />
+    <>
+      <RichTextPreview
+        richTextData={localData} 
+        readOnly={false}
+        onInlineChange={handleInlineChange} 
+      />
+      <RichTextEditorPanel
+        localData={localData}
+        setLocalDataForPanel={setLocalDataAndPropagate} // Pass the wrapped setter
+      />
+    </>
   );
 }
 
-// Add PropTypes validation
 RichTextBlock.propTypes = {
   readOnly: PropTypes.bool,
-  richTextData: PropTypes.object,
-  onConfigChange: PropTypes.func,
+  richTextData: PropTypes.object, 
+  onConfigChange: PropTypes.func, 
 };

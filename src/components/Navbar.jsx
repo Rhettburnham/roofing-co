@@ -33,19 +33,19 @@ const Navbar = () => {
   useEffect(() => {
     // Mobile menu animation
     const tl = gsap.timeline({ paused: true });
-    tl.to(topBarRef.current, { y: 6, rotate: -45, duration: 0.3 })
+    tl.to(topBarRef.current, { y: 10, rotate: -45, duration: 0.3 })
       .to(middleBarRef.current, { opacity: 0, duration: 0.3 }, "<")
-      .to(bottomBarRef.current, { y: -6, rotate: 45, duration: 0.3 }, "<");
+      .to(bottomBarRef.current, { y: -10, rotate: 45, duration: 0.3 }, "<");
     timelineRef.current = tl;
 
     // Desktop menu animation
     const desktopTl = gsap.timeline({ paused: true });
     desktopTl
-      .to(desktopTopBarRef.current, { y: 8, rotate: -45, duration: 0.3 })
+      .to(desktopTopBarRef.current, { y: 13, rotate: -45, duration: 0.3 })
       .to(desktopMiddleBarRef.current, { opacity: 0, duration: 0.3 }, "<")
       .to(
         desktopBottomBarRef.current,
-        { y: -8, rotate: 45, duration: 0.3 },
+        { y: -13, rotate: 45, duration: 0.3 },
         "<"
       );
     desktopTimelineRef.current = desktopTl;
@@ -107,31 +107,28 @@ const Navbar = () => {
     // Use a single timeline for better performance
     const tl = gsap.timeline();
 
-    if (hasScrolled) {
-      // Clear any in-progress animations
-      gsap.killTweensOf([
-        titleRef.current,
-        logoRef.current,
-        subTitleRef.current,
-      ]);
+    // Clear any in-progress animations from previous state changes
+    gsap.killTweensOf([
+      titleRef.current,
+      logoRef.current,
+      subTitleRef.current,
+      titleContainerRef.current,
+    ]);
 
-      // NEW ORDER:
-      // 1. Subtitle fades out (bg-banner appears via CSS classes in the render)
+    if (hasScrolled) {
+      // SCROLLED STATE ANIMATION
+      // 1. Subtitle fades out and is removed from layout
       tl.to(subTitleRef.current, {
         opacity: 0,
         duration: 0.2,
+        onComplete: () => {
+          if (subTitleRef.current) {
+            subTitleRef.current.style.display = 'none';
+          }
+        },
       });
 
-      // 2. Logo and title slide together
-      tl.to(
-        [logoRef.current, titleRef.current],
-        {
-          x: "-30vw", // Both move the same amount
-          duration: 0.2,
-          ease: "power1.out",
-        },
-        "+=0.1"
-      );
+
 
       // 3. Title font size shrinks last
       tl.to(
@@ -141,46 +138,41 @@ const Navbar = () => {
           duration: 0.2,
           ease: "power1.out",
         },
-        "+=0.1"
+        "+=0.1" // Starts 0.1s after the previous animation begins
+      );
+      
+      // 2. Logo and title slide together
+      tl.to(
+        [logoRef.current, titleRef.current],
+        {
+          x: "-30vw", // Both move the same amount
+          duration: 0.2,
+          ease: "power1.out",
+        },
+        "+=0.1" // Starts 0.1s after the previous animation begins
       );
 
-      // Ensure title is vertically centered
+      // Ensure titleContainer's cross-axis alignment is center
       tl.to(
         titleContainerRef.current,
         {
-          alignItems: "center",
+          alignItems: "center", // For flex-col, this is horizontal alignment
           duration: 0.1,
         },
-        "<"
-      ); // At the same time as the font size change
+        "<" // At the same time as the previous animation (title font size change)
+      );
     } else {
-      // Clear any in-progress animations
-      gsap.killTweensOf([
-        titleRef.current,
-        logoRef.current,
-        subTitleRef.current,
-        titleContainerRef.current,
-      ]);
+      // UNSCROLLED STATE ANIMATION (REVERSE)
 
-      // CORRECTED REVERSE SEQUENCE:
-      // 1. Title font size grows first
-      tl.to(titleRef.current, {
-        fontSize: "7vh",
-        duration: 0.2,
-        ease: "power1.out",
-      });
+      // Prepare subtitle to be shown: make it part of layout and initially transparent for fade-in
+      if (subTitleRef.current) {
+        subTitleRef.current.style.display = ''; // Revert display to default (e.g., 'inline' for span)
+        gsap.set(subTitleRef.current, { opacity: 0 }); // Set initial opacity for GSAP fade-in animation
+      }
 
-      // Reset vertical alignment to top
-      tl.to(
-        titleContainerRef.current,
-        {
-          alignItems: "flex-start",
-          duration: 0.1,
-        },
-        "<"
-      ); // At the same time as the font size change
 
-      // 2. Logo and title slide back together
+
+      // 1. Logo and title slide back together
       tl.to(
         [logoRef.current, titleRef.current],
         {
@@ -188,18 +180,33 @@ const Navbar = () => {
           duration: 0.2,
           ease: "power1.out",
         },
-        "+=0.1"
+        "+=0.1" // Starts 0.1s after the previous animation begins
       );
 
-      // 3. Subtitle fades in last (after the slide)
-      // This should happen after the slide, as bg change is CSS-based and will happen at this time
+      // 2. Title font size grows first
+      tl.to(titleRef.current, {
+        fontSize: "7vh",
+        duration: 0.2,
+        ease: "power1.out",
+      });
+
+      // Reset titleContainer's cross-axis alignment to flex-start
+      tl.to(
+        titleContainerRef.current,
+        {
+          alignItems: "flex-start", // For flex-col, this is horizontal alignment
+          duration: 0.1,
+        },
+        "<" // At the same time as the previous animation (title font size change)
+      );
+      // 3. Subtitle fades in last
       tl.to(
         subTitleRef.current,
         {
-          opacity: 1,
+          opacity: 1, // Animate to fully visible
           duration: 0.2,
         },
-        "+=0.1"
+        "+=0.1" // Starts 0.1s after the previous animation begins
       );
     }
   }, [hasScrolled]);
@@ -237,7 +244,7 @@ const Navbar = () => {
           >
             <h1
               ref={titleRef}
-              className="whitespace-nowrap text-[6vw] md:text-[7vh] text-white text-center drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:6px_black ] font-rye font-normal font-ultra-condensed origin-left transform-gpu"
+              className="whitespace-nowrap text-[2vw] md:text-[7vh] text-white text-center drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:6px_black ] font-rye  font-ultra-condensed origin-left"
             >
               COWBOYS-VAQUEROS
             </h1>
@@ -258,18 +265,18 @@ const Navbar = () => {
             className="focus:outline-none relative z-30"
             aria-label="Toggle Desktop Menu"
           >
-            <div className="relative w-5 h-5">
+            <div className="relative w-8 h-8">
               <span
                 ref={desktopTopBarRef}
-                className={`absolute top-0 left-0 w-full h-0.5 ${hasScrolled ? "bg-white" : "bg-black"} transition-colors duration-300`}
+                className={`absolute top-0 left-0 w-full h-1 ${hasScrolled ? "bg-white" : "bg-black"} transition-colors duration-300`}
               />
               <span
                 ref={desktopMiddleBarRef}
-                className={`absolute top-2 left-0 w-full h-0.5 ${hasScrolled ? "bg-white" : "bg-black"} transition-colors duration-300`}
+                className={`absolute top-3 left-0 w-full h-1 ${hasScrolled ? "bg-white" : "bg-black"} transition-colors duration-300`}
               />
               <span
                 ref={desktopBottomBarRef}
-                className={`absolute top-4 left-0 w-full h-0.5 ${hasScrolled ? "bg-white" : "bg-black"} transition-colors duration-300`}
+                className={`absolute top-6 left-0 w-full h-1 ${hasScrolled ? "bg-white" : "bg-black"} transition-colors duration-300`}
               />
             </div>
           </button>
@@ -282,18 +289,18 @@ const Navbar = () => {
             className="focus:outline-none"
             aria-label="Toggle Mobile Menu"
           >
-            <div className="relative w-5 h-5">
+            <div className="relative w-8 h-8">
               <span
                 ref={topBarRef}
-                className={`absolute top-0 left-0 w-full h-0.5 ${hasScrolled ? "bg-white" : "bg-black"} transition-colors duration-300`}
+                className={`absolute top-0 left-0 w-full h-1 ${hasScrolled ? "bg-white" : "bg-black"} transition-colors duration-300`}
               />
               <span
                 ref={middleBarRef}
-                className={`absolute top-2 left-0 w-full h-0.5 ${hasScrolled ? "bg-white" : "bg-black"} transition-colors duration-300`}
+                className={`absolute top-3 left-0 w-full h-1 ${hasScrolled ? "bg-white" : "bg-black"} transition-colors duration-300`}
               />
               <span
                 ref={bottomBarRef}
-                className={`absolute top-4 left-0 w-full h-0.5 ${hasScrolled ? "bg-white" : "bg-black"} transition-colors duration-300`}
+                className={`absolute top-6 left-0 w-full h-1 ${hasScrolled ? "bg-white" : "bg-black"} transition-colors duration-300`}
               />
             </div>
           </button>
@@ -308,7 +315,7 @@ const Navbar = () => {
       {/* Mobile Menu */}
       {isOpen && (
         <div
-          className={`md:hidden flex flex-col items-center justify-center w-full fixed top-[10vh] left-0 z-[9998] shadow-lg transition-colors duration-300 ${hasScrolled ? "bg-banner" : "bg-black bg-opacity-80"}`}
+          className={`md:hidden flex flex-col items-center justify-center w-full fixed top-[10vh] left-0 z-[9998] shadow-lg transition-colors duration-300 ${hasScrolled ? "bg-banner text-white" : "bg-white"}`}
         >
           {navLinks.map((nav) => (
             <HashLink
@@ -316,7 +323,7 @@ const Navbar = () => {
               smooth
               to={nav.href}
               onClick={() => setIsOpen(false)}
-              className="px-5 py-2 text-xs text-white hover:text-gray-300 transition-all"
+              className="px-5 py-2 text-xs text-black hover:text-gray-300 transition-all"
             >
               {nav.name}
             </HashLink>
@@ -327,7 +334,7 @@ const Navbar = () => {
       {/* Desktop Menu Dropdown */}
       {isDesktopMenuOpen && (
         <div
-          className={`hidden md:flex md:flex-col md:items-end w-48 fixed top-[10vh] right-10 z-[9998] shadow-lg rounded-b-lg transition-colors duration-300 ${hasScrolled ? "bg-banner" : "bg-black bg-opacity-80"}`}
+          className={`hidden md:flex md:flex-col md:items-end w-48 fixed top-[10vh] right-10 z-[9998] shadow-lg rounded-b-lg transition-colors duration-300 ${hasScrolled ? "bg-banner text-white" : "bg-white"}`}
         >
           {navLinks.map((nav) => (
             <HashLink
@@ -335,7 +342,7 @@ const Navbar = () => {
               smooth
               to={nav.href}
               onClick={() => setIsDesktopMenuOpen(false)}
-              className="px-5 py-3 text-sm text-white hover:text-gray-300 w-full text-right"
+              className="px-5 py-3 text-sm text-black hover:text-gray-300 w-full text-right"
             >
               {nav.name}
             </HashLink>

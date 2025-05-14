@@ -6,370 +6,96 @@ import { FaWarehouse } from "react-icons/fa";
 
 /* 
 ====================================================
- 1) HERO PREVIEW (READ-ONLY)
+ 1) HERO PREVIEW (Displays actual hero content)
 ----------------------------------------------------
-Uses a `heroconfig` prop with (at minimum):
-{
-  mainTitle: string,
-  subTitle: string,
-  residential: { subServices: [{ title: string }, ...] },
-  commercial:  { subServices: [{ title: string }, ...] },
-  logo: string,              // URL for logo image
-  heroImage: string,         // URL for hero background image
-}
-If a field is missing, a default is used.
+- Does NOT display mainTitle, subTitle, or logo.
+- Shows heroImage background and interactive service sections.
+- Takes `heroconfig` prop. This will be `localData` from HeroBlock 
+  when HeroBlock is in edit mode, or original `heroconfig` 
+  from MainPageForm when HeroBlock is read-only.
 ====================================================
 */
-function HeroPreview({ heroconfig }) {
+function HeroPreview({ heroconfig }) { 
   if (!heroconfig) {
-    return <p>No data found.</p>;
+    return <p>No data found for HeroPreview.</p>;
   }
 
-  // CSS variables for consistent styling
   const bannerStyles = {
-    "--banner-color": "#1e293b", // Match the banner color from tailwind.config.js
+    "--banner-color": "#1e293b",
   };
-
-  console.log("HeroBlock config:", heroconfig);
 
   const [residentialServices, setResidentialServices] = useState([]);
   const [commercialServices, setCommercialServices] = useState([]);
-  const [hasAnimated, setHasAnimated] = useState(false);
 
   const {
-    mainTitle,
-    subTitle,
     residential = { subServices: [] },
     commercial = { subServices: [] },
-    logo,
-    heroImage,
+    heroImage, 
   } = heroconfig;
 
   useEffect(() => {
-    setHasAnimated(true);
-
-    // Create residential service links with the new URL format
-    // Add a special mapping to fix the mismatch between combined_data.json and services.json
     const processedResidentialServices = residential.subServices.map(
       (service) => {
-        // Get the title and convert to lowercase for comparison
         const originalTitle = service.title;
         const lowercaseTitle = originalTitle.toLowerCase();
-
-        // Special mapping for services that don't match between files
         let actualServiceName = lowercaseTitle;
-
-        // This fixes the mismatch where:
-        // - "Siding" in combined_data.json should link to "Chimney" (ID 3) in services.json
-        // - "Chimney" in combined_data.json should link to "Guttering" (ID 2) in services.json
-        // - "Repairs" in combined_data.json should link to "Skylights" (ID 4) in services.json
-        if (lowercaseTitle === "siding") {
-          actualServiceName = "chimney";
-          console.log("Mapping 'Siding' to 'chimney' service");
-        } else if (lowercaseTitle === "chimney") {
-          actualServiceName = "guttering";
-          console.log("Mapping 'Chimney' to 'guttering' service");
-        } else if (lowercaseTitle === "repairs") {
-          actualServiceName = "skylights";
-          console.log("Mapping 'Repairs' to 'skylights' service");
-        }
-
+        if (lowercaseTitle === "siding") actualServiceName = "chimney";
+        else if (lowercaseTitle === "chimney") actualServiceName = "guttering";
+        else if (lowercaseTitle === "repairs") actualServiceName = "skylights";
         return {
-          label: originalTitle, // Keep the display label as shown in the HeroBlock
-          // Use the mapped service name for the actual URL
-          route: `/services/residential/${actualServiceName}`,
+          label: originalTitle,
+          route: `/services/residential/${actualServiceName.replace(/\s+/g, "-")}`,
         };
       }
     );
-
-    // Create commercial service links with the new URL format
     const processedCommercialServices = commercial.subServices.map(
       (service) => {
-        // Convert title to URL-friendly format
         const urlTitle = service.title.toLowerCase().replace(/\s+/g, "-");
-
-        return {
-          label: service.title,
-          // New URL format: /services/commercial/metal-roof
-          route: `/services/commercial/${urlTitle}`,
-        };
+        return { label: service.title, route: `/services/commercial/${urlTitle}` };
       }
     );
-
     setResidentialServices(processedResidentialServices);
     setCommercialServices(processedCommercialServices);
   }, [residential.subServices, commercial.subServices]);
 
   const [activeSection, setActiveSection] = useState("neutral");
-  const handleSectionClick = (section) => {
-    setActiveSection((prev) => (prev === section ? "neutral" : section));
-  };
 
-  // Function to handle clicks on a section or its elements
-  const handleSectionElementClick = (e, section) => {
-    e.stopPropagation();
-    setActiveSection((prev) => (prev === section ? "neutral" : section));
-  };
+  const iconVariants = { active: { opacity: [1,1,0], y: [-0,-10,-10], transition: { duration: 0.5, times: [0,0.6,1]}}, default: { opacity: 1, y: 0, transition: { duration: 0.3 }}};
+  const titleVariants = { active: { y: 0, transition: { duration: 0.5 }}, default: { y: 0, transition: { duration: 0.3 }}};
+  const listVariants = { hidden: { opacity: 0, height: 0}, visible: { opacity: 1, height: window.innerWidth < 768 ? 150:220, transition: { staggerChildren:0.1, duration:0.3, delay:0.3 }}};
+  const itemVariants = { hidden: { opacity: 0, y: 10}, visible: { opacity: 1, y: 0, transition: { duration: 0.2 }}};
 
-  // Modified animation variants
-  const iconVariants = {
-    active: {
-      opacity: [1, 1, 0],
-      y: [-0, -10, -10], // Reduced vertical movement
-      transition: {
-        duration: 0.5,
-        times: [0, 0.6, 1],
-      },
-    },
-    default: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.3 },
-    },
-  };
-
-  const titleVariants = {
-    active: {
-      y: 0, // Reduced vertical distance
-      transition: { duration: 0.5 },
-    },
-    default: {
-      y: 0,
-      transition: { duration: 0.3 },
-    },
-  };
-
-  const listVariants = {
-    hidden: { opacity: 0, height: 0 },
-    visible: {
-      opacity: 1,
-      height: window.innerWidth < 768 ? 150 : 220,
-      transition: {
-        staggerChildren: 0.1,
-        duration: 0.3,
-        delay: 0.3, // Reduced delay to account for shorter animation
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 10 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.2,
-      },
-    },
-  };
+  const getDisplayPath = (pathOrBlob) => (pathOrBlob && typeof pathOrBlob === 'string') ? pathOrBlob : '';
 
   return (
     <section className="relative overflow-y-hidden" style={bannerStyles}>
-      {/* Top white area - Controls distance from top via height */}
-
-      {/* Gradient from white to transparent - overlay on top of images */}
-      <div
-        className={`absolute top-[4vh] md:top-[0vh] left-0 right-0 bg-gradient-to-b from-white from-0% to-transparent pointer-events-none ${
-          activeSection === "neutral"
-            ? "h-[18vh] md:h-[18vh]"
-            : "h-[10vh] md:h-[10vh]"
-        }`}
-        style={{ transition: "height 0.3s ease-out 0.4s", zIndex: 1 }}
-      />
-
-      {/* Hero Split Sections */}
+      <div className={`absolute top-[0vh] left-0 right-0 bg-gradient-to-b from-white from-0% to-transparent pointer-events-none ${activeSection === "neutral" ? "h-[18vh] md:h-[18vh]" : "h-[10vh] md:h-[10vh]"}`} style={{ transition: "height 0.3s ease-out 0.4s", zIndex: 1 }}/>
+      {/* mainTitle, subTitle, and logo are NOT rendered by HeroPreview */}
       <div className="relative w-full h-[50vw] md:h-[45vh] ">
-        {/* Single background image container */}
-        <motion.div
-          className="absolute inset-0 w-full h-full overflow-hidden"
-          initial={{ x: 0, scale: 1 }}
-          animate={{
-            x:
-              activeSection === "commercial"
-                ? "-20vw"
-                : activeSection === "residential"
-                  ? "20vw"
-                  : "0vw",
-            scale:
-              activeSection === "commercial"
-                ? 1.35
-                : activeSection === "residential"
-                  ? 1.3
-                  : 1,
-          }}
-          transition={{
-            duration: 0.5,
-            ease: "easeInOut",
-          }}
-        >
-          <div
-            className="absolute inset-0 w-[100vw] h-full left-[-0vw]"
-            style={{
-              background: `url('${heroImage}') no-repeat center center`,
-              backgroundSize: "cover",
-              transformOrigin:
-                activeSection === "residential"
-                  ? "25% center"
-                  : activeSection === "commercial"
-                    ? "75% center"
-                    : "center center",
-              transition: "transform-origin 0.5s ease-in-out",
-            }}
-          />
+        <motion.div className="absolute inset-0 w-full h-full overflow-hidden" initial={{ x: 0, scale: 1 }} animate={{x: activeSection === "commercial" ? "-20vw" : activeSection === "residential" ? "20vw" : "0vw", scale: activeSection === "commercial" ? 1.35 : activeSection === "residential" ? 1.3 : 1}} transition={{ duration: 0.5, ease: "easeInOut" }}>
+          {heroImage && <div className="absolute inset-0 w-[100vw] h-full left-[-0vw]" style={{background: `url('${getDisplayPath(heroImage)}') no-repeat center center`, backgroundSize: "cover", transformOrigin: activeSection === "residential" ? "25% center" : activeSection === "commercial" ? "75% center" : "center center", transition: "transform-origin 0.5s ease-in-out"}}/>}
         </motion.div>
-
-        {/* Interactive sections overlay */}
-        <div className="relative w-full h-full flex">
-          {/* Residential section */}
-          <div
-            className="w-1/2 h-full cursor-pointer"
-            onClick={() =>
-              setActiveSection((prev) =>
-                prev === "residential" ? "neutral" : "residential"
-              )
-            }
-          >
-            <div className="absolute inset-0 left-0 right-1/2 flex items-center justify-center pointer-events-none z-50">
-              <div className="flex flex-col items-center pointer-events-auto">
-                <div
-                  className={`flex flex-col items-center cursor-pointer rounded-lg p-1 ${
-                    activeSection !== "residential" ? "" : ""
-                  }`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setActiveSection((prev) =>
-                      prev === "residential" ? "neutral" : "residential"
-                    );
-                  }}
-                >
-                  <motion.div
-                    variants={iconVariants}
-                    animate={
-                      activeSection === "residential" ? "active" : "default"
-                    }
-                  >
-                    <Home className="w-[6.5vw] h-[6.5vw] md:w-[6.5vh] md:h-[6.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)] text-gray-50" />
-                  </motion.div>
-
-                  <motion.h2
-                    variants={titleVariants}
-                    animate={
-                      activeSection === "residential" ? "active" : "default"
-                    }
-                    className="text-[3.2vw] md:text-[2.4vh] font-semibold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.3)] text-gray-50 font-serif -mt-3"
-                  >
-                    Residential
-                  </motion.h2>
-                </div>
-
-                {activeSection === "residential" && (
-                  <motion.ul
-                    variants={listVariants}
-                    initial="hidden"
-                    animate="visible"
-                    className="text-white font-serif text-center -space-y-2 md:space-y-0 text-[2.3vw] md:text-[2.4vh] font-normal drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,3)]"
-                  >
-                    {residentialServices.map((service, idx) => (
-                      <motion.li
-                        key={idx}
-                        variants={itemVariants}
-                        className="flex items-center justify-center whitespace-nowrap"
-                      >
-                        <Link
-                          to={service.route}
-                          onClick={(e) => e.stopPropagation()}
-                          className="text-white font-serif py-1 rounded hover:underline"
-                        >
-                          {service.label}
-                        </Link>
-                      </motion.li>
-                    ))}
-                  </motion.ul>
-                )}
+        <div className="relative w-full h-full flex pt-[15vh] md:pt-[20vh]">
+          <div className="w-1/2 h-full cursor-pointer flex items-center justify-center" onClick={() => setActiveSection(prev => prev === "residential" ? "neutral" : "residential")}>
+            <div className="flex flex-col items-center pointer-events-auto">
+              <div className={`flex flex-col items-center cursor-pointer rounded-lg p-1`} onClick={(e) => { e.stopPropagation(); setActiveSection(prev => prev === "residential" ? "neutral" : "residential"); }}>
+                <motion.div variants={iconVariants} animate={activeSection === "residential" ? "active" : "default"}><Home className="w-[6.5vw] h-[6.5vw] md:w-[6.5vh] md:h-[6.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)] text-gray-50" /></motion.div>
+                <motion.h2 variants={titleVariants} animate={activeSection === "residential" ? "active" : "default"} className="text-[3.2vw] md:text-[2.4vh] font-semibold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.3)] text-gray-50 font-serif -mt-3">Residential</motion.h2>
               </div>
+              {activeSection === "residential" && (<motion.ul variants={listVariants} initial="hidden" animate="visible" className="text-white font-serif text-center -space-y-2 md:space-y-0 text-[2.3vw] md:text-[2.4vh] font-normal drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,3)]">{residentialServices.map((service, idx) => (<motion.li key={idx} variants={itemVariants} className="flex items-center justify-center whitespace-nowrap"><Link to={service.route} onClick={(e) => e.stopPropagation()} className="text-white font-serif py-1 rounded hover:underline">{service.label}</Link></motion.li>))}</motion.ul>)}
             </div>
           </div>
-
-          {/* Commercial section */}
-          <div
-            className="w-1/2 h-full cursor-pointer"
-            onClick={() =>
-              setActiveSection((prev) =>
-                prev === "commercial" ? "neutral" : "commercial"
-              )
-            }
-          >
-            <div className="absolute inset-0 left-1/2 right-0 flex items-center justify-center pointer-events-none z-50">
-              <div className="flex flex-col items-center pointer-events-auto">
-                <div
-                  className={`flex flex-col items-center cursor-pointer ${
-                    activeSection !== "commercial" ? "" : ""
-                  }`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setActiveSection((prev) =>
-                      prev === "commercial" ? "neutral" : "commercial"
-                    );
-                  }}
-                >
-                  <motion.div
-                    variants={iconVariants}
-                    animate={
-                      activeSection === "commercial" ? "active" : "default"
-                    }
-                  >
-                    <FaWarehouse className="w-[6.5vw] h-[6.5vw] md:w-[6.5vh] md:h-[6.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)] text-gray-50" />
-                  </motion.div>
-
-                  <motion.h2
-                    variants={titleVariants}
-                    animate={
-                      activeSection === "commercial" ? "active" : "default"
-                    }
-                    className="text-[3.2vw] md:text-[2.4vh] font-semibold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.3)] text-gray-50 font-serif -mt-3"
-                  >
-                    Commercial
-                  </motion.h2>
-                </div>
-
-                {activeSection === "commercial" && (
-                  <motion.ul
-                    variants={listVariants}
-                    initial="hidden"
-                    animate="visible"
-                    className="text-white font-serif text-center -space-y-2 md:space-y-0 text-[2.3vw] md:text-[2.4vh] font-normal drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,3)]"
-                  >
-                    {commercialServices.map((service, idx) => (
-                      <motion.li
-                        key={idx}
-                        variants={itemVariants}
-                        className="flex items-center justify-center whitespace-nowrap"
-                      >
-                        <Link
-                          to={service.route}
-                          onClick={(e) => e.stopPropagation()}
-                          className="text-white font-serif py-1 rounded hover:underline"
-                        >
-                          {service.label}
-                        </Link>
-                      </motion.li>
-                    ))}
-                  </motion.ul>
-                )}
+          <div className="w-1/2 h-full cursor-pointer flex items-center justify-center" onClick={() => setActiveSection(prev => prev === "commercial" ? "neutral" : "commercial")}>
+            <div className="flex flex-col items-center pointer-events-auto">
+              <div className={`flex flex-col items-center cursor-pointer`} onClick={(e) => { e.stopPropagation(); setActiveSection(prev => prev === "commercial" ? "neutral" : "commercial"); }}>
+                <motion.div variants={iconVariants} animate={activeSection === "commercial" ? "active" : "default"}><FaWarehouse className="w-[6.5vw] h-[6.5vw] md:w-[6.5vh] md:h-[6.5vh] drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,3)] text-gray-50" /></motion.div>
+                <motion.h2 variants={titleVariants} animate={activeSection === "commercial" ? "active" : "default"} className="text-[3.2vw] md:text-[2.4vh] font-semibold drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.3)] text-gray-50 font-serif -mt-3">Commercial</motion.h2>
               </div>
+              {activeSection === "commercial" && (<motion.ul variants={listVariants} initial="hidden" animate="visible" className="text-white font-serif text-center -space-y-2 md:space-y-0 text-[2.3vw] md:text-[2.4vh] font-normal drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,3)]">{commercialServices.map((service, idx) => (<motion.li key={idx} variants={itemVariants} className="flex items-center justify-center whitespace-nowrap"><Link to={service.route} onClick={(e) => e.stopPropagation()} className="text-white font-serif py-1 rounded hover:underline">{service.label}</Link></motion.li>))}</motion.ul>)}
             </div>
           </div>
         </div>
-
-        {/* Dark red gradient at the bottom - overlay only on the images */}
-        <div
-          className={`absolute bottom-0 left-0 right-0 pointer-events-none bg-gradient-to-t from-banner from-10% to-transparent ${
-            activeSection === "neutral"
-              ? "h-[15vh] md:h-[18vh]"
-              : "h-[9vh] md:h-[10vh]"
-          }`}
-          style={{ transition: "height 0.3s ease-out 0.4s", zIndex: 1 }}
-        />
+        <div className={`absolute bottom-0 left-0 right-0 pointer-events-none bg-gradient-to-t from-banner from-10% to-transparent ${activeSection === "neutral" ? "h-[15vh] md:h-[18vh]" : "h-[9vh] md:h-[10vh]"}`} style={{ transition: "height 0.3s ease-out 0.4s", zIndex: 1 }}/>
       </div>
     </section>
   );
@@ -377,342 +103,97 @@ function HeroPreview({ heroconfig }) {
 
 /* 
 ====================================================
- 2) HERO EDITOR PANEL (EDIT MODE)
+ 2) HERO CONTROLS PANEL (For Hero Image & Services Only)
 ----------------------------------------------------
-Reorganized to match the visual layout of the preview.
-Connects services directly to the services.json file.
+ - Provides controls for hero background image and service selection.
+ - Logo, mainTitle, subTitle are NOT handled here.
+ - All changes call `onControlsChange` to update parent's localData.
 ====================================================
 */
-function HeroEditorPanel({ localData, setLocalData, onSave }) {
+function HeroControlsPanel({ currentData, onControlsChange }) { 
   const {
-    mainTitle = "",
-    subTitle = "",
     residential = { subServices: [] },
     commercial = { subServices: [] },
-    logo,
-    heroImage,
-  } = localData;
+    heroImage, 
+  } = currentData;
 
-  const [residentialServices, setResidentialServices] = useState([]);
-  const [commercialServices, setCommercialServices] = useState([]);
+  const [allResidentialServices, setAllResidentialServices] = useState([]);
+  const [allCommercialServices, setAllCommercialServices] = useState([]);
   const [isServicesLoading, setIsServicesLoading] = useState(true);
 
-  // Simplified path display method
-  const getDisplayPath = (imagePath) => {
-    return imagePath || "";
-  };
-
-  // Load services from combined_data.json
+  const getDisplayPath = (pathOrBlob) => (pathOrBlob && typeof pathOrBlob === 'string') ? pathOrBlob : '';
+  
   useEffect(() => {
     setIsServicesLoading(true);
-
-    // First try to fetch from the main data directory
-    fetch("/data/combined_data.json")
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
-        return res.json();
+    fetch("/data/raw_data/step_4/combined_data.json") 
+      .then(res => res.ok ? res.json() : Promise.reject(new Error(`HTTP error! Status: ${res.status}`)))
+      .then(data => {
+        if (data.hero?.residential?.subServices) {
+          setAllResidentialServices(data.hero.residential.subServices.map((s, i) => ({ id: `res-${i}`, title: s.title })));
+        }
+        if (data.hero?.commercial?.subServices) {
+          setAllCommercialServices(data.hero.commercial.subServices.map((s, i) => ({ id: `com-${i}`, title: s.title })));
+        }
+        setIsServicesLoading(false);
       })
-      .then((data) => {
-        console.log("HeroEditorPanel: Combined data fetched:", data);
-        processData(data);
-      })
-      .catch((error) => {
-        console.error(
-          "HeroEditorPanel: Error fetching from main directory:",
-          error
-        );
-
-        // Fallback to step_4 directory
-        console.log("HeroEditorPanel: Trying fallback location...");
-        fetch("/data/raw_data/step_4/combined_data.json")
-          .then((res) => {
-            if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
-            return res.json();
-          })
-          .then((data) => {
-            console.log("HeroEditorPanel: Fallback data fetched:", data);
-            processData(data);
-          })
-          .catch((fallbackError) => {
-            console.error(
-              "HeroEditorPanel: Error fetching fallback data:",
-              fallbackError
-            );
-            setIsServicesLoading(false);
-          });
+      .catch(error => {
+        console.error("HeroControlsPanel: Error fetching services data:", error);
+        setIsServicesLoading(false);
       });
-
-    // Function to process the fetched data
-    const processData = (data) => {
-      // Process residential services from combined_data
-      const residentialFromJson = data.hero.residential.subServices.map(
-        (service, idx) => {
-          const title = service.title || `Service ${idx + 1}`;
-          const slug = `residential-${idx + 1}-${title.toLowerCase().replace(/\s+/g, "-")}`;
-
-          return {
-            id: idx + 1,
-            label: title,
-            route: `/services/${slug}`,
-            slug,
-          };
-        }
-      );
-
-      // Process commercial services from combined_data
-      const commercialFromJson = data.hero.commercial.subServices.map(
-        (service, idx) => {
-          const title = service.title || `Service ${idx + 1}`;
-          const slug = `commercial-${idx + 1}-${title.toLowerCase().replace(/\s+/g, "-")}`;
-
-          return {
-            id: idx + 1,
-            label: title,
-            route: `/services/${slug}`,
-            slug,
-          };
-        }
-      );
-
-      setResidentialServices(residentialFromJson);
-      setCommercialServices(commercialFromJson);
-      setIsServicesLoading(false);
-    };
   }, []);
 
-  // Image upload handlers
-  const handleLogoChange = (file) => {
-    if (file) {
-      const fileURL = URL.createObjectURL(file);
-      setLocalData((prev) => ({ ...prev, logo: fileURL }));
-    }
+  const handleHeroImageUpload = (file) => {
+    if (file) onControlsChange({ heroImageFile: file });
   };
 
-  const handleHeroImageChange = (file) => {
-    if (!file) return;
-    const fileURL = URL.createObjectURL(file);
-    setLocalData((prev) => ({ ...prev, heroImage: fileURL }));
+  const handleServiceToggle = (serviceType, serviceItem) => {
+    const currentBlockSubServices = currentData[serviceType]?.subServices || [];
+    const isSelected = currentBlockSubServices.some(s => s.title === serviceItem.title);
+    let newSubServices = isSelected 
+      ? currentBlockSubServices.filter(s => s.title !== serviceItem.title)
+      : [...currentBlockSubServices, { title: serviceItem.title }];
+    onControlsChange({ [serviceType]: { ...currentData[serviceType], subServices: newSubServices } });
   };
 
-  // Handler for service selection/deselection
-  const handleServiceToggle = (serviceType, serviceId) => {
-    const services =
-      serviceType === "residential" ? residentialServices : commercialServices;
-    const selectedService = services.find((s) => s.id === serviceId);
+  const isServiceSelected = (serviceType, serviceItem) => 
+    currentData[serviceType]?.subServices?.some(s => s.title === serviceItem.title) || false;
 
-    if (!selectedService) return;
-
-    const currentSubServices = localData[serviceType]?.subServices || [];
-    const isSelected = currentSubServices.some((s) => s.id === serviceId);
-
-    let newSubServices;
-    if (isSelected) {
-      // Remove service
-      newSubServices = currentSubServices.filter((s) => s.id !== serviceId);
-    } else {
-      // Add service
-      newSubServices = [
-        ...currentSubServices,
-        {
-          id: serviceId,
-          title: selectedService.label,
-          slug: selectedService.slug,
-        },
-      ];
-    }
-
-    setLocalData((prev) => ({
-      ...prev,
-      [serviceType]: {
-        ...prev[serviceType],
-        subServices: newSubServices,
-      },
-    }));
-  };
-
-  // Utility function to check if a service is selected
-  const isServiceSelected = (serviceType, serviceId) => {
-    return (
-      localData[serviceType]?.subServices?.some((s) => s.id === serviceId) ||
-      false
-    );
-  };
+  const fileInputStyle = "w-full bg-gray-700 text-sm rounded-md border border-gray-600 p-2 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer";
 
   return (
-    <div className="bg-gray-900 text-white rounded-md ">
-      {/* Title Bar with Save Button */}
-      <div className="flex items-center justify-between bg-banner p-4">
-        <h2 className="text-xl font-semibold">Hero Block Editor</h2>
-        <button
-          onClick={onSave}
-          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors"
-        >
-          Save Changes
-        </button>
+    <div className="bg-gray-800 text-white p-4 rounded-lg mt-4 shadow-lg">
+      <h3 className="text-lg font-semibold mb-4 text-center border-b border-gray-700 pb-2">Edit Hero Background & Services</h3>
+      <div className="mb-6">
+        <label className="block text-sm mb-1 font-medium text-gray-300">Hero Background Image:</label>
+        <input type="file" accept="image/*" onChange={(e) => handleHeroImageUpload(e.target.files?.[0])} className={fileInputStyle} />
+        {heroImage && <img src={getDisplayPath(heroImage)} alt="Hero Background Preview" className="mt-2 h-24 w-full object-cover rounded bg-gray-700 p-1" />}
       </div>
-
-      {/* Main Title and Logo Section */}
-      <div className="p-4 bg-gray-800 border-b border-gray-700">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="w-full md:w-1/3">
-            <label className="block text-sm mb-1 text-gray-300">Logo:</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleLogoChange(e.target.files?.[0])}
-              className="w-full bg-gray-700 text-sm rounded-md border border-gray-600 p-2"
-            />
-            {logo && (
-              <img
-                src={getDisplayPath(logo)}
-                alt="Logo Preview"
-                className="mt-2 h-20 object-contain"
-              />
-            )}
-          </div>
-          <div className="w-full md:w-2/3">
-            <div className="mb-3">
-              <label className="block text-sm mb-1 text-gray-300">
-                Main Title:
-              </label>
-              <input
-                type="text"
-                value={localData.mainTitle || ""}
-                onChange={(e) =>
-                  setLocalData((prev) => ({
-                    ...prev,
-                    mainTitle: e.target.value,
-                  }))
-                }
-                className="w-full bg-gray-700 text-white rounded-md border border-gray-600 p-2"
-                placeholder="Enter main title"
-              />
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <h4 className="text-md font-semibold mb-2 text-amber-300">Select Residential Services</h4>
+          {isServicesLoading ? <p className="text-gray-400 text-sm">Loading...</p> : (
+            <div className="space-y-2 max-h-40 overflow-y-auto pr-2 border border-gray-700 rounded-md p-3 bg-gray-900">
+              {allResidentialServices.map(service => (
+                <div key={service.id} className={`p-2 rounded-md cursor-pointer flex items-center justify-between ${isServiceSelected("residential", service) ? "bg-blue-600" : "bg-gray-700 hover:bg-gray-600"}`} onClick={() => handleServiceToggle("residential", service)}>
+                  <span className="text-sm">{service.title}</span>
+                  <input type="checkbox" checked={isServiceSelected("residential", service)} readOnly className="form-checkbox h-4 w-4 text-blue-500 bg-gray-600 border-gray-500 rounded focus:ring-0 cursor-pointer" />
+                </div>
+              ))}
             </div>
-            <div>
-              <label className="block text-sm mb-1 text-gray-300">
-                Sub Title:
-              </label>
-              <input
-                type="text"
-                value={localData.subTitle || ""}
-                onChange={(e) =>
-                  setLocalData((prev) => ({
-                    ...prev,
-                    subTitle: e.target.value,
-                  }))
-                }
-                className="w-full bg-gray-700 text-white rounded-md border border-gray-600 p-2"
-                placeholder="Enter subtitle"
-              />
+          )}
+        </div>
+        <div>
+          <h4 className="text-md font-semibold mb-2 text-amber-300">Select Commercial Services</h4>
+          {isServicesLoading ? <p className="text-gray-400 text-sm">Loading...</p> : (
+            <div className="space-y-2 max-h-40 overflow-y-auto pr-2 border border-gray-700 rounded-md p-3 bg-gray-900">
+              {allCommercialServices.map(service => (
+                <div key={service.id} className={`p-2 rounded-md cursor-pointer flex items-center justify-between ${isServiceSelected("commercial", service) ? "bg-blue-600" : "bg-gray-700 hover:bg-gray-600"}`} onClick={() => handleServiceToggle("commercial", service)}>
+                  <span className="text-sm">{service.title}</span>
+                  <input type="checkbox" checked={isServiceSelected("commercial", service)} readOnly className="form-checkbox h-4 w-4 text-blue-500 bg-gray-600 border-gray-500 rounded focus:ring-0 cursor-pointer" />
+                </div>
+              ))}
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Split Section for Residential and Commercial */}
-      <div className="flex flex-col md:flex-row">
-        {/* Residential Side */}
-        <div className="w-full md:w-1/2 p-4 bg-gray-800 border-r border-gray-700 ">
-          <h3 className="text-lg font-semibold mb-3 text-amber-100 -mt-3">
-            Residential
-          </h3>
-
-          <div className="mt-4">
-            <label className="block text-sm mb-2 text-gray-300">
-              Available Services:
-            </label>
-            {isServicesLoading ? (
-              <p className="text-gray-400 text-sm">Loading services...</p>
-            ) : (
-              <div className="space-y-1 max-h-60 overflow-y-auto pr-2">
-                {residentialServices.map((service) => (
-                  <div
-                    key={service.id}
-                    className={`p-2 rounded-md cursor-pointer flex items-center ${
-                      isServiceSelected("residential", service.id)
-                        ? "bg-blue-900"
-                        : "bg-gray-700 hover:bg-gray-600"
-                    }`}
-                    onClick={() =>
-                      handleServiceToggle("residential", service.id)
-                    }
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isServiceSelected("residential", service.id)}
-                      onChange={() => {}}
-                      className="mr-2"
-                    />
-                    <span>{service.label}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Commercial Side */}
-        <div className="w-full md:w-1/2 p-4 bg-gray-800">
-          <h3 className="text-lg font-semibold mb-3 text-amber-100">
-            Commercial
-          </h3>
-
-          <div className="mt-4">
-            <label className="block text-sm mb-2 text-gray-300">
-              Available Services:
-            </label>
-            {isServicesLoading ? (
-              <p className="text-gray-400 text-sm">Loading services...</p>
-            ) : (
-              <div className="space-y-1 max-h-60 overflow-y-auto pr-2">
-                {commercialServices.map((service) => (
-                  <div
-                    key={service.id}
-                    className={`p-2 rounded-md cursor-pointer flex items-center ${
-                      isServiceSelected("commercial", service.id)
-                        ? "bg-blue-900"
-                        : "bg-gray-700 hover:bg-gray-600"
-                    }`}
-                    onClick={() =>
-                      handleServiceToggle("commercial", service.id)
-                    }
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isServiceSelected("commercial", service.id)}
-                      onChange={() => {}}
-                      className="mr-2"
-                    />
-                    <span>{service.label}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Hero Background Image Section */}
-      <div className="p-4 bg-gray-800 border-t border-gray-700">
-        <h3 className="text-lg font-semibold mb-3 text-amber-100">
-          Hero Background Image
-        </h3>
-        <div className="mb-4">
-          <label className="block text-sm mb-1 text-gray-300">
-            Background Image:
-          </label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => handleHeroImageChange(e.target.files?.[0])}
-            className="w-full bg-gray-700 text-sm rounded-md border border-gray-600 p-2"
-          />
-          {getDisplayPath(heroImage) && (
-            <img
-              src={getDisplayPath(heroImage)}
-              alt="Hero Background"
-              className="mt-2 h-24 w-full object-cover rounded-md"
-            />
           )}
         </div>
       </div>
@@ -724,83 +205,73 @@ function HeroEditorPanel({ localData, setLocalData, onSave }) {
 ====================================================
  3) MAIN EXPORT: HERO BLOCK
 ----------------------------------------------------
-If readOnly=true, renders HeroPreview.
-If false, renders HeroEditorPanel.
+ - If readOnly is true, renders HeroPreview with original heroconfig.
+ - If readOnly is false, renders HeroPreview (with localData for live background updates) 
+   AND HeroControlsPanel (for heroImage & services).
+ - All changes are auto-saved via onConfigChange.
+ - mainTitle, subTitle, logo are NO LONGER part of this block's data/editing.
 ====================================================
 */
 export default function HeroBlock({
-  heroconfig,
+  heroconfig, 
   readOnly = false,
   onConfigChange,
 }) {
-  // Helper function to ensure proper image paths
-  const ensureProperImagePaths = (config) => {
-    // If we're in edit mode, we might get object URLs or other temporary paths
-    // This ensures that when saving, paths are properly formatted
-    const updatedConfig = { ...config };
-
-    // Only process and update paths if they exist
-    if (
-      updatedConfig.logo &&
-      !updatedConfig.logo.startsWith("/assets/images/hero/")
-    ) {
-      // If it's an object URL or other temporary path, we'll need to handle it differently
-      // For now, we'll just note that this path needs to be processed
-      console.log(
-        "Logo path might need server-side processing:",
-        updatedConfig.logo
-      );
-    }
-
-    if (
-      updatedConfig.heroImage &&
-      !updatedConfig.heroImage.startsWith("/assets/images/hero/")
-    ) {
-      console.log(
-        "Hero image path might need server-side processing:",
-        updatedConfig.heroImage
-      );
-    }
-
-    return updatedConfig;
-  };
-
-  const [localHero, setLocalHero] = useState(() => {
-    // Use provided hero config or create a default one
-    if (!heroconfig) {
-      return {
-        mainTitle: "",
-        subTitle: "",
-        residential: {
-          subServices: [],
-        },
-        commercial: {
-          subServices: [],
-        },
-        logo: "",
-        heroImage: "",
-      };
-    }
-    return { ...heroconfig };
+  const [localData, setLocalData] = useState(() => {
+    const initial = heroconfig || {};
+    return {
+      residential: initial.residential || { subServices: [] },
+      commercial: initial.commercial || { subServices: [] },
+      heroImage: initial.heroImage || "/assets/images/hero/hero_split_background.jpg", 
+      heroImageFile: null, 
+    };
   });
 
-  const handleSave = () => {
-    if (onConfigChange) {
-      // Process paths before saving
-      const processedConfig = ensureProperImagePaths(localHero);
-      onConfigChange(processedConfig);
+  useEffect(() => {
+    if (heroconfig) {
+      setLocalData(prevData => {
+        const newHeroImageIsPath = typeof heroconfig.heroImage === 'string' && !heroconfig.heroImage.startsWith('blob:');
+        return {
+          residential: heroconfig.residential || prevData.residential || { subServices: [] },
+          commercial: heroconfig.commercial || prevData.commercial || { subServices: [] },
+          heroImage: heroconfig.heroImage !== undefined ? heroconfig.heroImage : prevData.heroImage,
+          heroImageFile: newHeroImageIsPath && heroconfig.heroImage !== prevData.heroImage ? null : prevData.heroImageFile,
+        };
+      });
     }
+  }, [heroconfig]);
+
+  const handleControlsChange = (changedFields) => {
+    let newHeroImage = localData.heroImage;
+    let newHeroImageFile = localData.heroImageFile;
+
+    if (changedFields.heroImageFile) {
+      if (localData.heroImage && localData.heroImage.startsWith('blob:')) URL.revokeObjectURL(localData.heroImage);
+      newHeroImage = URL.createObjectURL(changedFields.heroImageFile);
+      newHeroImageFile = changedFields.heroImageFile;
+    }
+
+    const updatedData = {
+      ...localData,
+      ...changedFields, 
+      heroImage: newHeroImage,
+      heroImageFile: newHeroImageFile,
+    };
+    setLocalData(updatedData);
+    if (onConfigChange) onConfigChange(updatedData);
   };
 
   if (readOnly) {
-    return <HeroPreview heroconfig={heroconfig} />;
+    return <HeroPreview heroconfig={heroconfig} />; 
   }
 
   return (
-    <HeroEditorPanel
-      localData={localHero}
-      setLocalData={setLocalHero}
-      onSave={handleSave}
-    />
+    <>
+      <HeroPreview heroconfig={localData} />
+      <HeroControlsPanel 
+        currentData={localData} 
+        onControlsChange={handleControlsChange} 
+      />
+    </>
   );
 }

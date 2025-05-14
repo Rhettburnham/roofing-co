@@ -660,7 +660,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   return (
     <div className="min-h-screen bg-gray-100 text-black">
       <div className="bg-gray-900 text-white p-3 shadow-md sticky top-0 z-50 flex justify-between items-center">
-        <h1 className="text-xl font-medium">Content Editor</h1>
+        <h1 className="text-[5vh] font-serif">WebEdit </h1>
         <button
           onClick={handleSubmit}
           type="button"
