@@ -20,13 +20,13 @@ function EmployeesPreview({ employeesData }) {
     return <p>No Employee data found.</p>;
   }
   // Use the employees data passed in or default to an empty array
-  const employeesList = employeesData?.employee || [];
+  const employeesListOriginal = employeesData?.employee || [];
   
   // Ensure we have a section title, default to "OUR TEAM" if none provided
   const sectionTitle = employeesData?.sectionTitle || "OUR TEAM";
   
   // Format image paths to ensure they have proper format
-  const formattedEmployees = employeesList.map(emp => ({
+  const formattedEmployees = employeesListOriginal.map(emp => ({
     ...emp,
     image: emp.image?.startsWith('/') ? emp.image : `/assets/images/team/${emp.image?.split('/').pop() || 'roofer.png'}`
   }));
@@ -38,34 +38,36 @@ function EmployeesPreview({ employeesData }) {
   // Carousel state
   const [currentIndex, setCurrentIndex] = useState(0);
   const [transitionDuration, setTransitionDuration] = useState(0.5);
-  const itemsToShow = useItemsToShow(); // custom hook for responsive count
   const slideInterval = 2500;
   
-  // Get employee data from employeesData, default to empty array
-  const employee = employeesData?.employee || [];
+  const numTotalEmployees = formattedEmployees.length;
+  const ITEMS_TO_SHOW_ANIMATION = 4; // Number of items visible during animation
 
-  // Extend the employees array for a seamless loop (use formattedEmployees)
+  // Extend the employees array for a seamless loop (only if animating)
   const extendedEmployees = useMemo(() => {
-    return formattedEmployees.concat(formattedEmployees.slice(0, itemsToShow));
-  }, [formattedEmployees, itemsToShow]);
+    if (numTotalEmployees >= 5) { // Animate if 5 or more
+      return formattedEmployees.concat(formattedEmployees.slice(0, ITEMS_TO_SHOW_ANIMATION));
+    }
+    return formattedEmployees; // For static display, actual list is used directly
+  }, [formattedEmployees, numTotalEmployees, ITEMS_TO_SHOW_ANIMATION]);
 
-  // Auto-slide the carousel
+  // Auto-slide the carousel (only if animating)
   useEffect(() => {
+    if (numTotalEmployees < 5) return; // Don't animate if less than 5 employees
+
     const interval = setInterval(() => {
       setCurrentIndex((prevIndex) => {
-        if (prevIndex >= employeesList.length - 1) {
-          // Reset the transition to jump instantly back to the beginning,
-          // then restore the smooth transition
-          setTransitionDuration(0);
-          setTimeout(() => setTransitionDuration(0.5), 50);
-          return 0;
+        if (prevIndex >= numTotalEmployees - 1) {
+          setTransitionDuration(0); // Instant jump
+          setTimeout(() => setTransitionDuration(0.5), 50); // Restore smooth transition for next slide
+          return 0; // Reset to the beginning
         }
         return prevIndex + 1;
       });
     }, slideInterval);
 
     return () => clearInterval(interval);
-  }, [employeesList.length, slideInterval]);
+  }, [numTotalEmployees, slideInterval]);
 
   // GSAP header animations (nail and text slide in)
   useEffect(() => {
@@ -118,6 +120,37 @@ function EmployeesPreview({ employeesData }) {
     };
   }, []);
 
+  // Helper function to render a single employee card
+  const renderEmployeeCard = (employee, key, cardStyle = {}) => (
+    <div
+      key={key}
+      className="flex-shrink-0 flex flex-col items-center justify-start px-2"
+      style={cardStyle}
+    >
+      <div className="relative mb-4">
+        <div className="bg-white w-[12.5vh] h-[12.5vh] md:w-32 md:h-32 rounded-full overflow-hidden flex items-center justify-center shadow-lg">
+          <img
+            src={employee.image}
+            alt={employee.name}
+            className="w-full h-full object-cover"
+            loading="lazy"
+            onError={(e) => {
+              e.target.src = "/assets/images/team/roofer.png";
+            }}
+          />
+        </div>
+        <div className="flex flex-col items-center mt-1">
+          <p className="whitespace-nowrap text-[1.4vw] md:text-[1.5vh] text-black font-semibold text-center">
+            {employee.name}
+          </p>
+          <p className="whitespace-nowrap text-[1.4vw] md:text-[1.5vh] font-semibold -mt-2 text-black text-center">
+            {employee.role}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div>
       {/* Header Section with animated nail and title */}
@@ -151,48 +184,35 @@ function EmployeesPreview({ employeesData }) {
         </div>
       </div>
 
-      {/* Employees Carousel */}
+      {/* Employees Display Area */}
       <div className="relative employee-section flex flex-col items-center justify-center px-6 overflow-hidden">
         <div className="w-full max-w-screen-lg">
-          <div
-            className="flex transition-transform"
-            style={{
-              transform: `translateX(-${currentIndex * (100 / itemsToShow)}%)`,
-              transitionDuration: `${transitionDuration}s`,
-              transitionTimingFunction: "cubic-bezier(0.65, 0, 0.35, 1)",
-              width: `${(extendedEmployees.length * 100) / itemsToShow}%`,
-            }}
-          >
-            {extendedEmployees.map((employee, idx) => (
-              <div
-                key={idx}
-                className="flex-shrink-0 flex flex-col items-center justify-start px-2"
-                style={{ width: `${100 / itemsToShow}%` }}
-              >
-                <div className="relative mb-4">
-                  <div className="bg-white w-[12.5vh] h-[12.5vh] md:w-32 md:h-32 rounded-full overflow-hidden flex items-center justify-center shadow-lg">
-                    <img
-                      src={employee.image}
-                      alt={employee.name}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                      onError={(e) => {
-                        e.target.src = "/assets/images/team/roofer.png";
-                      }}
-                    />
-                  </div>
-                  <div className="flex flex-col  items-center mt-1">
-                    <p className="whitespace-nowrap text-[1.4vw] md:text-[1.5vh] text-black font-semibold text-center">
-                      {employee.name}
-                    </p>
-                    <p className=" whitespace-nowrap text-[1.4vw] md:text-[1.5vh] font-semibold -mt-2 text-black text-center">
-                      {employee.role}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          {numTotalEmployees > 0 && numTotalEmployees <= 4 ? (
+            // Static display for 1 to 4 employees
+            <div className="flex justify-around items-start py-4">
+              {formattedEmployees.map((employee, idx) =>
+                renderEmployeeCard(employee, idx)
+              )}
+            </div>
+          ) : numTotalEmployees >= 5 ? (
+            // Animated Carousel for 5 or more employees
+            <div
+              className="flex transition-transform"
+              style={{
+                transform: `translateX(-${currentIndex * (100 / ITEMS_TO_SHOW_ANIMATION)}%)`,
+                transitionDuration: `${transitionDuration}s`,
+                transitionTimingFunction: "cubic-bezier(0.65, 0, 0.35, 1)",
+                width: `${(extendedEmployees.length * 100) / ITEMS_TO_SHOW_ANIMATION}%`,
+              }}
+            >
+              {extendedEmployees.map((employee, idx) =>
+                renderEmployeeCard(employee, idx, { width: `${100 / ITEMS_TO_SHOW_ANIMATION}%` })
+              )}
+            </div>
+          ) : (
+            // Case for 0 employees
+            <p className="text-center py-4">No employees to display.</p>
+          )}
         </div>
       </div>
     </div>
@@ -379,22 +399,23 @@ export default function EmployeesBlock({
    Determines how many carousel items to display at once
    based on the window width.
 ========================================================= */
-function useItemsToShow() {
-  const [itemsToShow, setItemsToShow] = useState(4);
+// This hook is no longer used by EmployeesPreview and can be removed.
+// function useItemsToShow() {
+//   const [itemsToShow, setItemsToShow] = useState(4);
 
-  useEffect(() => {
-    const updateItemsToShow = () => {
-      if (window.innerWidth >= 700) {
-        setItemsToShow(7);
-      } else {
-        setItemsToShow(5);
-      }
-    };
+//   useEffect(() => {
+//     const updateItemsToShow = () => {
+//       if (window.innerWidth >= 700) {
+//         setItemsToShow(7);
+//       } else {
+//         setItemsToShow(5);
+//       }
+//     };
 
-    updateItemsToShow();
-    window.addEventListener("resize", updateItemsToShow);
-    return () => window.removeEventListener("resize", updateItemsToShow);
-  }, []);
+//     updateItemsToShow();
+//     window.addEventListener("resize", updateItemsToShow);
+//     return () => window.removeEventListener("resize", updateItemsToShow);
+//   }, []);
 
-  return itemsToShow;
-}
+//   return itemsToShow;
+// }

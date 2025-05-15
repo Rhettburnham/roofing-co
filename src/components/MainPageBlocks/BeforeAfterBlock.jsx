@@ -22,15 +22,24 @@ function BeforeAfterPreview({ beforeAfterData }) {
   const headerRef = useRef(null);
   const nailRef = useRef(null);
   const textRef = useRef(null);
-  const buttonRef = useRef(null);
 
   // Local states for modal and card flipping
   const [selectedImages, setSelectedImages] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [viewState, setViewState] = useState("before");
+  // Initialize viewStates as an object to hold state for each card
+  const [viewStates, setViewStates] = useState({});
 
   // Safely destructure data and ensure paths are properly formatted
   const { sectionTitle = "BEFORE & AFTER", items = [] } = beforeAfterData || {};
+
+  // Initialize viewStates when items change
+  useEffect(() => {
+    const initialViewStates = {};
+    items.forEach((_, index) => {
+      initialViewStates[index] = "before"; // Default to 'before'
+    });
+    setViewStates(initialViewStates);
+  }, [items]);
 
   // Format paths to ensure they start with / if they don't already
   const formattedItems = items.map((item) => ({
@@ -53,8 +62,11 @@ function BeforeAfterPreview({ beforeAfterData }) {
     setSelectedImages(null);
   };
 
-  const toggleViewState = () => {
-    setViewState((prev) => (prev === "before" ? "after" : "before"));
+  const toggleCardViewState = (index) => {
+    setViewStates((prevStates) => ({
+      ...prevStates,
+      [index]: prevStates[index] === "before" ? "after" : "before",
+    }));
   };
 
   // GSAP animations
@@ -63,7 +75,6 @@ function BeforeAfterPreview({ beforeAfterData }) {
 
     const nailElement = nailRef.current;
     const textElement = textRef.current;
-    const buttonElement = buttonRef.current;
 
     // Initial states
     gsap.set(nailElement, {
@@ -73,9 +84,6 @@ function BeforeAfterPreview({ beforeAfterData }) {
     gsap.set(textElement, {
       opacity: 0,
       x: "100%",
-    });
-    gsap.set(buttonElement, {
-      opacity: 0,
     });
 
     // HeaderRef timeline - trigger when header is at 20% of viewport
@@ -110,15 +118,6 @@ function BeforeAfterPreview({ beforeAfterData }) {
           x: (index) => (index === 0 ? "-10vw" : "-50%"),
           duration: 0.8,
           ease: "power2.inOut",
-        },
-        "+=0.3"
-      )
-      .to(
-        buttonElement,
-        {
-          opacity: 1,
-          delay: 1.5,
-          duration: 0.5,
         },
         "+=0.3"
       );
@@ -230,7 +229,7 @@ function BeforeAfterPreview({ beforeAfterData }) {
   useEffect(() => {
     const boxEls = boxesRef.current.filter((box) => box !== null);
 
-    boxEls.forEach((box) => {
+    boxEls.forEach((box, index) => {
       if (!box) return;
       const cardElement = box.querySelector(".card");
       if (!cardElement) return;
@@ -239,8 +238,8 @@ function BeforeAfterPreview({ beforeAfterData }) {
       const afterImage = cardElement.querySelector(".after");
       if (!beforeImage || !afterImage) return;
 
-      // Create flip animation between states
-      if (viewState === "after") {
+      // Create flip animation based on the individual card's state
+      if (viewStates[index] === "after") {
         gsap.to(beforeImage, {
           rotationY: -180,
           duration: 0.4,
@@ -264,11 +263,11 @@ function BeforeAfterPreview({ beforeAfterData }) {
         });
       }
     });
-  }, [viewState]);
+  }, [viewStates, items]); // items dependency added for safety if card count changes
 
   return (
     <>
-      <section className="relative w-full overflow-visible bg-gradient-to-b from-black to-white">
+      <section className="relative w-full overflow-visible ">
         {/* Header / Title */}
         <div
           ref={headerRef}
@@ -294,17 +293,10 @@ function BeforeAfterPreview({ beforeAfterData }) {
             ref={textRef}
             className="absolute left-1/2 z-10 flex flex-row items-center"
           >
-            <h2 className="text-[6vw] md:text-[4vh] text-white font-normal font-condensed font-rye mt-2 py-3 z-30 text-center">
+            <h2 className="text-[6vw] md:text-[4vh] text-black font-normal font-condensed font-rye md:mt-4 items-center py-3 z-30 text-center">
               {sectionTitle}
             </h2>
           </div>
-          <button
-            ref={buttonRef}
-            onClick={toggleViewState}
-            className="absolute right-10 md:right-[20%]  px-2 text-[1vh] md:text-[2vh] md:px-6 py-1 md:py-2  md:mt-2 bg-banner text-white rounded-lg transition-all transform hover:scale-105 hover:shadow-lg border border-white"
-          >
-            {viewState === "before" ? "See After" : "See Before"}
-          </button>
         </div>
 
         {/* Gallery Grid - Now always 3 columns */}
@@ -318,9 +310,12 @@ function BeforeAfterPreview({ beforeAfterData }) {
               >
                 <div
                   className="relative cursor-pointer"
-                  onClick={() => handleBoxClick(img)}
+                  // onClick={() => handleBoxClick(img)} // Keep or remove based on desired modal behavior
                 >
-                  <div className="card w-[25vw] aspect-[4/3]">
+                  <div
+                    className="card w-[25vw] aspect-[4/3]"
+                    onClick={() => handleBoxClick(img)}
+                  >
                     <img
                       src={img.before}
                       alt={`Before ${index + 1}`}
@@ -332,6 +327,18 @@ function BeforeAfterPreview({ beforeAfterData }) {
                       className="after absolute top-0 left-0 w-full h-full object-cover rounded-lg"
                     />
                   </div>
+                  {/* Individual Toggle Button for each card */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent modal from opening when clicking the button
+                      toggleCardViewState(index);
+                    }}
+                    className="absolute top-2 right-2 z-10 px-2 py-1 bg-banner text-white rounded-md text-xs md:text-sm transition-all transform hover:scale-105 hover:shadow-lg border border-white"
+                  >
+                    {viewStates[index] === "before"
+                      ? "See After"
+                      : "See Before"}
+                  </button>
                   {/* Move info to the right of image with padding */}
                   <div className="overlay-text absolute bottom-0 right-0 pl-3 px-3 py-1 md:px-4 md:py-2">
                     <div className="flex flex-col items-start text-white text-left leading-tight">

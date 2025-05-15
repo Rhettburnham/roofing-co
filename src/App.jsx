@@ -3,7 +3,7 @@
 // of content. The edited content can be downloaded as JSON files and sent
 // to the developer for permanent integration into the site.
 import { useState, useEffect, lazy, Suspense } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import PropTypes from "prop-types";
 
 import Navbar from "./components/Navbar";
@@ -159,14 +159,17 @@ const AppRoutes = ({
                 <ButtonBlock readOnly buttonconfig={buttonconfig} />
               </Suspense>
             </section>
+            <section id="beforeAfter">
+              <Suspense fallback={<LoadingScreen />}>
+                <BeforeAfterBlock
+                  readOnly
+                  beforeAfterData={beforeAfterConfig}
+                />
+              </Suspense>
+            </section>
             <section id="map">
               <Suspense fallback={<LoadingScreen />}>
                 <BasicMapBlock readOnly mapData={mapConfig} />
-              </Suspense>
-            </section>
-            <section id="booking">
-              <Suspense fallback={<LoadingScreen />}>
-                <BookingBlock readOnly bookingData={bookingConfig} />
               </Suspense>
             </section>
             <section id="combinedPage">
@@ -174,12 +177,9 @@ const AppRoutes = ({
                 <CombinedPageBlock readOnly config={combinedPageCfg} />
               </Suspense>
             </section>
-            <section id="beforeAfter">
+            <section id="booking">
               <Suspense fallback={<LoadingScreen />}>
-                <BeforeAfterBlock
-                  readOnly
-                  beforeAfterData={beforeAfterConfig}
-                />
+                <BookingBlock readOnly bookingData={bookingConfig} />
               </Suspense>
             </section>
             <section id="employees">

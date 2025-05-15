@@ -397,7 +397,7 @@ const BookingPreview = memo(({ bookingData }) => {
   // Format logo path for proper display
   const formattedLogo = logo
     ? `/assets/images/booking/${logo.split("/").pop() || "clipped.png"}`
-    : logo || "/assets/images/booking/clipped.png";
+    : logo || "";
 
   return (
     <div className="flex flex-col items-center justify-center w-full px-6 overflow-hidden">

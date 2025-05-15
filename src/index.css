@@ -161,7 +161,7 @@
 
 /* Add these to your CSS file */
 .dynamic-shadow {
-  filter: drop-shadow(5px 5px 1px var(--hover-color));
+  filter: drop-shadow(5px 5px 1px var(--dark-color));
 }
 
 .text-dynamic-shadow {
@@ -554,11 +554,9 @@ canvas {
 }
 
 .banner-gradient {
-  background: linear-gradient(
-    to top,
-    theme('colors.banner') 0%,
-    transparent 100%
-  );
+  background: linear-gradient(to top,
+      theme('colors.banner') 0%,
+      transparent 100%);
 }
 
 .accent-gradient {
