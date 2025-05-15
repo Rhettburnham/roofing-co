@@ -1,0 +1,9 @@
+name = "auth-worker"
+main = "functions/auth.js"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "auth-db"
+database_id = "bef1c7fa-8bbd-4067-b293-b2dae6132680" 

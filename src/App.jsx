@@ -10,6 +10,7 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import LoadingScreen from "./components/loadingScreen";
 import ServicePage from "./components/ServicePage";
+import LoginPage from "./components/LoginPage";
 
 // Import the new ServicePageCreator component
 const ServicePageCreator = lazy(() => import("./components/ServicePageCreator"));
@@ -138,6 +139,16 @@ const AppRoutes = ({
 }) => {
   return (
     <Routes>
+      {/* Login route */}
+      <Route
+        path="/login"
+        element={
+          <Suspense fallback={<LoadingScreen />}>
+            <LoginPage />
+          </Suspense>
+        }
+      />
+
       {/* Main page route */}
       <Route
         path="/"
