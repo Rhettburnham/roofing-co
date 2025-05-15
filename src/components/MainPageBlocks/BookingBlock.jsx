@@ -7,6 +7,7 @@ import React, {
   useMemo,
   useRef,
 } from "react";
+import PropTypes from "prop-types";
 import axios from "axios";
 import { FaTools, FaFan, FaPaintRoller, FaTint } from "react-icons/fa";
 import {
@@ -55,6 +56,14 @@ const BookingPreview = memo(({ bookingData }) => {
   const formContainerRef = useRef(null);
   const toggleButtonRef = useRef(null);
   const contentRef = useRef(null);
+
+  // Social Icons mapping
+  const socialIconComponents = {
+    twitter: FaXTwitter,
+    linkedin: FaLinkedin,
+    instagram: FaInstagram,
+    facebook: FaFacebook,
+  };
 
   // Memoize the icons array to prevent recreating it on every render
   const residentialIcons = useMemo(
@@ -264,47 +273,24 @@ const BookingPreview = memo(({ bookingData }) => {
     masterTimeline.to(
       leftNails,
       {
-        x: "40%", // Move to final position
+        x: "10%", // Adjusted for shorter distance
         duration: 0.4,
         ease: "power2.out",
         stagger: 0.12,
       },
-      "+=0.5"
+      "+=0.2" // Delay slightly after form appears
     );
 
     // 4. Animate right nails to slide in from right
     masterTimeline.to(
       rightNails,
       {
-        x: "-40%", // Move to final position
+        x: "-10%", // Adjusted for shorter distance
         duration: 0.4,
         ease: "power2.out",
         stagger: 0.12,
       },
-      "-=0.5" // Overlap with left nails animation
-    );
-
-    masterTimeline.to(
-      leftNails,
-      {
-        x: "50%", // Move to final position
-        duration: 0.4,
-        ease: "power2.out",
-        stagger: 0.12,
-      },
-      "+=0.5"
-    );
-
-    // 4. Animate right nails to slide in from right
-    masterTimeline.to(
-      rightNails,
-      {
-        x: "-50%", // Move to final position
-        duration: 0.4,
-        ease: "power2.out",
-        stagger: 0.12,
-      },
-      "-=0.5" // Overlap with left nails animation
+      "-=0.4" // Overlap slightly with left nails animation
     );
 
     return () => {
@@ -315,10 +301,10 @@ const BookingPreview = memo(({ bookingData }) => {
   // GSAP animation for mobile toggle
   const toggleFormVisibility = useCallback(() => {
     if (!isMobile) return; // Exit early if not mobile
-    
+
     if (!isAnimating) {
       setIsAnimating(true);
-      
+
       if (!isFormVisible) {
         // Expanding: First expand banner, then show form
         gsap.to(bannerRef.current, {
@@ -331,9 +317,9 @@ const BookingPreview = memo(({ bookingData }) => {
               duration: 0.3,
               onComplete: () => {
                 setIsAnimating(false);
-              }
+              },
             });
-          }
+          },
         });
       } else {
         // Collapsing: First hide form, then collapse banner
@@ -342,17 +328,17 @@ const BookingPreview = memo(({ bookingData }) => {
           duration: 0.3,
           onComplete: () => {
             gsap.to(bannerRef.current, {
-              height: "140px", // Set to exact height
+              height: "140px",
               duration: 0.4,
               ease: "power2.inOut",
               onComplete: () => {
                 setIsAnimating(false);
-              }
+              },
             });
-          }
+          },
         });
       }
-      setIsFormVisible(prev => !prev);
+      setIsFormVisible((prev) => !prev);
     }
   }, [isFormVisible, isMobile, isAnimating]);
 
@@ -406,7 +392,7 @@ const BookingPreview = memo(({ bookingData }) => {
     return <p>No Booking data found.</p>;
   }
 
-  const { headerText, phone, logo } = bookingData;
+  const { headerText, phone, logo, socialLinks } = bookingData;
 
   // Format logo path for proper display
   const formattedLogo = logo
@@ -419,7 +405,7 @@ const BookingPreview = memo(({ bookingData }) => {
       <div
         ref={bannerRef}
         className={`md:max-w-xl w-full bg-banner rounded-lg shadow-lg relative z-30 transition-all duration-300 ease-in-out md:h-auto
-          ${isFormVisible ? 'h-auto' : 'h-[140px]'}`}
+          ${isFormVisible ? "h-auto" : "h-[140px]"}`}
       >
         {/* Left Nails */}
         <div className="absolute left-0  top-0 h-full hidden md:flex flex-col z-10 justify-between py-8 overflow-visible">
@@ -434,7 +420,7 @@ const BookingPreview = memo(({ bookingData }) => {
                 transform: "scale(1.8)",
                 transformOrigin: " center",
                 position: "absolute",
-                left: "-60%", // Position at final location
+                left: "-10%", // Adjusted position
                 top: 0,
                 filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
               }}
@@ -451,7 +437,7 @@ const BookingPreview = memo(({ bookingData }) => {
                 transform: "scale(1.8)",
                 transformOrigin: " center",
                 position: "absolute",
-                left: "-54%", // Position at final location
+                left: "-6%", // Adjusted position
                 top: 0,
                 filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
               }}
@@ -468,39 +454,11 @@ const BookingPreview = memo(({ bookingData }) => {
                 transform: "scale(1.8)",
                 transformOrigin: " center",
                 position: "absolute",
-                left: "-56%", // Position at final location
+                left: "-8%", // Adjusted position
                 top: 0,
                 filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
               }}
             />
-          </div>
-        </div>
-
-        {/* Left Social Icons */}
-        <div className="absolute -left-60 top-0 h-full hidden md:flex flex-col justify-between py-20 overflow-visible drop-shadow-lg">
-          <div id="left-social-1" className="relative">
-            <a
-              href="https://twitter.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block"
-            >
-              <div className="bg-accent p-2 rounded-md transform transition-transform hover:scale-110">
-                <FaXTwitter className="w-14 h-14 text-white" />
-              </div>
-            </a>
-          </div>
-          <div id="left-social-2" className="relative">
-            <a
-              href="https://linkedin.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block"
-            >
-              <div className="bg-accent p-2 rounded-md transform transition-transform hover:scale-110">
-                <FaLinkedin className="w-14 h-14 text-white" />
-              </div>
-            </a>
           </div>
         </div>
 
@@ -517,7 +475,7 @@ const BookingPreview = memo(({ bookingData }) => {
                 transform: "scale(1.8) scaleX(-1)",
                 transformOrigin: "center",
                 position: "absolute",
-                right: "-60%", // Position at final location
+                right: "-10%", // Adjusted position
                 top: 0,
                 filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
               }}
@@ -534,7 +492,7 @@ const BookingPreview = memo(({ bookingData }) => {
                 transform: "scale(1.8) scaleX(-1)",
                 transformOrigin: " center",
                 position: "absolute",
-                right: "-54%", // Position at final location
+                right: "-6%", // Adjusted position
                 top: 0,
                 filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
               }}
@@ -551,39 +509,11 @@ const BookingPreview = memo(({ bookingData }) => {
                 transform: "scale(1.8) scaleX(-1)",
                 transformOrigin: " center",
                 position: "absolute",
-                right: "-56%", // Position at final location
+                right: "-8%", // Adjusted position
                 top: 0,
                 filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))",
               }}
             />
-          </div>
-        </div>
-
-        {/* Right Social Icons */}
-        <div className="absolute -right-60 top-0 h-full hidden md:flex flex-col justify-between py-20 overflow-visible drop-shadow-lg">
-          <div id="right-social-1" className="relative">
-            <a
-              href="https://instagram.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block"
-            >
-              <div className="bg-accent p-2 rounded-md transform transition-transform hover:scale-110">
-                <FaInstagram className="w-14 h-14 text-white" />
-              </div>
-            </a>
-          </div>
-          <div id="right-social-2" className="relative">
-            <a
-              href="https://facebook.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block"
-            >
-              <div className="bg-accent p-2 rounded-md transform transition-transform hover:scale-110">
-                <FaFacebook className="w-14 h-14 text-white" />
-              </div>
-            </a>
           </div>
         </div>
 
@@ -614,8 +544,8 @@ const BookingPreview = memo(({ bookingData }) => {
               onClick={toggleFormVisibility}
               disabled={isAnimating}
               className={`md:hidden mt-2 px-6 py-2 rounded-md shadow-lg relative transition-all duration-300 
-                ${isAnimating ? 'opacity-50' : 'opacity-100'}
-                ${isFormVisible ? 'bg-white/20' : 'bg-white/10 hover:bg-white/20'}`}
+                ${isAnimating ? "opacity-50" : "opacity-100"}
+                ${isFormVisible ? "bg-white/20" : "bg-white/10 hover:bg-white/20"}`}
             >
               {isFormVisible ? (
                 <div className="relative z-40 flex space-x-1 justify-center">
@@ -635,16 +565,42 @@ const BookingPreview = memo(({ bookingData }) => {
           <div
             ref={formContainerRef}
             className={`w-full pb-2 md:block md:opacity-100
-              ${isMobile ? `transition-opacity duration-300 ease-in-out ${isFormVisible ? 'opacity-100' : 'opacity-0'}` : ''}`}
+              ${isMobile ? `transition-opacity duration-300 ease-in-out ${isFormVisible ? "opacity-100" : "opacity-0"}` : ""}`}
             style={{
-              display: !isMobile || isFormVisible ? 'block' : 'none'
+              display: !isMobile || isFormVisible ? "block" : "none",
             }}
           >
+            {/* Social Icons Row - MOVED HERE */}
+            {socialLinks && socialLinks.length > 0 && (
+              <div className="flex justify-center space-x-4 py-4 md:py-3">
+                {socialLinks.map((social, index) => {
+                  const IconComponent =
+                    socialIconComponents[social.platform.toLowerCase()];
+                  return (
+                    <a
+                      key={index}
+                      href={social.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block"
+                    >
+                      <div className="bg-accent p-2 rounded-md transform transition-transform hover:scale-110">
+                        {IconComponent ? (
+                          <IconComponent className="w-8 h-8 md:w-10 md:h-10 text-white" />
+                        ) : (
+                          <span className="text-white">{social.platform}</span> // Fallback for unknown platforms
+                        )}
+                      </div>
+                    </a>
+                  );
+                })}
+              </div>
+            )}
             <div className="bg-white rounded-lg p-3 shadow-inner mx-2 mt-2">
               <form onSubmit={handleSubmit} className="w-full">
-                <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* First Name */}
-                  <div>
+                  <div className="md:col-span-1 p-2 rounded-md bg-gray-50 transition-transform hover:scale-105">
                     <input
                       type="text"
                       name="firstName"
@@ -656,7 +612,7 @@ const BookingPreview = memo(({ bookingData }) => {
                     />
                   </div>
                   {/* Last Name */}
-                  <div>
+                  <div className="md:col-span-1 p-2 rounded-md bg-gray-50 transition-transform hover:scale-105">
                     <input
                       type="text"
                       name="lastName"
@@ -668,7 +624,7 @@ const BookingPreview = memo(({ bookingData }) => {
                     />
                   </div>
                   {/* Email */}
-                  <div>
+                  <div className="md:col-span-2 p-2 rounded-md bg-gray-50 transition-transform hover:scale-105">
                     <input
                       type="email"
                       name="email"
@@ -680,7 +636,7 @@ const BookingPreview = memo(({ bookingData }) => {
                     />
                   </div>
                   {/* Phone */}
-                  <div>
+                  <div className="md:col-span-1 p-2 rounded-md bg-gray-50 transition-transform hover:scale-105">
                     <input
                       type="tel"
                       name="phone"
@@ -692,7 +648,7 @@ const BookingPreview = memo(({ bookingData }) => {
                     />
                   </div>
                   {/* Service */}
-                  <div>
+                  <div className="md:col-span-1 p-2 rounded-md bg-gray-50 transition-transform hover:scale-105">
                     <div
                       onClick={() => setIsModalOpen(true)}
                       className="w-full p-2 bg-transparent border-b border-gray-400 cursor-pointer"
@@ -707,7 +663,7 @@ const BookingPreview = memo(({ bookingData }) => {
                     </div>
                   </div>
                   {/* Message */}
-                  <div>
+                  <div className="md:col-span-2 p-2 rounded-md bg-gray-50 transition-transform hover:scale-105">
                     <textarea
                       name="message"
                       value={formData.message}
@@ -723,7 +679,7 @@ const BookingPreview = memo(({ bookingData }) => {
                 <div className="flex justify-center w-full mt-4 relative">
                   <button
                     type="submit"
-                    className="relative px-8 py-2 text-white text-lg font-semibold rounded-md bg-accent hover:bg-banner hover:text-white md:w-1/3 shadow-md"
+                    className="relative px-8 py-2 text-white text-lg font-semibold rounded-md bg-accent hover:bg-banner hover:text-white md:w-auto shadow-md" // md:w-auto to allow natural width
                   >
                     Submit
                   </button>
@@ -838,6 +794,29 @@ const BookingPreview = memo(({ bookingData }) => {
 // Add display name to the component
 BookingPreview.displayName = "BookingPreview";
 
+// Added PropTypes validation for BookingPreview
+BookingPreview.propTypes = {
+  bookingData: PropTypes.shape({
+    headerText: PropTypes.string,
+    phone: PropTypes.string,
+    logo: PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.shape({
+        split: PropTypes.func, // For the case when logo is a string
+        name: PropTypes.string,
+        url: PropTypes.string,
+        file: PropTypes.object,
+      }),
+    ]),
+    socialLinks: PropTypes.arrayOf(
+      PropTypes.shape({
+        platform: PropTypes.string,
+        url: PropTypes.string,
+      })
+    ),
+  }).isRequired,
+};
+
 /* ===============================================
    2) BOOKING EDITOR PANEL (Editing Mode)
    -----------------------------------------------
@@ -845,7 +824,31 @@ BookingPreview.displayName = "BookingPreview";
    and the logo image on the left of the header.
 =============================================== */
 function BookingEditorPanel({ localData, setLocalData, onSave }) {
-  const { logo, headerText = "", phone = "" } = localData;
+  const { logo, headerText = "", phone = "", socialLinks = [] } = localData;
+
+  const handleSocialLinkChange = (index, field, value) => {
+    const updatedSocialLinks = [...socialLinks];
+    updatedSocialLinks[index] = {
+      ...updatedSocialLinks[index],
+      [field]: value,
+    };
+    setLocalData((prev) => ({ ...prev, socialLinks: updatedSocialLinks }));
+  };
+
+  const addSocialLink = () => {
+    setLocalData((prev) => ({
+      ...prev,
+      socialLinks: [
+        ...(prev.socialLinks || []),
+        { platform: "twitter", url: "" },
+      ],
+    }));
+  };
+
+  const removeSocialLink = (index) => {
+    const updatedSocialLinks = socialLinks.filter((_, i) => i !== index);
+    setLocalData((prev) => ({ ...prev, socialLinks: updatedSocialLinks }));
+  };
 
   /**
    * Handles logo image upload
@@ -941,9 +944,81 @@ function BookingEditorPanel({ localData, setLocalData, onSave }) {
           }
         />
       </div>
+
+      {/* Social Links Editor */}
+      <div className="space-y-3">
+        <h3 className="text-lg font-semibold">Social Media Links:</h3>
+        {socialLinks.map((link, index) => (
+          <div
+            key={index}
+            className="flex items-center space-x-2 p-2 bg-gray-800 rounded"
+          >
+            <select
+              value={link.platform}
+              onChange={(e) =>
+                handleSocialLinkChange(index, "platform", e.target.value)
+              }
+              className="bg-gray-700 px-2 py-1 rounded"
+            >
+              <option value="twitter">Twitter/X</option>
+              <option value="linkedin">LinkedIn</option>
+              <option value="instagram">Instagram</option>
+              <option value="facebook">Facebook</option>
+              {/* Add other platforms as needed */}
+            </select>
+            <input
+              type="url"
+              placeholder="Social Media URL"
+              value={link.url}
+              onChange={(e) =>
+                handleSocialLinkChange(index, "url", e.target.value)
+              }
+              className="w-full bg-gray-700 px-2 py-1 rounded"
+            />
+            <button
+              type="button"
+              onClick={() => removeSocialLink(index)}
+              className="bg-red-600 hover:bg-red-500 px-2 py-1 rounded text-white text-sm"
+            >
+              Remove
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={addSocialLink}
+          className="bg-blue-600 hover:bg-blue-500 px-3 py-1 rounded text-white text-sm"
+        >
+          Add Social Link
+        </button>
+      </div>
     </div>
   );
 }
+
+// Added PropTypes validation for BookingEditorPanel
+BookingEditorPanel.propTypes = {
+  localData: PropTypes.shape({
+    logo: PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.shape({
+        name: PropTypes.string,
+        url: PropTypes.string,
+        file: PropTypes.object,
+      }),
+    ]),
+    headerText: PropTypes.string,
+    phone: PropTypes.string,
+    socialLinks: PropTypes.arrayOf(
+      PropTypes.shape({
+        platform: PropTypes.string,
+        url: PropTypes.string,
+      })
+    ),
+  }).isRequired,
+  setLocalData: PropTypes.func.isRequired,
+  onSave: PropTypes.func.isRequired,
+};
 
 /* ===============================================
    3) MAIN EXPORT: BOOKING BLOCK
@@ -963,9 +1038,25 @@ export default function BookingBlock({
         logo: "/assets/images/logo.svg",
         headerText: "Contact Us!",
         phone: "(770) 880-1319",
+        socialLinks: [
+          // Default social links
+          { platform: "twitter", url: "https://twitter.com" },
+          { platform: "linkedin", url: "https://linkedin.com" },
+          { platform: "instagram", url: "https://instagram.com" },
+          { platform: "facebook", url: "https://facebook.com" },
+        ],
       };
     }
-    return { ...bookingData };
+    // Ensure socialLinks exists in bookingData, otherwise provide default
+    return {
+      ...bookingData,
+      socialLinks: bookingData.socialLinks || [
+        { platform: "twitter", url: "https://twitter.com" },
+        { platform: "linkedin", url: "https://linkedin.com" },
+        { platform: "instagram", url: "https://instagram.com" },
+        { platform: "facebook", url: "https://facebook.com" },
+      ],
+    };
   });
 
   const handleSave = () => {
@@ -984,3 +1075,44 @@ export default function BookingBlock({
     />
   );
 }
+
+// Added PropTypes validation for BookingBlock
+BookingBlock.propTypes = {
+  readOnly: PropTypes.bool,
+  bookingData: PropTypes.shape({
+    headerText: PropTypes.string,
+    phone: PropTypes.string,
+    logo: PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.shape({
+        name: PropTypes.string,
+        url: PropTypes.string,
+        file: PropTypes.object,
+      }),
+    ]),
+    socialLinks: PropTypes.arrayOf(
+      PropTypes.shape({
+        platform: PropTypes.string,
+        url: PropTypes.string,
+      })
+    ),
+  }),
+  onConfigChange: PropTypes.func,
+};
+
+// Default props for BookingBlock
+BookingBlock.defaultProps = {
+  readOnly: false,
+  bookingData: {
+    logo: "/assets/images/logo.svg",
+    headerText: "Contact Us!",
+    phone: "(770) 880-1319",
+    socialLinks: [
+      { platform: "twitter", url: "https://twitter.com" },
+      { platform: "linkedin", url: "https://linkedin.com" },
+      { platform: "instagram", url: "https://instagram.com" },
+      { platform: "facebook", url: "https://facebook.com" },
+    ],
+  },
+  onConfigChange: () => {},
+};
