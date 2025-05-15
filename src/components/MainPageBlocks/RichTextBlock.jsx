@@ -270,7 +270,6 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange }) {
     "/assets/images/shake_img/3.png",
     "/assets/images/shake_img/4.png",
   ];
-
   function FeatureCard({
     icon: Icon,
     title,
@@ -281,15 +280,16 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange }) {
     // Base styling for all card variants
     const baseClasses =
       "relative bg-white p-2 rounded-lg shadow-lg flex flex-col items-center justify-center";
-
+  
     // For md viewports, ensure square aspect ratio
     const sizeClasses =
       variant === "md"
         ? "md:w-[12vw] w-[40vw] w-full max-w-[12vw] h-auto min-h-[18vw] md:min-h-[14vw] lg:min-h-[12vw]"
         : "w-[40vw] md:w-[12vw] h-auto min-h-[18vw] md:min-h-[14vw] lg:min-h-[12vw]";
-        // Calculate delay based on index to stagger animations
+  
+    // Calculate delay based on index to stagger animations
     const delay = index * 0.15;
-
+  
     return (
       <div
         className={`${baseClasses} ${sizeClasses} feature-card ${animationClass}`}
@@ -306,15 +306,15 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange }) {
             clipPath: "polygon(0 0, 100% 0, 100% 100%)",
           }}
         />
-
+  
         {/* Icon positioned in top-right corner */}
         <div className="absolute -top-1 -right-1 w-8 h-8 md:w-10 md:h-10 z-30 flex items-center justify-center">
           {Icon && <Icon className="text-white drop-shadow-lg" />}
         </div>
-
+  
         {/* Gradient overlay for visual effect */}
         <div className="absolute inset-0 bg-gradient-to-br from-gray-900/20 to-transparent z-10 rounded-lg" />
-
+  
         {/* Overlay image that fades away */}
         <div
           className={`absolute inset-0 bg-center bg-cover z-20 rounded-lg overlay-image ${animationClass}`}
@@ -323,22 +323,23 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange }) {
             "--delay": `${delay + 0.6}s`,
           }}
         />
-
+  
         {/* Title container */}
         <div className="flex flex-col z-30">
           <div className="absolute inset-0 top-1 md:top-3 w-full ">
-            <h3 className=" z-30 ml-1 md:ml-2 mr-10 leading-tight text-[2.3vw] md:text-[1.9vh] font-semibold text-gray-900 font-sans">
+            <h3 className="z-30 ml-1 md:ml-2 mr-10 leading-tight text-[1.5vw] md:text-[1.2vw] lg:text-[1vw] font-semibold text-gray-900 font-sans max-w-[85%]">
               {title}
             </h3>
           </div>
           {/* Description text - Adjusted for tighter vertical spacing */}
-          <p className="z-30 text-[2.2vw] md:text-[1.5vh] text-gray-700 text-left px-1 md:px-1 mr-2 md:mr-0 font-serif leading-tight mt-4 md:mt-8">
+          <p className="z-30 text-[2.2vw] md:text-[1.5vh] text-gray-700 text-left px-1 md:px-1 mr-2 md:mr-0 font-serif leading-tight mt-8 md:mt-10 lg:mt-12">
             {desc}
           </p>
         </div>
       </div>
     );
   }
+  
 
   FeatureCard.propTypes = {
     icon: PropTypes.elementType,
@@ -596,6 +597,8 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange }) {
     checkAutoplaySupport(); 
   }, []);
 
+  
+
   return (
     <div className="w-full mx-auto">
       <style>{animationStyles}</style>
@@ -607,7 +610,7 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange }) {
       <div className="hidden md:flex md:flex-col md:-mt-[20vh] z-30">
       <div className="flex w-full">
         {/* Left Column */}
-        <div className="w-1/6 hidden md:flex flex-col gap-y-6 p-1 z-3">
+        <div className="w-1/6 hidden md:flex flex-col gap-y-6 p-1 z-3 pb-9">
           {leftCards.map((card, idx) => (
             <FeatureCard
               key={idx}
@@ -649,42 +652,20 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange }) {
 
             {/* Primary text block: shows only on md+ */}
             <div className="w-1/2 pl-6">
-              {readOnly ? (
-                <h2 className="text-[4vw] md:text-[2.5vh] text-white font-sans font-bold mb-4">
-                  {heroText}
-                </h2>
-              ) : (
-                <textarea
-                  value={heroText}
-                  onChange={(e) => onInlineChange('heroText', e.target.value)}
-                  className="text-[4vw] md:text-[2.5vh] font-sans mb-4 inline-editable inline-editable-hero"
-                  rows={2}
-                />
-              )}
-              {readOnly ? (
-                <p className="text-[2.8vw] md:text-[1.9vh] text-black font-serif leading-tight indent-8">
-                  {bus_description}
-                </p>
-              ) : (
-                <textarea
-                  value={bus_description}
-                  onChange={(e) => onInlineChange('bus_description', e.target.value)}
-                  className="text-[2.8vw] md:text-[1.9vh] leading-tight indent-8 inline-editable inline-editable-desc"
-                  rows={4}
-                />
-              )}
-              {readOnly ? (
-                 <p className="hidden lg:block text-[2.8vw] md:text-[1.9vh] text-black font-serif leading-tight indent-8 mt-2">
-                   {bus_description_second}
-                 </p>
-              ) : (
-                <textarea
-                  value={bus_description_second}
-                  onChange={(e) => onInlineChange('bus_description_second', e.target.value)}
-                  className="hidden lg:block text-[2.8vw] md:text-[1.9vh] leading-tight indent-8 mt-2 inline-editable inline-editable-desc"
-                  rows={4}
-                />
-              )}
+              <h2 className="text-[4vw] md:text-[2.5vh] text-white font-sans font-bold mb-4">
+                {heroText}
+              </h2>
+              {/* Split text content between the two sections */}
+              <p className="text-[2.8vw] md:text-[1.9vh] text-black font-serif leading-tight indent-8">
+                {bus_description.split('. ').slice(0, 2).join('. ')}
+              </p>
+              <p className="text-[2.8vw] md:text-[1.9vh] text-black font-serif leading-tight indent-8 mt-2">
+                {bus_description.split('. ').slice(2).join('. ')}
+              </p>
+              {/* Hide the second paragraph here on smaller than lg */}
+              <p className="hidden lg:block text-[2.8vw] md:text-[1.9vh] text-black font-serif leading-tight indent-8 mt-2">
+                {bus_description_second}
+              </p>
             </div>
           </div>
 
@@ -706,7 +687,7 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange }) {
         </div>
 
         {/* Right Column */}
-        <div className="w-1/6 hidden md:flex flex-col gap-y-6 p-1 z-3">
+        <div className="w-1/6 hidden md:flex flex-col gap-y-6 p-1 z-3 pb-12">
           {rightCards.map((card, idx) => (
             <FeatureCard
               key={idx + half}
