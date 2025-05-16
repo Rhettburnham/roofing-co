@@ -123,7 +123,7 @@ function ButtonPreview({ buttonconfig }) {
   const { text = "About Us" } = buttonconfig;
 
   return (
-    <div className="flex flex-col relative w-full mt-0 pt-0 md:-mt-[4vh]">
+    <div className="flex flex-col relative w-full mt-0 pt-0 ">
       {/* Main content */}
       <div className="z-40">
         <div className="relative overflow-hidden z-30">

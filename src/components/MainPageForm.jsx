@@ -228,9 +228,8 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
         return (
           <div className="relative">
             <BeforeAfterBlock
-              readOnly={false}
+              readOnly={true}
               beforeAfterData={getBlockData("before_after")}
-              onConfigChange={handleBeforeConfigChange}
             />
           </div>
         );
@@ -265,7 +264,7 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
             {activeEditBlock === "hero" ? CloseIcon : PencilIcon}
           </button>
         </div>
-        <HeroBlock readOnly={activeEditBlock !== "hero"} heroconfig={formData.hero} />
+        <HeroBlock readOnly={true} heroconfig={formData.hero} />
 
         {activeEditBlock === "hero" && (
           <SlidingEditPanel onClose={() => setActiveEditBlock(null)}>
@@ -335,7 +334,7 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
             {activeEditBlock === "map" ? CloseIcon : PencilIcon}
           </button>
         </div>
-        <BasicMapBlock readOnly={activeEditBlock !== "map"} mapData={formData.map} />
+        <BasicMapBlock readOnly={true} mapData={formData.map} />
 
         {activeEditBlock === "map" && (
           <SlidingEditPanel onClose={() => setActiveEditBlock(null)}>
@@ -385,7 +384,7 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
             {activeEditBlock === "combinedPage" ? CloseIcon : PencilIcon}
           </button>
         </div>
-        <CombinedPageBlock readOnly={activeEditBlock !== "combinedPage"} config={formData.combinedPage} />
+        <CombinedPageBlock readOnly={true} config={formData.combinedPage} />
 
         {activeEditBlock === "combinedPage" && (
           <SlidingEditPanel onClose={() => setActiveEditBlock(null)}>
@@ -411,7 +410,7 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
           </button>
         </div>
         <BeforeAfterBlock
-          readOnly={activeEditBlock !== "beforeAfter"}
+          readOnly={true}
           beforeAfterData={formData.before_after}
         />
 

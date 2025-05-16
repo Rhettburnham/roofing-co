@@ -16,6 +16,33 @@ import * as FaIcons from "react-icons/fa";
 // Register ScrollTrigger plugin with GSAP
 gsap.registerPlugin(ScrollTrigger);
 
+// Helper to get display URL from string path or {url, file} object
+const getDisplayUrl = (imageValue, defaultPath = null) => {
+  if (imageValue && typeof imageValue === 'object' && imageValue.url) {
+    return imageValue.url;
+  }
+  if (typeof imageValue === 'string') {
+    // Check if it's already a full URL or a blob/data URI
+    if (imageValue.startsWith('http') || imageValue.startsWith('blob:') || imageValue.startsWith('data:') || imageValue.startsWith('/')) {
+      return imageValue;
+    }
+    // Assume it's a relative path that needs a leading slash if part of assets
+    return `/${imageValue.replace(/^\.\//, "")}`;
+  }
+  return defaultPath;
+};
+
+// Helper to initialize image state: handles string path or {file, url} object
+const initializeImageState = (imageConfig, defaultPath) => {
+  if (imageConfig && typeof imageConfig === 'object' && imageConfig.url) {
+    return imageConfig; // Already in {file, url} format
+  }
+  if (typeof imageConfig === 'string') {
+    return { file: null, url: imageConfig }; // It's a path
+  }
+  return { file: null, url: defaultPath }; // Default
+};
+
 // to do this needs to be centered where the lat is currentl seem up and to the right
 const CustomMarkerIcon = (iconUrl) =>
   L.icon({
@@ -422,7 +449,7 @@ function BasicMapPreview({ mapData }) {
                       fillOpacity: 0.2,
                     }}
                   />
-                  <DropMarker position={center} iconUrl={markerIcon} />
+                  <DropMarker position={center} iconUrl={getDisplayUrl(markerIcon, "/assets/images/hero/clipped.png")} />
                   <MapInteractionHandler mapActive={mapActive} />
                 </MapContainer>
                 {!mapActive && (
@@ -636,6 +663,21 @@ function BasicMapEditorPanel({ localMap, setLocalMap, onSave }) {
     }));
   };
 
+  const handleMarkerIconUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const oldUrl = localMap.markerIcon?.url;
+      if (oldUrl && oldUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(oldUrl);
+      }
+      const fileURL = URL.createObjectURL(file);
+      setLocalMap((prev) => ({
+        ...prev,
+        markerIcon: { file: file, url: fileURL, name: file.name },
+      }));
+    }
+  };
+
   return (
     <div className="bg-black text-white p-4 rounded max-h-[75vh] overflow-auto">
       {/* Top bar with "Save" button */}
@@ -696,14 +738,32 @@ function BasicMapEditorPanel({ localMap, setLocalMap, onSave }) {
           {/* Icon URL input */}
           <div className="flex flex-col md:flex-row gap-2">
             <label className="block w-full">
-              <span className="block text-sm mb-1">Marker Icon URL:</span>
+              <span className="block text-sm mb-1">Marker Icon:</span>
+              <input
+                type="file"
+                accept="image/*"
+                className="bg-gray-700 px-2 py-1 rounded w-full text-sm file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
+                onChange={handleMarkerIconUpload}
+              />
+              {getDisplayUrl(localMap.markerIcon) && (
+                <img 
+                  src={getDisplayUrl(localMap.markerIcon)}
+                  alt="Marker Icon Preview"
+                  className="mt-2 h-16 w-16 object-contain rounded bg-gray-600 p-1"
+                />
+              )}
               <input
                 type="text"
-                className="bg-gray-700 px-2 py-1 rounded w-full"
-                value={localMap.markerIcon || ""}
-                onChange={(e) =>
-                  setLocalMap((p) => ({ ...p, markerIcon: e.target.value }))
-                }
+                className="bg-gray-700 px-2 py-1 rounded w-full mt-2 text-xs"
+                placeholder="Or paste direct image URL (e.g., /assets/icon.png)"
+                value={typeof localMap.markerIcon === 'string' ? localMap.markerIcon : (localMap.markerIcon?.url || '')}
+                onChange={(e) => {
+                  const oldUrl = localMap.markerIcon?.url;
+                  if (oldUrl && oldUrl.startsWith('blob:')) {
+                    URL.revokeObjectURL(oldUrl);
+                  }
+                  setLocalMap(prev => ({ ...prev, markerIcon: { file: null, url: e.target.value } }));
+                 }}
               />
             </label>
           </div>
@@ -737,7 +797,7 @@ function BasicMapEditorPanel({ localMap, setLocalMap, onSave }) {
                 {localMap.center && (
                   <DropMarker
                     position={localMap.center}
-                    iconUrl={localMap.markerIcon}
+                    iconUrl={getDisplayUrl(localMap.markerIcon, "/assets/images/hero/clipped.png")}
                   />
                 )}
                 <MapInteractionHandler mapActive={mapActive} />
@@ -846,34 +906,52 @@ export default function BasicMapBlock({
   onConfigChange,
 }) {
   // Add console log to debug incoming mapData
-  console.log("Received mapData:", mapData);
+  console.log("BasicMapBlock received mapData:", mapData);
 
   // Initialize local editor state
   const [localMapData, setLocalMapData] = useState(() => {
-    if (!mapData) {
-      return {
-        center: [0, 0],
-        zoomLevel: 5,
-        circleRadius: 0,
-        address: "",
-        telephone: "",
-        serviceHours: [],
-        stats: [],
-        markerIcon: "",
-      };
-    }
+    const initialConfig = mapData || {};
     return {
-      ...mapData,
-      serviceHours: mapData.serviceHours?.map((sh) => ({ ...sh })) || [],
-      stats: mapData.stats?.map((st) => ({ ...st })) || [],
+      ...initialConfig,
+      center: initialConfig.center || [0, 0],
+      zoomLevel: initialConfig.zoomLevel || 5,
+      circleRadius: initialConfig.circleRadius || 0,
+      address: initialConfig.address || "",
+      telephone: initialConfig.telephone || "",
+      serviceHours: initialConfig.serviceHours?.map((sh) => ({ ...sh })) || [],
+      stats: initialConfig.stats?.map((st) => ({ ...st })) || [],
+      markerIcon: initializeImageState(initialConfig.markerIcon, "/assets/images/hero/clipped.png"),
     };
   });
 
+  useEffect(() => {
+    if (mapData) {
+      setLocalMapData(prevLocalMapData => {
+        const newMarkerIconState = initializeImageState(mapData.markerIcon, "/assets/images/hero/clipped.png");
+
+        // Revoke old blob URL if it exists and is different
+        if (prevLocalMapData.markerIcon && prevLocalMapData.markerIcon.url && prevLocalMapData.markerIcon.url.startsWith('blob:') && prevLocalMapData.markerIcon.url !== newMarkerIconState.url) {
+          URL.revokeObjectURL(prevLocalMapData.markerIcon.url);
+        }
+
+        return {
+          ...prevLocalMapData,
+          ...mapData,
+          serviceHours: mapData.serviceHours?.map((sh) => ({ ...sh })) || prevLocalMapData.serviceHours || [],
+          stats: mapData.stats?.map((st) => ({ ...st })) || prevLocalMapData.stats || [],
+          markerIcon: newMarkerIconState,
+        };
+      });
+    }
+  }, [mapData]);
+
   const handleSave = () => {
+    console.log("BasicMapBlock saving data:", localMapData); // Log data being saved
     onConfigChange?.(localMapData);
   };
 
   if (readOnly) {
+    // Pass mapData directly, BasicMapPreview will use getDisplayUrl for markerIcon
     return <BasicMapPreview mapData={mapData} />;
   }
 

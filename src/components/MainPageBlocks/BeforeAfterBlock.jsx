@@ -6,6 +6,23 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 // Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger);
 
+// Helper to get display URL from string path or {url, file} object
+// This helper is now defined at the top level of the file
+const getDisplayUrl = (imageValue, defaultPath = null) => {
+  if (imageValue && typeof imageValue === 'object' && imageValue.url) {
+    return imageValue.url;
+  }
+  // If it's a string, ensure it starts with a slash or is a blob/data URL
+  if (typeof imageValue === 'string') {
+    if (imageValue.startsWith('/') || imageValue.startsWith('blob:') || imageValue.startsWith('data:')) {
+      return imageValue;
+    }
+    // Attempt to normalize relative paths, assuming they are from assets root if not starting with ./
+    return `/${imageValue.replace(/^\.\//, "")}`;
+  }
+  return defaultPath;
+};
+
 /* ==============================================
    1) BEFORE-AFTER PREVIEW (Read-Only)
    ----------------------------------------------
@@ -41,15 +58,12 @@ function BeforeAfterPreview({ beforeAfterData }) {
     setViewStates(initialViewStates);
   }, [items]);
 
-  // Format paths to ensure they start with / if they don't already
-  const formattedItems = items.map((item) => ({
+  // Use getDisplayUrl for formattedItems
+  // Ensure default paths are robust
+  const formattedItems = items.map(item => ({
     ...item,
-    before: item.before?.startsWith("/")
-      ? item.before
-      : `/${item.before?.replace(/^\.\//, "")}`,
-    after: item.after?.startsWith("/")
-      ? item.after
-      : `/${item.after?.replace(/^\.\//, "")}`,
+    before: getDisplayUrl(item.before, "/assets/images/beforeafter/default_before.jpg"),
+    after: getDisplayUrl(item.after, "/assets/images/beforeafter/default_after.jpg"),
   }));
 
   const handleBoxClick = (images) => {
@@ -267,15 +281,15 @@ function BeforeAfterPreview({ beforeAfterData }) {
 
   return (
     <>
-      <section className="relative w-full overflow-visible ">
+      <section className="relative w-full overflow-hidden ">
         {/* Header / Title */}
         <div
           ref={headerRef}
-          className="relative flex items-center py-6 md:py-8 md:pb-14 w-full "
+          className="relative flex items-center py-6 md:py-10 md:pb-10 w-full "
         >
           <div
             ref={nailRef}
-            className="absolute left-[25%] md:left-[17%] w-[30%] h-[15vh] md:h-[5vh] flex items-center"
+            className="absolute left-[25%] md:left-[17%] w-[30%] h-[15vh] md:h-[5vh] flex items-center z-50"
           >
             <div
               className="w-full h-full dynamic-shadow"
@@ -301,7 +315,7 @@ function BeforeAfterPreview({ beforeAfterData }) {
 
         {/* Gallery Grid - Now always 3 columns */}
         <div className="w-full flex justify-center">
-          <div className="grid grid-cols-3 gap-4 md:gap-6 px-2 md:px-5 md:pb-5">
+          <div className="grid grid-cols-3 gap-8 md:space-x-14 px-2 md:px-5 md:pb-5">
             {formattedItems.map((img, index) => (
               <div
                 key={index}
@@ -333,11 +347,11 @@ function BeforeAfterPreview({ beforeAfterData }) {
                       e.stopPropagation(); // Prevent modal from opening when clicking the button
                       toggleCardViewState(index);
                     }}
-                    className="absolute top-2 right-2 z-10 px-2 py-1 bg-banner text-white rounded-md text-xs md:text-sm transition-all transform hover:scale-105 hover:shadow-lg border border-white"
+                    className="absolute top-2 right-2 z-10 px-2 py-1 bg-banner text-white rounded-md text-xs md:text-sm transition-all transform hover:scale-105 hover:shadow-lg hover:bg-white hover:text-black"
                   >
                     {viewStates[index] === "before"
-                      ? "See After"
-                      : "See Before"}
+                      ? "After"
+                      : "Before"}
                   </button>
                   {/* Move info to the top left of image with padding */}
                   <div className="overlay-text absolute top-0 left-0 pt-1 pl-2 md:pt-2 md:pl-3">
@@ -470,8 +484,8 @@ function BeforeAfterEditorPanel({ localData, setLocalData, onSave }) {
     // Create a URL for display
     const fileURL = URL.createObjectURL(file);
 
-    // Store just the URL for display
-    handleChangeItem(index, field, fileURL);
+    // Store an object containing both the file and its URL
+    handleChangeItem(index, field, { file: file, url: fileURL, name: file.name });
   };
 
   /**
@@ -540,10 +554,10 @@ function BeforeAfterEditorPanel({ localData, setLocalData, onSave }) {
                 }}
               />
             </label>
-            {item.before && (
+            {getDisplayUrl(item.before) && (
               <img
-                src={item.before}
-                alt="Before"
+                src={getDisplayUrl(item.before)}
+                alt="Before Preview"
                 className="mt-2 h-24 rounded shadow"
               />
             )}
@@ -563,10 +577,10 @@ function BeforeAfterEditorPanel({ localData, setLocalData, onSave }) {
                 }}
               />
             </label>
-            {item.after && (
+            {getDisplayUrl(item.after) && (
               <img
-                src={item.after}
-                alt="After"
+                src={getDisplayUrl(item.after)}
+                alt="After Preview"
                 className="mt-2 h-24 rounded shadow"
               />
             )}
@@ -621,21 +635,67 @@ export default function BeforeAfterBlock({
   beforeAfterData,
   onConfigChange,
 }) {
-  const [localData, setLocalData] = useState(() => {
-    if (!beforeAfterData) {
-      return { sectionTitle: "GALLERY", items: [] };
+  // Helper to initialize image state: handles string path or {file, url} object
+  const initializeImageState = (imageConfig, defaultPath) => {
+    if (imageConfig && typeof imageConfig === 'object' && imageConfig.url) {
+      return imageConfig; // Already in {file, url} format
     }
+    if (typeof imageConfig === 'string') {
+      return { file: null, url: imageConfig }; // It's a path
+    }
+    return { file: null, url: defaultPath }; // Default
+  };
+
+  const [localData, setLocalData] = useState(() => {
+    const initialConfig = beforeAfterData || {};
     return {
-      sectionTitle: beforeAfterData.sectionTitle || "GALLERY",
-      items: (beforeAfterData.items || []).map((item) => ({ ...item })),
+      sectionTitle: initialConfig.sectionTitle || "GALLERY",
+      items: (initialConfig.items || []).map(item => ({
+        ...item,
+        before: initializeImageState(item.before, "/assets/images/beforeafter/default_before.jpg"),
+        after: initializeImageState(item.after, "/assets/images/beforeafter/default_after.jpg"),
+      })),
     };
   });
+
+  useEffect(() => {
+    if (beforeAfterData) {
+      setLocalData(prevLocalData => {
+        const newItems = (beforeAfterData.items || []).map((newItem, index) => {
+          const oldItem = prevLocalData.items[index] || {};
+          const newBeforeImg = initializeImageState(newItem.before, "/assets/images/beforeafter/default_before.jpg");
+          const newAfterImg = initializeImageState(newItem.after, "/assets/images/beforeafter/default_after.jpg");
+
+          // Revoke old blob URLs if they exist and are different
+          if (oldItem.before && oldItem.before.url && oldItem.before.url.startsWith('blob:') && oldItem.before.url !== newBeforeImg.url) {
+            URL.revokeObjectURL(oldItem.before.url);
+          }
+          if (oldItem.after && oldItem.after.url && oldItem.after.url.startsWith('blob:') && oldItem.after.url !== newAfterImg.url) {
+            URL.revokeObjectURL(oldItem.after.url);
+          }
+
+          return {
+            ...newItem,
+            before: newBeforeImg,
+            after: newAfterImg,
+          };
+        });
+
+        return {
+          ...prevLocalData,
+          sectionTitle: beforeAfterData.sectionTitle || prevLocalData.sectionTitle || "GALLERY",
+          items: newItems,
+        };
+      });
+    }
+  }, [beforeAfterData]);
 
   const handleSave = () => {
     onConfigChange?.(localData);
   };
 
   if (readOnly) {
+    // Pass the original beforeAfterData to preview, it will use its own getDisplayUrl
     return <BeforeAfterPreview beforeAfterData={beforeAfterData} />;
   }
   return (

@@ -154,17 +154,18 @@ const AppRoutes = ({
                 <RichTextBlock readOnly richTextData={richTextConfig} />
               </Suspense>
             </section>
-            <section id="button">
-              <Suspense fallback={<LoadingScreen />}>
-                <ButtonBlock readOnly buttonconfig={buttonconfig} />
-              </Suspense>
-            </section>
+
             <section id="beforeAfter">
               <Suspense fallback={<LoadingScreen />}>
                 <BeforeAfterBlock
                   readOnly
                   beforeAfterData={beforeAfterConfig}
                 />
+              </Suspense>
+            </section>
+            <section id="button">
+              <Suspense fallback={<LoadingScreen />}>
+                <ButtonBlock readOnly buttonconfig={buttonconfig} />
               </Suspense>
             </section>
             <section id="map">
@@ -207,12 +208,12 @@ const AppRoutes = ({
         element={<AllServiceBlocksPage />}
       />
 
-      {/* New Service Routes using ServicePageCreator */}
+      {/* Route for displaying individual service pages */}
       <Route
-        path="/service/:serviceType/:serviceId"
+        path="/service/:serviceType/:slug"
         element={
           <Suspense fallback={<LoadingScreen />}>
-            <ServicePageCreator />
+            <ServicePage />
           </Suspense>
         }
       />
@@ -349,6 +350,16 @@ const AppRoutes = ({
 
       {/* Legal Agreement route */}
       <Route path="/legal" element={<LegalAgreement />} />
+
+      {/* Route for the service page editor/creator */}
+      <Route
+        path="/service-editor"
+        element={
+          <Suspense fallback={<LoadingScreen />}>
+            <ServicePageCreator />
+          </Suspense>
+        }
+      />
     </Routes>
   );
 };

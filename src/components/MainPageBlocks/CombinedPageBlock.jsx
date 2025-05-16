@@ -631,94 +631,104 @@ export default function CombinedPageBlock({ readOnly = false, config = {}, onCon
   const [residentialServices, setResidentialServices] = useState([]);
   const [commercialServices, setCommercialServices] = useState([]);
   const [googleReviews, setGoogleReviews] = useState([]);
+
+  const getDisplayUrl = (imageValue, defaultPath) => {
+    if (imageValue && typeof imageValue === 'object' && imageValue.url) {
+      return imageValue.url;
+    }
+    if (typeof imageValue === 'string') {
+      return imageValue;
+    }
+    return defaultPath;
+  };
+
+  // Helper to initialize image state: handles string path or {file, url} object
+  const initializeImageState = (imageConfig, defaultPath) => {
+    if (imageConfig && typeof imageConfig === 'object' && imageConfig.url) {
+      return imageConfig;
+    }
+    if (typeof imageConfig === 'string') {
+      return { file: null, url: imageConfig };
+    }
+    return { file: null, url: defaultPath };
+  };
+
   const [localData, setLocalData] = useState(() => {
-    return { 
-      ...config,
-      isCommercial: config.isCommercial || false,
-      title: config.title || "Services",
-      googleReviews: config.googleReviews || [],
-      residentialServices: config.residentialServices || [],
-      commercialServices: config.commercialServices || [],
-      largeResidentialImg: config.largeResidentialImg || "/assets/images/main_image_expanded.jpg",
-      largeCommercialImg: config.largeCommercialImg || "/assets/images/commercialservices.jpg",
+    const initialConfig = config || {};
+    return {
+      ...initialConfig,
+      isCommercial: initialConfig.isCommercial || false,
+      title: initialConfig.title || "Services",
+      googleReviews: initialConfig.googleReviews || [],
+      residentialServices: initialConfig.residentialServices || [],
+      commercialServices: initialConfig.commercialServices || [],
+      largeResidentialImg: initializeImageState(initialConfig.largeResidentialImg, "/assets/images/main_image_expanded.jpg"),
+      largeCommercialImg: initializeImageState(initialConfig.largeCommercialImg, "/assets/images/commercialservices.jpg"),
     };
   });
 
   console.log("CombinedPageBlock config:", config);
+  console.log("CombinedPageBlock initial localData:", localData);
 
   useEffect(() => {
-    // First try to use the provided config data for services
-    if (
-      config &&
-      config.residentialServices &&
-      config.residentialServices.length > 0
-    ) {
-      console.log(
-        "Using config residentialServices:",
-        config.residentialServices
-      );
+    const currentConfig = config || {};
+    setLocalData(prevLocalData => {
+      // Logic to update localData based on config, carefully handling images
+      const newResidentialImg = initializeImageState(currentConfig.largeResidentialImg, "/assets/images/main_image_expanded.jpg");
+      const newCommercialImg = initializeImageState(currentConfig.largeCommercialImg, "/assets/images/commercialservices.jpg");
 
-      // Map residential services with proper slug-based links
-      const mappedResidentialServices = config.residentialServices.map(
-        (service) => ({
-          ...service,
-          link: service.slug ? `/services/${service.slug}` : service.link,
-        })
-      );
+      // Revoke old blob URLs if they exist and are different from new URLs
+      if (prevLocalData.largeResidentialImg && prevLocalData.largeResidentialImg.url && prevLocalData.largeResidentialImg.url.startsWith('blob:') && prevLocalData.largeResidentialImg.url !== newResidentialImg.url) {
+        URL.revokeObjectURL(prevLocalData.largeResidentialImg.url);
+      }
+      if (prevLocalData.largeCommercialImg && prevLocalData.largeCommercialImg.url && prevLocalData.largeCommercialImg.url.startsWith('blob:') && prevLocalData.largeCommercialImg.url !== newCommercialImg.url) {
+        URL.revokeObjectURL(prevLocalData.largeCommercialImg.url);
+      }
 
+      return {
+        ...prevLocalData, // Preserve existing local changes not overridden by config
+        ...currentConfig, // Apply all other config changes
+        title: currentConfig.title || prevLocalData.title || "Services",
+        googleReviews: currentConfig.googleReviews || prevLocalData.googleReviews || [],
+        residentialServices: currentConfig.residentialServices || prevLocalData.residentialServices || [],
+        commercialServices: currentConfig.commercialServices || prevLocalData.commercialServices || [],
+        largeResidentialImg: newResidentialImg,
+        largeCommercialImg: newCommercialImg,
+        isCommercial: currentConfig.isCommercial !== undefined ? currentConfig.isCommercial : prevLocalData.isCommercial || false,
+      };
+    });
+
+    // This separate useEffect is for setting display services based on config, not localData.
+    // The services displayed in the read-only view should directly reflect the `config` prop.
+    if (currentConfig.residentialServices && currentConfig.residentialServices.length > 0) {
+      const mappedResidentialServices = currentConfig.residentialServices.map(service => ({
+        ...service,
+        link: service.slug ? `/services/residential/${service.name.toLowerCase().replace(/s+/g, '-')}` : service.link,
+      }));
       setResidentialServices(mappedResidentialServices);
     } else {
-      // Warn about missing residential services in the config
-      console.warn(
-        "No residential services found in config, this shouldn't happen in production"
-      );
       setResidentialServices([]);
     }
 
-    // Same for commercial services
-    if (
-      config &&
-      config.commercialServices &&
-      config.commercialServices.length > 0
-    ) {
-      console.log(
-        "Using config commercialServices:",
-        config.commercialServices
-      );
-
-      // Map commercial services with proper slug-based links
-      const mappedCommercialServices = config.commercialServices.map(
-        (service) => ({
-          ...service,
-          link: service.slug ? `/services/${service.slug}` : service.link,
-        })
-      );
-
+    if (currentConfig.commercialServices && currentConfig.commercialServices.length > 0) {
+      const mappedCommercialServices = currentConfig.commercialServices.map(service => ({
+        ...service,
+        link: service.slug ? `/services/commercial/${service.name.toLowerCase().replace(/s+/g, '-')}` : service.link,
+      }));
       setCommercialServices(mappedCommercialServices);
     } else {
-      // Warn about missing commercial services in the config
-      console.warn(
-        "No commercial services found in config, this shouldn't happen in production"
-      );
       setCommercialServices([]);
     }
 
-    // For testimonials, use config data
-    if (config && config.googleReviews && config.googleReviews.length > 0) {
-      console.log("Using config googleReviews:", config.googleReviews);
-      setGoogleReviews(config.googleReviews);
+    if (currentConfig.googleReviews && currentConfig.googleReviews.length > 0) {
+      setGoogleReviews(currentConfig.googleReviews);
     } else {
-      // Warn about missing reviews data
-      console.warn(
-        "No Google reviews found in config, this shouldn't happen in production"
-      );
       setGoogleReviews([]);
     }
-
-    // Set initial isCommercial state from config if provided
-    if (config && config.isCommercial !== undefined) {
-      setIsCommercial(config.isCommercial);
+    if (currentConfig.isCommercial !== undefined) {
+      setIsCommercial(currentConfig.isCommercial);
     }
+
   }, [config]);
 
   // Choose which services to display based on the toggle.
@@ -784,15 +794,12 @@ export default function CombinedPageBlock({ readOnly = false, config = {}, onCon
             className="flex"
           >
             <img
-              src={config.largeResidentialImg || "/assets/images/main_img.jpg"}
+              src={getDisplayUrl(config.largeResidentialImg, "/assets/images/main_img.jpg")}
               alt="Residential Services"
               className="w-full h-[50vh] object-cover" /* Increased height and added object-cover */
             />
             <img
-              src={
-                config.largeCommercialImg ||
-                "/assets/images/commercialservices.jpg"
-              }
+              src={getDisplayUrl(config.largeCommercialImg, "/assets/images/commercialservices.jpg")}
               alt="Commercial Services"
               className="w-full h-[50vh] object-cover" /* Increased height and added object-cover */
             />
@@ -983,18 +990,12 @@ export default function CombinedPageBlock({ readOnly = false, config = {}, onCon
             className="flex w-[200%] h-full"
           >
             <img
-              src={
-                config.largeResidentialImg ||
-                "/assets/images/main_image_expanded.jpg"
-              }
+              src={getDisplayUrl(config.largeResidentialImg, "/assets/images/main_image_expanded.jpg")}
               alt="Residential Services"
               className="w-[100vw] h-full object-cover"
             />
             <img
-              src={
-                config.largeCommercialImg ||
-                "/assets/images/commercialservices.jpg"
-              }
+              src={getDisplayUrl(config.largeCommercialImg, "/assets/images/commercialservices.jpg")}
               alt="Commercial Services"
               className="w-[100vw] h-full object-cover"
             />

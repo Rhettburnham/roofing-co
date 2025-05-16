@@ -230,7 +230,7 @@ const BookingPreview = memo(({ bookingData }) => {
     gsap.set(formContainerRef.current, { opacity: 0, scale: 0.95 });
 
     // Set initial positions for nails
-    gsap.set(leftNails, { x: "-100vw" }); // Start completely off-screen to the left
+    gsap.set(leftNails, { x: "-100w" }); // Start completely off-screen to the left
     gsap.set(rightNails, { x: "100vw" }); // Start completely off-screen to the right
 
     const masterTimeline = gsap.timeline({
@@ -267,7 +267,7 @@ const BookingPreview = memo(({ bookingData }) => {
     masterTimeline.to(
       leftNails,
       {
-        x: "10%", // Adjusted for shorter distance
+        x: "-20%", // Adjusted for shorter distance
         duration: 0.4,
         ease: "power2.out",
         stagger: 0.12,
@@ -279,7 +279,7 @@ const BookingPreview = memo(({ bookingData }) => {
     masterTimeline.to(
       rightNails,
       {
-        x: "-10%", // Adjusted for shorter distance
+        x: "20%", // Adjusted for shorter distance
         duration: 0.4,
         ease: "power2.out",
         stagger: 0.12,
@@ -394,7 +394,7 @@ const BookingPreview = memo(({ bookingData }) => {
     : logo || "";
 
   return (
-    <div className="flex flex-col items-center justify-center w-full px-6 overflow-hidden">
+    <div className="flex flex-col items-center justify-center w-full px-6 overflow-hidden mt-4">
       {/* OUTER BOX WITH BANNER COLOR */}
       <div
         ref={bannerRef}
@@ -566,7 +566,7 @@ const BookingPreview = memo(({ bookingData }) => {
           >
             {/* Social Icons Row - MOVED HERE */}
             {socialLinks && socialLinks.length > 0 && (
-              <div className="flex justify-center space-x-4 py-4 md:py-3">
+              <div className="flex justify-center space-x-12 py-4 md:py-3">
                 {socialLinks.map((social, index) => {
                   const IconComponent =
                     socialIconComponents[social.platform.toLowerCase()];
@@ -578,7 +578,7 @@ const BookingPreview = memo(({ bookingData }) => {
                       rel="noopener noreferrer"
                       className="block"
                     >
-                      <div className="bg-accent p-2 rounded-md transform transition-transform hover:scale-110">
+                      <div className="bg-second-accent p-2 rounded-md transform transition-transform hover:scale-110  ">
                         {IconComponent ? (
                           <IconComponent className="w-8 h-8 md:w-10 md:h-10 text-white" />
                         ) : (
