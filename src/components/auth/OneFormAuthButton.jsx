@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import AdminButton from './AdminButton';
 
-export default function OneFormAuthButton() {
+export default function OneFormAuthButton({ formData }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showSignOut, setShowSignOut] = useState(false);
@@ -96,9 +97,69 @@ export default function OneFormAuthButton() {
     }
   };
 
-  const handleSaveClick = () => {
-    setSaveClicked(true);
-    setTimeout(() => setSaveClicked(false), 1000);
+  const handleSaveClick = async () => {
+    try {
+      setSaveClicked(true);
+      setDebug('Saving changes...');
+
+      if (!formData) {
+        setDebug('No form data found');
+        return;
+      }
+
+      console.log("Saving data:", formData);
+
+      // Copy process steps from aboutPage to richText if they exist and richText doesn't have them
+      const dataToSave = { ...formData };
+
+      if (
+        dataToSave.aboutPage &&
+        dataToSave.aboutPage.steps &&
+        dataToSave.richText &&
+        (!dataToSave.richText.steps || dataToSave.richText.steps.length === 0)
+      ) {
+        console.log("Copying process steps from aboutPage to richText");
+        dataToSave.richText = {
+          ...dataToSave.richText,
+          steps: dataToSave.aboutPage.steps,
+        };
+      }
+
+      // Get the current config ID from auth status
+      const authResponse = await fetch('/api/auth/status', {
+        credentials: 'include'
+      });
+      const authData = await authResponse.json();
+      
+      if (!authData.isAuthenticated || !authData.configId) {
+        setDebug('User not authenticated or no config ID found');
+        return;
+      }
+
+      // Save the config to R2
+      const saveResponse = await fetch('/api/config/save', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          config: dataToSave
+        })
+      });
+
+      if (saveResponse.ok) {
+        setDebug('Changes saved successfully');
+      } else {
+        const error = await saveResponse.text();
+        setDebug(`Failed to save changes: ${error}`);
+      }
+    } catch (error) {
+      console.error('Save error:', error);
+      setDebug(`Save error: ${error.message}`);
+    } finally {
+      setTimeout(() => setSaveClicked(false), 1000);
+    }
   };
 
   if (isLoading) {
@@ -158,17 +219,20 @@ export default function OneFormAuthButton() {
 
           <AnimatePresence>
             {showSignOut && (
-              <motion.button
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                onClick={handleAuth}
-                className="px-4 py-2 rounded-full bg-red-600 text-white 
-                         border border-red-700 hover:bg-red-700 
-                         transition-all duration-300 shadow-lg"
-              >
-                Sign Out
-              </motion.button>
+              <>
+                <motion.button
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  onClick={handleAuth}
+                  className="px-4 py-2 rounded-full bg-red-600 text-white 
+                           border border-red-700 hover:bg-red-700 
+                           transition-all duration-300 shadow-lg"
+                >
+                  Sign Out
+                </motion.button>
+                <AdminButton />
+              </>
             )}
           </AnimatePresence>
         </>

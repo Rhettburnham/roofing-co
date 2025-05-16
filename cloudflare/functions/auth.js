@@ -50,6 +50,9 @@ export default {
       // Config routes
       if (path.startsWith('/api/config/')) {
         const configPath = path.split('/api/config/')[1];
+        if (configPath === 'save' && request.method === 'POST') {
+          return handleConfigSave(request, env, corsHeaders);
+        }
         return handleConfigRequest(request, env, configPath, corsHeaders);
       }
 
@@ -150,7 +153,7 @@ async function handleLogin(request, env, corsHeaders) {
 
 async function handleSignup(request, env, corsHeaders) {
   try {
-    const { email, password } = await request.json();
+    const { email, password, code } = await request.json();
     
     const existingUser = await env.DB.prepare(
       'SELECT * FROM users WHERE email = ?'
@@ -165,8 +168,8 @@ async function handleSignup(request, env, corsHeaders) {
 
     const passwordHash = hashPassword(password);
     await env.DB.prepare(
-      'INSERT INTO users (email, password_hash, config_id) VALUES (?, ?, "default")'
-    ).bind(email, passwordHash).run();
+      'INSERT INTO users (email, password_hash, config_id) VALUES (?, ?, ?)'
+    ).bind(email, passwordHash, code).run();
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -275,6 +278,68 @@ async function handleConfigRequest(request, env, configPath, corsHeaders) {
   } catch (error) {
     console.error("Config request error:", error);
     return new Response(JSON.stringify({ error: 'Failed to fetch config' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+}
+
+async function handleConfigSave(request, env, corsHeaders) {
+  try {
+    console.log("Config save request received");
+    
+    // Verify authentication
+    const sessionId = request.headers.get('Cookie')?.split('session=')[1]?.split(';')[0];
+    console.log("Session ID from cookie:", sessionId);
+    
+    if (!sessionId) {
+      console.log("No session ID found in cookie");
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const session = await env.DB.prepare(
+      'SELECT s.*, u.config_id FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.session_id = ? AND s.expires_at > datetime("now")'
+    ).bind(sessionId).first();
+    
+    console.log("Session data from DB:", session);
+
+    if (!session) {
+      console.log("No valid session found");
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Get the config data from the request
+    const { config } = await request.json();
+    if (!config) {
+      return new Response(JSON.stringify({ error: 'No config data provided' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Save to R2
+    const configKey = `configs/${session.config_id}/combined_data.json`;
+    console.log("Saving config to R2 with key:", configKey);
+    
+    await env.ROOFING_CONFIGS.put(configKey, JSON.stringify(config, null, 2), {
+      httpMetadata: {
+        contentType: 'application/json',
+      },
+    });
+
+    console.log("Config saved successfully");
+    return new Response(JSON.stringify({ success: true }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    console.error("Config save error:", error);
+    return new Response(JSON.stringify({ error: 'Failed to save config' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

@@ -20,7 +20,7 @@ import { saveAs } from "file-saver";
 import ServiceEditPage, { getServicesData } from "./ServiceEditPage";
 import MainPageForm from "./MainPageForm";
 import AboutBlock from "./MainPageBlocks/AboutBlock";
-import OneFormAuthButton from "./OneFormAuthButton";
+import OneFormAuthButton from "./auth/OneFormAuthButton";
 
 // Tab style button component
 const TabButton = ({ id, label, isActive, onClick }) => (
@@ -716,43 +716,43 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   console.log("Rendering full editor with data:", formData);
   return (
     <div className="min-h-screen bg-gray-100">
-      <OneFormAuthButton />
+      <OneFormAuthButton formData={formData} />
       <div className="container mx-auto px-4 py-8">
-        <div className="bg-gray-900 text-white p-3 shadow-md sticky top-0 z-50 flex justify-between items-center">
-          <h1 className="text-[5vh] font-serif">WebEdit </h1>
-          <button
-            onClick={handleSubmit}
-            type="button"
-            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-white text-sm"
-          >
-            Download ZIP
-          </button>
-        </div>
+      <div className="bg-gray-900 text-white p-3 shadow-md sticky top-0 z-50 flex justify-between items-center">
+        <h1 className="text-[5vh] font-serif">WebEdit </h1>
+        <button
+          onClick={handleSubmit}
+          type="button"
+          className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-white text-sm"
+        >
+          Download ZIP
+        </button>
+      </div>
 
-        {/* Tab Navigation */}
-        {renderTabHeader()}
+      {/* Tab Navigation */}
+      {renderTabHeader()}
 
-        {/* Tab Content - Only one is shown at a time */}
-        <div className="tab-content">
-          {activeTab === "mainPage" && (
-            <MainPageForm formData={formData} setFormData={setFormData} />
-          )}
-          {activeTab === "services" && <ServiceEditPage />}
-          {activeTab === "about" && (
-            <div className="container mx-auto px-4 py-6 bg-gray-100">
-              <div className="mb-4 bg-gray-800 text-white p-4 rounded">
-                <h1 className="text-2xl font-bold">About Page</h1>
-                <p className="text-gray-300 mt-1">Edit the about page content</p>
-              </div>
-              <div className="relative border border-gray-300 bg-white overflow-hidden">
-                <AboutBlock
-                  readOnly={false}
-                  aboutData={formData.aboutPage}
-                  onConfigChange={handleAboutConfigChange}
-                />
-              </div>
+      {/* Tab Content - Only one is shown at a time */}
+      <div className="tab-content">
+        {activeTab === "mainPage" && (
+          <MainPageForm formData={formData} setFormData={setFormData} />
+        )}
+        {activeTab === "services" && <ServiceEditPage />}
+        {activeTab === "about" && (
+          <div className="container mx-auto px-4 py-6 bg-gray-100">
+            <div className="mb-4 bg-gray-800 text-white p-4 rounded">
+              <h1 className="text-2xl font-bold">About Page</h1>
+              <p className="text-gray-300 mt-1">Edit the about page content</p>
             </div>
-          )}
+            <div className="relative border border-gray-300 bg-white overflow-hidden">
+              <AboutBlock
+                readOnly={false}
+                aboutData={formData.aboutPage}
+                onConfigChange={handleAboutConfigChange}
+              />
+            </div>
+          </div>
+        )}
         </div>
       </div>
     </div>

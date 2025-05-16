@@ -5,6 +5,7 @@ export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [debug, setDebug] = useState('');
@@ -16,6 +17,12 @@ export default function LoginPage() {
     setDebug('Starting login process...');
 
     try {
+      if (!isLogin && (!code || code === 'admin')) {
+        setError('Invalid signup code');
+        setLoading(false);
+        return;
+      }
+
       const endpoint = isLogin ? '/api/auth/login' : '/api/auth/signup';
       setDebug(`Sending request to: ${endpoint}`);
       
@@ -25,7 +32,7 @@ export default function LoginPage() {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, code }),
       });
 
       setDebug(`Response status: ${response.status}`);
@@ -117,6 +124,23 @@ export default function LoginPage() {
               </p>
             )}
           </div>
+
+          {!isLogin && (
+            <div>
+              <label className="block text-gray-700 mb-2" htmlFor="code">
+                Signup Code
+              </label>
+              <input
+                id="code"
+                type="text"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                required
+                placeholder="Enter signup code"
+              />
+            </div>
+          )}
 
           <button
             type="submit"

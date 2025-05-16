@@ -10,7 +10,8 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import LoadingScreen from "./components/loadingScreen";
 import ServicePage from "./components/ServicePage";
-import LoginPage from "./components/LoginPage";
+import LoginPage from "./components/auth/LoginPage";
+import AdminPage from './pages/AdminPage';
 
 // Import the new ServicePageCreator component
 const ServicePageCreator = lazy(() => import("./components/ServicePageCreator"));
@@ -360,6 +361,9 @@ const AppRoutes = ({
 
       {/* Legal Agreement route */}
       <Route path="/legal" element={<LegalAgreement />} />
+
+      {/* Admin route */}
+      <Route path="/admin" element={<AdminPage />} />
     </Routes>
   );
 };
