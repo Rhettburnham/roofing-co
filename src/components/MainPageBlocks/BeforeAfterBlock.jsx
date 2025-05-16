@@ -275,7 +275,7 @@ function BeforeAfterPreview({ beforeAfterData }) {
         >
           <div
             ref={nailRef}
-            className="absolute left-[25%] md:left-[17%] w-[30%] h-[15vh] md:h-[5vh]"
+            className="absolute left-[25%] md:left-[17%] w-[30%] h-[15vh] md:h-[5vh] flex items-center"
           >
             <div
               className="w-full h-full dynamic-shadow"
@@ -293,7 +293,7 @@ function BeforeAfterPreview({ beforeAfterData }) {
             ref={textRef}
             className="absolute left-1/2 z-10 flex flex-row items-center"
           >
-            <h2 className="text-[6vw] md:text-[4vh] text-black font-normal font-condensed font-rye md:mt-4 items-center py-3 z-30 text-center">
+            <h2 className="text-[6vw] md:text-[4vh] text-black font-normal font-condensed font-rye items-center py-3 z-30 text-center">
               {sectionTitle}
             </h2>
           </div>
@@ -301,12 +301,12 @@ function BeforeAfterPreview({ beforeAfterData }) {
 
         {/* Gallery Grid - Now always 3 columns */}
         <div className="w-full flex justify-center">
-          <div className="grid grid-cols-3 gap-4 md:gap-6 px-6 md:px-10 md:pb-10">
+          <div className="grid grid-cols-3 gap-4 md:gap-6 px-2 md:px-5 md:pb-5">
             {formattedItems.map((img, index) => (
               <div
                 key={index}
                 ref={(el) => (boxesRef.current[index] = el)}
-                className="relative flex flex-col md:flex-row items-center"
+                className="relative flex flex-col md:flex-row items-center justify-between w-full"
               >
                 <div
                   className="relative cursor-pointer"
@@ -339,13 +339,13 @@ function BeforeAfterPreview({ beforeAfterData }) {
                       ? "See After"
                       : "See Before"}
                   </button>
-                  {/* Move info to the right of image with padding */}
-                  <div className="overlay-text absolute bottom-0 right-0 pl-3 px-3 py-1 md:px-4 md:py-2">
+                  {/* Move info to the top left of image with padding */}
+                  <div className="overlay-text absolute top-0 left-0 pt-1 pl-2 md:pt-2 md:pl-3">
                     <div className="flex flex-col items-start text-white text-left leading-tight">
-                      <span className="font-bold text-[2.5vw] md:text-xl whitespace-nowrap drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
+                      <span className="font-bold text-[2.5vw] md:text-xl whitespace-nowrap drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] mb-0">
                         {img.shingle}
                       </span>
-                      <span className="font-semibold text-[2.5vw] md:text-lg text-gray-200 drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
+                      <span className="font-semibold text-[2.5vw] md:text-lg text-white drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
                         {img.sqft}
                       </span>
                     </div>
@@ -364,43 +364,51 @@ function BeforeAfterPreview({ beforeAfterData }) {
           onClick={closeModal}
         >
           <div
-            className="relative w-[90vw] h-[80vh] md:h-[85vh] bg-white rounded-lg p-4 md:p-8"
+            className="relative w-[85vw] h-[75vh] md:h-[80vh] bg-white rounded-lg p-4 md:p-6 flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <button
-              className="absolute top-2 right-2 text-gray-700 bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center hover:bg-gray-300 focus:outline-none"
+              className="absolute top-2 right-2 text-gray-700 bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center hover:bg-gray-300 focus:outline-none z-10"
               onClick={closeModal}
               aria-label="Close Modal"
             >
               &times;
             </button>
 
-            <h3 className="text-xl md:text-2xl font-bold mb-4">
-              Before / After
-            </h3>
-
-            <div className="flex flex-col md:flex-row justify-between items-center h-[85%] gap-4">
-              <div className="relative w-full md:w-1/2 h-[40%] md:h-full">
-                <h4 className="text-lg font-semibold mb-2">Before</h4>
-                <img
-                  src={selectedImages.before}
-                  alt="Before"
-                  className="w-full h-full object-cover rounded-lg"
-                />
+            <div className="flex flex-col md:flex-row justify-between items-center flex-grow gap-3 md:gap-4 overflow-hidden">
+              <div className="relative w-full md:w-1/2 h-[45%] md:h-full flex flex-col">
+                <h4 className="text-lg font-semibold mb-1 md:mb-2 text-center md:text-left">
+                  Before
+                </h4>
+                <div className="relative flex-grow">
+                  <img
+                    src={selectedImages.before}
+                    alt="Before"
+                    className="absolute top-0 left-0 w-full h-full object-contain rounded-lg"
+                  />
+                </div>
               </div>
-              <div className="relative w-full md:w-1/2 h-[40%] md:h-full">
-                <h4 className="text-lg font-semibold mb-2">After</h4>
-                <img
-                  src={selectedImages.after}
-                  alt="After"
-                  className="w-full h-full object-cover rounded-lg"
-                />
+              <div className="relative w-full md:w-1/2 h-[45%] md:h-full flex flex-col">
+                <h4 className="text-lg font-semibold mb-1 md:mb-2 text-center md:text-left">
+                  After
+                </h4>
+                <div className="relative flex-grow">
+                  <img
+                    src={selectedImages.after}
+                    alt="After"
+                    className="absolute top-0 left-0 w-full h-full object-contain rounded-lg"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="mt-4 text-center">
-              <p className="font-bold text-xl">{selectedImages.shingle}</p>
-              <p className="text-gray-700">{selectedImages.sqft}</p>
+            <div className="mt-3 md:mt-4 text-center">
+              <p className="font-bold text-lg md:text-xl">
+                {selectedImages.shingle}
+              </p>
+              <p className="text-gray-700 text-base md:text-lg">
+                {selectedImages.sqft}
+              </p>
             </div>
           </div>
         </div>

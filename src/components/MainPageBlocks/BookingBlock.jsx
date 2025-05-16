@@ -48,7 +48,6 @@ const BookingPreview = memo(({ bookingData }) => {
   const [residentialServices, setResidentialServices] = useState([]);
   const [commercialServices, setCommercialServices] = useState([]);
   const [activeTab, setActiveTab] = useState("residential");
-  const [isLoading, setIsLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   // Refs for GSAP animations
@@ -102,7 +101,6 @@ const BookingPreview = memo(({ bookingData }) => {
 
     const fetchServices = async () => {
       try {
-        setIsLoading(true);
         const res = await fetch("/data/roofing_services.json", {
           signal,
           credentials: "same-origin",
@@ -195,10 +193,6 @@ const BookingPreview = memo(({ bookingData }) => {
               category: "commercial",
             },
           ]);
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
         }
       }
     };

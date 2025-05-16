@@ -120,7 +120,7 @@ const Navbar = () => {
       // 1. Subtitle fades out and is removed from layout
       tl.to(subTitleRef.current, {
         opacity: 0,
-        duration: 0.2,
+        duration: 0.3,
         onComplete: () => {
           if (subTitleRef.current) {
             subTitleRef.current.style.display = 'none';
@@ -138,7 +138,16 @@ const Navbar = () => {
           duration: 0.2,
           ease: "power1.out",
         },
-        "+=0.1" // Starts 0.1s after the previous animation begins
+        "<" // Starts 0.1s after the previous animation begins
+      );
+            // Ensure titleContainer's cross-axis alignment is center
+      tl.to(
+        titleContainerRef.current,
+        {
+          alignItems: "center", // For flex-col, this is horizontal alignment
+          duration: 0.2,
+        },
+        "<" // At the same time as the previous animation (title font size change)
       );
       
       // 2. Logo and title slide together
@@ -146,21 +155,13 @@ const Navbar = () => {
         [logoRef.current, titleRef.current],
         {
           x: "-30vw", // Both move the same amount
-          duration: 0.2,
+          duration: 0.4,
           ease: "power1.out",
         },
-        "+=0.1" // Starts 0.1s after the previous animation begins
+        "+=0.7" // Starts 0.1s after the previous animation begins
       );
 
-      // Ensure titleContainer's cross-axis alignment is center
-      tl.to(
-        titleContainerRef.current,
-        {
-          alignItems: "center", // For flex-col, this is horizontal alignment
-          duration: 0.1,
-        },
-        "<" // At the same time as the previous animation (title font size change)
-      );
+
     } else {
       // UNSCROLLED STATE ANIMATION (REVERSE)
 
@@ -177,10 +178,19 @@ const Navbar = () => {
         [logoRef.current, titleRef.current],
         {
           x: "0",
-          duration: 0.2,
+          duration: 0.6,
           ease: "power1.out",
         },
         "+=0.1" // Starts 0.1s after the previous animation begins
+      );
+            // Reset titleContainer's cross-axis alignment to flex-start
+      tl.to(
+        titleContainerRef.current,
+        {
+          alignItems: "flex-start", // For flex-col, this is horizontal alignment
+          duration: 0.9,
+        },
+        "+=0.6" // At the same time as the previous animation (title font size change)
       );
 
       // 2. Title font size grows first
@@ -188,17 +198,10 @@ const Navbar = () => {
         fontSize: "7vh",
         duration: 0.2,
         ease: "power1.out",
-      });
+      }, "<"
+    );
 
-      // Reset titleContainer's cross-axis alignment to flex-start
-      tl.to(
-        titleContainerRef.current,
-        {
-          alignItems: "flex-start", // For flex-col, this is horizontal alignment
-          duration: 0.1,
-        },
-        "<" // At the same time as the previous animation (title font size change)
-      );
+
       // 3. Subtitle fades in last
       tl.to(
         subTitleRef.current,
@@ -229,7 +232,7 @@ const Navbar = () => {
             ref={logoRef}
             src="/assets/images/hero/clipped.png"
             alt="Logo"
-            className="w-[12vw] md:w-[8vw] mr-2 cursor-pointer logo-fixed-size transform-gpu"
+            className="w-[12vw] md:w-[4vw] mr-2 cursor-pointer logo-fixed-size transform-gpu"
             onClick={handleLogoClick}
           />
 

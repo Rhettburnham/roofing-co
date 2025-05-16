@@ -17,17 +17,17 @@ import * as FaIcons from "react-icons/fa";
 gsap.registerPlugin(ScrollTrigger);
 
 // to do this needs to be centered where the lat is currentl seem up and to the right
-const CustomMarkerIcon = (iconUrl) => L.icon({
-  iconUrl: iconUrl || "/assets/images/hero/clipped.png",
-  iconSize: [30, 30],
-  iconAnchor: [15, 15], // Center the icon properly
-  popupAnchor: [0, -20],
-  className: "invert-icon", // Add class to make it white
-});
+const CustomMarkerIcon = (iconUrl) =>
+  L.icon({
+    iconUrl: iconUrl || "/assets/images/hero/clipped.png",
+    iconSize: [30, 30],
+    iconAnchor: [15, 15], // Center the icon properly
+    popupAnchor: [0, -20],
+  });
 
 const DropMarker = memo(({ position, iconUrl }) => {
   const markerRef = useRef(null);
-  
+
   // Debug log for icon URL
   console.log("Using marker icon:", iconUrl);
 
@@ -52,7 +52,6 @@ const DropMarker = memo(({ position, iconUrl }) => {
       position={position}
       icon={CustomMarkerIcon(iconUrl)}
       ref={markerRef}
-      style={{ filter: "invert(0)" }}
     />
   );
 });
@@ -126,9 +125,7 @@ const StatItem = memo(({ iconName, title, value }) => {
     <div className="flex flex-col items-center justify-center text-center">
       <div className="flex flex-row justify-center items-center text-gray-50/80">
         <IconComp className="w-full h-full" />
-        <p className="ml-2  font-semibold text-yellow-100">
-          {count}
-        </p>
+        <p className="ml-2  font-semibold text-yellow-100">{count}</p>
       </div>
       <div className="flex gap-1">
         <p className="whitespace-nowrap  font-semibold text-white mt-1">
@@ -300,8 +297,8 @@ function BasicMapPreview({ mapData }) {
     if (!titleRef.current || !sectionRef.current) return;
 
     // Clear any existing animations
-    ScrollTrigger.getAll().forEach(trigger => {
-      if (trigger.vars.id === 'titleAnimation') {
+    ScrollTrigger.getAll().forEach((trigger) => {
+      if (trigger.vars.id === "titleAnimation") {
         trigger.kill();
       }
     });
@@ -309,52 +306,52 @@ function BasicMapPreview({ mapData }) {
     // Define different animations for small vs medium+ viewports
     if (isSmallScreen) {
       // Small viewport: Slide in from right when 30% from bottom of viewport
-      gsap.set(titleRef.current, { 
-        x: '100vw', // Start off-screen to the right
-        opacity: 0
+      gsap.set(titleRef.current, {
+        x: "100vw", // Start off-screen to the right
+        opacity: 0,
       });
-      
+
       gsap.to(titleRef.current, {
-        x: '50%', // Center horizontally
+        x: "50%", // Center horizontally
         xPercent: -50, // Adjust for width of element
         opacity: 1,
         duration: 1,
         ease: "power3.out",
         scrollTrigger: {
-          id: 'titleAnimation',
+          id: "titleAnimation",
           trigger: sectionRef.current,
           start: "bottom 70%", // Trigger when bottom of section is 30% from bottom (70% down viewport)
           toggleActions: "play none none none",
           once: true,
-        }
+        },
       });
     } else {
       // Medium+ viewport: Center the title
       gsap.set(titleRef.current, {
         x: 0,
-        opacity: 0
+        opacity: 0,
       });
-      
+
       gsap.to(titleRef.current, {
-        x: '50%',
+        x: "50%",
         xPercent: -50, // Center horizontally by offsetting half of the element's width
         opacity: 1,
         duration: 1.2,
         ease: "power2.inOut",
         scrollTrigger: {
-          id: 'titleAnimation',
+          id: "titleAnimation",
           trigger: sectionRef.current,
           start: "top 40%", // Trigger when top of section reaches 40% down the viewport
           toggleActions: "play none none none",
           once: true,
-        }
+        },
       });
     }
 
     return () => {
       // Cleanup
-      ScrollTrigger.getAll().forEach(trigger => {
-        if (trigger.vars.id === 'titleAnimation') {
+      ScrollTrigger.getAll().forEach((trigger) => {
+        if (trigger.vars.id === "titleAnimation") {
           trigger.kill();
         }
       });
@@ -362,25 +359,20 @@ function BasicMapPreview({ mapData }) {
   }, [isSmallScreen, titleRef, sectionRef]);
 
   const renderServiceHoursTable = () => (
-    <div className="w-full h-full flex items-center justify-center overflow-auto bg-white p-1 md:p-0">
-      <table className="w-full border-collapse border border-gray-300 shadow-sm">
-        <thead className="bg-gray-700 sticky top-0">
-          <tr>
-            <th className="py-1 md:py-2 px-2 md:px-4 text-white text-[2.5vw] md:text-sm font-semibold">
-              Day
-            </th>
-            <th className="py-1 md:py-2 px-2 md:px-4 text-white text-[2.5vw] md:text-sm font-semibold">
-              Hours
-            </th>
-          </tr>
-        </thead>
-        <tbody className="text-center">
+    <div className="w-full h-full flex flex-col p-1 md:p-0">
+      <table className="w-full">
+        {" "}
+        {/* No outer border, parent sliding div has it */}
+        <tbody className="text-gray-800">
           {serviceHours.map((item, idx) => (
-            <tr key={idx} className={idx % 2 === 0 ? "bg-gray-50" : "bg-white"}>
-              <td className="py-[0.8vh] md:py-[1.2vh] px-2 md:px-4 border border-gray-300 text-[2.8vw] md:text-sm font-medium text-gray-800">
+            <tr
+              key={idx}
+              className={`${idx % 2 === 0 ? "bg-gray-50" : "bg-white"} border-b border-gray-300`}
+            >
+              <td className="w-1/2 py-[0.8vh] md:py-[1.2vh] px-2 md:px-4 text-[2.8vw] md:text-sm font-medium text-left border-r border-gray-300">
                 {item.day}
               </td>
-              <td className="py-[0.8vh] md:py-[1.2vh] px-2 md:px-4 border border-gray-300 text-[2.8vw] md:text-sm text-gray-800">
+              <td className="w-1/2 py-[0.8vh] md:py-[1.2vh] px-2 md:px-4 text-[2.8vw] md:text-sm text-gray-800 text-left">
                 {item.time}
               </td>
             </tr>
@@ -395,8 +387,10 @@ function BasicMapPreview({ mapData }) {
       <div className="pb-2">
         <div className="flex justify-center">
           {/* Title with animation - changed to always be centered parent */}
-          <h1 
-            ref={(el) => { titleRef.current = el; }}
+          <h1
+            ref={(el) => {
+              titleRef.current = el;
+            }}
             className="text-[3vh] md:text-[4vh] font-normal text-black font-serif title-animation"
           >
             Are we in your area?
@@ -446,11 +440,11 @@ function BasicMapPreview({ mapData }) {
                   </div>
                 )}
                 {/* Bottom overlay: address + phone */}
-                <div className="absolute bottom-0 w-full bg-banner text-center text-white font-semibold z-10 py-2">
-                  <div className="font-semibold text-[2.5vw] md:text-[2vh] leading-tight">
+                <div className="absolute bottom-0 w-full bg-banner text-white font-semibold z-10 py-2 px-3 flex justify-between items-center">
+                  <div className="font-semibold text-[2.5vw] md:text-[2vh] leading-tight text-left">
                     {address}
                   </div>
-                  <div className="text-[2.5vw] md:text-[2vh] text-white font-semibold leading-tight">
+                  <div className="text-[2.5vw] md:text-[2vh] text-white font-semibold leading-tight text-right">
                     <a href={`tel:${telephone?.replace(/[^0-9]/g, "")}`}>
                       {telephone}
                     </a>
@@ -464,10 +458,12 @@ function BasicMapPreview({ mapData }) {
             <button
               type="button"
               onClick={() => setIsServiceHoursVisible(!isServiceHoursVisible)}
-              className="dark_button bg-gray-700 rounded-t-xl py-1 md:py-2 items-center justify-center text-white text-[2vh] transition-all duration-300 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] font-serif z-30 relative"
-              style={{ willChange: 'transform' }}
+              className="dark_button bg-gray-700 rounded-t-xl py-1 md:py-2 px-4 flex justify-center items-center w-full text-white transition-all duration-300 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] font-serif z-30 relative"
+              style={{ willChange: "transform" }}
             >
-              {isServiceHoursVisible ? "Hide Hours" : "Show Hours"}
+              <span className="font-serif text-[2vh]">
+                {isServiceHoursVisible ? "Hide Hours" : "Show Hours"}
+              </span>
             </button>
             <div
               className="relative h-[30vh] md:h-[calc(40vh-2.5rem)] rounded-b-xl overflow-hidden"
@@ -491,7 +487,7 @@ function BasicMapPreview({ mapData }) {
                   <StatsPanel isSmallScreen={isSmallScreen} stats={stats} />
                 </div>
               </div>
-              
+
               {/* Service hours overlay */}
               <div
                 className={`
@@ -500,7 +496,7 @@ function BasicMapPreview({ mapData }) {
                   transition-transform duration-500 ease-in-out
                   ${isServiceHoursVisible ? "translate-y-0" : "translate-y-[-101%]"}
                 `}
-                style={{ willChange: 'transform' }}
+                style={{ willChange: "transform" }}
               >
                 {renderServiceHoursTable()}
               </div>
@@ -577,7 +573,7 @@ function BasicMapEditorPanel({ localMap, setLocalMap, onSave }) {
     typeof window !== "undefined" ? window.innerWidth <= 768 : false
   );
   const statsDivRef = useRef(null);
-  
+
   // Debug log for marker icon in editor
   console.log("Editor marker icon:", localMap.markerIcon);
 
@@ -595,25 +591,20 @@ function BasicMapEditorPanel({ localMap, setLocalMap, onSave }) {
   }, []);
 
   const renderServiceHoursTable = () => (
-    <div className="w-full h-full flex items-center justify-center overflow-auto bg-white p-1 md:p-0">
-      <table className="w-full border-collapse border border-gray-300 shadow-sm">
-        <thead className="bg-gray-700 sticky top-0">
-          <tr>
-            <th className="py-1 md:py-2 px-2 md:px-4 text-white text-[2.5vw] md:text-sm font-semibold">
-              Day
-            </th>
-            <th className="py-1 md:py-2 px-2 md:px-4 text-white text-[2.5vw] md:text-sm font-semibold">
-              Hours
-            </th>
-          </tr>
-        </thead>
-        <tbody className="text-center">
+    <div className="w-full h-full flex flex-col p-1 md:p-0">
+      <table className="w-full">
+        {" "}
+        {/* No outer border, parent sliding div has it */}
+        <tbody className="text-gray-800">
           {localMap.serviceHours.map((item, idx) => (
-            <tr key={idx} className={idx % 2 === 0 ? "bg-gray-50" : "bg-white"}>
-              <td className="py-[0.8vh] md:py-[1.2vh] px-2 md:px-4 border border-gray-300 text-[2.8vw] md:text-sm font-medium text-gray-800">
+            <tr
+              key={idx}
+              className={`${idx % 2 === 0 ? "bg-gray-50" : "bg-white"} border-b border-gray-300`}
+            >
+              <td className="w-1/2 py-[0.8vh] md:py-[1.2vh] px-2 md:px-4 text-[2.8vw] md:text-sm font-medium text-left border-r border-gray-300">
                 {item.day}
               </td>
-              <td className="py-[0.8vh] md:py-[1.2vh] px-2 md:px-4 border border-gray-300 text-[2.8vw] md:text-sm text-gray-800">
+              <td className="w-1/2 py-[0.8vh] md:py-[1.2vh] px-2 md:px-4 text-[2.8vw] md:text-sm text-gray-800 text-left">
                 {item.time}
               </td>
             </tr>
@@ -743,7 +734,12 @@ function BasicMapEditorPanel({ localMap, setLocalMap, onSave }) {
                     }}
                   />
                 )}
-                {localMap.center && <DropMarker position={localMap.center} iconUrl={localMap.markerIcon} />}
+                {localMap.center && (
+                  <DropMarker
+                    position={localMap.center}
+                    iconUrl={localMap.markerIcon}
+                  />
+                )}
                 <MapInteractionHandler mapActive={mapActive} />
               </MapContainer>
 
@@ -762,11 +758,11 @@ function BasicMapEditorPanel({ localMap, setLocalMap, onSave }) {
                 </div>
               )}
 
-              <div className="absolute bottom-0 w-full bg-banner text-center  z-10">
-                <div className="font-semibold text-base font-serif leading-tight">
+              <div className="absolute bottom-0 w-full bg-banner z-10 px-3 py-1 flex justify-between items-center">
+                <div className="font-semibold text-sm font-serif leading-tight text-left text-white">
                   {localMap.address}
                 </div>
-                <div className="text-sm text-gray-200 font-bold font-serif leading-tight">
+                <div className="text-sm text-gray-200 font-bold font-serif leading-tight text-right">
                   <a href={`tel:${localMap.telephone?.replace(/[^0-9]/g, "")}`}>
                     {localMap.telephone}
                   </a>
@@ -803,12 +799,19 @@ function BasicMapEditorPanel({ localMap, setLocalMap, onSave }) {
           <div className="bg-gray-800 p-3 rounded relative">
             <button
               onClick={() => setIsServiceHoursVisible(!isServiceHoursVisible)}
-              className="bg-gray-600 hover:bg-gray-500 px-2 py-1 rounded text-xs relative z-30"
-              style={{ willChange: 'transform' }}
+              className="dark_button bg-gray-600 hover:bg-gray-500 px-4 py-1 md:py-2 flex justify-center items-center w-full text-white rounded text-xs md:text-sm relative z-30" /* Adjusted classes for editor button */
+              style={{ willChange: "transform" }}
             >
-              {isServiceHoursVisible ? "Hide Hours" : "Show Hours"}
+              <span className="font-serif text-[2vh] md:text-sm">
+                {" "}
+                {/* Adjusted text size for editor consistency */}
+                {isServiceHoursVisible ? "Hide Hours" : "Show Hours"}
+              </span>
             </button>
-            <div className="relative overflow-hidden h-[30vh] md:h-[40vh]" ref={statsDivRef}>
+            <div
+              className="relative overflow-hidden h-[30vh] md:h-[40vh]"
+              ref={statsDivRef}
+            >
               <WindowStrings
                 isVisible={isServiceHoursVisible}
                 isSmallScreen={isSmallScreen}
@@ -820,7 +823,7 @@ function BasicMapEditorPanel({ localMap, setLocalMap, onSave }) {
                   transition-transform duration-500 ease-in-out
                   ${isServiceHoursVisible ? "translate-y-0" : "translate-y-[-101%]"}
                 `}
-                style={{ willChange: 'transform' }}
+                style={{ willChange: "transform" }}
               >
                 {renderServiceHoursTable()}
               </div>
@@ -844,7 +847,7 @@ export default function BasicMapBlock({
 }) {
   // Add console log to debug incoming mapData
   console.log("Received mapData:", mapData);
-  
+
   // Initialize local editor state
   const [localMapData, setLocalMapData] = useState(() => {
     if (!mapData) {

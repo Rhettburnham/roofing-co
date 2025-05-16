@@ -13,24 +13,24 @@ gsap.registerPlugin(ScrollTrigger);
    carousel that empows the employees.
 ========================================================= */
 
-
-
 function EmployeesPreview({ employeesData }) {
   if (!employeesData) {
     return <p>No Employee data found.</p>;
   }
   // Use the employees data passed in or default to an empty array
   const employeesListOriginal = employeesData?.employee || [];
-  
+
   // Ensure we have a section title, default to "OUR TEAM" if none provided
   const sectionTitle = employeesData?.sectionTitle || "OUR TEAM";
-  
+
   // Format image paths to ensure they have proper format
-  const formattedEmployees = employeesListOriginal.map(emp => ({
+  const formattedEmployees = employeesListOriginal.map((emp) => ({
     ...emp,
-    image: emp.image?.startsWith('/') ? emp.image : `/assets/images/team/${emp.image?.split('/').pop() || 'roofer.png'}`
+    image: emp.image?.startsWith("/")
+      ? emp.image
+      : `/assets/images/team/${emp.image?.split("/").pop() || "roofer.png"}`,
   }));
-  
+
   const headerRef = useRef(null);
   const nailRef = useRef(null);
   const textRef = useRef(null);
@@ -39,14 +39,17 @@ function EmployeesPreview({ employeesData }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [transitionDuration, setTransitionDuration] = useState(0.5);
   const slideInterval = 2500;
-  
+
   const numTotalEmployees = formattedEmployees.length;
   const ITEMS_TO_SHOW_ANIMATION = 4; // Number of items visible during animation
 
   // Extend the employees array for a seamless loop (only if animating)
   const extendedEmployees = useMemo(() => {
-    if (numTotalEmployees >= 5) { // Animate if 5 or more
-      return formattedEmployees.concat(formattedEmployees.slice(0, ITEMS_TO_SHOW_ANIMATION));
+    if (numTotalEmployees >= 5) {
+      // Animate if 5 or more
+      return formattedEmployees.concat(
+        formattedEmployees.slice(0, ITEMS_TO_SHOW_ANIMATION)
+      );
     }
     return formattedEmployees; // For static display, actual list is used directly
   }, [formattedEmployees, numTotalEmployees, ITEMS_TO_SHOW_ANIMATION]);
@@ -79,11 +82,11 @@ function EmployeesPreview({ employeesData }) {
       scrollTrigger: {
         trigger: headerRef.current,
         start: "top 90%", // Changed from 80% to 20% to trigger when div appears at 20% of viewport
-        end: "top 90%",   // Adjusted to match new trigger approach
+        end: "top 90%", // Adjusted to match new trigger approach
         toggleActions: "play none none none", // Play once when entering trigger area
         markers: false,
-        once: true,       // Added to ensure it only plays once
-      },     
+        once: true, // Added to ensure it only plays once
+      },
     });
 
     // 1) Nail slides in (from 100vw to -7vw)
@@ -162,7 +165,6 @@ function EmployeesPreview({ employeesData }) {
         <div
           ref={nailRef}
           className="absolute right-[17vw] md:right-[17%] w-[30%] h-[6vh] md:h-[4vh]"
-
         >
           <div
             className="w-full h-full dynamic-shadow"
@@ -206,7 +208,9 @@ function EmployeesPreview({ employeesData }) {
               }}
             >
               {extendedEmployees.map((employee, idx) =>
-                renderEmployeeCard(employee, idx, { width: `${100 / ITEMS_TO_SHOW_ANIMATION}%` })
+                renderEmployeeCard(employee, idx, {
+                  width: `${100 / ITEMS_TO_SHOW_ANIMATION}%`,
+                })
               )}
             </div>
           ) : (
@@ -313,7 +317,10 @@ function EmployeesEditorPanel({ localEmployees, setLocalEmployees, onSave }) {
                     const fileURL = URL.createObjectURL(file);
                     const updated = [...localEmployees.employee];
                     updated[index] = { ...emp, image: fileURL };
-                    setLocalEmployees((prev) => ({ ...prev, employee: updated }));
+                    setLocalEmployees((prev) => ({
+                      ...prev,
+                      employee: updated,
+                    }));
                   }
                 }}
                 className="w-full bg-gray-700 px-2 py-1 rounded mt-1"
@@ -371,7 +378,7 @@ export default function EmployeesBlock({
     }
     return {
       ...employeesData,
-      employee: employeesData.employee?.map((emp) => ({...emp})) || [],
+      employee: employeesData.employee?.map((emp) => ({ ...emp })) || [],
     };
   });
 
