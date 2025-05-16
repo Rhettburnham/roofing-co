@@ -1,28 +1,23 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 
-// Get the API base URL based on environment
-const API_BASE_URL = import.meta.env.DEV 
-  ? 'https://auth-worker.roofing-www.workers.dev'  // Your actual deployed worker URL
-  : '';
-
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [debug, setDebug] = useState(''); // Add debug state
+  const [debug, setDebug] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    setDebug('Starting login process...'); // Debug message
+    setDebug('Starting login process...');
 
     try {
-      const endpoint = `${API_BASE_URL}${isLogin ? '/api/auth/login' : '/api/auth/signup'}`;
-      setDebug(`Sending request to: ${endpoint}`); // Debug message
+      const endpoint = isLogin ? '/api/auth/login' : '/api/auth/signup';
+      setDebug(`Sending request to: ${endpoint}`);
       
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -33,16 +28,16 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
 
-      setDebug(`Response status: ${response.status}`); // Debug message
+      setDebug(`Response status: ${response.status}`);
       const responseText = await response.text();
-      setDebug(`Response text: ${responseText}`); // Debug message
+      setDebug(`Response text: ${responseText}`);
 
       let data;
       try {
         data = JSON.parse(responseText);
-        setDebug(`Parsed data: ${JSON.stringify(data)}`); // Debug message
+        setDebug(`Parsed data: ${JSON.stringify(data)}`);
       } catch (parseError) {
-        setDebug(`Parse error: ${parseError.message}`); // Debug message
+        setDebug(`Parse error: ${parseError.message}`);
         throw new Error('Invalid server response');
       }
 
@@ -50,13 +45,13 @@ export default function LoginPage() {
         throw new Error(data.message || 'Authentication failed');
       }
 
-      setDebug('Login successful, redirecting...'); // Debug message
+      setDebug('Login successful, redirecting...');
       // Redirect to OneForm page on success
       window.location.href = '/oneform';
     } catch (err) {
       console.error('Authentication error:', err);
       setError(err.message || 'An error occurred during authentication');
-      setDebug(`Error: ${err.message}`); // Debug message
+      setDebug(`Error: ${err.message}`);
     } finally {
       setLoading(false);
     }

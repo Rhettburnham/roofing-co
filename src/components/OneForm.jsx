@@ -53,8 +53,11 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   useEffect(() => {
     const fetchCombinedData = async () => {
       try {
+        console.log("Starting fetchCombinedData...");
+        
         // If initialData is provided, use it directly within the appropriate block structure
         if (initialData) {
+          console.log("Using provided initialData:", initialData);
           if (blockName) {
             // For editing a specific block, structure the data properly
             setFormData({ [blockName]: initialData });
@@ -66,20 +69,73 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
           return;
         }
 
-        // Otherwise, try to fetch the full combined_data.json first
+        // First check if user is authenticated and has a custom config
+        console.log("Checking authentication status...");
+        const authResponse = await fetch('/api/auth/status', {
+          credentials: 'include'
+        });
+        console.log("Auth response status:", authResponse.status);
+        console.log("Auth response headers:", Object.fromEntries(authResponse.headers.entries()));
+        
+        const authData = await authResponse.json();
+        console.log("Auth data received:", authData);
+
+        if (authData.configId !== "default") {
+          console.log("User has a custom config. Config ID:", authData.configId);
+          authData.hasCustomConfig = true;
+        }
+        
+        if (authData.isAuthenticated && authData.hasCustomConfig) {
+          console.log("User is authenticated and has custom config. Config ID:", authData.configId);
+          try {
+            // Fetch the user's custom config
+            console.log("Fetching custom config from:", `/api/config/combined_data.json`);
+            const customConfigResponse = await fetch(`/api/config/combined_data.json`, {
+              credentials: 'include'
+            });
+            console.log("Custom config response status:", customConfigResponse.status);
+            
+            if (customConfigResponse.ok) {
+              const customData = await customConfigResponse.json();
+              console.log("Successfully loaded custom config data:", customData);
+              setFormData(customData);
+              setLoading(false);
+              return;
+            } else {
+              console.error("Failed to load custom config. Status:", customConfigResponse.status);
+              const errorText = await customConfigResponse.text();
+              console.error("Error response:", errorText);
+            }
+          } catch (customConfigError) {
+            console.error("Error loading custom config:", customConfigError);
+            // Continue to fallback if custom config fetch fails
+          }
+        } else {
+          console.log("No custom config available. Auth state:", {
+            isAuthenticated: authData.isAuthenticated,
+            hasCustomConfig: authData.hasCustomConfig
+          });
+        }
+
+        // Otherwise, try to fetch the full combined_data.json
+        console.log("Attempting to fetch default combined_data.json...");
         try {
           const combinedResponse = await fetch(
             "/data/raw_data/step_4/combined_data.json"
           );
+          console.log("Default config response status:", combinedResponse.status);
+          
           if (combinedResponse.ok) {
             const combinedData = await combinedResponse.json();
-            console.log("Loaded combined data:", combinedData);
+            console.log("Successfully loaded default combined data:", combinedData);
             setFormData(combinedData);
             setLoading(false);
             return;
+          } else {
+            console.error("Failed to load default config. Status:", combinedResponse.status);
           }
         } catch (combinedError) {
-          console.error("Error loading combined data:", combinedError);
+          console.error("Error loading default combined data:", combinedError);
           // Continue to fallback if combined data fetch fails
         }
 
@@ -186,7 +242,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
 
         setLoading(false);
       } catch (error) {
-        console.error("Error loading form data:", error);
+        console.error("Error in fetchCombinedData:", error);
         setLoading(false);
       }
     };

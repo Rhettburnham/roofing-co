@@ -1,11 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Get the API base URL based on environment
-const API_BASE_URL = import.meta.env.DEV 
-  ? 'https://auth-worker.roofing-www.workers.dev'
-  : '';
-
 export default function OneFormAuthButton() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -19,36 +14,46 @@ export default function OneFormAuthButton() {
 
   const checkAuthStatus = async () => {
     try {
+      console.log("OneFormAuthButton: Starting auth status check...");
       setDebug('Checking auth status...');
       
       // Log the current cookies for debugging
       const cookies = document.cookie;
+      console.log("OneFormAuthButton: Current cookies:", cookies);
       setDebug(`Current cookies: ${cookies}`);
       
-      const response = await fetch(`${API_BASE_URL}/api/auth/status`, {
+      const response = await fetch('/api/auth/status', {
         method: 'GET',
-        credentials: 'include', // This is crucial for sending cookies
+        credentials: 'include',
         headers: {
           'Accept': 'application/json',
         },
       });
 
+      console.log("OneFormAuthButton: Auth status response:", {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries())
+      });
       setDebug(`Auth status response: ${response.status}`);
       setDebug(`Response headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()))}`);
       
       const data = await response.json();
+      console.log("OneFormAuthButton: Auth status data:", data);
       setDebug(`Auth status data: ${JSON.stringify(data)}`);
       
       if (data.isAuthenticated) {
+        console.log("OneFormAuthButton: User is authenticated");
         setIsLoggedIn(true);
         setDebug('Successfully authenticated');
       } else {
+        console.log("OneFormAuthButton: User is not authenticated");
         setIsLoggedIn(false);
         setDebug('Not authenticated');
       }
     } catch (error) {
+      console.error("OneFormAuthButton: Auth status check failed:", error);
       setDebug(`Auth status error: ${error.message}`);
-      console.error('Auth status check failed:', error);
       setIsLoggedIn(false);
     } finally {
       setIsLoading(false);
@@ -58,24 +63,34 @@ export default function OneFormAuthButton() {
   const handleAuth = async () => {
     if (isLoggedIn) {
       try {
+        console.log("OneFormAuthButton: Starting logout process...");
         setDebug('Logging out...');
-        const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
+        const response = await fetch('/api/auth/logout', {
           method: 'POST',
           credentials: 'include',
         });
         
+        console.log("OneFormAuthButton: Logout response:", {
+          status: response.status,
+          statusText: response.statusText,
+          headers: Object.fromEntries(response.headers.entries())
+        });
+        
         if (response.ok) {
+          console.log("OneFormAuthButton: Logout successful");
           setIsLoggedIn(false);
           setShowSignOut(false);
           setDebug('Logged out successfully');
         } else {
+          console.error("OneFormAuthButton: Logout failed with status:", response.status);
           setDebug(`Logout failed with status: ${response.status}`);
         }
       } catch (error) {
+        console.error("OneFormAuthButton: Logout error:", error);
         setDebug(`Logout error: ${error.message}`);
-        console.error('Logout failed:', error);
       }
     } else {
+      console.log("OneFormAuthButton: Redirecting to login page...");
       setDebug('Redirecting to login...');
       window.location.href = '/login';
     }

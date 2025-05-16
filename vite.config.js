@@ -51,6 +51,14 @@ export default defineConfig({
     fs: {
       strict: false,
       allow: ['..']
-    }
+    },
+    proxy: {
+      '/api': {
+        target: 'https://auth-worker.roofing-www.workers.dev',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path,
+      },
+    },
   },
 });

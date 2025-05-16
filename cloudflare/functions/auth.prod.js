@@ -5,16 +5,9 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
 
-    // CORS headers - allow both localhost and production
-    const origin = request.headers.get('Origin');
-    const allowedOrigins = [
-      'https://roofing-www.pages.dev',
-      'http://localhost:5173',
-      'http://127.0.0.1:5173'
-    ];
-    
+    // CORS headers for production
     const corsHeaders = {
-      'Access-Control-Allow-Origin': allowedOrigins.includes(origin) ? origin : 'https://roofing-www.pages.dev',
+      'Access-Control-Allow-Origin': 'https://roofing-www.pages.dev',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
       'Access-Control-Allow-Credentials': 'true',
@@ -47,12 +40,6 @@ export default {
         }
       }
 
-      // Config routes
-      if (path.startsWith('/api/config/')) {
-        const configPath = path.split('/api/config/')[1];
-        return handleConfigRequest(request, env, configPath, corsHeaders);
-      }
-
       return new Response(JSON.stringify({ error: 'Not found' }), {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -78,15 +65,12 @@ async function handleAuthStatus(request, env, corsHeaders) {
     }
 
     const session = await env.DB.prepare(
-      'SELECT s.*, u.config_id FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.session_id = ? AND s.expires_at > datetime("now")'
+      'SELECT * FROM sessions WHERE id = ? AND expires_at > datetime("now")'
     ).bind(sessionId).first();
     
     const isAuthenticated = !!session;
 
-    return new Response(JSON.stringify({ 
-      isAuthenticated,
-      configId: session?.config_id || 'default'
-    }), {
+    return new Response(JSON.stringify({ isAuthenticated }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
@@ -115,28 +99,14 @@ async function handleLogin(request, env, corsHeaders) {
 
     const sessionId = crypto.randomUUID();
     await env.DB.prepare(
-      'INSERT INTO sessions (user_id, session_id, expires_at) VALUES (?, ?, datetime("now", "+7 days"))'
-    ).bind(user.id, sessionId).run();
+      'INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, datetime("now", "+7 days"))'
+    ).bind(sessionId, user.id).run();
 
-    // Check if user has a custom config
-    let hasCustomConfig = false;
-    try {
-      const configKey = `configs/${user.config_id}/combined_data.json`;
-      const configObject = await env.ROOFING_CONFIGS.get(configKey);
-      hasCustomConfig = !!configObject;
-    } catch (error) {
-      console.error('Error checking custom config:', error);
-    }
-
-    return new Response(JSON.stringify({ 
-      success: true,
-      configId: user.config_id,
-      hasCustomConfig
-    }), {
+    return new Response(JSON.stringify({ success: true }), {
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/json',
-        'Set-Cookie': `session=${sessionId}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800`,
+        'Set-Cookie': `session=${sessionId}; Path=/; HttpOnly; Secure; SameSite=Lax; Domain=.roofing-www.workers.dev; Max-Age=604800`,
       },
     });
   } catch (error) {
@@ -165,7 +135,7 @@ async function handleSignup(request, env, corsHeaders) {
 
     const passwordHash = hashPassword(password);
     await env.DB.prepare(
-      'INSERT INTO users (email, password_hash, config_id) VALUES (?, ?, "default")'
+      'INSERT INTO users (email, password_hash) VALUES (?, ?)'
     ).bind(email, passwordHash).run();
 
     return new Response(JSON.stringify({ success: true }), {
@@ -186,7 +156,7 @@ async function handleLogout(request, env, corsHeaders) {
     
     if (sessionId) {
       await env.DB.prepare(
-        'DELETE FROM sessions WHERE session_id = ?'
+        'DELETE FROM sessions WHERE id = ?'
       ).bind(sessionId).run();
     }
 
@@ -194,7 +164,7 @@ async function handleLogout(request, env, corsHeaders) {
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/json',
-        'Set-Cookie': 'session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0',
+        'Set-Cookie': 'session=; Path=/; HttpOnly; Secure; SameSite=Lax; Domain=.roofing-www.workers.dev; Max-Age=0',
       },
     });
   } catch (error) {
@@ -212,71 +182,4 @@ function hashPassword(password) {
 
 function verifyPassword(password, hash) {
   return hashPassword(password) === hash;
-}
-
-async function handleConfigRequest(request, env, configPath, corsHeaders) {
-  try {
-    console.log("Config request received for path:", configPath);
-    
-    // Verify authentication
-    const sessionId = request.headers.get('Cookie')?.split('session=')[1]?.split(';')[0];
-    console.log("Session ID from cookie:", sessionId);
-    
-    if (!sessionId) {
-      console.log("No session ID found in cookie");
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const session = await env.DB.prepare(
-      'SELECT s.*, u.config_id FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.session_id = ? AND s.expires_at > datetime("now")'
-    ).bind(sessionId).first();
-    
-    console.log("Session data from DB:", session);
-
-    if (!session) {
-      console.log("No valid session found");
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Get the config from R2
-    const configKey = `configs/${session.config_id}/${configPath}`;
-    console.log("Attempting to fetch from R2 with key:", configKey);
-    
-    // Remove the config_id from the path if it's already included
-    const cleanPath = configPath.replace(`${session.config_id}/`, '');
-    const finalConfigKey = `configs/${session.config_id}/${cleanPath}`;
-    console.log("Final R2 key:", finalConfigKey);
-    
-    const configObject = await env.ROOFING_CONFIGS.get(finalConfigKey);
-    console.log("R2 response:", configObject ? "Config found" : "Config not found");
-
-    if (!configObject) {
-      console.log("Config not found in R2 bucket");
-      return new Response(JSON.stringify({ error: 'Config not found' }), {
-        status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Return the config
-    console.log("Successfully retrieved config from R2");
-    return new Response(configObject.body, {
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'application/json',
-      },
-    });
-  } catch (error) {
-    console.error("Config request error:", error);
-    return new Response(JSON.stringify({ error: 'Failed to fetch config' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
 } 
