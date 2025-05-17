@@ -117,7 +117,8 @@ const Navbar = () => {
 
     if (hasScrolled) {
       // SCROLLED STATE ANIMATION
-      // 1. Subtitle fades out and is removed from layout
+
+      // Batch 1: Subtitle fade out, Title font shrink, Title container align center. These start together.
       tl.to(subTitleRef.current, {
         opacity: 0,
         duration: 0.3,
@@ -126,31 +127,23 @@ const Navbar = () => {
             subTitleRef.current.style.display = 'none';
           }
         },
-      });
+      }); // S1: Ends at 0.3s
 
+      tl.to(titleRef.current, {
+        fontSize: "4vh",
+        duration: 0.2,
+        ease: "power1.out",
+      }, "<"); // S2: Starts at 0s, concurrent with S1
 
+      tl.to(titleContainerRef.current, {
+        alignItems: "center",
+        duration: 0.2,
+      }, "<"); // S3: Starts at 0s, concurrent with S1
 
-      // 3. Title font size shrinks last
-      tl.to(
-        titleRef.current,
-        {
-          fontSize: "4vh",
-          duration: 0.2,
-          ease: "power1.out",
-        },
-        "<" // Starts 0.1s after the previous animation begins
-      );
-            // Ensure titleContainer's cross-axis alignment is center
-      tl.to(
-        titleContainerRef.current,
-        {
-          alignItems: "center", // For flex-col, this is horizontal alignment
-          duration: 0.2,
-        },
-        "<" // At the same time as the previous animation (title font size change)
-      );
-      
-      // 2. Logo and title slide together
+      // Batch 2: Logo and title slide left, Logo scales down. These start together, later.
+      // Previous batch max duration is 0.3s. Original slide was "+=0.7" after that.
+      const slideAndShrinkStartTime = 0.3 + 0.7; // Starts at 1.0s
+
       tl.to(
         [logoRef.current, titleRef.current],
         {
@@ -158,14 +151,20 @@ const Navbar = () => {
           duration: 0.4,
           ease: "power1.out",
         },
-        "+=0.7" // Starts 0.1s after the previous animation begins
+        slideAndShrinkStartTime
       );
 
+      tl.to(logoRef.current, {
+        scale: 1,
+        duration: 0.4, // Match slide duration
+        ease: "power1.out",
+      },
+        slideAndShrinkStartTime // Concurrent with slide
+      );
 
     } else {
       // UNSCROLLED STATE ANIMATION (REVERSE)
-
-      // Prepare subtitle to be shown: make it part of layout and initially transparent for fade-in
+      // Prepare subtitle to be shown
       if (subTitleRef.current) {
         subTitleRef.current.style.display = ''; // Revert display to default (e.g., 'inline' for span)
         gsap.set(subTitleRef.current, { opacity: 0 }); // Set initial opacity for GSAP fade-in animation
@@ -173,7 +172,9 @@ const Navbar = () => {
 
 
 
-      // 1. Logo and title slide back together
+      // 1. Logo and title slide back together (AnimX)
+      // Original "+=0.1" -> starts at 0.1s. Duration 0.6s. Ends at 0.7s.
+      const slideBackStartTime = 0.1; 
       tl.to(
         [logoRef.current, titleRef.current],
         {
@@ -181,35 +182,52 @@ const Navbar = () => {
           duration: 0.6,
           ease: "power1.out",
         },
-        "+=0.1" // Starts 0.1s after the previous animation begins
+        slideBackStartTime 
       );
-            // Reset titleContainer's cross-axis alignment to flex-start
+
+      // 2. Reset titleContainer's alignment (AnimAlign) & Title font size grows (AnimFont)
+      // AnimAlign original: "+=0.6" after AnimX end. So, 0.7s + 0.6s = 1.3s start. Duration 0.9s. Ends 2.2s.
+      // AnimFont original: "<" (with AnimAlign). Duration 0.2s. Ends 1.5s.
+      const textAlignFontStartTime = slideBackStartTime + 0.6 + 0.6; // 0.1s (start) + 0.6s (AnimX dur) + 0.6s (offset) = 1.3s
+
       tl.to(
         titleContainerRef.current,
         {
           alignItems: "flex-start", // For flex-col, this is horizontal alignment
           duration: 0.9,
+          ease: "power1.out", 
         },
-        "+=0.6" // At the same time as the previous animation (title font size change)
+        textAlignFontStartTime // Starts at 1.3s, ends at 2.2s
       );
 
-      // 2. Title font size grows first
       tl.to(titleRef.current, {
         fontSize: "7vh",
         duration: 0.2,
         ease: "power1.out",
-      }, "<"
-    );
+      }, 
+        textAlignFontStartTime // Starts at 1.3s, concurrent with align
+      );
 
+      // 3. Logo grows (AnimLogoGrow) - after AnimAlign is repositioned (i.e. AnimAlign ends at 2.2s)
+      const logoGrowStartTime = textAlignFontStartTime + 0.9; // 1.3s + 0.9s = 2.2s
+      tl.to(logoRef.current, {
+        scale: 2.5,
+        duration: 0.4, // Ends at 2.2s + 0.4s = 2.6s
+        ease: "power1.out",
+      }, 
+        logoGrowStartTime
+      );
 
-      // 3. Subtitle fades in last
+      // 4. Subtitle fades in last (AnimSub)
+      // Original: "+=0.1" after previous section. So, after logo grow (ends 2.6s) + 0.1s = 2.7s start.
+      const subtitleFadeInStartTime = logoGrowStartTime + 0.4 + 0.1; // 2.2s + 0.4s + 0.1s = 2.7s
       tl.to(
         subTitleRef.current,
         {
           opacity: 1, // Animate to fully visible
           duration: 0.2,
         },
-        "+=0.1" // Starts 0.1s after the previous animation begins
+        subtitleFadeInStartTime // Starts at 2.7s, ends at 2.9s
       );
     }
   }, [hasScrolled]);

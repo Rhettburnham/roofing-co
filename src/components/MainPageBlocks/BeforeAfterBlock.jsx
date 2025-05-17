@@ -30,11 +30,11 @@ const getDisplayUrl = (imageValue, defaultPath = null) => {
    Expects props.beforeAfterData = {
      sectionTitle: string,
      items: [
-       { before, after, shingle, sqft }, ...
+       { id, before, after, shingle, sqft }, ...
      ]
    }
 =============================================== */
-function BeforeAfterPreview({ beforeAfterData }) {
+function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleChange, onItemTextChange }) {
   const boxesRef = useRef([]);
   const headerRef = useRef(null);
   const nailRef = useRef(null);
@@ -62,6 +62,7 @@ function BeforeAfterPreview({ beforeAfterData }) {
   // Ensure default paths are robust
   const formattedItems = items.map(item => ({
     ...item,
+    id: item.id || `item-${Math.random().toString(36).substr(2, 9)}`,
     before: getDisplayUrl(item.before, "/assets/images/beforeafter/default_before.jpg"),
     after: getDisplayUrl(item.after, "/assets/images/beforeafter/default_after.jpg"),
   }));
@@ -307,9 +308,19 @@ function BeforeAfterPreview({ beforeAfterData }) {
             ref={textRef}
             className="absolute left-1/2 z-10 flex flex-row items-center"
           >
-            <h2 className="text-[6vw] md:text-[4vh] text-black font-normal font-condensed font-rye items-center py-3 z-30 text-center">
-              {sectionTitle}
-            </h2>
+            {readOnly ? (
+              <h2 className="text-[6vw] md:text-[4vh] text-black font-normal font-condensed font-rye items-center py-3 z-30 text-center">
+                {sectionTitle}
+              </h2>
+            ) : (
+              <input
+                type="text"
+                value={sectionTitle}
+                onChange={(e) => onSectionTitleChange && onSectionTitleChange(e.target.value)}
+                className="text-[6vw] md:text-[4vh] text-black font-normal font-condensed font-rye items-center py-3 z-30 text-center bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-2 min-w-[300px] md:min-w-[400px]"
+                placeholder="Section Title"
+              />
+            )}
           </div>
         </div>
 
@@ -318,7 +329,7 @@ function BeforeAfterPreview({ beforeAfterData }) {
           <div className="grid grid-cols-3 gap-8 md:space-x-14 px-2 md:px-5 md:pb-5">
             {formattedItems.map((img, index) => (
               <div
-                key={index}
+                key={img.id}
                 ref={(el) => (boxesRef.current[index] = el)}
                 className="relative flex flex-col md:flex-row items-center justify-between w-full"
               >
@@ -354,14 +365,37 @@ function BeforeAfterPreview({ beforeAfterData }) {
                       : "Before"}
                   </button>
                   {/* Move info to the top left of image with padding */}
-                  <div className="overlay-text absolute top-0 left-0 pt-1 pl-2 md:pt-2 md:pl-3">
+                  <div className="overlay-text absolute top-0 left-0 pt-1 pl-2 md:pt-2 md:pl-3 w-full pr-12">
                     <div className="flex flex-col items-start text-white text-left leading-tight">
-                      <span className="font-bold text-[2.5vw] md:text-xl whitespace-nowrap drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] mb-0">
-                        {img.shingle}
-                      </span>
-                      <span className="font-semibold text-[2.5vw] md:text-lg text-white drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
-                        {img.sqft}
-                      </span>
+                      {readOnly ? (
+                        <>
+                          <span className="font-bold text-[2.5vw] md:text-xl whitespace-nowrap drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] mb-0">
+                            {img.shingle}
+                          </span>
+                          <span className="font-semibold text-[2.5vw] md:text-lg text-white drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
+                            {img.sqft}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <input
+                            type="text"
+                            value={img.shingle || ""}
+                            onChange={(e) => onItemTextChange && onItemTextChange(index, "shingle", e.target.value)}
+                            className="font-bold text-[2.5vw] md:text-xl whitespace-nowrap bg-transparent focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 mb-0 w-full text-white placeholder-gray-300 drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"
+                            placeholder="Shingle Type"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <input
+                            type="text"
+                            value={img.sqft || ""}
+                            onChange={(e) => onItemTextChange && onItemTextChange(index, "sqft", e.target.value)}
+                            className="font-semibold text-[2.5vw] md:text-lg bg-transparent focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 w-full text-white placeholder-gray-300 drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"
+                            placeholder="Sqft"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -437,12 +471,13 @@ function BeforeAfterPreview({ beforeAfterData }) {
    This panel now uses file inputs for the before and after images.
 =============================================== */
 function BeforeAfterEditorPanel({ localData, setLocalData, onSave }) {
-  const { sectionTitle = "", items = [] } = localData;
+  const { items = [] } = localData;
 
   const handleAddItem = () => {
     const newItem = {
-      before: "/assets/images/beforeafter/default_before.jpg",
-      after: "/assets/images/beforeafter/default_after.jpg",
+      id: `new_${Date.now()}`,
+      before: initializeImageState(null, "/assets/images/beforeafter/default_before.jpg"),
+      after: initializeImageState(null, "/assets/images/beforeafter/default_after.jpg"),
       shingle: "New Shingle Type",
       sqft: "0000 sqft",
     };
@@ -453,6 +488,15 @@ function BeforeAfterEditorPanel({ localData, setLocalData, onSave }) {
   };
 
   const handleRemoveItem = (index) => {
+    const itemToRemove = items[index];
+    // Revoke blob URLs if they exist for the item being removed
+    if (itemToRemove.before && typeof itemToRemove.before === 'object' && itemToRemove.before.url && itemToRemove.before.url.startsWith('blob:')) {
+      URL.revokeObjectURL(itemToRemove.before.url);
+    }
+    if (itemToRemove.after && typeof itemToRemove.after === 'object' && itemToRemove.after.url && itemToRemove.after.url.startsWith('blob:')) {
+      URL.revokeObjectURL(itemToRemove.after.url);
+    }
+
     const updated = [...items];
     updated.splice(index, 1);
     setLocalData((prev) => ({
@@ -481,6 +525,12 @@ function BeforeAfterEditorPanel({ localData, setLocalData, onSave }) {
   const handleImageUpload = (index, field, file) => {
     if (!file) return;
 
+    // Revoke old blob URL if exists for this specific image field
+    const currentItem = items[index];
+    if (currentItem && currentItem[field] && typeof currentItem[field] === 'object' && currentItem[field].url && currentItem[field].url.startsWith('blob:')) {
+      URL.revokeObjectURL(currentItem[field].url);
+    }
+
     // Create a URL for display
     const fileURL = URL.createObjectURL(file);
 
@@ -502,50 +552,33 @@ function BeforeAfterEditorPanel({ localData, setLocalData, onSave }) {
   };
 
   return (
-    <div className="bg-black text-white p-4 rounded max-h-[75vh] overflow-auto">
+    <div className="bg-white text-gray-800 p-4 rounded">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-lg md:text-2xl font-semibold">
-          Before/After Editor
+          Edit Gallery Images & Items
         </h1>
-        <button
-          type="button"
-          onClick={onSave}
-          className="bg-green-600 hover:bg-green-500 px-4 py-2 rounded text-white font-semibold"
-        >
-          Save
-        </button>
-      </div>
-
-      <div className="mb-6">
-        <label className="block text-sm mb-1">Section Title:</label>
-        <input
-          type="text"
-          className="w-full bg-gray-700 px-2 py-1 rounded"
-          value={sectionTitle}
-          onChange={(e) =>
-            setLocalData((prev) => ({ ...prev, sectionTitle: e.target.value }))
-          }
-        />
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold mb-2">Gallery Items</h2>
+        <h2 className="text-lg font-semibold mb-2">Manage Gallery Items & Images</h2>
         {items.map((item, index) => (
-          <div key={index} className="bg-gray-800 p-3 rounded mb-3 relative">
+          <div key={item.id || index} className="bg-gray-100 p-3 rounded mb-3 relative border border-gray-300">
             <button
               onClick={() => handleRemoveItem(index)}
-              className="bg-red-600 text-white text-xs px-2 py-1 rounded absolute top-2 right-2"
+              className="bg-red-600 text-white text-xs px-2 py-1 rounded absolute top-2 right-2 hover:bg-red-700"
             >
               Remove
             </button>
 
+            <p className="text-sm text-gray-600 mb-2">Editing Images for: {item.shingle || "Item"} ({item.sqft || "Details"})</p>
+
             {/* Before Image Upload */}
-            <label className="block text-sm mb-1">
+            <label className="block text-sm mb-1 text-gray-700">
               Before Image:
               <input
                 type="file"
                 accept="image/*"
-                className="w-full bg-gray-700 px-2 py-1 rounded mt-1"
+                className="w-full bg-gray-200 text-gray-800 px-2 py-1 rounded mt-1 text-sm file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) {
@@ -558,17 +591,31 @@ function BeforeAfterEditorPanel({ localData, setLocalData, onSave }) {
               <img
                 src={getDisplayUrl(item.before)}
                 alt="Before Preview"
-                className="mt-2 h-24 rounded shadow"
+                className="mt-2 h-24 w-24 object-cover rounded shadow bg-gray-200 p-1"
               />
             )}
+            <input
+                type="text"
+                className="w-full bg-gray-200 text-gray-800 px-2 py-1 rounded mt-1 text-xs placeholder-gray-500"
+                placeholder="Or paste direct image URL (e.g., /assets/img.png)"
+                value={(item.before && (typeof item.before === 'string' ? item.before : item.before.url)) || ''}
+                onChange={(e) => {
+                    const newImageValue = e.target.value;
+                    const oldImageState = item.before;
+                    if (oldImageState && typeof oldImageState === 'object' && oldImageState.url && oldImageState.url.startsWith('blob:')) {
+                        if (newImageValue !== oldImageState.url) { URL.revokeObjectURL(oldImageState.url); }
+                    }
+                    handleChangeItem(index, 'before', { file: null, url: newImageValue, name: newImageValue.split('/').pop() });
+                }}
+            />
 
             {/* After Image Upload */}
-            <label className="block text-sm mb-1">
+            <label className="block text-sm mb-1 mt-2 text-gray-700">
               After Image:
               <input
                 type="file"
                 accept="image/*"
-                className="w-full bg-gray-700 px-2 py-1 rounded mt-1"
+                className="w-full bg-gray-200 text-gray-800 px-2 py-1 rounded mt-1 text-sm file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) {
@@ -581,35 +628,23 @@ function BeforeAfterEditorPanel({ localData, setLocalData, onSave }) {
               <img
                 src={getDisplayUrl(item.after)}
                 alt="After Preview"
-                className="mt-2 h-24 rounded shadow"
+                className="mt-2 h-24 w-24 object-cover rounded shadow bg-gray-200 p-1"
               />
             )}
-
-            {/* Shingle Type */}
-            <label className="block text-sm mb-1">
-              Shingle Type:
-              <input
+             <input
                 type="text"
-                className="w-full bg-gray-700 px-2 py-1 rounded mt-1"
-                value={item.shingle}
-                onChange={(e) =>
-                  handleChangeItem(index, "shingle", e.target.value)
-                }
-              />
-            </label>
-
-            {/* Square Footage */}
-            <label className="block text-sm mb-1">
-              Square Footage:
-              <input
-                type="text"
-                className="w-full bg-gray-700 px-2 py-1 rounded mt-1"
-                value={item.sqft}
-                onChange={(e) =>
-                  handleChangeItem(index, "sqft", e.target.value)
-                }
-              />
-            </label>
+                className="w-full bg-gray-200 text-gray-800 px-2 py-1 rounded mt-1 text-xs placeholder-gray-500"
+                placeholder="Or paste direct image URL (e.g., /assets/img.png)"
+                value={(item.after && (typeof item.after === 'string' ? item.after : item.after.url)) || ''}
+                onChange={(e) => {
+                    const newImageValue = e.target.value;
+                    const oldImageState = item.after;
+                    if (oldImageState && typeof oldImageState === 'object' && oldImageState.url && oldImageState.url.startsWith('blob:')) {
+                        if (newImageValue !== oldImageState.url) { URL.revokeObjectURL(oldImageState.url); }
+                    }
+                    handleChangeItem(index, 'after', { file: null, url: newImageValue, name: newImageValue.split('/').pop() });
+                }}
+            />
           </div>
         ))}
 
@@ -630,28 +665,30 @@ function BeforeAfterEditorPanel({ localData, setLocalData, onSave }) {
    ----------------------------------------------
    Toggles between preview (read-only) and editor panel.
 =============================================== */
+// Helper to initialize image state: handles string path or {file, url, name} object
+const initializeImageState = (imageConfig, defaultPath) => {
+  if (imageConfig && typeof imageConfig === 'object' && imageConfig.url) {
+    return imageConfig; // Already in {file, url, name?} format
+  }
+  if (typeof imageConfig === 'string') {
+    return { file: null, url: imageConfig, name: imageConfig.split('/').pop() }; 
+  }
+  return { file: null, url: defaultPath, name: defaultPath.split('/').pop() }; 
+};
+
 export default function BeforeAfterBlock({
   readOnly = false,
   beforeAfterData,
   onConfigChange,
 }) {
-  // Helper to initialize image state: handles string path or {file, url} object
-  const initializeImageState = (imageConfig, defaultPath) => {
-    if (imageConfig && typeof imageConfig === 'object' && imageConfig.url) {
-      return imageConfig; // Already in {file, url} format
-    }
-    if (typeof imageConfig === 'string') {
-      return { file: null, url: imageConfig }; // It's a path
-    }
-    return { file: null, url: defaultPath }; // Default
-  };
-
-  const [localData, setLocalData] = useState(() => {
+ 
+  const [localData, setLocalDataState] = useState(() => {
     const initialConfig = beforeAfterData || {};
     return {
       sectionTitle: initialConfig.sectionTitle || "GALLERY",
-      items: (initialConfig.items || []).map(item => ({
+      items: (initialConfig.items || []).map((item, index) => ({
         ...item,
+        id: item.id || `item_${index}_${Date.now()}`,
         before: initializeImageState(item.before, "/assets/images/beforeafter/default_before.jpg"),
         after: initializeImageState(item.after, "/assets/images/beforeafter/default_after.jpg"),
       })),
@@ -660,7 +697,7 @@ export default function BeforeAfterBlock({
 
   useEffect(() => {
     if (beforeAfterData) {
-      setLocalData(prevLocalData => {
+      setLocalDataState(prevLocalData => {
         const newItems = (beforeAfterData.items || []).map((newItem, index) => {
           const oldItem = prevLocalData.items[index] || {};
           const newBeforeImg = initializeImageState(newItem.before, "/assets/images/beforeafter/default_before.jpg");
@@ -676,13 +713,15 @@ export default function BeforeAfterBlock({
 
           return {
             ...newItem,
+            id: newItem.id || oldItem.id || `item_update_${index}_${Date.now()}`,
             before: newBeforeImg,
             after: newAfterImg,
           };
         });
 
         return {
-          ...prevLocalData,
+          ...prevLocalData, // Keep other potential top-level fields from localData
+          ...beforeAfterData, // Overwrite with all fields from beforeAfterData, including sectionTitle
           sectionTitle: beforeAfterData.sectionTitle || prevLocalData.sectionTitle || "GALLERY",
           items: newItems,
         };
@@ -690,19 +729,55 @@ export default function BeforeAfterBlock({
     }
   }, [beforeAfterData]);
 
-  const handleSave = () => {
-    onConfigChange?.(localData);
+  // Cleanup blob URLs on unmount
+  useEffect(() => {
+    return () => {
+      localData.items.forEach(item => {
+        if (item.before && item.before.url && item.before.url.startsWith('blob:')) {
+          URL.revokeObjectURL(item.before.url);
+        }
+        if (item.after && item.after.url && item.after.url.startsWith('blob:')) {
+          URL.revokeObjectURL(item.after.url);
+        }
+      });
+    };
+  }, [localData.items]);
+
+  const updateAndPropagateChanges = (updater) => {
+    setLocalDataState(prevState => {
+      const newState = typeof updater === 'function' ? updater(prevState) : updater;
+      if (onConfigChange) {
+        onConfigChange(newState);
+      }
+      return newState;
+    });
   };
 
   if (readOnly) {
-    // Pass the original beforeAfterData to preview, it will use its own getDisplayUrl
-    return <BeforeAfterPreview beforeAfterData={beforeAfterData} />;
+    return <BeforeAfterPreview beforeAfterData={beforeAfterData} readOnly={true} />;
   }
+  
   return (
-    <BeforeAfterEditorPanel
-      localData={localData}
-      setLocalData={setLocalData}
-      onSave={handleSave}
-    />
+    <>
+      <BeforeAfterPreview 
+        beforeAfterData={localData} 
+        readOnly={false}
+        onSectionTitleChange={(newTitle) => {
+          updateAndPropagateChanges(prev => ({ ...prev, sectionTitle: newTitle }));
+        }}
+        onItemTextChange={(index, field, value) => {
+          updateAndPropagateChanges(prev => {
+            const updatedItems = [...prev.items];
+            updatedItems[index] = { ...updatedItems[index], [field]: value };
+            return { ...prev, items: updatedItems };
+          });
+        }}
+      />
+      <BeforeAfterEditorPanel
+        localData={localData}
+        setLocalData={updateAndPropagateChanges}
+        onSave={() => onConfigChange?.(localData)}
+      />
+    </>
   );
 }

@@ -8,34 +8,34 @@ import EmployeesBlock from "./MainPageBlocks/EmployeesBlock";
 import ButtonBlock from "./MainPageBlocks/ButtonBlock";
 import BookingBlock from "./MainPageBlocks/BookingBlock";
 import CombinedPageBlock from "./MainPageBlocks/CombinedPageBlock";
+import ServiceSliderBlock from "./MainPageBlocks/ServiceSliderBlock";
+import TestimonialBlock from "./MainPageBlocks/TestimonialBlock";
 
 // Sliding Edit Panel component - Will NOT be used for RichTextBlock anymore
 const SlidingEditPanel = ({ children, onClose }) => (
   <div className="w-full transition-all duration-300 mt-4">
-    <div className="bg-gray-800 p-4 rounded-lg shadow-lg">
-      <div className="flex justify-end mb-2">
-        <button
-          type="button"
-          onClick={onClose} // This will now also trigger save for RichTextBlock
-          className="bg-gray-700 text-white rounded-full p-2 hover:bg-gray-600"
+    <div className="bg-white py-4 px-0 rounded-lg shadow-lg relative">
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute top-2 right-2 z-10 text-gray-600 bg-gray-200 hover:bg-gray-300 rounded-full w-8 h-8 flex items-center justify-center focus:outline-none"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth="1.5"
+          stroke="currentColor"
+          className="w-6 h-6"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth="1.5"
-            stroke="currentColor"
-            className="w-6 h-6"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
-      </div>
-      <div className="overflow-auto max-h-[70vh]">{children}</div>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M6 18L18 6M6 6l12 12"
+          />
+        </svg>
+      </button>
+      <div>{children}</div>
     </div>
   </div>
 );
@@ -74,7 +74,19 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
 
   const handleRichTextConfigChange = (newRichTextConfig) => {
     console.log("RichText config changed (auto-saved):", newRichTextConfig);
-    setFormData((prev) => ({ ...prev, richText: newRichTextConfig }));
+    setFormData((prev) => {
+      const updatedFormData = { ...prev, richText: newRichTextConfig };
+      // Check if the rich text config update includes a sharedBannerColor to sync with hero
+      if (newRichTextConfig.hasOwnProperty('sharedBannerColor') && 
+          newRichTextConfig.sharedBannerColor !== prev.hero?.bannerColor) {
+        console.log("RichText changed sharedBannerColor, updating hero.bannerColor to:", newRichTextConfig.sharedBannerColor);
+        updatedFormData.hero = {
+          ...(prev.hero || {}),
+          bannerColor: newRichTextConfig.sharedBannerColor,
+        };
+      }
+      return updatedFormData;
+    });
   };
 
   const handleButtonConfigChange = (newButtonConfig) => {
@@ -90,6 +102,16 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
   const handleBookingConfigChange = (newBookingConfig) => {
     console.log("Booking config changed:", newBookingConfig);
     setFormData((prev) => ({ ...prev, booking: newBookingConfig }));
+  };
+
+  const handleServiceSliderConfigChange = (newServiceSliderConfig) => {
+    console.log("ServiceSlider config changed:", newServiceSliderConfig);
+    setFormData((prev) => ({ ...prev, serviceSlider: newServiceSliderConfig }));
+  };
+
+  const handleTestimonialsConfigChange = (newTestimonialsConfig) => {
+    console.log("Testimonials config changed:", newTestimonialsConfig);
+    setFormData((prev) => ({ ...prev, testimonials: newTestimonialsConfig }));
   };
 
   const handleCombinedConfigChange = (newCombinedConfig) => {
@@ -181,6 +203,8 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
               readOnly={false} // Always editable in single block mode for RichText
               richTextData={getBlockData("richText")}
               onConfigChange={handleRichTextConfigChange}
+              bannerColor={getBlockData("hero")?.bannerColor}
+              showControls={true} // In single block mode, always show controls for images
             />
           </div>
         );
@@ -214,13 +238,23 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
             />
           </div>
         );
-      case "combinedPage":
+      case "serviceSlider":
         return (
           <div className="relative">
-            <CombinedPageBlock
+            <ServiceSliderBlock
               readOnly={false}
-              config={getBlockData("combinedPage")}
-              onConfigChange={handleCombinedConfigChange}
+              config={getBlockData("serviceSlider")}
+              onConfigChange={handleServiceSliderConfigChange}
+            />
+          </div>
+        );
+      case "testimonials":
+        return (
+          <div className="relative">
+            <TestimonialBlock
+              readOnly={false}
+              config={getBlockData("testimonials")}
+              onConfigChange={handleTestimonialsConfigChange}
             />
           </div>
         );
@@ -264,7 +298,9 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
             {activeEditBlock === "hero" ? CloseIcon : PencilIcon}
           </button>
         </div>
-        <HeroBlock readOnly={true} heroconfig={formData.hero} />
+        {activeEditBlock !== "hero" && (
+          <HeroBlock readOnly={true} heroconfig={formData.hero} />
+        )}
 
         {activeEditBlock === "hero" && (
           <SlidingEditPanel onClose={() => setActiveEditBlock(null)}>
@@ -278,23 +314,25 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
       </div>
 
       {/* RICHTEXT BLOCK - Inline Editing Toggle, No SlidingEditPanel */}
-      <div className="relative bg-white overflow-hidden py-4"> {/* Added some padding for better spacing with editor panel */} 
+      <div className="relative bg-white overflow-hidden"> {/* Removed py-4 for flush layout */}
         <div className="absolute top-4 right-4 z-40">
           <button
             type="button"
-            onClick={toggleRichTextEdit} // Use the dedicated toggle function
+            onClick={toggleRichTextEdit} // Use the dedicated toggle function again
             className="bg-gray-800 text-white rounded-full p-2 shadow-lg hover:bg-gray-700 transition-colors"
             aria-label={activeEditBlock === "richText" ? "Done Editing Rich Text" : "Edit Rich Text Block"}
           >
-            {activeEditBlock === "richText" ? CheckIcon : PencilIcon} 
+            {activeEditBlock === "richText" ? CheckIcon : PencilIcon} {/* Restore CheckIcon for done state */}
           </button>
         </div>
         <RichTextBlock 
-          readOnly={activeEditBlock !== 'richText'}
+          readOnly={activeEditBlock !== 'richText'} // Text is editable if activeEditBlock is 'richText'
           richTextData={formData.richText} 
           onConfigChange={handleRichTextConfigChange} 
+          bannerColor={formData.hero?.bannerColor}
+          showControls={activeEditBlock === 'richText'} // Show image controls if activeEditBlock is 'richText'
         />
-        {/* The RichTextEditorPanel for images is now part of RichTextBlock itself when readOnly is false */}
+        {/* SlidingEditPanel removed, RichTextBlock handles its own controls panel display based on showControls prop */}
       </div>
 
       {/* ABOUT BUTTON BLOCK */}
@@ -334,7 +372,9 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
             {activeEditBlock === "map" ? CloseIcon : PencilIcon}
           </button>
         </div>
-        <BasicMapBlock readOnly={true} mapData={formData.map} />
+        {activeEditBlock !== "map" && (
+          <BasicMapBlock readOnly={true} mapData={formData.map} />
+        )}
 
         {activeEditBlock === "map" && (
           <SlidingEditPanel onClose={() => setActiveEditBlock(null)}>
@@ -372,26 +412,53 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
         )}
       </div>
 
-      {/* COMBINED PAGE BLOCK */}
+      {/* SERVICE SLIDER BLOCK */}
       <div className="relative bg-white overflow-hidden">
         <div className="absolute top-4 right-4 z-40">
           <button
             type="button"
-            onClick={() => setActiveEditBlock(activeEditBlock === "combinedPage" ? null : "combinedPage")}
+            onClick={() => setActiveEditBlock(activeEditBlock === "serviceSlider" ? null : "serviceSlider")}
             className="bg-gray-800 text-white rounded-full p-2 shadow-lg hover:bg-gray-700 transition-colors"
-            aria-label={activeEditBlock === "combinedPage" ? "Close Combined Page Editor" : "Edit Combined Page Block"}
+            aria-label={activeEditBlock === "serviceSlider" ? "Close Service Slider Editor" : "Edit Service Slider Block"}
           >
-            {activeEditBlock === "combinedPage" ? CloseIcon : PencilIcon}
+            {activeEditBlock === "serviceSlider" ? CloseIcon : PencilIcon}
           </button>
         </div>
-        <CombinedPageBlock readOnly={true} config={formData.combinedPage} />
+        {activeEditBlock !== "serviceSlider" && (
+          <ServiceSliderBlock readOnly={true} config={formData.serviceSlider} />
+        )}
 
-        {activeEditBlock === "combinedPage" && (
+        {activeEditBlock === "serviceSlider" && (
           <SlidingEditPanel onClose={() => setActiveEditBlock(null)}>
-            <CombinedPageBlock
+            <ServiceSliderBlock
               readOnly={false}
-              config={formData.combinedPage}
-              onConfigChange={handleCombinedConfigChange}
+              config={formData.serviceSlider}
+              onConfigChange={handleServiceSliderConfigChange}
+            />
+          </SlidingEditPanel>
+        )}
+      </div>
+
+      {/* TESTIMONIALS BLOCK */}
+      <div className="relative bg-white overflow-hidden">
+        <div className="absolute top-4 right-4 z-40">
+          <button
+            type="button"
+            onClick={() => setActiveEditBlock(activeEditBlock === "testimonials" ? null : "testimonials")}
+            className="bg-gray-800 text-white rounded-full p-2 shadow-lg hover:bg-gray-700 transition-colors"
+            aria-label={activeEditBlock === "testimonials" ? "Close Testimonials Editor" : "Edit Testimonials Block"}
+          >
+            {activeEditBlock === "testimonials" ? CloseIcon : PencilIcon}
+          </button>
+        </div>
+        <TestimonialBlock readOnly={true} config={formData.testimonials} />
+
+        {activeEditBlock === "testimonials" && (
+          <SlidingEditPanel onClose={() => setActiveEditBlock(null)}>
+            <TestimonialBlock
+              readOnly={false}
+              config={formData.testimonials}
+              onConfigChange={handleTestimonialsConfigChange}
             />
           </SlidingEditPanel>
         )}
@@ -409,10 +476,12 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
             {activeEditBlock === "beforeAfter" ? CloseIcon : PencilIcon}
           </button>
         </div>
-        <BeforeAfterBlock
-          readOnly={true}
-          beforeAfterData={formData.before_after}
-        />
+        {activeEditBlock !== "beforeAfter" && (
+          <BeforeAfterBlock
+            readOnly={true}
+            beforeAfterData={formData.before_after}
+          />
+        )}
 
         {activeEditBlock === "beforeAfter" && (
           <SlidingEditPanel onClose={() => setActiveEditBlock(null)}>
@@ -437,7 +506,9 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
             {activeEditBlock === "employees" ? CloseIcon : PencilIcon}
           </button>
         </div>
-        <EmployeesBlock readOnly={activeEditBlock !== "employees"} employeesData={formData.employees} />
+        {activeEditBlock !== "employees" && (
+          <EmployeesBlock readOnly={activeEditBlock !== "employees"} employeesData={formData.employees} />
+        )}
 
         {activeEditBlock === "employees" && (
           <SlidingEditPanel onClose={() => setActiveEditBlock(null)}>

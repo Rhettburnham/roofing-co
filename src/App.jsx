@@ -35,8 +35,11 @@ const BasicMapBlock = lazy(
 const BookingBlock = lazy(
   () => import("./components/MainPageBlocks/BookingBlock")
 );
-const CombinedPageBlock = lazy(
-  () => import("./components/MainPageBlocks/CombinedPageBlock")
+const ServiceSliderBlock = lazy(
+  () => import("./components/MainPageBlocks/ServiceSliderBlock")
+);
+const TestimonialBlock = lazy(
+  () => import("./components/MainPageBlocks/TestimonialBlock")
 );
 const BeforeAfterBlock = lazy(
   () => import("./components/MainPageBlocks/BeforeAfterBlock")
@@ -131,7 +134,8 @@ const AppRoutes = ({
   buttonconfig,
   mapConfig,
   bookingConfig,
-  combinedPageCfg,
+  serviceSliderConfig,
+  testimonialsConfig,
   beforeAfterConfig,
   employeesConfig,
   aboutPageConfig,
@@ -173,9 +177,14 @@ const AppRoutes = ({
                 <BasicMapBlock readOnly mapData={mapConfig} />
               </Suspense>
             </section>
-            <section id="combinedPage">
+            <section id="services">
               <Suspense fallback={<LoadingScreen />}>
-                <CombinedPageBlock readOnly config={combinedPageCfg} />
+                <ServiceSliderBlock readOnly config={serviceSliderConfig} />
+              </Suspense>
+            </section>
+            <section id="testimonials">
+              <Suspense fallback={<LoadingScreen />}>
+                <TestimonialBlock readOnly config={testimonialsConfig} />
               </Suspense>
             </section>
             <section id="booking">
@@ -312,13 +321,25 @@ const AppRoutes = ({
         }
       />
       <Route
-        path="/edit/combinedPage"
+        path="/edit/serviceSlider"
         element={
           <Suspense fallback={<LoadingScreen />}>
             <OneForm
-              initialData={combinedPageCfg}
-              blockName="combinedPage"
-              title="Combined Page Block Editor"
+              initialData={serviceSliderConfig}
+              blockName="serviceSlider"
+              title="Service Slider Block Editor"
+            />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/edit/testimonials"
+        element={
+          <Suspense fallback={<LoadingScreen />}>
+            <OneForm
+              initialData={testimonialsConfig}
+              blockName="testimonials"
+              title="Testimonial Block Editor"
             />
           </Suspense>
         }
@@ -370,7 +391,8 @@ AppRoutes.propTypes = {
   buttonconfig: PropTypes.object,
   mapConfig: PropTypes.object,
   bookingConfig: PropTypes.object,
-  combinedPageCfg: PropTypes.object,
+  serviceSliderConfig: PropTypes.object,
+  testimonialsConfig: PropTypes.object,
   beforeAfterConfig: PropTypes.object,
   employeesConfig: PropTypes.object,
   aboutPageConfig: PropTypes.object,
@@ -462,7 +484,8 @@ const App = () => {
   const buttonconfig = pageData.button;
   const mapConfig = pageData.map;
   const bookingConfig = pageData.booking;
-  const combinedPageCfg = pageData.combinedPage;
+  const serviceSliderConfig = pageData.serviceSlider;
+  const testimonialsConfig = pageData.testimonials;
   const beforeAfterConfig = pageData.before_after;
   const employeesConfig = pageData.employees;
   
@@ -486,7 +509,8 @@ const App = () => {
           buttonconfig={buttonconfig}
           mapConfig={mapConfig}
           bookingConfig={bookingConfig}
-          combinedPageCfg={combinedPageCfg}
+          serviceSliderConfig={serviceSliderConfig}
+          testimonialsConfig={testimonialsConfig}
           beforeAfterConfig={beforeAfterConfig}
           employeesConfig={employeesConfig}
           aboutPageConfig={aboutPageConfig}

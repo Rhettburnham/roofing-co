@@ -162,6 +162,7 @@
     ]
   },
   "map": {
+    "title": "Are we in your area?",
     "center": {
       "lat": 33.5407,
       "lng": -84.6519
@@ -171,6 +172,7 @@
     "address": "40 Tipperary TrlSharpsburg, GA 30277-3502",
     "telephone": "(404) 227-5000",
     "markerIcon": "/assets/images/hero/clipped.png",
+    "statsBackgroundImage": "/assets/images/stats_background.jpg",
     "serviceHours": [
       {
         "day": "Mon",
@@ -224,9 +226,60 @@
       }
     ]
   },
-  "combinedPage": {
+  "serviceSlider": {
     "isCommercial": false,
     "title": "Services",
+    "residentialButtonText": "Residential",
+    "commercialButtonText": "Commercial",
+    "residentialServices": [
+      {
+        "icon": "FaHardHat",
+        "title": "Shingling",
+        "link": "/services/residential-1-shingling"
+      },
+      {
+        "icon": "FaHome",
+        "title": "Chimney",
+        "link": "/services/residential-2-chimney"
+      },
+      {
+        "icon": "FaTools",
+        "title": "Siding",
+        "link": "/services/residential-3-siding"
+      },
+      {
+        "icon": "FaBroom",
+        "title": "Repairs",
+        "link": "/services/residential-4-repairs"
+      }
+    ],
+    "commercialServices": [
+      {
+        "icon": "FaPaintRoller",
+        "title": "Metal Roof",
+        "link": "/services/commercial-1-metal-roof"
+      },
+      {
+        "icon": "FaBuilding",
+        "title": "Flat Roof",
+        "link": "/services/commercial-2-flat-roof"
+      },
+      {
+        "icon": "FaWarehouse",
+        "title": "Restoration",
+        "link": "/services/commercial-3-restoration"
+      },
+      {
+        "icon": "FaChimney",
+        "title": "Maintenance",
+        "link": "/services/commercial-4-maintenance"
+      }
+    ],
+    "largeResidentialImg": "/assets/images/main_image_expanded.jpg",
+    "largeCommercialImg": "/assets/images/commercialservices.jpg"
+  },
+  "testimonials": {
+    "title": "Testimonials",
     "googleReviews": [
       {
         "name": "Valjean Whitlow",
@@ -272,61 +325,13 @@
         "name": "David Snyder",
         "stars": 5,
         "date": "4 years ago",
-        "text": "I would like to share a review of my experience with Craft Roofing Company. I had my roof replaced by them, and the results were outstanding. The installers were on time and finished the job in a little more than one day. The roof looks \u2026",
+        "text": "I would like to share a review of my experience with Craft Roofing Company. I had my roof replaced by them, and the results were outstanding. The installers were on time and finished the job in a little more than one day. The roof looks …",
         "logo": "/assets/images/hero/googleimage.png",
         "link": "https://www.google.com/maps"
       }
     ],
-    "residentialServices": [
-      {
-        "icon": "FaHardHat",
-        "title": "Shingling",
-        "link": "/services/residential-1-shingling"
-      },
-      {
-        "icon": "FaHome",
-        "title": "Chimney",
-        "link": "/services/residential-2-chimney"
-      },
-      {
-        "icon": "FaTools",
-        "title": "Siding",
-        "link": "/services/residential-3-siding"
-      },
-      {
-        "icon": "FaBroom",
-        "title": "Repairs",
-        "link": "/services/residential-4-repairs"
-      }
-    ],
-    "commercialServices": [
-      {
-        "icon": "FaPaintRoller",
-        "title": "Metal Roof",
-        "link": "/services/commercial-1-metal-roof"
-      },
-      {
-        "icon": "FaBuilding",
-        "title": "Flat Roof",
-        "link": "/services/commercial-2-flat-roof"
-      },
-      {
-        "icon": "FaWarehouse",
-        "title": "Restoration",
-        "link": "/services/commercial-3-restoration"
-      },
-      {
-        "icon": "FaChimney",
-        "title": "Maintenance",
-        "link": "/services/commercial-4-maintenance"
-      }
-    ],
-    "teamTitle": "Leadership",
-    "teamMembers": ["Mr. Luis Aguilar-Lopez", "Ms. Erika Salinas"],
-    "largeResidentialImg": "/assets/images/main_image_expanded.jpg",
-    "description for the image 1": [" An image of a residential neighborhood"],
-    "largeCommercialImg": "/assets/images/commercialservices.jpg",
-    "description for the image 2": ["An image of a city skyline"]
+    "reviewButtonText": "Review us on Google",
+    "reviewButtonLink": "https://www.google.com/maps"
   },
   "before_after": {
     "sectionTitle": "PORTFOLIO",
@@ -411,7 +416,7 @@
       "name": "David Snyder",
       "stars": 5,
       "date": "4 years ago",
-      "text": "I would like to share a review of my experience with Craft Roofing Company. I had my roof replaced by them, and the results were outstanding. The installers were on time and finished the job in a little more than one day. The roof looks \u2026",
+      "text": "I would like to share a review of my experience with Craft Roofing Company. I had my roof replaced by them, and the results were outstanding. The installers were on time and finished the job in a little more than one day. The roof looks …",
       "logo": "/assets/images/hero/googleimage.png",
       "link": "https://www.google.com/maps"
     }

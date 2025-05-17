@@ -1,7 +1,7 @@
 // src/components/MainPageBlocks/RichTextBlock.jsx
 import { useState, useEffect, useRef } from "react";
 import * as Icons from "lucide-react";
-import { motion, useInView } from "framer-motion";
+import { motion, useInView, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { HashLink } from "react-router-hash-link";
 import PropTypes from "prop-types";
@@ -18,11 +18,16 @@ Displays content. If not readOnly, allows inline editing of text fields.
 */
 
 // taking data from step_4/combined_data.json
-function RichTextPreview({ richTextData, readOnly, onInlineChange }) {
+function RichTextPreview({ richTextData, readOnly, onInlineChange, bannerColor }) {
   const [currentImage, setCurrentImage] = useState(0);
   const videoRefs = useRef([]);
   const [activeVideo, setActiveVideo] = useState(0);
   const [videosLoaded, setVideosLoaded] = useState(false);
+
+  // State for slideshow
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const slideTimeoutRef = useRef(null); // Ref for the 2.5s play timeout
+  const stepsRef = useRef([]); // Initialize with empty array
 
   // State to control whether the intro animation should play for cards
   const [playIntroAnimationForCards, setPlayIntroAnimationForCards] = useState(false);
@@ -38,8 +43,8 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange }) {
   }, []); // Empty dependency array ensures this runs once on mount
 
   useEffect(() => {
-    console.log("RichTextPreview received data:", richTextData, "readOnly:", readOnly);
-  }, [richTextData, readOnly]);
+    console.log("RichTextPreview received data:", richTextData, "readOnly:", readOnly, "bannerColor:", bannerColor);
+  }, [richTextData, readOnly, bannerColor]);
 
   if (!richTextData) {
     return <p className="text-center py-4">No RichText data found.</p>;
@@ -53,6 +58,11 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange }) {
     images = [],
     steps = [],
   } = richTextData || {};
+
+  // Keep stepsRef updated with the latest steps prop (MOVED HERE)
+  useEffect(() => {
+    stepsRef.current = steps;
+  }, [steps]);
 
   useEffect(() => {
     console.log("Steps data:", steps);
@@ -98,41 +108,82 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange }) {
     };
   }, [steps]);
 
+  // Effect for managing video playback (play/pause/load) based on currentSlide
   useEffect(() => {
     if (!videosLoaded || !steps || steps.length === 0) return;
-    let timeouts = [];
-    let isComponentMounted = true;
-    const playCurrentVideo = () => {
-      const currentIndex = activeVideo % 100;
-      const isHighlighted = activeVideo < 100;
-      videoRefs.current.forEach((video, idx) => {
-        if (!video) return;
-        try {
-          if (video.tagName?.toLowerCase() !== 'video') return;
-          if (!video.src) { console.warn(`Video ${idx} has no source`); return; }
-          if (idx === currentIndex) {
-            video.currentTime = 0;
-            video.muted = true;
-            video.load();
-            console.log(`Playing video ${idx}`);
-            try { video.play().catch(error => { console.warn(`Video ${idx} play failed:`, error.name); });
-            } catch (error) { console.warn("Video play error:", error); }
-          } else {
-            video.pause();
-          }
-        } catch (error) { console.warn(`Error controlling video ${idx}:`, error); }
-      });
-      if (isHighlighted) {
-        const highlightTimeout = setTimeout(() => { if (isComponentMounted) { setActiveVideo(currentIndex + 100); } }, 2500);
-        timeouts.push(highlightTimeout);
+
+    console.log(`[Playback Effect] currentSlide is: ${currentSlide}, steps.length: ${steps.length}`);
+
+    // Clear any existing slide advancement timeout before proceeding
+    if (slideTimeoutRef.current) {
+      clearTimeout(slideTimeoutRef.current);
+    }
+
+    videoRefs.current.forEach((video, idx) => {
+      if (!video || video.tagName?.toLowerCase() !== 'video') return;
+      // Ensure video source is properly set before attempting operations
+      const expectedSrc = steps[idx]?.videoFile ? URL.createObjectURL(steps[idx].videoFile) :
+                          (steps[idx]?.videoSrc && steps[idx].videoSrc.startsWith('/') ? steps[idx].videoSrc.substring(1) : steps[idx]?.videoSrc);
+      if (!video.src || (expectedSrc && video.src !== expectedSrc && !video.src.includes(expectedSrc.split('/').pop()))) {
+        // If src is not set, or seems stale (common with blob URLs if component re-renders before videoFile is processed into src attribute)
+        // we might need to set it here or rely on the RenderProcessSteps to set it. 
+        // For now, we assume RenderProcessSteps correctly sets the src attribute before this effect runs.
+        // console.warn(`Video ${idx} src mismatch or not set. Current: ${video.src}, Expected based on step: ${expectedSrc}`);
       }
-      const nextIndex = (currentIndex + 1) % steps.length;
-      const videoTimeout = setTimeout(() => { if (isComponentMounted) { setActiveVideo(nextIndex); } }, 6000);
-      timeouts.push(videoTimeout);
+      if (!video.src && !expectedSrc) {
+        console.warn(`Video ${idx} has no source in DOM or step data.`);
+        return;
+      }
+
+      try {
+        if (idx === currentSlide) {
+          console.log(`Attempting to play video ${idx} (current slide ${currentSlide})`);
+          video.currentTime = 0;
+          video.muted = true; 
+          const playPromise = video.play();
+          if (playPromise !== undefined) {
+            playPromise.then(() => {
+              console.log(`Video ${idx} started playing. Setting 2.5s timeout to advance slide.`);
+              // Set timeout to advance to the next slide after 2.5 seconds
+              slideTimeoutRef.current = setTimeout(() => {                
+                const latestSteps = stepsRef.current; // Use the most current steps array
+                console.log(`2.5s timer fired for slide ${currentSlide}. Advancing. Latest steps length: ${latestSteps?.length}`); // currentSlide here is the captured value from the outer scope
+                if (latestSteps && latestSteps.length > 0) {
+                  setCurrentSlide(prev => (prev + 1) % latestSteps.length);
+                } else {
+                  // This case should ideally be rare given other guards,
+                  // but as a fallback, reset to 0 if steps somehow became empty.
+                  setCurrentSlide(0);
+                  console.warn("Steps array was empty or undefined when slide advancement timer fired. Resetting to slide 0.");
+                }
+              }, 2500); 
+            }).catch(error => {
+              console.warn(`Video ${idx} play() failed, cannot set advance timer:`, error.name, error.message);
+              // If video fails to play, perhaps advance immediately or after a shorter fallback delay?
+              // For now, it won't advance automatically if play fails.
+            });
+          }
+        } else {
+          video.pause();
+          // Preload the next slide (the one that will become currentSlide after this one)
+          if (idx === (currentSlide + 1) % steps.length) {
+            console.log(`Preloading video ${idx} (next slide after ${currentSlide})`);
+            video.load(); 
+          }
+        }
+      } catch (error) {
+        console.warn(`Error controlling video ${idx} in slideshow playback effect:`, error);
+      }
+    });
+
+    return () => {
+      // Cleanup: clear the timeout when the component unmounts or dependencies change
+      if (slideTimeoutRef.current) {
+        console.log("Clearing slide advance timeout.");
+        clearTimeout(slideTimeoutRef.current);
+      }
     };
-    playCurrentVideo();
-    return () => { isComponentMounted = false; timeouts.forEach((timeout) => clearTimeout(timeout)); };
-  }, [activeVideo, videosLoaded, steps]);
+  }, [currentSlide, videosLoaded, steps]); // Depend on currentSlide to manage its specific video and set next timeout
 
   const slideshowImageSources = images.map(img => {
     if (typeof img === 'string') {
@@ -161,7 +212,9 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange }) {
     index,
     variant = "default",
     overlayImages,
-    playIntroAnimation, // New prop to control animation play
+    playIntroAnimation,
+    readOnlyCard,
+    onCardFieldChange
   }) {
     const baseClasses =
       "relative bg-white p-2 rounded-lg shadow-lg flex flex-col items-center justify-center";
@@ -186,9 +239,10 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange }) {
     };
 
     const overlayAnimationVariants = {
-      hidden: { opacity: 1 }, // Overlay is visible in its "hidden" animation state
-      visible: { // Overlay is invisible in its "visible" animation state
+      hidden: { opacity: 1, pointerEvents: 'auto' }, // Overlay is visible and interactive initially
+      visible: { // Overlay is invisible and non-interactive after animation
         opacity: 0,
+        pointerEvents: 'none', // Make it non-interactive when faded
         transition: {
           duration: 0.5,
           ease: "easeOut",
@@ -201,8 +255,8 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange }) {
       <motion.div
         className={`${baseClasses} ${sizeClasses}`}
         variants={cardAnimationVariants}
-        initial={playIntroAnimation ? "hidden" : "visible"} // Set initial based on prop
-        animate={"visible"} // Always animate to the "visible" variant configuration
+        initial={playIntroAnimation ? "hidden" : "visible"}
+        animate={"visible"}
       >
         <div
           className="absolute top-0 right-0 w-12 h-12 md:w-14 md:h-14 z-20 rounded-tr-lg"
@@ -218,24 +272,53 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange }) {
           {Icon && <Icon className="text-white drop-shadow-lg" />}
         </div>
         <div className="absolute inset-0 bg-gradient-to-br from-gray-900/20 to-transparent z-10 rounded-lg" />
+        
         <motion.div
           className="absolute inset-0 bg-center bg-cover z-40 rounded-lg"
           style={{
             backgroundImage: `url(${overlayImages[index % overlayImages.length]})`,
           }}
           variants={overlayAnimationVariants}
-          initial={playIntroAnimation ? "hidden" : "visible"} // "hidden" for overlay is opacity 1
-          animate={"visible"} // "visible" for overlay is opacity 0
+          initial={playIntroAnimation ? "hidden" : "visible"} 
+          animate={"visible"} 
         />
-        <div className="flex flex-col z-30">
-          <div className="absolute inset-0 top-1 md:top-3 w-full ">
-            <h3 className=" z-30 ml-1 md:ml-2 mr-10 md:mr-16 leading-tight text-[2.3vw] md:text-[1.9vh] font-semibold text-gray-900 font-sans">
-              {title}
-            </h3>
+
+        <div className="relative flex flex-col z-30 w-full h-full items-start justify-start p-1 md:p-2">
+          <div className="relative w-full mb-1 md:mb-2" style={{ zIndex: 51 }}>
+            {readOnlyCard ? (
+              <h3 className="ml-1 md:ml-0 mr-10 md:mr-12 leading-tight text-[2.3vw] md:text-[1.9vh] font-semibold text-gray-900 font-sans">
+                {title}
+              </h3>
+            ) : (
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => onCardFieldChange(index, 'title', e.target.value)}
+                className="ml-1 md:ml-0 mr-10 md:mr-12 leading-tight text-[2.3vw] md:text-[1.9vh] font-semibold text-gray-900 font-sans bg-transparent focus:bg-white/50 focus:backdrop-blur-sm border-none focus:border-b focus:border-brand-accent outline-none w-[calc(100%-2.5rem)] md:w-[calc(100%-3rem)] p-[1px] rounded-sm placeholder-gray-500"
+                onClick={(e) => e.stopPropagation()} 
+                placeholder="Edit title..."
+                style={{ lineHeight: 'normal' }}
+              />
+            )}
           </div>
-          <p className="z-30 text-[2.2vw] md:text-[1.5vh] text-gray-700 text-left px-1 md:px-1 mr-2 font-serif leading-tight mt-4 md:mt-8">
-            {desc}
-          </p>
+
+          <div className="relative w-full flex-grow" style={{ zIndex: 51 }}>
+            {readOnlyCard ? (
+              <p className="ml-1 md:ml-0 text-[2.2vw] md:text-[1.5vh] text-gray-700 text-left font-serif leading-tight">
+                {desc}
+              </p>
+            ) : (
+              <textarea
+                value={desc}
+                onChange={(e) => onCardFieldChange(index, 'desc', e.target.value)}
+                className="ml-1 md:ml-0 text-[2.2vw] md:text-[1.5vh] text-gray-700 font-serif leading-tight bg-transparent focus:bg-white/50 focus:backdrop-blur-sm border-none focus:border-b focus:border-brand-accent outline-none w-full h-full resize-none p-[1px] rounded-sm placeholder-gray-500"
+                onClick={(e) => e.stopPropagation()} 
+                placeholder="Edit description..."
+                style={{ lineHeight: 'normal', overflowY: 'auto' }}
+                rows={3}
+              />
+            )}
+          </div>
         </div>
       </motion.div>
     );
@@ -248,90 +331,83 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange }) {
     index: PropTypes.number,
     variant: PropTypes.string,
     overlayImages: PropTypes.array.isRequired,
-    playIntroAnimation: PropTypes.bool.isRequired, // Added prop type
+    playIntroAnimation: PropTypes.bool.isRequired,
+    readOnlyCard: PropTypes.bool.isRequired,
+    onCardFieldChange: PropTypes.func.isRequired,
   };
 
   const RenderProcessSteps = () => {
     if (!steps || steps.length === 0) {
       return <div className="text-center md:py-2">No process steps available</div>;
     }
-    console.log("Rendering process steps with video paths:", steps.map(s => s.videoSrc));
-    const isStepHighlighted = (index) => activeVideo === index;
-    const isVideoPlaying = (index) => activeVideo === index || activeVideo === index + 100;
+
+    // Define the size of the circular viewport for calculations
+    // These should match the Tailwind classes used for the viewport
+    const viewportSizeVH = 14.4; // vh for mobile-first width/height
+    const mdViewportSizeVH = 20; // vh for md breakpoint
+    // Note: Animating based on VH directly in JS can be tricky if CSS/JS values diverge.
+    // For simplicity, we assume these are fixed or can be obtained if needed.
+    // A ref to the viewport div could get its actual pixel width on mount for more robust calculations.
 
     return (
-      <div className="flex justify-center items-center flex-nowrap md:gap-4 mb-[2.5vh] md:mb-[6vh] w-full">
-        {steps.map((step, index) => {
-          const isHashLink = step.href?.startsWith("/#");
-          const LinkComponent = isHashLink ? HashLink : Link;
-          const videoSrc = step.videoSrc.startsWith('/') ? step.videoSrc.substring(1) : step.videoSrc;
-          const fallbackImage = `/assets/images/our_process_images/${step.title.toLowerCase()}.jpg`;
-
-          return (
-            <div key={index} className="flex items-center pt-1 md:pt-2 shrink-0">
-              <LinkComponent to={step.href || "#"}>
-                <motion.div
-                  initial={{ opacity: 0.7, scale: 1 }}
-                  animate={{
-                    opacity: isStepHighlighted(index) ? 1 : 0.7,
-                    scale: isStepHighlighted(index) ? 1.1 : 1,
-                  }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 260,
-                    damping: 20,
-                  }}
-                  className="flex flex-col items-center cursor-pointer"
-                  onClick={() => setActiveVideo(index)}
+      <div className="w-full flex flex-col items-center">
+        {/* Viewport Container - circular, overflow hidden */}
+        <div 
+          className="relative bg-white rounded-full shadow-lg overflow-hidden mb-2 md:mb-3"
+          style={{
+            width: `${viewportSizeVH}vh`, 
+            height: `${viewportSizeVH}vh`,
+            // Using style for md breakpoint as an example, ideally Tailwind classes handle this.
+            // This is just for the JS logic if it needed pixel values for the strip's x translate.
+            // However, framer-motion can animate percentages relative to the element itself.
+          }}
+        >
+          {/* Sliding Strip - will contain all videos, animated on x-axis */}
+          <motion.div
+            className="flex h-full" // Use flex to lay out videos horizontally
+            style={{ width: `${steps.length * 100}%` }} // Strip is N times the viewport width
+            animate={{
+              x: `-${currentSlide * (100 / (steps.length || 1))}%` // Guard against division by zero if steps.length is briefly 0
+            }}
+            transition={{ type: "tween", duration: 1, ease: "easeInOut" }} // Slide duration 1 second
+            onAnimationStart={() => console.log(`[Animation Start] Sliding to slide: ${currentSlide}, target x: -${currentSlide * (100 / (steps.length || 1))}%`)}
+            onAnimationComplete={() => console.log(`[Animation Complete] Arrived at slide: ${currentSlide}`)}
+          >
+            {steps.map((step, index) => {
+              const videoSrc = step.videoFile ? URL.createObjectURL(step.videoFile) :
+                               (step.videoSrc && step.videoSrc.startsWith('/') ? step.videoSrc.substring(1) : step.videoSrc);
+              
+              return (
+                // Each Video Item takes full width of the viewport (100% of its allocated segment in the strip)
+                <div 
+                  key={step.title + index} 
+                  className="w-full h-full flex-shrink-0 flex items-center justify-center"
+                  style={{ width: `${100 / steps.length}%`}} // Each item is 1/Nth of the strip's total width
                 >
-                  <div
-                    className={`rounded-full overflow-hidden flex items-center justify-center drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.3)] md:w-[14.4vh] md:h-[14.4vh] w-[6.8vh] h-[6.8vh] bg-white ${
-                      isStepHighlighted(index) ? "ring-2 ring-accent" : ""
-                    }`}
-                  >
+                  {videoSrc ? (
                     <video
-                      ref={(el) => { if (el && !videoRefs.current[index]) { videoRefs.current[index] = el; } }}
+                      ref={el => videoRefs.current[index] = el}
                       src={videoSrc}
                       muted
                       playsInline
-                      autoPlay={isVideoPlaying(index)}
-                      loop={isVideoPlaying(index)}
+                      loop 
+                      autoPlay // Autoplay will be managed by useEffect primarily
                       className="object-contain"
-                      style={{ pointerEvents: "none", width: `${80 * (step.scale || 1)}%`, height: `${80 * (step.scale || 1)}%`, opacity: 1, display: "block" }}
-                      tabIndex={-1}
+                      style={{ width: `${80 * (step.scale || 1)}%`, height: `${80 * (step.scale || 1)}%` }}
                       preload="auto"
-                      onError={(e) => {
-                        console.error(`Video ${index} load error:`, e);
-                        if (e.target) {
-                          try {
-                            const img = document.createElement('img');
-                            img.src = fallbackImage;
-                            img.alt = step.title;
-                            img.style.width = `${80 * (step.scale || 1)}%`;
-                            img.style.height = `${80 * (step.scale || 1)}%`;
-                            img.style.objectFit = 'contain';
-                            const parent = e.target.parentNode;
-                            if (parent) { parent.replaceChild(img, e.target); }
-                          } catch (imgError) { console.warn("Failed to replace video with image:", imgError); }
-                        }
-                      }}
+                      key={videoSrc} // Re-trigger if src changes (e.g., blob to path)
+                      onLoadedData={() => console.log(`Video ${index} (slide ${currentSlide}) loaded data`)}
+                      onError={(e) => console.error(`Video ${index} load error:`, e, "Source:", videoSrc)}
                     />
-                  </div>
-                  <p className={`text-center text-[3vw] md:text-lg font-semibold ${isStepHighlighted(index) ? "text-accent" : "text-black"}`}>
-                    {step.title}
-                  </p>
-                </motion.div>
-              </LinkComponent>
-              {index < steps.length - 1 && (
-                <div className="flex items-center mx-2 shrink-0">
-                  <svg xmlns="http://www.w3.org/2000/svg" className={`relative w-7 h-7 md:w-6 md:h-6 md:mx-2 transition-all duration-300 ${isStepHighlighted(index) ? "text-accent" : "text-white"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
-                  </svg>
+                  ) : (
+                    <Icons.HelpCircle className="w-1/2 h-1/2 text-gray-400" />
+                  )}
                 </div>
-              )}
-            </div>
-          );
-        })}
+              );
+            })}
+          </motion.div>
+        </div>
+        {/* Text titles/navigation can be re-added here if desired, but removed per last request */}
       </div>
     );
   };
@@ -341,11 +417,86 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange }) {
     checkAutoplaySupport(); 
   }, []);
 
+  const handleCardChange = (cardIndex, field, value) => {
+    const updatedCards = cards.map((card, idx) => 
+      idx === cardIndex ? { ...card, [field]: value } : card
+    );
+    onInlineChange({ ...richTextData, cards: updatedCards });
+  };
+
   return (
-    <div className="w-full mx-auto">
-      <div className="h-[20vh] bg-gradient-to-b from-banner from-10% to-transparent z-10" />
-      <div className="hidden md:flex md:flex-col md:-mt-[20vh] z-30 space-y-6 p-4">
-        <div className="flex flex-row justify-around items-start gap-4 w-full">
+    <div className="rich-text-preview-container mx-auto px-4 py-8">
+      {/* Part 1: Hero Text - Always render structure, content conditional */}
+      <div className="text-center my-6 md:my-8">
+        {readOnly ? (
+          (richTextData.heroText && (
+            <h2 className="text-3xl md:text-4xl font-bold">
+              {richTextData.heroText}
+            </h2>
+          ))
+        ) : (
+          <textarea 
+            value={richTextData.heroText || ""} 
+            onChange={(e) => onInlineChange('heroText', e.target.value)} 
+            placeholder="Enter Hero Text..."
+            className="text-3xl md:text-4xl font-bold text-center w-full bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 rounded p-2 resize-none" // Matched styling
+            rows={1}
+          />
+        )}
+      </div>
+
+      {/* Part 2: Layout for description and process videos/steps */}
+      <div className="flex flex-col md:flex-row items-start gap-6 lg:gap-8 mt-4 md:mt-6">
+        {/* Left side: Descriptions */}
+        {(richTextData.bus_description || richTextData.bus_description_second || !readOnly) && (
+          <div className="w-full md:w-1/2 space-y-4">
+            {readOnly ? (
+              (richTextData.bus_description && (
+                <p className="text-base md:text-lg text-gray-700 font-serif leading-relaxed indent-8">
+                  {richTextData.bus_description}
+                </p>
+              ))
+            ) : (
+              <textarea
+                value={richTextData.bus_description || ""}
+                onChange={(e) => onInlineChange('bus_description', e.target.value)}
+                placeholder="Enter primary business description..."
+                className="text-base md:text-lg text-gray-700 font-serif leading-relaxed indent-8 w-full bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 rounded p-0 resize-none"
+                rows={4}
+                style={{ overflowY: 'auto' }}
+              />
+            )}
+            
+            {readOnly ? (
+              (richTextData.bus_description_second && (
+                <p className="text-base md:text-lg text-gray-700 font-serif leading-relaxed indent-8 mt-3">
+                  {richTextData.bus_description_second}
+                </p>
+              ))
+            ) : (
+              <textarea
+                value={richTextData.bus_description_second || ""}
+                onChange={(e) => onInlineChange('bus_description_second', e.target.value)}
+                placeholder="Enter secondary business description..."
+                className="text-base md:text-lg text-gray-700 font-serif leading-relaxed indent-8 mt-3 w-full bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 rounded p-0 resize-none"
+                rows={4}
+                style={{ overflowY: 'auto' }}
+              />
+            )}
+          </div>
+        )}
+
+        {/* Right side: Process Steps (Videos) */}
+        {steps && steps.length > 0 && (
+          <div className="w-full md:w-1/2 mt-6 md:mt-0">
+            <RenderProcessSteps />
+          </div>
+        )}
+      </div>
+
+      {/* Feature Cards Section */}
+      {cards && cards.length > 0 && (
+        <div className="flex flex-row justify-around items-start gap-4 w-full mt-6">
           {cards.map((card, idx) => (
             <FeatureCard
               key={idx}
@@ -355,93 +506,13 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange }) {
               desc={card.desc}
               index={idx}
               overlayImages={overlayImages}
-              playIntroAnimation={playIntroAnimationForCards} // Pass the prop
+              playIntroAnimation={playIntroAnimationForCards}
+              readOnlyCard={readOnly}
+              onCardFieldChange={handleCardChange}
             />
           ))}
         </div>
-        <div className="flex flex-col lg:flex-row w-full gap-6">
-          <div className="w-full lg:w-1/2">
-            <div className={`relative rounded-2xl shadow-md h-[30vw] md:h-[40vh] lg:h-[30vh] image-container`}> 
-              <img src={displaySlideshowImages[currentImage]} alt="Slideshow" className="w-full h-full object-cover rounded-lg" />
-              <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-2 z-10">
-                {displaySlideshowImages.map((_, sIdx) => (
-                  <button key={sIdx} onClick={() => setCurrentImage(sIdx)} className={`w-3 h-3 rounded-full ${currentImage === sIdx ? "bg-white scale-110" : "bg-white/50"}`} aria-label={`Go to image ${sIdx + 1}`} />
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="w-full lg:w-1/2 lg:pl-6">
-            {readOnly ? (
-              <h2 className="text-[4vw] md:text-[2.5vh] text-white font-sans font-bold mb-4">{heroText}</h2>
-            ) : (
-              <textarea value={heroText} onChange={(e) => onInlineChange('heroText', e.target.value)} className="text-[4vw] md:text-[2.5vh] font-sans mb-4 inline-editable inline-editable-hero w-full" rows={2} />
-            )}
-            {readOnly ? (
-              <p className="text-[2.8vw] md:text-[1.9vh] text-black font-serif leading-tight indent-8">{bus_description}</p>
-            ) : (
-              <textarea value={bus_description} onChange={(e) => onInlineChange('bus_description', e.target.value)} className="text-[2.8vw] md:text-[1.9vh] leading-tight indent-8 inline-editable inline-editable-desc w-full" rows={4} />
-            )}
-            {readOnly ? (
-               <p className="text-[2.8vw] md:text-[1.9vh] text-black font-serif leading-tight indent-8 mt-2">{bus_description_second}</p>
-            ) : (
-              <textarea value={bus_description_second} onChange={(e) => onInlineChange('bus_description_second', e.target.value)} className="text-[2.8vw] md:text-[1.9vh] leading-tight indent-8 mt-2 inline-editable inline-editable-desc w-full" rows={4} />
-            )}
-          </div>
-        </div>
-        <div className="w-full">
-          <RenderProcessSteps />
-        </div>
-      </div>
-      <div className="md:hidden flex flex-col px-[3vw] -mt-[20vh] mb-1 mt-[-2vh]">
-        <section className="relative z-40 overflow-visible mb-4 -mt-[20vh]">
-          <div className="mobile-process-section w-full">
-            <RenderProcessSteps />
-          </div>
-        </section>
-        <div className={`relative w-full rounded-lg shadow-md px-3 -mt-[4vh] image-container`}>
-          <img src={displaySlideshowImages[currentImage]} alt="Slideshow" className="w-full h-[30vw] object-cover rounded-lg" />
-          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-2 z-10">
-            {displaySlideshowImages.map((_, sIdx) => (
-              <button key={sIdx} onClick={() => setCurrentImage(sIdx)} className={`w-2 h-2 rounded-full ${currentImage === sIdx ? "bg-white scale-110" : "bg-white/50"}`} aria-label={`Go to image ${sIdx + 1}`} />
-            ))}
-          </div>
-        </div>
-        <div className="mt-3 px-3">
-          {readOnly ? (
-            <h2 className="whitespace-nowrap relative text-[4vw] text-center font-bold z-60 px-[3vw] overflow-visible font-sans">{heroText}</h2>
-          ) : (
-            <textarea value={heroText} onChange={(e) => onInlineChange('heroText', e.target.value)} className="whitespace-nowrap relative text-[4vw] text-center font-bold z-60 px-[3vw] overflow-visible font-sans inline-editable inline-editable-hero" rows={1} />
-          )}
-          {readOnly ? (
-            <p className="text-[2.8vw] text-gray-700 my-1 font-sans indent-6">{bus_description}</p>
-          ) : (
-            <textarea value={bus_description} onChange={(e) => onInlineChange('bus_description', e.target.value)} className="text-[2.8vw] text-gray-700 my-1 font-sans indent-6 inline-editable inline-editable-desc" rows={3} />
-          )}
-          {readOnly ? (
-            <p className="text-[2.8vw] text-gray-700 mb-2 font-sans indent-6">{bus_description_second}</p>
-          ) : (
-             <textarea value={bus_description_second} onChange={(e) => onInlineChange('bus_description_second', e.target.value)} className="text-[2.8vw] text-gray-700 mb-2 font-sans indent-6 inline-editable inline-editable-desc" rows={3} />
-          )}
-        </div>
-        <div className="grid grid-cols-2 gap-2 px-[2vw]">
-          {cards.map((card, idx) => {
-            const IconComp = Icons[card.icon] || Icons.Star;
-            return (
-              <div key={idx}>
-                <FeatureCard
-                  variant="mobile"
-                  icon={IconComp}
-                  title={card.title}
-                  desc={card.desc}
-                  index={idx}
-                  overlayImages={overlayImages}
-                  playIntroAnimation={playIntroAnimationForCards} // Pass the prop for mobile cards as well
-                />
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -458,24 +529,28 @@ RichTextPreview.propTypes = {
   }),
   readOnly: PropTypes.bool.isRequired,
   onInlineChange: PropTypes.func,
+  bannerColor: PropTypes.string,
 };
 
 /* 
 =============================================
-2) RICH-TEXT EDITOR PANEL (Image Editing Only)
+2) RICH-TEXT CONTROLS PANEL
 ---------------------------------------------
 Allows editing of:
 - images[] (slideshow images via file upload)
-
-Other fields are edited inline or not at all.
+- sharedBannerColor (to sync with HeroBlock's bannerColor)
+- Process Steps (title, href, scale, video)
 =============================================
 */
-function RichTextEditorPanel({ localData, setLocalDataForPanel }) { 
-  const { images = [] } = localData;
-  const [validationError, setValidationError] = useState(""); 
+function RichTextControlsPanel({ localData, onDataChange, currentBannerColor }) {
+  const { images = [], steps = [] } = localData;
+
+  const handleSharedBannerColorChange = (color) => {
+    onDataChange((prev) => ({ ...prev, sharedBannerColor: color }));
+  };
 
   const handleAddImage = () => {
-    setLocalDataForPanel((prev) => ({ ...prev, images: [...prev.images, ""], imageUploads: [...(prev.imageUploads || []), null] }));
+    onDataChange((prev) => ({ ...prev, images: [...prev.images, ""], imageUploads: [...(prev.imageUploads || []), null] }));
   };
 
   const handleRemoveImage = (index) => {
@@ -483,7 +558,7 @@ function RichTextEditorPanel({ localData, setLocalDataForPanel }) {
     updatedImages.splice(index, 1);
     const updatedImageUploads = localData.imageUploads ? [...localData.imageUploads] : [];
     if (updatedImageUploads.length > index) { updatedImageUploads.splice(index,1); }
-    setLocalDataForPanel((prev) => ({ ...prev, images: updatedImages, imageUploads: updatedImageUploads }));
+    onDataChange((prev) => ({ ...prev, images: updatedImages, imageUploads: updatedImageUploads }));
   };
 
   const handleChangeImage = (index, file) => {
@@ -494,59 +569,169 @@ function RichTextEditorPanel({ localData, setLocalDataForPanel }) {
       const updatedImageUploads = localData.imageUploads ? [...localData.imageUploads] : new Array(images.length).fill(null);
       while(updatedImageUploads.length <= index) { updatedImageUploads.push(null); }
       updatedImageUploads[index] = { file, fileName: file.name }; 
-      setLocalDataForPanel((prev) => ({ ...prev, images: updatedImages, imageUploads: updatedImageUploads }));
+      onDataChange((prev) => ({ ...prev, images: updatedImages, imageUploads: updatedImageUploads }));
     }
   };
 
+  const handleStepChange = (index, field, value) => {
+    const updatedSteps = steps.map((step, i) => 
+      i === index ? { ...step, [field]: value } : step
+    );
+    onDataChange(prev => ({ ...prev, steps: updatedSteps }));
+  };
+
+  const handleStepVideoUpload = (index, file) => {
+    if (file) {
+      const newVideoSrc = URL.createObjectURL(file);
+      const updatedSteps = steps.map((step, i) =>
+        i === index ? { ...step, videoFile: file, videoSrc: newVideoSrc, videoFileName: file.name } : step
+      );
+      onDataChange(prev => ({ ...prev, steps: updatedSteps }));
+    }
+  };
+  
+  const handleAddStep = () => {
+    const newStep = { title: "New Step", videoSrc: "", href: "#", scale: 1, videoFile: null, videoFileName: "" };
+    onDataChange(prev => ({ ...prev, steps: [...(prev.steps || []), newStep] }));
+  };
+
+  const handleRemoveStep = (index) => {
+    const stepToRemove = steps[index];
+    if (stepToRemove && stepToRemove.videoFile && stepToRemove.videoSrc && stepToRemove.videoSrc.startsWith('blob:')) {
+      URL.revokeObjectURL(stepToRemove.videoSrc); // Revoke blob URL if it was a local file
+    }
+    const updatedSteps = steps.filter((_, i) => i !== index);
+    onDataChange(prev => ({ ...prev, steps: updatedSteps }));
+  };
+
   return (
-    <div className="p-4 mt-4"> 
-      <div className="flex items-center justify-between mb-4"><h1 className="text-xl md:text-2xl font-semibold text-gray-700">Slideshow Image Editor</h1></div>
-      <div>
+    <div> 
+      <div className="flex items-center justify-between mb-4"><h1 className="text-xl md:text-2xl font-semibold text-gray-200">Content Editor</h1></div>
+      
+      {/* Image Editor Section */}
+      <div className="mb-6 pb-4 border-b border-gray-700">
         <div className="flex items-center justify-between mb-2 ">
-          <h2 className="text-lg font-semibold text-gray-600">Edit Slideshow Images</h2>
+          <h2 className="text-lg font-semibold text-gray-300">Edit Slideshow Images</h2>
           <button onClick={handleAddImage} type="button" className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1.5 rounded shadow">+ Add Image Slot</button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {images.map((imgSrc, idx) => { 
             const currentUpload = localData.imageUploads && localData.imageUploads[idx];
-            const previewUrl = currentUpload && currentUpload.file ? URL.createObjectURL(currentUpload.file) : imgSrc;
+            let previewUrl = imgSrc; 
+            if (currentUpload && currentUpload.file) {
+                previewUrl = URL.createObjectURL(currentUpload.file); 
+            } else if (typeof imgSrc === 'string' && imgSrc.startsWith('blob:')) {
+                previewUrl = imgSrc; 
+            } else if (imgSrc) {
+                previewUrl = imgSrc.startsWith('/') ? imgSrc : `/assets/images/Richtext/${imgSrc.split('/').pop() || ''}`;
+            }
             return (
-              <div key={idx} className="bg-gray-100 p-3 rounded shadow-md relative flex flex-col">
+              <div key={idx} className="bg-gray-700 p-3 rounded shadow-md relative flex flex-col">
                 <button onClick={() => handleRemoveImage(idx)} type="button" className="bg-red-500 text-white text-xs px-2 py-1 rounded absolute top-2 right-2 hover:bg-red-600">Remove</button>
-                <label className="block text-sm mb-1 font-medium text-gray-700">Image Slot {idx + 1}:</label>
-                <input type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (file) { handleChangeImage(idx, file); } }} className="w-full bg-white border border-gray-300 px-2 py-1 rounded mt-1 text-sm focus:ring-blue-500 focus:border-blue-500" />
+                <label className="block text-sm mb-1 font-medium text-gray-300">Image Slot {idx + 1}:</label>
+                <input type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (file) { handleChangeImage(idx, file); } }} className="w-full bg-gray-600 border border-gray-500 px-2 py-1 rounded mt-1 text-sm text-white focus:ring-blue-500 focus:border-blue-500" />
                 {previewUrl ? (
-                  <img src={previewUrl} alt={`Preview ${idx + 1}`} className="mt-2 h-24 w-full object-contain rounded border border-gray-200 bg-gray-50" onLoad={() => { if (currentUpload && currentUpload.file && previewUrl.startsWith('blob:')) { URL.revokeObjectURL(previewUrl); } }} />
+                  <img 
+                    src={previewUrl} 
+                    alt={`Preview ${idx + 1}`} 
+                    className="mt-2 h-24 w-full object-contain rounded border border-gray-500 bg-gray-600" 
+                    onLoad={() => { if (currentUpload && currentUpload.file && previewUrl !== imgSrc && previewUrl.startsWith('blob:')) { /* URL.revokeObjectURL(previewUrl); // Potentially problematic if not managed carefully */ } }} 
+                  />
                 ) : (
-                  <div className="mt-2 h-24 w-full flex items-center justify-center bg-gray-100 border border-dashed border-gray-300 rounded text-gray-400 text-xs">Preview</div>
+                  <div className="mt-2 h-24 w-full flex items-center justify-center bg-gray-600 border border-dashed border-gray-500 rounded text-gray-400 text-xs">Preview</div>
                 )}
               </div>
             );
           })}
         </div>
       </div>
-      {validationError && <p className="text-red-500 mt-2 text-sm">{validationError}</p>}
+
+      {/* Process Steps Editor Section */}
+      <div className="mb-6 pb-4 border-b border-gray-700">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-lg font-semibold text-gray-300">Edit Process Steps</h2>
+          <button onClick={handleAddStep} type="button" className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1.5 rounded shadow">+ Add Step</button>
+        </div>
+        <div className="space-y-4">
+          {(steps || []).map((step, index) => (
+            <div key={index} className="bg-gray-700 p-3 rounded shadow-md">
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="text-md font-semibold text-gray-200">Step {index + 1}</h3>
+                <button onClick={() => handleRemoveStep(index)} type="button" className="bg-red-500 hover:bg-red-600 text-white text-xs px-2 py-1 rounded">Remove Step</button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm mb-1 font-medium text-gray-300">Title:</label>
+                  <input type="text" value={step.title || ''} onChange={(e) => handleStepChange(index, 'title', e.target.value)} className="w-full bg-gray-600 border border-gray-500 px-2 py-1 rounded text-sm text-white" />
+                </div>
+                <div>
+                  <label className="block text-sm mb-1 font-medium text-gray-300">Link URL (href):</label>
+                  <input type="text" value={step.href || ''} onChange={(e) => handleStepChange(index, 'href', e.target.value)} className="w-full bg-gray-600 border border-gray-500 px-2 py-1 rounded text-sm text-white" />
+                </div>
+                <div>
+                  <label className="block text-sm mb-1 font-medium text-gray-300">Icon Scale (e.g., 0.8, 1, 1.25):</label>
+                  <input type="number" step="0.05" value={step.scale || 1} onChange={(e) => handleStepChange(index, 'scale', parseFloat(e.target.value))} className="w-full bg-gray-600 border border-gray-500 px-2 py-1 rounded text-sm text-white" />
+                </div>
+                <div>
+                  <label className="block text-sm mb-1 font-medium text-gray-300">Video File:</label>
+                  <input type="file" accept="video/*" onChange={(e) => handleStepVideoUpload(index, e.target.files?.[0])} className="w-full bg-gray-600 border border-gray-500 px-2 py-1 rounded mt-1 text-sm text-white file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700" />
+                  {step.videoSrc && (
+                    <div className="mt-2">
+                      <span className="text-xs text-gray-400">Current: {step.videoFileName || step.videoSrc.split('/').pop()}</span>
+                      {step.videoSrc.startsWith('blob:') && <video src={step.videoSrc} controls className="mt-1 w-full h-24 object-contain rounded bg-black" />}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      {/* Shared Banner Color Section */}
+      <div className="mt-6 pt-4 border-t border-gray-700">
+        <label className="block text-sm mb-1 font-medium text-gray-300">Shared Banner Gradient Color (syncs with Hero):</label>
+        <input 
+          type="color" 
+          value={currentBannerColor} // Display the actual hero banner color
+          onChange={(e) => handleSharedBannerColorChange(e.target.value)}
+          className="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-md cursor-pointer"
+        />
+      </div>
     </div>
   );
 }
 
-RichTextEditorPanel.propTypes = {
-  localData: PropTypes.shape({ images: PropTypes.array, imageUploads: PropTypes.array }).isRequired,
-  setLocalDataForPanel: PropTypes.func.isRequired,
+RichTextControlsPanel.propTypes = { 
+  localData: PropTypes.shape({ 
+    images: PropTypes.array, 
+    imageUploads: PropTypes.array,
+    sharedBannerColor: PropTypes.string, 
+    steps: PropTypes.array, // Added steps to prop types
+  }).isRequired,
+  onDataChange: PropTypes.func.isRequired,
+  currentBannerColor: PropTypes.string, 
 };
 
 /* 
 =============================================
 3) MAIN EXPORT: RichTextBlock
 ---------------------------------------------
-- If readOnly=true, shows RichTextPreview (display only)
-- If false (edit mode):
-    - Shows RichTextPreview (for inline text editing)
-    - Shows RichTextEditorPanel (for image editing)
-- onConfigChange(updatedData) bubbles ALL changes up (auto-save model).
+- If `controlsOpen` is true, it renders RichTextControlsPanel for image editing,
+  and RichTextPreview for inline text editing.
+- If `controlsOpen` is false, it renders RichTextPreview in read-only mode (for text)
+  or editable mode based on the `readOnly` prop.
+- `onConfigChange` bubbles ALL changes up.
+- `showControls` prop will determine if the RichTextControlsPanel is rendered.
 =============================================
 */
-export default function RichTextBlock({ readOnly = false, richTextData, onConfigChange }) {
+export default function RichTextBlock({ 
+  readOnly = false, // This now directly controls RichTextPreview's inline editing capability
+  richTextData, 
+  onConfigChange, 
+  bannerColor,
+  showControls = false // This controls visibility of RichTextControlsPanel
+}) {
   const [localData, setLocalData] = useState(() => {
     const initial = richTextData || {};
     return {
@@ -557,48 +742,116 @@ export default function RichTextBlock({ readOnly = false, richTextData, onConfig
       bus_description_second: initial.bus_description_second || "",
       cards: initial.cards?.map((c) => ({ ...c })) || [], 
       images: [...(initial.images || [])],
-      imageUploads: initial.images?.map(img => img && typeof img === 'object' && img.file ? {file: img.file, fileName: img.fileName} : null) || [], 
+      imageUploads: initial.images?.map(img => {
+        if (img && typeof img === 'object' && img.file instanceof File) { // Check if it's our {file, fileName} structure
+          return { file: img.file, fileName: img.fileName };
+        }
+        // If initial images are just paths or existing blob URLs, imageUploads should be null for them
+        return null; 
+      }) || [],
       overlayImages: [ ...(initial.overlayImages || [ "/assets/images/shake_img/1.png", "/assets/images/shake_img/2.png", "/assets/images/shake_img/3.png", "/assets/images/shake_img/4.png" ]) ],
-      steps: initial.steps || [], 
+      steps: (initial.steps || []).map(step => ({
+        ...step,
+        videoFile: null, // Will be populated by file input
+        videoFileName: step.videoFileName || (typeof step.videoSrc === 'string' ? step.videoSrc.split('/').pop() : ''),
+      })), 
+      sharedBannerColor: richTextData?.sharedBannerColor || bannerColor || "#1e293b", // Initialize sharedBannerColor
     };
   });
 
   useEffect(() => {
     if (richTextData) {
-      setLocalData(prevData => ({
-        ...prevData, 
-        ...richTextData,
-        cards: richTextData.cards?.map((c) => ({ ...c })) || prevData.cards || [],
-        images: [...(richTextData.images || prevData.images || [])],
-        imageUploads: richTextData.imageUploads || prevData.imageUploads || richTextData.images?.map(img => img && typeof img === 'object' && img.file ? {file: img.file, fileName: img.fileName} : null) || [],
-        overlayImages: richTextData.overlayImages || prevData.overlayImages || [ "/assets/images/shake_img/1.png", "/assets/images/shake_img/2.png", "/assets/images/shake_img/3.png", "/assets/images/shake_img/4.png" ],
-        steps: richTextData.steps || prevData.steps || [],
-      }));
+      setLocalData(prevData => {
+        const newImages = richTextData.images || prevData.images || [];
+        const newImageUploads = richTextData.imageUploads || prevData.imageUploads || [];
+        const newSharedBannerColor = richTextData.sharedBannerColor !== undefined ? richTextData.sharedBannerColor : bannerColor;
+        const newSteps = (richTextData.steps || prevData.steps || []).map(step => ({
+            ...step,
+            // Preserve existing videoFile if it's already in prevData and not overwritten by richTextData
+            videoFile: (prevData.steps.find(s => s.title === step.title)?.videoFile && !richTextData.steps?.find(s => s.title === step.title)?.videoFile) 
+                         ? prevData.steps.find(s => s.title === step.title)?.videoFile 
+                         : (richTextData.steps?.find(s => s.title === step.title)?.videoFile || null),
+            videoFileName: step.videoFileName || (typeof step.videoSrc === 'string' ? step.videoSrc.split('/').pop() : ''),
+        }));
+
+        let hasChanged = prevData.heroText !== (richTextData.heroText || "") ||
+                         prevData.bus_description !== (richTextData.bus_description || "") ||
+                         JSON.stringify(prevData.images) !== JSON.stringify(newImages) ||
+                         prevData.sharedBannerColor !== newSharedBannerColor ||
+                         JSON.stringify(prevData.steps) !== JSON.stringify(newSteps); // Add steps comparison
+        
+        if (!hasChanged && !showControls) { // If !showControls, it implies we are in a read-only view from MainPageForm perspective
+            // If nothing major changed and controls are not open, potentially return prevData to avoid re-renders
+            // This needs careful handling based on how richTextData is updated from parent
+        }
+        
+        return { // Always return a new object structure for consistency when richTextData updates
+          ...prevData, 
+          ...richTextData, // Apply incoming changes
+          cards: richTextData.cards?.map((c) => ({ ...c })) || prevData.cards || [],
+          images: newImages,
+          imageUploads: richTextData.imageUploads !== undefined ? richTextData.imageUploads : prevData.imageUploads,
+          overlayImages: richTextData.overlayImages || prevData.overlayImages || [ "/assets/images/shake_img/1.png", "/assets/images/shake_img/2.png", "/assets/images/shake_img/3.png", "/assets/images/shake_img/4.png" ],
+          steps: newSteps, // Update local state with new steps
+          sharedBannerColor: newSharedBannerColor, // Update local state
+        };
+      });
     }
-  }, [richTextData]);
+  }, [richTextData, showControls, bannerColor]); // Added bannerColor to dependencies
 
   const setLocalDataAndPropagate = (updater) => {
-    const newData = typeof updater === 'function' ? updater(localData) : updater;
-    setLocalData(newData);
-    if (onConfigChange) { onConfigChange(newData); }
-    console.log("RichTextBlock: Data updated and propagated via onConfigChange", newData);
+    let newData;
+    setLocalData(currentLocalData => {
+        newData = typeof updater === 'function' ? updater(currentLocalData) : updater;
+        if (onConfigChange) { 
+            // When propagating, ensure image File objects are replaced correctly if they exist in imageUploads
+            const dataForConfigChange = { ...newData };
+            if (newData.imageUploads && Array.isArray(newData.imageUploads)) {
+                dataForConfigChange.images = newData.images.map((img, idx) => {
+                    const upload = newData.imageUploads[idx];
+                    if (upload && upload.file) {
+                        // For onConfigChange, we might want to send the file reference or a special marker
+                        // For now, keeping the blob URL for preview, but MainPageForm/OneForm must handle file uploads
+                        return img; // img here is already a blob URL or original path
+                    }
+                    return img;
+                });
+            }
+            onConfigChange(dataForConfigChange); 
+        }
+        console.log("RichTextBlock: Data updated and propagated", newData);
+        return newData;
+    });
   };
 
   const handleInlineChange = (field, value) => {
     const updatedData = { ...localData, [field]: value };
-    setLocalData(updatedData);
-    if (onConfigChange) { onConfigChange(updatedData); }
-    console.log("Inline change, auto-saving field:", field, "value:", value, "New data:", updatedData);
+    // setLocalData(updatedData); // Directly updating localData
+    // if (onConfigChange) { onConfigChange(updatedData); }
+    setLocalDataAndPropagate(updatedData); // Use central propagation
+    console.log("Inline change, auto-saving field:", field, "value:", value);
   };
 
-  if (readOnly) {
-    return <RichTextPreview richTextData={richTextData} readOnly={true} />;
-  }
-
+  // When showControls is true, RichTextPreview's inline editing is active (readOnly={false})
+  // and RichTextControlsPanel is also shown.
+  // When showControls is false, RichTextPreview's readOnly status is determined by the main readOnly prop.
   return (
     <>
-      <RichTextPreview richTextData={localData} readOnly={false} onInlineChange={handleInlineChange} />
-      <RichTextEditorPanel localData={localData} setLocalDataForPanel={setLocalDataAndPropagate} />
+      <RichTextPreview 
+        richTextData={localData} 
+        readOnly={readOnly} // Pass the main readOnly prop to control inline text editability
+        onInlineChange={handleInlineChange} 
+        bannerColor={bannerColor} 
+      />
+      {showControls && (
+        <div className="bg-gray-800 text-white p-4 rounded-lg mt-4 shadow-lg">
+          <RichTextControlsPanel 
+            localData={localData} 
+            onDataChange={setLocalDataAndPropagate}
+            currentBannerColor={bannerColor} // Pass the actual hero banner color for display
+          />
+        </div>
+      )}
     </>
   );
 }
@@ -607,4 +860,6 @@ RichTextBlock.propTypes = {
   readOnly: PropTypes.bool,
   richTextData: PropTypes.object, 
   onConfigChange: PropTypes.func, 
+  bannerColor: PropTypes.string,
+  showControls: PropTypes.bool, // Added prop type
 };

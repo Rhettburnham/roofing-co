@@ -21,6 +21,7 @@ import googleIcon from "/assets/images/hero/googleimage.png";
 
 // Additional icons from lucide-react
 import { Home, Building2 } from "lucide-react";
+import IconSelectorModal from "../common/IconSelectorModal";
 
 /**
  * Helper function to resolve icon name strings to React components
@@ -150,6 +151,8 @@ const TestimonialItem = ({ testimonial }) => {
 ───────────────────────────────────────────────────────────── */
 function CombinedPageEditorPanel({ localData, setLocalData, onSave }) {
   const [activeTab, setActiveTab] = useState("residential");
+  const [isIconModalOpen, setIsIconModalOpen] = useState(false);
+  const [editingServiceInfo, setEditingServiceInfo] = useState({ type: null, index: null });
   
   // Helper to create URL paths for image uploads
   const getDisplayUrl = (value) => {
@@ -271,6 +274,19 @@ function CombinedPageEditorPanel({ localData, setLocalData, onSave }) {
     });
   };
 
+  const openIconModal = (serviceType, index) => {
+    setEditingServiceInfo({ type: serviceType, index });
+    setIsIconModalOpen(true);
+  };
+
+  const handleIconSelect = (pack, iconName) => {
+    if (editingServiceInfo.type && editingServiceInfo.index !== null) {
+      handleServiceChange(editingServiceInfo.type, editingServiceInfo.index, 'icon', iconName);
+    }
+    setIsIconModalOpen(false);
+    setEditingServiceInfo({ type: null, index: null });
+  };
+
   return (
     <div className="bg-gray-800 text-white p-4 rounded-lg max-h-[75vh] overflow-auto">
       {/* Header with tabs */}
@@ -351,22 +367,18 @@ function CombinedPageEditorPanel({ localData, setLocalData, onSave }) {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-sm mb-1">Icon:</label>
-                  <select
-                    className="w-full bg-gray-600 px-2 py-1 rounded"
-                    value={service.icon || "FaTools"}
-                    onChange={(e) => handleServiceChange('residential', index, 'icon', e.target.value)}
+                  {/* Icon Selector Button */}
+                  <button 
+                    type="button"
+                    onClick={() => openIconModal('residential', index)}
+                    className="w-full bg-gray-600 px-2 py-1 rounded flex items-center justify-center hover:bg-gray-500 transition-colors"
                   >
-                    <option value="FaTools">Tools</option>
-                    <option value="FaFan">Fan</option>
-                    <option value="FaPaintRoller">Paint Roller</option>
-                    <option value="FaTint">Water Drop</option>
-                    <option value="FaHome">Home</option>
-                    <option value="FaBuilding">Building</option>
-                    <option value="FaWarehouse">Warehouse</option>
-                    <option value="FaSmog">Smog/Chimney</option>
-                    <option value="FaBroom">Broom</option>
-                    <option value="FaHardHat">Hard Hat</option>
-                  </select>
+                    {service.icon ? 
+                      React.createElement(resolveIcon(service.icon), { className: "w-5 h-5 mr-2" }) :
+                      <span className="text-xs">Select Icon</span>
+                    }
+                    <span className="text-xs truncate">{service.icon || "None"}</span>
+                  </button>
                 </div>
                 
                 <div>
@@ -420,22 +432,18 @@ function CombinedPageEditorPanel({ localData, setLocalData, onSave }) {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-sm mb-1">Icon:</label>
-                  <select
-                    className="w-full bg-gray-600 px-2 py-1 rounded"
-                    value={service.icon || "FaTools"}
-                    onChange={(e) => handleServiceChange('commercial', index, 'icon', e.target.value)}
+                  {/* Icon Selector Button */}
+                  <button 
+                    type="button"
+                    onClick={() => openIconModal('commercial', index)}
+                    className="w-full bg-gray-600 px-2 py-1 rounded flex items-center justify-center hover:bg-gray-500 transition-colors"
                   >
-                    <option value="FaTools">Tools</option>
-                    <option value="FaFan">Fan</option>
-                    <option value="FaPaintRoller">Paint Roller</option>
-                    <option value="FaTint">Water Drop</option>
-                    <option value="FaHome">Home</option>
-                    <option value="FaBuilding">Building</option>
-                    <option value="FaWarehouse">Warehouse</option>
-                    <option value="FaSmog">Smog/Chimney</option>
-                    <option value="FaBroom">Broom</option>
-                    <option value="FaHardHat">Hard Hat</option>
-                  </select>
+                    {service.icon ? 
+                      React.createElement(resolveIcon(service.icon), { className: "w-5 h-5 mr-2" }) :
+                      <span className="text-xs">Select Icon</span>
+                    }
+                    <span className="text-xs truncate">{service.icon || "None"}</span>
+                  </button>
                 </div>
                 
                 <div>
@@ -617,6 +625,15 @@ function CombinedPageEditorPanel({ localData, setLocalData, onSave }) {
           </div>
         </div>
       )}
+
+      {/* Icon Selector Modal */}
+      <IconSelectorModal 
+        isOpen={isIconModalOpen}
+        onClose={() => setIsIconModalOpen(false)}
+        onIconSelect={handleIconSelect}
+        currentIconPack="fa" // Assuming FontAwesome icons are primarily used
+        currentIconName={editingServiceInfo.index !== null && localData[editingServiceInfo.type === 'residential' ? 'residentialServices' : 'commercialServices'][editingServiceInfo.index]?.icon}
+      />
     </div>
   );
 }
