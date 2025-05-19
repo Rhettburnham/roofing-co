@@ -101,7 +101,7 @@ async function handleListConfigs(request, env, corsHeaders) {
     // Now list with delimiter to get folder structure
     console.log('\nListing with delimiter for folder structure...');
     const listOptions = {
-      prefix: 'configs/',
+      prefix: prefix || 'configs/',
       delimiter: '/',
     };
     console.log('R2 list options:', JSON.stringify(listOptions, null, 2));
@@ -126,9 +126,13 @@ async function handleListConfigs(request, env, corsHeaders) {
     if (listed.commonPrefixes) {
       console.log('Processing common prefixes:', listed.commonPrefixes);
       for (const prefix of listed.commonPrefixes) {
-        const folder = prefix.split('/')[1]; // Get the folder name
-        console.log('Adding folder from prefix:', folder);
-        folders.add(folder);
+        const parts = prefix.split('/');
+        // Get the immediate subfolder name
+        const folder = parts[parts.length - 2];
+        if (folder) {
+          console.log('Adding folder from prefix:', folder);
+          folders.add(folder);
+        }
       }
     }
 
@@ -147,17 +151,30 @@ async function handleListConfigs(request, env, corsHeaders) {
       if (parts.length > 2) {
         // This is a file in a folder
         const folder = parts[1];
-        folders.add(folder);
         
-        // Only add files that are in the current folder
-        if (!prefix || path.startsWith(prefix)) {
-          files.push({
-            name: parts[2],
-            folder,
-            size: object.size,
-            uploaded: object.uploaded,
-          });
-          console.log('Added file:', parts[2], 'to folder:', folder);
+        // Only process items in the current folder
+        if (prefix && path.startsWith(prefix)) {
+          // Check if this is a top-level item in the current folder
+          const relativePath = path.slice(prefix.length);
+          const relativeParts = relativePath.split('/');
+          
+          if (relativeParts.length === 1) {
+            // This is a file directly in the current folder
+            files.push({
+              name: relativeParts[0],
+              folder,
+              size: object.size,
+              uploaded: object.uploaded,
+            });
+            console.log('Added file:', relativeParts[0], 'to folder:', folder);
+          } else if (relativeParts.length > 1) {
+            // This is a subfolder in the current folder
+            const subfolder = relativeParts[0];
+            if (subfolder) {
+              folders.add(subfolder);
+              console.log('Added subfolder:', subfolder);
+            }
+          }
         }
       }
     }
@@ -187,7 +204,7 @@ async function handleListConfigs(request, env, corsHeaders) {
 
 async function handleUploadConfig(request, env, corsHeaders) {
   try {
-    const { folder, file } = await request.json();
+    const { folder, file, fileName, fileType } = await request.json();
     
     if (!folder || !file) {
       return new Response(JSON.stringify({ error: 'Missing folder or file data' }), {
@@ -196,14 +213,38 @@ async function handleUploadConfig(request, env, corsHeaders) {
       });
     }
 
-    const key = `configs/${folder}/combined_data.json`;
-    await env.ROOFING_CONFIGS.put(key, JSON.stringify(file), {
+    // Handle different file types
+    let key, contentType, fileData;
+    
+    if (fileType === 'image') {
+      // For images, use the provided fileName or generate one
+      const imageName = fileName || `image_${Date.now()}.${fileType.split('/')[1]}`;
+      key = `configs/${folder}/${imageName}`;
+      contentType = fileType;
+      fileData = file; // Base64 image data
+    } else if (fileType === 'folder') {
+      // For folder uploads, maintain the structure
+      key = `configs/${folder}/${fileName}`;
+      contentType = 'application/json';
+      fileData = JSON.stringify(file);
+    } else {
+      // Default case: JSON file
+      key = `configs/${folder}/combined_data.json`;
+      contentType = 'application/json';
+      fileData = JSON.stringify(file);
+    }
+
+    await env.ROOFING_CONFIGS.put(key, fileData, {
       httpMetadata: {
-        contentType: 'application/json',
+        contentType: contentType,
       },
     });
 
-    return new Response(JSON.stringify({ success: true }), {
+    return new Response(JSON.stringify({ 
+      success: true,
+      key: key,
+      type: fileType
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {

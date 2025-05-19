@@ -5,11 +5,14 @@ export default function AdminPage() {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentFolder, setCurrentFolder] = useState(null);
-  const [folders, setFolders] = useState([]);
-  const [files, setFiles] = useState([]);
+  const [topLevelFolders, setTopLevelFolders] = useState([]);
+  const [currentFolderContents, setCurrentFolderContents] = useState({ folders: [], files: [] });
   const [newFolderName, setNewFolderName] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [error, setError] = useState('');
+  const [pendingUpload, setPendingUpload] = useState(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState('');
 
   useEffect(() => {
     checkAdminAccess();
@@ -43,8 +46,16 @@ export default function AdminPage() {
     }
   };
 
+  const handleFolderClick = (folder) => {
+    setCurrentFolder(folder);
+    setCurrentFolderContents({ folders: [], files: [] });
+  };
+
   const loadConfigs = async () => {
     try {
+      // Clear current folder contents before loading new ones
+      setCurrentFolderContents({ folders: [], files: [] });
+      
       const response = await fetch('/api/admin/list-configs', {
         method: 'POST',
         credentials: 'include',
@@ -56,11 +67,27 @@ export default function AdminPage() {
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to load configs');
+      if (!response.ok) {
+        if (response.status === 401) {
+          setIsAuthorized(false);
+          window.location.href = '/';
+          return;
+        }
+        throw new Error('Failed to load configs');
+      }
 
       const data = await response.json();
-      setFolders(data.folders);
-      setFiles(data.files);
+      
+      if (currentFolder) {
+        // If we're in a specific folder, update current folder contents
+        setCurrentFolderContents({
+          folders: data.folders,
+          files: data.files
+        });
+      } else {
+        // If we're at root, update top-level folders
+        setTopLevelFolders(data.folders);
+      }
     } catch (error) {
       console.error('Error loading configs:', error);
       setError('Failed to load configurations');
@@ -91,15 +118,93 @@ export default function AdminPage() {
     }
   };
 
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
+  const handleFileUpload = async (file) => {
     if (!file) return;
 
     try {
       const reader = new FileReader();
       reader.onload = async (event) => {
-        try {
-          const fileContent = JSON.parse(event.target.result);
+        setPendingUpload({
+          type: 'file',
+          data: event.target.result,
+          name: file.name,
+          fileType: file.type.startsWith('image/') ? file.type : 'application/json'
+        });
+        setShowConfirmation(true);
+      };
+      
+      if (file.type.startsWith('image/')) {
+        reader.readAsDataURL(file);
+      } else {
+        reader.readAsText(file);
+      }
+    } catch (error) {
+      console.error('Error reading file:', error);
+      setError('Failed to read file');
+    }
+  };
+
+  const handleFolderUpload = async (event) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    try {
+      const folderFiles = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const reader = new FileReader();
+        
+        reader.onload = (e) => {
+          folderFiles.push({
+            data: e.target.result,
+            name: file.webkitRelativePath || file.name,
+            fileType: file.type.startsWith('image/') ? file.type : 'application/json'
+          });
+
+          if (folderFiles.length === files.length) {
+            setPendingUpload({
+              type: 'folder',
+              files: folderFiles
+            });
+            setShowConfirmation(true);
+          }
+        };
+
+        if (file.type.startsWith('image/')) {
+          reader.readAsDataURL(file);
+        } else {
+          reader.readAsText(file);
+        }
+      }
+    } catch (error) {
+      console.error('Error reading folder:', error);
+      setError('Failed to read folder');
+    }
+  };
+
+  const handleConfirmUpload = async () => {
+    if (!pendingUpload) return;
+
+    try {
+      if (pendingUpload.type === 'file') {
+        const response = await fetch('/api/admin/upload-config', {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            folder: currentFolder,
+            file: pendingUpload.data,
+            fileName: pendingUpload.name,
+            fileType: pendingUpload.fileType
+          }),
+        });
+
+        if (!response.ok) throw new Error('Failed to upload file');
+      } else {
+        // Handle folder upload
+        for (const file of pendingUpload.files) {
           const response = await fetch('/api/admin/upload-config', {
             method: 'POST',
             credentials: 'include',
@@ -108,23 +213,28 @@ export default function AdminPage() {
             },
             body: JSON.stringify({
               folder: currentFolder,
-              file: fileContent,
+              file: file.data,
+              fileName: file.name,
+              fileType: 'folder'
             }),
           });
 
           if (!response.ok) throw new Error('Failed to upload file');
-
-          loadConfigs();
-        } catch (error) {
-          console.error('Error uploading file:', error);
-          setError('Failed to upload file');
         }
-      };
-      reader.readAsText(file);
+      }
+
+      setPendingUpload(null);
+      setShowConfirmation(false);
+      loadConfigs();
     } catch (error) {
-      console.error('Error reading file:', error);
-      setError('Failed to read file');
+      console.error('Error uploading to Cloudflare:', error);
+      setError('Failed to upload to Cloudflare');
     }
+  };
+
+  const handleCancelUpload = () => {
+    setPendingUpload(null);
+    setShowConfirmation(false);
   };
 
   if (loading) {
@@ -166,6 +276,37 @@ export default function AdminPage() {
           </div>
         )}
 
+        {showConfirmation && pendingUpload && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
+          >
+            <div className="bg-white rounded-lg p-6 max-w-md w-full">
+              <h3 className="text-lg font-semibold mb-4">Confirm Upload</h3>
+              <p className="mb-4">
+                {pendingUpload.type === 'file' 
+                  ? `Ready to upload "${pendingUpload.name}" to Cloudflare?`
+                  : `Ready to upload ${pendingUpload.files.length} files to Cloudflare?`}
+              </p>
+              <div className="flex justify-end gap-4">
+                <button
+                  onClick={handleCancelUpload}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmUpload}
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  Upload to Cloudflare
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Create new folder form */}
         <form onSubmit={handleCreateFolder} className="mb-8">
           <div className="flex gap-4">
@@ -187,30 +328,48 @@ export default function AdminPage() {
 
         {/* File upload */}
         {currentFolder && (
-          <div className="mb-8">
-            <label className="block text-gray-700 mb-2">Upload combined_data.json</label>
-            <input
-              type="file"
-              accept=".json"
-              onChange={handleFileUpload}
-              className="block w-full text-sm text-gray-500
-                file:mr-4 file:py-2 file:px-4
-                file:rounded file:border-0
-                file:text-sm file:font-semibold
-                file:bg-blue-50 file:text-blue-700
-                hover:file:bg-blue-100"
-            />
+          <div className="mb-8 space-y-4">
+            <div>
+              <label className="block text-gray-700 mb-2">Upload Single File</label>
+              <input
+                type="file"
+                accept=".json,image/*"
+                onChange={(e) => handleFileUpload(e.target.files[0])}
+                className="block w-full text-sm text-gray-500
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded file:border-0
+                  file:text-sm file:font-semibold
+                  file:bg-blue-50 file:text-blue-700
+                  hover:file:bg-blue-100"
+              />
+            </div>
+
+            <div>
+              <label className="block text-gray-700 mb-2">Upload Folder</label>
+              <input
+                type="file"
+                webkitdirectory="true"
+                directory="true"
+                onChange={handleFolderUpload}
+                className="block w-full text-sm text-gray-500
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded file:border-0
+                  file:text-sm file:font-semibold
+                  file:bg-green-50 file:text-green-700
+                  hover:file:bg-green-100"
+              />
+            </div>
           </div>
         )}
 
         {/* Folders list */}
         <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">Folders</h2>
+          <h2 className="text-xl font-semibold mb-4">Config Folders</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {folders.map((folder) => (
+            {topLevelFolders.map((folder) => (
               <button
                 key={folder}
-                onClick={() => setCurrentFolder(folder)}
+                onClick={() => handleFolderClick(folder)}
                 className={`p-4 rounded-lg border ${
                   currentFolder === folder
                     ? 'border-blue-500 bg-blue-50'
@@ -223,23 +382,58 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Files list */}
+        {/* Files and subfolders list */}
         {currentFolder && (
           <div>
-            <h2 className="text-xl font-semibold mb-4">Files in {currentFolder}</h2>
-            {files.length === 0 ? (
-              <p className="text-red-500">Empty</p>
+            <h2 className="text-xl font-semibold mb-4">Contents of {currentFolder}</h2>
+            {currentFolderContents.files.length === 0 && currentFolderContents.folders.length === 0 ? (
+              <p className="text-gray-500">Empty folder</p>
             ) : (
-              <div className="space-y-2">
-                {files.map((file) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Show subfolders first */}
+                {currentFolderContents.folders.map((folder) => {
+                  // Find the most recent file in this folder
+                  const folderFiles = currentFolderContents.files.filter(file => 
+                    file.name.startsWith(folder + '/')
+                  );
+                  const mostRecentDate = folderFiles.length > 0 
+                    ? new Date(Math.max(...folderFiles.map(f => new Date(f.uploaded))))
+                    : null;
+
+                  return (
+                    <div
+                      key={`${currentFolder}-${folder}`}
+                      className="p-4 border border-gray-200 rounded-lg bg-gray-50"
+                    >
+                      <div className="flex items-center gap-2">
+                        <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                        </svg>
+                        <span className="font-medium">{folder}</span>
+                      </div>
+                      {mostRecentDate && (
+                        <div className="mt-2 text-sm text-gray-500">
+                          Last modified: {mostRecentDate.toLocaleDateString()}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                {/* Then show files */}
+                {currentFolderContents.files.map((file) => (
                   <div
-                    key={file.name}
-                    className="p-4 border border-gray-200 rounded-lg flex justify-between items-center"
+                    key={`${currentFolder}-${file.name}`}
+                    className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors"
                   >
-                    <span>{file.name}</span>
-                    <span className="text-sm text-gray-500">
+                    <div className="flex items-center gap-2">
+                      <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <span className="font-medium">{file.name}</span>
+                    </div>
+                    <div className="mt-2 text-sm text-gray-500">
                       {new Date(file.uploaded).toLocaleDateString()}
-                    </span>
+                    </div>
                   </div>
                 ))}
               </div>

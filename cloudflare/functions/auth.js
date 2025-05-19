@@ -154,23 +154,51 @@ async function handleLogin(request, env, corsHeaders) {
 async function handleSignup(request, env, corsHeaders) {
   try {
     const { email, password, code } = await request.json();
+    console.log('Signup attempt:', { email, code });
     
+    // Check if email is already registered
     const existingUser = await env.DB.prepare(
       'SELECT * FROM users WHERE email = ?'
     ).bind(email).first();
 
     if (existingUser) {
+      console.log('Email already registered:', email);
       return new Response(JSON.stringify({ message: 'Email already registered' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
+    // Check if code has already been used
+    console.log('Checking for code reuse:', code);
+    const usedCode = await env.DB.prepare(
+      'SELECT * FROM users WHERE config_id = ? AND config_id != "default" AND config_id != "admin"'
+    ).bind(code).first();
+
+    console.log('Code reuse check result:', {
+      code,
+      foundUser: usedCode ? {
+        email: usedCode.email,
+        config_id: usedCode.config_id,
+        created_at: usedCode.created_at
+      } : null
+    });
+
+    if (usedCode) {
+      console.log('Code already used by:', usedCode.email);
+      return new Response(JSON.stringify({ message: 'This signup code has already been used' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const passwordHash = hashPassword(password);
+    console.log('Creating new user with config_id:', code);
     await env.DB.prepare(
       'INSERT INTO users (email, password_hash, config_id) VALUES (?, ?, ?)'
     ).bind(email, passwordHash, code).run();
 
+    console.log('User created successfully');
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

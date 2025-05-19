@@ -220,17 +220,17 @@ export default function OneFormAuthButton({ formData }) {
           <AnimatePresence>
             {showSignOut && (
               <>
-                <motion.button
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  onClick={handleAuth}
-                  className="px-4 py-2 rounded-full bg-red-600 text-white 
-                           border border-red-700 hover:bg-red-700 
-                           transition-all duration-300 shadow-lg"
-                >
-                  Sign Out
-                </motion.button>
+              <motion.button
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                onClick={handleAuth}
+                className="px-4 py-2 rounded-full bg-red-600 text-white 
+                         border border-red-700 hover:bg-red-700 
+                         transition-all duration-300 shadow-lg"
+              >
+                Sign Out
+              </motion.button>
                 <AdminButton />
               </>
             )}

@@ -17,10 +17,18 @@ export default function LoginPage() {
     setDebug('Starting login process...');
 
     try {
-      if (!isLogin && (!code || code === 'admin')) {
-        setError('Invalid signup code');
-        setLoading(false);
-        return;
+      if (!isLogin) {
+        // Additional validation for signup
+        if (!code) {
+          setError('Signup code is required');
+          setLoading(false);
+          return;
+        }
+        if (code === 'admin') {
+          setError('Invalid signup code');
+          setLoading(false);
+          return;
+        }
       }
 
       const endpoint = isLogin ? '/api/auth/login' : '/api/auth/signup';
