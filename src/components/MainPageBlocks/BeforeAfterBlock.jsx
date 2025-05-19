@@ -7,17 +7,14 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 gsap.registerPlugin(ScrollTrigger);
 
 // Helper to get display URL from string path or {url, file} object
-// This helper is now defined at the top level of the file
 const getDisplayUrl = (imageValue, defaultPath = null) => {
   if (imageValue && typeof imageValue === 'object' && imageValue.url) {
     return imageValue.url;
   }
-  // If it's a string, ensure it starts with a slash or is a blob/data URL
   if (typeof imageValue === 'string') {
     if (imageValue.startsWith('/') || imageValue.startsWith('blob:') || imageValue.startsWith('data:')) {
       return imageValue;
     }
-    // Attempt to normalize relative paths, assuming they are from assets root if not starting with ./
     return `/${imageValue.replace(/^\.\//, "")}`;
   }
   return defaultPath;
@@ -60,16 +57,26 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
 
   // Use getDisplayUrl for formattedItems
   // Ensure default paths are robust
-  const formattedItems = items.map(item => ({
+  const formattedItems = items.map((item, index) => ({
     ...item,
-    id: item.id || `item-${Math.random().toString(36).substr(2, 9)}`,
-    before: getDisplayUrl(item.before, "/assets/images/beforeafter/default_before.jpg"),
-    after: getDisplayUrl(item.after, "/assets/images/beforeafter/default_after.jpg"),
+    id: item.id || `item-preview-${index}`,
+    beforeDisplayUrl: getDisplayUrl(item.before, "/assets/images/beforeafter/default_before.jpg"),
+    afterDisplayUrl: getDisplayUrl(item.after, "/assets/images/beforeafter/default_after.jpg"),
   }));
 
-  const handleBoxClick = (images) => {
-    setSelectedImages(images);
-    setShowModal(true);
+  const handleBoxClick = (item) => {
+    // In edit mode, clicking the card might be for editing, not opening modal
+    // Or, keep modal functionality but ensure it doesn't interfere with text editing clicks.
+    // For now, modal is primary for read-only, can be re-evaluated.
+    if (readOnly) {
+        setSelectedImages({
+            before: item.beforeDisplayUrl,
+            after: item.afterDisplayUrl,
+            shingle: item.shingle,
+            sqft: item.sqft
+        });
+        setShowModal(true);
+    }
   };
 
   const closeModal = () => {
@@ -78,6 +85,7 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
   };
 
   const toggleCardViewState = (index) => {
+    // Allow toggling view even in edit mode for the preview.
     setViewStates((prevStates) => ({
       ...prevStates,
       [index]: prevStates[index] === "before" ? "after" : "before",
@@ -327,27 +335,26 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
         {/* Gallery Grid - Now always 3 columns */}
         <div className="w-full flex justify-center">
           <div className="grid grid-cols-3 gap-8 md:space-x-14 px-2 md:px-5 md:pb-5">
-            {formattedItems.map((img, index) => (
+            {formattedItems.map((item, index) => (
               <div
-                key={img.id}
+                key={item.id}
                 ref={(el) => (boxesRef.current[index] = el)}
                 className="relative flex flex-col md:flex-row items-center justify-between w-full"
               >
                 <div
                   className="relative cursor-pointer"
-                  // onClick={() => handleBoxClick(img)} // Keep or remove based on desired modal behavior
+                  onClick={() => handleBoxClick(item)}
                 >
                   <div
                     className="card w-[25vw] aspect-[4/3]"
-                    onClick={() => handleBoxClick(img)}
                   >
                     <img
-                      src={img.before}
+                      src={item.beforeDisplayUrl}
                       alt={`Before ${index + 1}`}
                       className="before absolute top-0 left-0 w-full h-full object-cover rounded-lg"
                     />
                     <img
-                      src={img.after}
+                      src={item.afterDisplayUrl}
                       alt={`After ${index + 1}`}
                       className="after absolute top-0 left-0 w-full h-full object-cover rounded-lg"
                     />
@@ -355,7 +362,7 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
                   {/* Individual Toggle Button for each card */}
                   <button
                     onClick={(e) => {
-                      e.stopPropagation(); // Prevent modal from opening when clicking the button
+                      e.stopPropagation();
                       toggleCardViewState(index);
                     }}
                     className="absolute top-2 right-2 z-10 px-2 py-1 bg-banner text-white rounded-md text-xs md:text-sm transition-all transform hover:scale-105 hover:shadow-lg hover:bg-white hover:text-black"
@@ -370,17 +377,17 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
                       {readOnly ? (
                         <>
                           <span className="font-bold text-[2.5vw] md:text-xl whitespace-nowrap drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] mb-0">
-                            {img.shingle}
+                            {item.shingle}
                           </span>
                           <span className="font-semibold text-[2.5vw] md:text-lg text-white drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
-                            {img.sqft}
+                            {item.sqft}
                           </span>
                         </>
                       ) : (
                         <>
                           <input
                             type="text"
-                            value={img.shingle || ""}
+                            value={item.shingle || ""}
                             onChange={(e) => onItemTextChange && onItemTextChange(index, "shingle", e.target.value)}
                             className="font-bold text-[2.5vw] md:text-xl whitespace-nowrap bg-transparent focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 mb-0 w-full text-white placeholder-gray-300 drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"
                             placeholder="Shingle Type"
@@ -388,7 +395,7 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
                           />
                           <input
                             type="text"
-                            value={img.sqft || ""}
+                            value={item.sqft || ""}
                             onChange={(e) => onItemTextChange && onItemTextChange(index, "sqft", e.target.value)}
                             className="font-semibold text-[2.5vw] md:text-lg bg-transparent focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 w-full text-white placeholder-gray-300 drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"
                             placeholder="Sqft"
@@ -408,11 +415,11 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
       {/* Modal */}
       {showModal && selectedImages && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[1000] p-4"
           onClick={closeModal}
         >
           <div
-            className="relative w-[85vw] h-[75vh] md:h-[80vh] bg-white rounded-lg p-4 md:p-6 flex flex-col"
+            className="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-lg p-4 md:p-6 flex flex-col overflow-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -423,9 +430,9 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
               &times;
             </button>
 
-            <div className="flex flex-col md:flex-row justify-between items-center flex-grow gap-3 md:gap-4 overflow-hidden">
-              <div className="relative w-full md:w-1/2 h-[45%] md:h-full flex flex-col">
-                <h4 className="text-lg font-semibold mb-1 md:mb-2 text-center md:text-left">
+            <div className="flex flex-col md:flex-row justify-between items-stretch flex-grow gap-3 md:gap-4 overflow-hidden">
+              <div className="relative w-full md:w-1/2 flex flex-col h-1/2 md:h-full">
+                <h4 className="text-lg font-semibold mb-1 md:mb-2 text-center">
                   Before
                 </h4>
                 <div className="relative flex-grow">
@@ -436,8 +443,8 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
                   />
                 </div>
               </div>
-              <div className="relative w-full md:w-1/2 h-[45%] md:h-full flex flex-col">
-                <h4 className="text-lg font-semibold mb-1 md:mb-2 text-center md:text-left">
+              <div className="relative w-full md:w-1/2 flex flex-col h-1/2 md:h-full">
+                <h4 className="text-lg font-semibold mb-1 md:mb-2 text-center">
                   After
                 </h4>
                 <div className="relative flex-grow">
@@ -470,192 +477,86 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
    ----------------------------------------------
    This panel now uses file inputs for the before and after images.
 =============================================== */
-function BeforeAfterEditorPanel({ localData, setLocalData, onSave }) {
+function BeforeAfterEditorPanel({ localData, onPanelChange }) {
   const { items = [] } = localData;
 
   const handleAddItem = () => {
     const newItem = {
-      id: `new_${Date.now()}`,
+      id: `new_item_${Date.now()}`,
       before: initializeImageState(null, "/assets/images/beforeafter/default_before.jpg"),
       after: initializeImageState(null, "/assets/images/beforeafter/default_after.jpg"),
       shingle: "New Shingle Type",
       sqft: "0000 sqft",
     };
-    setLocalData((prev) => ({
-      ...prev,
-      items: [...prev.items, newItem],
-    }));
+    onPanelChange((prev) => ({ ...prev, items: [...(prev.items || []), newItem] }));
   };
 
   const handleRemoveItem = (index) => {
     const itemToRemove = items[index];
-    // Revoke blob URLs if they exist for the item being removed
-    if (itemToRemove.before && typeof itemToRemove.before === 'object' && itemToRemove.before.url && itemToRemove.before.url.startsWith('blob:')) {
-      URL.revokeObjectURL(itemToRemove.before.url);
-    }
-    if (itemToRemove.after && typeof itemToRemove.after === 'object' && itemToRemove.after.url && itemToRemove.after.url.startsWith('blob:')) {
-      URL.revokeObjectURL(itemToRemove.after.url);
-    }
-
-    const updated = [...items];
-    updated.splice(index, 1);
-    setLocalData((prev) => ({
-      ...prev,
-      items: updated,
-    }));
+    if (itemToRemove?.before?.url?.startsWith('blob:')) URL.revokeObjectURL(itemToRemove.before.url);
+    if (itemToRemove?.after?.url?.startsWith('blob:')) URL.revokeObjectURL(itemToRemove.after.url);
+    onPanelChange((prev) => ({ ...prev, items: prev.items.filter((_, i) => i !== index) }));
   };
 
-  const handleChangeItem = (index, field, value) => {
-    const updated = [...items];
-    updated[index] = { ...updated[index], [field]: value };
-    setLocalData((prev) => ({
-      ...prev,
-      items: updated,
-    }));
-  };
-
-  /**
-   * Handles file uploads for before/after images
-   * Stores both the URL for display and the file object for the ZIP
-   *
-   * @param {number} index - The index of the item in the items array
-   * @param {string} field - The field to update ('before' or 'after')
-   * @param {File} file - The uploaded file
-   */
-  const handleImageUpload = (index, field, file) => {
+  const handleItemImageChange = (index, field, file) => {
     if (!file) return;
-
-    // Revoke old blob URL if exists for this specific image field
     const currentItem = items[index];
-    if (currentItem && currentItem[field] && typeof currentItem[field] === 'object' && currentItem[field].url && currentItem[field].url.startsWith('blob:')) {
+    if (currentItem && currentItem[field]?.url?.startsWith('blob:')) {
       URL.revokeObjectURL(currentItem[field].url);
     }
-
-    // Create a URL for display
     const fileURL = URL.createObjectURL(file);
-
-    // Store an object containing both the file and its URL
-    handleChangeItem(index, field, { file: file, url: fileURL, name: file.name });
+    const updatedImageState = { file: file, url: fileURL, name: file.name };
+    
+    onPanelChange(prev => {
+      const updatedItems = [...prev.items];
+      updatedItems[index] = { ...updatedItems[index], [field]: updatedImageState };
+      return { ...prev, items: updatedItems };
+    });
   };
-
-  /**
-   * Gets the display URL from either a string URL or an object with a URL property
-   *
-   * @param {string|Object} value - The value to extract URL from
-   * @returns {string|null} - The URL to display
-   */
-  const getDisplayUrl = (value) => {
-    if (!value) return null;
-    if (typeof value === "string") return value;
-    if (typeof value === "object" && value.url) return value.url;
-    return null;
+  
+  const handleItemImageUrlChange = (index, field, urlValue) => {
+    const currentItem = items[index];
+    if (currentItem && currentItem[field]?.url?.startsWith('blob:')) {
+      URL.revokeObjectURL(currentItem[field].url);
+    }
+    const updatedImageState = { file: null, url: urlValue, name: urlValue.split('/').pop() };
+    onPanelChange(prev => {
+      const updatedItems = [...prev.items];
+      updatedItems[index] = { ...updatedItems[index], [field]: updatedImageState };
+      return { ...prev, items: updatedItems };
+    });
   };
 
   return (
     <div className="bg-white text-gray-800 p-4 rounded">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-lg md:text-2xl font-semibold">
-          Edit Gallery Images & Items
-        </h1>
+        <h2 className="text-lg font-semibold">Manage Gallery Items</h2>
       </div>
 
-      <div>
-        <h2 className="text-lg font-semibold mb-2">Manage Gallery Items & Images</h2>
+      <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
         {items.map((item, index) => (
           <div key={item.id || index} className="bg-gray-100 p-3 rounded mb-3 relative border border-gray-300">
-            <button
-              onClick={() => handleRemoveItem(index)}
-              className="bg-red-600 text-white text-xs px-2 py-1 rounded absolute top-2 right-2 hover:bg-red-700"
-            >
-              Remove
-            </button>
-
-            <p className="text-sm text-gray-600 mb-2">Editing Images for: {item.shingle || "Item"} ({item.sqft || "Details"})</p>
-
-            {/* Before Image Upload */}
-            <label className="block text-sm mb-1 text-gray-700">
-              Before Image:
-              <input
-                type="file"
-                accept="image/*"
-                className="w-full bg-gray-200 text-gray-800 px-2 py-1 rounded mt-1 text-sm file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    handleImageUpload(index, "before", file);
-                  }
-                }}
-              />
-            </label>
-            {getDisplayUrl(item.before) && (
-              <img
-                src={getDisplayUrl(item.before)}
-                alt="Before Preview"
-                className="mt-2 h-24 w-24 object-cover rounded shadow bg-gray-200 p-1"
-              />
-            )}
-            <input
-                type="text"
-                className="w-full bg-gray-200 text-gray-800 px-2 py-1 rounded mt-1 text-xs placeholder-gray-500"
-                placeholder="Or paste direct image URL (e.g., /assets/img.png)"
-                value={(item.before && (typeof item.before === 'string' ? item.before : item.before.url)) || ''}
-                onChange={(e) => {
-                    const newImageValue = e.target.value;
-                    const oldImageState = item.before;
-                    if (oldImageState && typeof oldImageState === 'object' && oldImageState.url && oldImageState.url.startsWith('blob:')) {
-                        if (newImageValue !== oldImageState.url) { URL.revokeObjectURL(oldImageState.url); }
-                    }
-                    handleChangeItem(index, 'before', { file: null, url: newImageValue, name: newImageValue.split('/').pop() });
-                }}
-            />
-
-            {/* After Image Upload */}
-            <label className="block text-sm mb-1 mt-2 text-gray-700">
-              After Image:
-              <input
-                type="file"
-                accept="image/*"
-                className="w-full bg-gray-200 text-gray-800 px-2 py-1 rounded mt-1 text-sm file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    handleImageUpload(index, "after", file);
-                  }
-                }}
-              />
-            </label>
-            {getDisplayUrl(item.after) && (
-              <img
-                src={getDisplayUrl(item.after)}
-                alt="After Preview"
-                className="mt-2 h-24 w-24 object-cover rounded shadow bg-gray-200 p-1"
-              />
-            )}
-             <input
-                type="text"
-                className="w-full bg-gray-200 text-gray-800 px-2 py-1 rounded mt-1 text-xs placeholder-gray-500"
-                placeholder="Or paste direct image URL (e.g., /assets/img.png)"
-                value={(item.after && (typeof item.after === 'string' ? item.after : item.after.url)) || ''}
-                onChange={(e) => {
-                    const newImageValue = e.target.value;
-                    const oldImageState = item.after;
-                    if (oldImageState && typeof oldImageState === 'object' && oldImageState.url && oldImageState.url.startsWith('blob:')) {
-                        if (newImageValue !== oldImageState.url) { URL.revokeObjectURL(oldImageState.url); }
-                    }
-                    handleChangeItem(index, 'after', { file: null, url: newImageValue, name: newImageValue.split('/').pop() });
-                }}
-            />
+            <button onClick={() => handleRemoveItem(index)} className="bg-red-500 text-white text-xs px-2 py-1 rounded absolute top-2 right-2 hover:bg-red-600 z-10">Remove</button>
+            <p className="text-sm text-gray-600 mb-2">Item: {item.shingle || `Item ${index+1}`} ({item.sqft || 'N/A'})</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                    <label className="block text-xs mb-1 text-gray-700">Before Image:</label>
+                    <input type="file" accept="image/*" className="w-full bg-gray-200 text-gray-800 px-2 py-1 rounded mt-1 text-xs file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600 cursor-pointer" onChange={(e) => handleItemImageChange(index, "before", e.target.files?.[0])} />
+                    <input type="text" className="w-full bg-gray-200 text-gray-800 px-2 py-1 rounded mt-1 text-xs placeholder-gray-500" placeholder="Or paste direct image URL" value={getDisplayUrl(item.before, '')} onChange={(e) => handleItemImageUrlChange(index, 'before', e.target.value)} />
+                    {getDisplayUrl(item.before) && <img src={getDisplayUrl(item.before)} alt="Before Preview" className="mt-2 h-20 w-20 object-cover rounded shadow bg-gray-200 p-1"/>}
+                </div>
+                <div>
+                    <label className="block text-xs mb-1 text-gray-700">After Image:</label>
+                    <input type="file" accept="image/*" className="w-full bg-gray-200 text-gray-800 px-2 py-1 rounded mt-1 text-xs file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600 cursor-pointer" onChange={(e) => handleItemImageChange(index, "after", e.target.files?.[0])} />
+                    <input type="text" className="w-full bg-gray-200 text-gray-800 px-2 py-1 rounded mt-1 text-xs placeholder-gray-500" placeholder="Or paste direct image URL" value={getDisplayUrl(item.after, '')} onChange={(e) => handleItemImageUrlChange(index, 'after', e.target.value)} />
+                    {getDisplayUrl(item.after) && <img src={getDisplayUrl(item.after)} alt="After Preview" className="mt-2 h-20 w-20 object-cover rounded shadow bg-gray-200 p-1"/>}
+                </div>
+            </div>
           </div>
         ))}
-
-        <button
-          type="button"
-          onClick={handleAddItem}
-          className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded w-full mt-2"
-        >
-          Add New Item
-        </button>
       </div>
+      <button type="button" onClick={handleAddItem} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded w-full mt-3 text-sm font-medium">+ Add Gallery Item</button>
     </div>
   );
 }
@@ -668,7 +569,7 @@ function BeforeAfterEditorPanel({ localData, setLocalData, onSave }) {
 // Helper to initialize image state: handles string path or {file, url, name} object
 const initializeImageState = (imageConfig, defaultPath) => {
   if (imageConfig && typeof imageConfig === 'object' && imageConfig.url) {
-    return imageConfig; // Already in {file, url, name?} format
+    return { ...imageConfig, name: imageConfig.name || imageConfig.url.split('/').pop() }; 
   }
   if (typeof imageConfig === 'string') {
     return { file: null, url: imageConfig, name: imageConfig.split('/').pop() }; 
@@ -681,80 +582,114 @@ export default function BeforeAfterBlock({
   beforeAfterData,
   onConfigChange,
 }) {
- 
-  const [localData, setLocalDataState] = useState(() => {
+  const [localData, setLocalData] = useState(() => {
     const initialConfig = beforeAfterData || {};
     return {
       sectionTitle: initialConfig.sectionTitle || "GALLERY",
       items: (initialConfig.items || []).map((item, index) => ({
         ...item,
-        id: item.id || `item_${index}_${Date.now()}`,
+        id: item.id || `item_init_${index}_${Date.now()}`,
         before: initializeImageState(item.before, "/assets/images/beforeafter/default_before.jpg"),
         after: initializeImageState(item.after, "/assets/images/beforeafter/default_after.jpg"),
       })),
     };
   });
 
+  const prevReadOnlyRef = useRef(readOnly);
+
   useEffect(() => {
     if (beforeAfterData) {
-      setLocalDataState(prevLocalData => {
-        const newItems = (beforeAfterData.items || []).map((newItem, index) => {
-          const oldItem = prevLocalData.items[index] || {};
-          const newBeforeImg = initializeImageState(newItem.before, "/assets/images/beforeafter/default_before.jpg");
-          const newAfterImg = initializeImageState(newItem.after, "/assets/images/beforeafter/default_after.jpg");
+      setLocalData(prevLocalData => {
+        const newItems = (beforeAfterData.items || []).map((newItemFromProp, index) => {
+          const oldItemFromLocal = prevLocalData.items.find(pi => pi.id === newItemFromProp.id) || prevLocalData.items[index] || {};
+          
+          const newBeforeImg = initializeImageState(newItemFromProp.before, oldItemFromLocal.before?.url || "/assets/images/beforeafter/default_before.jpg");
+          const newAfterImg = initializeImageState(newItemFromProp.after, oldItemFromLocal.after?.url || "/assets/images/beforeafter/default_after.jpg");
 
-          // Revoke old blob URLs if they exist and are different
-          if (oldItem.before && oldItem.before.url && oldItem.before.url.startsWith('blob:') && oldItem.before.url !== newBeforeImg.url) {
-            URL.revokeObjectURL(oldItem.before.url);
+          if (oldItemFromLocal.before?.file && oldItemFromLocal.before.url?.startsWith('blob:') && oldItemFromLocal.before.url !== newBeforeImg.url) {
+            URL.revokeObjectURL(oldItemFromLocal.before.url);
           }
-          if (oldItem.after && oldItem.after.url && oldItem.after.url.startsWith('blob:') && oldItem.after.url !== newAfterImg.url) {
-            URL.revokeObjectURL(oldItem.after.url);
+          if (oldItemFromLocal.after?.file && oldItemFromLocal.after.url?.startsWith('blob:') && oldItemFromLocal.after.url !== newAfterImg.url) {
+            URL.revokeObjectURL(oldItemFromLocal.after.url);
           }
 
-          return {
-            ...newItem,
-            id: newItem.id || oldItem.id || `item_update_${index}_${Date.now()}`,
+          // Merge item data: start with old local, overlay with new prop, then specifically protect inline editable fields
+          const mergedItem = {
+            ...oldItemFromLocal, // Contains local inline edits for shingle/sqft
+            ...newItemFromProp,  // Contains panel edits (e.g. image changes, structural changes if items are added/removed via panel)
+            id: newItemFromProp.id || oldItemFromLocal.id || `item_update_${index}_${Date.now()}`,
             before: newBeforeImg,
             after: newAfterImg,
           };
+
+          // Prioritize local shingle if it differs and is not just default/empty
+          if (oldItemFromLocal.shingle !== newItemFromProp.shingle && 
+              oldItemFromLocal.shingle !== (newItemFromProp.shingle || "")) { // Default for shingle might be empty string
+            mergedItem.shingle = oldItemFromLocal.shingle;
+          } else {
+            mergedItem.shingle = newItemFromProp.shingle || ""; // Ensure a value, fallback to empty if prop is undefined
+          }
+
+          // Prioritize local sqft if it differs and is not just default/empty
+          if (oldItemFromLocal.sqft !== newItemFromProp.sqft && 
+              oldItemFromLocal.sqft !== (newItemFromProp.sqft || "")) { // Default for sqft might be empty string
+            mergedItem.sqft = oldItemFromLocal.sqft;
+          } else {
+            mergedItem.sqft = newItemFromProp.sqft || ""; // Ensure a value
+          }
+          return mergedItem;
         });
 
         return {
-          ...prevLocalData, // Keep other potential top-level fields from localData
-          ...beforeAfterData, // Overwrite with all fields from beforeAfterData, including sectionTitle
-          sectionTitle: beforeAfterData.sectionTitle || prevLocalData.sectionTitle || "GALLERY",
+          ...prevLocalData, // Start with existing local data
+          ...beforeAfterData, // Overlay with incoming prop data for panel-driven changes
+          // Explicitly prioritize prevLocalData.sectionTitle if it holds an uncommitted inline edit
+          sectionTitle: (prevLocalData.sectionTitle !== beforeAfterData.sectionTitle && 
+                           prevLocalData.sectionTitle !== (beforeAfterData.sectionTitle || "GALLERY"))
+                        ? prevLocalData.sectionTitle
+                        : beforeAfterData.sectionTitle || "GALLERY",
           items: newItems,
         };
       });
     }
   }, [beforeAfterData]);
 
-  // Cleanup blob URLs on unmount
   useEffect(() => {
     return () => {
       localData.items.forEach(item => {
-        if (item.before && item.before.url && item.before.url.startsWith('blob:')) {
-          URL.revokeObjectURL(item.before.url);
-        }
-        if (item.after && item.after.url && item.after.url.startsWith('blob:')) {
-          URL.revokeObjectURL(item.after.url);
-        }
+        if (item.before?.file && item.before.url?.startsWith('blob:')) URL.revokeObjectURL(item.before.url);
+        if (item.after?.file && item.after.url?.startsWith('blob:')) URL.revokeObjectURL(item.after.url);
       });
     };
   }, [localData.items]);
 
-  const updateAndPropagateChanges = (updater) => {
-    setLocalDataState(prevState => {
-      const newState = typeof updater === 'function' ? updater(prevState) : updater;
+  useEffect(() => {
+    if (prevReadOnlyRef.current === false && readOnly === true) {
       if (onConfigChange) {
-        onConfigChange(newState);
+        console.log("BeforeAfterBlock: Editing finished. Calling onConfigChange.");
+        const dataToSave = {
+            ...localData,
+            items: localData.items.map(item => ({
+                ...item,
+                before: item.before?.file ? item.before.name : item.before?.url,
+                after: item.after?.file ? item.after.name : item.after?.url,
+            }))
+        };
+        onConfigChange(dataToSave);
       }
+    }
+    prevReadOnlyRef.current = readOnly;
+  }, [readOnly, localData, onConfigChange]);
+
+  const handleLocalDataChange = (updater) => {
+    setLocalData(prevState => {
+      const newState = typeof updater === 'function' ? updater(prevState) : { ...prevState, ...updater };
       return newState;
     });
   };
 
   if (readOnly) {
-    return <BeforeAfterPreview beforeAfterData={beforeAfterData} readOnly={true} />;
+    return <BeforeAfterPreview beforeAfterData={localData} readOnly={true} />;
   }
   
   return (
@@ -763,20 +698,21 @@ export default function BeforeAfterBlock({
         beforeAfterData={localData} 
         readOnly={false}
         onSectionTitleChange={(newTitle) => {
-          updateAndPropagateChanges(prev => ({ ...prev, sectionTitle: newTitle }));
+          handleLocalDataChange(prev => ({ ...prev, sectionTitle: newTitle }));
         }}
         onItemTextChange={(index, field, value) => {
-          updateAndPropagateChanges(prev => {
+          handleLocalDataChange(prev => {
             const updatedItems = [...prev.items];
-            updatedItems[index] = { ...updatedItems[index], [field]: value };
+            if (updatedItems[index]) {
+              updatedItems[index] = { ...updatedItems[index], [field]: value };
+            }
             return { ...prev, items: updatedItems };
           });
         }}
       />
       <BeforeAfterEditorPanel
         localData={localData}
-        setLocalData={updateAndPropagateChanges}
-        onSave={() => onConfigChange?.(localData)}
+        onPanelChange={handleLocalDataChange} 
       />
     </>
   );

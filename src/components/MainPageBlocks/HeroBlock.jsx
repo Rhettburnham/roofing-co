@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Home as DefaultHomeIcon, Building2 as DefaultWarehouseIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { FaWarehouse } from "react-icons/fa";
@@ -23,6 +23,14 @@ const renderDynamicIcon = (packName, iconName, defaultIconComponent, props = { c
   }
   const DefaultIcon = defaultIconComponent || LucideIcons.HelpCircle; 
   return <DefaultIcon {...props} />;
+};
+
+// Helper to get display path for image previews
+const getDisplayPath = (pathOrFile) => {
+  if (!pathOrFile) return '';
+  if (typeof pathOrFile === 'string') return pathOrFile; // URL or path
+  if (pathOrFile instanceof File) return URL.createObjectURL(pathOrFile); // File object
+  return '';
 };
 
 /* 
@@ -87,30 +95,168 @@ function HeroPreview({ heroconfig }) {
 
   const [activeSection, setActiveSection] = useState("neutral");
 
-  const iconVariants = { 
-    active: { opacity: 0.7, y: -10, transition: { duration: 0.3 }}, 
-    default: { opacity: 1, y: 0, transition: { duration: 0.3 }}
-  };
-  
-  const listVariants = { 
-    hidden: { opacity: 0 }, 
-    visible: { opacity: 1, transition: { staggerChildren: 0.07, delayChildren: 0.2, duration: 0.3 } }
-  };
-  
-  const itemVariants = { 
-    hidden: { opacity: 0, x: -30 }, 
-    visible: { opacity: 1, x: 0, transition: { duration: 0.3, ease: "easeOut" }}
-  };
-
-  const boxVariants = {
-    hidden: { opacity: 0, height: 0, y: -10, transition: { duration: 0.3, ease: "easeInOut", when: "afterChildren" } },
-    visible: { opacity: 1, height: 'auto', y: 0, transition: { duration: 0.4, ease: "easeInOut", when: "beforeChildren" } }
-  };
-
-  const getDisplayPath = (pathOrBlob) => (pathOrBlob && typeof pathOrBlob === 'string') ? pathOrBlob : (pathOrBlob instanceof File ? URL.createObjectURL(pathOrBlob) : '');
-
   // Props for inline editing, only relevant if HeroBlock's readOnly is false
-  const { onServiceNameChange, onRemoveService, readOnly: isPreviewReadOnly } = heroconfig;
+  const { onServiceNameChange, onRemoveService, readOnly: isPreviewReadOnly, onEditServiceIcon } = heroconfig;
+
+  const iconWrapperBaseClass = "text-gray-50 w-[6.5vw] h-[6.5vw] md:w-[60px] md:h-[60px] flex items-center justify-center drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,0.7)]";
+  const serviceSectionTextBaseClass = "text-lg md:text-xl font-semibold text-gray-50 drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)] ml-2 md:ml-3";
+
+  // Animation Variants
+  const iconAnimationVariants = {
+    neutral: { x: 0, y: 0, scale: 1, opacity: 1, transition: { duration: 0.3, ease: "easeInOut" } },
+    active: { // Icon shifts up slightly when active, and sub-services appear below it
+      y: -10, // Example: shift icon up a bit
+      x: 0,     // Icon does not slide left in this revised columnar approach
+      scale: 1.1,
+      opacity: 1,
+      transition: { duration: 0.3, ease: "easeInOut" }
+    },
+    inactive: { x: 0, scale: 0.85, opacity: 0.6, y: 0, transition: { duration: 0.3, ease: "easeInOut" } },
+  };
+
+  const textLabelAnimationVariants = {
+    exit: { opacity: 0, x: 0, transition: { duration: 0.2, ease: "easeOut" } }, // Label fades out in place or slides subtly
+    enter: { opacity: 1, x: 0, transition: { duration: 0.3, ease: "easeIn" } },
+  };
+
+  // Variants for the sub-service column container
+  const subServiceColumnVariants = {
+    hidden: { opacity: 0, height: 0, y: -10, transition: { duration: 0.3, ease: "easeInOut", when: "afterChildren" } },
+    visible: { 
+      opacity: 1, 
+      height: 'auto', // Animate to auto height
+      y: 0, 
+      transition: { duration: 0.4, delay: 0.1, ease: "easeInOut", when: "beforeChildren", staggerChildren: 0.07 } 
+    }
+  };
+
+  const subServiceItemVariants = {
+    hidden: { opacity: 0, x: -10 }, // Items slide in from left slightly
+    visible: { opacity: 1, x: 0, transition: { duration: 0.2, ease: "easeOut" } }
+  };
+
+  const renderServiceSection = (type, services, iconDetails) => {
+    const isActive = activeSection === type;
+    const isNeutral = activeSection === "neutral";
+    let iconState = "neutral";
+    if (isActive) iconState = "active";
+    else if (!isNeutral) iconState = "inactive";
+
+    const sectionLabel = type.charAt(0).toUpperCase() + type.slice(1);
+
+    const handleIconClick = () => {
+      if (!isPreviewReadOnly && onEditServiceIcon) {
+        onEditServiceIcon(type);
+      } else {
+        setActiveSection(prev => prev === type ? "neutral" : type);
+      }
+    };
+
+    const handleSectionAreaClick = () => {
+      setActiveSection(prev => prev === type ? "neutral" : type);
+    };
+
+    return (
+      <div
+        className="w-1/2 h-full flex flex-col items-center justify-start pt-2 md:pt-4 cursor-pointer"
+        onClick={handleSectionAreaClick}
+      >
+        {/* Icon and Main Label (Horizontal when neutral) */}
+        <div className="flex items-center justify-center mb-2 md:mb-3 min-h-[40px] md:min-h-[50px]">
+          <motion.div
+            className={`${iconWrapperBaseClass} ${!isPreviewReadOnly ? 'hover:bg-white/10 rounded-md' : ''}`}
+            variants={iconAnimationVariants}
+            animate={iconState}
+            layout
+            onClick={(e) => {
+              e.stopPropagation();
+              handleIconClick();
+            }}
+          >
+            {renderDynamicIcon(iconDetails.iconPack, iconDetails.icon, type === 'residential' ? DefaultHomeIcon : DefaultWarehouseIcon)}
+          </motion.div>
+          {/* Main Label - only shown when its section is NOT active OR if neutral */}
+          <AnimatePresence mode="wait">
+            {(isNeutral || !isActive) && (
+              <motion.p
+                key={`${type}-text-label-main`}
+                className={serviceSectionTextBaseClass} // Restored class with ml for spacing
+                variants={textLabelAnimationVariants}
+                initial="exit" // Start from exit to animate in if becoming visible
+                animate="enter"
+                exit="exit"
+              >
+                {sectionLabel}
+              </motion.p>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Sub-Services Column - Appears below the icon/label area when active */}
+        <AnimatePresence>
+          {isActive && (
+            <motion.div
+              className={`relative w-[90%] md:w-[85%] mt-1 rounded-lg shadow-xl overflow-hidden 
+                          ${isPreviewReadOnly ? 'bg-transparent' : 'bg-second-accent/30'} // Subtle bg in edit mode for container
+                        `}
+              variants={subServiceColumnVariants}
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+              style={{ pointerEvents: isActive ? 'auto' : 'none' }} 
+            >
+              <motion.ul className="flex flex-col items-center text-center p-2 space-y-1 md:space-y-1.5 text-sm md:text-base font-normal">
+                {services.map((service, idx) => (
+                  <motion.li
+                    key={service.id || idx}
+                    variants={subServiceItemVariants}
+                    className={`whitespace-nowrap flex items-center justify-center group w-full py-0.5 md:py-1 rounded-md 
+                                ${!isPreviewReadOnly ? 'hover:bg-white/10' : ''} // Hover effect for inputs
+                              `}
+                  >
+                    {!isPreviewReadOnly ? (
+                      <input
+                        type="text"
+                        value={service.label}
+                        onChange={(e) => onServiceNameChange(type, service.id, e.target.value)}
+                        className="py-1 px-2 bg-transparent text-white focus:bg-white/20 outline-none text-center w-auto max-w-[80%] text-sm md:text-base rounded-sm"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    ) : (
+                      <Link 
+                        to={service.route} 
+                        onClick={(e) => e.stopPropagation()} 
+                        className="block py-0.5 text-white hover:underline"
+                      >
+                        {service.label}
+                      </Link>
+                    )}
+                    {!isPreviewReadOnly && ( // Critical: Only show remove button if not in previewReadOnly mode
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onRemoveService(type, service.id); }}
+                        className="ml-2 text-red-400 hover:text-red-300 opacity-50 group-hover:opacity-100 transition-opacity"
+                        title="Remove Service"
+                      >
+                        <LucideIcons.MinusCircle size={14} />
+                      </button>
+                    )}
+                  </motion.li>
+                ))}
+                {services.length === 0 && isActive && (
+                  <motion.p
+                    variants={subServiceItemVariants}
+                    className="text-xs text-gray-400 italic py-1"
+                  >
+                    No services listed.
+                  </motion.p>
+                )}
+              </motion.ul>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  };
 
   return (
     <section className="relative overflow-y-hidden" style={bannerStyles}>
@@ -143,105 +289,11 @@ function HeroPreview({ heroconfig }) {
             transition={{ duration: 0.6, ease: "easeInOut" }}
           />
         )}
-        <div className="relative w-full h-full flex pt-[8vh] md:pt-[10vh] z-10">
+        <div className="relative w-full h-full flex pt-[6vh] md:pt-[8vh] z-10"> {/* Adjusted top padding slightly */}
           {/* Residential Section */}
-          <div className="w-1/2 h-full cursor-pointer flex flex-col items-center justify-start" onClick={() => setActiveSection(prev => prev === "residential" ? "neutral" : "residential")}>
-            <div className="flex flex-col items-center pointer-events-auto">
-              <motion.div variants={iconVariants} animate={activeSection === "residential" ? "active" : "default"} className="mb-1 md:mb-2 text-gray-50 w-[6.5vw] h-[6.5vw] md:w-[60px] md:h-[60px] flex items-center justify-center drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,0.7)]">
-                {renderDynamicIcon(residential.iconPack, residential.icon, DefaultHomeIcon)}
-              </motion.div>
-              
-              <motion.div
-                className={`relative w-[90%] md:w-[80%] bg-second-accent text-banner rounded-lg shadow-lg overflow-hidden ${activeSection === "residential" ? "pointer-events-auto" : "pointer-events-none"}`}
-                variants={boxVariants}
-                initial="hidden"
-                animate={activeSection === "residential" ? "visible" : "hidden"}
-              >
-                <div className="p-3 md:p-4">
-                  <h2 className="text-lg md:text-xl font-semibold text-center mb-2">Residential</h2>
-                  {activeSection === "residential" && (
-                    <motion.ul variants={listVariants} initial="hidden" animate="visible" className="text-center -space-y-1 md:space-y-0 text-sm md:text-base font-normal">
-                      {residentialServices.map((service, idx) => (
-                        <motion.li key={service.id || idx} variants={itemVariants} className="whitespace-nowrap flex items-center justify-center group">
-                          {!isPreviewReadOnly ? (
-                            <input
-                              type="text"
-                              value={service.label}
-                              onChange={(e) => onServiceNameChange('residential', service.id, e.target.value)}
-                              className="py-1 px-2 rounded bg-transparent hover:bg-white/20 focus:bg-white/30 outline-none text-center w-auto max-w-[80%]"
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                          ) : (
-                            <Link to={service.route} onClick={(e) => e.stopPropagation()} className="block py-1 rounded hover:underline">
-                              {service.label}
-                            </Link>
-                          )}
-                          {!isPreviewReadOnly && (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); onRemoveService('residential', service.id); }}
-                              className="ml-2 text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity"
-                              title="Remove Service"
-                            >
-                              <LucideIcons.MinusCircle size={16} />
-                            </button>
-                          )}
-                        </motion.li>
-                      ))}
-                    </motion.ul>
-                  )}
-                </div>
-              </motion.div>
-            </div>
-          </div>
+          {renderServiceSection('residential', residentialServices, residential)}
           {/* Commercial Section */}
-          <div className="w-1/2 h-full cursor-pointer flex flex-col items-center justify-start" onClick={() => setActiveSection(prev => prev === "commercial" ? "neutral" : "commercial")}>
-            <div className="flex flex-col items-center pointer-events-auto">
-              <motion.div variants={iconVariants} animate={activeSection === "commercial" ? "active" : "default"} className="mb-1 md:mb-2 text-gray-50 w-[6.5vw] h-[6.5vw] md:w-[60px] md:h-[60px] flex items-center justify-center drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,0.7)]">
-                {renderDynamicIcon(commercial.iconPack, commercial.icon, DefaultWarehouseIcon)}
-              </motion.div>
-
-              <motion.div
-                className={`relative w-[90%] md:w-[80%] bg-second-accent text-banner rounded-lg shadow-lg overflow-hidden ${activeSection === "commercial" ? "pointer-events-auto" : "pointer-events-none"}`}
-                variants={boxVariants}
-                initial="hidden"
-                animate={activeSection === "commercial" ? "visible" : "hidden"}
-              >
-                <div className="p-3 md:p-4">
-                  <h2 className="text-lg md:text-xl font-semibold text-center mb-2">Commercial</h2>
-                  {activeSection === "commercial" && (
-                    <motion.ul variants={listVariants} initial="hidden" animate="visible" className="text-center -space-y-1 md:space-y-0 text-sm md:text-base font-normal">
-                      {commercialServices.map((service, idx) => (
-                        <motion.li key={service.id || idx} variants={itemVariants} className="whitespace-nowrap flex items-center justify-center group">
-                          {!isPreviewReadOnly ? (
-                            <input
-                              type="text"
-                              value={service.label}
-                              onChange={(e) => onServiceNameChange('commercial', service.id, e.target.value)}
-                              className="py-1 px-2 rounded bg-transparent hover:bg-white/20 focus:bg-white/30 outline-none text-center w-auto max-w-[80%]"
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                          ) : (
-                            <Link to={service.route} onClick={(e) => e.stopPropagation()} className="block py-1 rounded hover:underline">
-                              {service.label}
-                            </Link>
-                          )}
-                          {!isPreviewReadOnly && (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); onRemoveService('commercial', service.id); }}
-                              className="ml-2 text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity"
-                              title="Remove Service"
-                            >
-                              <LucideIcons.MinusCircle size={16} />
-                            </button>
-                          )}
-                        </motion.li>
-                      ))}
-                    </motion.ul>
-                  )}
-                </div>
-              </motion.div>
-            </div>
-          </div>
+          {renderServiceSection('commercial', commercialServices, commercial)}
         </div>
         <div 
           className={`absolute bottom-0 left-0 right-0 pointer-events-none to-transparent ${activeSection === "neutral" ? "h-[15vh] md:h-[18vh]" : "h-[9vh] md:h-[10vh]"}`} 
@@ -281,14 +333,6 @@ function HeroControlsPanel({ currentData, onControlsChange }) {
   const [allCommercialServices, setAllCommercialServices] = useState([]);
   const [isServicesLoading, setIsServicesLoading] = useState(true);
 
-  // Helper to get display path for image previews
-  const getDisplayPath = (pathOrFile) => {
-    if (!pathOrFile) return '';
-    if (typeof pathOrFile === 'string') return pathOrFile; // URL or path
-    if (pathOrFile instanceof File) return URL.createObjectURL(pathOrFile); // File object
-    return '';
-  };
-  
   useEffect(() => {
     setIsServicesLoading(true);
     // Assuming combined_data.json is in public/data/raw_data/step_4/
@@ -341,31 +385,6 @@ function HeroControlsPanel({ currentData, onControlsChange }) {
 
   const handleTopBannerColorChange = (color) => {
     onControlsChange({ topBannerColor: color });
-  };
-
-  const openIconSelectionModal = (type) => {
-    const currentSettings = currentData[type] || {};
-    setEditingIconContext({ 
-      type: type, 
-      currentPack: currentSettings.iconPack || 'lucide', 
-      currentName: currentSettings.icon 
-    });
-    setIsIconModalOpen(true);
-  };
-
-  const handleIconSelection = (pack, name) => {
-    if (editingIconContext.type) {
-      onControlsChange({
-        [editingIconContext.type]: {
-          // Spread existing subServices and other properties for the type
-          ...(currentData[editingIconContext.type] || {}),
-          subServices: currentData[editingIconContext.type]?.subServices || [], 
-          icon: name,
-          iconPack: pack,
-        },
-      });
-    }
-    setIsIconModalOpen(false);
   };
 
   const handleServiceToggle = (serviceType, serviceItem) => {
@@ -550,7 +569,7 @@ function HeroControlsPanel({ currentData, onControlsChange }) {
         </div>
       </div>
 
-      {isIconModalOpen && (
+      {/* {isIconModalOpen && ( // REMOVE IconSelectorModal instance from HeroControlsPanel
         <IconSelectorModal
           isOpen={isIconModalOpen}
           onClose={() => setIsIconModalOpen(false)}
@@ -558,7 +577,7 @@ function HeroControlsPanel({ currentData, onControlsChange }) {
           currentIconPack={editingIconContext.currentPack}
           currentIconName={editingIconContext.currentName}
         />
-      )}
+      )} */}
     </div>
   );
 }
@@ -590,6 +609,10 @@ export default function HeroBlock({
       topBannerColor: initialConfig.topBannerColor || "#FFFFFF",
     };
   });
+
+  // State for IconSelectorModal, now managed by HeroBlock
+  const [isIconModalOpen, setIsIconModalOpen] = useState(false);
+  const [editingIconServiceType, setEditingIconServiceType] = useState(null); // 'residential' or 'commercial'
 
   useEffect(() => {
     if (heroconfig) {
@@ -723,6 +746,28 @@ export default function HeroBlock({
     });
   };
 
+  const handleOpenIconModalForService = (serviceType) => { // serviceType is 'residential' or 'commercial'
+    const currentServiceSettings = localData[serviceType] || {};
+    setEditingIconServiceType(serviceType); // Store which service's icon is being edited
+    // Note: The modal in IconSelectorModal.jsx needs currentIconPack and currentIconName.
+    // These will be derived from localData[serviceType].icon and localData[serviceType].iconPack
+    setIsIconModalOpen(true);
+  };
+
+  const handleIconSelectionConfirm = (selectedPack, selectedIconName) => {
+    if (editingIconServiceType) {
+      handleControlsChange({
+        [editingIconServiceType]: {
+          ...(localData[editingIconServiceType] || {}), // Preserve other props like subServices
+          icon: selectedIconName,
+          iconPack: selectedPack,
+        },
+      });
+    }
+    setIsIconModalOpen(false);
+    setEditingIconServiceType(null); // Reset
+  };
+
   if (readOnly) {
     // Pass the original heroconfig, which might include a path or a blob URL if it came from an edited state
     return <HeroPreview heroconfig={heroconfig} />; 
@@ -748,6 +793,7 @@ export default function HeroBlock({
       });
     },
     readOnly: false, // Explicitly pass false for HeroPreview when HeroBlock is editable
+    onEditServiceIcon: handleOpenIconModalForService, // Pass the handler to HeroPreview
   };
 
   return (
@@ -757,6 +803,18 @@ export default function HeroBlock({
         currentData={localData} 
         onControlsChange={handleControlsChange} 
       />
+      {isIconModalOpen && editingIconServiceType && (
+        <IconSelectorModal
+          isOpen={isIconModalOpen}
+          onClose={() => {
+            setIsIconModalOpen(false);
+            setEditingIconServiceType(null);
+          }}
+          onIconSelect={handleIconSelectionConfirm}
+          currentIconPack={localData[editingIconServiceType]?.iconPack || 'lucide'}
+          currentIconName={localData[editingIconServiceType]?.icon}
+        />
+      )}
     </>
   );
 }

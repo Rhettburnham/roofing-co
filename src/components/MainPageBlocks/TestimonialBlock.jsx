@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import StarRating from "../StarRating";
 import googleIcon from "/assets/images/hero/googleimage.png";
 
@@ -60,9 +60,13 @@ const TestimonialItem = ({ testimonial }) => {
 };
 
 // EDITOR PANEL
-function TestimonialEditorPanel({ localData, setLocalData, onSave }) {
+function TestimonialEditorPanel({ localData, onPanelChange }) {
+  const handleFieldChange = (field, value) => {
+    onPanelChange(prev => ({ ...prev, [field]: value }));
+  };
+
   const handleAddTestimonial = () => {
-    setLocalData(prev => ({
+    onPanelChange(prev => ({
       ...prev,
       title: prev.title || "Testimonials",
       googleReviews: [
@@ -80,7 +84,7 @@ function TestimonialEditorPanel({ localData, setLocalData, onSave }) {
   };
 
   const handleRemoveTestimonial = (index) => {
-    setLocalData(prev => {
+    onPanelChange(prev => {
       const updatedReviews = [...(prev.googleReviews || [])];
       updatedReviews.splice(index, 1);
       return { ...prev, googleReviews: updatedReviews };
@@ -88,39 +92,22 @@ function TestimonialEditorPanel({ localData, setLocalData, onSave }) {
   };
 
   const handleTestimonialChange = (index, field, value) => {
-    setLocalData(prev => {
+    onPanelChange(prev => {
       const updatedReviews = [...(prev.googleReviews || [])];
-      updatedReviews[index] = {
-        ...updatedReviews[index],
-        [field]: field === 'stars' ? Number(value) : value
-      };
+      if (updatedReviews[index]) {
+        updatedReviews[index] = {
+          ...updatedReviews[index],
+          [field]: field === 'stars' ? Number(value) : value
+        };
+      }
       return { ...prev, googleReviews: updatedReviews };
     });
   };
   
-  const handleTitleChange = (e) => {
-    setLocalData(prev => ({ ...prev, title: e.target.value }));
-  };
-  
-  const handleReviewButtonLinkChange = (e) => {
-    setLocalData(prev => ({ ...prev, reviewButtonLink: e.target.value }));
-  };
-  
-  const handleReviewButtonTextChange = (e) => {
-    setLocalData(prev => ({ ...prev, reviewButtonText: e.target.value }));
-  };
-
-
   return (
     <div className="bg-gray-800 text-white p-4 rounded-lg max-h-[75vh] overflow-auto">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">Testimonials Editor</h2>
-        <button
-          onClick={onSave}
-          className="bg-green-600 hover:bg-green-500 px-4 py-2 rounded text-white font-medium"
-        >
-          Save Changes
-        </button>
       </div>
 
       <div className="mb-6">
@@ -129,7 +116,7 @@ function TestimonialEditorPanel({ localData, setLocalData, onSave }) {
           type="text"
           className="w-full bg-gray-700 px-3 py-2 rounded text-white"
           value={localData.title || "Testimonials"}
-          onChange={handleTitleChange}
+          onChange={(e) => handleFieldChange('title', e.target.value)}
         />
       </div>
       
@@ -139,7 +126,7 @@ function TestimonialEditorPanel({ localData, setLocalData, onSave }) {
           type="text"
           className="w-full bg-gray-700 px-3 py-2 rounded text-white"
           value={localData.reviewButtonText || "Review us on Google"}
-          onChange={handleReviewButtonTextChange}
+          onChange={(e) => handleFieldChange('reviewButtonText', e.target.value)}
         />
       </div>
 
@@ -149,7 +136,7 @@ function TestimonialEditorPanel({ localData, setLocalData, onSave }) {
           type="text"
           className="w-full bg-gray-700 px-3 py-2 rounded text-white"
           value={localData.reviewButtonLink || "https://www.google.com/maps"}
-          onChange={handleReviewButtonLinkChange}
+          onChange={(e) => handleFieldChange('reviewButtonLink', e.target.value)}
         />
       </div>
 
@@ -167,7 +154,7 @@ function TestimonialEditorPanel({ localData, setLocalData, onSave }) {
           <div key={index} className="bg-gray-700 p-3 rounded mb-4 relative">
             <button
               onClick={() => handleRemoveTestimonial(index)}
-              className="absolute top-2 right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
+              className="absolute top-2 right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-500 focus:outline-none"
               title="Remove testimonial"
             > × </button>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
@@ -248,16 +235,89 @@ export default function TestimonialBlock({ readOnly = false, config = {}, onConf
     };
   });
 
+  const prevReadOnlyRef = useRef(readOnly);
+
   useEffect(() => {
-    const currentConfig = config || {};
-    setLocalData({
-        title: currentConfig.title || "Testimonials",
-        googleReviews: currentConfig.googleReviews || [],
-        reviewButtonText: currentConfig.reviewButtonText || "Review us on Google",
-        reviewButtonLink: currentConfig.reviewButtonLink || "https://www.google.com/maps",
-    });
-    setGoogleReviews(currentConfig.googleReviews || []);
+    if (config) {
+      let updatedGoogleReviewsForCarousel = [];
+
+      setLocalData(prevLocalData => {
+        // Define defaults for top-level fields
+        const defaultTitle = "Testimonials";
+        const defaultReviewButtonText = "Review us on Google";
+        const defaultReviewButtonLink = "https://www.google.com/maps";
+
+        // Define defaults for individual review item fields
+        const defaultReviewValues = {
+          name: "New Customer", stars: 5, date: "1 month ago", text: "Add your testimonial text here...",
+          logo: "/assets/images/hero/googleimage.png", link: "https://www.google.com/maps"
+        };
+
+        let mergedGoogleReviews = [];
+        if (config.googleReviews) {
+          mergedGoogleReviews = config.googleReviews.map((reviewFromProp, propIndex) => {
+            const localReview = prevLocalData.googleReviews?.find(lr => lr.id && lr.id === reviewFromProp.id) || 
+                                prevLocalData.googleReviews?.[propIndex] || 
+                                {};
+
+            return {
+              ...reviewFromProp, // Start with prop data (structure, panel-settable defaults like ID)
+              id: reviewFromProp.id || localReview.id || `testimonial_${Date.now()}_${propIndex}`,
+
+              name: (localReview.name && localReview.name !== reviewFromProp.name && localReview.name !== defaultReviewValues.name) 
+                    ? localReview.name : (reviewFromProp.name || defaultReviewValues.name),
+              stars: (localReview.stars !== undefined && localReview.stars !== reviewFromProp.stars && localReview.stars !== defaultReviewValues.stars)
+                    ? Number(localReview.stars) : (reviewFromProp.stars !== undefined ? Number(reviewFromProp.stars) : defaultReviewValues.stars),
+              date: (localReview.date && localReview.date !== reviewFromProp.date && localReview.date !== defaultReviewValues.date)
+                    ? localReview.date : (reviewFromProp.date || defaultReviewValues.date),
+              text: (localReview.text && localReview.text !== reviewFromProp.text && localReview.text !== defaultReviewValues.text)
+                    ? localReview.text : (reviewFromProp.text || defaultReviewValues.text),
+              logo: (localReview.logo && localReview.logo !== reviewFromProp.logo && localReview.logo !== defaultReviewValues.logo)
+                    ? localReview.logo : (reviewFromProp.logo || defaultReviewValues.logo),
+              link: (localReview.link && localReview.link !== reviewFromProp.link && localReview.link !== defaultReviewValues.link)
+                    ? localReview.link : (reviewFromProp.link || defaultReviewValues.link),
+            };
+          });
+        } else if (prevLocalData.googleReviews) {
+          mergedGoogleReviews = prevLocalData.googleReviews; // Keep local if prop provides no reviews
+        }
+        
+        updatedGoogleReviewsForCarousel = mergedGoogleReviews; // Capture for setGoogleReviews call
+
+        return {
+          ...prevLocalData, // Base with previous local data
+          ...config,        // Overlay with incoming config for any new/top-level fields from prop
+
+          title: (prevLocalData.title !== config.title && prevLocalData.title !== (config.title || defaultTitle))
+                 ? prevLocalData.title
+                 : (config.title || defaultTitle),
+          reviewButtonText: (prevLocalData.reviewButtonText !== config.reviewButtonText && prevLocalData.reviewButtonText !== (config.reviewButtonText || defaultReviewButtonText))
+                 ? prevLocalData.reviewButtonText
+                 : (config.reviewButtonText || defaultReviewButtonText),
+          reviewButtonLink: (prevLocalData.reviewButtonLink !== config.reviewButtonLink && prevLocalData.reviewButtonLink !== (config.reviewButtonLink || defaultReviewButtonLink))
+                 ? prevLocalData.reviewButtonLink
+                 : (config.reviewButtonLink || defaultReviewButtonLink),
+          
+          googleReviews: mergedGoogleReviews,
+        };
+      });
+      
+      // Update the separate state for the carousel with the merged reviews
+      setGoogleReviews(updatedGoogleReviewsForCarousel || []);
+
+    }
+    // If config is null/undefined, localData remains as is.
   }, [config]);
+
+  useEffect(() => {
+    if (prevReadOnlyRef.current === false && readOnly === true) {
+      if (onConfigChange) {
+        console.log("TestimonialBlock: Editing finished. Calling onConfigChange.");
+        onConfigChange(localData);
+      }
+    }
+    prevReadOnlyRef.current = readOnly;
+  }, [readOnly, localData, onConfigChange]);
 
 
   const chunkSize = 3; // For large screens
@@ -283,14 +343,8 @@ export default function TestimonialBlock({ readOnly = false, config = {}, onConf
     }
   };
 
-  const handleSave = () => {
-    if (onConfigChange) {
-      onConfigChange(localData);
-    }
-  };
-
   if (!readOnly) {
-    return <TestimonialEditorPanel localData={localData} setLocalData={setLocalData} onSave={handleSave} />;
+    return <TestimonialEditorPanel localData={localData} onPanelChange={setLocalData} />;
   }
 
   // READ-ONLY MODE

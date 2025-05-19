@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -18,6 +18,21 @@ import {
 import { Home as LucideHome, Building2 } from "lucide-react"; // Renamed to avoid conflict
 import IconSelectorModal from "../common/IconSelectorModal";
 
+// Helper to initialize image state: handles string path or {file, url, name} object
+const initializeImageState = (imageConfig, defaultPath) => {
+    if (imageConfig && typeof imageConfig === 'object' && imageConfig.url) return imageConfig;
+    if (typeof imageConfig === 'string') return { file: null, url: imageConfig, name: imageConfig.split('/').pop() };
+    return { file: null, url: defaultPath, name: defaultPath.split('/').pop() };
+};
+
+// Helper to get display URL from string path or {url, file} object
+const getDisplayUrl = (imageValue, defaultPath = null) => {
+    if (!imageValue) return defaultPath;
+    if (typeof imageValue === 'string') return imageValue; // Assumes string is a direct URL or path
+    if (typeof imageValue === 'object' && imageValue.url) return imageValue.url; // Handles {file, url, name}
+    return defaultPath;
+};
+
 // Helper function to resolve icon name strings to React components
 function resolveIcon(iconName) {
   const iconMap = {
@@ -35,7 +50,7 @@ function resolveIcon(iconName) {
   return iconMap[iconName] || FaTools; // Default to FaTools if not found
 }
 
-// ANIMATION VARIANTS
+// GSAP ANIMATION VARIANTS (defined once)
 const containerVariants = {
   enter: { transition: { staggerChildren: 0.07, staggerDirection: 1 } },
   exit: { transition: { staggerChildren: 0.07, staggerDirection: 1 } },
@@ -47,323 +62,8 @@ const itemVariants = {
   exit: { opacity: 0, x: "100%", transition: { duration: 0.3 } },
 };
 
-// EDITOR PANEL (will be modified later)
-function ServiceSliderEditorPanel({ localData, setLocalData, onSave, onServiceChange, onAddService, onRemoveService, onImageUpload, onIconSelect }) {
-  const [activeTab, setActiveTab] = useState("residential");
-  const [isIconModalOpen, setIsIconModalOpen] = useState(false);
-  const [editingServiceInfo, setEditingServiceInfo] = useState({ type: null, index: null });
-
-  const getDisplayUrl = (value) => {
-    if (!value) return null;
-    if (typeof value === "string") return value;
-    if (typeof value === "object" && value.url) return value.url;
-    return null;
-  };
-
-  const handleAddServiceInternal = (serviceType) => {
-    const serviceList = serviceType === 'residential' ? 'residentialServices' : 'commercialServices';
-    const iconOptions = ['FaTools', 'FaFan', 'FaPaintRoller', 'FaTint', 'FaHome', 'FaBuilding', 'FaWarehouse', 'FaSmog', 'FaBroom', 'FaHardHat'];
-    onAddService(serviceType, {
-      icon: iconOptions[Math.floor(Math.random() * iconOptions.length)],
-      title: `New ${serviceType === 'residential' ? 'Residential' : 'Commercial'} Service`,
-      link: "#"
-    });
-  };
-
-  const handleRemoveService = (serviceType, index) => {
-    const serviceList = serviceType === 'residential' ? 'residentialServices' : 'commercialServices';
-    onRemoveService(serviceType, index);
-  };
-
-  const handleServiceChange = (serviceType, index, field, value) => {
-    const serviceList = serviceType === 'residential' ? 'residentialServices' : 'commercialServices';
-    onServiceChange(serviceType, index, field, value);
-  };
-
-  const openIconModal = (serviceType, index) => {
-    setEditingServiceInfo({ type: serviceType, index });
-    setIsIconModalOpen(true);
-  };
-
-  const handleIconSelectInternal = (pack, iconName) => {
-    if (editingServiceInfo.type && editingServiceInfo.index !== null) {
-      onIconSelect(editingServiceInfo.type, editingServiceInfo.index, iconName);
-    }
-    setIsIconModalOpen(false);
-    setEditingServiceInfo({ type: null, index: null });
-  };
-
-  return (
-    <div className="bg-white text-gray-800 px-4 py-0 rounded-lg mt-4 border border-gray-300">
-      <div className="flex flex-col mb-4 pt-4">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Service Details Editor</h2>
-          {/* <button
-            onClick={onSave}
-            className="bg-green-600 hover:bg-green-500 px-4 py-2 rounded text-white font-medium"
-          >
-            Save All Slider Changes 
-          </button> */}
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700">Residential Button Text:</label>
-          <input
-            type="text"
-            className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-800"
-            value={localData.residentialButtonText || "Residential"}
-            onChange={(e) => setLocalData(prev => ({ ...prev, residentialButtonText: e.target.value }))}
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700">Commercial Button Text:</label>
-          <input
-            type="text"
-            className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-800"
-            value={localData.commercialButtonText || "Commercial"}
-            onChange={(e) => setLocalData(prev => ({ ...prev, commercialButtonText: e.target.value }))}
-          />
-        </div>
-        {/* Tabs removed */}
-        {/* <div className="flex border-b border-gray-700 mb-4">
-          <button
-            className={`px-4 py-2 ${activeTab === 'residential' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'} rounded-t`}
-            onClick={() => setActiveTab('residential')}
-          >
-            Residential Services
-          </button>
-          <button
-            className={`px-4 py-2 ${activeTab === 'commercial' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'} rounded-t`}
-            onClick={() => setActiveTab('commercial')}
-          >
-            Commercial Services
-          </button>
-          <button
-            className={`px-4 py-2 ${activeTab === 'images' ? 'bg-gray-200 text-gray-800 border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-700'} rounded-t`}
-            onClick={() => setActiveTab('images')}
-          >
-            Images
-          </button>
-        </div> */}
-      </div>
-      
-      {/* Residential Services Editor - No longer tabbed */}
-      <div>
-          <div className="flex justify-between items-center mb-3">
-            <h3 className="text-lg font-medium">Residential Services</h3>
-            <button
-              onClick={() => handleAddServiceInternal('residential')}
-              className="bg-blue-600 hover:bg-blue-500 px-3 py-1 rounded text-white text-sm"
-            >
-              + Add Service
-            </button>
-          </div>
-          {/* Existing residential services list removed */}
-          {/* {localData.residentialServices?.map((service, index) => (
-            <div key={index} className="bg-gray-100 p-3 rounded mb-3 relative border border-gray-300">
-              <button
-                onClick={() => handleRemoveService('residential', index)}
-                className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 text-xs"
-                title="Remove service"
-              > X </button>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {/* Link input removed */}
-              {/*</div>
-            </div>
-          ))} */}
-        </div>
-      
-      {/* Commercial Services Editor - No longer tabbed */}
-      <div className="mt-6">
-          <div className="flex justify-between items-center mb-3">
-            <h3 className="text-lg font-medium">Commercial Services</h3>
-            <button
-              onClick={() => handleAddServiceInternal('commercial')}
-              className="bg-blue-600 hover:bg-blue-500 px-3 py-1 rounded text-white text-sm"
-            >
-              + Add Service
-            </button>
-          </div>
-           {/* Existing commercial services list removed */}
-          {/* {localData.commercialServices?.map((service, index) => (
-            <div key={index} className="bg-gray-100 p-3 rounded mb-3 relative border border-gray-300">
-              <button
-                onClick={() => handleRemoveService('commercial', index)}
-                className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 text-xs"
-                title="Remove service"
-              > X </button>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                 {/* Link input removed */}
-              {/* </div>
-            </div>
-          ))} */}
-        </div>
-      
-      {/* Images Editor - No longer tabbed */}
-      <div className="mt-6">
-          <h3 className="text-lg font-medium mb-3">Banner Images</h3>
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Residential Image:</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={onImageUpload('largeResidentialImg')}
-              className="mb-2 w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-            />
-            {getDisplayUrl(localData.largeResidentialImg) && (
-              <div className="mt-2 border border-gray-600 rounded overflow-hidden h-32">
-                <img
-                  src={getDisplayUrl(localData.largeResidentialImg)}
-                  alt="Residential banner"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
-            <input
-              type="text"
-              className="w-full bg-gray-100 border border-gray-300 px-3 py-2 mt-2 rounded text-gray-800 placeholder-gray-400"
-              value={ (localData.largeResidentialImg && typeof localData.largeResidentialImg === 'object' && !localData.largeResidentialImg.file) ? localData.largeResidentialImg.url : (typeof localData.largeResidentialImg === 'string' ? localData.largeResidentialImg : '')}
-              placeholder="Or enter image URL"
-              onChange={(e) => setLocalData(prev => ({ ...prev, largeResidentialImg: { file: null, url: e.target.value } }))}
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Commercial Image:</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={onImageUpload('largeCommercialImg')}
-              className="mb-2 w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-            />
-            {getDisplayUrl(localData.largeCommercialImg) && (
-              <div className="mt-2 border border-gray-600 rounded overflow-hidden h-32">
-                <img
-                  src={getDisplayUrl(localData.largeCommercialImg)}
-                  alt="Commercial banner"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
-            <input
-              type="text"
-              className="w-full bg-gray-100 border border-gray-300 px-3 py-2 mt-2 rounded text-gray-800 placeholder-gray-400"
-              value={ (localData.largeCommercialImg && typeof localData.largeCommercialImg === 'object' && !localData.largeCommercialImg.file) ? localData.largeCommercialImg.url : (typeof localData.largeCommercialImg === 'string' ? localData.largeCommercialImg : '')}
-              placeholder="Or enter image URL"
-              onChange={(e) => setLocalData(prev => ({ ...prev, largeCommercialImg: { file: null, url: e.target.value } }))}
-            />
-          </div>
-        </div>
-
-      <IconSelectorModal 
-        isOpen={isIconModalOpen}
-        onClose={() => setIsIconModalOpen(false)}
-        onIconSelect={handleIconSelectInternal}
-        currentIconPack="fa"
-        currentIconName={editingServiceInfo.index !== null && localData[editingServiceInfo.type === 'residential' ? 'residentialServices' : 'commercialServices'][editingServiceInfo.index]?.icon}
-      />
-    </div>
-  );
-}
-
-
-// NEW Editable Preview Component for Service Slider
-function ServiceSliderEditablePreview({ 
-  data, 
-  onTitleChange, 
-  onServiceItemChange, 
-  onServiceIconClick,
-  onToggleServiceType, // For "Switch to Commercial/Residential"
-  currentServiceType // 'residential' or 'commercial'
-}) {
-  const { title = "Services", residentialServices = [], commercialServices = [] } = data;
-  const currentServicesToDisplay = currentServiceType === 'commercial' ? commercialServices : residentialServices;
-  
-  const getDisplayUrl = (imageValue, defaultPath) => {
-    if (imageValue && typeof imageValue === 'object' && imageValue.url) return imageValue.url;
-    if (typeof imageValue === 'string') return imageValue;
-    return defaultPath;
-  };
-
-  // Simplified rendering, focusing on editable parts. GSAP animations removed for brevity here,
-  // but could be added back if needed for the editable preview.
-  return (
-    <div className="w-full bg-gray-100 p-4 rounded-lg border border-gray-300">
-      {/* Editable Section Title */}
-      <input
-        type="text"
-        value={title}
-        onChange={(e) => onTitleChange(e.target.value)}
-        className="text-3xl font-bold text-center w-full mb-6 bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 rounded p-1"
-        placeholder="Section Title"
-      />
-
-      {/* Toggle Buttons */}
-      <div className="flex justify-center gap-4 mb-6">
-        <button
-          onClick={() => onToggleServiceType('residential')}
-          className={`px-6 py-2 rounded-md font-medium ${currentServiceType === 'residential' ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-700 hover:bg-gray-400'}`}
-        >
-          Show Residential
-        </button>
-        <button
-          onClick={() => onToggleServiceType('commercial')}
-          className={`px-6 py-2 rounded-md font-medium ${currentServiceType === 'commercial' ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-700 hover:bg-gray-400'}`}
-        >
-          Show Commercial
-        </button>
-      </div>
-      
-      {/* Service Items Grid - Simplified for Click-to-Edit */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {currentServicesToDisplay.map((service, index) => (
-          <div key={service.title + index} className="bg-white p-3 rounded-lg shadow flex flex-col items-center text-center">
-            <div 
-              className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white text-3xl mb-2 cursor-pointer hover:bg-blue-700"
-              onClick={() => onServiceIconClick(currentServiceType, index)}
-              title="Click to change icon"
-            >
-              {service.icon ? React.createElement(resolveIcon(service.icon)) : <FaTools />}
-            </div>
-            <input
-              type="text"
-              value={service.title || ""}
-              onChange={(e) => onServiceItemChange(currentServiceType, index, 'title', e.target.value)}
-              className="font-semibold text-center w-full bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 placeholder-gray-400"
-              placeholder="Service Title"
-            />
-            {/* Link editing will remain in the panel below for now */}
-            {/* {!isPreviewReadOnly && <p className="text-xs text-gray-500 mt-1 truncate w-full" title={service.link || '#'}>
-              Link: {service.link || '#'}
-            </p>} */}
-          </div>
-        ))}
-      </div>
-      {currentServicesToDisplay.length === 0 && (
-        <p className="text-center text-gray-500 mt-4">No {currentServiceType} services to display. Add them below.</p>
-      )}
-    </div>
-  );
-}
-
-
 // SERVICE SLIDER COMPONENT
 export default function ServiceSliderBlock({ readOnly = false, config = {}, onConfigChange }) {
-  const [currentEditDisplayType, setCurrentEditDisplayType] = useState('residential'); // For editable preview
-  const [isIconModalOpen, setIsIconModalOpen] = useState(false); // Unified Icon Modal state
-  const [editingServiceInfo, setEditingServiceInfo] = useState({ type: null, index: null }); // Unified editing info
-  const [isCommercialForReadOnly, setIsCommercialForReadOnly] = useState(false); // Added for read-only state
-
-  const getDisplayUrl = (imageValue, defaultPath) => {
-    if (imageValue && typeof imageValue === 'object' && imageValue.url) return imageValue.url;
-    if (typeof imageValue === 'string') return imageValue;
-    return defaultPath;
-  };
-
-  const initializeImageState = (imageConfig, defaultPath) => {
-    if (imageConfig && typeof imageConfig === 'object' && imageConfig.url) return imageConfig;
-    if (typeof imageConfig === 'string') return { file: null, url: imageConfig };
-    return { file: null, url: defaultPath };
-  };
-
   const [localData, setLocalData] = useState(() => {
     const initialConfig = config || {};
     return {
@@ -371,452 +71,550 @@ export default function ServiceSliderBlock({ readOnly = false, config = {}, onCo
       title: initialConfig.title || "Services",
       residentialButtonText: initialConfig.residentialButtonText || "Residential",
       commercialButtonText: initialConfig.commercialButtonText || "Commercial",
-      residentialServices: initialConfig.residentialServices?.map(s => ({...s, id: s.id || Math.random().toString(36).substr(2,9)})) || [],
-      commercialServices: initialConfig.commercialServices?.map(s => ({...s, id: s.id || Math.random().toString(36).substr(2,9)})) || [],
+      residentialServices: initialConfig.residentialServices?.map(s => ({...s, id: s.id || Math.random().toString(36).substr(2,9), link: s.link || "#", iconPack: s.iconPack || 'fa'})) || [],
+      commercialServices: initialConfig.commercialServices?.map(s => ({...s, id: s.id || Math.random().toString(36).substr(2,9), link: s.link || "#", iconPack: s.iconPack || 'fa'})) || [],
       largeResidentialImg: initializeImageState(initialConfig.largeResidentialImg, "/assets/images/main_image_expanded.jpg"),
       largeCommercialImg: initializeImageState(initialConfig.largeCommercialImg, "/assets/images/commercialservices.jpg"),
+      isCommercial: initialConfig.isCommercial || false, 
+      activeButtonBgColor: initialConfig.activeButtonBgColor || "#FF5733", // Example: Bright Red/Orange
+      inactiveButtonBgColor: initialConfig.inactiveButtonBgColor || "#6c757d", // Example: Gray
     };
   });
 
+  const [currentEditDisplayType, setCurrentEditDisplayType] = useState(localData.isCommercial ? 'commercial' : 'residential');
+  const [isIconModalOpen, setIsIconModalOpen] = useState(false);
+  const [editingServiceInfo, setEditingServiceInfo] = useState({ type: null, index: null }); 
+  
+  const prevReadOnlyRef = useRef(readOnly);
+
   useEffect(() => {
-    const currentConfig = config || {};
-    setLocalData(prevLocalData => {
-      const newResidentialImg = initializeImageState(currentConfig.largeResidentialImg, "/assets/images/main_image_expanded.jpg");
-      const newCommercialImg = initializeImageState(currentConfig.largeCommercialImg, "/assets/images/commercialservices.jpg");
+    if (config) {
+      setLocalData(prevLocalData => {
+        const newResImg = initializeImageState(config.largeResidentialImg, prevLocalData.largeResidentialImg?.url || "/assets/images/main_image_expanded.jpg");
+        const newComImg = initializeImageState(config.largeCommercialImg, prevLocalData.largeCommercialImg?.url || "/assets/images/commercialservices.jpg");
 
-      if (prevLocalData.largeResidentialImg?.url?.startsWith('blob:') && prevLocalData.largeResidentialImg.url !== newResidentialImg.url) {
-        URL.revokeObjectURL(prevLocalData.largeResidentialImg.url);
-      }
-      if (prevLocalData.largeCommercialImg?.url?.startsWith('blob:') && prevLocalData.largeCommercialImg.url !== newCommercialImg.url) {
-        URL.revokeObjectURL(prevLocalData.largeCommercialImg.url);
-      }
+        if (prevLocalData.largeResidentialImg?.file && prevLocalData.largeResidentialImg.url?.startsWith('blob:') && prevLocalData.largeResidentialImg.url !== newResImg.url) {
+          URL.revokeObjectURL(prevLocalData.largeResidentialImg.url);
+        }
+        if (prevLocalData.largeCommercialImg?.file && prevLocalData.largeCommercialImg.url?.startsWith('blob:') && prevLocalData.largeCommercialImg.url !== newComImg.url) {
+          URL.revokeObjectURL(prevLocalData.largeCommercialImg.url);
+        }
+        
+        const newResidentialServices = (config.residentialServices || prevLocalData.residentialServices || []).map(serviceConfig => {
+          const localService = prevLocalData.residentialServices?.find(s => s.id === serviceConfig.id);
+          return {
+            ...serviceConfig, // Base from prop or existing local if prop is sparse
+            id: serviceConfig.id || localService?.id || Math.random().toString(36).substr(2,9),
+            link: serviceConfig.link !== undefined ? serviceConfig.link : localService?.link || "#",
+            icon: serviceConfig.icon !== undefined ? serviceConfig.icon : localService?.icon || 'FaTools',
+            iconPack: serviceConfig.iconPack !== undefined ? serviceConfig.iconPack : localService?.iconPack || 'fa',
+            // Prioritize local title if it's different and not just default/empty vs prop
+            title: (localService && localService.title !== serviceConfig.title && localService.title !== (serviceConfig.title || "")) 
+                   ? localService.title 
+                   : serviceConfig.title || "",
+          };
+        });
 
-      return {
-        ...prevLocalData,
-        ...currentConfig,
-        title: currentConfig.title || prevLocalData.title || "Services",
-        residentialButtonText: currentConfig.residentialButtonText || prevLocalData.residentialButtonText || "Residential",
-        commercialButtonText: currentConfig.commercialButtonText || prevLocalData.commercialButtonText || "Commercial",
-        residentialServices: currentConfig.residentialServices?.map(s => ({...s, id: s.id || Math.random().toString(36).substr(2,9)})) || prevLocalData.residentialServices || [],
-        commercialServices: currentConfig.commercialServices?.map(s => ({...s, id: s.id || Math.random().toString(36).substr(2,9)})) || prevLocalData.commercialServices || [],
-        largeResidentialImg: newResidentialImg,
-        largeCommercialImg: newCommercialImg,
-      };
-    });
-  }, [config]);
+        const newCommercialServices = (config.commercialServices || prevLocalData.commercialServices || []).map(serviceConfig => {
+          const localService = prevLocalData.commercialServices?.find(s => s.id === serviceConfig.id);
+          return {
+            ...serviceConfig,
+            id: serviceConfig.id || localService?.id || Math.random().toString(36).substr(2,9),
+            link: serviceConfig.link !== undefined ? serviceConfig.link : localService?.link || "#",
+            icon: serviceConfig.icon !== undefined ? serviceConfig.icon : localService?.icon || 'FaTools',
+            iconPack: serviceConfig.iconPack !== undefined ? serviceConfig.iconPack : localService?.iconPack || 'fa',
+            title: (localService && localService.title !== serviceConfig.title && localService.title !== (serviceConfig.title || "")) 
+                   ? localService.title 
+                   : serviceConfig.title || "",
+          };
+        });
+        
+        const updatedData = {
+          ...prevLocalData, // Start with previous local state
+          ...config,        // Overlay with incoming config prop for panel-managed fields
 
-  const displayTypeForEditing = readOnly ? (config?.isCommercial ? 'commercial' : 'residential') : currentEditDisplayType;
-  const currentServicesToDisplay = displayTypeForEditing === 'commercial' ? (localData.commercialServices || []) : (localData.residentialServices || []);
+          // Explicitly prioritize prevLocalData for simple inline-editable text fields
+          title: (prevLocalData.title !== config.title && prevLocalData.title !== (config.title || "Services"))
+                   ? prevLocalData.title
+                   : config.title || "Services",
+          residentialButtonText: (prevLocalData.residentialButtonText !== config.residentialButtonText && prevLocalData.residentialButtonText !== (config.residentialButtonText || "Residential"))
+                                 ? prevLocalData.residentialButtonText
+                                 : config.residentialButtonText || "Residential",
+          commercialButtonText: (prevLocalData.commercialButtonText !== config.commercialButtonText && prevLocalData.commercialButtonText !== (config.commercialButtonText || "Commercial"))
+                                ? prevLocalData.commercialButtonText
+                                : config.commercialButtonText || "Commercial",
+          
+          residentialServices: newResidentialServices,
+          commercialServices: newCommercialServices,
+          
+          largeResidentialImg: newResImg,
+          largeCommercialImg: newComImg,
+          // These are usually changed via panel, so config prop should be authoritative if present
+          isCommercial: config.isCommercial !== undefined ? config.isCommercial : prevLocalData.isCommercial,
+          activeButtonBgColor: config.activeButtonBgColor !== undefined ? config.activeButtonBgColor : prevLocalData.activeButtonBgColor,
+          inactiveButtonBgColor: config.inactiveButtonBgColor !== undefined ? config.inactiveButtonBgColor : prevLocalData.inactiveButtonBgColor,
+        };
 
-  const handleToggleServiceType = (type) => {
-    if (!readOnly) {
-      setCurrentEditDisplayType(type);
-    } else {
-      // In readOnly mode, this would be controlled by a different mechanism if needed
-      // For now, the readOnly view uses its own isCommercialForReadOnly state based on initial config
-      // This function is primarily for edit mode toggle of currentEditDisplayType
-      const newIsCommercial = type === 'commercial';
-      // If we need to update a prop for read-only display type, it would be done here
-      // e.g., onConfigChange({ ...localData, isCommercial: newIsCommercial });
-      // However, the task is to make edit mode visually similar to read-only, so this primarily affects edit mode's `currentEditDisplayType`.
-      // The read-only display itself uses `isCommercialForReadOnly` which is derived from `config.isCommercial`
+        // This part was for edit mode UI sync, keep it separate or controlled by readOnly state change in another effect
+        // if (prevReadOnlyRef.current === true && readOnly === false) { 
+        //     setCurrentEditDisplayType(updatedData.isCommercial ? 'commercial' : 'residential');
+        // }
+        return updatedData;
+      });
     }
-  };
+  }, [config]); // REMOVED readOnly from dependencies
 
-  const updateLocalDataAndPropagate = (updater) => {
-    setLocalData(prevState => {
-      const newState = typeof updater === 'function' ? updater(prevState) : updater;
+  // Effect to handle UI changes when readOnly flips (like setting currentEditDisplayType)
+  useEffect(() => {
+    if (prevReadOnlyRef.current === true && readOnly === false) { // Entering edit mode
+        setCurrentEditDisplayType(localData.isCommercial ? 'commercial' : 'residential');
+    }
+  }, [readOnly, localData.isCommercial]); // Runs when readOnly or localData.isCommercial changes
+
+  useEffect(() => {
+    if (prevReadOnlyRef.current === false && readOnly === true) {
       if (onConfigChange) {
-        onConfigChange(newState);
+        console.log("ServiceSliderBlock: Editing finished. Calling onConfigChange.");
+        const dataToSave = { ...localData };
+        // For file objects, only send the name/path for the config, actual file handled by OneForm
+        if (localData.largeResidentialImg?.file) {
+            dataToSave.largeResidentialImg = { url: localData.largeResidentialImg.name, name: localData.largeResidentialImg.name }; 
+        }
+        if (localData.largeCommercialImg?.file) {
+            dataToSave.largeCommercialImg = { url: localData.largeCommercialImg.name, name: localData.largeCommercialImg.name };
+        }
+        onConfigChange(dataToSave);
+      }
+    }
+    prevReadOnlyRef.current = readOnly;
+  }, [readOnly, localData, onConfigChange]);
+
+  const handleLocalDataChange = (updater) => {
+    setLocalData(prevState => {
+      const newState = typeof updater === 'function' ? updater(prevState) : { ...prevState, ...updater };
+      if (newState.hasOwnProperty('isCommercial')) {
+          setCurrentEditDisplayType(newState.isCommercial ? 'commercial' : 'residential');
       }
       return newState;
     });
   };
   
-  const handleSaveForPanel = () => {
-    if (onConfigChange) {
-      onConfigChange(localData);
-    }
+  const handleTitleChange = (newTitle) => {
+    setLocalData(prev => ({ ...prev, title: newTitle }));
   };
 
-  const handleServiceItemChange = (serviceType, index, field, value) => {
+  const handleServiceItemTitleChange = (serviceType, index, newTitle) => {
     const serviceListKey = serviceType === 'residential' ? 'residentialServices' : 'commercialServices';
-    updateLocalDataAndPropagate(prev => {
+    setLocalData(prev => {
       const updatedServices = [...(prev[serviceListKey] || [])];
-      updatedServices[index] = { ...updatedServices[index], [field]: value };
+      if(updatedServices[index]) {
+        updatedServices[index] = { ...updatedServices[index], title: newTitle };
+      }
       return { ...prev, [serviceListKey]: updatedServices };
     });
-  };
-
-  const handleAddServiceToPanel = (serviceType, newServiceData) => {
-    const serviceListKey = serviceType === 'residential' ? 'residentialServices' : 'commercialServices';
-    updateLocalDataAndPropagate(prev => ({
-      ...prev,
-      [serviceListKey]: [...(prev[serviceListKey] || []), {...newServiceData, id: Math.random().toString(36).substr(2,9)}]
-    }));
-  };
-  
-  const handleRemoveServiceFromPanel = (serviceType, index) => {
-    const serviceListKey = serviceType === 'residential' ? 'residentialServices' : 'commercialServices';
-    updateLocalDataAndPropagate(prev => {
-      const updatedServices = [...(prev[serviceListKey] || [])];
-      updatedServices.splice(index, 1);
-      return { ...prev, [serviceListKey]: updatedServices };
-    });
-  };
-
-  const handleImageUploadForPanel = (fieldName) => (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const oldUrl = localData[fieldName]?.url;
-    if (oldUrl && oldUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(oldUrl);
-    }
-    const fileURL = URL.createObjectURL(file);
-    updateLocalDataAndPropagate((prev) => ({
-      ...prev,
-      [fieldName]: { file: file, url: fileURL, name: file.name },
-    }));
   };
   
   const openIconModalHandler = (serviceType, index) => {
+    if (readOnly) return; 
     setEditingServiceInfo({ type: serviceType, index });
     setIsIconModalOpen(true);
   };
 
-  const handleIconSelect = (pack, iconName) => {
+  const handleIconSelectAndSave = (pack, iconName) => {
     if (editingServiceInfo.type && editingServiceInfo.index !== null) {
-      handleServiceItemChange(editingServiceInfo.type, editingServiceInfo.index, 'icon', iconName);
+      const serviceListKey = editingServiceInfo.type === 'residential' ? 'residentialServices' : 'commercialServices';
+      setLocalData(prev => {
+        const updatedServices = [...(prev[serviceListKey] || [])];
+        if(updatedServices[editingServiceInfo.index]) {
+            updatedServices[editingServiceInfo.index] = { ...updatedServices[editingServiceInfo.index], icon: iconName, iconPack: pack };
+        }
+        return { ...prev, [serviceListKey]: updatedServices };
+      });
     }
     setIsIconModalOpen(false);
     setEditingServiceInfo({ type: null, index: null });
   };
 
-  // Determine if we are in readOnly mode for display purposes of the preview section
-  // The actual editing capability is controlled by the top-level readOnly prop
-  const isPreviewReadOnly = readOnly; 
-
-  // When in editing mode (i.e., !readOnly passed to ServiceSliderBlock),
-  // the preview section itself should behave like the read-only version but with editable fields.
-  // The `isCommercial` state for the main animated display will be `currentEditDisplayType === 'commercial'` if !readOnly,
-  // or `config.isCommercial` if readOnly.
-  
-  const motionIsCommercial = isPreviewReadOnly ? (config?.isCommercial || false) : (currentEditDisplayType === 'commercial');
-  const servicesForMotion = motionIsCommercial ? (localData.commercialServices || []) : (localData.residentialServices || []);
-
-  // Remove the mt-3 class from the main wrapper div in edit mode to prevent extra space.
+  const displayType = readOnly ? (localData.isCommercial ? 'commercial' : 'residential') : currentEditDisplayType;
+  const servicesForDisplay = displayType === 'commercial' ? (localData.commercialServices || []) : (localData.residentialServices || []);
   const wrapperClassName = `w-full bg-black relative ${readOnly ? 'mt-3' : ''}`;
+  
+  const currentActiveColor = localData.activeButtonBgColor || '#FF5733';
+  const currentInactiveColor = localData.inactiveButtonBgColor || '#6c757d';
 
-  if (!readOnly) {
-    // EDITING MODE: Render the visually identical preview with editable fields, then the slimmed editor panel.
-    return (
-      <>
-        {/* This is the combined Preview & Inline Edit Area */}
-        <div className={wrapperClassName}>
-          {/* SMALL SCREEN SECTION - Adapted for inline editing */}
-          <div className="block md:hidden relative w-full">
-            <div className="overflow-hidden w-full relative h-[40vh]">
-              <motion.div
-                animate={{ x: motionIsCommercial ? "-100vw" : "0%" }}
+  const commonButtonClass = "flex items-center px-2 md:px-4 rounded-full border-1 mx-2 text-md transition-colors duration-300 font-sans";
+  const activeButtonClass = "text-gray-50 border-gray-800 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]";
+  const inactiveButtonClass = "text-white hover:opacity-80";
+
+  // --- Combined Read-Only and Editable Preview Rendering Logic ---
+  const renderPreview = () => (
+    <div className={wrapperClassName}>
+      {/* Small Screen */}
+      <div className="block md:hidden relative w-full">
+          <div className="overflow-hidden w-full relative h-[40vh]">
+            <motion.div
+                animate={{ x: displayType === 'commercial' ? "-100%" : "0%" }}
                 transition={{ duration: 0.8 }}
-                className="flex"
-              >
-                <img
-                  src={getDisplayUrl(localData.largeResidentialImg, "/assets/images/main_img.jpg")}
-                  alt="Residential Services"
-                  className="w-full h-[50vh] object-cover"
-                />
-                <img
-                  src={getDisplayUrl(localData.largeCommercialImg, "/assets/images/commercialservices.jpg")}
-                  alt="Commercial Services"
-                  className="w-full h-[50vh] object-cover"
-                />
-              </motion.div>
-            </div>
-            <div className="absolute bottom-0 left-0 w-full h-[9.5vh] bg-black z-10 pointer-events-none" style={{ clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)" }}/>
-            {!isPreviewReadOnly ? (
-              <input 
+                className="flex w-[200%] h-full"
+            >
+                <img src={getDisplayUrl(localData.largeResidentialImg)} alt="Residential Services" className="w-full h-full object-cover" />
+                <img src={getDisplayUrl(localData.largeCommercialImg)} alt="Commercial Services" className="w-full h-full object-cover" />
+            </motion.div>
+          </div>
+          <div className="absolute bottom-0 left-0 w-full h-[9.5vh] bg-black z-10 pointer-events-none" style={{ clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)" }}/>
+          {readOnly ? (
+            <h2 className="absolute top-[1vh] left-1/2 transform -translate-x-1/2 text-white text-[10vw] font-rye drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-20 select-none">
+              {localData.title}
+            </h2>
+          ) : (
+            <input 
                 type="text" 
-                value={localData.title || "Services"} 
-                onChange={(e) => updateLocalDataAndPropagate(prev => ({...prev, title: e.target.value}))} 
+                value={localData.title} 
+                onChange={(e) => handleTitleChange(e.target.value)} 
                 className="absolute top-[1vh] left-1/2 transform -translate-x-1/2 text-white text-[10vw] font-rye drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-20 bg-transparent text-center focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-2 min-w-[70vw]"
                 placeholder="Section Title"
-              />
-            ) : (
-              <h2 className="absolute top-[1vh] left-1/2 transform -translate-x-1/2 text-white text-[10vw] font-rye drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-20">
-                {localData.title || "Services"}
-              </h2>
-            )}
-            <div className="absolute bottom-[10vh] left-1/2 transform -translate-x-1/2 z-30">
-              <div className="flex flex-row gap-3">
+            />
+          )}
+          <div className="absolute bottom-[10vh] left-1/2 transform -translate-x-1/2 z-30">
+            <div className="flex flex-row gap-3">
                 <button
-                  onClick={() => { if (readOnly) setIsCommercialForReadOnly(false); else handleToggleServiceType('residential'); }}
-                  className={`flex items-center px-2 md:px-4 md:py-2 rounded-full border-1 mx-2 text-md ${!motionIsCommercial ? "bg-banner text-gray-50 border-gray-800 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]" : "bg-gray-500 text-white hover:bg-white hover:text-black"} transition-colors duration-300 font-sans`}
+                  onClick={() => readOnly ? handleLocalDataChange({isCommercial: false}) : setCurrentEditDisplayType('residential')}
+                  style={{ backgroundColor: displayType === 'residential' ? currentActiveColor : currentInactiveColor }}
+                  className={`${commonButtonClass} ${displayType === 'residential' ? activeButtonClass : inactiveButtonClass} md:py-2`}
                 >
                   <LucideHome className="mr-2" size={16} />
-                  <p className="text-[3vw] font-sans">{localData.residentialButtonText || "Residential"}</p>
+                  <p className="text-[3vw] font-sans">{localData.residentialButtonText}</p>
                 </button>
                 <button
-                  onClick={() => { if (readOnly) setIsCommercialForReadOnly(true); else handleToggleServiceType('commercial'); }}
-                  className={`flex items-center px-2 md:px-4 py-1 md:py-2 text-lg rounded-full border-1 mx-2 ${motionIsCommercial ? "bg-banner text-gray-50 border-gray-800 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]" : "bg-gray-500 hover:bg-white hover:text-black text-white"} transition-colors duration-300 font-sans`}
+                  onClick={() => readOnly ? handleLocalDataChange({isCommercial: true}) : setCurrentEditDisplayType('commercial')}
+                  style={{ backgroundColor: displayType === 'commercial' ? currentActiveColor : currentInactiveColor }}
+                  className={`${commonButtonClass} ${displayType === 'commercial' ? activeButtonClass : inactiveButtonClass} py-1 md:py-2 text-lg`}
                 >
                   <FaWarehouse className="mr-2" size={16} />
-                  <p className="text-[3vw] font-sans">{localData.commercialButtonText || "Commercial"}</p>
+                  <p className="text-[3vw] font-sans">{localData.commercialButtonText}</p>
                 </button>
-              </div>
-            </div>
-            <div className="absolute inset-0 flex flex-col items-center justify-start pt-[23vh] p-2 z-20">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={motionIsCommercial ? "commercial-edit" : "residential-edit"} // Key change for animation
-                  className="flex flex-row gap-4"
-                  variants={containerVariants} initial="initial" animate="enter" exit="exit"
-                >
-                  {[...servicesForMotion].reverse().map((service, index) => (
-                    <motion.div key={service.id || index} variants={itemVariants} className="flex flex-col items-center -mt-[14vh]">
-                      <div
-                        onClick={() => !isPreviewReadOnly && openIconModalHandler(displayTypeForEditing, index)}
-                        className={`group whitespace-nowrap flex-col dark_button bg-banner w-[9vh] h-[9vh] p-2 md:w-24 md:h-24 rounded-full flex items-center justify-around text-white text-[5vw] hover:text-gray-200 hover:bg-gray-200 transition drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] ${!isPreviewReadOnly ? 'cursor-pointer' : ''}`}
-                      >
-                        {React.createElement(resolveIcon(service.icon), { className: "w-[8vw] h-[8vw] md:w-10 md:h-10" })}
-                        {!isPreviewReadOnly ? (
-                          <input 
-                            type="text" 
-                            value={service.title} 
-                            onChange={(e) => handleServiceItemChange(displayTypeForEditing, index, 'title', e.target.value)}
-                            className="text-white text-[3.6vw] group-hover:text-gray-200 md:text-sm drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] bg-transparent text-center focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded w-full truncate"
-                            placeholder="Title"
-                            onClick={(e) => e.stopPropagation()} // Prevent icon modal when clicking input
-                          />
-                        ) : (
-                          <h3 className="text-white text-[3.6vw] group-hover:text-gray-200 md:text-sm drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
-                            {service.title}
-                          </h3>
-                        )}
-                      </div>
-                    </motion.div>
-                  ))}
-                </motion.div>
-              </AnimatePresence>
             </div>
           </div>
-
-          {/* LARGE SCREENS - Adapted for inline editing */}
-          <div className="hidden md:block overflow-hidden">
-            <div className="relative w-full h-[60vh]">
-              <motion.div
-                animate={{ x: motionIsCommercial ? "-100vw" : "0%" }}
-                transition={{ duration: 1 }}
-                className="flex w-[200%] h-full"
-              >
-                <img src={getDisplayUrl(localData.largeResidentialImg, "/assets/images/main_image_expanded.jpg")} alt="Residential Services" className="w-[100vw] h-full object-cover" />
-                <img src={getDisplayUrl(localData.largeCommercialImg, "/assets/images/commercialservices.jpg")} alt="Commercial Services" className="w-[100vw] h-full object-cover" />
-              </motion.div>
-              <div className="absolute top-0 w-full flex justify-center">
-                 {!isPreviewReadOnly ? (
-                    <input 
-                      type="text" 
-                      value={localData.title || "Services"} 
-                      onChange={(e) => updateLocalDataAndPropagate(prev => ({...prev, title: e.target.value}))} 
-                      className="relative z-40 text-white text-[11.5vh] tracking-wider font-rye first:drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,1.8)] bg-transparent text-center focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-2 min-w-[50vw]"
-                      placeholder="Section Title"
-                    />
-                  ) : (
-                    <h2 className="relative z-40 text-white text-[11.5vh] tracking-wider font-rye first:drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,1.8)]">
-                      {localData.title || "Services"}
-                    </h2>
-                  )}
-              </div>
-              <div className="absolute bottom-[6vh] left-1/2 transform -translate-x-1/2 z-30">
-                <div className="flex flex-row">
-                  <button
-                    onClick={() => { if (readOnly) setIsCommercialForReadOnly(false); else handleToggleServiceType('residential'); }}
-                    className={`flex items-center px-4 py-2 rounded-full border-1 mx-2 text-lg ${!motionIsCommercial ? "bg-banner text-gray-50 border-gray-800 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]" : "bg-gray-500 text-white hover:bg-white hover:text-black"} transition-colors duration-300 font-sans`}
-                  >
-                    <LucideHome className="mr-2" size={30} /> {localData.residentialButtonText || "Residential"}
-                  </button>
-                  <button
-                    onClick={() => { if (readOnly) setIsCommercialForReadOnly(true); else handleToggleServiceType('commercial'); }}
-                    className={`flex items-center px-4 py-2 text-lg rounded-full border-1 mx-2 ${motionIsCommercial ? "bg-banner text-gray-50 border-gray-800 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]" : "bg-gray-500 hover:bg-white hover:text-black text-white"} transition-colors duration-300 font-sans`}
-                  >
-                    <Building2 className="mr-2" size={30} /> {localData.commercialButtonText || "Commercial"}
-                  </button>
-                </div>
-              </div>
-              <div className="absolute inset-0 flex items-end justify-center mb-[26vh]">
-                <AnimatePresence mode="wait">
+          <div className="absolute inset-0 flex flex-col items-center justify-start pt-[23vh] p-2 z-20">
+              <AnimatePresence mode="wait">
                   <motion.div
-                    key={motionIsCommercial ? "commercial-lg-edit" : "residential-lg-edit"} // Key change
-                    className="grid grid-cols-4 gap-[5.5vw]"
+                    key={displayType === 'commercial' ? "commercial-services" : "residential-services"}
+                    className="flex flex-row gap-4"
                     variants={containerVariants} initial="initial" animate="enter" exit="exit"
                   >
-                    {[...servicesForMotion].reverse().map((service, index) => (
-                      <motion.div key={service.id || index} variants={itemVariants} className="flex flex-col items-center">
-                        <div 
-                          onClick={() => !isPreviewReadOnly && openIconModalHandler(displayTypeForEditing, index)}
-                          className={`dark_button bg-banner flex-col w-28 h-28 rounded-full flex items-center justify-center text-white text-[6vh] hover:text-black hover:bg-gray-200 transition drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] ${!isPreviewReadOnly ? 'cursor-pointer' : ''}`}
-                        >
-                          {React.createElement(resolveIcon(service.icon), { className: "w-[5vw] h-[5vw] md:w-10 md:h-10" })}
-                           {!isPreviewReadOnly ? (
-                            <input 
-                              type="text" 
-                              value={service.title} 
-                              onChange={(e) => handleServiceItemChange(displayTypeForEditing, index, 'title', e.target.value)}
-                              className="mt-1 text-white text-lg drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] bg-transparent text-center focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded w-full truncate"
-                              placeholder="Title"
-                              onClick={(e) => e.stopPropagation()} // Prevent icon modal when clicking input
-                            />
-                          ) : (
-                            <h3 className="mt-1 text-white text-lg drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
-                              {service.title}
-                            </h3>
-                          )}
-                        </div>
-                      </motion.div>
-                    ))}
+                    {servicesForDisplay.slice().reverse().map((service, index_reversed) => {
+                        const originalIndex = servicesForDisplay.length - 1 - index_reversed;
+                        return (
+                          <motion.div key={service.id || originalIndex} variants={itemVariants} className="flex flex-col items-center -mt-[14vh]">
+                              <div
+                                onClick={() => !readOnly && openIconModalHandler(displayType, originalIndex)}
+                                className={`group whitespace-nowrap flex-col dark_button bg-banner w-[9vh] h-[9vh] p-2 md:w-24 md:h-24 rounded-full flex items-center justify-around text-white text-[5vw] hover:text-gray-200 hover:bg-gray-200 transition drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] ${!readOnly ? 'cursor-pointer' : 'cursor-default'}`}
+                              >
+                                {React.createElement(resolveIcon(service.icon), { className: "w-[8vw] h-[8vw] md:w-10 md:h-10" })}
+                                {readOnly ? (
+                                  <h3 className="text-white text-[3.6vw] group-hover:text-gray-200 md:text-sm drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
+                                      {service.title}
+                                  </h3>
+                                ) : (
+                                  <input 
+                                      type="text" 
+                                      value={service.title} 
+                                      onChange={(e) => handleServiceItemTitleChange(displayType, originalIndex, e.target.value)}
+                                      className="text-white text-[3.6vw] group-hover:text-gray-200 md:text-sm drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] bg-transparent text-center focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded w-full truncate"
+                                      placeholder="Title"
+                                      onClick={(e) => e.stopPropagation()} 
+                                  />
+                                )}
+                              </div>
+                              {!readOnly && service.link && (
+                                <Link to={service.link} className="text-xs text-blue-300 hover:underline mt-1" onClick={(e) => e.stopPropagation()}>Configure Link</Link>
+                              )}
+                              {readOnly && service.link && (
+                                <Link to={service.link} className="text-xs text-blue-300 hover:underline mt-1 pointer-events-none">{service.link}</Link>
+                              )}
+                          </motion.div>
+                        );
+                    })}
+                  </motion.div>
+              </AnimatePresence>
+          </div>
+      </div>
+
+      {/* Large Screen */}
+      <div className="hidden md:block overflow-hidden">
+          <div className="relative w-full h-[60vh]">
+            <motion.div
+                animate={{ x: displayType === 'commercial' ? "-100%" : "0%" }}
+                transition={{ duration: 1 }}
+                className="flex w-[200%] h-full"
+            >
+                <img src={getDisplayUrl(localData.largeResidentialImg)} alt="Residential Services" className="w-full h-full object-cover" />
+                <img src={getDisplayUrl(localData.largeCommercialImg)} alt="Commercial Services" className="w-full h-full object-cover" />
+            </motion.div>
+            <div className="absolute top-0 w-full flex justify-center">
+              {readOnly ? (
+                  <h2 className="relative z-40 text-white text-[11.5vh] tracking-wider font-rye first:drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,1.8)] select-none">
+                    {localData.title}
+                  </h2>
+                ) : (
+                  <input 
+                      type="text" 
+                      value={localData.title} 
+                      onChange={(e) => handleTitleChange(e.target.value)}
+                      className="relative z-40 text-white text-[11.5vh] tracking-wider font-rye first:drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,1.8)] bg-transparent text-center focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-2 min-w-[50vw]"
+                      placeholder="Section Title"
+                  />
+                )}
+            </div>
+            <div className="absolute bottom-[6vh] left-1/2 transform -translate-x-1/2 z-30">
+                <div className="flex flex-row">
+                  <button
+                      onClick={() => readOnly ? handleLocalDataChange({isCommercial: false}) : setCurrentEditDisplayType('residential')}
+                      style={{ backgroundColor: displayType === 'residential' ? currentActiveColor : currentInactiveColor }}
+                      className={`${commonButtonClass} ${displayType === 'residential' ? activeButtonClass : inactiveButtonClass} py-2 text-lg`}
+                  >
+                      <LucideHome className="mr-2" size={30} /> {localData.residentialButtonText}
+                  </button>
+                  <button
+                      onClick={() => readOnly ? handleLocalDataChange({isCommercial: true}) : setCurrentEditDisplayType('commercial')}
+                      style={{ backgroundColor: displayType === 'commercial' ? currentActiveColor : currentInactiveColor }}
+                      className={`${commonButtonClass} ${displayType === 'commercial' ? activeButtonClass : inactiveButtonClass} py-2 text-lg`}
+                  >
+                      <Building2 className="mr-2" size={30} /> {localData.commercialButtonText}
+                  </button>
+                </div>
+            </div>
+            <div className="absolute inset-0 flex items-end justify-center mb-[26vh]">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                      key={displayType === 'commercial' ? "commercial-lg-services" : "residential-lg-services"}
+                      className="grid grid-cols-4 gap-[5.5vw]"
+                      variants={containerVariants} initial="initial" animate="enter" exit="exit"
+                  >
+                      {servicesForDisplay.slice().reverse().map((service, index_reversed) => {
+                          const originalIndex = servicesForDisplay.length - 1 - index_reversed;
+                          return (
+                            <motion.div key={service.id || originalIndex} variants={itemVariants} className="flex flex-col items-center">
+                                <div 
+                                  onClick={() => !readOnly && openIconModalHandler(displayType, originalIndex)}
+                                  className={`dark_button bg-banner flex-col w-28 h-28 rounded-full flex items-center justify-center text-white text-[6vh] hover:text-black hover:bg-gray-200 transition drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] ${!readOnly ? 'cursor-pointer' : 'cursor-default'}`}
+                                >
+                                  {React.createElement(resolveIcon(service.icon), { className: "w-[5vw] h-[5vw] md:w-10 md:h-10" })}
+                                  {readOnly ? (
+                                    <h3 className="mt-1 text-white text-lg drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
+                                      {service.title}
+                                    </h3>
+                                  ) : (
+                                    <input 
+                                        type="text" 
+                                        value={service.title} 
+                                        onChange={(e) => handleServiceItemTitleChange(displayType, originalIndex, e.target.value)}
+                                        className="mt-1 text-white text-lg drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] bg-transparent text-center focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded w-full truncate"
+                                        placeholder="Title"
+                                        onClick={(e) => e.stopPropagation()}
+                                    />
+                                  )}
+                                </div>
+                                {!readOnly && service.link && (
+                                    <Link to={service.link} className="text-xs text-blue-300 hover:underline mt-1" onClick={(e) => e.stopPropagation()}>Configure Link</Link>
+                                )}
+                                {readOnly && service.link && (
+                                    <Link to={service.link} className="text-xs text-blue-300 hover:underline mt-1 pointer-events-none">{service.link}</Link>
+                                )}
+                            </motion.div>
+                          );
+                      })}
                   </motion.div>
                 </AnimatePresence>
-              </div>
             </div>
           </div>
-        </div>
+      </div>
+    </div>
+  );
 
-        <ServiceSliderEditorPanel 
-          localData={localData} 
-          setLocalData={updateLocalDataAndPropagate}
-          onSave={handleSaveForPanel}
-          onServiceChange={handleServiceItemChange}
-          onAddService={handleAddServiceToPanel}
-          onRemoveService={handleRemoveServiceFromPanel}
-          onImageUpload={handleImageUploadForPanel}
-          onIconSelect={handleIconSelect} // Unified icon selection handler for panel
-        />
-        <IconSelectorModal 
-          isOpen={isIconModalOpen}
-          onClose={() => setIsIconModalOpen(false)}
-          onIconSelect={handleIconSelect} // Unified icon selection
-          currentIconPack="fa"
-          currentIconName={editingServiceInfo.index !== null && localData[editingServiceInfo.type === 'residential' ? 'residentialServices' : 'commercialServices']?.[editingServiceInfo.index]?.icon}
-        />
-      </>
-    );
+  if (readOnly) {
+    return renderPreview();
   }
 
-  // READ-ONLY rendering (remains largely the same, but uses localData and motionIsCommercial)
+  // EDITING MODE: Render the preview (which is now inline editable) 
+  // AND the ServiceSliderEditorPanel for ancillary controls.
   return (
-    <div className={wrapperClassName}> 
-      {/* SMALL SCREEN SECTION */}
-      <div className="block md:hidden relative w-full">
-        <div className="overflow-hidden w-full relative h-[40vh]">
-          <motion.div
-            animate={{ x: motionIsCommercial ? "-100vw" : "0%" }} // Use motionIsCommercial
-            transition={{ duration: 0.8 }}
-            className="flex"
-          >
-            <img src={getDisplayUrl(localData.largeResidentialImg, "/assets/images/main_img.jpg")} alt="Residential Services" className="w-full h-[50vh] object-cover" />
-            <img src={getDisplayUrl(localData.largeCommercialImg, "/assets/images/commercialservices.jpg")} alt="Commercial Services" className="w-full h-[50vh] object-cover" />
-          </motion.div>
+    <>
+      {renderPreview()} 
+      <ServiceSliderEditorPanel 
+        localData={localData}
+        onPanelChange={handleLocalDataChange} 
+      />
+      <IconSelectorModal 
+        isOpen={isIconModalOpen}
+        onClose={() => setIsIconModalOpen(false)}
+        onIconSelect={handleIconSelectAndSave}
+        currentIconPack={editingServiceInfo.type ? localData[editingServiceInfo.type === 'residential' ? 'residentialServices' : 'commercialServices']?.[editingServiceInfo.index]?.iconPack || 'fa' : 'fa'}
+        currentIconName={editingServiceInfo.type ? localData[editingServiceInfo.type === 'residential' ? 'residentialServices' : 'commercialServices']?.[editingServiceInfo.index]?.icon : null}
+      />
+    </>
+  );
+}
+
+function ServiceSliderEditorPanel({ localData, onPanelChange }) {
+  
+  const handleFieldChange = (field, value) => {
+    onPanelChange({ [field]: value });
+  };
+
+  const handleServiceListChange = (serviceType, index, field, value) => {
+    const serviceListKey = serviceType === 'residential' ? 'residentialServices' : 'commercialServices';
+    const updatedServices = [...(localData[serviceListKey] || [])];
+    if (updatedServices[index]) {
+      updatedServices[index] = { ...updatedServices[index], [field]: value };
+      onPanelChange({ [serviceListKey]: updatedServices });
+    }
+  };
+
+  const handleAddService = (serviceType) => {
+    const serviceListKey = serviceType === 'residential' ? 'residentialServices' : 'commercialServices';
+    const iconOptions = ['FaTools', 'FaFan', 'FaPaintRoller', 'FaTint', 'FaHome', 'FaBuilding', 'FaWarehouse', 'FaSmog', 'FaBroom', 'FaHardHat'];
+    const newService = {
+      id: Math.random().toString(36).substr(2,9),
+      icon: iconOptions[Math.floor(Math.random() * iconOptions.length)],
+      iconPack: 'fa', // Default new icons to FontAwesome
+      title: `New ${serviceType.charAt(0).toUpperCase() + serviceType.slice(1)} Service`,
+      link: "#"
+    };
+    onPanelChange({ [serviceListKey]: [...(localData[serviceListKey] || []), newService] });
+  };
+
+  const handleRemoveService = (serviceType, index) => {
+    const serviceListKey = serviceType === 'residential' ? 'residentialServices' : 'commercialServices';
+    const updatedServices = [...(localData[serviceListKey] || [])];
+    updatedServices.splice(index, 1);
+    onPanelChange({ [serviceListKey]: updatedServices });
+  };
+
+  const handleImageUpload = (fieldName, file) => {
+    if (!file) return;
+    const currentImageState = localData[fieldName];
+    if (currentImageState && currentImageState.url && currentImageState.url.startsWith('blob:')) {
+        URL.revokeObjectURL(currentImageState.url);
+    }
+    const fileURL = URL.createObjectURL(file);
+    onPanelChange({ [fieldName]: { file: file, url: fileURL, name: file.name }});
+  };
+  
+  const handleImageUrlChange = (fieldName, url) => {
+    const currentImageState = localData[fieldName];
+    if (currentImageState && currentImageState.url && currentImageState.url.startsWith('blob:')) {
+        URL.revokeObjectURL(currentImageState.url);
+    }
+    onPanelChange({ [fieldName]: { file: null, url: url, name: url.split('/').pop() }});
+  };
+  
+  return (
+    <div className="bg-white text-gray-800 px-4 py-2 rounded-lg mt-0 border border-gray-300">
+      <h2 className="text-xl font-semibold mb-3 border-b pb-2">Slider Settings</h2>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+            <label className="block text-sm font-medium text-gray-700">Residential Button Text:</label>
+            <input
+            type="text"
+            className="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-800"
+            value={localData.residentialButtonText || "Residential"}
+            onChange={(e) => handleFieldChange('residentialButtonText', e.target.value)}
+            />
         </div>
-        <div className="absolute bottom-0 left-0 w-full h-[9.5vh] bg-black z-10 pointer-events-none" style={{ clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)" }}/>
-        <h2 className="absolute top-[1vh] left-1/2 transform -translate-x-1/2 text-white text-[10vw] font-rye drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-20">
-          {localData.title || "Services"}
-        </h2>
-        <div className="absolute bottom-[10vh] left-1/2 transform -translate-x-1/2 z-30">
-          <div className="flex flex-row gap-3">
-            <button
-              onClick={() => { if (readOnly) setIsCommercialForReadOnly(false); else handleToggleServiceType('residential'); }}
-              className={`flex items-center px-2 md:px-4 md:py-2 rounded-full border-1 mx-2 text-md ${!motionIsCommercial ? "bg-banner text-gray-50 border-gray-800 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]" : "bg-gray-500 text-white hover:bg-white hover:text-black"} transition-colors duration-300 font-sans`}
-            >
-              <LucideHome className="mr-2" size={16} />
-              <p className="text-[3vw] font-sans">{localData.residentialButtonText || "Residential"}</p>
-            </button>
-            <button
-              onClick={() => { if (readOnly) setIsCommercialForReadOnly(true); else handleToggleServiceType('commercial'); }}
-              className={`flex items-center px-2 md:px-4 py-1 md:py-2 text-lg rounded-full border-1 mx-2 ${motionIsCommercial ? "bg-banner text-gray-50 border-gray-800 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]" : "bg-gray-500 hover:bg-white hover:text-black text-white"} transition-colors duration-300 font-sans`}
-            >
-              <FaWarehouse className="mr-2" size={16} />
-              <p className="text-[3vw] font-sans">{localData.commercialButtonText || "Commercial"}</p>
-            </button>
-          </div>
+        <div>
+            <label className="block text-sm font-medium text-gray-700">Commercial Button Text:</label>
+            <input
+            type="text"
+            className="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-800"
+            value={localData.commercialButtonText || "Commercial"}
+            onChange={(e) => handleFieldChange('commercialButtonText', e.target.value)}
+            />
         </div>
-        <div className="absolute inset-0 flex flex-col items-center justify-start pt-[23vh] p-2 z-20">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={motionIsCommercial ? "commercial" : "residential"} // Use motionIsCommercial
-              className="flex flex-row gap-4"
-              variants={containerVariants} initial="initial" animate="enter" exit="exit"
+        <div>
+            <label className="block text-sm font-medium text-gray-700">Default View (for Read-Only Mode):</label>
+            <select
+                className="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-800"
+                value={localData.isCommercial ? 'commercial' : 'residential'}
+                onChange={(e) => handleFieldChange('isCommercial', e.target.value === 'commercial')}
             >
-              {[...servicesForMotion].reverse().map((service) => (
-                <motion.div key={service.id || service.title} variants={itemVariants} className="flex flex-col items-center -mt-[14vh]">
-                  <Link to={service.link || '#'}>
-                    <div className="group whitespace-nowrap flex-col dark_button bg-banner w-[9vh] h-[9vh] p-2 md:w-24 md:h-24 rounded-full flex items-center justify-around text-white text-[5vw] hover:text-gray-200 hover:bg-gray-200 transition drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]">
-                      {React.createElement(resolveIcon(service.icon), { className: "w-[8vw] h-[8vw] md:w-10 md:h-10" })}
-                      <h3 className="text-white text-[3.6vw] group-hover:text-gray-200 md:text-sm drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
-                        {service.title}
-                      </h3>
-                    </div>
-                  </Link>
-                </motion.div>
-              ))}
-            </motion.div>
-          </AnimatePresence>
+                <option value="residential">Residential</option>
+                <option value="commercial">Commercial</option>
+            </select>
         </div>
       </div>
 
-      {/* LARGE SCREENS */}
-      <div className="hidden md:block overflow-hidden">
-        <div className="relative w-full h-[60vh]">
-          <motion.div
-            animate={{ x: motionIsCommercial ? "-100vw" : "0%" }} // Use motionIsCommercial
-            transition={{ duration: 1 }}
-            className="flex w-[200%] h-full"
-          >
-            <img src={getDisplayUrl(localData.largeResidentialImg, "/assets/images/main_image_expanded.jpg")} alt="Residential Services" className="w-[100vw] h-full object-cover" />
-            <img src={getDisplayUrl(localData.largeCommercialImg, "/assets/images/commercialservices.jpg")} alt="Commercial Services" className="w-[100vw] h-full object-cover" />
-          </motion.div>
-          <div className="absolute top-0 w-full flex justify-center">
-            <h2 className="relative z-40 text-white text-[11.5vh] tracking-wider font-rye first:drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,1.8)]">
-              {localData.title || "Services"}
-            </h2>
-          </div>
-          <div className="absolute bottom-[6vh] left-1/2 transform -translate-x-1/2 z-30">
-            <div className="flex flex-row">
-              <button
-                onClick={() => { if (readOnly) setIsCommercialForReadOnly(false); else handleToggleServiceType('residential'); }}
-                className={`flex items-center px-4 py-2 rounded-full border-1 mx-2 text-lg ${!motionIsCommercial ? "bg-banner text-gray-50 border-gray-800 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]" : "bg-gray-500 text-white hover:bg-white hover:text-black"} transition-colors duration-300 font-sans`}
-              >
-                <LucideHome className="mr-2" size={30} /> {localData.residentialButtonText || "Residential"}
-              </button>
-              <button
-                onClick={() => { if (readOnly) setIsCommercialForReadOnly(true); else handleToggleServiceType('commercial'); }}
-                className={`flex items-center px-4 py-2 text-lg rounded-full border-1 mx-2 ${motionIsCommercial ? "bg-banner text-gray-50 border-gray-800 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)]" : "bg-gray-500 hover:bg-white hover:text-black text-white"} transition-colors duration-300 font-sans`}
-              >
-                <Building2 className="mr-2" size={30} /> {localData.commercialButtonText || "Commercial"}
-              </button>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 mt-4 border-t">
+        <div>
+            <label className="block text-sm font-medium text-gray-700">Active Button Background Color:</label>
+            <input
+                type="color"
+                className="mt-1 block w-full h-10 px-1 py-1 bg-gray-50 border border-gray-300 rounded-md shadow-sm"
+                value={localData.activeButtonBgColor || "#FF5733"} 
+                onChange={(e) => handleFieldChange('activeButtonBgColor', e.target.value)}
+            />
+        </div>
+        <div>
+            <label className="block text-sm font-medium text-gray-700">Inactive Button Background Color:</label>
+            <input
+                type="color"
+                className="mt-1 block w-full h-10 px-1 py-1 bg-gray-50 border border-gray-300 rounded-md shadow-sm"
+                value={localData.inactiveButtonBgColor || "#6c757d"} 
+                onChange={(e) => handleFieldChange('inactiveButtonBgColor', e.target.value)}
+            />
+        </div>
+      </div>
+
+      {/* Residential Services List Editor */}
+      <div className="mb-4 pt-3 border-t mt-4">
+        <div className="flex justify-between items-center mb-2">
+            <h3 className="text-lg font-medium">Residential Services</h3>
+            <button onClick={() => handleAddService('residential')} className="bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded text-white text-xs">+ Add</button>
+        </div>
+        {(localData.residentialServices || []).map((service, index) => (
+            <div key={service.id || index} className="bg-gray-100 p-2 rounded mb-2 border border-gray-200 text-xs">
+                <div className="flex justify-between items-center mb-1">
+                    <span className="font-medium">{service.title || `Service ${index + 1}`} (Icon: {service.iconPack}/{service.icon})</span>
+                    <button onClick={() => handleRemoveService('residential', index)} className="bg-red-500 text-white px-2 py-0.5 rounded">Remove</button>
+                </div>
+                <label className="block text-xs font-medium mt-1">Link URL:</label>
+                <input type="text" value={service.link || ""} onChange={(e) => handleServiceListChange('residential', index, 'link', e.target.value)} className="w-full bg-white border border-gray-300 px-2 py-1 rounded text-xs" />
             </div>
-          </div>
-          <div className="absolute inset-0 flex items-end justify-center mb-[26vh]">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={motionIsCommercial ? "commercial-lg" : "residential-lg"} // Use motionIsCommercial
-                className="grid grid-cols-4 gap-[5.5vw]"
-                variants={containerVariants} initial="initial" animate="enter" exit="exit"
-              >
-                {[...servicesForMotion].reverse().map((service, index) => (
-                  <motion.div key={service.id || service.title} variants={itemVariants} className="flex flex-col items-center">
-                    <Link to={service.link || '#'}>
-                      <div className="dark_button bg-banner flex-col w-28 h-28 rounded-full flex items-center justify-center text-white text-[6vh] hover:text-black hover:bg-gray-200 transition drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
-                        {React.createElement(resolveIcon(service.icon), { className: "w-[5vw] h-[5vw] md:w-10 md:h-10" })}
-                        <h3 className="mt-1 text-white text-lg drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
-                          {service.title}
-                        </h3>
-                      </div>
-                    </Link>
-                  </motion.div>
-                ))}
-              </motion.div>
-            </AnimatePresence>
-          </div>
+        ))}
+      </div>
+      
+      {/* Commercial Services List Editor */}
+      <div className="mb-4 pt-3 border-t mt-4">
+        <div className="flex justify-between items-center mb-2">
+            <h3 className="text-lg font-medium">Commercial Services</h3>
+            <button onClick={() => handleAddService('commercial')} className="bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded text-white text-xs">+ Add</button>
+        </div>
+        {(localData.commercialServices || []).map((service, index) => (
+             <div key={service.id || index} className="bg-gray-100 p-2 rounded mb-2 border border-gray-200 text-xs">
+                <div className="flex justify-between items-center mb-1">
+                    <span className="font-medium">{service.title || `Service ${index + 1}`} (Icon: {service.iconPack}/{service.icon})</span>
+                    <button onClick={() => handleRemoveService('commercial', index)} className="bg-red-500 text-white px-2 py-0.5 rounded">Remove</button>
+                </div>
+                <label className="block text-xs font-medium mt-1">Link URL:</label>
+                <input type="text" value={service.link || ""} onChange={(e) => handleServiceListChange('commercial', index, 'link', e.target.value)} className="w-full bg-white border border-gray-300 px-2 py-1 rounded text-xs" />
+            </div>
+        ))}
+      </div>
+
+      {/* Image Editors */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t mt-4">
+        <div>
+            <label className="block text-sm font-medium mb-1">Residential Banner Image:</label>
+            <input type="file" accept="image/*" onChange={(e) => handleImageUpload('largeResidentialImg', e.target.files?.[0])} className="mb-1 w-full text-xs file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"/>
+            <input type="text" value={getDisplayUrl(localData.largeResidentialImg, '')} placeholder="Or enter image URL" onChange={(e) => handleImageUrlChange('largeResidentialImg', e.target.value)} className="w-full bg-gray-50 border border-gray-300 px-2 py-1 rounded text-xs"/>
+            {getDisplayUrl(localData.largeResidentialImg) && <img src={getDisplayUrl(localData.largeResidentialImg)} alt="Preview" className="mt-1 h-16 w-auto object-cover rounded border"/>}
+        </div>
+        <div>
+            <label className="block text-sm font-medium mb-1">Commercial Banner Image:</label>
+            <input type="file" accept="image/*" onChange={(e) => handleImageUpload('largeCommercialImg', e.target.files?.[0])} className="mb-1 w-full text-xs file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"/>
+            <input type="text" value={getDisplayUrl(localData.largeCommercialImg, '')} placeholder="Or enter image URL" onChange={(e) => handleImageUrlChange('largeCommercialImg', e.target.value)} className="w-full bg-gray-50 border border-gray-300 px-2 py-1 rounded text-xs"/>
+            {getDisplayUrl(localData.largeCommercialImg) && <img src={getDisplayUrl(localData.largeCommercialImg)} alt="Preview" className="mt-1 h-16 w-auto object-cover rounded border"/>}
         </div>
       </div>
     </div>

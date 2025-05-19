@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { HashLink } from "react-router-hash-link";
 import gsap from "gsap";
 
@@ -35,25 +35,25 @@ function NavbarPreview({ navconfig }) {
   const logoRef = useRef(null);
   const whiteLogoRef = useRef(null);
 
-  const location = useLocation();
-
-  // Extract data from config
   const {
-    navLinks = [
-      { name: "About", href: "/about" },
-      { name: "Booking", href: "/#book" },
-      { name: "Packages", href: "/#packages" }
-    ],
-    logo = "/assets/images/hero/clipped-cowboy.png",
-    whiteLogo = "/assets/images/hero/logo.svg"
+    navLinks = [],
+    logo,
+    whiteLogo,
+    unscrolledBackgroundColor = 'bg-transparent',
+    scrolledBackgroundColor = 'bg-banner',
+    dropdownBackgroundColor = 'bg-white',
+    useWhiteHamburger = false,
   } = navconfig;
+
+  const currentLogoUrl = getDisplayUrl(logo, "/assets/images/hero/clipped-cowboy.png");
+  const currentWhiteLogoUrl = getDisplayUrl(whiteLogo, "/assets/images/hero/logo.svg");
 
   // 1) Set up the GSAP timeline for the hamburger menu
   useEffect(() => {
     const tl = gsap.timeline({ paused: true });
-    tl.to(topBarRef.current, { y: 10, rotate: -45, duration: 0.3 })
+    tl.to(topBarRef.current, { y: 8, rotate: -45, duration: 0.3 })
       .to(middleBarRef.current, { opacity: 0, duration: 0.3 }, "<")
-      .to(bottomBarRef.current, { y: -10, rotate: 45, duration: 0.3 }, "<");
+      .to(bottomBarRef.current, { y: -8, rotate: 45, duration: 0.3 }, "<");
     timelineRef.current = tl;
   }, []);
 
@@ -100,83 +100,41 @@ function NavbarPreview({ navconfig }) {
     };
   }, []);
 
+  const navClasses = `sticky top-0 z-50 w-full flex items-center justify-between transition-all duration-300 px-5 md:px-10 ${hasScrolled ? `h-14 ${scrolledBackgroundColor}` : `h-10 md:h-12 ${unscrolledBackgroundColor}`}`;
+  const linkColorClass = hasScrolled ? (navconfig.scrolledLinkColor || 'text-white hover:text-gray-200') : (navconfig.unscrolledLinkColor || 'text-white hover:text-gray-200');
+  const hamburgerColorClass = useWhiteHamburger || !hasScrolled ? "bg-white" : (navconfig.scrolledHamburgerColor || "bg-gray-800");
+
   return (
     <>
-      <nav
-        className={`sticky top-0 z-50 w-full flex items-center justify-between 
-        ${
-          hasScrolled
-            ? "bg-banner transition-all duration-300 h-14"
-            : "bg-transparent transition-all duration-300 h-10 md:h-12"
-        } 
-        px-5 md:px-10`}
-      >
-        {/* Left: Logo */}
+      <nav className={navClasses}>
         <div className="flex items-center">
           <Link to="/" className="flex items-center">
-            {/* White logo (visible before scroll) */}
-            <img
-              ref={whiteLogoRef}
-              src={whiteLogo}
-              alt="Logo Light"
-              className="h-6 md:h-8 transition-opacity duration-300"
-              style={{ filter: "invert(1)" }}
-            />
-            {/* Regular logo (visible after scroll) */}
-            <img
-              ref={logoRef}
-              src={logo}
-              alt="Logo Dark"
-              className="h-6 md:h-8 absolute top-0 left-5 opacity-0 transition-opacity duration-300"
-              style={{ marginTop: "10px" }}
-            />
+            <img ref={whiteLogoRef} src={currentWhiteLogoUrl} alt="Logo Light" className={`h-6 md:h-8 transition-opacity duration-300 ${hasScrolled ? 'opacity-0' : 'opacity-100'}`} style={!hasScrolled && currentWhiteLogoUrl.endsWith('.svg') ? { filter: "invert(1)"} : {}}/>
+            <img ref={logoRef} src={currentLogoUrl} alt="Logo Dark" className={`h-6 md:h-8 absolute top-1/2 left-5 transform -translate-y-1/2 transition-opacity duration-300 ${hasScrolled ? 'opacity-100' : 'opacity-0'}`} />
           </Link>
         </div>
-
-        {/* Right side: Navigation Links (Desktop) */}
         <div className="hidden md:flex items-center justify-end space-x-5 pr-0">
           {navLinks.map((nav) => (
             <HashLink
               key={nav.name}
               smooth
               to={nav.href}
-              className={`text-sm font-normal ${
-                hasScrolled
-                  ? "text-white hover:text-gray-200"
-                  : "text-white hover:text-gray-200"
-              } transition-colors duration-300`}
+              className={`text-sm font-normal ${linkColorClass} transition-colors duration-300`}
             >
               {nav.name}
             </HashLink>
           ))}
         </div>
-
-        {/* Right: Hamburger Menu (Mobile) - Always at top right */}
         <div className="flex items-center md:hidden">
           <button
             onClick={() => setIsOpen(!isOpen)}
             className="focus:outline-none"
             aria-label="Toggle navigation menu"
           >
-            <div className="relative w-5 h-5">
-              <span
-                ref={topBarRef}
-                className={`absolute top-0 left-0 w-full h-0.5 ${
-                  hasScrolled ? "bg-white" : "bg-white"
-                } transition-colors duration-300`}
-              />
-              <span
-                ref={middleBarRef}
-                className={`absolute top-2 left-0 w-full h-0.5 ${
-                  hasScrolled ? "bg-white" : "bg-white"
-                } transition-colors duration-300`}
-              />
-              <span
-                ref={bottomBarRef}
-                className={`absolute top-4 left-0 w-full h-0.5 ${
-                  hasScrolled ? "bg-white" : "bg-white"
-                } transition-colors duration-300`}
-              />
+            <div className="relative w-5 h-4 flex flex-col justify-between">
+              <span ref={topBarRef} className={`block w-full h-0.5 ${hamburgerColorClass} transition-colors duration-300 origin-center`}/>
+              <span ref={middleBarRef} className={`block w-full h-0.5 ${hamburgerColorClass} transition-colors duration-300`}/>
+              <span ref={bottomBarRef} className={`block w-full h-0.5 ${hamburgerColorClass} transition-colors duration-300 origin-center`}/>
             </div>
           </button>
         </div>
@@ -185,7 +143,7 @@ function NavbarPreview({ navconfig }) {
       {/* Mobile Menu - Smaller and to the right */}
       {isOpen && (
         <div
-          className="md:hidden flex flex-col items-end justify-start w-[200px] fixed top-14 right-0 z-50 bg-banner shadow-lg transition-colors duration-300 rounded-bl-lg"
+          className={`md:hidden flex flex-col items-end justify-start w-[200px] fixed top-14 right-0 z-40 shadow-lg transition-colors duration-300 rounded-bl-lg ${dropdownBackgroundColor}`}
         >
           {navLinks.map((nav) => (
             <HashLink
@@ -193,7 +151,7 @@ function NavbarPreview({ navconfig }) {
               smooth
               to={nav.href}
               onClick={() => setIsOpen(false)}
-              className="px-5 py-3 text-sm text-white hover:text-gray-200 w-full text-right"
+              className={`px-5 py-3 text-sm ${navconfig.dropdownLinkColor || 'text-gray-700'} hover:bg-gray-100 w-full text-right`}
             >
               {nav.name}
             </HashLink>

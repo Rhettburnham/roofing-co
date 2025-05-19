@@ -546,7 +546,9 @@ function RichTextControlsPanel({ localData, onDataChange, currentBannerColor }) 
   const { images = [], steps = [] } = localData;
 
   const handleSharedBannerColorChange = (color) => {
-    onDataChange((prev) => ({ ...prev, sharedBannerColor: color }));
+    // Ensure a valid color string is passed, or a default if somehow invalid
+    const newColor = typeof color === 'string' ? color : '#000000'; // Fallback to black if color is not a string
+    onDataChange((prev) => ({ ...prev, sharedBannerColor: newColor }));
   };
 
   const handleAddImage = () => {
@@ -693,7 +695,8 @@ function RichTextControlsPanel({ localData, onDataChange, currentBannerColor }) 
         <label className="block text-sm mb-1 font-medium text-gray-300">Shared Banner Gradient Color (syncs with Hero):</label>
         <input 
           type="color" 
-          value={currentBannerColor} // Display the actual hero banner color
+          // Ensure currentBannerColor (from HeroBlock) has a fallback if undefined, though sharedBannerColor from localData might be more direct
+          value={localData.sharedBannerColor || currentBannerColor || "#1e293b"} 
           onChange={(e) => handleSharedBannerColorChange(e.target.value)}
           className="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-md cursor-pointer"
         />
@@ -755,81 +758,102 @@ export default function RichTextBlock({
         videoFile: null, // Will be populated by file input
         videoFileName: step.videoFileName || (typeof step.videoSrc === 'string' ? step.videoSrc.split('/').pop() : ''),
       })), 
-      sharedBannerColor: richTextData?.sharedBannerColor || bannerColor || "#1e293b", // Initialize sharedBannerColor
+      sharedBannerColor: initial.sharedBannerColor || bannerColor || "#1e293b", // Initialize with prop or default
     };
   });
 
+  // Ref to store the previous value of showControls
+  const prevShowControlsRef = useRef();
+
   useEffect(() => {
     if (richTextData) {
-      setLocalData(prevData => {
-        const newImages = richTextData.images || prevData.images || [];
-        const newImageUploads = richTextData.imageUploads || prevData.imageUploads || [];
-        const newSharedBannerColor = richTextData.sharedBannerColor !== undefined ? richTextData.sharedBannerColor : bannerColor;
-        const newSteps = (richTextData.steps || prevData.steps || []).map(step => ({
-            ...step,
-            // Preserve existing videoFile if it's already in prevData and not overwritten by richTextData
-            videoFile: (prevData.steps.find(s => s.title === step.title)?.videoFile && !richTextData.steps?.find(s => s.title === step.title)?.videoFile) 
-                         ? prevData.steps.find(s => s.title === step.title)?.videoFile 
-                         : (richTextData.steps?.find(s => s.title === step.title)?.videoFile || null),
-            videoFileName: step.videoFileName || (typeof step.videoSrc === 'string' ? step.videoSrc.split('/').pop() : ''),
-        }));
+      setLocalData(prevLocalData => {
+        // prevLocalData contains the most recent state including uncommitted inline edits.
+        // richTextData is the prop from MainPageForm.
 
-        let hasChanged = prevData.heroText !== (richTextData.heroText || "") ||
-                         prevData.bus_description !== (richTextData.bus_description || "") ||
-                         JSON.stringify(prevData.images) !== JSON.stringify(newImages) ||
-                         prevData.sharedBannerColor !== newSharedBannerColor ||
-                         JSON.stringify(prevData.steps) !== JSON.stringify(newSteps); // Add steps comparison
-        
-        if (!hasChanged && !showControls) { // If !showControls, it implies we are in a read-only view from MainPageForm perspective
-            // If nothing major changed and controls are not open, potentially return prevData to avoid re-renders
-            // This needs careful handling based on how richTextData is updated from parent
-        }
-        
-        return { // Always return a new object structure for consistency when richTextData updates
-          ...prevData, 
-          ...richTextData, // Apply incoming changes
-          cards: richTextData.cards?.map((c) => ({ ...c })) || prevData.cards || [],
-          images: newImages,
-          imageUploads: richTextData.imageUploads !== undefined ? richTextData.imageUploads : prevData.imageUploads,
-          overlayImages: richTextData.overlayImages || prevData.overlayImages || [ "/assets/images/shake_img/1.png", "/assets/images/shake_img/2.png", "/assets/images/shake_img/3.png", "/assets/images/shake_img/4.png" ],
-          steps: newSteps, // Update local state with new steps
-          sharedBannerColor: newSharedBannerColor, // Update local state
+        // For fields edited inline in RichTextPreview (heroText, descriptions),
+        // prevLocalData is more current if an edit just occurred and hasn't been "saved" up.
+        // For data managed by RichTextControlsPanel (images, steps, cards structure, sharedBannerColor),
+        // richTextData (reflecting changes from onConfigChange from panel) is generally more authoritative.
+
+        const newCards = richTextData.cards !== undefined ? richTextData.cards.map(c => ({...c})) : prevLocalData.cards || [];
+        // If cards were directly editable inline in a more complex way, their merge would need care.
+        // Current setup: card title/desc are passed to FeatureCard, which calls onCardFieldChange,
+        // which updates 'cards' array in localData, then onInlineChange passes it up.
+        // So, prevLocalData.cards should be fine if panel isn't open.
+
+        return {
+          ...prevLocalData, // Start with local data (has latest inline edits for text, potentially latest cards from inline card edits)
+          ...richTextData,  // Overlay with prop data (panel edits for images, steps, sharedBannerColor; also cards if from panel)
+          
+          // Explicitly prioritize prevLocalData for simple inline-editable text fields if they differ,
+          // assuming prevLocalData holds a more recent uncommitted inline edit.
+          heroText: prevLocalData.heroText !== richTextData.heroText && prevLocalData.heroText !== (richTextData.heroText || "") // Check if prevLocalData is different AND not just cleared
+                      ? prevLocalData.heroText
+                      : richTextData.heroText || "",
+          bus_description: prevLocalData.bus_description !== richTextData.bus_description && prevLocalData.bus_description !== (richTextData.bus_description || "")
+                      ? prevLocalData.bus_description
+                      : richTextData.bus_description || "",
+          bus_description_second: prevLocalData.bus_description_second !== richTextData.bus_description_second && prevLocalData.bus_description_second !== (richTextData.bus_description_second || "")
+                      ? prevLocalData.bus_description_second
+                      : richTextData.bus_description_second || "",
+          
+          // Ensure arrays come from richTextData if defined (usually from panel), else keep local.
+          // This also handles cases where richTextData might explicitly set an array to empty.
+          cards: richTextData.cards !== undefined ? richTextData.cards.map(c => ({...c})) : prevLocalData.cards || [],
+          images: richTextData.images !== undefined ? [...richTextData.images] : prevLocalData.images || [],
+          imageUploads: richTextData.imageUploads !== undefined ? [...richTextData.imageUploads] : prevLocalData.imageUploads || [],
+          overlayImages: richTextData.overlayImages !== undefined ? [...richTextData.overlayImages] : prevLocalData.overlayImages || [ "/assets/images/shake_img/1.png", "/assets/images/shake_img/2.png", "/assets/images/shake_img/3.png", "/assets/images/shake_img/4.png" ],
+          steps: richTextData.steps !== undefined ? richTextData.steps.map(s => ({...s})) : prevLocalData.steps || [],
+          sharedBannerColor: richTextData.sharedBannerColor !== undefined ? richTextData.sharedBannerColor : prevLocalData.sharedBannerColor,
+          // Ensure other fields from richTextData that are not in prevLocalData or are meant to be authoritative are included
+          accredited: richTextData.accredited !== undefined ? richTextData.accredited : prevLocalData.accredited,
+          years_in_business: richTextData.years_in_business !== undefined ? richTextData.years_in_business : prevLocalData.years_in_business,
         };
       });
     }
-  }, [richTextData, showControls, bannerColor]); // Added bannerColor to dependencies
+  }, [richTextData, bannerColor]); // Removed showControls from dependencies
+
+  // Effect to call onConfigChange when editing is finished (showControls becomes false)
+  useEffect(() => {
+    // Check if showControls has changed from true to false
+    if (prevShowControlsRef.current === true && showControls === false) {
+      if (onConfigChange) {
+        console.log("RichTextBlock: Editing finished (showControls changed to false). Calling onConfigChange.");
+        onConfigChange(localData);
+      }
+    }
+    // Update the ref to the current showControls value for the next render
+    prevShowControlsRef.current = showControls;
+  }, [showControls, localData, onConfigChange]);
 
   const setLocalDataAndPropagate = (updater) => {
     let newData;
     setLocalData(currentLocalData => {
         newData = typeof updater === 'function' ? updater(currentLocalData) : updater;
-        if (onConfigChange) { 
-            // When propagating, ensure image File objects are replaced correctly if they exist in imageUploads
-            const dataForConfigChange = { ...newData };
-            if (newData.imageUploads && Array.isArray(newData.imageUploads)) {
-                dataForConfigChange.images = newData.images.map((img, idx) => {
-                    const upload = newData.imageUploads[idx];
-                    if (upload && upload.file) {
-                        // For onConfigChange, we might want to send the file reference or a special marker
-                        // For now, keeping the blob URL for preview, but MainPageForm/OneForm must handle file uploads
-                        return img; // img here is already a blob URL or original path
-                    }
-                    return img;
-                });
-            }
-            onConfigChange(dataForConfigChange); 
+        // DO NOT call onConfigChange here for inline text edits.
+        // It will be called by the useEffect watching showControls.
+        // For RichTextControlsPanel changes, this is still the path.
+        if (typeof updater !== 'function' && onConfigChange && showControls) { // Check if updater is the full object from panel
+             // This condition is specifically for changes from RichTextControlsPanel
+             // We assume panel changes are "deliberate" enough to propagate immediately
+             // OR the panel could have its own "Save" button.
+             // For now, let's assume panel changes propagate up.
+            console.log("RichTextBlock: Data updated from ControlsPanel, propagating.", newData);
+            onConfigChange(newData);
         }
-        console.log("RichTextBlock: Data updated and propagated", newData);
+        console.log("RichTextBlock: Local data updated.", newData);
         return newData;
     });
   };
 
   const handleInlineChange = (field, value) => {
-    const updatedData = { ...localData, [field]: value };
-    // setLocalData(updatedData); // Directly updating localData
-    // if (onConfigChange) { onConfigChange(updatedData); }
-    setLocalDataAndPropagate(updatedData); // Use central propagation
-    console.log("Inline change, auto-saving field:", field, "value:", value);
+    // Only update localData. onConfigChange will be called when showControls becomes false.
+    setLocalData(prevLocalData => ({
+      ...prevLocalData,
+      [field]: value
+    }));
+    console.log("Inline change for field:", field, "value:", value, "(local update only)");
   };
 
   // When showControls is true, RichTextPreview's inline editing is active (readOnly={false})
@@ -848,7 +872,7 @@ export default function RichTextBlock({
           <RichTextControlsPanel 
             localData={localData} 
             onDataChange={setLocalDataAndPropagate}
-            currentBannerColor={bannerColor} // Pass the actual hero banner color for display
+            currentBannerColor={localData.sharedBannerColor || bannerColor || "#1e293b"} 
           />
         </div>
       )}

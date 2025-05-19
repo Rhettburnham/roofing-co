@@ -19,37 +19,29 @@ gsap.registerPlugin(ScrollTrigger);
 
 // Helper to get display URL from string path or {url, file} object
 const getDisplayUrl = (imageValue, defaultPath = null) => {
-  if (imageValue && typeof imageValue === 'object' && imageValue.url) {
-    return imageValue.url;
-  }
-  if (typeof imageValue === 'string') {
-    // Check if it's already a full URL or a blob/data URI
-    if (imageValue.startsWith('http') || imageValue.startsWith('blob:') || imageValue.startsWith('data:') || imageValue.startsWith('/')) {
-      return imageValue;
-    }
-    // Assume it's a relative path that needs a leading slash if part of assets
-    return `/${imageValue.replace(/^\.\//, "")}`;
-  }
+  if (!imageValue) return defaultPath;
+  if (typeof imageValue === 'string') return imageValue;
+  if (typeof imageValue === 'object' && imageValue.url) return imageValue.url;
   return defaultPath;
 };
 
-// Helper to initialize image state: handles string path or {file, url} object
+// Helper to initialize image state: handles string path or {file, url, name} object
 const initializeImageState = (imageConfig, defaultPath) => {
   if (imageConfig && typeof imageConfig === 'object' && imageConfig.url) {
-    return imageConfig; // Already in {file, url} format
+    return { ...imageConfig, name: imageConfig.name || imageConfig.url.split('/').pop() }; 
   }
   if (typeof imageConfig === 'string') {
-    return { file: null, url: imageConfig }; // It's a path
+    return { file: null, url: imageConfig, name: imageConfig.split('/').pop() }; 
   }
-  return { file: null, url: defaultPath }; // Default
+  return { file: null, url: defaultPath, name: defaultPath.split('/').pop() }; 
 };
 
 // to do this needs to be centered where the lat is currentl seem up and to the right
 const CustomMarkerIcon = (iconUrl) =>
   L.icon({
-    iconUrl: iconUrl || "/assets/images/hero/clipped.png",
+    iconUrl: getDisplayUrl(iconUrl, "/assets/images/hero/clipped.png"),
     iconSize: [30, 30],
-    iconAnchor: [15, 15], // Center the icon properly
+    iconAnchor: [15, 15],
     popupAnchor: [0, -20],
   });
 
@@ -164,45 +156,33 @@ const StatItem = memo(({ iconName, title, value }) => {
   );
 });
 
-const StatsPanel = memo(({ isSmallScreen, stats }) => {
-  // Ensure we always have exactly 4 stats for a 2x2 grid
-  const displayStats = [...stats];
-
-  // If we have fewer than 4 stats, add placeholders to maintain the 2x2 grid
-  while (displayStats.length < 4) {
-    displayStats.push({
-      value: "0",
-      label: "Placeholder",
-      icon: "FaAward",
-      title: "Placeholder",
-    });
+const StatsPanel = memo(({ stats, readOnly, onStatTextChange, onStatIconClick, statsTextColor }) => {
+  const displayStats = [...(stats || [])];
+  while (displayStats.length < 4 && !readOnly) { // Only add placeholders if not readOnly and less than 4, or always show 4 if readOnly and less than 4 initially
+      displayStats.push({ value: '0', title: 'New Stat', icon: 'FaAward' });
   }
-
-  // If we have more than 4, just use the first 4
   const gridStats = displayStats.slice(0, 4);
+  const currentStatsTextColor = statsTextColor || '#FFFFFF';
 
   return (
-    <div
-      className={`
-      w-full h-full grid gap-1 md:gap-2 
-      grid-cols-2 
-      text-center p-1 md:p-2
-    `}
-    >
+    <div className={`w-full h-full grid gap-1 md:gap-2 grid-cols-2 text-center p-1 md:p-2`}>
       {gridStats.map((stat, index) => {
         const IconComponent = FaIcons[stat.icon] || FaIcons.FaAward;
         return (
-          <div
-            key={index}
-            className="flex flex-col items-center justify-center bg-white/30 rounded-lg p-1 shadow-md h-full"
-          >
-            <IconComponent className="w-8 h-8 md:w-6 md:h-6  md:mb-1 text-white" />
-            <div className="text-lg md:text-lg font-bold text-white">
-              {stat.value}
+          <div key={stat.id || index} className="flex flex-col items-center justify-center bg-white/30 rounded-lg p-1 shadow-md h-full">
+            <div className={`p-1 rounded-full ${!readOnly ? 'cursor-pointer hover:bg-white/20' : ''} transition-colors`} onClick={() => !readOnly && onStatIconClick && onStatIconClick(index)} title={!readOnly ? "Click to change icon" : ""}>
+              <IconComponent className="w-8 h-8 md:w-6 md:h-6 md:mb-1" style={{color: currentStatsTextColor}} />
             </div>
-            <div className="text-[3vw] md:text-sm text-white font-medium line-clamp-1">
-              {stat.title || stat.label}
-            </div>
+            {readOnly ? (
+                <div className="text-lg md:text-lg font-bold" style={{color: currentStatsTextColor}}>{stat.value}</div>
+            ) : (
+                <input type="text" style={{color: currentStatsTextColor}} className="text-lg md:text-lg font-bold text-white bg-transparent text-center w-full focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 placeholder-gray-300" value={stat.value || ""} onChange={(e) => onStatTextChange && onStatTextChange(index, 'value', e.target.value)} placeholder="Value"/>
+            )}
+            {readOnly ? (
+                <div className="text-[3vw] md:text-sm font-medium line-clamp-1" style={{color: currentStatsTextColor}}>{stat.title || stat.label}</div>
+            ) : (
+                <input type="text" style={{color: currentStatsTextColor}} className="text-[3vw] md:text-sm text-white font-medium line-clamp-1 bg-transparent text-center w-full focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 placeholder-gray-300" value={stat.title || stat.label || ""} onChange={(e) => onStatTextChange && onStatTextChange(index, 'title', e.target.value)} placeholder="Title"/>
+            )}
           </div>
         );
       })}
@@ -211,7 +191,7 @@ const StatsPanel = memo(({ isSmallScreen, stats }) => {
 });
 
 // Window strings component
-const WindowStrings = memo(({ isVisible, isSmallScreen }) => {
+const WindowStrings = memo(({ isVisible }) => {
   const leftRef = useRef(null);
   const rightRef = useRef(null);
 
@@ -312,6 +292,9 @@ function BasicMapPreview({
     markerIcon,
     title,
     statsBackgroundImage,
+    bannerTextColor,
+    bannerBackgroundColor,
+    statsTextColor,
   } = mapData;
 
   useEffect(() => {
@@ -399,7 +382,7 @@ function BasicMapPreview({
         <tbody className="text-gray-800">
           {serviceHours.map((item, idx) => (
             <tr
-              key={idx}
+              key={item.id || idx}
               className={`${idx % 2 === 0 ? "bg-gray-50" : "bg-white"} border-b border-gray-300`}
             >
               <td className="w-1/2 py-[0.8vh] md:py-[1.2vh] px-2 md:px-4 text-[2.8vw] md:text-sm font-medium text-left border-r border-gray-300">
@@ -414,6 +397,9 @@ function BasicMapPreview({
       </table>
     </div>
   );
+
+  const currentBannerBgColor = bannerBackgroundColor || '#1f2937';
+  const currentBannerTextColor = bannerTextColor || '#FFFFFF';
 
   return (
     <section className="overflow-hidden" ref={sectionRef}>
@@ -464,7 +450,7 @@ function BasicMapPreview({
                       fillOpacity: 0.2,
                     }}
                   />
-                  <DropMarker position={center} iconUrl={getDisplayUrl(markerIcon, "/assets/images/hero/clipped.png")} />
+                  <DropMarker position={center} iconUrl={markerIcon} />
                   <MapInteractionHandler mapActive={mapActive} />
                 </MapContainer>
                 {!mapActive && (
@@ -482,14 +468,14 @@ function BasicMapPreview({
                   </div>
                 )}
                 {/* Bottom overlay: address + phone - conditionally editable */}
-                <div className="absolute bottom-0 w-full bg-banner text-white font-semibold z-10 py-2 px-3 flex justify-between items-center">
+                <div className="absolute bottom-0 w-full bg-banner text-white font-semibold z-10 py-2 px-3 flex justify-between items-center" style={{backgroundColor: currentBannerBgColor, color: currentBannerTextColor}}>
                   {readOnly ? (
                     <>
                       <div className="font-semibold text-[2.5vw] md:text-[2vh] leading-tight text-left">
                         {address}
                       </div>
                       <div className="text-[2.5vw] md:text-[2vh] text-white font-semibold leading-tight text-right">
-                        <a href={`tel:${telephone?.replace(/[^0-9]/g, "")}`}>
+                        <a href={`tel:${telephone?.replace(/[^0-9]/g, "")}`} style={{color: currentBannerTextColor}}>
                           {telephone}
                         </a>
                       </div>
@@ -533,7 +519,6 @@ function BasicMapPreview({
             >
               <WindowStrings
                 isVisible={isServiceHoursVisible}
-                isSmallScreen={isSmallScreen}
               />
               {/* Stats background and content - conditionally editable stats */}
               <div className="absolute inset-0 z-10">
@@ -546,44 +531,7 @@ function BasicMapPreview({
                   <div className="absolute inset-0 bg-black opacity-20"></div>
                 </div>
                 <div className={`relative w-full h-full flex items-center justify-center overflow-hidden ${readOnly ? '' : 'p-1 md:p-2'}`}> 
-                  {readOnly ? (
-                    <StatsPanel isSmallScreen={isSmallScreen} stats={stats} />
-                  ) : (
-                    <div className="w-full h-full grid gap-1 md:gap-2 grid-cols-2 text-center">
-                      {(stats || []).slice(0, 4).map((stat, index) => {
-                        const IconComponent = FaIcons[stat.icon] || FaIcons.FaAward;
-                        return (
-                          <div
-                            key={index}
-                            className="flex flex-col items-center justify-center bg-white/30 rounded-lg p-1 shadow-md h-full"
-                          >
-                            <div 
-                              className="cursor-pointer p-1 rounded-full hover:bg-white/20 transition-colors"
-                              onClick={() => onStatIconClick(index)}
-                              title="Click to change icon"
-                            >
-                              <IconComponent className="w-8 h-8 md:w-6 md:h-6 md:mb-1 text-white" />
-                            </div>
-                            <input
-                              type="text" 
-                              className="text-lg md:text-lg font-bold text-white bg-transparent text-center w-full focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 placeholder-gray-300"
-                              value={stat.value}
-                              onChange={(e) => onStatTextChange(index, 'value', e.target.value)}
-                              placeholder="Value"
-                            />
-                            <input
-                              type="text"
-                              className="text-[3vw] md:text-sm text-white font-medium line-clamp-1 bg-transparent text-center w-full focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 placeholder-gray-300"
-                              value={stat.title || stat.label}
-                              onChange={(e) => onStatTextChange(index, 'title', e.target.value)}
-                              placeholder="Title"
-                            />
-                          </div>
-                        );
-                      })}
-                      {/* Placeholder for adding new stats if functionality is desired here */}
-                    </div>
-                  )}
+                  <StatsPanel stats={stats} readOnly={readOnly} onStatTextChange={onStatTextChange} onStatIconClick={onStatIconClick} statsTextColor={statsTextColor} />
                 </div>
               </div>
 
@@ -665,258 +613,152 @@ function StatItemEditor({ stat, onChange, onRemove }) {
   );
 }
 
-function BasicMapEditorPanel({ localMap, setLocalMap, onSave, onStatIconEditClick, statsBackgroundImage, markerIcon }) {
-  const [mapActive, setMapActive] = useState(false);
-
-  // Debug log for marker icon in editor
-  console.log("Editor marker icon:", localMap.markerIcon);
-  console.log("Editor stats background:", localMap.statsBackgroundImage);
-
-  const handleInlineChange = (field, value) => {
-    setLocalMap(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleStatTextChange = (statIndex, field, value) => {
-    setLocalMap(prev => {
-      const newStats = [...prev.stats];
-      newStats[statIndex] = { ...newStats[statIndex], [field]: value };
-      return { ...prev, stats: newStats };
-    });
-  };
-  
+function BasicMapEditorPanel({ localMapData, onPanelChange, onStatIconEditClick }) {
   const handleServiceHourChange = (index, field, value) => {
-    setLocalMap(prev => {
-      const newServiceHours = [...prev.serviceHours];
-      newServiceHours[index] = { ...newServiceHours[index], [field]: value };
-      return { ...prev, serviceHours: newServiceHours };
-    });
+    const updatedHours = [...(localMapData.serviceHours || [])];
+    if (updatedHours[index]) {
+        updatedHours[index] = { ...updatedHours[index], [field]: value };
+        onPanelChange(prev => ({ ...prev, serviceHours: updatedHours }));
+    }
   };
   
-  const handleStatsBackgroundImageUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const oldUrl = localMap.statsBackgroundImage?.url;
-      if (oldUrl && oldUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(oldUrl);
-      }
-      const fileURL = URL.createObjectURL(file);
-      setLocalMap((prev) => ({
-        ...prev,
-        statsBackgroundImage: { file: file, url: fileURL, name: file.name },
-      }));
-    }
+  const handleAddServiceHour = () => {
+    onPanelChange(prev => ({ ...prev, serviceHours: [...(prev.serviceHours || []), { day: "New Day", time: "Closed" }] }));
   };
 
-  const handleMarkerIconUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const oldUrl = localMap.markerIcon?.url;
-      if (oldUrl && oldUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(oldUrl);
-      }
-      const fileURL = URL.createObjectURL(file);
-      setLocalMap((prev) => ({
-        ...prev,
-        markerIcon: { file: file, url: fileURL, name: file.name },
-      }));
-    }
+  const handleRemoveServiceHour = (index) => {
+    onPanelChange(prev => ({ ...prev, serviceHours: prev.serviceHours.filter((_, i) => i !== index) }));
   };
 
-  const renderServiceHoursEditorTable = () => (
-    <div className="w-full h-full flex flex-col p-1 md:p-0 overflow-auto">
-      <table className="w-full">
-        <thead className="bg-gray-700 text-white">
-          <tr>
-            <th className="py-2 px-2 md:px-4 text-left text-xs font-medium">Day</th>
-            <th className="py-2 px-2 md:px-4 text-left text-xs font-medium">Time</th>
-            <th className="py-2 px-1 text-left text-xs font-medium">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="text-gray-300">
-          {localMap.serviceHours?.map((item, idx) => (
-            <tr
-              key={idx}
-              className={`${idx % 2 === 0 ? "bg-gray-650" : "bg-gray-600"} border-b border-gray-500`}
-            >
-              <td className="py-1 px-2 md:px-4 border-r border-gray-500">
-                <input
-                  type="text"
-                  value={item.day}
-                  onChange={(e) => handleServiceHourChange(idx, 'day', e.target.value)}
-                  className="bg-transparent w-full text-xs focus:outline-none"
-                />
-              </td>
-              <td className="py-1 px-2 md:px-4">
-                <input
-                  type="text"
-                  value={item.time}
-                  onChange={(e) => handleServiceHourChange(idx, 'time', e.target.value)}
-                  className="bg-transparent w-full text-xs focus:outline-none"
-                />
-              </td>
-              <td className="py-1 px-1 text-center">
-                <button
-                  onClick={() => {
-                    const updatedHours = [...localMap.serviceHours];
-                    updatedHours.splice(idx, 1);
-                    setLocalMap(prev => ({ ...prev, serviceHours: updatedHours }));
-                  }}
-                  className="text-red-400 hover:text-red-300 text-xs"
-                >
-                  Remove
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <button
-        onClick={() => {
-          setLocalMap(prev => ({
-            ...prev,
-            serviceHours: [...prev.serviceHours, { day: "New Day", time: "09:00 AM - 5:00 PM" }]
-          }));
-        }}
-        className="bg-blue-600 text-white text-xs px-2 py-1 rounded mt-2 self-start"
-      >
-        + Add Hours
-      </button>
-    </div>
-  );
+  const handleImageChange = (fieldName, file) => {
+    if (!file) return;
+    const currentImageState = localMapData[fieldName];
+    if (currentImageState?.url?.startsWith('blob:')) URL.revokeObjectURL(currentImageState.url);
+    const fileURL = URL.createObjectURL(file);
+    onPanelChange({ [fieldName]: { file, url: fileURL, name: file.name }});
+  };
+
+  const handleImageUrlChange = (fieldName, urlValue) => {
+    const currentImageState = localMapData[fieldName];
+    if (currentImageState?.url?.startsWith('blob:')) URL.revokeObjectURL(currentImageState.url);
+    onPanelChange({ [fieldName]: { file: null, url: urlValue, name: urlValue.split('/').pop() }});
+  };
+  
+  const handleAddStat = () => {
+    onPanelChange(prev => ({ ...prev, stats: [...(prev.stats || []), { id: `stat_new_${Date.now()}`, icon: 'FaAward', value: '0', title: 'New Stat'}] }));
+  };
+
+  const handleRemoveStat = (index) => {
+    onPanelChange(prev => ({ ...prev, stats: prev.stats.filter((_, i) => i !== index) }));
+  };
+  
+  const handleMapFieldChange = (field, value, isCoordinate = false, coordIndex = 0) => {
+    if (isCoordinate) {
+        onPanelChange(prev => {
+            const newCenter = [...(prev.center || [0,0])];
+            newCenter[coordIndex] = parseFloat(value) || 0;
+            return {...prev, center: newCenter };
+        });
+    } else if (field === 'zoomLevel' || field === 'circleRadius') {
+        onPanelChange(prev => ({ ...prev, [field]: parseInt(value, 10) || 0 }));
+    } else {
+        onPanelChange(prev => ({ ...prev, [field]: value })); // For color strings etc.
+    }
+  };
 
   return (
-    <div className="bg-black text-white p-4 rounded">
-      {/* Top bar with "Save" button */}
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-lg md:text-2xl font-semibold">Map Editor</h1>
-        <button
-          onClick={onSave}
-          className="bg-green-600 hover:bg-green-500 px-4 py-2 rounded text-white font-semibold"
-        >
-          Save & Close
-        </button>
-      </div>
-
-      {/* Layout: Map Config (Marker, Radius, BG Image) + Service Hours */}
-      <div className="flex flex-col md:flex-row gap-6">
-        {/* Left side: Map config */}
-        <div className="flex-1 space-y-4 p-4 bg-gray-800 rounded-lg">
-          <h3 className="text-lg font-semibold text-gray-100 border-b border-gray-700 pb-2 mb-3">Map Configuration</h3>
-          <label className="block">
-            <span className="block text-sm mb-1 font-medium text-gray-300">Center Latitude:</span>
-            <input
-              type="number"
-              step="any"
-              className="bg-gray-700 px-3 py-2 rounded w-full text-white focus:ring-blue-500 focus:border-blue-500"
-              value={localMap.center?.[0] || 0}
-              onChange={(e) => setLocalMap(p => ({ ...p, center: [parseFloat(e.target.value), p.center?.[1] || 0] }))}
-            />
+    <div className="bg-black text-white p-4 rounded mt-0">
+      <h2 className="text-xl font-semibold mb-3 border-b border-gray-700 pb-2">Map Settings</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+        <div className="space-y-3 pr-3 md:border-r border-gray-700">
+          <h3 className="text-lg font-medium text-gray-200">Map Coordinates & View</h3>
+          <label className="block text-sm"><span className="font-medium text-gray-400">Center Latitude:</span>
+            <input type="number" step="any" className="bg-gray-700 px-3 py-1.5 rounded w-full text-white focus:ring-blue-500 focus:border-blue-500 text-xs" value={localMapData.center?.[0] || 0} onChange={(e) => handleMapFieldChange('center', e.target.value, true, 0)}/>
           </label>
-          <label className="block">
-            <span className="block text-sm mb-1 font-medium text-gray-300">Center Longitude:</span>
-            <input
-              type="number"
-              step="any"
-              className="bg-gray-700 px-3 py-2 rounded w-full text-white focus:ring-blue-500 focus:border-blue-500"
-              value={localMap.center?.[1] || 0}
-              onChange={(e) => setLocalMap(p => ({ ...p, center: [p.center?.[0] || 0, parseFloat(e.target.value)] }))}
-            />
+          <label className="block text-sm"><span className="font-medium text-gray-400">Center Longitude:</span>
+            <input type="number" step="any" className="bg-gray-700 px-3 py-1.5 rounded w-full text-white focus:ring-blue-500 focus:border-blue-500 text-xs" value={localMapData.center?.[1] || 0} onChange={(e) => handleMapFieldChange('center', e.target.value, true, 1)}/>
           </label>
-          <label className="block">
-            <span className="block text-sm mb-1 font-medium text-gray-300">Zoom Level:</span>
-            <input
-              type="number"
-              className="bg-gray-700 px-3 py-2 rounded w-full text-white focus:ring-blue-500 focus:border-blue-500"
-              value={localMap.zoomLevel || 5}
-              onChange={(e) => setLocalMap(p => ({ ...p, zoomLevel: parseInt(e.target.value, 10) }))}
-            />
+          <label className="block text-sm"><span className="font-medium text-gray-400">Zoom Level:</span>
+            <input type="number" className="bg-gray-700 px-3 py-1.5 rounded w-full text-white focus:ring-blue-500 focus:border-blue-500 text-xs" value={localMapData.zoomLevel || 5} onChange={(e) => handleMapFieldChange('zoomLevel', e.target.value)}/>
           </label>
-          <label className="block">
-            <span className="block text-sm mb-1 font-medium text-gray-300">Circle Radius (meters):</span>
-            <input
-              type="number"
-              className="bg-gray-700 px-3 py-2 rounded w-full text-white focus:ring-blue-500 focus:border-blue-500"
-              value={localMap.circleRadius || 0}
-              onChange={(e) =>
-                setLocalMap((p) => ({
-                  ...p,
-                  circleRadius: parseInt(e.target.value, 10),
-                }))
-              }
-            />
+          <label className="block text-sm"><span className="font-medium text-gray-400">Circle Radius (meters):</span>
+            <input type="number" className="bg-gray-700 px-3 py-1.5 rounded w-full text-white focus:ring-blue-500 focus:border-blue-500 text-xs" value={localMapData.circleRadius || 0} onChange={(e) => handleMapFieldChange('circleRadius', e.target.value)}/>
           </label>
 
-          {/* Marker Icon input */}
-          <div className="flex flex-col gap-2 pt-2 border-t border-gray-700">
-            <label className="block w-full">
-              <span className="block text-sm mb-1 font-medium text-gray-300">Map Marker Icon:</span>
-              <input
-                type="file"
-                accept="image/*"
-                className="bg-gray-700 px-2 py-1 rounded w-full text-sm file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
-                onChange={handleMarkerIconUpload}
-              />
-              {getDisplayUrl(localMap.markerIcon) && (
-                <img
-                  src={getDisplayUrl(localMap.markerIcon)}
-                  alt="Marker Icon Preview"
-                  className="mt-2 h-16 w-16 object-contain rounded bg-gray-600 p-1"
-                />
-              )}
-              <input
-                type="text"
-                className="bg-gray-700 px-2 py-1 rounded w-full mt-2 text-xs"
-                placeholder="Or paste direct image URL (e.g., /assets/icon.png)"
-                value={typeof localMap.markerIcon === 'string' ? localMap.markerIcon : (localMap.markerIcon?.url || '')}
-                onChange={(e) => {
-                  const oldUrl = localMap.markerIcon?.url;
-                  if (oldUrl && oldUrl.startsWith('blob:')) {
-                    URL.revokeObjectURL(oldUrl);
-                  }
-                  setLocalMap(prev => ({ ...prev, markerIcon: { file: null, url: e.target.value } }));
-                 }}
-              />
+          <div className="pt-2 border-t border-gray-600">
+            <label className="block text-sm"><span className="font-medium text-gray-400">Map Marker Icon:</span>
+              <input type="file" accept="image/*" className="bg-gray-700 mt-1 px-2 py-1 rounded w-full text-xs file:mr-2 file:py-0.5 file:px-1.5 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer" onChange={(e) => handleImageChange('markerIcon', e.target.files?.[0])}/>
+              <input type="text" className="bg-gray-700 mt-1 px-2 py-1 rounded w-full text-xs" placeholder="Or paste direct image URL" value={getDisplayUrl(localMapData.markerIcon, '')} onChange={(e) => handleImageUrlChange('markerIcon', e.target.value)}/>
+              {getDisplayUrl(localMapData.markerIcon) && <img src={getDisplayUrl(localMapData.markerIcon)} alt="Marker Icon Preview" className="mt-1 h-12 w-12 object-contain rounded bg-gray-600 p-0.5"/>}
             </label>
           </div>
-          
-          {/* Stats Background Image input */}
-          <div className="flex flex-col gap-2 pt-2 border-t border-gray-700">
-            <label className="block w-full">
-              <span className="block text-sm mb-1 font-medium text-gray-300">Stats Panel Background Image:</span>
-              <input
-                type="file"
-                accept="image/*"
-                className="bg-gray-700 px-2 py-1 rounded w-full text-sm file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
-                onChange={handleStatsBackgroundImageUpload}
-              />
-              {getDisplayUrl(localMap.statsBackgroundImage) && (
-                <img
-                  src={getDisplayUrl(localMap.statsBackgroundImage)}
-                  alt="Stats Background Preview"
-                  className="mt-2 h-24 w-auto object-contain rounded bg-gray-600 p-1"
-                />
-              )}
-               <input
-                type="text"
-                className="bg-gray-700 px-2 py-1 rounded w-full mt-2 text-xs"
-                placeholder="Or paste direct image URL (e.g., /assets/stats_bg.jpg)"
-                value={typeof localMap.statsBackgroundImage === 'string' ? localMap.statsBackgroundImage : (localMap.statsBackgroundImage?.url || '')}
-                onChange={(e) => {
-                  const oldUrl = localMap.statsBackgroundImage?.url;
-                  if (oldUrl && oldUrl.startsWith('blob:')) {
-                    URL.revokeObjectURL(oldUrl);
-                  }
-                  setLocalMap(prev => ({ ...prev, statsBackgroundImage: { file: null, url: e.target.value } }));
-                 }}
-              />
+          <div className="pt-2 border-t border-gray-600">
+             <label className="block text-sm"><span className="font-medium text-gray-400">Stats Panel Background:</span>
+                <input type="file" accept="image/*" className="bg-gray-700 mt-1 px-2 py-1 rounded w-full text-xs file:mr-2 file:py-0.5 file:px-1.5 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer" onChange={(e) => handleImageChange('statsBackgroundImage', e.target.files?.[0])}/>
+                <input type="text" className="bg-gray-700 mt-1 px-2 py-1 rounded w-full text-xs" placeholder="Or paste direct image URL" value={getDisplayUrl(localMapData.statsBackgroundImage, '')} onChange={(e) => handleImageUrlChange('statsBackgroundImage', e.target.value)}/>
+                {getDisplayUrl(localMapData.statsBackgroundImage) && <img src={getDisplayUrl(localMapData.statsBackgroundImage)} alt="Stats BG Preview" className="mt-1 h-16 w-auto object-contain rounded bg-gray-600 p-0.5"/>}
             </label>
           </div>
+            <div className="pt-2">
+                <label className="block text-sm"><span className="font-medium text-gray-400">Info Banner Text Color:</span>
+                    <input type="color" className="mt-1 block w-full h-8 px-1 py-0.5 bg-gray-700 border border-gray-600 rounded-md shadow-sm" value={localMapData.bannerTextColor || '#FFFFFF'} onChange={(e) => handleMapFieldChange('bannerTextColor', e.target.value)}/>
+                </label>
+            </div>
+            <div className="pt-2">
+                <label className="block text-sm"><span className="font-medium text-gray-400">Info Banner Background Color:</span>
+                    <input type="color" className="mt-1 block w-full h-8 px-1 py-0.5 bg-gray-700 border border-gray-600 rounded-md shadow-sm" value={localMapData.bannerBackgroundColor || '#1f2937'} onChange={(e) => handleMapFieldChange('bannerBackgroundColor', e.target.value)}/>
+                </label>
+            </div>
+             <div className="pt-2">
+                <label className="block text-sm"><span className="font-medium text-gray-400">Stats Panel Text Color:</span>
+                    <input type="color" className="mt-1 block w-full h-8 px-1 py-0.5 bg-gray-700 border border-gray-600 rounded-md shadow-sm" value={localMapData.statsTextColor || '#FFFFFF'} onChange={(e) => handleMapFieldChange('statsTextColor', e.target.value)}/>
+                </label>
+            </div>
         </div>
 
-        {/* Right side: Service Hours Editor */}
-        <div className="flex-1 space-y-4 p-4 bg-gray-800 rounded-lg">
-           <h3 className="text-lg font-semibold text-gray-100 border-b border-gray-700 pb-2 mb-3">Service Hours Editor</h3>
-           {renderServiceHoursEditorTable()}
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-lg font-medium text-gray-200 mb-2">Service Hours</h3>
+            <div className="max-h-[200px] overflow-y-auto pr-1 text-xs">
+              <table className="w-full"> 
+                <thead className="bg-gray-700 text-gray-300 sticky top-0 z-10"><tr className="text-xs"><th className="py-1 px-2 text-left font-normal">Day</th><th className="py-1 px-2 text-left font-normal">Time</th><th className="py-1 px-1"></th></tr></thead>
+                <tbody>
+                  {(localMapData.serviceHours || []).map((item, idx) => (
+                    <tr key={item.id || idx} className={`${idx % 2 === 0 ? "bg-gray-650" : "bg-gray-600"} border-b border-gray-500 text-gray-200`}>
+                      <td className="py-0.5 px-1 border-r border-gray-500"><input type="text" value={item.day} onChange={(e) => handleServiceHourChange(idx, 'day', e.target.value)} className="bg-transparent w-full focus:outline-none text-xs p-0.5"/></td>
+                      <td className="py-0.5 px-1"><input type="text" value={item.time} onChange={(e) => handleServiceHourChange(idx, 'time', e.target.value)} className="bg-transparent w-full focus:outline-none text-xs p-0.5"/></td>
+                      <td className="py-0.5 px-1 text-center"><button onClick={() => handleRemoveServiceHour(idx)} className="text-red-400 hover:text-red-300 text-xs">×</button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <button onClick={handleAddServiceHour} className="bg-blue-600 text-white text-xs px-2 py-1 rounded mt-2 self-start hover:bg-blue-700">+ Add Hours</button>
+          </div>
+
+          <div className="pt-3 border-t border-gray-700">
+            <h3 className="text-lg font-medium text-gray-200 mb-2">Stats Items (Max 4)</h3>
+             <div className="max-h-[200px] overflow-y-auto pr-1 text-xs">
+                {(localMapData.stats || []).slice(0,4).map((stat, index) => (
+                    <div key={stat.id || index} className="bg-gray-700 p-2 rounded mb-1.5 relative text-xs">
+                        <button onClick={() => onStatIconEditClick && onStatIconEditClick(index)} className="absolute top-1 right-8 bg-indigo-500 text-white p-0.5 rounded text-[10px] hover:bg-indigo-600" title="Edit Icon">Icon</button>
+                        <button onClick={() => handleRemoveStat(index)} className="absolute top-1 right-1 bg-red-500 text-white p-0.5 rounded text-[10px] hover:bg-red-600">X</button>
+                        <div className="flex items-center mb-1">
+                            <FaIcons.FaHashtag className="text-gray-400 mr-1.5" /> 
+                            <input type="text" placeholder="Value (e.g., 100+)" value={stat.value || ''} onChange={e => onPanelChange(prev => ({...prev, stats: prev.stats.map((s, i) => i === index ? {...s, value: e.target.value} : s)}))} className="bg-gray-600 p-0.5 rounded w-full focus:outline-none text-gray-200 text-xs"/>
+                        </div>
+                        <div className="flex items-center">
+                            <FaIcons.FaTag className="text-gray-400 mr-1.5" />
+                            <input type="text" placeholder="Title (e.g., Happy Clients)" value={stat.title || ''} onChange={e => onPanelChange(prev => ({...prev, stats: prev.stats.map((s, i) => i === index ? {...s, title: e.target.value} : s)}))} className="bg-gray-600 p-0.5 rounded w-full focus:outline-none text-gray-200 text-xs"/>
+                        </div>
+                         <p className="text-[10px] text-gray-400 mt-0.5">Icon: {stat.icon || 'FaAward'}</p>
+                    </div>
+                ))}
+            </div>
+            { (localMapData.stats?.length || 0) < 4 &&
+                <button onClick={handleAddStat} className="bg-blue-600 text-white text-xs px-2 py-1 rounded mt-2 self-start hover:bg-blue-700">+ Add Stat</button>
+            }
+          </div>
         </div>
       </div>
     </div>
@@ -936,162 +778,189 @@ export default function BasicMapBlock({
   // Add console log to debug incoming mapData
   console.log("BasicMapBlock received mapData:", mapData);
 
-  const [isIconModalOpen, setIsIconModalOpen] = useState(false);
-  const [editingStatIndex, setEditingStatIndex] = useState(null);
-
-  // Initialize local editor state
   const [localMapData, setLocalMapData] = useState(() => {
     const initialConfig = mapData || {};
     return {
-      ...initialConfig,
       title: initialConfig.title || "Are we in your area?",
-      center: initialConfig.center || [0, 0],
-      zoomLevel: initialConfig.zoomLevel || 5,
-      circleRadius: initialConfig.circleRadius || 0,
-      address: initialConfig.address || "",
-      telephone: initialConfig.telephone || "",
-      serviceHours: initialConfig.serviceHours?.map((sh) => ({ ...sh })) || [],
-      stats: initialConfig.stats?.map((st) => ({ ...st })) || [],
+      center: initialConfig.center || [34.0522, -118.2437], 
+      zoomLevel: initialConfig.zoomLevel || 10,
+      circleRadius: initialConfig.circleRadius || 5000,
+      address: initialConfig.address || "123 Main St, Anytown, USA",
+      telephone: initialConfig.telephone || "(555) 123-4567",
+      serviceHours: (initialConfig.serviceHours || []).map(sh => ({ ...sh, id: sh.id || `sh_${Math.random().toString(36).substr(2, 5)}` })),
+      stats: (initialConfig.stats || []).map((st, idx) => ({ ...st, id: st.id || `stat_${idx}_${Date.now()}`, icon: st.icon || 'FaAward' })).slice(0,4),
       markerIcon: initializeImageState(initialConfig.markerIcon, "/assets/images/hero/clipped.png"),
       statsBackgroundImage: initializeImageState(initialConfig.statsBackgroundImage, "/assets/images/stats_background.jpg"),
+      bannerTextColor: initialConfig.bannerTextColor || '#FFFFFF',
+      bannerBackgroundColor: initialConfig.bannerBackgroundColor || '#1f2937',
+      statsTextColor: initialConfig.statsTextColor || '#FFFFFF',
     };
   });
 
+  const prevReadOnlyRef = useRef(readOnly);
+  const [isIconModalOpen, setIsIconModalOpen] = useState(false);
+  const [editingStatIndexForIcon, setEditingStatIndexForIcon] = useState(null);
+
   useEffect(() => {
     if (mapData) {
-      setLocalMapData(prevLocalMapData => {
-        const newMarkerIconState = initializeImageState(mapData.markerIcon, "/assets/images/hero/clipped.png");
-        const newStatsBgImageState = initializeImageState(mapData.statsBackgroundImage, "/assets/images/stats_background.jpg");
+      setLocalMapData(prevLocal => {
+        const newMarkerIcon = initializeImageState(mapData.markerIcon, prevLocal.markerIcon?.url);
+        const newStatsBg = initializeImageState(mapData.statsBackgroundImage, prevLocal.statsBackgroundImage?.url);
+        if (prevLocal.markerIcon?.file && prevLocal.markerIcon.url?.startsWith('blob:') && prevLocal.markerIcon.url !== newMarkerIcon.url) URL.revokeObjectURL(prevLocal.markerIcon.url);
+        if (prevLocal.statsBackgroundImage?.file && prevLocal.statsBackgroundImage.url?.startsWith('blob:') && prevLocal.statsBackgroundImage.url !== newStatsBg.url) URL.revokeObjectURL(prevLocal.statsBackgroundImage.url);
 
-        // Revoke old blob URL for markerIcon if it exists and is different
-        if (prevLocalMapData.markerIcon && prevLocalMapData.markerIcon.url && prevLocalMapData.markerIcon.url.startsWith('blob:') && prevLocalMapData.markerIcon.url !== newMarkerIconState.url) {
-          URL.revokeObjectURL(prevLocalMapData.markerIcon.url);
-        }
-        // Revoke old blob URL for statsBackgroundImage if it exists and is different
-        if (prevLocalMapData.statsBackgroundImage && prevLocalMapData.statsBackgroundImage.url && prevLocalMapData.statsBackgroundImage.url.startsWith('blob:') && prevLocalMapData.statsBackgroundImage.url !== newStatsBgImageState.url) {
-          URL.revokeObjectURL(prevLocalMapData.statsBackgroundImage.url);
-        }
+        const newStatsList = (mapData.stats || prevLocal.stats || []).map((statFromProp, index) => {
+          const localStat = prevLocal.stats?.find(s => s.id === statFromProp.id) || prevLocal.stats?.[index] || {};
+          const mergedStat = {
+            ...localStat,      // Prioritize local for uncommitted inline edits
+            ...statFromProp,   // Overlay with prop data (e.g. icon changes from panel)
+            id: statFromProp.id || localStat.id || `stat_update_${index}_${Date.now()}`,
+            icon: statFromProp.icon || localStat.icon || 'FaAward',
+          };
+
+          // Prioritize local value if it differs meaningfully
+          if (localStat.value !== statFromProp.value && 
+              localStat.value !== (statFromProp.value || "")) {
+            mergedStat.value = localStat.value;
+          } else {
+            mergedStat.value = statFromProp.value || ""; // Ensure value
+          }
+
+          // Prioritize local title if it differs meaningfully
+          if (localStat.title !== statFromProp.title && 
+              localStat.title !== (statFromProp.title || "")) {
+            mergedStat.title = localStat.title;
+          } else {
+            mergedStat.title = statFromProp.title || ""; // Ensure value
+          }
+          return mergedStat;
+        }).slice(0,4); // Ensure max 4 stats
 
         return {
-          ...prevLocalMapData,
-          ...mapData,
-          title: mapData.title || prevLocalMapData.title || "Are we in your area?",
-          serviceHours: mapData.serviceHours?.map((sh) => ({ ...sh })) || prevLocalMapData.serviceHours || [],
-          stats: mapData.stats?.map((st) => ({ ...st })) || prevLocalMapData.stats || [],
-          markerIcon: newMarkerIconState,
-          statsBackgroundImage: newStatsBgImageState,
+          ...prevLocal,    // Start with local data
+          ...mapData,      // Overlay with prop data (panel edits for map coords, colors, images, service hours structure)
+          
+          // Explicitly prioritize prevLocal for inline-editable text fields if they differ
+          title: (prevLocal.title !== mapData.title && prevLocal.title !== (mapData.title || "Are we in your area?"))
+                 ? prevLocal.title 
+                 : mapData.title || "Are we in your area?",
+          address: (prevLocal.address !== mapData.address && prevLocal.address !== (mapData.address || ""))
+                   ? prevLocal.address
+                   : mapData.address || "",
+          telephone: (prevLocal.telephone !== mapData.telephone && prevLocal.telephone !== (mapData.telephone || ""))
+                     ? prevLocal.telephone
+                     : mapData.telephone || "",
+          
+          stats: newStatsList,
+          
+          // Fields primarily managed by the panel, prop data is authoritative if present
+          center: mapData.center || prevLocal.center,
+          zoomLevel: mapData.zoomLevel !== undefined ? mapData.zoomLevel : prevLocal.zoomLevel,
+          circleRadius: mapData.circleRadius !== undefined ? mapData.circleRadius : prevLocal.circleRadius,
+          serviceHours: (mapData.serviceHours || prevLocal.serviceHours || []).map(sh => ({ ...sh, id: sh.id || `sh_${Math.random().toString(36).substr(2, 5)}` })),
+          markerIcon: newMarkerIcon,
+          statsBackgroundImage: newStatsBg,
+          bannerTextColor: mapData.bannerTextColor !== undefined ? mapData.bannerTextColor : prevLocal.bannerTextColor,
+          bannerBackgroundColor: mapData.bannerBackgroundColor !== undefined ? mapData.bannerBackgroundColor : prevLocal.bannerBackgroundColor,
+          statsTextColor: mapData.statsTextColor !== undefined ? mapData.statsTextColor : prevLocal.statsTextColor,
         };
       });
     }
   }, [mapData]);
 
-  const handleSave = () => {
-    // Create a deep copy for cleaning, to avoid mutating localMapData directly
-    // especially if it contains File objects that shouldn't be in the JSON
-    const dataToSave = JSON.parse(JSON.stringify(localMapData));
+  useEffect(() => {
+    return () => {
+      if (localMapData.markerIcon?.file && localMapData.markerIcon.url?.startsWith('blob:')) URL.revokeObjectURL(localMapData.markerIcon.url);
+      if (localMapData.statsBackgroundImage?.file && localMapData.statsBackgroundImage.url?.startsWith('blob:')) URL.revokeObjectURL(localMapData.statsBackgroundImage.url);
+    };
+  }, [localMapData.markerIcon, localMapData.statsBackgroundImage]);
 
-    // Clean markerIcon
-    if (dataToSave.markerIcon && typeof dataToSave.markerIcon === 'object' && dataToSave.markerIcon.url) {
-        // If it was a file upload, we save the URL (which might be a blob URL or a path if user pasted)
-        // The actual file saving to a persistent store or CDN would happen elsewhere (e.g. in a backend or a build step)
-        // For now, we ensure that if it was a {file, url} object, we save the url string.
-        // If the url is a blob, the parent component (OneForm) will handle zipping the File object.
-        // Here, we ensure the config itself stores the reference path/URL.
-        if (localMapData.markerIcon.file) { // if there was a file object
-            dataToSave.markerIcon = localMapData.markerIcon.url; // Keep blob or actual URL
-        } else { // if it was just a URL string or an object with only URL
-            dataToSave.markerIcon = localMapData.markerIcon.url || localMapData.markerIcon;
-        }
-    } else if (typeof dataToSave.markerIcon === 'string') {
-        // it's already a string, do nothing
-    } else {
-        dataToSave.markerIcon = "/assets/images/hero/clipped.png"; // Fallback
+  useEffect(() => {
+    if (prevReadOnlyRef.current === false && readOnly === true) {
+      if (onConfigChange) {
+        console.log("BasicMapBlock: Editing finished. Calling onConfigChange.");
+        const dataToSave = {
+          ...localMapData,
+          markerIcon: localMapData.markerIcon?.file ? localMapData.markerIcon.name : localMapData.markerIcon?.url,
+          statsBackgroundImage: localMapData.statsBackgroundImage?.file ? localMapData.statsBackgroundImage.name : localMapData.statsBackgroundImage?.url,
+        };
+        onConfigChange(dataToSave);
+      }
     }
+    prevReadOnlyRef.current = readOnly;
+  }, [readOnly, localMapData, onConfigChange]);
 
-    // Clean statsBackgroundImage
-    if (dataToSave.statsBackgroundImage && typeof dataToSave.statsBackgroundImage === 'object' && dataToSave.statsBackgroundImage.url) {
-        if (localMapData.statsBackgroundImage.file) {
-             dataToSave.statsBackgroundImage = localMapData.statsBackgroundImage.url;
-        } else {
-            dataToSave.statsBackgroundImage = localMapData.statsBackgroundImage.url || localMapData.statsBackgroundImage;
-        }
-    } else if (typeof dataToSave.statsBackgroundImage === 'string') {
-        // it's already a string
-    } else {
-        dataToSave.statsBackgroundImage = "/assets/images/stats_background.jpg"; // Fallback
-    }
-    
-    // Pass the original localMapData (with File objects if any) to onConfigChange
-    // The OneForm component is responsible for extracting File objects for zipping.
-    console.log("BasicMapBlock saving data (original with potential Files):", localMapData);
-    onConfigChange?.(localMapData); // Pass the version with File objects for zipping
-  };
-  
-  // This function will be passed to BasicMapEditorPanel's setLocalMap prop
-  // It updates the local state and then calls onConfigChange for auto-saving behavior
-  const setLocalMapDataAndPropagate = (updater) => {
-    let newData;
-    setLocalMapData(currentData => {
-      newData = typeof updater === 'function' ? updater(currentData) : updater;
-      return newData;
+  const handleLocalDataChange = (updater) => {
+    setLocalMapData(prevState => {
+      const newState = typeof updater === 'function' ? updater(prevState) : { ...prevState, ...updater };
+      // Ensure stats array does not exceed 4 items after an update from panel
+      if (newState.stats && newState.stats.length > 4) {
+        newState.stats = newState.stats.slice(0, 4);
+      }
+      return newState;
     });
-    if (onConfigChange) {
-        console.log("Propagating changes from BasicMapBlock editor via setLocalMapDataAndPropagate:", newData);
-        onConfigChange(newData);
-    }
   };
 
-  const handleStatIconClick = (statIndex) => {
-    setEditingStatIndex(statIndex);
+  const handleStatIconEditClick = (statIndex) => {
+    if (readOnly) return;
+    setEditingStatIndexForIcon(statIndex);
     setIsIconModalOpen(true);
   };
 
-  const handleIconSelect = (pack, iconName) => {
-    if (editingStatIndex !== null) {
-      setLocalMapDataAndPropagate(prev => {
-        const newStats = [...prev.stats];
-        newStats[editingStatIndex] = { ...newStats[editingStatIndex], icon: iconName };
-        return { ...prev, stats: newStats };
-      });
+  const handleIconSelectionForStat = (pack, iconName) => {
+    if (editingStatIndexForIcon !== null) {
+        handleLocalDataChange(prev => {
+            const newStats = [...(prev.stats || [])];
+            if (newStats[editingStatIndexForIcon]) {
+                newStats[editingStatIndexForIcon] = { ...newStats[editingStatIndexForIcon], icon: iconName }; // Assuming pack is not stored per stat item
+            }
+            return { ...prev, stats: newStats };
+        });
     }
     setIsIconModalOpen(false);
-    setEditingStatIndex(null);
+    setEditingStatIndexForIcon(null);
   };
 
+  const handleInlineChange = (field, value) => {
+    handleLocalDataChange({ [field]: value });
+  };
+  const handleStatTextChange = (index, field, value) => {
+    handleLocalDataChange(prev => {
+      const currentStats = prev.stats || [];
+      const newStats = [...currentStats];
+      // Ensure the stat object exists up to index 3
+      while(newStats.length <= index && index < 4) newStats.push({ id: `stat_new_${newStats.length}`, icon: 'FaAward', value: '', title: '' });
+      if (newStats[index]) { 
+        newStats[index] = { ...newStats[index], [field]: value };
+      }
+      return { ...prev, stats: newStats.slice(0,4) }; 
+    });
+  };
+  
   if (readOnly) {
-    // Pass mapData directly, BasicMapPreview will use getDisplayUrl for markerIcon & statsBg
-    return <BasicMapPreview mapData={mapData} readOnly={true} />;
+    return <BasicMapPreview mapData={localMapData} readOnly={true} />;
   }
-
-  // When not readOnly, BasicMapPreview will show editable fields.
-  // BasicMapEditorPanel will show other configurations.
+  
   return (
     <>
       <BasicMapPreview 
         mapData={localMapData} 
         readOnly={false}
-        onInlineChange={(field, value) => setLocalMapDataAndPropagate(prev => ({ ...prev, [field]: value }))}
-        onStatTextChange={(index, field, value) => setLocalMapDataAndPropagate(prev => {
-          const currentStats = prev.stats || [];
-          const newStats = [...currentStats];
-          // Ensure the stat object exists
-          if (!newStats[index]) newStats[index] = { icon: 'FaAward', value: '', title: '' }; 
-          newStats[index] = { ...newStats[index], [field]: value };
-          return { ...prev, stats: newStats };
-        })}
-        onStatIconClick={handleStatIconClick} 
+        onInlineChange={handleInlineChange}
+        onStatTextChange={handleStatTextChange}
+        onStatIconClick={handleStatIconEditClick} 
       />
       <BasicMapEditorPanel
-        localMap={localMapData}
-        setLocalMap={setLocalMapDataAndPropagate} 
-        onSave={handleSave}
+        localMapData={localMapData}
+        onPanelChange={handleLocalDataChange} 
+        onStatIconEditClick={handleStatIconEditClick} 
       />
       <IconSelectorModal
         isOpen={isIconModalOpen}
         onClose={() => setIsIconModalOpen(false)}
-        onIconSelect={handleIconSelect}
+        onIconSelect={handleIconSelectionForStat}
         currentIconPack="fa" 
-        currentIconName={editingStatIndex !== null && localMapData.stats[editingStatIndex] ? localMapData.stats[editingStatIndex].icon : null}
+        currentIconName={editingStatIndexForIcon !== null && localMapData.stats && localMapData.stats[editingStatIndexForIcon] ? localMapData.stats[editingStatIndexForIcon].icon : null}
       />
     </>
   );

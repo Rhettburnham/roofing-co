@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense, useRef } from "react";
 import PropTypes from "prop-types";
 import BasicMapBlock from "./MainPageBlocks/BasicMapBlock";
 import RichTextBlock from "./MainPageBlocks/RichTextBlock";
@@ -10,6 +10,33 @@ import BookingBlock from "./MainPageBlocks/BookingBlock";
 import CombinedPageBlock from "./MainPageBlocks/CombinedPageBlock";
 import ServiceSliderBlock from "./MainPageBlocks/ServiceSliderBlock";
 import TestimonialBlock from "./MainPageBlocks/TestimonialBlock";
+import Navbar from "./Navbar";
+
+// Lazy load components to avoid circular dependencies if any, and for consistency
+const BasicMapBlockLazy = lazy(() => import("./MainPageBlocks/BasicMapBlock"));
+const RichTextBlockLazy = lazy(() => import("./MainPageBlocks/RichTextBlock"));
+const HeroBlockLazy = lazy(() => import("./MainPageBlocks/HeroBlock"));
+const BeforeAfterBlockLazy = lazy(() => import("./MainPageBlocks/BeforeAfterBlock"));
+const EmployeesBlockLazy = lazy(() => import("./MainPageBlocks/EmployeesBlock"));
+const ButtonBlockLazy = lazy(() => import("./MainPageBlocks/ButtonBlock"));
+const BookingBlockLazy = lazy(() => import("./MainPageBlocks/BookingBlock"));
+const ServiceSliderBlockLazy = lazy(() => import("./MainPageBlocks/ServiceSliderBlock"));
+const TestimonialBlockLazy = lazy(() => import("./MainPageBlocks/TestimonialBlock"));
+const NavbarLazy = lazy(() => import("./Navbar")); // For Navbar preview
+
+// Mapping block names to components for dynamic rendering
+const blockComponentMap = {
+  HeroBlock,
+  RichTextBlock,
+  ButtonBlock,
+  BasicMapBlock,
+  BookingBlock,
+  ServiceSliderBlock,
+  TestimonialBlock,
+  BeforeAfterBlock,
+  EmployeesBlock,
+  // Add other main page blocks here if any
+};
 
 // Sliding Edit Panel component - Will NOT be used for RichTextBlock anymore
 const SlidingEditPanel = ({ children, onClose }) => (
@@ -45,481 +72,353 @@ SlidingEditPanel.propTypes = {
   onClose: PropTypes.func.isRequired,
 };
 
+// Navbar Edit Form Component
+const NavbarEditForm = React.forwardRef(({ navbarConfig, onConfigChange }, ref) => {
+  const [localNavConfig, setLocalNavConfig] = useState(navbarConfig || { 
+    navLinks: [], logo: '', whiteLogo: '',
+    unscrolledBackgroundColor: 'bg-transparent', scrolledBackgroundColor: 'bg-banner',
+    dropdownBackgroundColor: 'bg-white', useWhiteHamburger: false,
+  });
+
+  useEffect(() => {
+    setLocalNavConfig(prevConfig => ({ 
+        ...prevConfig, ...(navbarConfig || {}),
+        navLinks: navbarConfig?.navLinks || [],
+        logo: navbarConfig?.logo || '',
+        whiteLogo: navbarConfig?.whiteLogo || '',
+        unscrolledBackgroundColor: navbarConfig?.unscrolledBackgroundColor || 'bg-transparent',
+        scrolledBackgroundColor: navbarConfig?.scrolledBackgroundColor || 'bg-banner',
+        dropdownBackgroundColor: navbarConfig?.dropdownBackgroundColor || 'bg-white',
+        useWhiteHamburger: navbarConfig?.useWhiteHamburger || false,
+    }));
+  }, [navbarConfig]);
+
+  // Exposed to parent to commit changes before closing
+  React.useImperativeHandle(ref, () => ({
+    commitChanges: () => {
+      onConfigChange(localNavConfig);
+      console.log("NavbarEditForm: Committed changes via ref", localNavConfig);
+    }
+  }));
+
+  const handleInputChange = (field, value) => {
+    setLocalNavConfig(prevConf => ({ ...prevConf, [field]: value }));
+    // DO NOT call onConfigChange here directly anymore for every keystroke
+  };
+
+  const handleNavLinkChange = (index, field, value) => {
+    const updatedNavLinks = localNavConfig.navLinks.map((link, i) =>
+      i === index ? { ...link, [field]: value } : link
+    );
+    handleInputChange('navLinks', updatedNavLinks);
+  };
+
+  const addNavLink = () => {
+    handleInputChange('navLinks', [...(localNavConfig.navLinks || []), { name: '', href: '' }]);
+  };
+
+  const removeNavLink = (index) => {
+    const updatedNavLinks = (localNavConfig.navLinks || []).filter((_, i) => i !== index);
+    handleInputChange('navLinks', updatedNavLinks);
+  };
+  
+  if (!localNavConfig) return <p>Loading navbar configuration...</p>;
+
+  return (
+    <div className="p-4 space-y-4 bg-gray-50 rounded-md">
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Logo URL:</label>
+        <input type="text" value={localNavConfig.logo || ''} onChange={(e) => handleInputChange('logo', e.target.value)} className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"/>
+        {localNavConfig.logo && <img src={localNavConfig.logo} alt="Logo Preview" className="mt-2 h-16 w-auto object-contain border p-1 bg-gray-100 rounded" />}
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700">White Logo URL (for dark backgrounds):</label>
+        <input type="text" value={localNavConfig.whiteLogo || ''} onChange={(e) => handleInputChange('whiteLogo', e.target.value)} className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"/>
+        {localNavConfig.whiteLogo && <img src={localNavConfig.whiteLogo} alt="White Logo Preview" className="mt-2 h-16 w-auto object-contain border p-1 bg-gray-700 rounded" />}
+      </div>
+      <div>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Navigation Links:</h3>
+        {(localNavConfig.navLinks || []).map((link, index) => (
+          <div key={index} className="space-y-2 p-3 border border-gray-200 rounded-md mb-3 bg-white">
+            <div className="flex justify-between items-center"><p className="text-sm font-medium text-gray-600">Link {index + 1}</p><button type="button" onClick={() => removeNavLink(index)} className="text-red-500 hover:text-red-700 text-xs">Remove</button></div>
+            <div><label className="block text-xs font-medium text-gray-600">Name:</label><input type="text" value={link.name} onChange={(e) => handleNavLinkChange(index, 'name', e.target.value)} className="mt-1 block w-full px-2 py-1 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"/></div>
+            <div><label className="block text-xs font-medium text-gray-600">URL (href):</label><input type="text" value={link.href} onChange={(e) => handleNavLinkChange(index, 'href', e.target.value)} className="mt-1 block w-full px-2 py-1 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"/></div>
+          </div>
+        ))}
+        <button type="button" onClick={addNavLink} className="mt-2 px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Add Nav Link</button>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 mt-3 border-t border-gray-200">
+        <div><label className="block text-sm font-medium text-gray-700">Unscrolled Navbar Background:</label><input type="text" value={localNavConfig.unscrolledBackgroundColor || ''} onChange={(e) => handleInputChange('unscrolledBackgroundColor', e.target.value)} placeholder="e.g., bg-transparent, bg-white, #FFFFFF" className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm sm:text-sm"/><p className="text-xs text-gray-500 mt-1">Use Tailwind class or hex color.</p></div>
+        <div><label className="block text-sm font-medium text-gray-700">Scrolled Navbar Background:</label><input type="text" value={localNavConfig.scrolledBackgroundColor || ''} onChange={(e) => handleInputChange('scrolledBackgroundColor', e.target.value)} placeholder="e.g., bg-banner, bg-gray-800, #1f2937" className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm sm:text-sm"/></div>
+        <div><label className="block text-sm font-medium text-gray-700">Dropdown Menu Background:</label><input type="text" value={localNavConfig.dropdownBackgroundColor || ''} onChange={(e) => handleInputChange('dropdownBackgroundColor', e.target.value)} placeholder="e.g., bg-white, bg-gray-800, #FFFFFF" className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm sm:text-sm"/></div>
+        <div><label className="flex items-center text-sm font-medium text-gray-700"><input type="checkbox" checked={localNavConfig.useWhiteHamburger || false} onChange={(e) => handleInputChange('useWhiteHamburger', e.target.checked)} className="mr-2 h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"/>Use White Hamburger Icon</label></div>
+      </div>
+    </div>
+  );
+});
+NavbarEditForm.displayName = 'NavbarEditForm'; // For React DevTools
+
 /**
  * MainPageForm is a presentational component for editing the main page.
  * It displays the UI and passes changes upward via setFormData.
  */
 const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
   const [activeEditBlock, setActiveEditBlock] = useState(null);
+  const [previewNavbarAsScrolled, setPreviewNavbarAsScrolled] = useState(false);
+  const navbarEditFormRef = useRef(); // Ref for NavbarEditForm
+  const [internalFormData, setInternalFormData] = useState(formData);
 
   useEffect(() => {
-    console.log("MainPageForm received formData:", formData);
-    console.log("Current singleBlockMode:", singleBlockMode);
-  }, [formData, singleBlockMode]);
-
-  const getBlockData = (blockKey) => {
-    if (singleBlockMode) {
-      if (formData[singleBlockMode] && blockKey === singleBlockMode) {
-        return formData[singleBlockMode];
+    let needsUpdate = false;
+    const updatedBlocks = (formData?.mainPageBlocks || []).map((block, index) => {
+      if (!block.uniqueKey) {
+        needsUpdate = true;
+        return { ...block, uniqueKey: `${block.blockName}_${Date.now()}_${index}` };
       }
-      return formData[blockKey];
-    }
-    return formData[blockKey];
-  };
+      return block;
+    });
+    setInternalFormData(prevInternal => {
+        const newInternal = { ...prevInternal, ...formData };
+        if (needsUpdate || (formData?.mainPageBlocks && JSON.stringify(newInternal.mainPageBlocks) !== JSON.stringify(updatedBlocks))) {
+            newInternal.mainPageBlocks = updatedBlocks;
+        }
+        return newInternal;
+    });
+  }, [formData]);
 
-  const handleHeroConfigChange = (newHeroConfig) => {
-    console.log("Hero config changed:", newHeroConfig);
-    setFormData((prev) => ({ ...prev, hero: newHeroConfig }));
+  const handleBlockConfigChange = (blockUniqueKey, newConfigFromBlock) => {
+    console.log(`MainPageForm: Block ${blockUniqueKey} is committing changes.`, newConfigFromBlock);
+    setInternalFormData((prev) => {
+      const newMainPageBlocks = (prev.mainPageBlocks || []).map(block =>
+        block.uniqueKey === blockUniqueKey ? { ...block, config: newConfigFromBlock } : block
+      );
+      return { ...prev, mainPageBlocks: newMainPageBlocks }; 
+    });
+  };
+  
+  const handleNavbarConfigChange = (newNavbarConfig) => {
+    console.log("MainPageForm: Navbar is committing changes.", newNavbarConfig);
+    setInternalFormData((prev) => ({ ...prev, navbar: newNavbarConfig }));
   };
 
   const handleRichTextConfigChange = (newRichTextConfig) => {
-    console.log("RichText config changed (auto-saved):", newRichTextConfig);
-    setFormData((prev) => {
-      const updatedFormData = { ...prev, richText: newRichTextConfig };
-      // Check if the rich text config update includes a sharedBannerColor to sync with hero
-      if (newRichTextConfig.hasOwnProperty('sharedBannerColor') && 
-          newRichTextConfig.sharedBannerColor !== prev.hero?.bannerColor) {
-        console.log("RichText changed sharedBannerColor, updating hero.bannerColor to:", newRichTextConfig.sharedBannerColor);
-        updatedFormData.hero = {
-          ...(prev.hero || {}),
-          bannerColor: newRichTextConfig.sharedBannerColor,
-        };
+    console.log("MainPageForm: RichText committing changes.", newRichTextConfig);
+    setInternalFormData((prev) => {
+      const updatedMainPageBlocks = (prev.mainPageBlocks || []).map(block =>
+        block.blockName === 'RichTextBlock' 
+          ? { ...block, config: newRichTextConfig }
+          : block
+      );
+      let newInternalFormData = { ...prev, mainPageBlocks: updatedMainPageBlocks };
+      const heroBlockIndex = (prev.mainPageBlocks || []).findIndex(b => b.blockName === 'HeroBlock');
+      if (newRichTextConfig.hasOwnProperty('sharedBannerColor') && heroBlockIndex !== -1) {
+        const heroConfig = prev.mainPageBlocks[heroBlockIndex].config;
+        if (newRichTextConfig.sharedBannerColor !== heroConfig?.bannerColor) {
+          updatedMainPageBlocks[heroBlockIndex] = {
+            ...prev.mainPageBlocks[heroBlockIndex],
+            config: { ...(heroConfig || {}), bannerColor: newRichTextConfig.sharedBannerColor }
+          };
+          newInternalFormData = { ...prev, mainPageBlocks: updatedMainPageBlocks };
+        }
       }
-      return updatedFormData;
+      return newInternalFormData;
     });
   };
 
-  const handleButtonConfigChange = (newButtonConfig) => {
-    console.log("Button config changed:", newButtonConfig);
-    setFormData((prev) => ({ ...prev, button: newButtonConfig }));
-  };
+  const prevActiveEditBlockRef = useRef(activeEditBlock);
+  useEffect(() => {
+    if (prevActiveEditBlockRef.current !== null && activeEditBlock === null) {
+      console.log("MainPageForm: Edit session ended. Propagating internal changes to OneForm.", internalFormData);
+      setFormData(internalFormData); 
+    }
+    prevActiveEditBlockRef.current = activeEditBlock;
+  }, [activeEditBlock, internalFormData, setFormData]);
 
-  const handleMapConfigChange = (newMapConfig) => {
-    console.log("Map config changed:", newMapConfig);
-    setFormData((prev) => ({ ...prev, map: newMapConfig }));
-  };
+  const PencilIcon = ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487a2.032 2.032 0 112.872 2.872L7.5 21.613H4v-3.5L16.862 4.487z"/></svg> );
+  const CheckIcon = ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> );
 
-  const handleBookingConfigChange = (newBookingConfig) => {
-    console.log("Booking config changed:", newBookingConfig);
-    setFormData((prev) => ({ ...prev, booking: newBookingConfig }));
-  };
-
-  const handleServiceSliderConfigChange = (newServiceSliderConfig) => {
-    console.log("ServiceSlider config changed:", newServiceSliderConfig);
-    setFormData((prev) => ({ ...prev, serviceSlider: newServiceSliderConfig }));
-  };
-
-  const handleTestimonialsConfigChange = (newTestimonialsConfig) => {
-    console.log("Testimonials config changed:", newTestimonialsConfig);
-    setFormData((prev) => ({ ...prev, testimonials: newTestimonialsConfig }));
-  };
-
-  const handleCombinedConfigChange = (newCombinedConfig) => {
-    console.log("CombinedPage config changed:", newCombinedConfig);
-    setFormData((prev) => ({ ...prev, combinedPage: newCombinedConfig }));
-  };
-
-  const handleBeforeConfigChange = (newBeforeConfig) => {
-    console.log("BeforeAfter config changed:", newBeforeConfig);
-    setFormData((prev) => ({ ...prev, before_after: newBeforeConfig }));
-  };
-
-  const handleEmployeesConfigChange = (newEmployeesConfig) => {
-    console.log("Employees config changed:", newEmployeesConfig);
-    setFormData((prev) => ({ ...prev, employees: newEmployeesConfig }));
-  };
-
-  const PencilIcon = (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      strokeWidth="1.5"
-      stroke="currentColor"
-      className="w-6 h-6"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M16.862 4.487a2.032 2.032 0 112.872 2.872L7.5 21.613H4v-3.5L16.862 4.487z"
-      />
-    </svg>
-  );
-
-  const CloseIcon = (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      strokeWidth="1.5"
-      stroke="currentColor"
-      className="w-6 h-6"
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-    </svg>
-  );
-  
-  const CheckIcon = ( // Using a Check icon for "Done Editing" or "Save"
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      fill="none" 
-      viewBox="0 0 24 24" 
-      strokeWidth="1.5" 
-      stroke="currentColor" 
-      className="w-6 h-6"
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-    </svg>
-  );
-
-  // Handle toggling edit mode for RichTextBlock specifically
-  const toggleRichTextEdit = () => {
-    if (activeEditBlock === 'richText') {
-      // Closing RichText editor - changes are already auto-saved by RichTextBlock via onConfigChange
-      console.log("Closing RichText editor. Data should be up-to-date in formData.");
-      setActiveEditBlock(null);
-    } else {
-      setActiveEditBlock('richText');
+  const handleToggleEditState = (key) => {
+    if (activeEditBlock === key) { // Is currently editing, about to close/save
+      if (key === 'navbar' && navbarEditFormRef.current?.commitChanges) {
+        navbarEditFormRef.current.commitChanges(); // Ensure NavbarEditForm calls its onConfigChange
+      }
+      // For blocks, their onConfigChange is triggered by readOnly prop change.
+      // Setting activeEditBlock to null will trigger the save propagation effect.
+      setActiveEditBlock(null); 
+    } else { // Is not editing this key, about to open it (or switch from another)
+      if (activeEditBlock && activeEditBlock !== 'navbar' && activeEditBlock !== key) {
+        // If another block was open, its save would have been triggered by its readOnly prop changing.
+        // The main useEffect watching activeEditBlock will handle propagation.
+      } else if (activeEditBlock === 'navbar' && key !== 'navbar' && navbarEditFormRef.current?.commitChanges) {
+        // Switching from navbar to a block, commit navbar changes.
+        navbarEditFormRef.current.commitChanges();
+      }
+      setActiveEditBlock(key);
     }
   };
 
   if (singleBlockMode) {
-    console.log(`Rendering single block mode for: ${singleBlockMode}`);
-    switch (singleBlockMode) {
-      case "hero":
-        return (
-          <div className="relative">
-            <HeroBlock
-              readOnly={false}
-              heroconfig={getBlockData("hero")}
-              onConfigChange={handleHeroConfigChange}
-            />
-          </div>
-        );
-      case "richText":
-        return (
-          <div className="relative">
-            <RichTextBlock
-              readOnly={false} // Always editable in single block mode for RichText
-              richTextData={getBlockData("richText")}
-              onConfigChange={handleRichTextConfigChange}
-              bannerColor={getBlockData("hero")?.bannerColor}
-              showControls={true} // In single block mode, always show controls for images
-            />
-          </div>
-        );
-      case "button":
-        return (
-          <div className="relative">
-            <ButtonBlock
-              readOnly={false}
-              buttonconfig={getBlockData("button")}
-              onConfigChange={handleButtonConfigChange}
-            />
-          </div>
-        );
-      case "map":
-        return (
-          <div className="relative">
-            <BasicMapBlock
-              readOnly={false}
-              mapData={getBlockData("map")}
-              onConfigChange={handleMapConfigChange}
-            />
-          </div>
-        );
-      case "booking":
-        return (
-          <div className="relative">
-            <BookingBlock
-              readOnly={false}
-              bookingData={getBlockData("booking")}
-              onConfigChange={handleBookingConfigChange}
-            />
-          </div>
-        );
-      case "serviceSlider":
-        return (
-          <div className="relative">
-            <ServiceSliderBlock
-              readOnly={false}
-              config={getBlockData("serviceSlider")}
-              onConfigChange={handleServiceSliderConfigChange}
-            />
-          </div>
-        );
-      case "testimonials":
-        return (
-          <div className="relative">
-            <TestimonialBlock
-              readOnly={false}
-              config={getBlockData("testimonials")}
-              onConfigChange={handleTestimonialsConfigChange}
-            />
-          </div>
-        );
-      case "beforeAfter":
-        return (
-          <div className="relative">
-            <BeforeAfterBlock
-              readOnly={true}
-              beforeAfterData={getBlockData("before_after")}
-            />
-          </div>
-        );
-      case "employees":
-        return (
-          <div className="relative">
-            <EmployeesBlock
-              readOnly={false}
-              employeesData={getBlockData("employees")}
-              onConfigChange={handleEmployeesConfigChange}
-            />
-          </div>
-        );
-      default:
-        console.error(`Unknown block type: ${singleBlockMode}`);
-        return <div>Unknown block type: {singleBlockMode}</div>;
+    const blockConfig = internalFormData[singleBlockMode]; // Use internalFormData
+    const Component = blockComponentMap[singleBlockMode];
+    
+    if (singleBlockMode === "navbar") {
+      return (
+        <div className="relative p-4 bg-gray-200">
+          <h2 className="text-xl font-semibold mb-3">Navbar Editor</h2>
+          <NavbarEditForm 
+            ref={navbarEditFormRef} 
+            navbarConfig={internalFormData.navbar} 
+            onConfigChange={handleNavbarConfigChange} 
+          />
+           {/* Add a save button for single navbar edit mode */}
+           <button 
+             onClick={() => navbarEditFormRef.current?.commitChanges()} 
+             className="mt-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+           >Save Navbar Changes</button>
+        </div>
+      );
+    }
+    
+    if (Component && blockConfig) {
+        let props = {
+            readOnly: false, 
+            onConfigChange: (newConfig) => {
+                 console.log(`Single block mode: ${singleBlockMode} committing changes.`);
+                 setInternalFormData(prev => ({
+                    ...prev, 
+                    [singleBlockMode]: newConfig,
+                    // If it's a block within mainPageBlocks structure, update there too for consistency
+                    mainPageBlocks: (prev.mainPageBlocks || []).map(b => b.blockName === singleBlockMode ? {...b, config: newConfig} : b)
+                 }));
+                 setFormData(prev => ({...prev, [singleBlockMode]: newConfig, mainPageBlocks: (prev.mainPageBlocks || []).map(b => b.blockName === singleBlockMode ? {...b, config: newConfig} : b)})); // Also update OneForm directly for single block
+            }
+        };
+
+        // Assign correct prop name for config data
+        if (blockComponentMap[singleBlockMode]) {
+            const propName = Object.keys(propsForBlocks[singleBlockMode] || {config: null})[0] || 'config';
+            props[propName] = blockConfig;
+            if(singleBlockMode === 'RichTextBlock') props.showControls = true;
+        } else {
+            props.config = blockConfig; // Default
+        }
+        
+      return (
+        <div className="relative">
+          <Suspense fallback={<div>Loading {singleBlockMode}...</div>}>
+            <Component {...props} />
+          </Suspense>
+        </div>
+      );
+    } else {
+      return <div>Unknown block type or missing config for single block: {singleBlockMode}</div>;
     }
   }
 
-  console.log("Rendering all blocks for main page editor");
+  if (!internalFormData || (!internalFormData.mainPageBlocks && !internalFormData.navbar) ) {
+    return <div className="p-4 text-center">Loading form data...</div>;
+  }
+
   return (
     <div className="bg-gray-100">
-      {/* HERO BLOCK */}
-      <div className="relative bg-white overflow-hidden">
-        <div className="absolute top-4 right-4 z-40">
-          <button
-            type="button"
-            onClick={() => setActiveEditBlock(activeEditBlock === "hero" ? null : "hero")}
-            className="bg-gray-800 text-white rounded-full p-2 shadow-lg hover:bg-gray-700 transition-colors"
-            aria-label={activeEditBlock === "hero" ? "Close Hero Editor" : "Edit Hero Block"}
-          >
-            {activeEditBlock === "hero" ? CloseIcon : PencilIcon}
-          </button>
+      {internalFormData.navbar && !singleBlockMode && (
+        <div className="bg-white p-4 shadow-md mb-6 border rounded-lg">
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="text-xl font-semibold text-gray-700">Navbar Configuration</h2>
+            <button type="button" onClick={() => handleToggleEditState('navbar')} className="bg-gray-700 text-white rounded-full p-2 shadow-lg hover:bg-gray-600 transition-colors">
+              {activeEditBlock === "navbar" ? CheckIcon : PencilIcon}
+            </button>
+          </div>
+          <div className={`border rounded-md p-2 mb-3 ${activeEditBlock === 'navbar' ? 'opacity-50 pointer-events-none' : ''}`}>
+            <Suspense fallback={<div>Loading Navbar Preview...</div>}><Navbar config={internalFormData.navbar} forceScrolledState={previewNavbarAsScrolled} isPreview={true}/></Suspense>
+          </div>
+          <div className="flex space-x-2 mb-3">
+            <button type="button" onClick={() => setPreviewNavbarAsScrolled(false)} className={`px-3 py-1.5 text-sm rounded-md ${!previewNavbarAsScrolled ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>View Unscrolled</button>
+            <button type="button" onClick={() => setPreviewNavbarAsScrolled(true)} className={`px-3 py-1.5 text-sm rounded-md ${previewNavbarAsScrolled ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>View Scrolled</button>
+          </div>
+          {activeEditBlock === "navbar" && (
+            <SlidingEditPanel onClose={() => handleToggleEditState('navbar')}>
+              <NavbarEditForm ref={navbarEditFormRef} navbarConfig={internalFormData.navbar} onConfigChange={handleNavbarConfigChange} />
+            </SlidingEditPanel>
+          )}
         </div>
-        {activeEditBlock !== "hero" && (
-          <HeroBlock readOnly={true} heroconfig={formData.hero} />
-        )}
+      )}
 
-        {activeEditBlock === "hero" && (
-          <SlidingEditPanel onClose={() => setActiveEditBlock(null)}>
-            <HeroBlock
-              readOnly={false}
-              heroconfig={formData.hero}
-              onConfigChange={handleHeroConfigChange}
-            />
-          </SlidingEditPanel>
-        )}
-      </div>
+      {(internalFormData.mainPageBlocks || []).map((block, index) => {
+        const blockKey = block.uniqueKey || `${block.blockName}_${Date.now()}_${index}`;
+        const ComponentToRender = blockComponentMap[block.blockName];
+        const isEditingThisBlock = activeEditBlock === blockKey;
 
-      {/* RICHTEXT BLOCK - Inline Editing Toggle, No SlidingEditPanel */}
-      <div className="relative bg-white overflow-hidden"> {/* Removed py-4 for flush layout */}
-        <div className="absolute top-4 right-4 z-40">
-          <button
-            type="button"
-            onClick={toggleRichTextEdit} // Use the dedicated toggle function again
-            className="bg-gray-800 text-white rounded-full p-2 shadow-lg hover:bg-gray-700 transition-colors"
-            aria-label={activeEditBlock === "richText" ? "Done Editing Rich Text" : "Edit Rich Text Block"}
-          >
-            {activeEditBlock === "richText" ? CheckIcon : PencilIcon} {/* Restore CheckIcon for done state */}
-          </button>
-        </div>
-        <RichTextBlock 
-          readOnly={activeEditBlock !== 'richText'} // Text is editable if activeEditBlock is 'richText'
-          richTextData={formData.richText} 
-          onConfigChange={handleRichTextConfigChange} 
-          bannerColor={formData.hero?.bannerColor}
-          showControls={activeEditBlock === 'richText'} // Show image controls if activeEditBlock is 'richText'
-        />
-        {/* SlidingEditPanel removed, RichTextBlock handles its own controls panel display based on showControls prop */}
-      </div>
+        if (!ComponentToRender) return <div key={blockKey} className="p-4 text-red-500">Unknown block type: {block.blockName}</div>;
 
-      {/* ABOUT BUTTON BLOCK */}
-      <div className="relative bg-white overflow-hidden">
-        <div className="absolute top-4 right-4 z-40">
-           <button
-            type="button"
-            onClick={() => setActiveEditBlock(activeEditBlock === "button" ? null : "button")}
-            className="bg-gray-800 text-white rounded-full p-2 shadow-lg hover:bg-gray-700 transition-colors"
-            aria-label={activeEditBlock === "button" ? "Close Button Editor" : "Edit Button Block"}
-          >
-            {activeEditBlock === "button" ? CloseIcon : PencilIcon}
-          </button>
-        </div>
-        <ButtonBlock readOnly={activeEditBlock !== "button"} buttonconfig={formData.button} />
+        let componentProps = { 
+            key: blockKey, 
+            readOnly: !isEditingThisBlock, 
+            // Pass the specific config object for this block
+            // The block component itself will expect this with a specific prop name (e.g., 'config', 'heroconfig')
+        };
 
-        {activeEditBlock === "button" && (
-          <SlidingEditPanel onClose={() => setActiveEditBlock(null)}>
-            <ButtonBlock
-              readOnly={false}
-              buttonconfig={formData.button}
-              onConfigChange={handleButtonConfigChange}
-            />
-          </SlidingEditPanel>
-        )}
-      </div>
+        // Assign specific prop names based on block type, falling back to 'config'
+        const blockSpecificPropName = {
+            HeroBlock: 'heroconfig',
+            RichTextBlock: 'richTextData',
+            ButtonBlock: 'buttonconfig',
+            BasicMapBlock: 'mapData',
+            BookingBlock: 'bookingData',
+            ServiceSliderBlock: 'config', // or specific like serviceSliderData
+            TestimonialBlock: 'config', // or specific like testimonialData
+            BeforeAfterBlock: 'beforeAfterData',
+            EmployeesBlock: 'employeesData',
+            AboutBlock: 'aboutData',
+            CombinedPageBlock: 'config' // or specific like combinedPageData
+        }[block.blockName] || 'config';
+        componentProps[blockSpecificPropName] = block.config;
 
-      {/* MAP & STATS BLOCK */}
-      <div className="relative bg-white overflow-hidden">
-        <div className="absolute top-4 right-4 z-40">
-          <button
-            type="button"
-            onClick={() => setActiveEditBlock(activeEditBlock === "map" ? null : "map")}
-            className="bg-gray-800 text-white rounded-full p-2 shadow-lg hover:bg-gray-700 transition-colors"
-            aria-label={activeEditBlock === "map" ? "Close Map Editor" : "Edit Map Block"}
-          >
-            {activeEditBlock === "map" ? CloseIcon : PencilIcon}
-          </button>
-        </div>
-        {activeEditBlock !== "map" && (
-          <BasicMapBlock readOnly={true} mapData={formData.map} />
-        )}
+        if (block.blockName === 'RichTextBlock') {
+            componentProps.showControls = isEditingThisBlock; 
+            componentProps.bannerColor = internalFormData.mainPageBlocks?.find(b => b.blockName === 'HeroBlock')?.config?.bannerColor || internalFormData.navbar?.bannerColor;
+            componentProps.onConfigChange = handleRichTextConfigChange; // RichText still uses its specific handler due to complexity
+        } else {
+            componentProps.onConfigChange = (newConf) => handleBlockConfigChange(blockKey, newConf);
+        }
+        
+        let currentIcon = isEditingThisBlock ? CheckIcon : PencilIcon;
 
-        {activeEditBlock === "map" && (
-          <SlidingEditPanel onClose={() => setActiveEditBlock(null)}>
-            <BasicMapBlock
-              readOnly={false}
-              mapData={formData.map}
-              onConfigChange={handleMapConfigChange}
-            />
-          </SlidingEditPanel>
-        )}
-      </div>
-
-      {/* BOOKING BLOCK */}
-      <div className="relative bg-white overflow-hidden">
-        <div className="absolute top-4 right-4 z-40">
-          <button
-            type="button"
-            onClick={() => setActiveEditBlock(activeEditBlock === "booking" ? null : "booking")}
-            className="bg-gray-800 text-white rounded-full p-2 shadow-lg hover:bg-gray-700 transition-colors"
-            aria-label={activeEditBlock === "booking" ? "Close Booking Editor" : "Edit Booking Block"}
-          >
-            {activeEditBlock === "booking" ? CloseIcon : PencilIcon}
-          </button>
-        </div>
-        <BookingBlock readOnly={activeEditBlock !== "booking"} bookingData={formData.booking} />
-
-        {activeEditBlock === "booking" && (
-          <SlidingEditPanel onClose={() => setActiveEditBlock(null)}>
-            <BookingBlock
-              readOnly={false}
-              bookingData={formData.booking}
-              onConfigChange={handleBookingConfigChange}
-            />
-          </SlidingEditPanel>
-        )}
-      </div>
-
-      {/* SERVICE SLIDER BLOCK */}
-      <div className="relative bg-white overflow-hidden">
-        <div className="absolute top-4 right-4 z-40">
-          <button
-            type="button"
-            onClick={() => setActiveEditBlock(activeEditBlock === "serviceSlider" ? null : "serviceSlider")}
-            className="bg-gray-800 text-white rounded-full p-2 shadow-lg hover:bg-gray-700 transition-colors"
-            aria-label={activeEditBlock === "serviceSlider" ? "Close Service Slider Editor" : "Edit Service Slider Block"}
-          >
-            {activeEditBlock === "serviceSlider" ? CloseIcon : PencilIcon}
-          </button>
-        </div>
-        {activeEditBlock !== "serviceSlider" && (
-          <ServiceSliderBlock readOnly={true} config={formData.serviceSlider} />
-        )}
-
-        {activeEditBlock === "serviceSlider" && (
-          <SlidingEditPanel onClose={() => setActiveEditBlock(null)}>
-            <ServiceSliderBlock
-              readOnly={false}
-              config={formData.serviceSlider}
-              onConfigChange={handleServiceSliderConfigChange}
-            />
-          </SlidingEditPanel>
-        )}
-      </div>
-
-      {/* TESTIMONIALS BLOCK */}
-      <div className="relative bg-white overflow-hidden">
-        <div className="absolute top-4 right-4 z-40">
-          <button
-            type="button"
-            onClick={() => setActiveEditBlock(activeEditBlock === "testimonials" ? null : "testimonials")}
-            className="bg-gray-800 text-white rounded-full p-2 shadow-lg hover:bg-gray-700 transition-colors"
-            aria-label={activeEditBlock === "testimonials" ? "Close Testimonials Editor" : "Edit Testimonials Block"}
-          >
-            {activeEditBlock === "testimonials" ? CloseIcon : PencilIcon}
-          </button>
-        </div>
-        <TestimonialBlock readOnly={true} config={formData.testimonials} />
-
-        {activeEditBlock === "testimonials" && (
-          <SlidingEditPanel onClose={() => setActiveEditBlock(null)}>
-            <TestimonialBlock
-              readOnly={false}
-              config={formData.testimonials}
-              onConfigChange={handleTestimonialsConfigChange}
-            />
-          </SlidingEditPanel>
-        )}
-      </div>
-
-      {/* BEFORE & AFTER BLOCK */}
-      <div className="relative bg-white overflow-hidden">
-        <div className="absolute top-4 right-4 z-40">
-          <button
-            type="button"
-            onClick={() => setActiveEditBlock(activeEditBlock === "beforeAfter" ? null : "beforeAfter")}
-            className="bg-gray-800 text-white rounded-full p-2 shadow-lg hover:bg-gray-700 transition-colors"
-            aria-label={activeEditBlock === "beforeAfter" ? "Close Before/After Editor" : "Edit Before/After Block"}
-          >
-            {activeEditBlock === "beforeAfter" ? CloseIcon : PencilIcon}
-          </button>
-        </div>
-        {activeEditBlock !== "beforeAfter" && (
-          <BeforeAfterBlock
-            readOnly={true}
-            beforeAfterData={formData.before_after}
-          />
-        )}
-
-        {activeEditBlock === "beforeAfter" && (
-          <SlidingEditPanel onClose={() => setActiveEditBlock(null)}>
-            <BeforeAfterBlock
-              readOnly={false}
-              beforeAfterData={formData.before_after}
-              onConfigChange={handleBeforeConfigChange}
-            />
-          </SlidingEditPanel>
-        )}
-      </div>
-
-      {/* EMPLOYEES BLOCK */}
-      <div className="relative bg-white overflow-hidden">
-        <div className="absolute top-4 right-4 z-40">
-          <button
-            type="button"
-            onClick={() => setActiveEditBlock(activeEditBlock === "employees" ? null : "employees")}
-            className="bg-gray-800 text-white rounded-full p-2 shadow-lg hover:bg-gray-700 transition-colors"
-            aria-label={activeEditBlock === "employees" ? "Close Employees Editor" : "Edit Employees Block"}
-          >
-            {activeEditBlock === "employees" ? CloseIcon : PencilIcon}
-          </button>
-        </div>
-        {activeEditBlock !== "employees" && (
-          <EmployeesBlock readOnly={activeEditBlock !== "employees"} employeesData={formData.employees} />
-        )}
-
-        {activeEditBlock === "employees" && (
-          <SlidingEditPanel onClose={() => setActiveEditBlock(null)}>
-            <EmployeesBlock
-              readOnly={false}
-              employeesData={formData.employees}
-              onConfigChange={handleEmployeesConfigChange}
-            />
-          </SlidingEditPanel>
-        )}
-      </div>
+        return (
+          <div key={blockKey} className="relative bg-white overflow-hidden my-1 border">
+            <div className="absolute top-4 right-4 z-40">
+              {/* Standardized Edit/Save Button */}
+              <button type="button" onClick={() => handleToggleEditState(blockKey)} className={`${isEditingThisBlock ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-700 hover:bg-gray-600'} text-white rounded-full p-2 shadow-lg transition-colors`}>
+                {currentIcon}
+              </button>
+            </div>
+            
+            {/* Render the block preview */}
+            <Suspense fallback={<div>Loading {block.blockName}...</div>}>
+              <ComponentToRender {...componentProps} /> 
+            </Suspense>
+            
+            {/* Render the EditorPanel for the block if it's being edited and has one */}
+            {isEditingThisBlock && block.blockName !== 'RichTextBlock' && ComponentToRender.EditorPanel && (
+              <SlidingEditPanel onClose={() => handleToggleEditState(blockKey)}> 
+                <ComponentToRender.EditorPanel 
+                    localData={block.config} // Pass current config for this block
+                    onPanelChange={(updatedFields) => { // Panel changes update internalFormData for this block
+                        setInternalFormData(prev => ({
+                            ...prev,
+                            mainPageBlocks: (prev.mainPageBlocks || []).map(b => 
+                                b.uniqueKey === blockKey ? { ...b, config: { ...b.config, ...updatedFields } } : b
+                            )
+                        }));
+                    }} 
+                    // Example: pass down a function to trigger icon modal if needed from panel
+                    // openIconSelector={(args) => openIconModalForBlock(blockKey, args)}
+                />
+              </SlidingEditPanel>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 };
@@ -528,6 +427,21 @@ MainPageForm.propTypes = {
   formData: PropTypes.object.isRequired,
   setFormData: PropTypes.func.isRequired,
   singleBlockMode: PropTypes.string,
+};
+
+// Make sure propsForBlocks is defined if used in singleBlockMode for prop name mapping
+const propsForBlocks = {
+    HeroBlock: { heroconfig: null },
+    RichTextBlock: { richTextData: null },
+    ButtonBlock: { buttonconfig: null },
+    BasicMapBlock: { mapData: null },
+    BookingBlock: { bookingData: null },
+    ServiceSliderBlock: { config: null },
+    TestimonialBlock: { config: null },
+    BeforeAfterBlock: { beforeAfterData: null },
+    EmployeesBlock: { employeesData: null },
+    AboutBlock: { aboutData: null },
+    CombinedPageBlock: { config: null }
 };
 
 export default MainPageForm;
