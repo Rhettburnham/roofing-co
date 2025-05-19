@@ -54,19 +54,25 @@ export default defineConfig({
     },
     proxy: {
       '/api/auth': {
-        target: 'https://auth-worker.roofing-www.workers.dev',
+        target: process.env.NODE_ENV === 'production' 
+          ? 'https://auth-worker.roofing-co-with-workers.workers.dev'
+          : 'https://auth-worker.roofing-www.workers.dev',
         changeOrigin: true,
         secure: true,
         rewrite: (path) => path,
       },
       '/api/admin': {
-        target: 'https://roofing-admin.roofing-www.workers.dev',
+        target: process.env.NODE_ENV === 'production'
+          ? 'https://roofing-admin.roofing-co-with-workers.workers.dev'
+          : 'https://roofing-admin.roofing-www.workers.dev',
         changeOrigin: true,
         secure: true,
         rewrite: (path) => path,
       },
       '/api/config': {
-        target: 'https://auth-worker.roofing-www.workers.dev',
+        target: process.env.NODE_ENV === 'production'
+          ? 'https://auth-worker.roofing-co-with-workers.workers.dev'
+          : 'https://auth-worker.roofing-www.workers.dev',
         changeOrigin: true,
         secure: true,
         rewrite: (path) => path,

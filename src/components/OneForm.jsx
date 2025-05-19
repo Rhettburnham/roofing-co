@@ -45,23 +45,7 @@ TabButton.propTypes = {
 };
 
 const OneForm = ({ initialData = null, blockName = null, title = null }) => {
-  // Initialize with a default structure instead of null
-  const [formData, setFormData] = useState({
-    hero: {
-      title: "Loading...",
-      subtitle: "Please wait",
-      buttonText: "Loading",
-      buttonUrl: "#",
-      residentialImage: "",
-      commercialImage: "",
-      accentColor: "#2B4C7E",
-    },
-    richText: {
-      title: "Loading...",
-      content: "Loading content...",
-      heroText: "Loading...",
-    }
-  });
+  const [formData, setFormData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("mainPage");
 
@@ -133,65 +117,26 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
           });
         }
 
-        // Try to fetch from default config folder first
-        console.log("Attempting to fetch from default config folder...");
+        // Otherwise, try to fetch the full combined_data.json
+        console.log("Attempting to fetch default combined_data.json...");
         try {
-          console.log("Trying default config path: /api/config/default/combined_data.json");
-          const defaultConfigResponse = await fetch("/api/config/default/combined_data.json");
-          console.log("Default config response status:", defaultConfigResponse.status);
-          
-          if (defaultConfigResponse.ok) {
-            const defaultConfigData = await defaultConfigResponse.json();
-            console.log("Successfully loaded default config data");
-            setFormData(defaultConfigData);
-            setLoading(false);
-            return;
-          } else {
-            console.error("Failed to load default config. Status:", defaultConfigResponse.status);
-          }
-        } catch (defaultConfigError) {
-          console.error("Error loading default config:", defaultConfigError);
-        }
-
-        // If default config fails, try the raw data path
-        console.log("Attempting to fetch from raw data path...");
-        try {
-          console.log("Trying raw data path: /data/raw_data/step_4/combined_data.json");
           const combinedResponse = await fetch(
             "/data/raw_data/step_4/combined_data.json"
           );
-          console.log("Raw data response status:", combinedResponse.status);
-          console.log("Response headers:", Object.fromEntries(combinedResponse.headers.entries()));
+          console.log("Default config response status:", combinedResponse.status);
           
           if (combinedResponse.ok) {
             const combinedData = await combinedResponse.json();
-            console.log("Successfully loaded raw data");
+            console.log("Successfully loaded default combined data:", combinedData);
             setFormData(combinedData);
             setLoading(false);
             return;
           } else {
-            console.error("Failed to load raw data. Status:", combinedResponse.status);
-            // Try alternative path
-            console.log("Trying alternative path: /data/step_4/combined_data.json");
-            const altResponse = await fetch("/data/step_4/combined_data.json");
-            console.log("Alternative path response status:", altResponse.status);
-            
-            if (altResponse.ok) {
-              const altData = await altResponse.json();
-              console.log("Successfully loaded data from alternative path");
-              setFormData(altData);
-              setLoading(false);
-              return;
-            } else {
-              console.error("Failed to load from alternative path. Status:", altResponse.status);
-            }
+            console.error("Failed to load default config. Status:", combinedResponse.status);
           }
         } catch (combinedError) {
-          console.error("Error loading raw data:", combinedError);
-          console.error("Error details:", {
-            message: combinedError.message,
-            stack: combinedError.stack
-          });
+          console.error("Error loading default combined data:", combinedError);
+          // Continue to fallback if combined data fetch fails
         }
 
         // Fallback: Create a default configuration
