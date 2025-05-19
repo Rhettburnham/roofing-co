@@ -120,10 +120,12 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         // Otherwise, try to fetch the full combined_data.json
         console.log("Attempting to fetch default combined_data.json...");
         try {
+          console.log("Trying primary path: /data/raw_data/step_4/combined_data.json");
           const combinedResponse = await fetch(
             "/data/raw_data/step_4/combined_data.json"
           );
           console.log("Default config response status:", combinedResponse.status);
+          console.log("Response headers:", Object.fromEntries(combinedResponse.headers.entries()));
           
           if (combinedResponse.ok) {
             const combinedData = await combinedResponse.json();
@@ -133,9 +135,42 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
             return;
           } else {
             console.error("Failed to load default config. Status:", combinedResponse.status);
+            console.log("Trying alternative path: /data/step_4/combined_data.json");
+            // Try alternative path
+            const altResponse = await fetch("/data/step_4/combined_data.json");
+            console.log("Alternative path response status:", altResponse.status);
+            console.log("Alternative path headers:", Object.fromEntries(altResponse.headers.entries()));
+            
+            if (altResponse.ok) {
+              const altData = await altResponse.json();
+              console.log("Successfully loaded default combined data from alternative path");
+              setFormData(altData);
+              setLoading(false);
+              return;
+            } else {
+              console.error("Failed to load from alternative path. Status:", altResponse.status);
+              // Try one more path
+              console.log("Trying final path: /data/combined_data.json");
+              const finalResponse = await fetch("/data/combined_data.json");
+              console.log("Final path response status:", finalResponse.status);
+              
+              if (finalResponse.ok) {
+                const finalData = await finalResponse.json();
+                console.log("Successfully loaded default combined data from final path");
+                setFormData(finalData);
+                setLoading(false);
+                return;
+              } else {
+                console.error("All paths failed to load combined_data.json");
+              }
+            }
           }
         } catch (combinedError) {
           console.error("Error loading default combined data:", combinedError);
+          console.error("Error details:", {
+            message: combinedError.message,
+            stack: combinedError.stack
+          });
           // Continue to fallback if combined data fetch fails
         }
 
