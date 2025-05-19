@@ -45,7 +45,23 @@ TabButton.propTypes = {
 };
 
 const OneForm = ({ initialData = null, blockName = null, title = null }) => {
-  const [formData, setFormData] = useState(null);
+  // Initialize with a default structure instead of null
+  const [formData, setFormData] = useState({
+    hero: {
+      title: "Loading...",
+      subtitle: "Please wait",
+      buttonText: "Loading",
+      buttonUrl: "#",
+      residentialImage: "",
+      commercialImage: "",
+      accentColor: "#2B4C7E",
+    },
+    richText: {
+      title: "Loading...",
+      content: "Loading content...",
+      heroText: "Loading...",
+    }
+  });
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("mainPage");
 
