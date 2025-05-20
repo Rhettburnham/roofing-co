@@ -2,12 +2,11 @@ name = "roofing-co"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
-[site]
-bucket = "./dist"
+pages_build_output_dir = "dist"
+pages_functions_dir = "functions"
 
 [build]
 command = "npm run build"
-upload.format = "service-worker"
 
 [env.production]
 name = "roofing-co"
@@ -25,8 +24,3 @@ database_id = "bef1c7fa-8bbd-4067-b293-b2dae6132680"
 [[r2_buckets]]
 binding = "ROOFING_CONFIGS"
 bucket_name = "roofing-configs"
-
-[pages]
-pages_build_output_dir = "dist"
-pages_functions_dir = "functions"
-compatibility_flags = ["nodejs_compat"] 
