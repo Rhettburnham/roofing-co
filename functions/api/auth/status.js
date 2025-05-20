@@ -15,6 +15,7 @@ export default {
     const origin = request.headers.get('Origin');
     const allowedOrigins = [
       'https://roofing-www.pages.dev',
+      'https://roofing-co.pages.dev/',
       'https://roofing-co-with-workers.pages.dev',
       'http://localhost:5173',
       'http://127.0.0.1:5173'
