@@ -23,4 +23,7 @@ database_id = "bef1c7fa-8bbd-4067-b293-b2dae6132680"
 
 [[r2_buckets]]
 binding = "ROOFING_CONFIGS"
-bucket_name = "roofing-configs" 
+bucket_name = "roofing-configs"
+
+[pages]
+pages_build_output_dir = "dist" 
