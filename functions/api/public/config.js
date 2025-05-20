@@ -5,6 +5,7 @@ export async function onRequest(context) {
     console.log('Context received:', { 
       hasRequest: !!request,
       hasEnv: !!env,
+      hasDB: !!env?.DB,
       hasROOFING_CONFIGS: !!env?.ROOFING_CONFIGS
     });
 
@@ -21,14 +22,15 @@ export async function onRequest(context) {
       return new Response(null, { headers: corsHeaders });
     }
 
-    // Get the host from the request
-    const host = request.headers.get('Host');
+    // Get the host from the request headers
+    const host = request.headers.get('host');
     console.log('Request host:', host);
 
     // Map domains to config IDs
     const domainConfigMap = {
       'cowboy-vaqueros.com': 'client1',
-      // Add more domain mappings here as needed
+      'www.cowboy-vaqueros.com': 'client1',
+      'localhost': 'client1' // For local development
     };
 
     // Get the config ID for this domain
@@ -37,7 +39,7 @@ export async function onRequest(context) {
 
     if (!configId) {
       console.log('No config mapping found for domain');
-      return new Response(JSON.stringify({ error: 'No configuration found for this domain' }), {
+      return new Response(JSON.stringify({ error: 'Configuration not found for this domain' }), {
         status: 404,
         headers: {
           ...corsHeaders,
@@ -46,7 +48,7 @@ export async function onRequest(context) {
       });
     }
 
-    // Fetch the config data
+    // Fetch the config from R2
     const configKey = `configs/${configId}/combined_data.json`;
     console.log('Fetching config from R2:', configKey);
     const configObject = await env.ROOFING_CONFIGS.get(configKey);
@@ -62,27 +64,17 @@ export async function onRequest(context) {
       });
     }
 
-    console.log('Parsing config data...');
-    const configData = await configObject.json();
-    console.log('Config data fetched successfully');
-
-    return new Response(JSON.stringify(configData), {
+    // Return the config
+    console.log('Successfully retrieved config from R2');
+    return new Response(configObject.body, {
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/json',
       },
     });
   } catch (error) {
-    console.error('Error in public config handler:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name,
-      type: error.constructor.name
-    });
-    return new Response(JSON.stringify({ 
-      error: 'Internal server error',
-      details: error.message 
-    }), {
+    console.error('Public config error:', error);
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
       headers: {
         'Content-Type': 'application/json',

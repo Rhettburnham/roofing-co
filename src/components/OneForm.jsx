@@ -48,12 +48,19 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   const [formData, setFormData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("mainPage");
+  const [isCustomDomain, setIsCustomDomain] = useState(false);
 
   // On mount, fetch combined_data.json to populate the form if no initialData is provided
   useEffect(() => {
     const fetchCombinedData = async () => {
       try {
         console.log("Starting fetchCombinedData...");
+        
+        // Check if we're on a custom domain
+        const customDomain = window.location.hostname !== 'roofing-co.pages.dev' && 
+                           window.location.hostname !== 'roofing-www.pages.dev' &&
+                           window.location.hostname !== 'localhost';
+        setIsCustomDomain(customDomain);
         
         // If initialData is provided, use it directly within the appropriate block structure
         if (initialData) {
@@ -69,12 +76,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
           return;
         }
 
-        // Check if we're on a custom domain
-        const isCustomDomain = window.location.hostname !== 'roofing-co.pages.dev' && 
-                             window.location.hostname !== 'roofing-www.pages.dev' &&
-                             window.location.hostname !== 'localhost';
-
-        if (isCustomDomain) {
+        if (customDomain) {
           console.log("On custom domain:", window.location.hostname);
           try {
             // Fetch the domain-specific config

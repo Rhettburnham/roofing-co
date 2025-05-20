@@ -77,6 +77,14 @@ export default defineConfig({
         secure: true,
         rewrite: (path) => path,
       },
+      '/api/public': {
+        target: process.env.NODE_ENV === 'production'
+          ? 'https://auth-worker.roofing-co-with-workers.pages.dev'
+          : 'https://auth-worker.roofing-www.workers.dev',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path,
+      },
     },
   },
 });
