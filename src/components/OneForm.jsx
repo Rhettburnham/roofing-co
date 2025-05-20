@@ -75,18 +75,12 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
           credentials: 'include'
         });
         console.log("Auth response status:", authResponse.status);
-        console.log("Auth response headers:", Object.fromEntries(authResponse.headers.entries()));
         
         const authData = await authResponse.json();
         console.log("Auth data received:", authData);
 
-        if (authData.configId !== "default") {
-          console.log("User has a custom config. Config ID:", authData.configId);
-          authData.hasCustomConfig = true;
-        }
-        
-        if (authData.isAuthenticated && authData.hasCustomConfig) {
-          console.log("User is authenticated and has custom config. Config ID:", authData.configId);
+        if (authData.isAuthenticated) {
+          console.log("User is authenticated. Config ID:", authData.configId);
           try {
             // Fetch the user's custom config
             console.log("Fetching custom config from:", `/api/config/combined_data.json`);
@@ -111,135 +105,42 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
             // Continue to fallback if custom config fetch fails
           }
         } else {
-          console.log("No custom config available. Auth state:", {
-            isAuthenticated: authData.isAuthenticated,
-            hasCustomConfig: authData.hasCustomConfig
-          });
+          console.log("User is not authenticated");
         }
 
-        // Otherwise, try to fetch the full combined_data.json
-        console.log("Attempting to fetch default combined_data.json...");
+        // Fallback to default config
+        console.log("Loading default config...");
         try {
-          const combinedResponse = await fetch(
-            "/data/raw_data/step_4/combined_data.json"
-          );
-          console.log("Default config response status:", combinedResponse.status);
-          
-          if (combinedResponse.ok) {
-            const combinedData = await combinedResponse.json();
-            console.log("Successfully loaded default combined data:", combinedData);
-            setFormData(combinedData);
-            setLoading(false);
-            return;
+          const defaultResponse = await fetch("/data/raw_data/step_4/combined_data.json");
+          if (defaultResponse.ok) {
+            const defaultData = await defaultResponse.json();
+            console.log("Successfully loaded default config");
+            setFormData(defaultData);
           } else {
-            console.error("Failed to load default config. Status:", combinedResponse.status);
+            console.error("Failed to load default config");
+            // Set minimal default data
+            setFormData({
+              hero: {
+                title: "Welcome",
+                subtitle: "Professional Services",
+                buttonText: "Contact Us",
+                buttonUrl: "#contact"
+              }
+            });
           }
-        } catch (combinedError) {
-          console.error("Error loading default combined data:", combinedError);
-          // Continue to fallback if combined data fetch fails
-        }
-
-        // Fallback: Create a default configuration
-        try {
-          // Fetch colors from colors_output.json
-          const colorsResponse = await fetch(
-            "/data/raw_data/step_2/colors_output.json"
-          );
-          const colorData = await colorsResponse.json();
-
-          // Create a basic default form data
-          const defaultData = {
-            hero: {
-              title: "Welcome to Craft Roofing Company",
-              subtitle: "Professional Roofing Services",
-              buttonText: "Get a Quote",
-              buttonUrl: "#contact",
-              residentialImage: "/assets/images/residential-roof.jpg",
-              commercialImage: "/assets/images/commercial-roof.jpg",
-              accentColor: colorData.accent || "#2B4C7E",
-            },
-            richText: {
-              title: "About Our Services",
-              content:
-                "We provide professional roofing services for both residential and commercial properties.",
-              heroText: "Expert Roofs, Trusted Craftsmanship",
-              bus_description: "Professional roofing services description",
-              bus_description_second: "Additional description text",
-              cards: [],
-              images: [],
-              steps: [
-                {
-                  title: "Book",
-                  videoSrc: "/assets/videos/our_process_videos/booking.mp4",
-                  href: "/#booking",
-                  scale: 0.8,
-                },
-                {
-                  title: "Inspection",
-                  videoSrc: "/assets/videos/our_process_videos/magnify.mp4",
-                  href: "/inspection",
-                  scale: 1.25,
-                },
-              ],
-            },
-            button: {
-              text: "Contact Us",
-              url: "#contact",
-            },
-            map: {
-              title: "Find Us",
-              location: "Your Location",
-              center: {
-                lat: 33.67671976442508,
-                lng: -84.32647876462993,
-              },
-              zoomLevel: 12,
-              circleRadius: 6000,
-              address: "123 Main Street, Atlanta, GA",
-              telephone: "(404) 555-1234",
-              serviceHours: [],
-            },
-            booking: {
-              title: "Book an Appointment",
-            },
-            combinedPage: {
-              title: "Our Services",
-              residentialServices: [],
-              commercialServices: [],
-              googleReviews: [],
-            },
-            before_after: {
-              title: "Before & After",
-              items: [],
-            },
-            employees: {
-              title: "Our Team",
-              items: [],
-            },
-            aboutPage: {
-              title: "About Us",
-            },
-          };
-
-          setFormData(defaultData);
-          console.log("Using default data:", defaultData);
-        } catch (colorError) {
-          console.error("Error loading color data:", colorError);
-
-          // Fallback to very basic data if color fetch fails
-          const basicData = {
+        } catch (error) {
+          console.error("Error loading default config:", error);
+          // Set minimal default data
+          setFormData({
             hero: {
               title: "Welcome",
               subtitle: "Professional Services",
               buttonText: "Contact Us",
-              buttonUrl: "#contact",
-            },
-          };
-
-          setFormData(basicData);
-          console.log("Using basic fallback data:", basicData);
+              buttonUrl: "#contact"
+            }
+          });
         }
-
+        
         setLoading(false);
       } catch (error) {
         console.error("Error in fetchCombinedData:", error);
@@ -654,17 +555,16 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
     return filename.split(".").pop().toLowerCase() || "png";
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-100 text-black flex items-center justify-center">
-        <p>Loading data...</p>
-      </div>
-    );
-  }
-
   // If editing a specific block, render a simplified interface
   if (blockName && title) {
     console.log(`Editing specific block: ${blockName}`, formData);
+    if (!formData) {
+      return (
+        <div className="min-h-screen bg-gray-100 text-black flex items-center justify-center">
+          <p>Loading data...</p>
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen bg-gray-100 text-black">
         <div className="bg-gray-900 text-white p-3 shadow-md sticky top-0 z-50 flex justify-between items-center">
@@ -714,6 +614,13 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
 
   // Otherwise, render the full editor interface
   console.log("Rendering full editor with data:", formData);
+  if (!formData) {
+    return (
+      <div className="min-h-screen bg-gray-100 text-black flex items-center justify-center">
+        <p>Loading data...</p>
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen bg-gray-100">
       <OneFormAuthButton formData={formData} />

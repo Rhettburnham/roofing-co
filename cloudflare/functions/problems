@@ -1,1 +1,10 @@
 users should see a logout option if they manually access the login page while logged in
+users cant signup with repeat codes
+
+
+connect real domain, adjust code to work with localhost and domain
+try enterprise saas 100 free hosting thing
+
+send to both emails for booking, make sure it doenst have a cc
+folder of jsons, services.json, aboutpage.json, legalagreement.json
+ui bugs on admin page(double clicking, no green upload, no modal popup etc)

@@ -4,6 +4,12 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const path = url.pathname;
+    console.log('=== Auth Worker Request ===');
+    console.log('URL:', request.url);
+    console.log('Method:', request.method);
+    console.log('Path:', path);
+    console.log('Origin:', request.headers.get('Origin'));
+    console.log('Cookie:', request.headers.get('Cookie'));
 
     // CORS headers - allow both localhost and production
     const origin = request.headers.get('Origin');
@@ -14,15 +20,22 @@ export default {
       'http://127.0.0.1:5173'
     ];
     
+    console.log('Allowed Origins:', allowedOrigins);
+    console.log('Request Origin:', origin);
+    
     const corsHeaders = {
       'Access-Control-Allow-Origin': allowedOrigins.includes(origin) ? origin : 'https://roofing-co-with-workers.pages.dev',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Headers': 'Content-Type, Cookie',
       'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Expose-Headers': 'Set-Cookie',
     };
+
+    console.log('CORS Headers:', corsHeaders);
 
     // Handle preflight requests
     if (request.method === 'OPTIONS') {
+      console.log('Handling OPTIONS request');
       return new Response(null, { headers: corsHeaders });
     }
 
@@ -30,6 +43,7 @@ export default {
       // Auth routes
       if (path.startsWith('/api/auth/')) {
         const action = path.split('/api/auth/')[1];
+        console.log('Auth action:', action);
 
         switch (action) {
           case 'status':
@@ -41,6 +55,7 @@ export default {
           case 'logout':
             return handleLogout(request, env, corsHeaders);
           default:
+            console.log('Unknown auth action:', action);
             return new Response(JSON.stringify({ error: 'Not found' }), {
               status: 404,
               headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -50,6 +65,7 @@ export default {
 
       // Config routes
       if (path.startsWith('/api/config/')) {
+        console.log('Config route detected');
         const configPath = path.split('/api/config/')[1];
         if (configPath === 'save' && request.method === 'POST') {
           return handleConfigSave(request, env, corsHeaders);
@@ -57,12 +73,14 @@ export default {
         return handleConfigRequest(request, env, configPath, corsHeaders);
       }
 
+      console.log('No matching route found');
       return new Response(JSON.stringify({ error: 'Not found' }), {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     } catch (error) {
       console.error('Worker error:', error);
+      console.error('Error stack:', error.stack);
       return new Response(JSON.stringify({ error: 'Internal server error' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -73,9 +91,12 @@ export default {
 
 async function handleAuthStatus(request, env, corsHeaders) {
   try {
+    console.log("=== Auth Status Handler ===");
     const sessionId = request.headers.get('Cookie')?.split('session=')[1]?.split(';')[0];
+    console.log("Session ID from cookie:", sessionId);
     
     if (!sessionId) {
+      console.log("No session ID found, returning unauthenticated");
       return new Response(JSON.stringify({ isAuthenticated: false }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -85,16 +106,23 @@ async function handleAuthStatus(request, env, corsHeaders) {
       'SELECT s.*, u.config_id FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.session_id = ? AND s.expires_at > datetime("now")'
     ).bind(sessionId).first();
     
+    console.log("Session data from DB:", session);
     const isAuthenticated = !!session;
+    console.log("Is authenticated:", isAuthenticated);
+    console.log("Config ID:", session?.config_id || 'default');
 
-    return new Response(JSON.stringify({ 
+    const response = new Response(JSON.stringify({ 
       isAuthenticated,
       configId: session?.config_id || 'default'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
+
+    console.log("Response headers:", Object.fromEntries(response.headers.entries()));
+    return response;
   } catch (error) {
     console.error('Auth status error:', error);
+    console.error('Error stack:', error.stack);
     return new Response(JSON.stringify({ error: 'Failed to check auth status' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -248,7 +276,8 @@ function verifyPassword(password, hash) {
 
 async function handleConfigRequest(request, env, configPath, corsHeaders) {
   try {
-    console.log("Config request received for path:", configPath);
+    console.log("=== Config Request Handler ===");
+    console.log("Config path:", configPath);
     
     // Verify authentication
     const sessionId = request.headers.get('Cookie')?.split('session=')[1]?.split(';')[0];
@@ -298,14 +327,17 @@ async function handleConfigRequest(request, env, configPath, corsHeaders) {
 
     // Return the config
     console.log("Successfully retrieved config from R2");
-    return new Response(configObject.body, {
+    const response = new Response(configObject.body, {
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/json',
       },
     });
+    console.log("Response headers:", Object.fromEntries(response.headers.entries()));
+    return response;
   } catch (error) {
     console.error("Config request error:", error);
+    console.error("Error stack:", error.stack);
     return new Response(JSON.stringify({ error: 'Failed to fetch config' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
