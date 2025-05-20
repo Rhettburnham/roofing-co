@@ -84,13 +84,53 @@ export async function onRequest(context) {
     // Get the config data from the request body
     console.log('Reading request body...');
     const configData = await request.json();
-    console.log('Config data received');
+    console.log('Config data received:', {
+      type: typeof configData,
+      isObject: configData instanceof Object,
+      keys: Object.keys(configData)
+    });
+
+    // Validate the config data
+    if (!configData || typeof configData !== 'object') {
+      console.error('Invalid config data format');
+      return new Response(JSON.stringify({ error: 'Invalid config data format' }), {
+        status: 400,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
+      });
+    }
 
     // Save the config data to R2
     const configKey = `configs/${configId}/combined_data.json`;
     console.log('Saving config to R2:', configKey);
-    await env.ROOFING_CONFIGS.put(configKey, JSON.stringify(configData, null, 2));
-    console.log('Config saved successfully');
+    
+    // Ensure the data is properly stringified with consistent formatting
+    const jsonString = JSON.stringify(configData, null, 2);
+    console.log('JSON string preview:', jsonString.substring(0, 200) + '...');
+    
+    try {
+      await env.ROOFING_CONFIGS.put(configKey, jsonString, {
+        httpMetadata: {
+          contentType: 'application/json'
+        }
+      });
+      console.log('Config saved successfully');
+
+      // Verify the saved data
+      const savedConfig = await env.ROOFING_CONFIGS.get(configKey);
+      if (savedConfig) {
+        const savedData = await savedConfig.json();
+        console.log('Verification - Saved data keys:', Object.keys(savedData));
+      }
+    } catch (saveError) {
+      console.error('Error saving to R2:', {
+        message: saveError.message,
+        stack: saveError.stack
+      });
+      throw saveError;
+    }
 
     return new Response(JSON.stringify({ success: true }), {
       headers: {
