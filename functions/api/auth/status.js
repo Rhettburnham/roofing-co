@@ -95,14 +95,26 @@ export async function onRequest(context) {
     const sessionId = context.request.cookies.get('session_id')?.value;
     console.log("Session ID from cookie:", sessionId);
     
+    // CORS headers
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Cookie',
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Expose-Headers': 'Set-Cookie',
+    };
+
+    // Handle preflight requests
+    if (context.request.method === 'OPTIONS') {
+      return new Response(null, { headers: corsHeaders });
+    }
+    
     if (!sessionId) {
       console.log("No session ID found, returning unauthenticated");
       return new Response(JSON.stringify({ isAuthenticated: false }), {
         headers: {
+          ...corsHeaders,
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
         },
       });
     }
@@ -121,10 +133,8 @@ export async function onRequest(context) {
       configId: session?.config_id || 'default'
     }), {
       headers: {
+        ...corsHeaders,
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
       },
     });
   } catch (error) {
@@ -134,8 +144,9 @@ export async function onRequest(context) {
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Cookie',
+        'Access-Control-Allow-Credentials': 'true',
       },
     });
   }
