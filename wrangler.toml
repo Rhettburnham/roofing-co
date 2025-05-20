@@ -1,7 +1,20 @@
-name = "auth-worker"
-main = "functions/auth.js"
+name = "roofing-co"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
+
+[site]
+bucket = "./dist"
+
+[build]
+command = "npm run build"
+upload.format = "service-worker"
+
+[env.production]
+name = "roofing-co"
+route = "roofing-co-with-workers.pages.dev/*"
+
+[env.production.vars]
+ENVIRONMENT = "production"
 
 [[d1_databases]]
 binding = "DB"

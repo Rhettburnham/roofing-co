@@ -89,20 +89,25 @@ export default {
   },
 };
 
-async function handleAuthStatus(request, env, corsHeaders) {
+export async function onRequest(context) {
   try {
     console.log("=== Auth Status Handler ===");
-    const sessionId = request.headers.get('Cookie')?.split('session=')[1]?.split(';')[0];
+    const sessionId = context.request.cookies.get('session_id')?.value;
     console.log("Session ID from cookie:", sessionId);
     
     if (!sessionId) {
       console.log("No session ID found, returning unauthenticated");
       return new Response(JSON.stringify({ isAuthenticated: false }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
+        },
       });
     }
 
-    const session = await env.DB.prepare(
+    const session = await context.env.DB.prepare(
       'SELECT s.*, u.config_id FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.session_id = ? AND s.expires_at > datetime("now")'
     ).bind(sessionId).first();
     
@@ -111,21 +116,27 @@ async function handleAuthStatus(request, env, corsHeaders) {
     console.log("Is authenticated:", isAuthenticated);
     console.log("Config ID:", session?.config_id || 'default');
 
-    const response = new Response(JSON.stringify({ 
+    return new Response(JSON.stringify({ 
       isAuthenticated,
       configId: session?.config_id || 'default'
     }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      },
     });
-
-    console.log("Response headers:", Object.fromEntries(response.headers.entries()));
-    return response;
   } catch (error) {
     console.error('Auth status error:', error);
-    console.error('Error stack:', error.stack);
     return new Response(JSON.stringify({ error: 'Failed to check auth status' }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      },
     });
   }
 }
