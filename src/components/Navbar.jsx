@@ -3,8 +3,24 @@ import { useNavigate } from "react-router-dom";
 import { HashLink } from "react-router-hash-link";
 import gsap from "gsap";
 import PropTypes from "prop-types";
+import { Home, Building2, HelpCircle } from "lucide-react";
+import { FaWarehouse } from 'react-icons/fa';
 
-const Navbar = ({ config, forceScrolledState = null, isPreview = false }) => {
+const getDisplayUrl = (imageValue, defaultPath = null) => {
+  if (!imageValue) return defaultPath;
+  if (typeof imageValue === 'string') return imageValue;
+  if (imageValue.url) return imageValue.url; // Handles { url: '...', file: ..., name: ... }
+  return defaultPath;
+};
+
+const Navbar = ({ 
+  config, 
+  forceScrolledState = null, 
+  isPreview = false,
+  onTitleChange, // New prop for live editing
+  onSubtitleChange, // New prop for live editing
+  isEditingPreview // Make sure this is destructured
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const [internalHasScrolled, setInternalHasScrolled] = useState(false);
   const [isDesktopMenuOpen, setIsDesktopMenuOpen] = useState(false);
@@ -28,6 +44,26 @@ const Navbar = ({ config, forceScrolledState = null, isPreview = false }) => {
   const titleContainerRef = useRef(null);
 
   const navigate = useNavigate();
+
+  // Dynamic Icon Renderer (copied from IconSelectorModal or a shared util if preferred)
+  // For simplicity, defined here. Consider moving to a shared utils file if used elsewhere.
+  const FaIcons = { Warehouse: FaWarehouse };
+  const iconPacks = {
+    lucide: { Home, Building2, HelpCircle },
+    fa: FaIcons,
+  };
+
+  const renderDynamicIcon = (packName, iconName, defaultIconComponent, props = { className: "w-full h-full" }) => {
+    const pack = iconPacks[packName?.toLowerCase()];
+    if (pack) {
+      const IconComponent = pack[iconName];
+      if (IconComponent && typeof IconComponent === 'function') {
+        return <IconComponent {...props} />;
+      }
+    }
+    const DefaultIcon = defaultIconComponent || iconPacks.lucide.HelpCircle;
+    return <DefaultIcon {...props} />;
+  };
 
   useEffect(() => {
     const tl = gsap.timeline({ paused: true });
@@ -81,42 +117,56 @@ const Navbar = ({ config, forceScrolledState = null, isPreview = false }) => {
 
   useEffect(() => {
     const tl = gsap.timeline();
+    // Ensure refs are current and elements exist before animating
+    const titleElement = titleRef.current;
+    const logoElement = logoRef.current;
+    const subTitleElement = subTitleRef.current;
+    const titleContainerElement = titleContainerRef.current;
+
+    if (!titleElement || !logoElement || !subTitleElement || !titleContainerElement) {
+        return;
+    }
+
     gsap.killTweensOf([
-      titleRef.current,
-      logoRef.current,
-      subTitleRef.current,
-      titleContainerRef.current,
+      titleElement,
+      logoElement,
+      subTitleElement,
+      titleContainerElement,
     ]);
 
     if (hasScrolled) {
-      tl.to(subTitleRef.current, { opacity: 0, duration: 0.3, onComplete: () => { if (subTitleRef.current) subTitleRef.current.style.display = 'none'; } });
-      tl.to(titleRef.current, { fontSize: "4vh", duration: 0.2, ease: "power1.out" }, "<");
-      tl.to(titleContainerRef.current, { alignItems: "center", duration: 0.2 }, "<");
-      tl.to(logoRef.current, { scale: 1, duration: 0.4, ease: "power1.out" }, "<");
+      tl.to(subTitleElement, { opacity: 0, duration: 0.3, onComplete: () => { if (subTitleElement) subTitleElement.style.display = 'none'; } });
+      // For input or h1, style.fontSize can be used by GSAP
+      tl.to(titleElement, { fontSize: "4vh", duration: 0.2, ease: "power1.out" }, "<");
+      tl.to(titleContainerElement, { alignItems: "center", duration: 0.2 }, "<");
+      tl.to(logoElement, { scale: 1, duration: 0.4, ease: "power1.out" }, "<");
       const slideAndShrinkStartTime = 0.3 + 0.7;
-      tl.to([logoRef.current, titleRef.current], { x: "-30vw", duration: 0.4, ease: "power1.out" }, slideAndShrinkStartTime);
+      tl.to([logoElement, titleElement], { x: "-30vw", duration: 0.4, ease: "power1.out" }, slideAndShrinkStartTime);
       
     } else {
-      if (subTitleRef.current) {
-        subTitleRef.current.style.display = '';
-        gsap.set(subTitleRef.current, { opacity: 0 });
+      if (subTitleElement) {
+        subTitleElement.style.display = ''; // Use empty string to reset display
+        gsap.set(subTitleElement, { opacity: 0 });
       }
       const slideBackStartTime = 0.1;
-      tl.to([logoRef.current, titleRef.current], { x: "0", duration: 0.4, ease: "power1.out" }, slideBackStartTime);
+      tl.to([logoElement, titleElement], { x: "0", duration: 0.4, ease: "power1.out" }, slideBackStartTime);
       const textAlignFontStartTime = slideBackStartTime + 0.6 ;
-      tl.to(titleRef.current, { fontSize: "7vh", duration: 0.2, ease: "power1.out" }, textAlignFontStartTime);
-      tl.to(logoRef.current, { scale: 2, duration: 0.4, ease: "power1.out" }, "<");
-      tl.to(titleContainerRef.current, { alignItems: "flex-start", duration: 0.9, ease: "power1.out" }, textAlignFontStartTime);
-      tl.to(subTitleRef.current, { opacity: 1, duration: 0.2 }, "<");
+      tl.to(titleElement, { fontSize: "7vh", duration: 0.2, ease: "power1.out" }, textAlignFontStartTime);
+      tl.to(logoElement, { scale: 2, duration: 0.4, ease: "power1.out" }, "<");
+      tl.to(titleContainerElement, { alignItems: "flex-start", duration: 0.9, ease: "power1.out" }, textAlignFontStartTime);
+      tl.to(subTitleElement, { opacity: 1, duration: 0.2 }, "<");
     }
-  }, [hasScrolled]);
+  }, [hasScrolled]); // isEditingPreview is not directly used in this GSAP effect's logic, so not needed in deps
 
   const navLinksFromConfig = config?.navLinks || [
     { name: "About", href: "/about" },
     { name: "Booking", href: "/#book" },
     { name: "Packages", href: "/#packages" },
   ];
-  const logoUrl = config?.logo || "/assets/images/hero/clipped.png";
+  
+  const logoUrl = getDisplayUrl(config?.logo, "/assets/images/hero/clipped.png");
+  const mainTitle = config?.title || "COWBOYS-VAQUEROS";
+  const mainSubtitle = config?.subtitle || "CONSTRUCTION";
   
   // Color and Style handling
   const scrolledBgSetting = config?.scrolledBackgroundColor || "bg-banner";
@@ -152,6 +202,27 @@ const Navbar = ({ config, forceScrolledState = null, isPreview = false }) => {
   
   const dropdownStyling = applyStyling(dropdownBgSetting);
 
+  // Determine if conditions are met to show a white version of the logo (icon or image)
+  const showWhiteVersion = !hasScrolled && 
+      (config?.unscrolledBackgroundColor === 'bg-transparent' || 
+       (typeof config?.unscrolledBackgroundColor === 'string' && config.unscrolledBackgroundColor.startsWith('#') && parseInt(config.unscrolledBackgroundColor.substring(1, 3), 16) < 128) ||
+       config?.unscrolledBackgroundColor === 'bg-black' ||
+       config?.unscrolledBackgroundColor === 'bg-gray-800' ||
+       config?.unscrolledBackgroundColor === 'bg-gray-900'
+      );
+
+  let logoToDisplay;
+  // Prioritize whiteLogoIcon if it's set and conditions are met
+  if (config?.whiteLogoIcon?.pack && config?.whiteLogoIcon?.name && showWhiteVersion) {
+      logoToDisplay = 'icon';
+  // Fallback to whiteLogo image if it's set (has a URL) and conditions are met
+  } else if (config?.whiteLogo?.url && showWhiteVersion) {
+      logoToDisplay = 'whiteImage';
+  // Otherwise, use the default logo
+  } else {
+      logoToDisplay = 'defaultImage';
+  }
+
   return (
     <>
       <nav
@@ -160,34 +231,73 @@ const Navbar = ({ config, forceScrolledState = null, isPreview = false }) => {
         style={navStyle}
       >
         <div className="w-full max-w-6xl flex items-center justify-center">
-          <img
-            ref={logoRef}
-            src={logoUrl}
-            alt="Logo"
-            className="w-[12vw] md:w-[4vw] mr-2 cursor-pointer logo-fixed-size transform-gpu"
-            onClick={handleLogoClick}
-          />
+          {/* Conditional rendering for whiteLogoIcon or whiteLogo image */}
+          {logoToDisplay === 'icon' ? (
+             <div className="w-[12vw] md:w-[4vw] mr-2 cursor-pointer logo-fixed-size transform-gpu" onClick={handleLogoClick}>
+              {renderDynamicIcon(config.whiteLogoIcon.pack, config.whiteLogoIcon.name, null, { className: "w-full h-full text-white" })}
+            </div>
+          ) : logoToDisplay === 'whiteImage' ? (
+            <img
+              src={getDisplayUrl(config.whiteLogo)} // Use the white logo URL
+              alt="Logo White"
+              className="w-[12vw] md:w-[4vw] mr-2 cursor-pointer logo-fixed-size transform-gpu"
+              onClick={handleLogoClick}
+            />
+          ) : ( // 'defaultImage'
+            <img
+              ref={logoRef} // Default logo ref - only attach ref to the element that might be animated by GSAP
+              src={getDisplayUrl(config?.logo, "/assets/images/hero/clipped.png")} 
+              alt="Logo"
+              className="w-[12vw] md:w-[4vw] mr-2 cursor-pointer logo-fixed-size transform-gpu"
+              onClick={handleLogoClick}
+            />
+          )}
           <div
             ref={titleContainerRef}
-            className="flex flex-col h-[10vh] transition-all duration-300" // h-[10vh] is for the title content block
+            className="flex flex-col h-[10vh] transition-all duration-300"
             style={{
               alignItems: hasScrolled ? "center" : "flex-start",
               justifyContent: "center",
             }}
           >
-            <h1
-              ref={titleRef}
-              className="whitespace-nowrap text-[2vw] md:text-[7vh] text-white text-center drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:6px_black ] font-rye font-ultra-condensed origin-left"
-            >
-              COWBOYS-VAQUEROS
-            </h1>
-            <span
-              ref={subTitleRef}
-              className="text-[4vw] md:text-[4vh] -mt-[2vh] text-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:1px_black ] text-gray-500 font-serif"
-              style={{ opacity: hasScrolled ? 0 : 1 }}
-            >
-              CONSTRUCTION
-            </span>
+            {isPreview && isEditingPreview && onTitleChange ? (
+              <input
+                type="text"
+                ref={titleRef}
+                value={mainTitle}
+                onChange={(e) => onTitleChange(e.target.value)}
+                className="whitespace-nowrap text-white text-center drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:6px_black ] font-rye font-ultra-condensed origin-left bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-300 p-1 rounded-sm z-10 relative"
+                onClick={(e) => e.stopPropagation()} 
+                style={{ fontSize: hasScrolled ? "4vh" : "7vh"}} 
+              />
+            ) : (
+              <h1
+                ref={titleRef}
+                className="whitespace-nowrap text-white text-center drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:6px_black ] font-rye font-ultra-condensed origin-left"
+                 style={{ fontSize: hasScrolled ? "4vh" : "7vh"}} // Ensure this style is applied here too
+              >
+                {mainTitle}
+              </h1>
+            )}
+            {isPreview && isEditingPreview && onSubtitleChange ? (
+              <input
+                type="text"
+                ref={subTitleRef}
+                value={mainSubtitle}
+                onChange={(e) => onSubtitleChange(e.target.value)}
+                className="text-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:1px_black ] text-gray-500 font-serif bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-300 p-1 rounded-sm z-10 relative"
+                onClick={(e) => e.stopPropagation()} 
+                style={{ opacity: hasScrolled ? 0 : 1, fontSize: "4vh", marginTop: "-2vh" }} // Match span style for consistency
+              />
+            ) : (
+              <span
+                ref={subTitleRef}
+                className="text-[4vh] -mt-[2vh] text-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:1px_black ] text-gray-500 font-serif"
+                style={{ opacity: hasScrolled ? 0 : 1 }}
+              >
+                {mainSubtitle}
+              </span>
+            )}
           </div>
         </div>
 
@@ -259,9 +369,29 @@ const Navbar = ({ config, forceScrolledState = null, isPreview = false }) => {
 
 Navbar.propTypes = {
   config: PropTypes.shape({
+    title: PropTypes.string, // New prop type
+    subtitle: PropTypes.string, // New prop type
     navLinks: PropTypes.arrayOf(PropTypes.shape({ name: PropTypes.string, href: PropTypes.string })),
-    logo: PropTypes.string,
-    whiteLogo: PropTypes.string,
+    logo: PropTypes.oneOfType([ // Updated prop type for logo
+      PropTypes.string,
+      PropTypes.shape({
+        url: PropTypes.string,
+        file: PropTypes.object, // File object
+        name: PropTypes.string
+      })
+    ]),
+    whiteLogo: PropTypes.oneOfType([ // Updated prop type for whiteLogo
+      PropTypes.string,
+      PropTypes.shape({
+        url: PropTypes.string,
+        file: PropTypes.object,
+        name: PropTypes.string
+      })
+    ]),
+    whiteLogoIcon: PropTypes.shape({ // New prop type for white logo icon
+      pack: PropTypes.string,
+      name: PropTypes.string,
+    }),
     useWhiteHamburger: PropTypes.bool,
     scrolledBackgroundColor: PropTypes.string,
     unscrolledBackgroundColor: PropTypes.string,
@@ -270,6 +400,9 @@ Navbar.propTypes = {
   }),
   forceScrolledState: PropTypes.bool,
   isPreview: PropTypes.bool,
+  onTitleChange: PropTypes.func, // New prop type
+  onSubtitleChange: PropTypes.func, // New prop type
+  isEditingPreview: PropTypes.bool // New prop type
 };
 
 export default Navbar;

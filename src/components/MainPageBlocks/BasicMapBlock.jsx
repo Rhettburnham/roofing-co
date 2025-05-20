@@ -267,7 +267,8 @@ function BasicMapPreview({
   readOnly = true, 
   onInlineChange, 
   onStatTextChange, 
-  onStatIconClick 
+  onStatIconClick, 
+  onServiceHourChange
 }) {
   if (!mapData) {
     return <p>No map data found.</p>;
@@ -295,6 +296,8 @@ function BasicMapPreview({
     bannerTextColor,
     bannerBackgroundColor,
     statsTextColor,
+    showHoursButtonText,
+    hideHoursButtonText
   } = mapData;
 
   useEffect(() => {
@@ -386,10 +389,26 @@ function BasicMapPreview({
               className={`${idx % 2 === 0 ? "bg-gray-50" : "bg-white"} border-b border-gray-300`}
             >
               <td className="w-1/2 py-[0.8vh] md:py-[1.2vh] px-2 md:px-4 text-[2.8vw] md:text-sm font-medium text-left border-r border-gray-300">
-                {item.day}
+                {readOnly ? item.day : (
+                  <input 
+                    type="text" 
+                    value={item.day || ''}
+                    onChange={(e) => onServiceHourChange && onServiceHourChange(idx, 'day', e.target.value)}
+                    className="bg-transparent w-full focus:outline-none focus:ring-1 focus:ring-blue-500 rounded p-0.5 placeholder-gray-400"
+                    placeholder="Day"
+                  />
+                )}
               </td>
               <td className="w-1/2 py-[0.8vh] md:py-[1.2vh] px-2 md:px-4 text-[2.8vw] md:text-sm text-gray-800 text-left">
-                {item.time}
+                {readOnly ? item.time : (
+                  <input 
+                    type="text" 
+                    value={item.time || ''}
+                    onChange={(e) => onServiceHourChange && onServiceHourChange(idx, 'time', e.target.value)}
+                    className="bg-transparent w-full focus:outline-none focus:ring-1 focus:ring-blue-500 rounded p-0.5 placeholder-gray-400"
+                    placeholder="Time"
+                  />
+                )}
               </td>
             </tr>
           ))}
@@ -400,6 +419,8 @@ function BasicMapPreview({
 
   const currentBannerBgColor = bannerBackgroundColor || '#1f2937';
   const currentBannerTextColor = bannerTextColor || '#FFFFFF';
+  const currentShowHoursText = showHoursButtonText || "Show Hours";
+  const currentHideHoursText = hideHoursButtonText || "Hide Hours";
 
   return (
     <section className="overflow-hidden" ref={sectionRef}>
@@ -511,7 +532,7 @@ function BasicMapPreview({
               style={{ willChange: "transform" }}
             >
               <span className="font-serif text-[2vh]">
-                {isServiceHoursVisible ? "Hide Hours" : "Show Hours"}
+                {isServiceHoursVisible ? currentHideHoursText : currentShowHoursText}
               </span>
             </button>
             <div 
@@ -614,36 +635,6 @@ function StatItemEditor({ stat, onChange, onRemove }) {
 }
 
 function BasicMapEditorPanel({ localMapData, onPanelChange, onStatIconEditClick }) {
-  const handleServiceHourChange = (index, field, value) => {
-    const updatedHours = [...(localMapData.serviceHours || [])];
-    if (updatedHours[index]) {
-        updatedHours[index] = { ...updatedHours[index], [field]: value };
-        onPanelChange(prev => ({ ...prev, serviceHours: updatedHours }));
-    }
-  };
-  
-  const handleAddServiceHour = () => {
-    onPanelChange(prev => ({ ...prev, serviceHours: [...(prev.serviceHours || []), { day: "New Day", time: "Closed" }] }));
-  };
-
-  const handleRemoveServiceHour = (index) => {
-    onPanelChange(prev => ({ ...prev, serviceHours: prev.serviceHours.filter((_, i) => i !== index) }));
-  };
-
-  const handleImageChange = (fieldName, file) => {
-    if (!file) return;
-    const currentImageState = localMapData[fieldName];
-    if (currentImageState?.url?.startsWith('blob:')) URL.revokeObjectURL(currentImageState.url);
-    const fileURL = URL.createObjectURL(file);
-    onPanelChange({ [fieldName]: { file, url: fileURL, name: file.name }});
-  };
-
-  const handleImageUrlChange = (fieldName, urlValue) => {
-    const currentImageState = localMapData[fieldName];
-    if (currentImageState?.url?.startsWith('blob:')) URL.revokeObjectURL(currentImageState.url);
-    onPanelChange({ [fieldName]: { file: null, url: urlValue, name: urlValue.split('/').pop() }});
-  };
-  
   const handleAddStat = () => {
     onPanelChange(prev => ({ ...prev, stats: [...(prev.stats || []), { id: `stat_new_${Date.now()}`, icon: 'FaAward', value: '0', title: 'New Stat'}] }));
   };
@@ -686,20 +677,17 @@ function BasicMapEditorPanel({ localMapData, onPanelChange, onStatIconEditClick 
           </label>
 
           <div className="pt-2 border-t border-gray-600">
-            <label className="block text-sm"><span className="font-medium text-gray-400">Map Marker Icon:</span>
-              <input type="file" accept="image/*" className="bg-gray-700 mt-1 px-2 py-1 rounded w-full text-xs file:mr-2 file:py-0.5 file:px-1.5 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer" onChange={(e) => handleImageChange('markerIcon', e.target.files?.[0])}/>
-              <input type="text" className="bg-gray-700 mt-1 px-2 py-1 rounded w-full text-xs" placeholder="Or paste direct image URL" value={getDisplayUrl(localMapData.markerIcon, '')} onChange={(e) => handleImageUrlChange('markerIcon', e.target.value)}/>
-              {getDisplayUrl(localMapData.markerIcon) && <img src={getDisplayUrl(localMapData.markerIcon)} alt="Marker Icon Preview" className="mt-1 h-12 w-12 object-contain rounded bg-gray-600 p-0.5"/>}
+            <label className="block text-sm"><span className="font-medium text-gray-400">'Show Hours' Button Text:</span>
+              <input type="text" className="bg-gray-700 mt-1 px-2 py-1 rounded w-full text-xs" placeholder="Show Hours" value={localMapData.showHoursButtonText || ''} onChange={(e) => handleMapFieldChange('showHoursButtonText', e.target.value)}/>
             </label>
           </div>
-          <div className="pt-2 border-t border-gray-600">
-             <label className="block text-sm"><span className="font-medium text-gray-400">Stats Panel Background:</span>
-                <input type="file" accept="image/*" className="bg-gray-700 mt-1 px-2 py-1 rounded w-full text-xs file:mr-2 file:py-0.5 file:px-1.5 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer" onChange={(e) => handleImageChange('statsBackgroundImage', e.target.files?.[0])}/>
-                <input type="text" className="bg-gray-700 mt-1 px-2 py-1 rounded w-full text-xs" placeholder="Or paste direct image URL" value={getDisplayUrl(localMapData.statsBackgroundImage, '')} onChange={(e) => handleImageUrlChange('statsBackgroundImage', e.target.value)}/>
-                {getDisplayUrl(localMapData.statsBackgroundImage) && <img src={getDisplayUrl(localMapData.statsBackgroundImage)} alt="Stats BG Preview" className="mt-1 h-16 w-auto object-contain rounded bg-gray-600 p-0.5"/>}
+          <div className="pt-2">
+            <label className="block text-sm"><span className="font-medium text-gray-400">'Hide Hours' Button Text:</span>
+              <input type="text" className="bg-gray-700 mt-1 px-2 py-1 rounded w-full text-xs" placeholder="Hide Hours" value={localMapData.hideHoursButtonText || ''} onChange={(e) => handleMapFieldChange('hideHoursButtonText', e.target.value)}/>
             </label>
           </div>
-            <div className="pt-2">
+
+          <div className="pt-2">
                 <label className="block text-sm"><span className="font-medium text-gray-400">Info Banner Text Color:</span>
                     <input type="color" className="mt-1 block w-full h-8 px-1 py-0.5 bg-gray-700 border border-gray-600 rounded-md shadow-sm" value={localMapData.bannerTextColor || '#FFFFFF'} onChange={(e) => handleMapFieldChange('bannerTextColor', e.target.value)}/>
                 </label>
@@ -717,41 +705,16 @@ function BasicMapEditorPanel({ localMapData, onPanelChange, onStatIconEditClick 
         </div>
 
         <div className="space-y-4">
-          <div>
-            <h3 className="text-lg font-medium text-gray-200 mb-2">Service Hours</h3>
-            <div className="max-h-[200px] overflow-y-auto pr-1 text-xs">
-              <table className="w-full"> 
-                <thead className="bg-gray-700 text-gray-300 sticky top-0 z-10"><tr className="text-xs"><th className="py-1 px-2 text-left font-normal">Day</th><th className="py-1 px-2 text-left font-normal">Time</th><th className="py-1 px-1"></th></tr></thead>
-                <tbody>
-                  {(localMapData.serviceHours || []).map((item, idx) => (
-                    <tr key={item.id || idx} className={`${idx % 2 === 0 ? "bg-gray-650" : "bg-gray-600"} border-b border-gray-500 text-gray-200`}>
-                      <td className="py-0.5 px-1 border-r border-gray-500"><input type="text" value={item.day} onChange={(e) => handleServiceHourChange(idx, 'day', e.target.value)} className="bg-transparent w-full focus:outline-none text-xs p-0.5"/></td>
-                      <td className="py-0.5 px-1"><input type="text" value={item.time} onChange={(e) => handleServiceHourChange(idx, 'time', e.target.value)} className="bg-transparent w-full focus:outline-none text-xs p-0.5"/></td>
-                      <td className="py-0.5 px-1 text-center"><button onClick={() => handleRemoveServiceHour(idx)} className="text-red-400 hover:text-red-300 text-xs">×</button></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <button onClick={handleAddServiceHour} className="bg-blue-600 text-white text-xs px-2 py-1 rounded mt-2 self-start hover:bg-blue-700">+ Add Hours</button>
-          </div>
-
           <div className="pt-3 border-t border-gray-700">
-            <h3 className="text-lg font-medium text-gray-200 mb-2">Stats Items (Max 4)</h3>
+            <h3 className="text-lg font-medium text-gray-200 mb-2">Stats Items (Preview for structure, edit inline)</h3>
              <div className="max-h-[200px] overflow-y-auto pr-1 text-xs">
                 {(localMapData.stats || []).slice(0,4).map((stat, index) => (
                     <div key={stat.id || index} className="bg-gray-700 p-2 rounded mb-1.5 relative text-xs">
                         <button onClick={() => onStatIconEditClick && onStatIconEditClick(index)} className="absolute top-1 right-8 bg-indigo-500 text-white p-0.5 rounded text-[10px] hover:bg-indigo-600" title="Edit Icon">Icon</button>
                         <button onClick={() => handleRemoveStat(index)} className="absolute top-1 right-1 bg-red-500 text-white p-0.5 rounded text-[10px] hover:bg-red-600">X</button>
-                        <div className="flex items-center mb-1">
-                            <FaIcons.FaHashtag className="text-gray-400 mr-1.5" /> 
-                            <input type="text" placeholder="Value (e.g., 100+)" value={stat.value || ''} onChange={e => onPanelChange(prev => ({...prev, stats: prev.stats.map((s, i) => i === index ? {...s, value: e.target.value} : s)}))} className="bg-gray-600 p-0.5 rounded w-full focus:outline-none text-gray-200 text-xs"/>
-                        </div>
-                        <div className="flex items-center">
-                            <FaIcons.FaTag className="text-gray-400 mr-1.5" />
-                            <input type="text" placeholder="Title (e.g., Happy Clients)" value={stat.title || ''} onChange={e => onPanelChange(prev => ({...prev, stats: prev.stats.map((s, i) => i === index ? {...s, title: e.target.value} : s)}))} className="bg-gray-600 p-0.5 rounded w-full focus:outline-none text-gray-200 text-xs"/>
-                        </div>
-                         <p className="text-[10px] text-gray-400 mt-0.5">Icon: {stat.icon || 'FaAward'}</p>
+                        <p className="text-gray-300">Value: {stat.value || 'N/A'}</p>
+                        <p className="text-gray-300">Title: {stat.title || 'N/A'}</p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">Icon: {stat.icon || 'FaAward'}</p>
                     </div>
                 ))}
             </div>
@@ -794,6 +757,8 @@ export default function BasicMapBlock({
       bannerTextColor: initialConfig.bannerTextColor || '#FFFFFF',
       bannerBackgroundColor: initialConfig.bannerBackgroundColor || '#1f2937',
       statsTextColor: initialConfig.statsTextColor || '#FFFFFF',
+      showHoursButtonText: initialConfig.showHoursButtonText || "Show Hours",
+      hideHoursButtonText: initialConfig.hideHoursButtonText || "Hide Hours"
     };
   });
 
@@ -812,57 +777,33 @@ export default function BasicMapBlock({
         const newStatsList = (mapData.stats || prevLocal.stats || []).map((statFromProp, index) => {
           const localStat = prevLocal.stats?.find(s => s.id === statFromProp.id) || prevLocal.stats?.[index] || {};
           const mergedStat = {
-            ...localStat,      // Prioritize local for uncommitted inline edits
-            ...statFromProp,   // Overlay with prop data (e.g. icon changes from panel)
+            ...localStat,
+            ...statFromProp,
             id: statFromProp.id || localStat.id || `stat_update_${index}_${Date.now()}`,
             icon: statFromProp.icon || localStat.icon || 'FaAward',
           };
-
-          // Prioritize local value if it differs meaningfully
-          if (localStat.value !== statFromProp.value && 
-              localStat.value !== (statFromProp.value || "")) {
-            mergedStat.value = localStat.value;
-          } else {
-            mergedStat.value = statFromProp.value || ""; // Ensure value
-          }
-
-          // Prioritize local title if it differs meaningfully
-          if (localStat.title !== statFromProp.title && 
-              localStat.title !== (statFromProp.title || "")) {
-            mergedStat.title = localStat.title;
-          } else {
-            mergedStat.title = statFromProp.title || ""; // Ensure value
-          }
+          if (localStat.value !== statFromProp.value && localStat.value !== (statFromProp.value || "")) mergedStat.value = localStat.value;
+          else mergedStat.value = statFromProp.value || "";
+          if (localStat.title !== statFromProp.title && localStat.title !== (statFromProp.title || "")) mergedStat.title = localStat.title;
+          else mergedStat.title = statFromProp.title || "";
           return mergedStat;
-        }).slice(0,4); // Ensure max 4 stats
+        }).slice(0,4);
 
         return {
-          ...prevLocal,    // Start with local data
-          ...mapData,      // Overlay with prop data (panel edits for map coords, colors, images, service hours structure)
-          
-          // Explicitly prioritize prevLocal for inline-editable text fields if they differ
-          title: (prevLocal.title !== mapData.title && prevLocal.title !== (mapData.title || "Are we in your area?"))
-                 ? prevLocal.title 
-                 : mapData.title || "Are we in your area?",
-          address: (prevLocal.address !== mapData.address && prevLocal.address !== (mapData.address || ""))
-                   ? prevLocal.address
-                   : mapData.address || "",
-          telephone: (prevLocal.telephone !== mapData.telephone && prevLocal.telephone !== (mapData.telephone || ""))
-                     ? prevLocal.telephone
-                     : mapData.telephone || "",
-          
+          ...prevLocal,
+          ...mapData,
+          title: (prevLocal.title !== mapData.title && prevLocal.title !== (mapData.title || "Are we in your area?")) ? prevLocal.title : mapData.title || "Are we in your area?",
+          address: (prevLocal.address !== mapData.address && prevLocal.address !== (mapData.address || "")) ? prevLocal.address : mapData.address || "",
+          telephone: (prevLocal.telephone !== mapData.telephone && prevLocal.telephone !== (mapData.telephone || "")) ? prevLocal.telephone : mapData.telephone || "",
           stats: newStatsList,
-          
-          // Fields primarily managed by the panel, prop data is authoritative if present
-          center: mapData.center || prevLocal.center,
-          zoomLevel: mapData.zoomLevel !== undefined ? mapData.zoomLevel : prevLocal.zoomLevel,
-          circleRadius: mapData.circleRadius !== undefined ? mapData.circleRadius : prevLocal.circleRadius,
           serviceHours: (mapData.serviceHours || prevLocal.serviceHours || []).map(sh => ({ ...sh, id: sh.id || `sh_${Math.random().toString(36).substr(2, 5)}` })),
           markerIcon: newMarkerIcon,
           statsBackgroundImage: newStatsBg,
           bannerTextColor: mapData.bannerTextColor !== undefined ? mapData.bannerTextColor : prevLocal.bannerTextColor,
           bannerBackgroundColor: mapData.bannerBackgroundColor !== undefined ? mapData.bannerBackgroundColor : prevLocal.bannerBackgroundColor,
           statsTextColor: mapData.statsTextColor !== undefined ? mapData.statsTextColor : prevLocal.statsTextColor,
+          showHoursButtonText: mapData.showHoursButtonText !== undefined ? mapData.showHoursButtonText : prevLocal.showHoursButtonText,
+          hideHoursButtonText: mapData.hideHoursButtonText !== undefined ? mapData.hideHoursButtonText : prevLocal.hideHoursButtonText
         };
       });
     }
@@ -870,21 +811,19 @@ export default function BasicMapBlock({
 
   useEffect(() => {
     return () => {
-      if (localMapData.markerIcon?.file && localMapData.markerIcon.url?.startsWith('blob:')) URL.revokeObjectURL(localMapData.markerIcon.url);
-      if (localMapData.statsBackgroundImage?.file && localMapData.statsBackgroundImage.url?.startsWith('blob:')) URL.revokeObjectURL(localMapData.statsBackgroundImage.url);
+      // No file objects directly in localMapData for these anymore, so revocation logic for markerIcon/statsBg is not needed here.
+      // If initializeImageState was changed to ONLY store URLs, this is fine.
+      // If it CAN still store blobs (e.g. from an old config load), we might need to check localMapData.markerIcon.file etc.
+      // For now, assuming initializeImageState in the main component will handle blobs if they come from 'mapData' prop only briefly.
     };
-  }, [localMapData.markerIcon, localMapData.statsBackgroundImage]);
+  }, []); // Removed dependencies localMapData.markerIcon, localMapData.statsBackgroundImage as they are now string URLs
 
   useEffect(() => {
     if (prevReadOnlyRef.current === false && readOnly === true) {
       if (onConfigChange) {
         console.log("BasicMapBlock: Editing finished. Calling onConfigChange.");
-        const dataToSave = {
-          ...localMapData,
-          markerIcon: localMapData.markerIcon?.file ? localMapData.markerIcon.name : localMapData.markerIcon?.url,
-          statsBackgroundImage: localMapData.statsBackgroundImage?.file ? localMapData.statsBackgroundImage.name : localMapData.statsBackgroundImage?.url,
-        };
-        onConfigChange(dataToSave);
+        // No need to check for .file for markerIcon/statsBackgroundImage as they are expected to be URLs/names
+        onConfigChange(localMapData);
       }
     }
     prevReadOnlyRef.current = readOnly;
@@ -893,10 +832,7 @@ export default function BasicMapBlock({
   const handleLocalDataChange = (updater) => {
     setLocalMapData(prevState => {
       const newState = typeof updater === 'function' ? updater(prevState) : { ...prevState, ...updater };
-      // Ensure stats array does not exceed 4 items after an update from panel
-      if (newState.stats && newState.stats.length > 4) {
-        newState.stats = newState.stats.slice(0, 4);
-      }
+      if (newState.stats && newState.stats.length > 4) newState.stats = newState.stats.slice(0, 4);
       return newState;
     });
   };
@@ -912,7 +848,7 @@ export default function BasicMapBlock({
         handleLocalDataChange(prev => {
             const newStats = [...(prev.stats || [])];
             if (newStats[editingStatIndexForIcon]) {
-                newStats[editingStatIndexForIcon] = { ...newStats[editingStatIndexForIcon], icon: iconName }; // Assuming pack is not stored per stat item
+                newStats[editingStatIndexForIcon] = { ...newStats[editingStatIndexForIcon], icon: iconName };
             }
             return { ...prev, stats: newStats };
         });
@@ -924,15 +860,25 @@ export default function BasicMapBlock({
   const handleInlineChange = (field, value) => {
     handleLocalDataChange({ [field]: value });
   };
+
+  const handleServiceHourLocalChange = (index, field, value) => {
+    handleLocalDataChange(prev => {
+        const newServiceHours = [...(prev.serviceHours || [])];
+        // Ensure the service hour object exists
+        while(newServiceHours.length <= index) newServiceHours.push({ id: `sh_new_${newServiceHours.length}`, day: '', time: '' });
+        if (newServiceHours[index]) {
+            newServiceHours[index] = { ...newServiceHours[index], [field]: value };
+        }
+        return { ...prev, serviceHours: newServiceHours };
+    });
+  };
+
   const handleStatTextChange = (index, field, value) => {
     handleLocalDataChange(prev => {
       const currentStats = prev.stats || [];
       const newStats = [...currentStats];
-      // Ensure the stat object exists up to index 3
       while(newStats.length <= index && index < 4) newStats.push({ id: `stat_new_${newStats.length}`, icon: 'FaAward', value: '', title: '' });
-      if (newStats[index]) { 
-        newStats[index] = { ...newStats[index], [field]: value };
-      }
+      if (newStats[index]) newStats[index] = { ...newStats[index], [field]: value };
       return { ...prev, stats: newStats.slice(0,4) }; 
     });
   };
@@ -949,6 +895,7 @@ export default function BasicMapBlock({
         onInlineChange={handleInlineChange}
         onStatTextChange={handleStatTextChange}
         onStatIconClick={handleStatIconEditClick} 
+        onServiceHourChange={handleServiceHourLocalChange}
       />
       <BasicMapEditorPanel
         localMapData={localMapData}

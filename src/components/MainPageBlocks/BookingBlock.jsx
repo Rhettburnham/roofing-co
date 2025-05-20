@@ -51,7 +51,7 @@ const getLogoDisplayUrl = (logoState, defaultPath = "/assets/images/logo.svg") =
    bookingData.phone for the phone number link, and
    bookingData.logo for the logo image.
 =============================================== */
-const BookingPreview = memo(({ bookingData, readOnly }) => {
+const BookingPreview = memo(({ bookingData, readOnly, onHeaderTextChange, onPhoneChange }) => {
   const [formData, setFormData] = useState({ firstName: "", lastName: "", email: "", phone: "", service: "", message: "" });
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -104,17 +104,19 @@ const BookingPreview = memo(({ bookingData, readOnly }) => {
     const masterTimeline = gsap.timeline({
         scrollTrigger: {
             trigger: bannerRef.current,
-            start: "top 80%", 
+            start: "top 70%",
             toggleActions: "play none none none", 
             once: true,
         },
     });
     masterTimeline.to(bannerRef.current, { y: 0, opacity: 1, duration: 0.8, ease: "bounce.out" })
-                  .to(formContainerRef.current, { opacity: 1, scale: 1, duration: 0.6, ease: "back.out(1.4)" }, "-=0.2") // Form should always become visible in preview animation
+                  .to(formContainerRef.current, { opacity: 1, scale: 1, duration: 0.6, ease: "back.out(1.4)" }, "-=0.2")
                   .to(leftNails, { x: "-20%", duration: 0.4, ease: "power2.out", stagger: 0.12 }, "+=0.2")
                   .to(rightNails, { x: "20%", duration: 0.4, ease: "power2.out", stagger: 0.12 }, "-=0.4");
-    return () => { ScrollTrigger.getAll().forEach((trigger) => trigger.kill()); };
-  }, [readOnly]); // Added readOnly dependency to re-evaluate form visibility
+    return () => { 
+      masterTimeline.kill();
+    };
+  }, []); // Empty dependency array for mount-once animation
 
   const toggleFormVisibility = useCallback(() => {
     if (!isMobile || isAnimating || readOnly) return;
@@ -164,7 +166,7 @@ const BookingPreview = memo(({ bookingData, readOnly }) => {
 
   return (
     <div className="flex flex-col items-center justify-center w-full px-6 overflow-hidden mt-4">
-      <div ref={bannerRef} className={`md:max-w-xl w-full rounded-lg shadow-lg relative z-30 transition-all duration-300 ease-in-out md:h-auto ${isFormVisible && isMobile && !readOnly ? "h-auto" : "h-[140px]"}`} style={{ backgroundColor: currentMainBgColor }}>
+      <div ref={bannerRef} className={`md:max-w-xl w-full rounded-lg shadow-lg relative z-30 md:h-auto ${isFormVisible && isMobile && !readOnly ? "h-auto" : "h-[140px]"}`} style={{ backgroundColor: currentMainBgColor }}>
         <div className="absolute left-0 top-0 h-full hidden md:flex flex-col z-10 justify-between py-8 overflow-visible">
             {[1,2,3].map(i => <div key={`ln-${i}`} id={`left-nail-${i}`} className="w-[8vw] h-[2.5vh] relative"><div className="w-full h-full" style={{backgroundImage: "url('/assets/images/nail.png')", backgroundPosition: " center", backgroundRepeat: "no-repeat", backgroundSize: "contain", transform: "scale(1.8)", transformOrigin: " center", position: "absolute", left: `-${6 + (i*2)}%`, top:0, filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))"}}/></div>)}
         </div>
@@ -177,8 +179,30 @@ const BookingPreview = memo(({ bookingData, readOnly }) => {
             <div className="flex items-center justify-center w-full">
               <img src={getLogoDisplayUrl(logo)} alt="logo" className="w-16 h-auto mr-4 drop-shadow-[0_1.2px_1.2px_rgba(255,30,0,0.8)]" style={{ filter: "invert(1)" }}/>
               <div className="text-left drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]" style={{color: currentHeaderTextColor}}>
-                <h2 className="text-2xl md:text-3xl font-bold">{headerText}</h2>
-                <div className="font-bold md:text-lg"><a href={`tel:${phone?.replace(/[^0-9]/g, "")}`} style={{color: currentHeaderTextColor}}>{phone}</a></div>
+                {readOnly ? (
+                  <h2 className="text-2xl md:text-3xl font-bold">{headerText}</h2>
+                ) : (
+                  <input
+                    type="text"
+                    value={headerText}
+                    onChange={(e) => onHeaderTextChange && onHeaderTextChange(e.target.value)}
+                    className="text-2xl md:text-3xl font-bold bg-transparent border-b border-gray-500 focus:outline-none focus:border-white w-full placeholder-gray-300"
+                    placeholder="Header Text"
+                    style={{color: currentHeaderTextColor}}
+                  />
+                )}
+                {readOnly ? (
+                  <div className="font-bold md:text-lg"><a href={`tel:${phone?.replace(/[^0-9]/g, "")}`} style={{color: currentHeaderTextColor}}>{phone}</a></div>
+                ) : (
+                  <input
+                    type="text"
+                    value={phone}
+                    onChange={(e) => onPhoneChange && onPhoneChange(e.target.value)}
+                    className="font-bold md:text-lg bg-transparent border-b border-gray-500 focus:outline-none focus:border-white w-full mt-1 placeholder-gray-300"
+                    placeholder="Phone Number"
+                    style={{color: currentHeaderTextColor}}
+                  />
+                )}
               </div>
             </div>
             {!readOnly && (
@@ -261,7 +285,12 @@ const BookingPreview = memo(({ bookingData, readOnly }) => {
   );
 });
 BookingPreview.displayName = "BookingPreview";
-BookingPreview.propTypes = { bookingData: PropTypes.object.isRequired, readOnly: PropTypes.bool };
+BookingPreview.propTypes = {
+  bookingData: PropTypes.object.isRequired,
+  readOnly: PropTypes.bool,
+  onHeaderTextChange: PropTypes.func,
+  onPhoneChange: PropTypes.func,
+};
 
 /* ===============================================
    2) BOOKING EDITOR PANEL (Editing Mode)
@@ -270,7 +299,7 @@ BookingPreview.propTypes = { bookingData: PropTypes.object.isRequired, readOnly:
    and the logo image on the left of the header.
 =============================================== */
 function BookingEditorPanel({ localData, onPanelChange }) { 
-  const { logo, headerText = "", phone = "", socialLinks = [], mainBackgroundColor, headerTextColor, formBackgroundColor, inputTextColor, buttonTextColor, buttonBackgroundColor } = localData;
+  const { logo, socialLinks = [], mainBackgroundColor, headerTextColor, formBackgroundColor, inputTextColor, buttonTextColor, buttonBackgroundColor } = localData;
 
   const handleFieldChange = (field, value) => {
     onPanelChange(prev => ({ ...prev, [field]: value }));
@@ -303,18 +332,14 @@ function BookingEditorPanel({ localData, onPanelChange }) {
   };
 
   return (
-    <div className="bg-black text-white p-4 rounded mt-0 max-h-[75vh] overflow-auto space-y-4">
+    <div className="bg-black text-white p-4 rounded mt-0 space-y-4">
       <h2 className="text-xl font-semibold border-b border-gray-700 pb-2">Booking Settings</h2>
       
       <div>
         <label className="block text-sm mb-1">Logo Image:</label>
         <input type="file" accept="image/*" onChange={(e) => handleLogoFileChange(e.target.files?.[0])} className="w-full bg-gray-700 px-2 py-1 rounded text-xs file:mr-2 file:py-0.5 file:px-1.5 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700"/>
-        <input type="text" className="w-full bg-gray-700 px-2 py-1 rounded mt-1 text-xs" placeholder="Or paste direct logo URL" value={getLogoDisplayUrl(logo, '')} onChange={(e) => handleLogoUrlChange(e.target.value)}/>
         {getLogoDisplayUrl(logo) && <img src={getLogoDisplayUrl(logo)} alt="Logo Preview" className="mt-2 h-20 rounded shadow bg-gray-700 p-1"/>}
       </div>
-
-      <div><label className="block text-sm mb-1">Header Text (Company Name):</label><input type="text" className="w-full bg-gray-700 px-2 py-1 rounded" value={headerText} onChange={(e) => handleFieldChange('headerText', e.target.value)}/></div>
-      <div><label className="block text-sm mb-1">Phone Number (Displayed in Header):</label><input type="text" className="w-full bg-gray-700 px-2 py-1 rounded" value={phone} onChange={(e) => handleFieldChange('phone', e.target.value)}/></div>
 
       <div className="space-y-3 pt-3 border-t border-gray-700">
         <h3 className="text-lg font-semibold">Social Media Links:</h3>
@@ -328,7 +353,7 @@ function BookingEditorPanel({ localData, onPanelChange }) {
         <button type="button" onClick={addSocialLink} className="bg-blue-600 hover:bg-blue-500 px-3 py-1 rounded text-white text-sm">+ Add Social Link</button>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-gray-700">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-3 border-t border-gray-700">
         <div><label className="block text-sm font-medium">Main Background Color:</label><input type="color" className="mt-1 block w-full h-10 px-1 py-1 bg-gray-700 border border-gray-600 rounded-md shadow-sm" value={mainBackgroundColor || '#1f2937'} onChange={(e) => handleFieldChange('mainBackgroundColor', e.target.value)}/></div>
         <div><label className="block text-sm font-medium">Header Text Color:</label><input type="color" className="mt-1 block w-full h-10 px-1 py-1 bg-gray-700 border border-gray-600 rounded-md shadow-sm" value={headerTextColor || '#FFFFFF'} onChange={(e) => handleFieldChange('headerTextColor', e.target.value)}/></div>
         <div><label className="block text-sm font-medium">Form Background Color:</label><input type="color" className="mt-1 block w-full h-10 px-1 py-1 bg-gray-700 border border-gray-600 rounded-md shadow-sm" value={formBackgroundColor || '#FFFFFF'} onChange={(e) => handleFieldChange('formBackgroundColor', e.target.value)}/></div>
@@ -446,17 +471,22 @@ export default function BookingBlock({
   };
 
   if (readOnly) {
+    // If truly readOnly (e.g., final page view), show only the preview.
     return <BookingPreview bookingData={localData} readOnly={true} />;
   }
   
+  // If not readOnly (i.e., being edited within MainPageForm):
+  // Render the preview part with inline editing enabled (readOnly={false} for BookingPreview).
+  // The BookingEditorPanel is rendered by MainPageForm via the exported BookingBlock.EditorPanel.
   return (
-    <>
-      <BookingPreview bookingData={localData} readOnly={true} /> 
-      <BookingEditorPanel
-        localData={localData}
-        onPanelChange={handleLocalDataChange} 
-      />
-    </>
+    <BookingPreview 
+      bookingData={localData} 
+      readOnly={false} // Allows inline editing of header/phone in the preview
+      onHeaderTextChange={(newText) => handleLocalDataChange(prev => ({ ...prev, headerText: newText }))}
+      onPhoneChange={(newPhone) => handleLocalDataChange(prev => ({ ...prev, phone: newPhone }))}
+    /> 
+    // The <BookingEditorPanel /> is no longer rendered directly here by BookingBlock itself.
+    // MainPageForm will render BookingBlock.EditorPanel when appropriate.
   );
 }
 

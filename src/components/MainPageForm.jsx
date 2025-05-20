@@ -11,6 +11,7 @@ import CombinedPageBlock from "./MainPageBlocks/CombinedPageBlock";
 import ServiceSliderBlock from "./MainPageBlocks/ServiceSliderBlock";
 import TestimonialBlock from "./MainPageBlocks/TestimonialBlock";
 import Navbar from "./Navbar";
+import IconSelectorModal from './common/IconSelectorModal';
 
 // Lazy load components to avoid circular dependencies if any, and for consistency
 const BasicMapBlockLazy = lazy(() => import("./MainPageBlocks/BasicMapBlock"));
@@ -73,27 +74,46 @@ SlidingEditPanel.propTypes = {
 };
 
 // Navbar Edit Form Component
-const NavbarEditForm = React.forwardRef(({ navbarConfig, onConfigChange }, ref) => {
-  const [localNavConfig, setLocalNavConfig] = useState(navbarConfig || { 
-    navLinks: [], logo: '', whiteLogo: '',
-    unscrolledBackgroundColor: 'bg-transparent', scrolledBackgroundColor: 'bg-banner',
-    dropdownBackgroundColor: 'bg-white', useWhiteHamburger: false,
+const NavbarEditForm = React.forwardRef(({ 
+  navbarConfig, 
+  onConfigChange, 
+  previewNavbarAsScrolled, 
+  setPreviewNavbarAsScrolled,
+  onOpenIconModal
+}, ref) => {
+  const [localNavConfig, setLocalNavConfig] = useState(() => {
+    const initial = navbarConfig || {};
+    return {
+      navLinks: initial.navLinks || [{ name: "Home", href: "/" }],
+      logo: initial.logo || { url: '/assets/images/hero/clipped.png', file: null, name: 'clipped.png' },
+      whiteLogo: initial.whiteLogo || { url: '', file: null, name: '' },
+      whiteLogoIcon: initial.whiteLogoIcon || null,
+      unscrolledBackgroundColor: initial.unscrolledBackgroundColor || 'bg-transparent',
+      scrolledBackgroundColor: initial.scrolledBackgroundColor || 'bg-banner',
+      dropdownBackgroundColor: initial.dropdownBackgroundColor || 'bg-white',
+      dropdownTextColor: initial.dropdownTextColor || 'text-black',
+      useWhiteHamburger: initial.useWhiteHamburger || false,
+    };
   });
 
   useEffect(() => {
-    setLocalNavConfig(prevConfig => ({ 
-        ...prevConfig, ...(navbarConfig || {}),
-        navLinks: navbarConfig?.navLinks || [],
-        logo: navbarConfig?.logo || '',
-        whiteLogo: navbarConfig?.whiteLogo || '',
-        unscrolledBackgroundColor: navbarConfig?.unscrolledBackgroundColor || 'bg-transparent',
-        scrolledBackgroundColor: navbarConfig?.scrolledBackgroundColor || 'bg-banner',
-        dropdownBackgroundColor: navbarConfig?.dropdownBackgroundColor || 'bg-white',
-        useWhiteHamburger: navbarConfig?.useWhiteHamburger || false,
-    }));
+    setLocalNavConfig(prevConfig => {
+      const newBase = navbarConfig || {};
+      return {
+        ...prevConfig,
+        navLinks: newBase.navLinks || prevConfig.navLinks || [],
+        logo: newBase.logo || prevConfig.logo || { url: '/assets/images/hero/clipped.png', file: null, name: 'clipped.png' },
+        whiteLogo: newBase.whiteLogo || prevConfig.whiteLogo || { url: '', file: null, name: '' },
+        whiteLogoIcon: newBase.whiteLogoIcon || prevConfig.whiteLogoIcon || null,
+        unscrolledBackgroundColor: newBase.unscrolledBackgroundColor || prevConfig.unscrolledBackgroundColor || 'bg-transparent',
+        scrolledBackgroundColor: newBase.scrolledBackgroundColor || prevConfig.scrolledBackgroundColor || 'bg-banner',
+        dropdownBackgroundColor: newBase.dropdownBackgroundColor || prevConfig.dropdownBackgroundColor || 'bg-white',
+        dropdownTextColor: newBase.dropdownTextColor || prevConfig.dropdownTextColor || 'text-black',
+        useWhiteHamburger: newBase.useWhiteHamburger !== undefined ? newBase.useWhiteHamburger : prevConfig.useWhiteHamburger || false,
+      };
+    });
   }, [navbarConfig]);
 
-  // Exposed to parent to commit changes before closing
   React.useImperativeHandle(ref, () => ({
     commitChanges: () => {
       onConfigChange(localNavConfig);
@@ -103,7 +123,37 @@ const NavbarEditForm = React.forwardRef(({ navbarConfig, onConfigChange }, ref) 
 
   const handleInputChange = (field, value) => {
     setLocalNavConfig(prevConf => ({ ...prevConf, [field]: value }));
-    // DO NOT call onConfigChange here directly anymore for every keystroke
+  };
+
+  const handleImageInputChange = (field, type, value) => {
+    setLocalNavConfig(prevConf => {
+      const currentImageState = prevConf[field] || { url: '', file: null, name: '' };
+      let newImageState = { ...currentImageState };
+
+      if (type === 'file' && value instanceof File) {
+        if (currentImageState.url && currentImageState.url.startsWith('blob:')) {
+          URL.revokeObjectURL(currentImageState.url);
+        }
+        newImageState = { file: value, url: URL.createObjectURL(value), name: value.name };
+      } else if (type === 'url') {
+        if (currentImageState.url && currentImageState.url.startsWith('blob:')) {
+          URL.revokeObjectURL(currentImageState.url);
+        }
+        newImageState = { file: null, url: value, name: value.split('/').pop() };
+      }
+      // If an image is set for whiteLogo, clear any selected whiteLogoIcon
+      const updates = { [field]: newImageState };
+      if (field === 'whiteLogo' && (newImageState.file || newImageState.url)) {
+        updates.whiteLogoIcon = null;
+      }
+      return { ...prevConf, ...updates };
+    });
+  };
+  
+  const getDisplayUrl = (imageState) => {
+    if (!imageState) return '';
+    if (imageState.file && imageState.url && imageState.url.startsWith('blob:')) return imageState.url; // Prioritize blob URL for local file
+    return imageState.url || ''; // Fallback to path
   };
 
   const handleNavLinkChange = (index, field, value) => {
@@ -114,49 +164,182 @@ const NavbarEditForm = React.forwardRef(({ navbarConfig, onConfigChange }, ref) 
   };
 
   const addNavLink = () => {
-    handleInputChange('navLinks', [...(localNavConfig.navLinks || []), { name: '', href: '' }]);
+    handleInputChange('navLinks', [...(localNavConfig.navLinks || []), { name: 'New Link', href: '/' }]);
   };
 
   const removeNavLink = (index) => {
     const updatedNavLinks = (localNavConfig.navLinks || []).filter((_, i) => i !== index);
     handleInputChange('navLinks', updatedNavLinks);
   };
+
+  // Simplified routes for the dropdown
+  const predefinedRoutes = [
+    { label: "Home Page", value: "/" },
+    { label: "About Page", value: "/about" },
+    { label: "Booking Anchor", value: "/#book" },
+    { label: "Packages Anchor", value: "/#packages" },
+    { label: "Services Anchor", value: "/#services" }, // Added from combined_data
+    { label: "Contact Anchor", value: "/#contact" },   // Added from combined_data
+    { label: "Legal Page", value: "/legal" },
+    { label: "All Service Blocks Page", value: "/all-service-blocks" },
+    { label: "Custom URL...", value: "CUSTOM" }
+  ];
   
   if (!localNavConfig) return <p>Loading navbar configuration...</p>;
 
   return (
     <div className="p-4 space-y-4 bg-gray-50 rounded-md">
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Logo URL:</label>
-        <input type="text" value={localNavConfig.logo || ''} onChange={(e) => handleInputChange('logo', e.target.value)} className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"/>
-        {localNavConfig.logo && <img src={localNavConfig.logo} alt="Logo Preview" className="mt-2 h-16 w-auto object-contain border p-1 bg-gray-100 rounded" />}
+      <div className="flex space-x-2 mb-3 border-b pb-3">
+        <p className="text-sm font-medium text-gray-700 self-center mr-2">Preview Mode:</p>
+        <button 
+          type="button" 
+          onClick={() => setPreviewNavbarAsScrolled(false)}
+          className={`px-3 py-1.5 text-xs rounded-md ${!previewNavbarAsScrolled ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+        >
+          Unscrolled
+        </button>
+        <button 
+          type="button" 
+          onClick={() => setPreviewNavbarAsScrolled(true)}
+          className={`px-3 py-1.5 text-xs rounded-md ${previewNavbarAsScrolled ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+        >
+          Scrolled
+        </button>
       </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700">White Logo URL (for dark backgrounds):</label>
-        <input type="text" value={localNavConfig.whiteLogo || ''} onChange={(e) => handleInputChange('whiteLogo', e.target.value)} className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"/>
-        {localNavConfig.whiteLogo && <img src={localNavConfig.whiteLogo} alt="White Logo Preview" className="mt-2 h-16 w-auto object-contain border p-1 bg-gray-700 rounded" />}
+      
+      <div className="space-y-3">
+        <div className="border p-3 rounded-md bg-white shadow-sm">
+            <label className="block text-sm font-medium text-gray-700">Logo:</label>
+            <input type="file" accept="image/*" onChange={(e) => handleImageInputChange('logo', 'file', e.target.files?.[0])} className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100"/>
+            <input type="text" placeholder="Or paste image URL" value={getDisplayUrl(localNavConfig.logo) === localNavConfig.logo?.file?.name ? '' : getDisplayUrl(localNavConfig.logo)} onChange={(e) => handleImageInputChange('logo', 'url', e.target.value)} className="mt-1 block w-full px-3 py-1.5 bg-white border border-gray-300 rounded-md shadow-sm sm:text-sm"/>
+            {getDisplayUrl(localNavConfig.logo) && <img src={getDisplayUrl(localNavConfig.logo)} alt="Logo Preview" className="mt-2 h-12 w-auto object-contain border p-1 bg-gray-100 rounded" />}
+        </div>
+        <div className="border p-3 rounded-md bg-white shadow-sm">
+            <label className="block text-sm font-medium text-gray-700">White Logo (for dark unscrolled backgrounds):</label>
+            <div className="flex items-center space-x-2 mt-1">
+                <button 
+                    type="button"
+                    onClick={() => onOpenIconModal('whiteLogoIcon', localNavConfig.whiteLogoIcon)}
+                    className="px-3 py-1.5 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-md"
+                >
+                    Select Icon
+                </button>
+                {!localNavConfig.whiteLogoIcon && <span className="text-sm text-gray-600">OR Upload Image:</span>}
+            </div>
+
+            {localNavConfig.whiteLogoIcon ? (
+                <div className="mt-2 p-2 bg-gray-100 rounded-md">
+                    <p className="text-sm text-gray-700">
+                        Selected Icon: <strong>{localNavConfig.whiteLogoIcon.pack} - {localNavConfig.whiteLogoIcon.name}</strong>
+                        <button 
+                            type="button" 
+                            onClick={() => handleInputChange('whiteLogoIcon', null)} 
+                            className="text-red-500 hover:text-red-700 text-xs ml-2 font-semibold"
+                        >
+                            (Clear Icon & Use Image Instead)
+                        </button>
+                    </p>
+                     {/* Optional: Preview icon in form. Ensure renderDynamicIcon is available or adapt. */}
+                    {/* <div className="w-10 h-10 mt-1 bg-gray-700 p-1 rounded flex items-center justify-center"> */}
+                    {/*   {renderDynamicIcon(localNavConfig.whiteLogoIcon.pack, localNavConfig.whiteLogoIcon.name, null, { className: "w-full h-full text-white" })} */}
+                    {/* </div> */}
+                </div>
+            ) : (
+                <>
+                    <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={(e) => handleImageInputChange('whiteLogo', 'file', e.target.files?.[0])} 
+                        className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100"/>
+                    <input 
+                        type="text" 
+                        placeholder="Or paste image URL" 
+                        value={getDisplayUrl(localNavConfig.whiteLogo) === localNavConfig.whiteLogo?.file?.name ? '' : getDisplayUrl(localNavConfig.whiteLogo)} 
+                        onChange={(e) => handleImageInputChange('whiteLogo', 'url', e.target.value)} 
+                        className="mt-1 block w-full px-3 py-1.5 bg-white border border-gray-300 rounded-md shadow-sm sm:text-sm"/>
+                    {getDisplayUrl(localNavConfig.whiteLogo) && <img src={getDisplayUrl(localNavConfig.whiteLogo)} alt="White Logo Preview" className="mt-2 h-12 w-auto object-contain border p-1 bg-gray-700 rounded" />}
+                </>
+            )}
+        </div>
       </div>
+
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Navigation Links:</h3>
+        <h3 className="text-md font-medium text-gray-900 mb-2">Navigation Links:</h3>
         {(localNavConfig.navLinks || []).map((link, index) => (
-          <div key={index} className="space-y-2 p-3 border border-gray-200 rounded-md mb-3 bg-white">
-            <div className="flex justify-between items-center"><p className="text-sm font-medium text-gray-600">Link {index + 1}</p><button type="button" onClick={() => removeNavLink(index)} className="text-red-500 hover:text-red-700 text-xs">Remove</button></div>
-            <div><label className="block text-xs font-medium text-gray-600">Name:</label><input type="text" value={link.name} onChange={(e) => handleNavLinkChange(index, 'name', e.target.value)} className="mt-1 block w-full px-2 py-1 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"/></div>
-            <div><label className="block text-xs font-medium text-gray-600">URL (href):</label><input type="text" value={link.href} onChange={(e) => handleNavLinkChange(index, 'href', e.target.value)} className="mt-1 block w-full px-2 py-1 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"/></div>
+          <div key={index} className="p-2 border border-gray-200 rounded-md mb-2 bg-white shadow-sm">
+            <div className="flex items-center space-x-2">
+              <div className="flex-grow">
+                <label className="block text-xs font-medium text-gray-600">Display Name:</label>
+                <input type="text" value={link.name} onChange={(e) => handleNavLinkChange(index, 'name', e.target.value)} className="mt-0.5 block w-full px-2 py-1 bg-gray-50 border border-gray-300 rounded-md shadow-sm sm:text-sm"/>
+              </div>
+              <div className="flex-grow">
+                <label className="block text-xs font-medium text-gray-600">Target Route:</label>
+                <select value={predefinedRoutes.find(r => r.value === link.href) ? link.href : 'CUSTOM'} onChange={(e) => {
+                    const val = e.target.value;
+                    handleNavLinkChange(index, 'href', val === 'CUSTOM' ? '' : val);
+                }} className="mt-0.5 block w-full px-2 py-1 bg-gray-50 border border-gray-300 rounded-md shadow-sm sm:text-sm">
+                    {predefinedRoutes.map(route => <option key={route.value} value={route.value}>{route.label}</option>)}
+                </select>
+                {link.href === 'CUSTOM' || !predefinedRoutes.find(r => r.value === link.href) && (
+                     <input type="text" value={link.href === 'CUSTOM' ? '' : link.href} onChange={(e) => handleNavLinkChange(index, 'href', e.target.value)} placeholder="Enter custom URL (e.g., /#contact)" className="mt-1 block w-full px-2 py-1 bg-gray-50 border border-gray-300 rounded-md shadow-sm sm:text-sm"/>
+                )}
+              </div>
+              <button type="button" onClick={() => removeNavLink(index)} className="text-red-500 hover:text-red-700 text-xs font-semibold self-end pb-1">Remove</button>
+            </div>
           </div>
         ))}
-        <button type="button" onClick={addNavLink} className="mt-2 px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Add Nav Link</button>
+        <button type="button" onClick={addNavLink} className="mt-2 px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">Add Nav Link</button>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 mt-3 border-t border-gray-200">
-        <div><label className="block text-sm font-medium text-gray-700">Unscrolled Navbar Background:</label><input type="text" value={localNavConfig.unscrolledBackgroundColor || ''} onChange={(e) => handleInputChange('unscrolledBackgroundColor', e.target.value)} placeholder="e.g., bg-transparent, bg-white, #FFFFFF" className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm sm:text-sm"/><p className="text-xs text-gray-500 mt-1">Use Tailwind class or hex color.</p></div>
-        <div><label className="block text-sm font-medium text-gray-700">Scrolled Navbar Background:</label><input type="text" value={localNavConfig.scrolledBackgroundColor || ''} onChange={(e) => handleInputChange('scrolledBackgroundColor', e.target.value)} placeholder="e.g., bg-banner, bg-gray-800, #1f2937" className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm sm:text-sm"/></div>
-        <div><label className="block text-sm font-medium text-gray-700">Dropdown Menu Background:</label><input type="text" value={localNavConfig.dropdownBackgroundColor || ''} onChange={(e) => handleInputChange('dropdownBackgroundColor', e.target.value)} placeholder="e.g., bg-white, bg-gray-800, #FFFFFF" className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm sm:text-sm"/></div>
-        <div><label className="flex items-center text-sm font-medium text-gray-700"><input type="checkbox" checked={localNavConfig.useWhiteHamburger || false} onChange={(e) => handleInputChange('useWhiteHamburger', e.target.checked)} className="mr-2 h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"/>Use White Hamburger Icon</label></div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-4 pt-4 mt-3 border-t border-gray-200">
+        {[
+          { label: 'Unscrolled Background:', field: 'unscrolledBackgroundColor' },
+          { label: 'Scrolled Background:', field: 'scrolledBackgroundColor' },
+          { label: 'Dropdown Background:', field: 'dropdownBackgroundColor' }
+        ].map(({label, field}) => (
+          <div key={field}>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+            <div className="flex items-center space-x-2">
+              <input 
+                type="color" 
+                value={localNavConfig[field]?.startsWith('#') ? localNavConfig[field] : (localNavConfig[field]?.includes('transparent') ? '#ffffff' : '#000000')}
+                onChange={(e) => handleInputChange(field, e.target.value)}
+                className="h-9 w-10 p-0.5 border border-gray-300 rounded-md cursor-pointer"
+              />
+              <input 
+                type="text" 
+                value={localNavConfig[field] || ''} 
+                onChange={(e) => handleInputChange(field, e.target.value)} 
+                placeholder="Hex or Tailwind class" 
+                className="block w-full px-3 py-1.5 bg-white border border-gray-300 rounded-md shadow-sm sm:text-sm"
+              />
+            </div>
+          </div>
+        ))}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Dropdown Text Color:</label>
+          <input 
+            type="text" 
+            value={localNavConfig.dropdownTextColor || ''} 
+            onChange={(e) => handleInputChange('dropdownTextColor', e.target.value)} 
+            placeholder="e.g., text-black" 
+            className="mt-1 block w-full px-3 py-1.5 bg-white border border-gray-300 rounded-md shadow-sm sm:text-sm"
+          />
+        </div>
+        <div className="md:col-span-2 flex items-center mt-1">
+            <input 
+                type="checkbox" 
+                checked={localNavConfig.useWhiteHamburger || false} 
+                onChange={(e) => handleInputChange('useWhiteHamburger', e.target.checked)} 
+                className="mr-2 h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+            />
+            <label className="text-sm font-medium text-gray-700">Use White Hamburger Icon</label>
+        </div>
       </div>
     </div>
   );
 });
-NavbarEditForm.displayName = 'NavbarEditForm'; // For React DevTools
+NavbarEditForm.displayName = 'NavbarEditForm';
 
 /**
  * MainPageForm is a presentational component for editing the main page.
@@ -165,8 +348,11 @@ NavbarEditForm.displayName = 'NavbarEditForm'; // For React DevTools
 const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
   const [activeEditBlock, setActiveEditBlock] = useState(null);
   const [previewNavbarAsScrolled, setPreviewNavbarAsScrolled] = useState(false);
-  const navbarEditFormRef = useRef(); // Ref for NavbarEditForm
+  const navbarEditFormRef = useRef();
   const [internalFormData, setInternalFormData] = useState(formData);
+  const [isIconModalOpen, setIsIconModalOpen] = useState(false);
+  const [iconModalTargetField, setIconModalTargetField] = useState(null);
+  const [currentIconForModal, setCurrentIconForModal] = useState(null);
 
   useEffect(() => {
     let needsUpdate = false;
@@ -257,6 +443,28 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
     }
   };
 
+  const handleOpenIconModal = (fieldId, currentIcon) => {
+    setIconModalTargetField(fieldId);
+    setCurrentIconForModal(currentIcon);
+    setIsIconModalOpen(true);
+  };
+
+  const handleIconSelection = (pack, iconName) => {
+    if (iconModalTargetField === 'whiteLogoIcon') {
+      setInternalFormData(prev => ({
+        ...prev,
+        navbar: {
+          ...(prev.navbar || {}),
+          whiteLogoIcon: { pack, name: iconName },
+          whiteLogo: { url: '', file: null, name: '' }
+        }
+      }));
+    }
+    setIsIconModalOpen(false);
+    setIconModalTargetField(null);
+    setCurrentIconForModal(null);
+  };
+
   if (singleBlockMode) {
     const blockConfig = internalFormData[singleBlockMode]; // Use internalFormData
     const Component = blockComponentMap[singleBlockMode];
@@ -269,6 +477,9 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
             ref={navbarEditFormRef} 
             navbarConfig={internalFormData.navbar} 
             onConfigChange={handleNavbarConfigChange} 
+            previewNavbarAsScrolled={previewNavbarAsScrolled}
+            setPreviewNavbarAsScrolled={setPreviewNavbarAsScrolled}
+            onOpenIconModal={handleOpenIconModal}
           />
            {/* Add a save button for single navbar edit mode */}
            <button 
@@ -322,24 +533,52 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
   return (
     <div className="bg-gray-100">
       {internalFormData.navbar && !singleBlockMode && (
-        <div className="bg-white p-4 shadow-md mb-6 border rounded-lg">
-          <div className="flex justify-between items-center mb-3">
-            <h2 className="text-xl font-semibold text-gray-700">Navbar Configuration</h2>
-            <button type="button" onClick={() => handleToggleEditState('navbar')} className="bg-gray-700 text-white rounded-full p-2 shadow-lg hover:bg-gray-600 transition-colors">
+        <div className="bg-white shadow-md border rounded-lg">
+          <div className="flex justify-between items-center p-3 border-b">
+            <h2 className="text-xl font-semibold text-gray-700">Navbar </h2>
+            <button 
+              type="button" 
+              onClick={() => handleToggleEditState('navbar')} 
+              className={`${activeEditBlock === "navbar" ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-700 hover:bg-gray-600'} text-white rounded-full p-2 shadow-lg transition-colors`}
+            >
               {activeEditBlock === "navbar" ? CheckIcon : PencilIcon}
             </button>
           </div>
-          <div className={`border rounded-md p-2 mb-3 ${activeEditBlock === 'navbar' ? 'opacity-50 pointer-events-none' : ''}`}>
-            <Suspense fallback={<div>Loading Navbar Preview...</div>}><Navbar config={internalFormData.navbar} forceScrolledState={previewNavbarAsScrolled} isPreview={true}/></Suspense>
-          </div>
-          <div className="flex space-x-2 mb-3">
-            <button type="button" onClick={() => setPreviewNavbarAsScrolled(false)} className={`px-3 py-1.5 text-sm rounded-md ${!previewNavbarAsScrolled ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>View Unscrolled</button>
-            <button type="button" onClick={() => setPreviewNavbarAsScrolled(true)} className={`px-3 py-1.5 text-sm rounded-md ${previewNavbarAsScrolled ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>View Scrolled</button>
+          <div className={`navbar-preview-container`}>
+            <Suspense fallback={<div>Loading Navbar Preview...</div>}>
+              <Navbar 
+                config={internalFormData.navbar} 
+                forceScrolledState={previewNavbarAsScrolled}
+                isPreview={true} 
+                isEditingPreview={activeEditBlock === 'navbar'}
+                onTitleChange={(newTitle) => {
+                  setInternalFormData(prev => ({ 
+                    ...prev, 
+                    navbar: { ...(prev.navbar || {}), title: newTitle }
+                  }));
+                }}
+                onSubtitleChange={(newSubtitle) => {
+                  setInternalFormData(prev => ({ 
+                    ...prev, 
+                    navbar: { ...(prev.navbar || {}), subtitle: newSubtitle }
+                  }));
+                }}
+              />
+            </Suspense>
           </div>
           {activeEditBlock === "navbar" && (
-            <SlidingEditPanel onClose={() => handleToggleEditState('navbar')}>
-              <NavbarEditForm ref={navbarEditFormRef} navbarConfig={internalFormData.navbar} onConfigChange={handleNavbarConfigChange} />
-            </SlidingEditPanel>
+            <div className="w-full border-t">
+              <div className="bg-white py-4 px-0">
+                <NavbarEditForm
+                  ref={navbarEditFormRef}
+                  navbarConfig={internalFormData.navbar}
+                  onConfigChange={handleNavbarConfigChange}
+                  previewNavbarAsScrolled={previewNavbarAsScrolled}
+                  setPreviewNavbarAsScrolled={setPreviewNavbarAsScrolled}
+                  onOpenIconModal={handleOpenIconModal}
+                />
+              </div>
+            </div>
           )}
         </div>
       )}
@@ -352,13 +591,9 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
         if (!ComponentToRender) return <div key={blockKey} className="p-4 text-red-500">Unknown block type: {block.blockName}</div>;
 
         let componentProps = { 
-            key: blockKey, 
-            readOnly: !isEditingThisBlock, 
-            // Pass the specific config object for this block
-            // The block component itself will expect this with a specific prop name (e.g., 'config', 'heroconfig')
+            readOnly: !isEditingThisBlock,
         };
 
-        // Assign specific prop names based on block type, falling back to 'config'
         const blockSpecificPropName = {
             HeroBlock: 'heroconfig',
             RichTextBlock: 'richTextData',
@@ -385,25 +620,22 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
         let currentIcon = isEditingThisBlock ? CheckIcon : PencilIcon;
 
         return (
-          <div key={blockKey} className="relative bg-white overflow-hidden my-1 border">
+          <div key={blockKey} className="relative bg-white overflow-hidden border">
             <div className="absolute top-4 right-4 z-40">
-              {/* Standardized Edit/Save Button */}
               <button type="button" onClick={() => handleToggleEditState(blockKey)} className={`${isEditingThisBlock ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-700 hover:bg-gray-600'} text-white rounded-full p-2 shadow-lg transition-colors`}>
                 {currentIcon}
               </button>
             </div>
             
-            {/* Render the block preview */}
             <Suspense fallback={<div>Loading {block.blockName}...</div>}>
-              <ComponentToRender {...componentProps} /> 
+              <ComponentToRender key={blockKey} {...componentProps} />
             </Suspense>
             
-            {/* Render the EditorPanel for the block if it's being edited and has one */}
             {isEditingThisBlock && block.blockName !== 'RichTextBlock' && ComponentToRender.EditorPanel && (
               <SlidingEditPanel onClose={() => handleToggleEditState(blockKey)}> 
                 <ComponentToRender.EditorPanel 
-                    localData={block.config} // Pass current config for this block
-                    onPanelChange={(updatedFields) => { // Panel changes update internalFormData for this block
+                    localData={block.config}
+                    onPanelChange={(updatedFields) => {
                         setInternalFormData(prev => ({
                             ...prev,
                             mainPageBlocks: (prev.mainPageBlocks || []).map(b => 
@@ -411,14 +643,22 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
                             )
                         }));
                     }} 
-                    // Example: pass down a function to trigger icon modal if needed from panel
-                    // openIconSelector={(args) => openIconModalForBlock(blockKey, args)}
                 />
               </SlidingEditPanel>
             )}
           </div>
         );
       })}
+      {/* Render IconSelectorModal if open */}
+      {isIconModalOpen && (
+        <IconSelectorModal
+          isOpen={isIconModalOpen}
+          onClose={() => setIsIconModalOpen(false)}
+          onIconSelect={handleIconSelection}
+          currentIconPack={currentIconForModal?.pack || 'lucide'}
+          currentIconName={currentIconForModal?.name}
+        />
+      )}
     </div>
   );
 };

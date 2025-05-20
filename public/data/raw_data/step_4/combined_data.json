@@ -1,5 +1,7 @@
 {
   "navbar": {
+    "title": "COWBOYS-VAQUEROS",
+    "subtitle": "CONSTRUCTION",
     "navLinks": [
       {
         "name": "About",
@@ -19,7 +21,8 @@
       }
     ],
     "logo": "/assets/images/hero/clipped.png",
-    "whiteLogo": "/assets/images/hero/logo.svg"
+    "whiteLogo": "/assets/images/hero/logo.svg",
+    "whiteLogoIcon": null
   },
   "mainPageBlocks": [
     {
@@ -206,55 +209,71 @@
         "telephone": "(404) 227-5000",
         "markerIcon": "/assets/images/hero/clipped.png",
         "statsBackgroundImage": "/assets/images/stats_background.jpg",
+        "bannerTextColor": "#FFFFFF",
+        "bannerBackgroundColor": "#1F2937",
+        "statsTextColor": "#FFFFFF",
+        "showHoursButtonText": "View Our Hours",
+        "hideHoursButtonText": "Hide Our Hours",
         "serviceHours": [
           {
+            "id": "sh_mon",
             "day": "Mon",
             "time": "08:00 AM - 6:00 PM"
           },
           {
+            "id": "sh_tue",
             "day": "Tue",
             "time": "08:00 AM - 6:00 PM"
           },
           {
+            "id": "sh_wed",
             "day": "Wed",
             "time": "08:00 AM - 6:00 PM"
           },
           {
+            "id": "sh_thu",
             "day": "Thu",
             "time": "08:00 AM - 6:00 PM"
           },
           {
+            "id": "sh_fri",
             "day": "Fri",
             "time": "08:00 AM - 6:00 PM"
           },
           {
+            "id": "sh_sat",
             "day": "Sat",
             "time": "08:00 AM - 6:00 PM"
           },
           {
+            "id": "sh_sun",
             "day": "Sun",
             "time": "CLOSED"
           }
         ],
         "stats": [
           {
+            "id": "stat_0_exp",
             "title": "Years of Service",
-            "value": 11,
+            "value": "11",
             "icon": "FaCalendarAlt"
           },
           {
+            "id": "stat_1_cust",
             "title": "Customers Served",
-            "value": 550,
+            "value": "550+",
             "icon": "FaHandshake"
           },
           {
+            "id": "stat_2_roofs",
             "title": "Roofs Repaired",
-            "value": 330,
+            "value": "330+",
             "icon": "FaHome"
           },
           {
+            "id": "stat_3_expyrs",
             "title": "Years of Experience",
-            "value": 11,
+            "value": "11",
             "icon": "FaCalendarAlt"
           }
         ]
@@ -263,52 +282,69 @@
     {
       "blockName": "ServiceSliderBlock",
       "config": {
-        "isCommercial": false,
         "title": "Services",
         "residentialButtonText": "Residential",
         "commercialButtonText": "Commercial",
+        "residentialButtonIcon": { "pack": "lucide", "name": "Home" },
+        "commercialButtonIcon": { "pack": "lucide", "name": "Building2" },
+        "activeButtonConfig": {
+          "bgColor": "#D9534F",
+          "textColor": "#FFFFFF",
+          "iconColor": "#FFFFFF"
+        },
+        "inactiveButtonConfig": {
+          "bgColor": "#5A6268",
+          "textColor": "#FFFFFF",
+          "iconColor": "#FFFFFF"
+        },
+        "serviceItemConfig": {
+          "bgColor": "#343A40",
+          "textColor": "#FFFFFF",
+          "iconColor": "#FFFFFF"
+        },
+        "isCommercial": false,
         "residentialServices": [
           {
             "icon": "FaHardHat",
-            "title": "Shingling",
-            "link": "/services/residential-1-shingling"
+            "iconPack": "fa",
+            "title": "Shingling"
           },
           {
-            "icon": "FaHome",
-            "title": "Chimney",
-            "link": "/services/residential-2-chimney"
+            "icon": "FaHomeIcon",
+            "iconPack": "fa",
+            "title": "Chimney"
           },
           {
             "icon": "FaTools",
-            "title": "Siding",
-            "link": "/services/residential-3-siding"
+            "iconPack": "fa",
+            "title": "Siding"
           },
           {
             "icon": "FaBroom",
-            "title": "Repairs",
-            "link": "/services/residential-4-repairs"
+            "iconPack": "fa",
+            "title": "Repairs"
           }
         ],
         "commercialServices": [
           {
             "icon": "FaPaintRoller",
-            "title": "Metal Roof",
-            "link": "/services/commercial-1-metal-roof"
+            "iconPack": "fa",
+            "title": "Metal Roof"
           },
           {
             "icon": "FaBuilding",
-            "title": "Flat Roof",
-            "link": "/services/commercial-2-flat-roof"
+            "iconPack": "fa",
+            "title": "Flat Roof"
           },
           {
             "icon": "FaWarehouse",
-            "title": "Restoration",
-            "link": "/services/commercial-3-restoration"
+            "iconPack": "fa",
+            "title": "Restoration"
           },
           {
-            "icon": "FaChimney",
-            "title": "Maintenance",
-            "link": "/services/commercial-4-maintenance"
+            "icon": "FaSmog",
+            "iconPack": "fa",
+            "title": "Maintenance"
           }
         ],
         "largeResidentialImg": "/assets/images/main_image_expanded.jpg",
