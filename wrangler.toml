@@ -1,26 +1,31 @@
+# ── Project Settings ───────────────────────────────────────────────────────────
 name = "roofing-co"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
+# ── Pages Settings ─────────────────────────────────────────────────────────────
+# Directory with your built static assets:
 pages_build_output_dir = "dist"
+
+# Directory containing your Functions:
 pages_functions_dir = "functions"
 
-[build]
-command = "npm run build"
-
+# ── Production Environment ─────────────────────────────────────────────────────
 [env.production]
 name = "roofing-co"
-route = "roofing-co-with-workers.pages.dev/*"
 compatibility_flags = ["nodejs_compat"]
 
+# Environment variables for production:
 [env.production.vars]
 ENVIRONMENT = "production"
 
-[[d1_databases]]
-binding = "DB"
+# D1 database binding, inherited only in production:
+[[env.production.d1_databases]]
+binding       = "DB"
 database_name = "auth-db"
-database_id = "bef1c7fa-8bbd-4067-b293-b2dae6132680"
+database_id   = "bef1c7fa-8bbd-4067-b293-b2dae6132680"
 
-[[r2_buckets]]
-binding = "ROOFING_CONFIGS"
+# R2 bucket binding, inherited only in production:
+[[env.production.r2_buckets]]
+binding     = "ROOFING_CONFIGS"
 bucket_name = "roofing-configs"
