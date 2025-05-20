@@ -69,7 +69,36 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
           return;
         }
 
-        // First check if user is authenticated and has a custom config
+        // Check if we're on a custom domain
+        const isCustomDomain = window.location.hostname !== 'roofing-co.pages.dev' && 
+                             window.location.hostname !== 'roofing-www.pages.dev' &&
+                             window.location.hostname !== 'localhost';
+
+        if (isCustomDomain) {
+          console.log("On custom domain:", window.location.hostname);
+          try {
+            // Fetch the domain-specific config
+            const domainConfigResponse = await fetch('/api/public/config');
+            console.log("Domain config response status:", domainConfigResponse.status);
+            
+            if (domainConfigResponse.ok) {
+              const domainData = await domainConfigResponse.json();
+              console.log("Successfully loaded domain config data");
+              setFormData(domainData);
+              setLoading(false);
+              return;
+            } else {
+              console.error("Failed to load domain config. Status:", domainConfigResponse.status);
+              const errorText = await domainConfigResponse.text();
+              console.error("Error response:", errorText);
+            }
+          } catch (domainConfigError) {
+            console.error("Error loading domain config:", domainConfigError);
+            // Continue to fallback if domain config fetch fails
+          }
+        }
+
+        // If not on custom domain or domain config failed, check authentication
         console.log("Checking authentication status...");
         const authResponse = await fetch('/api/auth/status', {
           credentials: 'include'
@@ -91,7 +120,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
             
             if (customConfigResponse.ok) {
               const customData = await customConfigResponse.json();
-              console.log("Successfully loaded custom config data:", customData);
+              console.log("Successfully loaded custom config data");
               setFormData(customData);
               setLoading(false);
               return;
@@ -590,25 +619,22 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
 
   // Render the tab header
   const renderTabHeader = () => (
-    <div className="bg-gray-800 px-4 flex border-b border-gray-700 shadow-md">
-      <TabButton
-        id="mainPage"
-        label="Main Page"
-        isActive={activeTab === "mainPage"}
-        onClick={() => setActiveTab("mainPage")}
-      />
-      <TabButton
-        id="services"
-        label="Service Pages"
-        isActive={activeTab === "services"}
-        onClick={() => setActiveTab("services")}
-      />
-      <TabButton
-        id="about"
-        label="About Page"
-        isActive={activeTab === "about"}
-        onClick={() => setActiveTab("about")}
-      />
+    <div className="flex justify-between items-center mb-6">
+      <div className="flex space-x-2">
+        <TabButton
+          id="mainPage"
+          label="Main Page"
+          isActive={activeTab === "mainPage"}
+          onClick={() => setActiveTab("mainPage")}
+        />
+        <TabButton
+          id="services"
+          label="Services"
+          isActive={activeTab === "services"}
+          onClick={() => setActiveTab("services")}
+        />
+      </div>
+      {!isCustomDomain && <OneFormAuthButton />}
     </div>
   );
 
