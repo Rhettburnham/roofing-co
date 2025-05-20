@@ -83,15 +83,16 @@ export async function onRequest(context) {
 
     // Get the config data from the request body
     console.log('Reading request body...');
-    const configData = await request.json();
+    const { config } = await request.json();
     console.log('Config data received:', {
-      type: typeof configData,
-      isObject: configData instanceof Object,
-      keys: Object.keys(configData)
+      hasConfig: !!config,
+      type: typeof config,
+      isObject: config instanceof Object,
+      keys: config ? Object.keys(config) : []
     });
 
     // Validate the config data
-    if (!configData || typeof configData !== 'object') {
+    if (!config || typeof config !== 'object') {
       console.error('Invalid config data format');
       return new Response(JSON.stringify({ error: 'Invalid config data format' }), {
         status: 400,
@@ -107,7 +108,7 @@ export async function onRequest(context) {
     console.log('Saving config to R2:', configKey);
     
     // Ensure the data is properly stringified with consistent formatting
-    const jsonString = JSON.stringify(configData, null, 2);
+    const jsonString = JSON.stringify(config, null, 2);
     console.log('JSON string preview:', jsonString.substring(0, 200) + '...');
     
     try {
