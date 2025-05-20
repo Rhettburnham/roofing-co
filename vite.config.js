@@ -55,7 +55,7 @@ export default defineConfig({
     proxy: {
       '/api/auth': {
         target: process.env.NODE_ENV === 'production' 
-          ? 'https://auth-worker.roofing-co-with-workers.workers.dev'
+          ? 'https://auth-worker.roofing-co-with-workers.pages.dev'
           : 'https://auth-worker.roofing-www.workers.dev',
         changeOrigin: true,
         secure: true,
@@ -63,7 +63,7 @@ export default defineConfig({
       },
       '/api/admin': {
         target: process.env.NODE_ENV === 'production'
-          ? 'https://roofing-admin.roofing-co-with-workers.workers.dev'
+          ? 'https://roofing-admin.roofing-co-with-workers.pages.dev'
           : 'https://roofing-admin.roofing-www.workers.dev',
         changeOrigin: true,
         secure: true,
@@ -71,7 +71,7 @@ export default defineConfig({
       },
       '/api/config': {
         target: process.env.NODE_ENV === 'production'
-          ? 'https://auth-worker.roofing-co-with-workers.workers.dev'
+          ? 'https://auth-worker.roofing-co-with-workers.pages.dev'
           : 'https://auth-worker.roofing-www.workers.dev',
         changeOrigin: true,
         secure: true,
