@@ -12,6 +12,7 @@ upload.format = "service-worker"
 [env.production]
 name = "roofing-co"
 route = "roofing-co-with-workers.pages.dev/*"
+compatibility_flags = ["nodejs_compat"]
 
 [env.production.vars]
 ENVIRONMENT = "production"
@@ -26,4 +27,6 @@ binding = "ROOFING_CONFIGS"
 bucket_name = "roofing-configs"
 
 [pages]
-pages_build_output_dir = "dist" 
+pages_build_output_dir = "dist"
+pages_functions_dir = "functions"
+compatibility_flags = ["nodejs_compat"] 
