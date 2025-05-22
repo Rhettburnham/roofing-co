@@ -161,14 +161,32 @@ function AboutEditorPanel({ localData, onPanelChange }) {
 
   const handleImageChange = (file) => {
     if (!file) return;
-    if (localData.image?.url?.startsWith('blob:')) URL.revokeObjectURL(localData.image.url);
+    const currentImageState = localData.image; // Get current state
+    if (currentImageState?.url?.startsWith('blob:')) URL.revokeObjectURL(currentImageState.url);
     const fileURL = URL.createObjectURL(file);
-    onPanelChange(prev => ({ ...prev, image: { file, url: fileURL, name: file.name } }));
+    onPanelChange(prev => ({ 
+        ...prev, 
+        image: { 
+            file, 
+            url: fileURL, 
+            name: file.name, 
+            originalUrl: currentImageState?.originalUrl // Preserve originalUrl
+        } 
+    }));
   };
 
   const handleImageUrlChange = (urlValue) => {
-    if (localData.image?.url?.startsWith('blob:')) URL.revokeObjectURL(localData.image.url);
-    onPanelChange(prev => ({ ...prev, image: { file: null, url: urlValue, name: urlValue.split('/').pop() } }));
+    const currentImageState = localData.image;
+    if (currentImageState?.url?.startsWith('blob:')) URL.revokeObjectURL(currentImageState.url);
+    onPanelChange(prev => ({ 
+        ...prev, 
+        image: { 
+            file: null, 
+            url: urlValue, 
+            name: urlValue.split('/').pop(), 
+            originalUrl: urlValue // Pasted URL is the new original
+        } 
+    }));
   };
 
   const handleStatChange = (index, field, value) => {
@@ -193,13 +211,30 @@ function AboutEditorPanel({ localData, onPanelChange }) {
     onPanelChange(prev => {
       const updatedAwards = [...(prev.awards || [])];
       if (updatedAwards[index]) {
+        const currentAwardSrcState = updatedAwards[index].src;
         if (field === 'src' && typeof valueOrFile !== 'string') { // File object for src
-          if (updatedAwards[index].src?.url?.startsWith('blob:')) URL.revokeObjectURL(updatedAwards[index].src.url);
+          if (currentAwardSrcState?.url?.startsWith('blob:')) URL.revokeObjectURL(currentAwardSrcState.url);
           const fileURL = URL.createObjectURL(valueOrFile);
-          updatedAwards[index] = { ...updatedAwards[index], src: { file: valueOrFile, url: fileURL, name: valueOrFile.name } };
+          updatedAwards[index] = { 
+              ...updatedAwards[index], 
+              src: { 
+                  file: valueOrFile, 
+                  url: fileURL, 
+                  name: valueOrFile.name, 
+                  originalUrl: currentAwardSrcState?.originalUrl // Preserve originalUrl
+              } 
+          };
         } else if (field === 'src' && typeof valueOrFile === 'string') { // URL string for src
-           if (updatedAwards[index].src?.url?.startsWith('blob:')) URL.revokeObjectURL(updatedAwards[index].src.url);
-           updatedAwards[index] = { ...updatedAwards[index], src: { file: null, url: valueOrFile, name: valueOrFile.split('/').pop() } };
+           if (currentAwardSrcState?.url?.startsWith('blob:')) URL.revokeObjectURL(currentAwardSrcState.url);
+           updatedAwards[index] = { 
+               ...updatedAwards[index], 
+               src: { 
+                   file: null, 
+                   url: valueOrFile, 
+                   name: valueOrFile.split('/').pop(), 
+                   originalUrl: valueOrFile // Pasted URL is new original
+               } 
+            };
         } else {
           updatedAwards[index] = { ...updatedAwards[index], [field]: valueOrFile };
         }
@@ -355,10 +390,14 @@ export default function AboutBlock({
         console.log("AboutBlock: Editing finished. Calling onConfigChange.");
         const dataToSave = {
             ...localData,
-            image: localData.image?.file ? localData.image.name : localData.image?.url,
+            image: localData.image?.file 
+                ? { ...localData.image } // Pass full state if file exists
+                : { url: localData.image?.originalUrl || localData.image?.url }, // Else, pass originalUrl (or fallback)
             awards: localData.awards.map(award => ({
                 ...award,
-                src: award.src?.file ? award.src.name : award.src?.url,
+                src: award.src?.file 
+                    ? { ...award.src } // Pass full state if file exists
+                    : { url: award.src?.originalUrl || award.src?.url }, // Else, pass originalUrl (or fallback)
             }))
         };
         onConfigChange(dataToSave);
@@ -437,13 +476,28 @@ AboutBlock.defaultProps = {
 
 // Helper to initialize image state: handles string path or {file, url, name} object
 const initializeImageState = (imageConfig, defaultPath) => {
-  if (imageConfig && typeof imageConfig === 'object' && imageConfig.url) {
-    return { ...imageConfig, name: imageConfig.name || imageConfig.url.split('/').pop() };
+  let originalUrlToStore = defaultPath;
+  let nameToStore = defaultPath.split('/').pop();
+  let urlToDisplay = defaultPath;
+  let fileObject = null;
+
+  if (imageConfig && typeof imageConfig === 'object') {
+    urlToDisplay = imageConfig.url || defaultPath;
+    nameToStore = imageConfig.name || urlToDisplay.split('/').pop();
+    fileObject = imageConfig.file || null;
+    originalUrlToStore = imageConfig.originalUrl || (typeof imageConfig.url === 'string' && !imageConfig.url.startsWith('blob:') ? imageConfig.url : defaultPath);
+  } else if (typeof imageConfig === 'string') {
+    urlToDisplay = imageConfig;
+    nameToStore = imageConfig.split('/').pop();
+    originalUrlToStore = imageConfig;
   }
-  if (typeof imageConfig === 'string') {
-    return { file: null, url: imageConfig, name: imageConfig.split('/').pop() };
-  }
-  return { file: null, url: defaultPath, name: defaultPath.split('/').pop() };
+  
+  return { 
+    file: fileObject, 
+    url: urlToDisplay, 
+    name: nameToStore,
+    originalUrl: originalUrlToStore
+  }; 
 };
 
 // Helper to get display URL from string path or {url, file} object

@@ -25,7 +25,11 @@ const { createLucideIcon, ...FilteredLucideIcons } = LucideIcons;
 const iconPacks = {
   lucide: FilteredLucideIcons,
   fa: { // Manually list Fa icons to be used or import * as FaIconsModule and assign.
-    FaTools, FaFan, FaPaintRoller, FaTint, FaHome: FaHomeIcon, FaBuilding, FaWarehouse, FaSmog, FaBroom, FaHardHat, FaQuestionCircle
+    FaTools, FaFan, FaPaintRoller, FaTint, 
+    FaHome: FaHomeIcon, // This was the potential issue, if iconName is 'FaHomeIcon'
+    // Let's change the key to match the alias if that's what you intend to store in config
+    FaHomeIcon: FaHomeIcon, // Use the alias as the key if names like 'FaHomeIcon' are stored
+    FaBuilding, FaWarehouse, FaSmog, FaBroom, FaHardHat, FaQuestionCircle
   },
 };
 
@@ -47,9 +51,28 @@ function resolveIcon(iconName, iconPack = 'fa') {
 
 // Helper to initialize image state: handles string path or {file, url, name} object
 const initializeImageState = (imageConfig, defaultPath) => {
-    if (imageConfig && typeof imageConfig === 'object' && imageConfig.url) return imageConfig;
-    if (typeof imageConfig === 'string') return { file: null, url: imageConfig, name: imageConfig.split('/').pop() };
-    return { file: null, url: defaultPath, name: defaultPath.split('/').pop() };
+    let originalUrlToStore = defaultPath;
+    let nameToStore = defaultPath.split('/').pop();
+    let urlToDisplay = defaultPath;
+    let fileObject = null;
+
+    if (imageConfig && typeof imageConfig === 'object') {
+        urlToDisplay = imageConfig.url || defaultPath;
+        nameToStore = imageConfig.name || urlToDisplay.split('/').pop();
+        fileObject = imageConfig.file || null;
+        originalUrlToStore = imageConfig.originalUrl || (typeof imageConfig.url === 'string' && !imageConfig.url.startsWith('blob:') ? imageConfig.url : defaultPath);
+    } else if (typeof imageConfig === 'string') {
+        urlToDisplay = imageConfig;
+        nameToStore = imageConfig.split('/').pop();
+        originalUrlToStore = imageConfig;
+    }
+    
+    return { 
+        file: fileObject, 
+        url: urlToDisplay, 
+        name: nameToStore,
+        originalUrl: originalUrlToStore
+    }; 
 };
 
 // Helper to get display URL from string path or {url, file} object
@@ -203,12 +226,17 @@ export default function ServiceSliderBlock({ readOnly = false, config = {}, onCo
       if (onConfigChange) {
         console.log("ServiceSliderBlock: Editing finished. Calling onConfigChange.");
         const dataToSave = { ...localData };
-        // For file objects, only send the name/path for the config, actual file handled by OneForm
+        
         if (localData.largeResidentialImg?.file) {
-            dataToSave.largeResidentialImg = { url: localData.largeResidentialImg.name, name: localData.largeResidentialImg.name }; 
+            dataToSave.largeResidentialImg = { ...localData.largeResidentialImg }; 
+        } else {
+            dataToSave.largeResidentialImg = { url: localData.largeResidentialImg?.originalUrl || localData.largeResidentialImg?.url };
         }
+
         if (localData.largeCommercialImg?.file) {
-            dataToSave.largeCommercialImg = { url: localData.largeCommercialImg.name, name: localData.largeCommercialImg.name };
+            dataToSave.largeCommercialImg = { ...localData.largeCommercialImg };
+        } else {
+            dataToSave.largeCommercialImg = { url: localData.largeCommercialImg?.originalUrl || localData.largeCommercialImg?.url };
         }
         onConfigChange(dataToSave);
       }
@@ -556,7 +584,14 @@ function ServiceSliderEditorPanel({ localData, onPanelChange }) {
         URL.revokeObjectURL(currentImageState.url);
     }
     const fileURL = URL.createObjectURL(file);
-    onPanelChange({ [fieldName]: { file: file, url: fileURL, name: file.name }});
+    onPanelChange({ 
+        [fieldName]: { 
+            file: file, 
+            url: fileURL, 
+            name: file.name, 
+            originalUrl: currentImageState?.originalUrl // Preserve originalUrl
+        }
+    });
   };
   
   const handleImageUrlChange = (fieldName, url) => {
@@ -564,7 +599,14 @@ function ServiceSliderEditorPanel({ localData, onPanelChange }) {
     if (currentImageState && currentImageState.url && currentImageState.url.startsWith('blob:')) {
         URL.revokeObjectURL(currentImageState.url);
     }
-    onPanelChange({ [fieldName]: { file: null, url: url, name: url.split('/').pop() }});
+    onPanelChange({ 
+        [fieldName]: { 
+            file: null, 
+            url: url, 
+            name: url.split('/').pop(), 
+            originalUrl: url // New URL is the new original reference
+        }
+    });
   };
   
   return (

@@ -72,57 +72,151 @@ function traverseAndModifyDataForZip(originalDataNode, assetsToCollect, pathCont
     return originalDataNode;
   }
 
-  // Handle arrays by creating a new array with processed items
   if (Array.isArray(originalDataNode)) {
     return originalDataNode.map((item, index) =>
       traverseAndModifyDataForZip(item, assetsToCollect, `${pathContext}[${index}]`, uploadBaseDir)
     );
   }
 
-  // Handle objects (including potential file upload objects)
   if (typeof originalDataNode === 'object' && !(originalDataNode instanceof File)) {
-    // Check if it's our structure for a file upload (e.g., contains a File object)
+    // Specific check for block config objects that might contain a direct File object
+    // E.g., HeroBlock stores its file in `heroImageFile` and replacement target in `originalUrl` or `_heroImageOriginalPathFromProps`
+    // This check needs to be robust and potentially identify other similar patterns.
+    const isHeroBlockConfig = pathContext.endsWith('.config'); // Simple check, might need refinement
+
+    if (isHeroBlockConfig && originalDataNode.heroImageFile instanceof File) {
+      console.log(`[traverseAndModifyDataForZip] Detected HeroBlock-like config with File. PathContext: ${pathContext}, File Name: ${originalDataNode.heroImageFile.name}`);
+      const file = originalDataNode.heroImageFile;
+      const fileName = file.name || 'untitled_hero_image';
+      let pathInZip;
+      let jsonUrl;
+      // The `originalUrl` for replacement should be at this level or `_heroImageOriginalPathFromProps`
+      const replacementUrl = originalDataNode.originalUrl || originalDataNode._heroImageOriginalPathFromProps;
+
+      if (replacementUrl && typeof replacementUrl === 'string') {
+        console.log(`[traverseAndModifyDataForZip] HeroBlock File: Found replacementUrl: ${replacementUrl}`);
+        let tempPath = replacementUrl;
+        if (tempPath.startsWith('/')) tempPath = tempPath.substring(1);
+        pathInZip = tempPath.startsWith('assets/') ? tempPath : `assets/${tempPath}`;
+        jsonUrl = pathInZip;
+      } else {
+        console.log(`[traverseAndModifyDataForZip] HeroBlock File: No replacementUrl. Creating new path.`);
+        const sanitizedPathContext = pathContext.replace(/[\W_]+/g, '_').slice(0, 50);
+        pathInZip = `assets/${uploadBaseDir}/${sanitizedPathContext}_${fileName}`;
+        jsonUrl = pathInZip;
+      }
+      assetsToCollect.push({ pathInZip, dataSource: file, type: 'file' });
+      console.log(`[traverseAndModifyDataForZip] HeroBlock File: Collected asset: type=file, pathInZip=${pathInZip}, dataSource name=${fileName}`);
+      
+      // Return a modified config object: heroImage points to jsonUrl, file object removed
+      const cleanedConfig = { ...originalDataNode };
+      delete cleanedConfig.heroImageFile;
+      delete cleanedConfig.originalUrl; // originalUrl (if it was the source) is now represented by jsonUrl
+      delete cleanedConfig._heroImageOriginalPathFromProps; // also clean this if it existed
+      cleanedConfig.heroImage = jsonUrl; // The main image field should now point to the new path
+      // Recursively process other properties within this config object, *excluding* the ones we just handled.
+      const furtherProcessedConfig = {};
+      for (const key in cleanedConfig) {
+        if (key !== 'heroImage' && Object.prototype.hasOwnProperty.call(cleanedConfig, key)) {
+            furtherProcessedConfig[key] = traverseAndModifyDataForZip(cleanedConfig[key], assetsToCollect, `${pathContext}.${key}`, uploadBaseDir);
+        } else if (key === 'heroImage') {
+            furtherProcessedConfig[key] = cleanedConfig.heroImage; // Already processed
+        }
+      }
+      return furtherProcessedConfig;
+    }
+
+    // Generic file object structure check (as before)
     if (originalDataNode.file && originalDataNode.file instanceof File && typeof originalDataNode.name === 'string') {
+      console.log(`[traverseAndModifyDataForZip] Detected Generic FileObject structure. PathContext: ${pathContext}, File Name: ${originalDataNode.name}, OriginalURL prop: ${originalDataNode.originalUrl}`);
       const file = originalDataNode.file;
       const fileName = originalDataNode.name || file.name || 'untitled_asset';
-      const sanitizedPathContext = pathContext.replace(/[\[\].]/g, '_').replace(/[^a-zA-Z0-9_/-]/g, '').slice(0, 100);
-      const pathInZip = `media/${uploadBaseDir}/${sanitizedPathContext}_${fileName}`;
+      let pathInZip;
+      let jsonUrl;
 
-      assetsToCollect.push({
-        pathInZip,
-        dataSource: file,
-        type: 'file',
-      });
+      if (originalDataNode.originalUrl && typeof originalDataNode.originalUrl === 'string') {
+        console.log(`traverseAndModifyDataForZip: Found originalUrl: ${originalDataNode.originalUrl} for file ${fileName}`);
+        // Directly use originalUrl, ensuring it starts with 'assets/' and has no leading '/' for internal consistency.
+        let tempPath = originalDataNode.originalUrl;
+        if (tempPath.startsWith('/')) {
+          tempPath = tempPath.substring(1);
+        }
+        // Ensure the path is treated as relative to the root of asset storage for ZIP pathing.
+        // If originalUrl is like "/assets/images/foo.png", tempPath becomes "assets/images/foo.png".
+        // If originalUrl is like "images/foo.png", tempPath becomes "images/foo.png". 
+        // We need to ensure it becomes "assets/images/foo.png" for the ZIP structure.
+        if (!tempPath.startsWith('assets/')) {
+            console.warn(`traverseAndModifyDataForZip: originalUrl "${originalDataNode.originalUrl}" did not start with assets/. Prepending "assets/". This might indicate an issue with how originalUrl is formed or passed.`);
+            // This prepending logic might be too broad. Consider if originalUrl *should* sometimes not start with assets/.
+            // For heroImage, it *should* be like "/assets/images/hero/hero.png"
+            pathInZip = `assets/${tempPath.split('/').pop()}`; // Fallback: take filename under assets if originalUrl is malformed.
+                                                        // More robust: ensure originalUrl is always correctly formed upstream.
+            // A safer approach if originalUrl is expected to be well-formed (e.g. /assets/images/...):
+            pathInZip = tempPath; // Use the cleaned tempPath directly if it's already correct.
+        } else {
+            pathInZip = tempPath; // Use the cleaned tempPath directly.
+        }
+        jsonUrl = pathInZip; // The URL in JSON should match this structured path.
+        console.log(`traverseAndModifyDataForZip: Determined pathInZip: ${pathInZip} and jsonUrl: ${jsonUrl} from originalUrl.`);
+
+      } else {
+        const sanitizedPathContext = pathContext.replace(/[\W_]+/g, '_').slice(0, 50); 
+        // uploadBaseDir is like 'user_uploads/new_combined_data', so pathInZip is assets/user_uploads/new_combined_data/...
+        pathInZip = `assets/${uploadBaseDir}/${sanitizedPathContext}_${fileName}`;
+        jsonUrl = pathInZip;
+        console.log(`traverseAndModifyDataForZip: No originalUrl. Determined pathInZip: ${pathInZip} for file ${fileName}`);
+      }
       
-      // Return a new, cleaned object for the JSON structure
+      assetsToCollect.push({
+        pathInZip, 
+        dataSource: file,
+        type: 'file', // Explicitly set type as file
+      });
+      console.log(`[traverseAndModifyDataForZip] Collected asset: type=file, pathInZip=${pathInZip}, dataSource name=${file.name}`);
+      
       const cleanedFileObject = { ...originalDataNode };
-      delete cleanedFileObject.file;
-      cleanedFileObject.url = pathInZip;
+      delete cleanedFileObject.file; 
+      delete cleanedFileObject.originalUrl; 
+      cleanedFileObject.url = jsonUrl; 
       return cleanedFileObject;
     }
     
-    // Handle objects with url property (from pasted URLs)
+    // Handle objects with url property (from pasted URLs or existing data)
     else if (originalDataNode.url && typeof originalDataNode.url === 'string' && isProcessableAssetUrl(originalDataNode.url)) {
       let url = originalDataNode.url;
       let pathInZip = url;
+      let jsonUrl = url;
+      console.log(`[traverseAndModifyDataForZip] Detected URL structure. PathContext: ${pathContext}, URL: ${url}`);
+
       if (pathInZip.startsWith('/')) {
         pathInZip = pathInZip.substring(1);
+        jsonUrl = jsonUrl.substring(1);
       }
       
-      // Add 'media/' prefix
-      pathInZip = `media/${pathInZip}`;
+      // Ensure existing assets are also under 'assets/' in the ZIP and JSON
+      if (!pathInZip.startsWith('assets/') && !pathInZip.startsWith('http') && !pathInZip.startsWith('data:') && !pathInZip.startsWith('blob:')) {
+         // This assumes URLs like 'images/pic.jpg' or 'Commercial/thing.png' should be 'assets/images/pic.jpg'
+         pathInZip = `assets/${pathInZip}`;
+         jsonUrl = pathInZip;
+      } else if (pathInZip.startsWith('assets/')) {
+        // It's already good
+      } else {
+        // External URL, data URL, blob URL - do not add to assetsToCollect, return as is.
+        return originalDataNode;
+      }
       
-      // Avoid duplicating asset collection
+      // Avoid duplicating asset collection for these existing URLs
       if (!assetsToCollect.some(asset => asset.pathInZip === pathInZip && asset.type === 'url')) {
         assetsToCollect.push({
           pathInZip,
-          dataSource: url,
-          type: 'url',
+          dataSource: url, 
+          type: 'url', // Explicitly set type as url
         });
+        console.log(`[traverseAndModifyDataForZip] Collected asset: type=url, pathInZip=${pathInZip}, dataSource=${url}`);
       }
       
       // Return a cloned object with updated url
-      return { ...originalDataNode, url: pathInZip };
+      return { ...originalDataNode, url: jsonUrl };
     }
 
     // Otherwise, it's a generic object; traverse its properties and build a new object
@@ -140,25 +234,39 @@ function traverseAndModifyDataForZip(originalDataNode, assetsToCollect, pathCont
     return newObj;
   }
 
-  // Handle string URLs that might be existing assets
+  // Handle string URLs that might be existing assets (these are direct string values, not in objects like {url: '...'})
   if (typeof originalDataNode === 'string' && isProcessableAssetUrl(originalDataNode)) {
     let pathInZip = originalDataNode;
+    let jsonUrl = originalDataNode;
+    console.log(`[traverseAndModifyDataForZip] Detected string URL. PathContext: ${pathContext}, URL: ${originalDataNode}`);
+
     if (pathInZip.startsWith('/')) {
       pathInZip = pathInZip.substring(1);
+      jsonUrl = jsonUrl.substring(1);
     }
     
-    // Add 'media/' prefix
-    pathInZip = `media/${pathInZip}`;
+    // Add 'assets/' prefix if not an absolute URL and not already prefixed
+     if (!pathInZip.startsWith('assets/') && !pathInZip.startsWith('http') && !pathInZip.startsWith('data:') && !pathInZip.startsWith('blob:')) {
+        pathInZip = `assets/${pathInZip}`;
+        jsonUrl = pathInZip;
+    } else if (pathInZip.startsWith('assets/')) {
+        // It's already good
+    } else {
+        // External URL, data URL, blob URL - return as is.
+        return originalDataNode;
+    }
+
 
     // Avoid duplicating asset collection
     if (!assetsToCollect.some(asset => asset.pathInZip === pathInZip && asset.type === 'url')) {
         assetsToCollect.push({
           pathInZip,
-          dataSource: originalDataNode,
-          type: 'url',
+          dataSource: originalDataNode, 
+          type: 'url', // Explicitly set type as url
         });
+        console.log(`[traverseAndModifyDataForZip] Collected asset: type=url, pathInZip=${pathInZip}, dataSource=${originalDataNode}`);
     }
-    return pathInZip;
+    return jsonUrl; // Return the potentially modified URL for the JSON
   }
 
   // Return primitives and other types as is
@@ -189,6 +297,7 @@ TabButton.propTypes = {
 
 const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   const [formData, setFormData] = useState(null);
+  const [initialFormDataForOldExport, setInitialFormDataForOldExport] = useState(null); // For "old" export
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("mainPage");
 
@@ -196,52 +305,53 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   useEffect(() => {
     const fetchCombinedData = async () => {
       try {
+        let dataToSet;
         // If initialData is provided, use it directly (for single block editing like /edit/hero)
         if (initialData && blockName) {
-          // Make sure initialData for single block also includes navbar if needed for preview/context
           const baseData = { ...initialData };
           if (!baseData.navbar && initialData.navbar) baseData.navbar = initialData.navbar;
           else if (!baseData.navbar) baseData.navbar = { navLinks: [{name: "Home", href: "/"}], logo: { url: '/assets/images/logo.png', name: 'logo.png' }, whiteLogo: { url: '/assets/images/logo-white.png', name: 'logo-white.png'} };
-
-          setFormData({ [blockName]: baseData[blockName] || baseData, navbar: baseData.navbar });
-          setLoading(false);
-          return;
-        }
-        if (initialData && !blockName) { // Case where OneForm is loaded with full data but not for a single block.
-             setFormData(initialData);
-             setLoading(false);
-             return;
-        }
-
-        // Default: fetch the full combined_data.json for the main OneForm editor
-        try {
-          const combinedResponse = await fetch(
-            "/data/raw_data/step_4/combined_data.json"
-          );
-          if (combinedResponse.ok) {
-            const combinedData = await combinedResponse.json();
-            console.log("Loaded combined data:", combinedData);
-            setFormData(combinedData); // This will include navbar and mainPageBlocks
-            setLoading(false);
-            return;
-          } else {
-            console.error("Failed to load combined_data.json, status:", combinedResponse.status);
+          dataToSet = { [blockName]: baseData[blockName] || baseData, navbar: baseData.navbar };
+        } else if (initialData && !blockName) { // Case where OneForm is loaded with full data but not for a single block.
+          dataToSet = initialData;
+        } else {
+          // Default: fetch the full combined_data.json for the main OneForm editor
+          try {
+            const combinedResponse = await fetch(
+              "/data/raw_data/step_4/combined_data.json"
+            );
+            if (combinedResponse.ok) {
+              dataToSet = await combinedResponse.json();
+              console.log("Loaded combined data:", dataToSet);
+            } else {
+              console.error("Failed to load combined_data.json, status:", combinedResponse.status);
+            }
+          } catch (combinedError) {
+            console.error("Error loading combined data:", combinedError);
           }
-        } catch (combinedError) {
-          console.error("Error loading combined data:", combinedError);
-          // Continue to fallback if combined data fetch fails
         }
 
-        // Fallback: Create a default configuration (simplified, ensure navbar exists)
-        console.warn("Falling back to default data structure for OneForm.");
-        const defaultData = {
-          navbar: { navLinks: [{name: "Home", href: "/"}], logo: { url: '/assets/images/logo.png', name: 'logo.png' }, whiteLogo: { url: '/assets/images/logo-white.png', name: 'logo-white.png'} },
-          mainPageBlocks: [], // Default to empty blocks
-          hero: { title: "Welcome" }, // Keep some defaults for single block editors if they rely on this path
-          // ... (other default block structures if needed by single block editors)
-        };
-        setFormData(defaultData);
-        console.log("Using default data:", defaultData);
+        if (!dataToSet) { // Fallback if fetching or initialData failed
+            console.warn("Falling back to default data structure for OneForm.");
+            dataToSet = {
+              navbar: { navLinks: [{name: "Home", href: "/"}], logo: { url: '/assets/images/logo.png', name: 'logo.png' }, whiteLogo: { url: '/assets/images/logo-white.png', name: 'logo-white.png'} },
+              mainPageBlocks: [], 
+              hero: { title: "Welcome" }, 
+            };
+        }
+        
+        setFormData(dataToSet);
+        // Store a deep copy for the "old" export state, only if not in single block mode for simplicity of "old" state
+        if (!blockName) {
+            try {
+                setInitialFormDataForOldExport(JSON.parse(JSON.stringify(dataToSet)));
+            } catch (e) {
+                console.error("Could not deep clone initial data for old export:", e);
+                setInitialFormDataForOldExport(null); // or some other fallback
+            }
+        } else {
+            setInitialFormDataForOldExport(null); // Don't create "old" folder for single block edits
+        }
         setLoading(false);
 
       } catch (error) {
@@ -275,107 +385,206 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         alert("No data available to download.");
         return;
       }
-      console.log("Creating ZIP with initial data (a copy will be processed):", formData);
-
-      const zip = new JSZip();
-      const collectedAssets = [];
-
-      // Process formData (for combined_data.json)
-      const cleanedCombinedData = traverseAndModifyDataForZip(
-        formData,
-        collectedAssets,
-        'formDataRoot',
-        'user_uploads/combined_data'
-      );
-      zip.file("json/combined_data.json", JSON.stringify(cleanedCombinedData, null, 2));
-      console.log("Cleaned combined_data for ZIP:", cleanedCombinedData);
       
-      // Log what assets are being collected
-      console.log("Assets collected from combined_data:", collectedAssets.map(a => a.pathInZip));
+      const zip = new JSZip();
+      let collectedAssets = []; // Re-initialize for each export section if needed, or manage carefully
 
-      // Fetch and process services.json
-      if (!blockName) {
-        try {
-          // Direct fetch for services.json
-          const servicesResponse = await fetch("/data/ignore/services.json");
-          if (!servicesResponse.ok) {
-            throw new Error(`Failed to fetch services.json: ${servicesResponse.status}`);
+      // --- Process "OLD" data if available (for full OneForm, not single block mode) ---
+      const oldAssetPaths = new Set(); // To store paths of assets in the "old" export
+      if (initialFormDataForOldExport) {
+        console.log("Processing OLD data for ZIP:", initialFormDataForOldExport);
+        let oldCollectedAssets = []; 
+        const cleanedOldCombinedData = traverseAndModifyDataForZip(
+          initialFormDataForOldExport,
+          oldCollectedAssets,
+          'oldFormDataRoot', 
+          'user_uploads/old_combined_data' 
+        );
+        zip.file("old/json/combined_data.json", JSON.stringify(cleanedOldCombinedData, null, 2));
+        
+        oldCollectedAssets.forEach(asset => oldAssetPaths.add(asset.pathInZip)); // Add relative path to set
+
+        const oldAssetProcessingPromises = oldCollectedAssets.map(async (asset) => {
+          const assetPathInZip = `old/${asset.pathInZip}`;
+          try {
+            if (asset.type === 'url' && typeof asset.dataSource === 'string') {
+              if (!asset.dataSource.startsWith('http:') && !asset.dataSource.startsWith('https:') && !asset.dataSource.startsWith('data:') && !asset.dataSource.startsWith('blob:')) {
+                const fetchUrl = asset.dataSource.startsWith('/') ? asset.dataSource : `/${asset.dataSource}`;
+                const response = await fetch(fetchUrl);
+                if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText} for ${fetchUrl}`);
+                const blob = await response.blob();
+                zip.file(assetPathInZip, blob);
+              }
+            } else if (asset.type === 'file' && asset.dataSource instanceof File) {
+              // This case implies initialFormDataForOldExport itself contained File objects (less common)
+              zip.file(assetPathInZip, asset.dataSource);
+            }
+          } catch (assetError) {
+            console.error(`Error processing OLD asset ${assetPathInZip}:`, assetError);
           }
-          
-          const servicesData = await servicesResponse.json();
-          if (servicesData) {
-            console.log("Raw services_data fetched");
-            const cleanedServicesData = traverseAndModifyDataForZip(
-              servicesData,
-              collectedAssets,
-              'servicesDataRoot',
-              'user_uploads/services_data'
+        });
+        await Promise.all(oldAssetProcessingPromises);
+
+        if (!blockName) {
+            try {
+                const servicesResponse = await fetch("/data/ignore/services.json"); 
+                if (servicesResponse.ok) {
+                    const servicesDataOld = await servicesResponse.json();
+                    let oldServiceAssets = []; 
+                    const cleanedServicesDataOld = traverseAndModifyDataForZip(
+                        servicesDataOld,
+                        oldServiceAssets,
+                        'oldServicesDataRoot',
+                        'user_uploads/old_services_data'
+                    );
+                    zip.file("old/json/services.json", JSON.stringify(cleanedServicesDataOld, null, 2));
+                    oldServiceAssets.forEach(asset => oldAssetPaths.add(asset.pathInZip));
+                    const oldServiceAssetPromises = oldServiceAssets.map(async (asset) => {
+                        const assetPathInZip = `old/${asset.pathInZip}`;
+                        if (asset.type === 'url' && typeof asset.dataSource === 'string' && !asset.dataSource.startsWith('http:') && !asset.dataSource.startsWith('https:') && !asset.dataSource.startsWith('data:') && !asset.dataSource.startsWith('blob:')) {
+                            const fetchUrl = asset.dataSource.startsWith('/') ? asset.dataSource : `/${asset.dataSource}`;
+                            const response = await fetch(fetchUrl);
+                            if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText} for ${fetchUrl}`);
+                            const blob = await response.blob();
+                            zip.file(assetPathInZip, blob);
+                        }
+                    });
+                    await Promise.all(oldServiceAssetPromises);
+                }
+            } catch (serviceError) {
+                console.error("Error processing OLD services.json for ZIP:", serviceError);
+            }
+        }
+        console.log("[OneForm] Paths of assets included in OLD export:", Array.from(oldAssetPaths));
+      }
+
+      // --- Process "NEW" (current formData) data ---
+      const newPathPrefix = initialFormDataForOldExport ? "new/" : ""; 
+      console.log("Processing NEW data for ZIP:", formData);
+      let newCollectedAssets = []; // Use a different variable name to avoid confusion with old assets
+
+      const cleanedNewCombinedData = traverseAndModifyDataForZip(
+        formData,
+        newCollectedAssets, // Pass the new array
+        newPathPrefix ? 'newFormDataRoot' : 'formDataRoot',
+        newPathPrefix ? 'user_uploads/new_combined_data' : 'user_uploads/combined_data'
+      );
+      zip.file(`${newPathPrefix}json/combined_data.json`, JSON.stringify(cleanedNewCombinedData, null, 2));
+      console.log("Cleaned NEW combined_data for ZIP:", cleanedNewCombinedData);
+      // console.log("Assets collected from NEW combined_data:", newCollectedAssets); // Log raw newCollectedAssets
+
+      if (!blockName) { 
+        try {
+          const servicesResponse = await fetch("/data/ignore/services.json"); 
+          if (servicesResponse.ok) {
+            const servicesDataNew = await servicesResponse.json();
+            const serviceAssetsForNew = []; // Separate asset collection for services
+            const cleanedServicesDataNew = traverseAndModifyDataForZip(
+                servicesDataNew,
+                serviceAssetsForNew,
+                newPathPrefix ? 'newServicesDataRoot' : 'servicesDataRoot',
+                newPathPrefix ? 'user_uploads/new_services_data' : 'user_uploads/services_data'
             );
-            zip.file("json/services.json", JSON.stringify(cleanedServicesData, null, 2));
-            console.log("Assets collected after services_data processing:", 
-              collectedAssets.map(a => a.pathInZip).filter(p => 
-                !p.includes('formDataRoot') // Only show newly added assets
-              )
-            );
+            zip.file(`${newPathPrefix}json/services.json`, JSON.stringify(cleanedServicesDataNew, null, 2));
+            newCollectedAssets.push(...serviceAssetsForNew); // Add service assets to the main new list
           }
         } catch (serviceError) {
-          console.error("Error processing services.json for ZIP:", serviceError);
-          alert(`Error processing services.json: ${serviceError.message}. ZIP may be incomplete.`);
+          console.error(`Error processing ${newPathPrefix}services.json for ZIP:`, serviceError);
         }
       }
       
-      // Filter out any assets that might have slipped through but should be excluded
-      const filteredAssets = collectedAssets.filter(asset => {
-        // Skip any asset that isn't in a folder structure
-        if (asset.pathInZip.split('/').length <= 2) {
-          console.log(`Excluding non-folder asset: ${asset.pathInZip}`);
-          return false;
-        }
+      // De-duplicate and prioritize File objects for NEW assets
+      const finalNewAssetsMap = new Map();
+      console.log("[OneForm] Initial newCollectedAssets count:", newCollectedAssets.length);
+      newCollectedAssets.forEach(asset => {
+        const assetPathInZip = asset.pathInZip; 
+        // console.log(`[OneForm] Processing asset for final map: pathInZip=${assetPathInZip}, type=${asset.type}, dataSource=${typeof asset.dataSource === 'object' ? asset.dataSource.name || 'FileObject' : asset.dataSource}`);
         
-        // Skip document files that might have passed the initial check
-        const baseFileName = asset.pathInZip.split('/').pop();
-        if (baseFileName === 'about' || baseFileName === 'inspection' || 
-            baseFileName === 'shingleinstallation' || baseFileName.startsWith('#')) {
-          console.log(`Excluding document file: ${asset.pathInZip}`);
-          return false;
+        const existingAsset = finalNewAssetsMap.get(assetPathInZip);
+        if (existingAsset) {
+          if (existingAsset.type === 'url' && asset.type === 'file') {
+            // console.log(`[OneForm] Prioritizing FILE over URL for path: ${assetPathInZip}`);
+            finalNewAssetsMap.set(assetPathInZip, asset);
+          } else if (existingAsset.type === 'file' && asset.type === 'url') {
+            // console.log(`[OneForm] Keeping existing FILE, ignoring URL for path: ${assetPathInZip}`);
+          } else {
+            finalNewAssetsMap.set(assetPathInZip, asset);
+          }
+        } else {
+          finalNewAssetsMap.set(assetPathInZip, asset);
         }
-        
-        return true;
       });
-      
-      console.log(`Filtered out ${collectedAssets.length - filteredAssets.length} assets`);
-      console.log("Final assets for ZIP:", filteredAssets.map(a => a.pathInZip));
 
-      // Add all collected assets to the ZIP
-      const assetProcessingPromises = filteredAssets.map(async (asset) => {
+      const prioritizedNewAssets = Array.from(finalNewAssetsMap.values());
+      console.log("[OneForm] Prioritized new assets count:", prioritizedNewAssets.length);
+      // prioritizedNewAssets.forEach(a => console.log(`  Prioritized asset: path=${a.pathInZip}, type=${a.type}, src=${typeof a.dataSource === 'object' ? a.dataSource.name : a.dataSource}`));
+
+      // Filter for truly new or changed assets to include in the new/assets folder
+      const assetsForNewFolder = prioritizedNewAssets.filter(asset => {
+        console.log(`[OneForm] FILTERING for new/assets: path="${asset.pathInZip}", type="${asset.type}", dataSourceType="${typeof asset.dataSource}", isFileObj=${asset.dataSource instanceof File}`);
+        if (asset.type === 'file') {
+          console.log(`[OneForm] Including FILE in new/assets: ${asset.pathInZip} (name: ${asset.dataSource.name})`);
+          return true; // Always include new file uploads
+        }
+        // For type 'url', only include if it was NOT in the old assets OR if it's a blob (newly pasted image).
+        if (asset.type === 'url') {
+            if (!oldAssetPaths.has(asset.pathInZip) || asset.dataSource.startsWith('blob:')){
+                console.log(`[OneForm] Including URL in new/assets (not in old OR is blob): ${asset.pathInZip}`);
+                return true;
+            }
+            console.log(`[OneForm] SKIPPING URL in new/assets (already in old and not a blob): ${asset.pathInZip}`);
+            return false;
+        }
+        return false; // Should not happen if types are only 'file' or 'url'
+      });
+      console.log("[OneForm] Assets to be physically included in new/assets/ folder:", assetsForNewFolder.map(a => a.pathInZip));
+
+      // Filter out any assets that might have slipped through but should be excluded (for "NEW" assets) - this filtering is now part of assetsForNewFolder logic
+      // const filteredFinalNewAssets = finalNewAssets.filter(asset => { ... });
+      
+      // console.log(`Filtered out ${prioritizedNewAssets.length - assetsForNewFolder.length} assets for NEW physical inclusion`);
+      console.log("Final NEW assets for ZIP (physical files in new/assets):");
+      assetsForNewFolder.forEach(a => console.log(`  Path: ${newPathPrefix}${a.pathInZip}, Type: ${a.type}`));
+
+      // Add only the truly new/changed assets to the new/assets folder in the ZIP
+      const newAssetProcessingPromises = assetsForNewFolder.map(async (asset) => {
+        const assetPathInZip = `${newPathPrefix}${asset.pathInZip}`;
         try {
           if (asset.type === 'file' && asset.dataSource instanceof File) {
-            zip.file(asset.pathInZip, asset.dataSource);
-            console.log(`Added file ${asset.pathInZip} to ZIP`);
+            console.log(`[OneForm] ADDING File to NEW ZIP: path="${assetPathInZip}",fileName="${asset.dataSource.name}", fileSize=${asset.dataSource.size}`);
+            zip.file(assetPathInZip, asset.dataSource);
           } else if (asset.type === 'url' && typeof asset.dataSource === 'string') {
-            if (asset.dataSource.startsWith('/') || !asset.dataSource.includes(':')) {
-              try {
+            if (!asset.dataSource.startsWith('http:') && !asset.dataSource.startsWith('https:') && !asset.dataSource.startsWith('data:') && !asset.dataSource.startsWith('blob:')) {
+              const fetchUrl = asset.dataSource.startsWith('/') ? asset.dataSource : `/${asset.dataSource}`;
+              console.log(`[OneForm] FETCHING local URL for NEW ZIP: path="${assetPathInZip}", from="${fetchUrl}"`);
+              const response = await fetch(fetchUrl);
+              if (!response.ok) {
+                console.error(`[OneForm] FAILED to fetch local URL "${fetchUrl}" for NEW ZIP. Status: ${response.status}`);
+                throw new Error(`HTTP ${response.status}: ${response.statusText} for ${fetchUrl}`);
+              }
+              const blob = await response.blob();
+              console.log(`[OneForm] ADDING fetched local URL content to NEW ZIP: path="${assetPathInZip}", size=${blob.size}`);
+              zip.file(assetPathInZip, blob);
+            } else if (asset.dataSource.startsWith('blob:')) {
+                console.log(`[OneForm] FETCHING blob URL for NEW ZIP: path="${assetPathInZip}", from="${asset.dataSource}"`);
                 const response = await fetch(asset.dataSource);
                 if (!response.ok) {
-                  throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    console.error(`[OneForm] FAILED to fetch blob URL "${asset.dataSource}" for NEW ZIP. Status: ${response.status}`);
+                    throw new Error(`HTTP ${response.status}: Failed to fetch blob ${asset.dataSource}`);
                 }
-                const blob = await response.blob();
-                zip.file(asset.pathInZip, blob);
-                console.log(`Fetched and added ${asset.pathInZip} to ZIP`);
-              } catch (fetchError) {
-                console.error(`Error fetching ${asset.dataSource}:`, fetchError);
-                // Skip adding error files to keep the ZIP clean
-              }
+                const blobContent = await response.blob();
+                console.log(`[OneForm] ADDING fetched blob URL content to NEW ZIP: path="${assetPathInZip}", size=${blobContent.size}`);
+                zip.file(assetPathInZip, blobContent);
             } else {
-              console.warn(`Skipping external URL: ${asset.dataSource}`);
+              // External http/https URLs are not added to the ZIP here by default
+              console.log(`[OneForm] SKIPPING external URL for NEW ZIP: path="${assetPathInZip}", url="${asset.dataSource}"`);
             }
           }
         } catch (assetError) {
-          console.error(`Error processing asset ${asset.pathInZip}:`, assetError);
+          console.error(`Error processing NEW asset ${assetPathInZip} for ZIP:`, assetError);
         }
       });
-
-      await Promise.all(assetProcessingPromises);
+      await Promise.all(newAssetProcessingPromises);
 
       const content = await zip.generateAsync({ type: "blob" });
       const date = new Date();

@@ -7,13 +7,28 @@ gsap.registerPlugin(ScrollTrigger);
 
 // Helper to initialize image state: handles string path or {file, url, name} object
 const initializeEmployeeImageState = (imageValue, defaultPath = "/assets/images/team/roofer.png") => {
-  if (imageValue && typeof imageValue === 'object' && imageValue.url) {
-    return { ...imageValue, name: imageValue.name || imageValue.url.split('/').pop() };
+  let originalUrlToStore = defaultPath;
+  let nameToStore = defaultPath.split('/').pop();
+  let urlToDisplay = defaultPath;
+  let fileObject = null;
+
+  if (imageValue && typeof imageValue === 'object') {
+    urlToDisplay = imageValue.url || defaultPath;
+    nameToStore = imageValue.name || urlToDisplay.split('/').pop();
+    fileObject = imageValue.file || null;
+    originalUrlToStore = imageValue.originalUrl || (typeof imageValue.url === 'string' && !imageValue.url.startsWith('blob:') ? imageValue.url : defaultPath);
+  } else if (typeof imageValue === 'string') {
+    urlToDisplay = imageValue;
+    nameToStore = imageValue.split('/').pop();
+    originalUrlToStore = imageValue;
   }
-  if (typeof imageValue === 'string') {
-    return { file: null, url: imageValue, name: imageValue.split('/').pop() };
-  }
-  return { file: null, url: defaultPath, name: defaultPath.split('/').pop() }; 
+  
+  return { 
+    file: fileObject, 
+    url: urlToDisplay, 
+    name: nameToStore,
+    originalUrl: originalUrlToStore
+  }; 
 };
 
 // Helper to get display URL from string path or {url, file} object
@@ -216,11 +231,18 @@ function EmployeesEditorPanel({ localData, onPanelChange }) {
   const handleImageUpload = (index, file) => {
     if (!file) return;
     const currentItem = localData.employee[index];
-    if (currentItem?.image?.url?.startsWith('blob:')) {
-      URL.revokeObjectURL(currentItem.image.url);
+    const currentImageState = currentItem?.image;
+
+    if (currentImageState?.url?.startsWith('blob:')) {
+      URL.revokeObjectURL(currentImageState.url);
     }
     const fileURL = URL.createObjectURL(file);
-    const updatedImageState = { file: file, url: fileURL, name: file.name };
+    const updatedImageState = { 
+        file: file, 
+        url: fileURL, 
+        name: file.name, 
+        originalUrl: currentImageState?.originalUrl
+    };
     onPanelChange(prev => {
       const updatedEmployees = [...prev.employee];
       updatedEmployees[index] = { ...updatedEmployees[index], image: updatedImageState };
@@ -230,10 +252,17 @@ function EmployeesEditorPanel({ localData, onPanelChange }) {
 
   const handleImageUrlChange = (index, urlValue) => {
     const currentItem = localData.employee[index];
-    if (currentItem?.image?.url?.startsWith('blob:')) {
-      URL.revokeObjectURL(currentItem.image.url);
+    const currentImageState = currentItem?.image;
+
+    if (currentImageState?.url?.startsWith('blob:')) {
+      URL.revokeObjectURL(currentImageState.url);
     }
-    const updatedImageState = { file: null, url: urlValue, name: urlValue.split('/').pop() };
+    const updatedImageState = { 
+        file: null, 
+        url: urlValue, 
+        name: urlValue.split('/').pop(),
+        originalUrl: urlValue
+    };
     onPanelChange(prev => {
       const updatedEmployees = [...prev.employee];
       updatedEmployees[index] = { ...updatedEmployees[index], image: updatedImageState };
@@ -311,58 +340,57 @@ export default function EmployeesBlock({
   useEffect(() => {
     if (employeesData) {
       setLocalData(prevLocalData => {
+        const defaultTitle = "OUR TEAM";
+        
+        const resolvedSectionTitle = 
+          (prevLocalData.sectionTitle !== undefined && prevLocalData.sectionTitle !== (employeesData.sectionTitle || defaultTitle) && prevLocalData.sectionTitle !== defaultTitle)
+          ? prevLocalData.sectionTitle 
+          : (employeesData.sectionTitle || defaultTitle);
+
         const newEmployeeList = (employeesData.employee || []).map((newEmpFromProp, index) => {
-          const oldEmpFromLocal = prevLocalData.employee.find(pe => pe.id === newEmpFromProp.id) || prevLocalData.employee[index] || {};
-          const newImageState = initializeEmployeeImageState(newEmpFromProp.image, oldEmpFromLocal.image?.url);
-          
-          if (oldEmpFromLocal.image?.file && oldEmpFromLocal.image.url?.startsWith('blob:') && oldEmpFromLocal.image.url !== newImageState.url) {
+          const oldEmpFromLocal = prevLocalData.employee?.find(pe => pe.id === newEmpFromProp.id) || 
+                                  prevLocalData.employee?.[index] || 
+                                  { name: "", role: "", image: initializeEmployeeImageState(null), id: `emp_fallback_${index}_${Date.now()}` };
+
+          const newImageState = initializeEmployeeImageState(newEmpFromProp.image, oldEmpFromLocal.image?.originalUrl || oldEmpFromLocal.image?.url);
+
+          if (oldEmpFromLocal.image?.file && oldEmpFromLocal.image.url?.startsWith('blob:') && 
+              (oldEmpFromLocal.image.url !== newImageState.url || (newImageState.url && !newImageState.url.startsWith('blob:')))) {
             URL.revokeObjectURL(oldEmpFromLocal.image.url);
           }
+          
+          const resolvedName = 
+            (oldEmpFromLocal.name !== undefined && oldEmpFromLocal.name !== (newEmpFromProp.name || "") && oldEmpFromLocal.name !== "")
+            ? oldEmpFromLocal.name 
+            : (newEmpFromProp.name || "");
+          
+          const resolvedRole = 
+            (oldEmpFromLocal.role !== undefined && oldEmpFromLocal.role !== (newEmpFromProp.role || "") && oldEmpFromLocal.role !== "")
+            ? oldEmpFromLocal.role
+            : (newEmpFromProp.role || "");
 
-          const mergedEmp = {
-            ...oldEmpFromLocal,
+          return {
             ...newEmpFromProp,
-            id: newEmpFromProp.id || oldEmpFromLocal.id || `emp_update_${index}_${Date.now()}`,
+            id: newEmpFromProp.id || oldEmpFromLocal.id,
             image: newImageState,
+            name: resolvedName,
+            role: resolvedRole,
           };
-
-          if (!readOnly && oldEmpFromLocal.name !== (newEmpFromProp.name || "")) {
-            mergedEmp.name = oldEmpFromLocal.name;
-          } else {
-            mergedEmp.name = newEmpFromProp.name || "";
-          }
-
-          if (!readOnly && oldEmpFromLocal.role !== (newEmpFromProp.role || "")) {
-            mergedEmp.role = oldEmpFromLocal.role;
-          } else {
-            mergedEmp.role = newEmpFromProp.role || "";
-          }
-          return mergedEmp;
         });
-        
-        let resolvedSectionTitle;
-        if (!readOnly && prevLocalData.sectionTitle !== (employeesData.sectionTitle || "OUR TEAM")) {
-            resolvedSectionTitle = prevLocalData.sectionTitle;
-        } else {
-            resolvedSectionTitle = employeesData.sectionTitle || "OUR TEAM";
-        }
 
         const resolvedShowNailAnimation = employeesData.showNailAnimation !== undefined
                                      ? employeesData.showNailAnimation
                                      : (prevLocalData.showNailAnimation !== undefined
                                           ? prevLocalData.showNailAnimation
                                           : true);
-
         return {
-          ...prevLocalData,
-          ...employeesData,
           sectionTitle: resolvedSectionTitle,
           employee: newEmployeeList,
           showNailAnimation: resolvedShowNailAnimation,
         };
       });
     }
-  }, [employeesData, readOnly]);
+  }, [employeesData]);
 
   useEffect(() => {
     return () => {
@@ -380,10 +408,15 @@ export default function EmployeesBlock({
         console.log("EmployeesBlock: Editing finished. Calling onConfigChange.");
         const dataToSave = {
             ...localData,
-            employee: localData.employee.map(emp => ({
-                ...emp,
-                image: emp.image?.file ? (emp.image.name || 'default_employee.png') : emp.image?.url,
-            })),
+            employee: localData.employee.map(emp => {
+                const imageState = emp.image?.file
+                    ? { ...emp.image }
+                    : { url: emp.image?.originalUrl || emp.image?.url };
+                return {
+                    ...emp,
+                    image: imageState,
+                };
+            }),
             showNailAnimation: localData.showNailAnimation !== undefined ? localData.showNailAnimation : true,
         };
         onConfigChange(dataToSave);

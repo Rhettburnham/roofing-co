@@ -501,11 +501,18 @@ function BeforeAfterEditorPanel({ localData, onPanelChange }) {
   const handleItemImageChange = (index, field, file) => {
     if (!file) return;
     const currentItem = items[index];
-    if (currentItem && currentItem[field]?.url?.startsWith('blob:')) {
-      URL.revokeObjectURL(currentItem[field].url);
+    const currentImageFieldState = currentItem?.[field];
+
+    if (currentImageFieldState?.url?.startsWith('blob:')) {
+      URL.revokeObjectURL(currentImageFieldState.url);
     }
     const fileURL = URL.createObjectURL(file);
-    const updatedImageState = { file: file, url: fileURL, name: file.name };
+    const updatedImageState = {
+        file: file, 
+        url: fileURL, 
+        name: file.name, 
+        originalUrl: currentImageFieldState?.originalUrl // Preserve originalUrl
+    };
     
     onPanelChange(prev => {
       const updatedItems = [...prev.items];
@@ -516,10 +523,18 @@ function BeforeAfterEditorPanel({ localData, onPanelChange }) {
   
   const handleItemImageUrlChange = (index, field, urlValue) => {
     const currentItem = items[index];
-    if (currentItem && currentItem[field]?.url?.startsWith('blob:')) {
-      URL.revokeObjectURL(currentItem[field].url);
+    const currentImageFieldState = currentItem?.[field];
+
+    if (currentImageFieldState?.url?.startsWith('blob:')) {
+      URL.revokeObjectURL(currentImageFieldState.url);
     }
-    const updatedImageState = { file: null, url: urlValue, name: urlValue.split('/').pop() };
+    // When pasting a URL, this becomes the new originalUrl as well, and file is null
+    const updatedImageState = { 
+        file: null, 
+        url: urlValue, 
+        name: urlValue.split('/').pop(),
+        originalUrl: urlValue // New URL is the new original reference
+    };
     onPanelChange(prev => {
       const updatedItems = [...prev.items];
       updatedItems[index] = { ...updatedItems[index], [field]: updatedImageState };
@@ -584,13 +599,31 @@ function BeforeAfterEditorPanel({ localData, onPanelChange }) {
 =============================================== */
 // Helper to initialize image state: handles string path or {file, url, name} object
 const initializeImageState = (imageConfig, defaultPath) => {
-  if (imageConfig && typeof imageConfig === 'object' && imageConfig.url) {
-    return { ...imageConfig, name: imageConfig.name || imageConfig.url.split('/').pop() }; 
+  let originalUrlToStore = defaultPath;
+  let nameToStore = defaultPath.split('/').pop();
+  let urlToDisplay = defaultPath;
+  let fileObject = null;
+
+  if (imageConfig && typeof imageConfig === 'object') {
+    // If imageConfig is an object, it might be from a previous state or a new upload
+    urlToDisplay = imageConfig.url || defaultPath;
+    nameToStore = imageConfig.name || urlToDisplay.split('/').pop();
+    fileObject = imageConfig.file || null; // Preserve file object if it exists
+    // Crucially, preserve originalUrl if it already exists in imageConfig, otherwise use the determined urlToDisplay or defaultPath
+    originalUrlToStore = imageConfig.originalUrl || (typeof imageConfig.url === 'string' && !imageConfig.url.startsWith('blob:') ? imageConfig.url : defaultPath) ;
+  } else if (typeof imageConfig === 'string') {
+    // If imageConfig is a string, it's an initial path
+    urlToDisplay = imageConfig;
+    nameToStore = imageConfig.split('/').pop();
+    originalUrlToStore = imageConfig; // This path is the original
   }
-  if (typeof imageConfig === 'string') {
-    return { file: null, url: imageConfig, name: imageConfig.split('/').pop() }; 
-  }
-  return { file: null, url: defaultPath, name: defaultPath.split('/').pop() }; 
+  
+  return { 
+    file: fileObject, 
+    url: urlToDisplay, // This could be a path or a blob URL for preview
+    name: nameToStore,
+    originalUrl: originalUrlToStore // The persistent original path
+  }; 
 };
 
 export default function BeforeAfterBlock({
@@ -617,70 +650,65 @@ export default function BeforeAfterBlock({
   useEffect(() => {
     if (beforeAfterData) {
       setLocalData(prevLocalData => {
-        const newItems = (beforeAfterData.items || []).map((newItemFromProp, index) => {
-          const oldItemFromLocal = prevLocalData.items.find(pi => pi.id === newItemFromProp.id) || prevLocalData.items[index] || {};
-          
-          const newBeforeImg = initializeImageState(newItemFromProp.before, oldItemFromLocal.before?.url || "/assets/images/beforeafter/default_before.jpg");
-          const newAfterImg = initializeImageState(newItemFromProp.after, oldItemFromLocal.after?.url || "/assets/images/beforeafter/default_after.jpg");
+        const defaultTitle = "GALLERY";
+        const defaultShingle = "";
+        const defaultSqft = "";
 
-          if (oldItemFromLocal.before?.file && oldItemFromLocal.before.url?.startsWith('blob:') && oldItemFromLocal.before.url !== newBeforeImg.url) {
+        const resolvedSectionTitle =
+          (prevLocalData.sectionTitle !== undefined && prevLocalData.sectionTitle !== (beforeAfterData.sectionTitle || defaultTitle) && prevLocalData.sectionTitle !== defaultTitle)
+          ? prevLocalData.sectionTitle
+          : (beforeAfterData.sectionTitle || defaultTitle);
+
+        const newItems = (beforeAfterData.items || []).map((newItemFromProp, index) => {
+          const oldItemFromLocal = prevLocalData.items?.find(pi => pi.id === newItemFromProp.id) || 
+                                   prevLocalData.items?.[index] || 
+                                   { shingle: "", sqft: "", before: initializeImageState(null), after: initializeImageState(null), id: `item_fallback_${index}_${Date.now()}` };
+
+          const newBeforeImg = initializeImageState(newItemFromProp.before, oldItemFromLocal.before?.originalUrl || oldItemFromLocal.before?.url);
+          const newAfterImg = initializeImageState(newItemFromProp.after, oldItemFromLocal.after?.originalUrl || oldItemFromLocal.after?.url);
+
+          if (oldItemFromLocal.before?.file && oldItemFromLocal.before.url?.startsWith('blob:') && 
+              (oldItemFromLocal.before.url !== newBeforeImg.url || (newBeforeImg.url && !newBeforeImg.url.startsWith('blob:')))) {
             URL.revokeObjectURL(oldItemFromLocal.before.url);
           }
-          if (oldItemFromLocal.after?.file && oldItemFromLocal.after.url?.startsWith('blob:') && oldItemFromLocal.after.url !== newAfterImg.url) {
+          if (oldItemFromLocal.after?.file && oldItemFromLocal.after.url?.startsWith('blob:') && 
+              (oldItemFromLocal.after.url !== newAfterImg.url || (newAfterImg.url && !newAfterImg.url.startsWith('blob:')))) {
             URL.revokeObjectURL(oldItemFromLocal.after.url);
           }
+          
+          const resolvedShingle = 
+            (oldItemFromLocal.shingle !== undefined && oldItemFromLocal.shingle !== (newItemFromProp.shingle || defaultShingle) && oldItemFromLocal.shingle !== defaultShingle)
+            ? oldItemFromLocal.shingle
+            : (newItemFromProp.shingle || defaultShingle);
 
-          const mergedItem = {
-            ...oldItemFromLocal,
+          const resolvedSqft =
+            (oldItemFromLocal.sqft !== undefined && oldItemFromLocal.sqft !== (newItemFromProp.sqft || defaultSqft) && oldItemFromLocal.sqft !== defaultSqft)
+            ? oldItemFromLocal.sqft
+            : (newItemFromProp.sqft || defaultSqft);
+
+          return {
             ...newItemFromProp,
-            id: newItemFromProp.id || oldItemFromLocal.id || `item_update_${index}_${Date.now()}`,
+            id: newItemFromProp.id || oldItemFromLocal.id,
             before: newBeforeImg,
             after: newAfterImg,
+            shingle: resolvedShingle,
+            sqft: resolvedSqft,
           };
-
-          // Preserve local shingle if editing and different from prop
-          if (!readOnly && oldItemFromLocal.shingle !== (newItemFromProp.shingle || "")) {
-            mergedItem.shingle = oldItemFromLocal.shingle;
-          } else {
-            mergedItem.shingle = newItemFromProp.shingle || "";
-          }
-
-          // Preserve local sqft if editing and different from prop
-          if (!readOnly && oldItemFromLocal.sqft !== (newItemFromProp.sqft || "")) {
-            mergedItem.sqft = oldItemFromLocal.sqft;
-          } else {
-            mergedItem.sqft = newItemFromProp.sqft || "";
-          }
-          return mergedItem;
         });
         
-        let resolvedSectionTitle;
-        // Preserve local sectionTitle if editing and different from prop
-        if (!readOnly && prevLocalData.sectionTitle !== (beforeAfterData.sectionTitle || "GALLERY")) {
-            resolvedSectionTitle = prevLocalData.sectionTitle;
-        } else {
-            resolvedSectionTitle = beforeAfterData.sectionTitle || "GALLERY";
-        }
-        
-        // Handle showNailAnimation using BookingBlock pattern: prop if defined, else local, else default
         const resolvedShowNailAnimation = beforeAfterData.showNailAnimation !== undefined
                                      ? beforeAfterData.showNailAnimation
                                      : (prevLocalData.showNailAnimation !== undefined
                                           ? prevLocalData.showNailAnimation
                                           : true);
-
         return {
-          ...prevLocalData, // Start with current local state
-          ...beforeAfterData, // Overlay with all incoming props for general structure/defaults
-
-          // Specifically set fields with merge logic or editor state preference
           sectionTitle: resolvedSectionTitle,
           items: newItems,
           showNailAnimation: resolvedShowNailAnimation,
         };
       });
     }
-  }, [beforeAfterData, readOnly]);
+  }, [beforeAfterData]); // MODIFIED: Only depends on beforeAfterData prop
 
   useEffect(() => {
     return () => {
@@ -697,11 +725,23 @@ export default function BeforeAfterBlock({
         console.log("BeforeAfterBlock: Editing finished. Calling onConfigChange.");
         const dataToSave = {
             ...localData,
-            items: localData.items.map(item => ({
-                ...item,
-                before: item.before?.file ? (item.before.name || 'default_before.jpg') : item.before?.url,
-                after: item.after?.file ? (item.after.name || 'default_after.jpg') : item.after?.url,
-            })),
+            items: localData.items.map(item => {
+                // For each image (before, after), pass the full state if a file exists (includes File & originalUrl)
+                // Otherwise, pass an object with just the url (which should be the originalUrl or a pasted one)
+                const beforeImageState = item.before?.file 
+                    ? { ...item.before } // Pass the whole object {file, name, url (blob), originalUrl}
+                    : { url: item.before?.originalUrl || item.before?.url }; // Fallback to url if originalUrl somehow missing
+                
+                const afterImageState = item.after?.file
+                    ? { ...item.after } // Pass the whole object {file, name, url (blob), originalUrl}
+                    : { url: item.after?.originalUrl || item.after?.url };
+
+                return {
+                    ...item,
+                    before: beforeImageState,
+                    after: afterImageState,
+                };
+            }),
             showNailAnimation: localData.showNailAnimation !== undefined ? localData.showNailAnimation : true,
         };
         onConfigChange(dataToSave);

@@ -22,14 +22,29 @@ const deriveInitialLocalData = (richTextDataInput, currentBannerColor) => {
     bus_description: initial.bus_description || "",
     bus_description_second: initial.bus_description_second || "",
     cards: initial.cards?.map(c => ({ ...c, id: c.id || `card_${Math.random().toString(36).substr(2, 9)}`, icon: c.icon || 'Star' })) || [],
-    images: [...(initial.images || [])],
-    imageUploads: initial.imageUploads || (initial.images ? initial.images.map(() => null) : []),
+    images: (initial.images || []).map(img => {
+      if (typeof img === 'string') {
+        return { 
+          file: null, 
+          url: img, 
+          name: img.split('/').pop(), 
+          originalUrl: img 
+        };
+      }
+      // If img is already an object (e.g., from a previous edit session that wasn't fully saved/propagated in old format)
+      // try to preserve its structure or default it if invalid.
+      return img && typeof img === 'object' && img.url ? 
+        { ...img, originalUrl: img.originalUrl || img.url } : 
+        { file: null, url: '', name: '', originalUrl: '' }; // Default for malformed objects
+    }),
     overlayImages: [...(initial.overlayImages || ["/assets/images/shake_img/1.png", "/assets/images/shake_img/2.png", "/assets/images/shake_img/3.png", "/assets/images/shake_img/4.png"])],
     steps: (initial.steps || []).map(step => ({
       ...step,
       id: step.id || `step_${Math.random().toString(36).substr(2, 9)}`,
       videoFile: step.videoFile || null, 
-      videoFileName: step.videoFileName || (typeof step.videoSrc === 'string' ? step.videoSrc.split('/').pop() : ''),
+      videoSrc: step.videoFile ? URL.createObjectURL(step.videoFile) : (step.videoSrc || ''), // Display URL
+      videoFileName: step.videoFileName || (step.videoFile ? step.videoFile.name : (typeof step.videoSrc === 'string' ? step.videoSrc.split('/').pop() : '')),
+      originalVideoUrl: step.originalVideoUrl || (typeof step.videoSrc === 'string' && !step.videoSrc.startsWith('blob:') ? step.videoSrc : null)
     })),
     sharedBannerColor: initial.sharedBannerColor || currentBannerColor || "#1e293b",
   };
@@ -82,7 +97,7 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange, bannerColor, 
   }, []); // Empty dependency array ensures this runs once on mount
 
   useEffect(() => {
-    console.log("RichTextPreview received data:", richTextData, "readOnly:", readOnly, "bannerColor:", bannerColor);
+    // console.log("RichTextPreview received data:", richTextData, "readOnly:", readOnly, "bannerColor:", bannerColor);
   }, [richTextData, readOnly, bannerColor]);
 
   if (!richTextData) {
@@ -117,7 +132,7 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange, bannerColor, 
   }, [steps]);
 
   useEffect(() => {
-    console.log("Steps data:", steps);
+    // console.log("Steps data:", steps);
     steps.forEach((_, idx) => {
       if (!videoRefs.current[idx]) {
         videoRefs.current[idx] = document.createElement('video');
@@ -135,14 +150,14 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange, bannerColor, 
             const normalizedPath = step.videoSrc.startsWith('/') ? step.videoSrc.substring(1) : step.videoSrc;
             video.src = normalizedPath;
             video.load();
-            video.onloadeddata = () => { console.log(`Video ${idx} data loaded`); resolve(); };
-            video.oncanplaythrough = () => { console.log(`Video ${idx} can play through`); resolve(); };
-            video.onerror = (e) => { console.error(`Error loading video for step ${idx}:`, step, e); resolve(); };
+            video.onloadeddata = () => { /* console.log(`Video ${idx} data loaded`); */ resolve(); };
+            video.oncanplaythrough = () => { /* console.log(`Video ${idx} can play through`); */ resolve(); };
+            video.onerror = (e) => { console.error(`Error loading video for step ${idx}:`, step.videoSrc, e); resolve(); }; // Keep error for actual issues
             setTimeout(resolve, 5000);
           });
         });
         await Promise.all(promises);
-        console.log("All videos preloaded");
+        // console.log("All videos preloaded");
         setVideosLoaded(true);
       } catch (error) {
         console.error("Error preloading videos:", error);
@@ -164,7 +179,7 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange, bannerColor, 
   useEffect(() => {
     if (!videosLoaded || !steps || steps.length === 0) return;
 
-    console.log(`[Playback Effect] currentSlide is: ${currentSlide}, steps.length: ${steps.length}`);
+    // console.log(`[Playback Effect] currentSlide is: ${currentSlide}, steps.length: ${steps.length}`);
 
     // Clear any existing slide advancement timeout before proceeding
     if (slideTimeoutRef.current) {
@@ -183,55 +198,51 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange, bannerColor, 
         // console.warn(`Video ${idx} src mismatch or not set. Current: ${video.src}, Expected based on step: ${expectedSrc}`);
       }
       if (!video.src && !expectedSrc) {
-        console.warn(`Video ${idx} has no source in DOM or step data.`);
+        // console.warn(`Video ${idx} has no source in DOM or step data.`);
         return;
       }
 
       try {
         if (idx === currentSlide) {
-          console.log(`Attempting to play video ${idx} (current slide ${currentSlide})`);
+          // console.log(`Attempting to play video ${idx} (current slide ${currentSlide})`);
           video.currentTime = 0;
           video.muted = true; 
           const playPromise = video.play();
           if (playPromise !== undefined) {
             playPromise.then(() => {
-              console.log(`Video ${idx} started playing. Setting 2.5s timeout to advance slide.`);
+              // console.log(`Video ${idx} started playing. Setting 2.5s timeout to advance slide.`);
               // Set timeout to advance to the next slide after 2.5 seconds
               slideTimeoutRef.current = setTimeout(() => {                
                 const latestSteps = stepsRef.current; // Use the most current steps array
-                console.log(`2.5s timer fired for slide ${currentSlide}. Advancing. Latest steps length: ${latestSteps?.length}`); // currentSlide here is the captured value from the outer scope
+                // console.log(`2.5s timer fired for slide ${currentSlide}. Advancing. Latest steps length: ${latestSteps?.length}`); 
                 if (latestSteps && latestSteps.length > 0) {
                   setCurrentSlide(prev => (prev + 1) % latestSteps.length);
                 } else {
-                  // This case should ideally be rare given other guards,
-                  // but as a fallback, reset to 0 if steps somehow became empty.
                   setCurrentSlide(0);
-                  console.warn("Steps array was empty or undefined when slide advancement timer fired. Resetting to slide 0.");
+                  // console.warn("Steps array was empty or undefined when slide advancement timer fired. Resetting to slide 0.");
                 }
               }, 2500); 
             }).catch(error => {
-              console.warn(`Video ${idx} play() failed, cannot set advance timer:`, error.name, error.message);
-              // If video fails to play, perhaps advance immediately or after a shorter fallback delay?
-              // For now, it won't advance automatically if play fails.
+              console.warn(`Video ${idx} play() failed, cannot set advance timer:`, error.name, error.message); // Keep important warnings
             });
           }
         } else {
           video.pause();
           // Preload the next slide (the one that will become currentSlide after this one)
           if (idx === (currentSlide + 1) % steps.length) {
-            console.log(`Preloading video ${idx} (next slide after ${currentSlide})`);
+            // console.log(`Preloading video ${idx} (next slide after ${currentSlide})`);
             video.load(); 
           }
         }
       } catch (error) {
-        console.warn(`Error controlling video ${idx} in slideshow playback effect:`, error);
+        console.warn(`Error controlling video ${idx} in slideshow playback effect:`, error); // Keep important warnings
       }
     });
 
     return () => {
       // Cleanup: clear the timeout when the component unmounts or dependencies change
       if (slideTimeoutRef.current) {
-        console.log("Clearing slide advance timeout.");
+        // console.log("Clearing slide advance timeout.");
         clearTimeout(slideTimeoutRef.current);
       }
     };
@@ -469,8 +480,8 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange, bannerColor, 
               x: `-${currentSlide * (100 / (steps.length || 1))}%` // Guard against division by zero if steps.length is briefly 0
             }}
             transition={{ type: "tween", duration: 1, ease: "easeInOut" }} // Slide duration 1 second
-            onAnimationStart={() => console.log(`[Animation Start] Sliding to slide: ${currentSlide}, target x: -${currentSlide * (100 / (steps.length || 1))}%`)}
-            onAnimationComplete={() => console.log(`[Animation Complete] Arrived at slide: ${currentSlide}`)}
+            // onAnimationStart={() => console.log(`[Animation Start] Sliding to slide: ${currentSlide}, target x: -${currentSlide * (100 / (steps.length || 1))}%`)}
+            // onAnimationComplete={() => console.log(`[Animation Complete] Arrived at slide: ${currentSlide}`)}
           >
             {steps.map((step, index) => {
               const videoSrc = step.videoFile ? URL.createObjectURL(step.videoFile) :
@@ -704,29 +715,32 @@ function RichTextControlsPanel({ localData, onDataChange, currentBannerColor }) 
   const handleAddImage = () => {
     onDataChange((prev) => ({ 
         ...prev, 
-        images: [...(prev.images || []), ""], 
-        imageUploads: [...(prev.imageUploads || []), null] 
+        images: [...(prev.images || []), { file: null, url: '', name: 'New Image', originalUrl: '' }], 
+        // imageUploads: [...(prev.imageUploads || []), null] // No longer needed
     }));
   };
 
   const handleRemoveImage = (index) => {
     onDataChange((prev) => {
         const currentImages = prev.images || [];
-        const currentImageUploads = prev.imageUploads || [];
+        // const currentImageUploads = prev.imageUploads || []; // No longer needed
 
         const updatedImages = [...currentImages];
-        const imageToRemoveSrc = updatedImages[index];
+        const imageToRemove = updatedImages[index];
+        if (imageToRemove && imageToRemove.url && imageToRemove.url.startsWith('blob:')) {
+            URL.revokeObjectURL(imageToRemove.url);
+        }
         updatedImages.splice(index, 1);
         
-        const updatedImageUploads = [...currentImageUploads];
-        if (updatedImageUploads.length > index) { 
-            const uploadData = updatedImageUploads[index];
-            if (uploadData && uploadData.file && typeof imageToRemoveSrc === 'string' && imageToRemoveSrc.startsWith('blob:')) {
-                URL.revokeObjectURL(imageToRemoveSrc);
-            }
-            updatedImageUploads.splice(index,1); 
-        }
-        return { ...prev, images: updatedImages, imageUploads: updatedImageUploads };
+        // const updatedImageUploads = [...currentImageUploads]; // No longer needed
+        // if (updatedImageUploads.length > index) {  // No longer needed
+        //     const uploadData = updatedImageUploads[index]; // No longer needed
+        //     if (uploadData && uploadData.file && typeof imageToRemoveSrc === 'string' && imageToRemoveSrc.startsWith('blob:')) { // No longer needed
+        //         URL.revokeObjectURL(imageToRemoveSrc); // No longer needed
+        //     } // No longer needed
+        //     updatedImageUploads.splice(index,1);  // No longer needed
+        // } // No longer needed
+        return { ...prev, images: updatedImages /*, imageUploads: updatedImageUploads */ }; // imageUploads removed
     });
   };
 
@@ -735,23 +749,29 @@ function RichTextControlsPanel({ localData, onDataChange, currentBannerColor }) 
       const fileURL = URL.createObjectURL(file); 
       onDataChange((prev) => {
           const currentImages = prev.images || [];
-          const currentImageUploads = prev.imageUploads || [];
+          // const currentImageUploads = prev.imageUploads || []; // No longer needed
 
           const updatedImages = [...currentImages];
-          const updatedImageUploads = [...currentImageUploads];
+          // const updatedImageUploads = [...currentImageUploads]; // No longer needed
           
-          while(updatedImages.length <= index) { updatedImages.push(""); }
-          while(updatedImageUploads.length <= index) { updatedImageUploads.push(null); }
+          while(updatedImages.length <= index) { 
+            updatedImages.push({ file: null, url: '', name: '', originalUrl: '' }); 
+          }
+          // while(updatedImageUploads.length <= index) { updatedImageUploads.push(null); } // No longer needed
 
-          const oldImageSrc = updatedImages[index];
-          const oldUploadData = updatedImageUploads[index];
-          if (oldUploadData && oldUploadData.file && typeof oldImageSrc === 'string' && oldImageSrc.startsWith('blob:')) {
-              URL.revokeObjectURL(oldImageSrc);
+          const oldImageState = updatedImages[index];
+          if (oldImageState && oldImageState.url && oldImageState.url.startsWith('blob:')) {
+              URL.revokeObjectURL(oldImageState.url);
           }
 
-          updatedImages[index] = fileURL; 
-          updatedImageUploads[index] = { file, fileName: file.name }; 
-          return { ...prev, images: updatedImages, imageUploads: updatedImageUploads };
+          updatedImages[index] = { 
+            file: file, 
+            url: fileURL, 
+            name: file.name, 
+            originalUrl: oldImageState?.originalUrl || '' // Preserve originalUrl
+          }; 
+          // updatedImageUploads[index] = { file, fileName: file.name }; // No longer needed
+          return { ...prev, images: updatedImages /*, imageUploads: updatedImageUploads */ }; // imageUploads removed
       });
     }
   };
@@ -767,7 +787,7 @@ function RichTextControlsPanel({ localData, onDataChange, currentBannerColor }) 
 
   const handleStepVideoUpload = (index, file) => {
     if (file) {
-      const newVideoSrc = URL.createObjectURL(file);
+      const newVideoSrcBlob = URL.createObjectURL(file);
       onDataChange(prev => {
           const currentSteps = prev.steps || [];
           const oldStep = currentSteps[index];
@@ -776,23 +796,26 @@ function RichTextControlsPanel({ localData, onDataChange, currentBannerColor }) 
           }
 
           let updatedSteps = [...currentSteps];
-          // Ensure step exists at index before updating
           if (index < updatedSteps.length) {
             updatedSteps = updatedSteps.map((step, i) =>
-                i === index ? { ...step, videoFile: file, videoSrc: newVideoSrc, videoFileName: file.name } : step
+                i === index ? { 
+                    ...step, 
+                    videoFile: file, 
+                    videoSrc: newVideoSrcBlob, 
+                    videoFileName: file.name, 
+                    originalVideoUrl: step.originalVideoUrl // Preserve existing originalVideoUrl
+                } : step
             );
-          } else if (index === updatedSteps.length) { // Append if new step index
-             // This assumes a new step placeholder isn't necessarily added by handleAddStep first
-             // For robustness, handleAddStep should create the entry, and this just populates video
-             console.warn("handleStepVideoUpload: Adding new step for video upload at index", index, ". Consider adding step structure first.");
+          } else if (index === updatedSteps.length) { 
              updatedSteps.push({
                 id: `step_new_${Date.now()}`,
                 title: "New Video Step", 
                 videoFile: file, 
-                videoSrc: newVideoSrc, 
+                videoSrc: newVideoSrcBlob, 
                 videoFileName: file.name, 
                 href: "#", 
-                scale: 1
+                scale: 1,
+                originalVideoUrl: null // New step, no original video URL yet
             });
           }
           
@@ -802,7 +825,16 @@ function RichTextControlsPanel({ localData, onDataChange, currentBannerColor }) 
   };
   
   const handleAddStep = () => {
-    const newStep = { id: `step_${Date.now()}_${Math.random().toString(36).substr(2,5)}`, title: "New Step", videoSrc: "", href: "#", scale: 1, videoFile: null, videoFileName: "" };
+    const newStep = { 
+        id: `step_${Date.now()}_${Math.random().toString(36).substr(2,5)}`, 
+        title: "New Step", 
+        videoSrc: "", 
+        href: "#", 
+        scale: 1, 
+        videoFile: null, 
+        videoFileName: "", 
+        originalVideoUrl: null 
+    };
     onDataChange(prev => ({ ...prev, steps: [...(prev.steps || []), newStep] }));
   };
 
@@ -829,22 +861,22 @@ function RichTextControlsPanel({ localData, onDataChange, currentBannerColor }) 
           <button onClick={handleAddImage} type="button" className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1.5 rounded shadow">+ Add Image Slot</button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {(images || []).map((imgSrc, idx) => { 
-            const currentUpload = imageUploads && imageUploads[idx];
+          {(images || []).map((imgState, idx) => { 
+            // const currentUpload = imageUploads && imageUploads[idx]; // No longer needed
             let displayFileName = 'Empty';
-            if (currentUpload && currentUpload.fileName) {
-                displayFileName = currentUpload.fileName;
-            } else if (typeof imgSrc === 'string' && !imgSrc.startsWith('blob:') && imgSrc) {
-                displayFileName = imgSrc.split('/').pop() || 'Existing Image';
-            } else if (typeof imgSrc === 'string' && imgSrc.startsWith('blob:')) {
-                displayFileName = 'New Upload';
+            if (imgState && imgState.name) {
+                displayFileName = imgState.name;
+            } else if (imgState && typeof imgState.url === 'string' && !imgState.url.startsWith('blob:') && imgState.url) {
+                displayFileName = imgState.url.split('/').pop() || 'Existing Image';
+            } else if (imgState && typeof imgState.url === 'string' && imgState.url.startsWith('blob:')) {
+                displayFileName = imgState.name || 'New Upload'; // Use name from file if available
             }
 
-            let previewUrl = imgSrc; 
-            if (typeof imgSrc === 'string' && !imgSrc.startsWith('blob:') && !imgSrc.startsWith('/') && imgSrc) {
-                previewUrl = `/assets/images/Richtext/${imgSrc.split('/').pop() || ''}`;
-            } else if (!imgSrc && currentUpload && currentUpload.file) {
-                previewUrl = URL.createObjectURL(currentUpload.file); 
+            let previewUrl = imgState?.url; 
+            if (typeof previewUrl === 'string' && !previewUrl.startsWith('blob:') && !previewUrl.startsWith('/') && previewUrl) {
+                previewUrl = `/assets/images/Richtext/${previewUrl.split('/').pop() || ''}`;
+            } else if (!previewUrl && imgState?.file) { // Should be handled by imgState.url being blob
+                // previewUrl = URL.createObjectURL(imgState.file); 
             }
             
             return (
@@ -972,71 +1004,85 @@ export default function RichTextBlock({
   useEffect(() => {
     setLocalData(prevLocalData => {
       const newBaseFromProps = deriveInitialLocalData(richTextData, bannerColor);
+      const defaultHeroText = "";
+      const defaultBusDesc = "";
+      const defaultBusDescSecond = "";
 
-      if (showControls) {
-        // In edit mode: preserve unpropagated inline text edits from prevLocalData.
-        // Panel-controlled items (images, steps, banner color, card icons) come from newBaseFromProps (via richTextData).
-        // Card text (title, desc) is inline, preserve from prevLocalData if different.
-        // File objects (imageUploads, videoFile) need careful preservation from prevLocalData.
-        
-        // Preserve files from prevLocalData if they exist and props haven't explicitly changed them
-        const mergedImageUploads = newBaseFromProps.imageUploads.map((propUpload, idx) => {
-          const prevUpload = prevLocalData.imageUploads && prevLocalData.imageUploads[idx];
-          const propImageSrc = newBaseFromProps.images && newBaseFromProps.images[idx];
-          const prevImageSrc = prevLocalData.images && prevLocalData.images[idx];
+      const resolvedHeroText =
+        (prevLocalData.heroText !== undefined && prevLocalData.heroText !== (newBaseFromProps.heroText || defaultHeroText) && prevLocalData.heroText !== defaultHeroText)
+        ? prevLocalData.heroText
+        : (newBaseFromProps.heroText || defaultHeroText);
 
-          // If previous upload had a file, and the corresponding image source in props is either missing, 
-          // the same as before, or a blob (indicating it might still be the same file), keep the previous file.
-          if (prevUpload && prevUpload.file && 
-              (!propImageSrc || propImageSrc === prevImageSrc || (typeof propImageSrc === 'string' && propImageSrc.startsWith('blob:')))) {
-            return prevUpload;
-          }
-          return propUpload; // Otherwise, take from props (which might be null if file was removed via panel)
-        });
+      const resolvedBusDescription =
+        (prevLocalData.bus_description !== undefined && prevLocalData.bus_description !== (newBaseFromProps.bus_description || defaultBusDesc) && prevLocalData.bus_description !== defaultBusDesc)
+        ? prevLocalData.bus_description
+        : (newBaseFromProps.bus_description || defaultBusDesc);
 
-        const mergedSteps = newBaseFromProps.steps.map((propStep) => {
-          const prevStep = prevLocalData.steps && prevLocalData.steps.find(s => s.id === propStep.id);
-          if (prevStep && prevStep.videoFile && 
-              (!propStep.videoSrc || propStep.videoSrc === prevStep.videoSrc || (typeof propStep.videoSrc === 'string' && propStep.videoSrc.startsWith('blob:')))) {
-            return { ...propStep, videoFile: prevStep.videoFile, videoFileName: prevStep.videoFileName };
-          }
-          return propStep;
-        });
+      const resolvedBusDescriptionSecond =
+        (prevLocalData.bus_description_second !== undefined && prevLocalData.bus_description_second !== (newBaseFromProps.bus_description_second || defaultBusDescSecond) && prevLocalData.bus_description_second !== defaultBusDescSecond)
+        ? prevLocalData.bus_description_second
+        : (newBaseFromProps.bus_description_second || defaultBusDescSecond);
 
-        return {
-          ...newBaseFromProps, 
-          heroText: prevLocalData.heroText, // Always take from local when editing
-          bus_description: prevLocalData.bus_description, // Always take from local
-          bus_description_second: prevLocalData.bus_description_second, // Always take from local
-          
-          cards: newBaseFromProps.cards.map((propCard) => {
-            const localCardEquivalent = prevLocalData.cards.find(lc => lc.id === propCard.id);
-            if (localCardEquivalent) {
-              return {
-                ...propCard, // icon from propCard (updated by immediate propagation from onConfigChange)
-                title: localCardEquivalent.title, // Always take local title if editing
-                desc: localCardEquivalent.desc,   // Always take local desc if editing
-              };
-            }
-            // If no local equivalent, it might be a new card from props, take it as is.
-            return { ...propCard, icon: propCard.icon || 'Star'}; 
-          }),
+      const mergedImages = (newBaseFromProps.images || []).map((propImgState, idx) => {
+        const prevImgState = prevLocalData.images?.[idx];
+        if (prevImgState && prevImgState.file && 
+            (prevImgState.url === propImgState.url || 
+             (prevImgState.originalUrl && prevImgState.originalUrl === propImgState.originalUrl) ||
+             (propImgState.url && propImgState.url === prevImgState.url ) // if prop url is already blob from parent
+            ))
+        {
+          return prevImgState; 
+        }
+        return propImgState; 
+      });
 
-          imageUploads: mergedImageUploads,
-          steps: mergedSteps,
-        };
-      } else {
-        // Not in edit mode. localData should mirror props.
-        return newBaseFromProps;
-      }
+      const mergedSteps = (newBaseFromProps.steps || []).map((propStep) => {
+        const prevStep = prevLocalData.steps?.find(s => s.id === propStep.id);
+        if (prevStep && prevStep.videoFile && 
+            (prevStep.videoSrc === propStep.videoSrc || 
+             (prevStep.originalVideoUrl && prevStep.originalVideoUrl === propStep.originalVideoUrl) ||
+             (propStep.videoSrc && propStep.videoSrc === prevStep.videoSrc) // if prop src is already blob
+            ))
+        {
+          return { ...propStep, videoFile: prevStep.videoFile, videoFileName: prevStep.videoFileName, videoSrc: prevStep.videoSrc, originalVideoUrl: prevStep.originalVideoUrl };
+        }
+        return propStep;
+      });
+
+      const mergedCards = (newBaseFromProps.cards || []).map((propCard) => {
+        const localCardEquivalent = prevLocalData.cards?.find(lc => lc.id === propCard.id);
+        if (localCardEquivalent) {
+          return {
+            ...propCard, 
+            icon: propCard.icon || localCardEquivalent.icon || 'Star', // Prioritize prop icon for immediate feedback from modal
+            title: (localCardEquivalent.title !== undefined && localCardEquivalent.title !== (propCard.title || "") && localCardEquivalent.title !== "") 
+                   ? localCardEquivalent.title 
+                   : (propCard.title || ""),
+            desc: (localCardEquivalent.desc !== undefined && localCardEquivalent.desc !== (propCard.desc || "") && localCardEquivalent.desc !== "")
+                  ? localCardEquivalent.desc
+                  : (propCard.desc || ""),
+          };
+        }
+        return { ...propCard, icon: propCard.icon || 'Star'}; 
+      });
+
+      return {
+        ...newBaseFromProps, // Base for panel-controlled items like sharedBannerColor
+        heroText: resolvedHeroText,
+        bus_description: resolvedBusDescription,
+        bus_description_second: resolvedBusDescriptionSecond,
+        cards: mergedCards,
+        images: mergedImages,
+        steps: mergedSteps,
+      };
     });
-  }, [richTextData, showControls, bannerColor]); // Removed localData from deps to avoid loop, logic relies on prevLocalData in updater
+  }, [richTextData, bannerColor]); // MODIFIED: Removed showControls and localData dependencies
 
   // Effect to call onConfigChange when exiting edit mode
   useEffect(() => {
     if (prevShowControlsRef.current === true && showControls === false) {
       if (onConfigChange) {
-        console.log("RichTextBlock: Editing finished (showControls from true to false). Calling onConfigChange with:", localData);
+        // console.log("RichTextBlock: Editing finished (showControls from true to false). Calling onConfigChange with:", localData);
         onConfigChange(localData);
       }
     }
@@ -1067,7 +1113,7 @@ export default function RichTextBlock({
         // allowing React to process the state update first.
         setTimeout(() => {
             setLocalData(currentAfterUpdate => { // Read the most current state
-                 console.log("RichTextBlock: Data updated from ControlsPanel/IconSelection, propagating immediately.", currentAfterUpdate);
+                 // console.log("RichTextBlock: Data updated from ControlsPanel/IconSelection, propagating immediately.", currentAfterUpdate);
                  onConfigChange(currentAfterUpdate);
                  return currentAfterUpdate; // No actual change, just reading
             });
@@ -1084,7 +1130,7 @@ export default function RichTextBlock({
       } else { 
         newLocalData = { ...prevLocalData, [fieldOrObject]: value };
       }
-      console.log("RichTextBlock: Inline change, local data updated (will save on exit).", newLocalData);
+      // console.log("RichTextBlock: Inline change, local data updated (will save on exit).", newLocalData);
       return newLocalData;
     });
   }, []); 
@@ -1114,7 +1160,7 @@ export default function RichTextBlock({
          // Use a timeout to ensure state update has likely processed
          setTimeout(() => {
             setLocalData(currentAfterIconUpdate => {
-                console.log("RichTextBlock: Card icon updated, propagating immediately.", currentAfterIconUpdate);
+                // console.log("RichTextBlock: Card icon updated, propagating immediately.", currentAfterIconUpdate);
                 onConfigChange(currentAfterIconUpdate);
                 return currentAfterIconUpdate; // No change, just reading
             });

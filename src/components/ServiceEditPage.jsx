@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
+import JSZip from "jszip";
 
 // Import preview components for blocks
 import HeroBlock from "./blocks/HeroBlock";
@@ -81,6 +82,55 @@ EditOverlay.propTypes = {
 // Export a reference to the services data
 let servicesDataRef = null;
 
+// Simplified traversal function for ServiceEditPage (adapt as needed for its specific data structure)
+// This version focuses on finding string URLs that might be local assets.
+// If service blocks start containing File objects, this needs to be expanded like OneForm's version.
+function traverseAndCleanServiceData(originalDataNode, assetsToCollect, pathPrefix = "") {
+  if (originalDataNode === null || originalDataNode === undefined) {
+    return originalDataNode;
+  }
+
+  if (Array.isArray(originalDataNode)) {
+    return originalDataNode.map(item => traverseAndCleanServiceData(item, assetsToCollect, pathPrefix));
+  }
+
+  if (typeof originalDataNode === 'object') {
+    const newObj = {};
+    for (const key in originalDataNode) {
+      if (Object.prototype.hasOwnProperty.call(originalDataNode, key)) {
+        // Example: if a 'file' key holds a File object (hypothetical for service blocks)
+        // if (key === 'file' && originalDataNode[key] instanceof File) {
+        //   const file = originalDataNode[key];
+        //   const fileName = originalDataNode.name || file.name || 'untitled_asset';
+        //   const pathInZip = `assets/service_uploads/${fileName}`;
+        //   assetsToCollect.push({ pathInZip, dataSource: file, type: 'file' });
+        //   newObj.url = pathInZip; // Replace file object with path for JSON
+        //   continue;
+        // }
+        newObj[key] = traverseAndCleanServiceData(originalDataNode[key], assetsToCollect, pathPrefix);
+      }
+    }
+    return newObj;
+  }
+
+  if (typeof originalDataNode === 'string') {
+    // Check if it's a processable local asset URL (simplified check here)
+    const isAssetUrl = (url) => typeof url === 'string' && !url.startsWith('http') && !url.startsWith('data:') && (url.includes('/assets/') || url.includes('/Commercial/') || url.includes('uploads/'));
+    if (isAssetUrl(originalDataNode)) {
+      let pathInZip = originalDataNode.startsWith('/') ? originalDataNode.substring(1) : originalDataNode;
+      // Ensure it's under 'assets/' in the zip for consistency if not already structured that way
+      if (!pathInZip.startsWith('assets/') && (pathInZip.includes('Commercial/') || pathInZip.includes('uploads/'))) {
+          pathInZip = `assets/${pathInZip}`;
+      }
+      if (!assetsToCollect.some(asset => asset.pathInZip === pathInZip && asset.type === 'url')) {
+        assetsToCollect.push({ pathInZip, dataSource: originalDataNode, type: 'url' });
+      }
+      return pathInZip; // Return the path that will be in the JSON
+    }
+  }
+  return originalDataNode;
+}
+
 /* 
 =============================================
 ServiceEditPage Component
@@ -92,6 +142,7 @@ service page content.
 */
 const ServiceEditPage = () => {
   const [servicesData, setServicesData] = useState(null);
+  const [initialServicesDataForOldExport, setInitialServicesDataForOldExport] = useState(null); // For "old" export
   const [selectedCategory, setSelectedCategory] = useState("commercial");
   const [selectedPageId, setSelectedPageId] = useState(1);
   const [currentPage, setCurrentPage] = useState(null);
@@ -114,6 +165,12 @@ const ServiceEditPage = () => {
       .then((res) => res.json())
       .then((data) => {
         setServicesData(data);
+        try {
+            setInitialServicesDataForOldExport(JSON.parse(JSON.stringify(data))); // Deep copy for "old" export
+        } catch (e) {
+            console.error("Could not deep clone initial services data for old export:", e);
+            setInitialServicesDataForOldExport(null);
+        }
         const page = data[selectedCategory].find(
           (p) => p.id === Number(selectedPageId)
         );
@@ -139,22 +196,95 @@ const ServiceEditPage = () => {
   Downloads the edited services data as a JSON file
   =============================================
   */
-  const handleDownloadJSON = () => {
+  const handleDownloadJSON = async () => {
     if (!servicesData) return;
 
-    const dataStr = JSON.stringify(servicesData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    
+    const zip = new JSZip();
+    let collectedAssets = [];
+
+    // --- Process "OLD" data if available ---
+    if (initialServicesDataForOldExport) {
+        console.log("Processing OLD services data for ZIP:", initialServicesDataForOldExport);
+        collectedAssets = []; 
+        const cleanedOldServicesData = traverseAndCleanServiceData(initialServicesDataForOldExport, collectedAssets, "old/");
+        zip.file("old/json/services.json", JSON.stringify(cleanedOldServicesData, null, 2));
+        console.log("Cleaned OLD services.json for ZIP:", cleanedOldServicesData);
+        console.log("Assets collected from OLD services.json:", collectedAssets.map(a => ({...a, pathInZip: `old/${a.pathInZip}`})));
+
+        const oldAssetProcessingPromises = collectedAssets.map(async (asset) => {
+            const assetPathInZip = `old/${asset.pathInZip}`;
+            try {
+                if (asset.type === 'url' && typeof asset.dataSource === 'string') {
+                    // Basic check to avoid fetching external URLs if any slip through
+                    if (!asset.dataSource.startsWith('http:') && !asset.dataSource.startsWith('https:') && !asset.dataSource.startsWith('data:') && !asset.dataSource.startsWith('blob:')) {
+                        const fetchUrl = asset.dataSource.startsWith('/') ? asset.dataSource : `/${asset.dataSource}`;
+                        const response = await fetch(fetchUrl);
+                        if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText} for ${fetchUrl}`);
+                        const blob = await response.blob();
+                        zip.file(assetPathInZip, blob);
+                    }
+                }
+                // Add handling for asset.type === 'file' if service blocks can have direct File uploads
+            } catch (assetError) {
+                console.error(`Error processing OLD asset ${assetPathInZip} for services:`, assetError);
+            }
+        });
+        await Promise.all(oldAssetProcessingPromises);
+    }
+
+    // --- Process "NEW" (current servicesData) data ---
+    const newPathPrefix = initialServicesDataForOldExport ? "new/" : "";
+    console.log("Processing NEW services data for ZIP:", servicesData);
+    collectedAssets = []; 
+
+    const cleanedNewServicesData = traverseAndCleanServiceData(servicesData, collectedAssets, newPathPrefix);
+    zip.file(`${newPathPrefix}json/services.json`, JSON.stringify(cleanedNewServicesData, null, 2));
+    console.log("Cleaned NEW services.json for ZIP:", cleanedNewServicesData);
+    console.log("Assets collected from NEW services.json:", collectedAssets.map(a => ({...a, pathInZip: `${newPathPrefix}${a.pathInZip}`})));
+
+    const newAssetProcessingPromises = collectedAssets.map(async (asset) => {
+        const assetPathInZip = `${newPathPrefix}${asset.pathInZip}`;
+        try {
+            if (asset.type === 'file' && asset.dataSource instanceof File) {
+                // This path will be taken if handleFileChange is modified to store File objects
+                zip.file(assetPathInZip, asset.dataSource);
+            } else if (asset.type === 'url' && typeof asset.dataSource === 'string') {
+                 if (!asset.dataSource.startsWith('http:') && !asset.dataSource.startsWith('https:') && !asset.dataSource.startsWith('data:') && !asset.dataSource.startsWith('blob:')) {
+                    const fetchUrl = asset.dataSource.startsWith('/') ? asset.dataSource : `/${asset.dataSource}`;
+                    const response = await fetch(fetchUrl);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText} for ${fetchUrl}`);
+                    const blob = await response.blob();
+                    zip.file(assetPathInZip, blob);
+                } else if (asset.dataSource.startsWith('blob:')) {
+                    // If it's a blob URL (likely from handleFileChange), fetch its content
+                    const response = await fetch(asset.dataSource);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}: Failed to fetch blob ${asset.dataSource}`);
+                    const blobContent = await response.blob();
+                    zip.file(assetPathInZip, blobContent);
+                    console.log(`Fetched and added blob ${assetPathInZip} to NEW ZIP`);
+                }
+            }
+        } catch (assetError) {
+            console.error(`Error processing NEW asset ${assetPathInZip} for services:`, assetError);
+        }
+    });
+    await Promise.all(newAssetProcessingPromises);
+
+    const content = await zip.generateAsync({ type: "blob" });
+    const date = new Date();
+    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    const timeStr = `${String(date.getHours()).padStart(2, "0")}-${String(date.getMinutes()).padStart(2, "0")}`;
+    const zipFileName = `services_edit_${dateStr}_${timeStr}.zip`;
+
     const link = document.createElement('a');
-    link.href = url;
-    link.download = 'services.json';
+    link.href = URL.createObjectURL(content);
+    link.download = zipFileName;
     document.body.appendChild(link);
     link.click();
     
     // Clean up
     setTimeout(() => {
-      URL.revokeObjectURL(url);
+      URL.revokeObjectURL(link.href);
       document.body.removeChild(link);
     }, 100);
   };

@@ -599,12 +599,31 @@ export default function HeroBlock({
   onConfigChange,
 }) {
   const [localData, setLocalData] = useState(() => {
-    const initialConfig = heroconfig || {}; // heroconfig is prop, could be undefined initially
+    const initialConfig = heroconfig || {}; 
+    let initialHeroImagePath = initialConfig.heroImage || "/assets/images/hero/hero_split_background.jpg";
+    let initialHeroImageFile = initialConfig.heroImageFile || null;
+
+    // If the initial heroImage from props is already a File object (e.g. from a previous non-saved state)
+    // This situation should ideally be minimized by proper state flow, but as a safeguard:
+    if (initialConfig.heroImage instanceof File) {
+        initialHeroImageFile = initialConfig.heroImage;
+        initialHeroImagePath = URL.createObjectURL(initialConfig.heroImage); // For preview
+        // We don't have an "original path" if the prop itself is a File. 
+        // This implies it's a new image not yet saved with a persistent path.
+        // _heroImageOriginalPathFromProps would be undefined or null here.
+    }
+    
+    // _heroImageOriginalPathFromProps should only store the string path from the props, not a blob.
+    const originalPathFromProps = (typeof initialConfig.heroImage === 'string' && !initialConfig.heroImage.startsWith('blob:'))
+        ? initialConfig.heroImage
+        : (initialConfig._heroImageOriginalPathFromProps || null); // Fallback to prop if already processed
+
     return {
       residential: initialConfig.residential || { subServices: [], icon: 'Home', iconPack: 'lucide' },
       commercial: initialConfig.commercial || { subServices: [], icon: 'Building2', iconPack: 'lucide' },
-      heroImage: initialConfig.heroImage || "/assets/images/hero/hero_split_background.jpg",
-      heroImageFile: initialConfig.heroImageFile || null,
+      heroImage: initialHeroImagePath, 
+      heroImageFile: initialHeroImageFile, 
+      _heroImageOriginalPathFromProps: originalPathFromProps,
       bannerColor: initialConfig.bannerColor || "#1e293b",
       topBannerColor: initialConfig.topBannerColor || "#FFFFFF",
     };
@@ -617,78 +636,75 @@ export default function HeroBlock({
   useEffect(() => {
     if (heroconfig) {
       setLocalData(prevLocalData => {
-        const isNewImage = heroconfig.heroImage !== prevLocalData.heroImage;
-        if (isNewImage && typeof prevLocalData.heroImage === 'string' && prevLocalData.heroImage.startsWith('blob:')) {
-          URL.revokeObjectURL(prevLocalData.heroImage);
+        let newHeroImagePathForState = prevLocalData.heroImage;
+        let newHeroImageFileForState = prevLocalData.heroImageFile;
+        let newOriginalPathFromProps = prevLocalData._heroImageOriginalPathFromProps;
+
+        // Logic for heroImage, heroImageFile, and _heroImageOriginalPathFromProps updates
+        if (heroconfig.heroImageFile instanceof File) { // Prop directly provides a new File
+            if (typeof prevLocalData.heroImage === 'string' && prevLocalData.heroImage.startsWith('blob:')) {
+                URL.revokeObjectURL(prevLocalData.heroImage); // Revoke old local blob
+            }
+            newHeroImagePathForState = URL.createObjectURL(heroconfig.heroImageFile);
+            newHeroImageFileForState = heroconfig.heroImageFile;
+            // If a new file is provided via props, the original path to *replace* should come from heroconfig.originalUrl or current _heroImageOriginalPathFromProps
+            newOriginalPathFromProps = heroconfig.originalUrl || prevLocalData._heroImageOriginalPathFromProps; 
+        } else if (typeof heroconfig.heroImage === 'string') { // Prop provides a string path or blob
+            if (heroconfig.heroImage.startsWith('blob:')) {
+                // Prop is a blob. This usually means it's a reflection of a previous local change.
+                // We should be cautious not to overwrite a newer local file with an older prop blob.
+                // This scenario is tricky. If local has a file, and prop brings a blob, which one is newer?
+                // Assuming prop change means to adopt it.
+                if (typeof prevLocalData.heroImage === 'string' && prevLocalData.heroImage.startsWith('blob:') && prevLocalData.heroImage !== heroconfig.heroImage) {
+                    URL.revokeObjectURL(prevLocalData.heroImage);
+                }
+                newHeroImagePathForState = heroconfig.heroImage;
+                newHeroImageFileForState = prevLocalData.heroImageFile; // Try to keep existing file if blob matches
+                                                                      // Or, if prop is just a blob URL, file might be null.
+                 if (heroconfig.heroImageFile) newHeroImageFileForState = heroconfig.heroImageFile;
+
+            } else { // Prop is a string path (non-blob)
+                if (typeof prevLocalData.heroImage === 'string' && prevLocalData.heroImage.startsWith('blob:')) {
+                    URL.revokeObjectURL(prevLocalData.heroImage); // Revoke old local blob if switching to path
+                }
+                newHeroImagePathForState = heroconfig.heroImage;
+                newHeroImageFileForState = null; // Path means no local file object active for this path
+                newOriginalPathFromProps = heroconfig.heroImage; // This IS the new original path
+            }
         }
+        // If heroconfig.heroImage is undefined, local state remains as is for image fields.
 
-        let changed = false;
-
-        const newHeroImage = heroconfig.heroImage || prevLocalData.heroImage || "/assets/images/hero/hero_split_background.jpg";
-        if (newHeroImage !== prevLocalData.heroImage) changed = true;
-
-        // For File objects, direct comparison might not be robust if new instances are created with same content.
-        // However, heroImageFile is typically null or a File object from an input.
-        // If it's a new File object instance, it will be different. This is usually desired.
-        const newHeroImageFile = heroconfig.heroImageFile !== undefined ? heroconfig.heroImageFile : prevLocalData.heroImageFile;
-        if (newHeroImageFile !== prevLocalData.heroImageFile) changed = true;
-
-        const newBannerColor = heroconfig.bannerColor !== undefined ? heroconfig.bannerColor : (prevLocalData.bannerColor || "#1e293b");
-        if (newBannerColor !== prevLocalData.bannerColor) changed = true;
-        
-        const newTopBannerColor = heroconfig.topBannerColor !== undefined ? heroconfig.topBannerColor : (prevLocalData.topBannerColor || "#FFFFFF");
-        if (newTopBannerColor !== prevLocalData.topBannerColor) changed = true;
-
-
-        // Residential update
-        const resConfig = heroconfig.residential;
-        const prevRes = prevLocalData.residential;
-        // Use incoming subServices if available, otherwise keep previous. Ensure IDs and originalTitles.
-        const nextResSubServicesSource = resConfig?.subServices || prevRes?.subServices;
+        const nextResSubServicesSource = heroconfig.residential?.subServices || prevLocalData.residential?.subServices;
         const nextResSubServices = (nextResSubServicesSource || []).map(s => ({
-            id: s.id || s.slug, // Ensure id
+            id: s.id || s.slug, 
             title: s.title,
-            originalTitle: s.originalTitle || s.title, // Ensure originalTitle
+            originalTitle: s.originalTitle || s.title, 
         }));
-        const nextResIcon = resConfig?.icon || prevRes?.icon || 'Home';
-        const nextResIconPack = resConfig?.iconPack || prevRes?.iconPack || 'lucide';
-
-        if (JSON.stringify(nextResSubServices) !== JSON.stringify(prevRes?.subServices || []) ||
-            nextResIcon !== (prevRes?.icon) || // Compare with potentially undefined prevRes.icon
-            nextResIconPack !== (prevRes?.iconPack)) { // Compare with potentially undefined prevRes.iconPack
-          changed = true;
-        }
+        const nextResIcon = heroconfig.residential?.icon || prevLocalData.residential?.icon || 'Home';
+        const nextResIconPack = heroconfig.residential?.iconPack || prevLocalData.residential?.iconPack || 'lucide';
         
-        // Commercial update
-        const comConfig = heroconfig.commercial;
-        const prevCom = prevLocalData.commercial;
-        const nextComSubServicesSource = comConfig?.subServices || prevCom?.subServices;
+        const nextComSubServicesSource = heroconfig.commercial?.subServices || prevLocalData.commercial?.subServices;
         const nextComSubServices = (nextComSubServicesSource || []).map(s => ({
             id: s.id || s.slug,
             title: s.title,
             originalTitle: s.originalTitle || s.title,
         }));
-        const nextComIcon = comConfig?.icon || prevCom?.icon || 'Building2';
-        const nextComIconPack = comConfig?.iconPack || prevCom?.iconPack || 'lucide';
-
-        if (JSON.stringify(nextComSubServices) !== JSON.stringify(prevCom?.subServices || []) ||
-            nextComIcon !== (prevCom?.icon) ||
-            nextComIconPack !== (prevCom?.iconPack)) {
-          changed = true;
-        }
-
-        if (!changed) {
-          return prevLocalData;
-        }
+        const nextComIcon = heroconfig.commercial?.icon || prevLocalData.commercial?.icon || 'Building2';
+        const nextComIconPack = heroconfig.commercial?.iconPack || prevLocalData.commercial?.iconPack || 'lucide';
 
         return {
-          ...prevLocalData,
+          // Spread prevLocalData first to keep any other fields not explicitly managed
+          ...prevLocalData, 
+          // Then spread heroconfig to get most general updates from props
+          ...heroconfig, 
+          // Then specifically set the carefully merged/derived fields
           residential: { subServices: nextResSubServices, icon: nextResIcon, iconPack: nextResIconPack },
           commercial: { subServices: nextComSubServices, icon: nextComIcon, iconPack: nextComIconPack },
-          heroImage: newHeroImage,
-          heroImageFile: newHeroImageFile,
-          bannerColor: newBannerColor,
-          topBannerColor: newTopBannerColor,
+          heroImage: newHeroImagePathForState,
+          heroImageFile: newHeroImageFileForState,
+          _heroImageOriginalPathFromProps: newOriginalPathFromProps,
+          bannerColor: heroconfig.bannerColor !== undefined ? heroconfig.bannerColor : (prevLocalData.bannerColor || "#1e293b"),
+          topBannerColor: heroconfig.topBannerColor !== undefined ? heroconfig.topBannerColor : (prevLocalData.topBannerColor || "#FFFFFF"),
         };
       });
     }
@@ -736,9 +752,20 @@ export default function HeroBlock({
         // Prepare data for onConfigChange: send path if image is path, or keep blob for preview but send file for saving
         const dataForConfigChange = { ...updatedData };
         if (updatedData.heroImageFile) { // If a file was uploaded
-          // For config change, we might want to signal that there's a new file to be uploaded.
-          // The actual file object `heroImageFile` is already in `updatedData`.
-          // `heroImage` (the blob URL) is fine for `localData` for preview.
+          dataForConfigChange.originalUrl = localData._heroImageOriginalPathFromProps;
+          console.log(
+            'HeroBlock: Preparing onConfigChange with File:',
+            '\n  Uploaded File Name:', updatedData.heroImageFile.name,
+            '\n  Uploaded File Size:', updatedData.heroImageFile.size,
+            '\n  Intended Original URL to replace:', dataForConfigChange.originalUrl,
+            '\n  Display heroImage (blob URL):', updatedData.heroImage 
+          );
+        } else {
+          console.log(
+            'HeroBlock: Preparing onConfigChange (no new file uploaded):',
+            '\n  Display heroImage (path):', updatedData.heroImage,
+            '\n  Original Path from Props cache:', localData._heroImageOriginalPathFromProps
+          );
         }
         onConfigChange(dataForConfigChange);
       }

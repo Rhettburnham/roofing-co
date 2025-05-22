@@ -100,10 +100,19 @@ const NavbarEditForm = React.forwardRef(({
 }, ref) => {
   const [localNavConfig, setLocalNavConfig] = useState(() => {
     const initial = navbarConfig || {};
+    const initialLogo = initial.logo || { url: '/assets/images/hero/clipped.png', file: null, name: 'clipped.png' };
+    const initialWhiteLogo = initial.whiteLogo || { url: '', file: null, name: '' };
+
     return {
       navLinks: initial.navLinks || [{ name: "Home", href: "/" }],
-      logo: initial.logo || { url: '/assets/images/hero/clipped.png', file: null, name: 'clipped.png' },
-      whiteLogo: initial.whiteLogo || { url: '', file: null, name: '' },
+      logo: { 
+        ...initialLogo, 
+        originalUrl: typeof initialLogo.url === 'string' && !initialLogo.url.startsWith('blob:') ? initialLogo.url : '/assets/images/hero/clipped.png' 
+      },
+      whiteLogo: { 
+        ...initialWhiteLogo, 
+        originalUrl: typeof initialWhiteLogo.url === 'string' && !initialWhiteLogo.url.startsWith('blob:') ? initialWhiteLogo.url : '' 
+      },
       whiteLogoIcon: initial.whiteLogoIcon || null,
       unscrolledBackgroundColor: initial.unscrolledBackgroundColor || 'bg-transparent',
       scrolledBackgroundColor: initial.scrolledBackgroundColor || 'bg-banner',
@@ -116,17 +125,80 @@ const NavbarEditForm = React.forwardRef(({
   useEffect(() => {
     setLocalNavConfig(prevConfig => {
       const newBase = navbarConfig || {};
+      const defaultLogoUrl = '/assets/images/hero/clipped.png';
+      const defaultWhiteLogoUrl = '';
+
+      // Preserve local changes if they differ from incoming prop and are not the default placeholder
+      const resolveField = (fieldName, defaultValue, isObject = false) => {
+        if (isObject) {
+          // For objects like logo, whiteLogo, compare relevant parts or stringify for a general check
+          // This example simplifies; a deep compare might be needed for complex objects if only parts change
+          const prevField = prevConfig[fieldName];
+          const newBaseField = newBase[fieldName];
+          if (JSON.stringify(prevField) !== JSON.stringify(newBaseField) && 
+              JSON.stringify(prevField) !== JSON.stringify(defaultValue)) {
+            return prevField;
+          }
+          return newBaseField || defaultValue;
+        } else {
+          const prevValue = prevConfig[fieldName];
+          const newValue = newBase[fieldName];
+          if (prevValue !== undefined && prevValue !== newValue && prevValue !== defaultValue) {
+            return prevValue;
+          }
+          return newValue !== undefined ? newValue : defaultValue;
+        }
+      };
+
+      const resolvedNavLinks = resolveField('navLinks', [{ name: "Home", href: "/" }], true);
+      
+      const resolvedLogo = {
+        file: newBase.logo?.file !== undefined ? newBase.logo.file : prevConfig.logo?.file,
+        url: newBase.logo?.url !== undefined ? newBase.logo.url : prevConfig.logo?.url,
+        name: newBase.logo?.name !== undefined ? newBase.logo.name : prevConfig.logo?.name,
+        originalUrl: newBase.logo?.originalUrl || 
+                     (typeof newBase.logo?.url === 'string' && !newBase.logo.url.startsWith('blob:') ? newBase.logo.url : prevConfig.logo?.originalUrl || defaultLogoUrl)
+      };
+      if (prevConfig.logo?.file && prevConfig.logo?.url?.startsWith('blob:')) {
+          if (resolvedLogo.url !== prevConfig.logo.url) {
+            // If new prop provides a different URL (even non-blob), and local was blob, it means local file is being overridden
+            // URL.revokeObjectURL(prevConfig.logo.url); // No, don't revoke here, might be needed if prop is transient
+          } else {
+            // Prop is same as local blob, or prop is undefined, keep local blob
+            resolvedLogo.file = prevConfig.logo.file;
+            resolvedLogo.url = prevConfig.logo.url;
+            resolvedLogo.name = prevConfig.logo.name;
+          }
+      }
+
+      const resolvedWhiteLogo = {
+        file: newBase.whiteLogo?.file !== undefined ? newBase.whiteLogo.file : prevConfig.whiteLogo?.file,
+        url: newBase.whiteLogo?.url !== undefined ? newBase.whiteLogo.url : prevConfig.whiteLogo?.url,
+        name: newBase.whiteLogo?.name !== undefined ? newBase.whiteLogo.name : prevConfig.whiteLogo?.name,
+        originalUrl: newBase.whiteLogo?.originalUrl || 
+                     (typeof newBase.whiteLogo?.url === 'string' && !newBase.whiteLogo.url.startsWith('blob:') ? newBase.whiteLogo.url : prevConfig.whiteLogo?.originalUrl || defaultWhiteLogoUrl)
+      };
+      if (prevConfig.whiteLogo?.file && prevConfig.whiteLogo?.url?.startsWith('blob:')) {
+        if (resolvedWhiteLogo.url !== prevConfig.whiteLogo.url) {
+            // similar logic as logo
+        } else {
+            resolvedWhiteLogo.file = prevConfig.whiteLogo.file;
+            resolvedWhiteLogo.url = prevConfig.whiteLogo.url;
+            resolvedWhiteLogo.name = prevConfig.whiteLogo.name;
+        }
+      }
+
       return {
-        ...prevConfig,
-        navLinks: newBase.navLinks || prevConfig.navLinks || [],
-        logo: newBase.logo || prevConfig.logo || { url: '/assets/images/hero/clipped.png', file: null, name: 'clipped.png' },
-        whiteLogo: newBase.whiteLogo || prevConfig.whiteLogo || { url: '', file: null, name: '' },
-        whiteLogoIcon: newBase.whiteLogoIcon || prevConfig.whiteLogoIcon || null,
-        unscrolledBackgroundColor: newBase.unscrolledBackgroundColor || prevConfig.unscrolledBackgroundColor || 'bg-transparent',
-        scrolledBackgroundColor: newBase.scrolledBackgroundColor || prevConfig.scrolledBackgroundColor || 'bg-banner',
-        dropdownBackgroundColor: newBase.dropdownBackgroundColor || prevConfig.dropdownBackgroundColor || 'bg-white',
-        dropdownTextColor: newBase.dropdownTextColor || prevConfig.dropdownTextColor || 'text-black',
-        useWhiteHamburger: newBase.useWhiteHamburger !== undefined ? newBase.useWhiteHamburger : prevConfig.useWhiteHamburger || false,
+        ...prevConfig, // Start with previous config to keep any unmanaged local state
+        navLinks: resolvedNavLinks,
+        logo: resolvedLogo,
+        whiteLogo: resolvedWhiteLogo,
+        whiteLogoIcon: resolveField('whiteLogoIcon', null, true),
+        unscrolledBackgroundColor: resolveField('unscrolledBackgroundColor', 'bg-transparent'),
+        scrolledBackgroundColor: resolveField('scrolledBackgroundColor', 'bg-banner'),
+        dropdownBackgroundColor: resolveField('dropdownBackgroundColor', 'bg-white'),
+        dropdownTextColor: resolveField('dropdownTextColor', 'text-black'),
+        useWhiteHamburger: resolveField('useWhiteHamburger', false),
       };
     });
   }, [navbarConfig]);
@@ -144,19 +216,30 @@ const NavbarEditForm = React.forwardRef(({
 
   const handleImageInputChange = (field, type, value) => {
     setLocalNavConfig(prevConf => {
-      const currentImageState = prevConf[field] || { url: '', file: null, name: '' };
+      const currentImageState = prevConf[field] || { url: '', file: null, name: '', originalUrl: '' };
       let newImageState = { ...currentImageState };
 
       if (type === 'file' && value instanceof File) {
         if (currentImageState.url && currentImageState.url.startsWith('blob:')) {
           URL.revokeObjectURL(currentImageState.url);
         }
-        newImageState = { file: value, url: URL.createObjectURL(value), name: value.name };
+        newImageState = {
+            ...currentImageState,
+            file: value, 
+            url: URL.createObjectURL(value), 
+            name: value.name 
+        };
       } else if (type === 'url') {
         if (currentImageState.url && currentImageState.url.startsWith('blob:')) {
           URL.revokeObjectURL(currentImageState.url);
         }
-        newImageState = { file: null, url: value, name: value.split('/').pop() };
+        newImageState = { 
+            ...currentImageState,
+            file: null, 
+            url: value, 
+            name: value.split('/').pop(),
+            originalUrl: value
+        };
       }
       // If an image is set for whiteLogo, clear any selected whiteLogoIcon
       const updates = { [field]: newImageState };
@@ -375,10 +458,19 @@ const MainPageForm = ({ formData: formDataProp, setFormData: setFormDataProp, si
   // Effect 1: When an edit session ends, propagate internalFormData up to OneForm.
   useEffect(() => {
     if (prevActiveEditBlockRef.current !== null && activeEditBlock === null) {
-      console.log("MainPageForm: Edit session ended. Propagating internal changes to OneForm.", internalFormData);
-      // Ensure setFormDataProp is stable and internalFormData is what we expect
+      console.log("MainPageForm: Edit session ended for a block. Propagating internal changes to OneForm.");
+      const heroBlockData = internalFormData.mainPageBlocks?.find(b => b.blockName === 'HeroBlock');
+      if (heroBlockData && heroBlockData.config) {
+          console.log("MainPageForm HeroBlock config BEFORE propagation to OneForm (File check):", 
+              heroBlockData.config.heroImageFile instanceof File ? `[File: ${heroBlockData.config.heroImageFile.name}]` : 'No File',
+              "Original URL:", heroBlockData.config.originalUrl
+          );
+      }
       if (typeof setFormDataProp === 'function') {
-        setFormDataProp(safeDeepClone(internalFormData));
+        // REMOVED safeDeepClone as it strips File objects.
+        // OneForm's setFormData will handle merging this into its state.
+        // OneForm's traverseAndModifyDataForZip is designed to handle File objects.
+        setFormDataProp(internalFormData); 
       }
     }
     prevActiveEditBlockRef.current = activeEditBlock;
@@ -416,6 +508,13 @@ const MainPageForm = ({ formData: formDataProp, setFormData: setFormDataProp, si
       const newMainPageBlocks = (prev.mainPageBlocks || []).map(block =>
         block.uniqueKey === blockUniqueKey ? { ...block, config: newConfigFromBlock } : block
       );
+      const heroBlockInNewState = newMainPageBlocks.find(b => b.blockName === 'HeroBlock');
+      if (heroBlockInNewState && heroBlockInNewState.config) {
+          console.log("MainPageForm: HeroBlock config after update in newMainPageBlocks (File check):", 
+              heroBlockInNewState.config.heroImageFile instanceof File ? `[File: ${heroBlockInNewState.config.heroImageFile.name}]` : 'No File',
+              "Original URL:", heroBlockInNewState.config.originalUrl
+          );
+      }
       return { ...prev, mainPageBlocks: newMainPageBlocks };
     });
   };
