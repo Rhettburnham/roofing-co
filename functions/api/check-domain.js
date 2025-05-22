@@ -62,6 +62,10 @@ export async function onRequestGet(context) {
       data: availabilityData
     });
 
+    if (!availabilityResponse.ok) {
+      throw new Error(`GoDaddy API error: ${availabilityData.message || 'Unknown error'}`);
+    }
+
     // Get similar domain suggestions from GoDaddy
     const baseName = domain.split('.')[0];
     console.log('Getting similar domains for base name:', baseName);
@@ -75,8 +79,17 @@ export async function onRequestGet(context) {
     const similarDomains = await similarDomainsResponse.json();
     console.log('Similar domains response:', {
       status: similarDomainsResponse.status,
-      count: similarDomains.length
+      data: similarDomains
     });
+
+    if (!similarDomainsResponse.ok) {
+      throw new Error(`GoDaddy API error: ${similarDomains.message || 'Unknown error'}`);
+    }
+
+    if (!Array.isArray(similarDomains)) {
+      console.error('Invalid similar domains response:', similarDomains);
+      throw new Error('Invalid response from GoDaddy API');
+    }
 
     const similarSuggestions = similarDomains
       .filter(domain => domain.available && domain.price <= 30)
