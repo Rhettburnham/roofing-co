@@ -49,6 +49,8 @@ const BookingPreview = memo(({ bookingData }) => {
   const [activeTab, setActiveTab] = useState("residential");
   const [isLoading, setIsLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
 
   // Refs for GSAP animations
   const bannerRef = useRef(null);
@@ -366,37 +368,31 @@ const BookingPreview = memo(({ bookingData }) => {
     setIsModalOpen(false);
   }, []);
 
-  const handleSubmit = useCallback(
-    async (e) => {
-      e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
 
-      try {
-        // Show some form of loading indicator if needed
-        const response = await axios.post("/submit-booking", formData);
-
-        if (response.status === 200) {
-          alert("Form submitted successfully!");
-          // Reset form data after successful submission
-          setFormData({
-            firstName: "",
-            lastName: "",
-            email: "",
-            phone: "",
-            service: "",
-            message: "",
-          });
-          // Hide the form after submission
-          setIsFormVisible(false);
-        }
-      } catch (error) {
-        console.error("Error submitting form:", error);
-        alert(
-          "There was an error submitting your form. Please try again later."
-        );
+    try {
+      const response = await axios.post('/api/submit-booking', formData);
+      if (response.status === 200) {
+        alert("Thank you for your booking request! We'll get back to you soon.");
+        setFormData({
+          firstName: "",
+          lastName: "",
+          email: "",
+          phone: "",
+          service: "",
+          message: "",
+        });
       }
-    },
-    [formData]
-  );
+    } catch (err) {
+      console.error("Error submitting form:", err);
+      setError(err.response?.data?.message || "Failed to submit booking. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const handleTabChange = useCallback((tab) => {
     setActiveTab(tab);

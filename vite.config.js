@@ -53,40 +53,30 @@ export default defineConfig({
       allow: ['..']
     },
     proxy: {
-      '/api/auth': {
+      "/api/auth": {
+        target: "http://localhost:5001",
+        changeOrigin: true,
+        secure: false,
+      },
+      "/api/admin": {
+        target: "http://localhost:5001",
+        changeOrigin: true,
+        secure: false,
+      },
+      "/api/submit-booking": {
         target: process.env.NODE_ENV === 'production' 
-          ? 'https://auth-worker.roofing-co-with-workers.pages.dev'
-          : 'https://auth-worker.roofing-www.workers.dev',
+          ? 'https://roofing-co.pages.dev'
+          : 'http://localhost:8788',
         changeOrigin: true,
         secure: true,
-        rewrite: (path) => path,
       },
-      '/api/admin': {
-        target: process.env.NODE_ENV === 'production'
-          ? 'https://roofing-admin.roofing-co-with-workers.pages.dev'
-          : 'https://roofing-admin.roofing-www.workers.dev',
+      "/api/upload": {
+        target: "http://localhost:5001",
         changeOrigin: true,
-        secure: true,
-        rewrite: (path) => path,
+        secure: false,
       },
-      '/api/config': {
-        target: process.env.NODE_ENV === 'production'
-          ? 'https://auth-worker.roofing-co-with-workers.pages.dev'
-          : 'https://auth-worker.roofing-www.workers.dev',
-        changeOrigin: true,
-        secure: true,
-        rewrite: (path) => path,
-      },
-      '/api/public': {
-        target: process.env.NODE_ENV === 'production'
-          ? 'https://auth-worker.roofing-co-with-workers.pages.dev'
-          : 'https://auth-worker.roofing-www.workers.dev',
-        changeOrigin: true,
-        secure: true,
-        rewrite: (path) => path,
-      },
-      '/submit-booking': {
-        target: 'http://localhost:5001',
+      "/api/download": {
+        target: "http://localhost:5001",
         changeOrigin: true,
         secure: false,
       },
