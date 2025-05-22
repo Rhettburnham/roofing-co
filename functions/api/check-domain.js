@@ -36,22 +36,39 @@ export async function onRequestGet(context) {
       throw new Error('Cloudflare API token is not configured');
     }
 
-    // First check if the domain is already registered in Cloudflare
-    const zoneResponse = await fetch(`https://api.cloudflare.com/client/v4/zones?name=${domain}`, {
+    // First get the account ID
+    const accountsResponse = await fetch('https://api.cloudflare.com/client/v4/accounts', {
       headers: {
         'Authorization': `Bearer ${env.CLOUDFLARE_API_TOKEN}`,
         'Content-Type': 'application/json',
       }
     });
 
-    const zoneData = await zoneResponse.json();
+    const accountsData = await accountsResponse.json();
+    
+    if (!accountsData.success || !accountsData.result.length) {
+      throw new Error('Failed to get account information');
+    }
 
-    if (zoneData.success && zoneData.result.length > 0) {
+    const accountId = accountsData.result[0].id;
+
+    // Check domain availability using account-specific endpoint
+    const domainCheckResponse = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/registrar/domains/${domain}`, {
+      headers: {
+        'Authorization': `Bearer ${env.CLOUDFLARE_API_TOKEN}`,
+        'Content-Type': 'application/json',
+      }
+    });
+
+    const domainCheckData = await domainCheckResponse.json();
+
+    // If domain is already registered, return that information
+    if (domainCheckData.success) {
       return new Response(JSON.stringify({
         success: true,
         available: false,
-        message: "Domain is already registered in Cloudflare",
-        details: zoneData.result[0]
+        message: "Domain is already registered",
+        details: domainCheckData.result
       }), {
         status: 200,
         headers: {
@@ -76,8 +93,8 @@ export async function onRequestGet(context) {
       `${baseName}roofingcontractors.com`
     ];
 
-    // Check availability for all suggestions
-    const registrarResponse = await fetch(`https://api.cloudflare.com/client/v4/registrar/domains/check`, {
+    // Check availability for all suggestions using the availability endpoint
+    const registrarResponse = await fetch(`https://api.cloudflare.com/client/v4/registrar/domains/availability`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${env.CLOUDFLARE_API_TOKEN}`,
