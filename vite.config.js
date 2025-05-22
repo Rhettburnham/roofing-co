@@ -70,6 +70,14 @@ export default defineConfig({
         changeOrigin: true,
         secure: true,
       },
+      '/api/config': {
+        target: process.env.NODE_ENV === 'production'
+          ? 'https://auth-worker.roofing-co-with-workers.pages.dev'
+          : 'https://auth-worker.roofing-www.workers.dev',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path,
+      },
       "/api/upload": {
         target: "http://localhost:5001",
         changeOrigin: true,
