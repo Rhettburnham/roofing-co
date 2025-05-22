@@ -1,8 +1,10 @@
 export async function onRequestPost(context) {
   const { request, env } = context;
+  console.log('Booking request received');
 
   // Handle CORS preflight requests
   if (request.method === 'OPTIONS') {
+    console.log('Handling OPTIONS request');
     return new Response(null, {
       headers: {
         'Access-Control-Allow-Origin': '*',
@@ -18,10 +20,13 @@ export async function onRequestPost(context) {
     console.log('Booking request received from:', originUrl);
 
     // Parse the request body
-    const { firstName, lastName, email, phone, service, message } = await request.json();
+    const body = await request.json();
+    console.log('Request body:', JSON.stringify(body, null, 2));
+    const { firstName, lastName, email, phone, service, message } = body;
 
     // Validate required fields
     if (!firstName || !lastName || !email || !phone || !service) {
+      console.log('Missing required fields:', { firstName, lastName, email, phone, service });
       return new Response(JSON.stringify({
         success: false,
         message: "Missing required fields"
@@ -32,6 +37,12 @@ export async function onRequestPost(context) {
           'Access-Control-Allow-Origin': '*',
         }
       });
+    }
+
+    // Check if SendGrid API key is available
+    if (!env.SENDGRID_API_KEY) {
+      console.error('SendGrid API key is not set in environment variables');
+      throw new Error('SendGrid API key is not configured');
     }
 
     // Construct email content
@@ -84,6 +95,7 @@ Please respond to the client via email or phone. CC if necessary.
       ]
     };
 
+    console.log('Sending email to SendGrid...');
     // Send email using SendGrid API
     const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
       method: 'POST',
@@ -95,9 +107,17 @@ Please respond to the client via email or phone. CC if necessary.
     });
 
     if (!response.ok) {
-      throw new Error(`SendGrid API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error('SendGrid API error details:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText,
+        requestBody: emailContent
+      });
+      throw new Error(`SendGrid API error: ${response.status} - ${errorText}`);
     }
 
+    console.log('Email sent successfully');
     // Return success response
     return new Response(JSON.stringify({
       success: true,
