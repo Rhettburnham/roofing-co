@@ -146,6 +146,7 @@
       "blockName": "BeforeAfterBlock",
       "config": {
         "sectionTitle": "PORTFOLIO",
+        "showNailAnimation": true,
         "items": [
           {
             "before": "/assets/images/beforeafter/a1.jpeg",
@@ -414,13 +415,15 @@
       "config": {
         "logo": "/assets/images/hero/clipped.png",
         "headerText": "Contact ",
-        "phone": "(404) 227-5000"
+        "phone": "(404) 227-5000",
+        "showNailAnimation": true
       }
     },
     {
       "blockName": "EmployeesBlock",
       "config": {
         "sectionTitle": "CREW",
+        "showNailAnimation": true,
         "employee": [
           {
             "name": "Mr. Luis Aguilar-Lopez",

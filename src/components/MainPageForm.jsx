@@ -39,6 +39,23 @@ const blockComponentMap = {
   // Add other main page blocks here if any
 };
 
+// Helper for safe deep cloning
+function safeDeepClone(obj) {
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+  try {
+    // Ensure undefined is not stringified to "undefined" which breaks JSON.parse
+    const stringified = JSON.stringify(obj, (key, value) => {
+        return typeof value === 'undefined' ? null : value;
+    });
+    return JSON.parse(stringified);
+  } catch (e) {
+    console.error("Error in safeDeepClone:", e, "Object was:", obj);
+    return Array.isArray(obj) ? [] : {}; // Fallback to empty object/array
+  }
+}
+
 // Sliding Edit Panel component - Will NOT be used for RichTextBlock anymore
 const SlidingEditPanel = ({ children, onClose }) => (
   <div className="w-full transition-all duration-300 mt-4">
@@ -345,303 +362,255 @@ NavbarEditForm.displayName = 'NavbarEditForm';
  * MainPageForm is a presentational component for editing the main page.
  * It displays the UI and passes changes upward via setFormData.
  */
-const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
+const MainPageForm = ({ formData: formDataProp, setFormData: setFormDataProp, singleBlockMode = null }) => {
+  const [internalFormData, setInternalFormData] = useState(() => safeDeepClone(formDataProp) || {});
   const [activeEditBlock, setActiveEditBlock] = useState(null);
   const [previewNavbarAsScrolled, setPreviewNavbarAsScrolled] = useState(false);
   const navbarEditFormRef = useRef();
-  const [internalFormData, setInternalFormData] = useState(formData);
   const [isIconModalOpen, setIsIconModalOpen] = useState(false);
   const [iconModalTargetField, setIconModalTargetField] = useState(null);
   const [currentIconForModal, setCurrentIconForModal] = useState(null);
+  const prevActiveEditBlockRef = useRef(null);
 
+  // Effect 1: When an edit session ends, propagate internalFormData up to OneForm.
   useEffect(() => {
-    let needsUpdate = false;
-    const updatedBlocks = (formData?.mainPageBlocks || []).map((block, index) => {
-      if (!block.uniqueKey) {
-        needsUpdate = true;
-        return { ...block, uniqueKey: `${block.blockName}_${Date.now()}_${index}` };
+    if (prevActiveEditBlockRef.current !== null && activeEditBlock === null) {
+      console.log("MainPageForm: Edit session ended. Propagating internal changes to OneForm.", internalFormData);
+      // Ensure setFormDataProp is stable and internalFormData is what we expect
+      if (typeof setFormDataProp === 'function') {
+        setFormDataProp(safeDeepClone(internalFormData));
       }
-      return block;
-    });
-    setInternalFormData(prevInternal => {
-        const newInternal = { ...prevInternal, ...formData };
-        if (needsUpdate || (formData?.mainPageBlocks && JSON.stringify(newInternal.mainPageBlocks) !== JSON.stringify(updatedBlocks))) {
-            newInternal.mainPageBlocks = updatedBlocks;
+    }
+    prevActiveEditBlockRef.current = activeEditBlock;
+  }, [activeEditBlock, internalFormData, setFormDataProp]);
+
+  // Effect 2: Synchronize from formDataProp down to internalFormData ONLY when not actively editing.
+  useEffect(() => {
+    if (activeEditBlock === null) { // Only sync if nothing is being actively edited
+      const clonedFormDataProp = safeDeepClone(formDataProp);
+      if (clonedFormDataProp && typeof clonedFormDataProp === 'object') {
+        // Ensure unique keys for blocks if syncing from formDataProp
+        if (clonedFormDataProp.mainPageBlocks && Array.isArray(clonedFormDataProp.mainPageBlocks)) {
+          clonedFormDataProp.mainPageBlocks = clonedFormDataProp.mainPageBlocks.map((block, index) => ({
+            ...block,
+            uniqueKey: block.uniqueKey || `${block.blockName}_${Date.now()}_${index}_propSync`
+          }));
         }
-        return newInternal;
-    });
-  }, [formData]);
+        
+        // Only update if there's an actual difference
+        // Compare stringified versions for a reasonable check of value equality
+        if (JSON.stringify(internalFormData) !== JSON.stringify(clonedFormDataProp)) {
+          console.log("MainPageForm: Syncing from formData prop to internalFormData (no active edit).", clonedFormDataProp);
+          setInternalFormData(clonedFormDataProp);
+        }
+      } else if (JSON.stringify(internalFormData) !== '{}') {
+          console.log("MainPageForm: formData prop is null/undefined. Resetting internalFormData if not already empty.");
+          setInternalFormData({});
+      }
+    }
+  }, [formDataProp, activeEditBlock]); // Removed internalFormData dependency from Effect 2. Added activeEditBlock
 
   const handleBlockConfigChange = (blockUniqueKey, newConfigFromBlock) => {
-    console.log(`MainPageForm: Block ${blockUniqueKey} is committing changes.`, newConfigFromBlock);
+    console.log(`MainPageForm: Block ${blockUniqueKey} is committing changes to internalFormData.`, newConfigFromBlock);
     setInternalFormData((prev) => {
       const newMainPageBlocks = (prev.mainPageBlocks || []).map(block =>
         block.uniqueKey === blockUniqueKey ? { ...block, config: newConfigFromBlock } : block
       );
-      return { ...prev, mainPageBlocks: newMainPageBlocks }; 
+      return { ...prev, mainPageBlocks: newMainPageBlocks };
     });
   };
   
   const handleNavbarConfigChange = (newNavbarConfig) => {
-    console.log("MainPageForm: Navbar is committing changes.", newNavbarConfig);
+    console.log("MainPageForm: Navbar is committing changes to internalFormData.", newNavbarConfig);
     setInternalFormData((prev) => ({ ...prev, navbar: newNavbarConfig }));
   };
 
   const handleRichTextConfigChange = (newRichTextConfig) => {
-    console.log("MainPageForm: RichText committing changes.", newRichTextConfig);
+    console.log("MainPageForm: RichText committing changes to internalFormData.", newRichTextConfig);
     setInternalFormData((prev) => {
       const updatedMainPageBlocks = (prev.mainPageBlocks || []).map(block =>
         block.blockName === 'RichTextBlock' 
           ? { ...block, config: newRichTextConfig }
           : block
       );
-      let newInternalFormData = { ...prev, mainPageBlocks: updatedMainPageBlocks };
+      let newInternalState = { ...prev, mainPageBlocks: updatedMainPageBlocks };
       const heroBlockIndex = (prev.mainPageBlocks || []).findIndex(b => b.blockName === 'HeroBlock');
       if (newRichTextConfig.hasOwnProperty('sharedBannerColor') && heroBlockIndex !== -1) {
         const heroConfig = prev.mainPageBlocks[heroBlockIndex].config;
-        if (newRichTextConfig.sharedBannerColor !== heroConfig?.bannerColor) {
+        if (heroConfig && newRichTextConfig.sharedBannerColor !== heroConfig.bannerColor) {
           updatedMainPageBlocks[heroBlockIndex] = {
             ...prev.mainPageBlocks[heroBlockIndex],
             config: { ...(heroConfig || {}), bannerColor: newRichTextConfig.sharedBannerColor }
           };
-          newInternalFormData = { ...prev, mainPageBlocks: updatedMainPageBlocks };
+          newInternalState = { ...prev, mainPageBlocks: updatedMainPageBlocks };
         }
       }
-      return newInternalFormData;
+      return newInternalState;
     });
   };
-
-  const prevActiveEditBlockRef = useRef(activeEditBlock);
-  useEffect(() => {
-    if (prevActiveEditBlockRef.current !== null && activeEditBlock === null) {
-      console.log("MainPageForm: Edit session ended. Propagating internal changes to OneForm.", internalFormData);
-      setFormData(internalFormData); 
-    }
-    prevActiveEditBlockRef.current = activeEditBlock;
-  }, [activeEditBlock, internalFormData, setFormData]);
 
   const PencilIcon = ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487a2.032 2.032 0 112.872 2.872L7.5 21.613H4v-3.5L16.862 4.487z"/></svg> );
   const CheckIcon = ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> );
 
   const handleToggleEditState = (key) => {
-    if (activeEditBlock === key) { // Is currently editing, about to close/save
+    if (activeEditBlock === key) {
       if (key === 'navbar' && navbarEditFormRef.current?.commitChanges) {
-        navbarEditFormRef.current.commitChanges(); // Ensure NavbarEditForm calls its onConfigChange
-      }
-      // For blocks, their onConfigChange is triggered by readOnly prop change.
-      // Setting activeEditBlock to null will trigger the save propagation effect.
-      setActiveEditBlock(null); 
-    } else { // Is not editing this key, about to open it (or switch from another)
-      if (activeEditBlock && activeEditBlock !== 'navbar' && activeEditBlock !== key) {
-        // If another block was open, its save would have been triggered by its readOnly prop changing.
-        // The main useEffect watching activeEditBlock will handle propagation.
-      } else if (activeEditBlock === 'navbar' && key !== 'navbar' && navbarEditFormRef.current?.commitChanges) {
-        // Switching from navbar to a block, commit navbar changes.
         navbarEditFormRef.current.commitChanges();
+      }
+      // For blocks, onConfigChange is triggered by readOnly prop change in the block component itself.
+      // This change, via handleBlockConfigChange, updates internalFormData.
+      // The useEffect watching activeEditBlock will then propagate this internalFormData up.
+      setActiveEditBlock(null); 
+    } else {
+      // If switching from another block or navbar, ensure its changes are committed if necessary.
+      if (activeEditBlock && activeEditBlock !== 'navbar' && activeEditBlock !== key) {
+        // The previously active block's onConfigChange would have already updated internalFormData.
+      } else if (activeEditBlock === 'navbar' && key !== 'navbar' && navbarEditFormRef.current?.commitChanges) {
+        navbarEditFormRef.current.commitChanges(); // Commits navbar changes to internalFormData
       }
       setActiveEditBlock(key);
     }
   };
 
   const handleOpenIconModal = (fieldId, currentIcon) => {
-    setIconModalTargetField(fieldId);
-    setCurrentIconForModal(currentIcon);
-    setIsIconModalOpen(true);
+    setIconModalTargetField(fieldId); setCurrentIconForModal(currentIcon); setIsIconModalOpen(true);
   };
 
   const handleIconSelection = (pack, iconName) => {
     if (iconModalTargetField === 'whiteLogoIcon') {
-      setInternalFormData(prev => ({
-        ...prev,
-        navbar: {
-          ...(prev.navbar || {}),
-          whiteLogoIcon: { pack, name: iconName },
-          whiteLogo: { url: '', file: null, name: '' }
-        }
-      }));
+      setInternalFormData(prev => ({ ...prev, navbar: { ...(prev.navbar || {}), whiteLogoIcon: { pack, name: iconName }, whiteLogo: { url: '', file: null, name: '' }} }));
     }
-    setIsIconModalOpen(false);
-    setIconModalTargetField(null);
-    setCurrentIconForModal(null);
+    setIsIconModalOpen(false); setIconModalTargetField(null); setCurrentIconForModal(null);
   };
 
   if (singleBlockMode) {
-    const blockConfig = internalFormData[singleBlockMode]; // Use internalFormData
+    // Use internalFormData for single block mode, ensuring it's an object.
+    const blockDataContainer = internalFormData || {};
+    const blockConfig = blockDataContainer[singleBlockMode];
     const Component = blockComponentMap[singleBlockMode];
     
     if (singleBlockMode === "navbar") {
       return (
         <div className="relative p-4 bg-gray-200">
           <h2 className="text-xl font-semibold mb-3">Navbar Editor</h2>
-          <NavbarEditForm 
-            ref={navbarEditFormRef} 
-            navbarConfig={internalFormData.navbar} 
-            onConfigChange={handleNavbarConfigChange} 
-            previewNavbarAsScrolled={previewNavbarAsScrolled}
-            setPreviewNavbarAsScrolled={setPreviewNavbarAsScrolled}
-            onOpenIconModal={handleOpenIconModal}
-          />
-           {/* Add a save button for single navbar edit mode */}
-           <button 
-             onClick={() => navbarEditFormRef.current?.commitChanges()} 
-             className="mt-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-           >Save Navbar Changes</button>
+          <NavbarEditForm ref={navbarEditFormRef} navbarConfig={blockDataContainer.navbar || {}} onConfigChange={handleNavbarConfigChange} previewNavbarAsScrolled={previewNavbarAsScrolled} setPreviewNavbarAsScrolled={setPreviewNavbarAsScrolled} onOpenIconModal={handleOpenIconModal}/>
+          <button onClick={() => navbarEditFormRef.current?.commitChanges()} className="mt-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Save Navbar Changes</button>
         </div>
       );
     }
     
     if (Component && blockConfig) {
+        const propName = Object.keys(propsForBlocks[singleBlockMode] || {config: null})[0] || 'config';
         let props = {
             readOnly: false, 
+            [propName]: blockConfig,
             onConfigChange: (newConfig) => {
-                 console.log(`Single block mode: ${singleBlockMode} committing changes.`);
-                 setInternalFormData(prev => ({
-                    ...prev, 
-                    [singleBlockMode]: newConfig,
-                    // If it's a block within mainPageBlocks structure, update there too for consistency
-                    mainPageBlocks: (prev.mainPageBlocks || []).map(b => b.blockName === singleBlockMode ? {...b, config: newConfig} : b)
-                 }));
-                 setFormData(prev => ({...prev, [singleBlockMode]: newConfig, mainPageBlocks: (prev.mainPageBlocks || []).map(b => b.blockName === singleBlockMode ? {...b, config: newConfig} : b)})); // Also update OneForm directly for single block
+                 console.log(`Single block mode: ${singleBlockMode} committing changes to internalFormData.`);
+                 setInternalFormData(prev => {
+                    const newBlockData = { ...prev, [singleBlockMode]: newConfig };
+                    // If it's a block that also exists in mainPageBlocks, update there for consistency with full editor.
+                    if ((prev.mainPageBlocks || []).some(b => b.blockName === singleBlockMode)) {
+                        newBlockData.mainPageBlocks = (prev.mainPageBlocks || []).map(b => 
+                            b.blockName === singleBlockMode ? {...b, config: newConfig} : b
+                        );
+                    }
+                    return newBlockData;
+                 });
             }
         };
-
-        // Assign correct prop name for config data
-        if (blockComponentMap[singleBlockMode]) {
-            const propName = Object.keys(propsForBlocks[singleBlockMode] || {config: null})[0] || 'config';
-            props[propName] = blockConfig;
-            if(singleBlockMode === 'RichTextBlock') props.showControls = true;
-        } else {
-            props.config = blockConfig; // Default
-        }
+        if(singleBlockMode === 'RichTextBlock') props.showControls = true;
         
       return (
-        <div className="relative">
-          <Suspense fallback={<div>Loading {singleBlockMode}...</div>}>
-            <Component {...props} />
-          </Suspense>
-        </div>
+        <div className="relative"><Suspense fallback={<div>Loading {singleBlockMode}...</div>}><Component {...props} /></Suspense></div>
       );
     } else {
-      return <div>Unknown block type or missing config for single block: {singleBlockMode}</div>;
+      return <div>Unknown block type or missing config for single block: {singleBlockMode} (Data: {JSON.stringify(blockConfig || 'undefined')})</div>;
     }
   }
 
-  if (!internalFormData || (!internalFormData.mainPageBlocks && !internalFormData.navbar) ) {
-    return <div className="p-4 text-center">Loading form data...</div>;
+  // Ensure internalFormData and its main parts are objects before trying to render
+  const currentInternalData = internalFormData || {};
+  const currentNavbarData = currentInternalData.navbar || {};
+  const currentMainPageBlocks = currentInternalData.mainPageBlocks || [];
+
+  if (Object.keys(currentInternalData).length === 0 && !singleBlockMode) { // More robust loading check
+    return <div className="p-4 text-center">Loading form data... (Main Form)</div>;
   }
 
   return (
     <div className="bg-gray-100">
-      {internalFormData.navbar && !singleBlockMode && (
+      {!singleBlockMode && Object.keys(currentNavbarData).length > 0 && (
         <div className="bg-white shadow-md border rounded-lg">
           <div className="flex justify-between items-center p-3 border-b">
-            <h2 className="text-xl font-semibold text-gray-700">Navbar </h2>
-            <button 
-              type="button" 
-              onClick={() => handleToggleEditState('navbar')} 
-              className={`${activeEditBlock === "navbar" ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-700 hover:bg-gray-600'} text-white rounded-full p-2 shadow-lg transition-colors`}
-            >
+            <h2 className="text-xl font-semibold text-gray-700">Navbar</h2>
+            <button type="button" onClick={() => handleToggleEditState('navbar')} className={`${activeEditBlock === "navbar" ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-700 hover:bg-gray-600'} text-white rounded-full p-2 shadow-lg transition-colors`}>
               {activeEditBlock === "navbar" ? CheckIcon : PencilIcon}
             </button>
           </div>
-          <div className={`navbar-preview-container`}>
+          <div className="navbar-preview-container">
             <Suspense fallback={<div>Loading Navbar Preview...</div>}>
-              <Navbar 
-                config={internalFormData.navbar} 
-                forceScrolledState={previewNavbarAsScrolled}
-                isPreview={true} 
-                isEditingPreview={activeEditBlock === 'navbar'}
-                onTitleChange={(newTitle) => {
-                  setInternalFormData(prev => ({ 
-                    ...prev, 
-                    navbar: { ...(prev.navbar || {}), title: newTitle }
-                  }));
-                }}
-                onSubtitleChange={(newSubtitle) => {
-                  setInternalFormData(prev => ({ 
-                    ...prev, 
-                    navbar: { ...(prev.navbar || {}), subtitle: newSubtitle }
-                  }));
-                }}
+              <Navbar config={currentNavbarData} forceScrolledState={previewNavbarAsScrolled} isPreview={true} isEditingPreview={activeEditBlock === 'navbar'}
+                onTitleChange={(newTitle) => setInternalFormData(prev => ({ ...prev, navbar: { ...(prev.navbar || {}), title: newTitle }}))}
+                onSubtitleChange={(newSubtitle) => setInternalFormData(prev => ({ ...prev, navbar: { ...(prev.navbar || {}), subtitle: newSubtitle }}))}
               />
             </Suspense>
           </div>
           {activeEditBlock === "navbar" && (
-            <div className="w-full border-t">
-              <div className="bg-white py-4 px-0">
-                <NavbarEditForm
-                  ref={navbarEditFormRef}
-                  navbarConfig={internalFormData.navbar}
-                  onConfigChange={handleNavbarConfigChange}
-                  previewNavbarAsScrolled={previewNavbarAsScrolled}
-                  setPreviewNavbarAsScrolled={setPreviewNavbarAsScrolled}
-                  onOpenIconModal={handleOpenIconModal}
-                />
-              </div>
-            </div>
+            <div className="w-full border-t"><div className="bg-white py-4 px-0">
+              <NavbarEditForm ref={navbarEditFormRef} navbarConfig={currentNavbarData} onConfigChange={handleNavbarConfigChange} previewNavbarAsScrolled={previewNavbarAsScrolled} setPreviewNavbarAsScrolled={setPreviewNavbarAsScrolled} onOpenIconModal={handleOpenIconModal}/>
+            </div></div>
           )}
         </div>
       )}
 
-      {(internalFormData.mainPageBlocks || []).map((block, index) => {
-        const blockKey = block.uniqueKey || `${block.blockName}_${Date.now()}_${index}`;
+      {currentMainPageBlocks.map((block) => { // Removed index from map to rely on uniqueKey
+        const blockKey = block.uniqueKey || `${block.blockName}_fallbackKey_${Math.random()}`; // Fallback if uniqueKey is somehow missing
         const ComponentToRender = blockComponentMap[block.blockName];
         const isEditingThisBlock = activeEditBlock === blockKey;
 
         if (!ComponentToRender) return <div key={blockKey} className="p-4 text-red-500">Unknown block type: {block.blockName}</div>;
 
+        const blockSpecificPropName = {
+            HeroBlock: 'heroconfig', RichTextBlock: 'richTextData', ButtonBlock: 'buttonconfig',
+            BasicMapBlock: 'mapData', BookingBlock: 'bookingData', ServiceSliderBlock: 'config',
+            TestimonialBlock: 'config', BeforeAfterBlock: 'beforeAfterData', EmployeesBlock: 'employeesData',
+            AboutBlock: 'aboutData', CombinedPageBlock: 'config'
+        }[block.blockName] || 'config';
+        
         let componentProps = { 
             readOnly: !isEditingThisBlock,
+            [blockSpecificPropName]: block.config || {}, // Ensure config is an object
         };
-
-        const blockSpecificPropName = {
-            HeroBlock: 'heroconfig',
-            RichTextBlock: 'richTextData',
-            ButtonBlock: 'buttonconfig',
-            BasicMapBlock: 'mapData',
-            BookingBlock: 'bookingData',
-            ServiceSliderBlock: 'config', // or specific like serviceSliderData
-            TestimonialBlock: 'config', // or specific like testimonialData
-            BeforeAfterBlock: 'beforeAfterData',
-            EmployeesBlock: 'employeesData',
-            AboutBlock: 'aboutData',
-            CombinedPageBlock: 'config' // or specific like combinedPageData
-        }[block.blockName] || 'config';
-        componentProps[blockSpecificPropName] = block.config;
 
         if (block.blockName === 'RichTextBlock') {
             componentProps.showControls = isEditingThisBlock; 
-            componentProps.bannerColor = internalFormData.mainPageBlocks?.find(b => b.blockName === 'HeroBlock')?.config?.bannerColor || internalFormData.navbar?.bannerColor;
-            componentProps.onConfigChange = handleRichTextConfigChange; // RichText still uses its specific handler due to complexity
+            componentProps.bannerColor = (currentMainPageBlocks.find(b => b.blockName === 'HeroBlock')?.config?.bannerColor) || currentNavbarData.bannerColor;
+            componentProps.onConfigChange = handleRichTextConfigChange;
         } else {
             componentProps.onConfigChange = (newConf) => handleBlockConfigChange(blockKey, newConf);
         }
         
-        let currentIcon = isEditingThisBlock ? CheckIcon : PencilIcon;
-
         return (
           <div key={blockKey} className="relative bg-white overflow-hidden border">
             <div className="absolute top-4 right-4 z-40">
               <button type="button" onClick={() => handleToggleEditState(blockKey)} className={`${isEditingThisBlock ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-700 hover:bg-gray-600'} text-white rounded-full p-2 shadow-lg transition-colors`}>
-                {currentIcon}
+                {isEditingThisBlock ? CheckIcon : PencilIcon}
               </button>
             </div>
-            
             <Suspense fallback={<div>Loading {block.blockName}...</div>}>
-              <ComponentToRender key={blockKey} {...componentProps} />
+              <ComponentToRender {...componentProps} />
             </Suspense>
-            
-            {isEditingThisBlock && block.blockName !== 'RichTextBlock' && ComponentToRender.EditorPanel && (
+            {isEditingThisBlock && block.blockName !== 'RichTextBlock' && block.blockName !== 'BookingBlock' && ComponentToRender.EditorPanel && (
               <SlidingEditPanel onClose={() => handleToggleEditState(blockKey)}> 
                 <ComponentToRender.EditorPanel 
-                    localData={block.config}
-                    onPanelChange={(updatedFields) => {
-                        setInternalFormData(prev => ({
-                            ...prev,
-                            mainPageBlocks: (prev.mainPageBlocks || []).map(b => 
-                                b.uniqueKey === blockKey ? { ...b, config: { ...b.config, ...updatedFields } } : b
-                            )
-                        }));
+                    localData={block.config || {}} // Ensure localData is an object
+                    onPanelChange={(updatedConfigFields) => {
+                        setInternalFormData(prev => {
+                            const newBlocks = (prev.mainPageBlocks || []).map(b => 
+                                b.uniqueKey === blockKey ? { ...b, config: { ...(b.config || {}), ...updatedConfigFields } } : b
+                            );
+                            return { ...prev, mainPageBlocks: newBlocks };
+                        });
                     }} 
                 />
               </SlidingEditPanel>
@@ -649,39 +618,24 @@ const MainPageForm = ({ formData, setFormData, singleBlockMode = null }) => {
           </div>
         );
       })}
-      {/* Render IconSelectorModal if open */}
       {isIconModalOpen && (
-        <IconSelectorModal
-          isOpen={isIconModalOpen}
-          onClose={() => setIsIconModalOpen(false)}
-          onIconSelect={handleIconSelection}
-          currentIconPack={currentIconForModal?.pack || 'lucide'}
-          currentIconName={currentIconForModal?.name}
-        />
+        <IconSelectorModal isOpen={isIconModalOpen} onClose={() => setIsIconModalOpen(false)} onIconSelect={handleIconSelection} currentIconPack={currentIconForModal?.pack || 'lucide'} currentIconName={currentIconForModal?.name}/>
       )}
     </div>
   );
 };
 
 MainPageForm.propTypes = {
-  formData: PropTypes.object.isRequired,
+  formData: PropTypes.object, // Can be initially null
   setFormData: PropTypes.func.isRequired,
   singleBlockMode: PropTypes.string,
 };
 
-// Make sure propsForBlocks is defined if used in singleBlockMode for prop name mapping
 const propsForBlocks = {
-    HeroBlock: { heroconfig: null },
-    RichTextBlock: { richTextData: null },
-    ButtonBlock: { buttonconfig: null },
-    BasicMapBlock: { mapData: null },
-    BookingBlock: { bookingData: null },
-    ServiceSliderBlock: { config: null },
-    TestimonialBlock: { config: null },
-    BeforeAfterBlock: { beforeAfterData: null },
-    EmployeesBlock: { employeesData: null },
-    AboutBlock: { aboutData: null },
-    CombinedPageBlock: { config: null }
+    HeroBlock: { heroconfig: null }, RichTextBlock: { richTextData: null }, ButtonBlock: { buttonconfig: null },
+    BasicMapBlock: { mapData: null }, BookingBlock: { bookingData: null }, ServiceSliderBlock: { config: null },
+    TestimonialBlock: { config: null }, BeforeAfterBlock: { beforeAfterData: null }, EmployeesBlock: { employeesData: null },
+    AboutBlock: { aboutData: null }, CombinedPageBlock: { config: null }
 };
 
 export default MainPageForm;

@@ -22,6 +22,149 @@ import MainPageForm from "./MainPageForm";
 import AboutBlock from "./MainPageBlocks/AboutBlock";
 import Navbar from "./Navbar"; // Import Navbar for preview
 
+// Helper function to check if a URL is a local asset to be processed
+function isProcessableAssetUrl(url) {
+  if (typeof url !== 'string') {
+    return false;
+  }
+  
+  // Exclude absolute URLs, data URLs, blob URLs
+  if (url.startsWith('http:') || url.startsWith('https:') || url.startsWith('data:') || url.startsWith('blob:')) {
+    return false;
+  }
+  
+  // Exclude anchor links and document files
+  if (url.startsWith('#') || url === 'about' || url === 'inspection' || url === 'shingleinstallation') {
+    return false;
+  }
+  
+  // Check if the URL points to a known media folder or a file with an extension
+  const validPathCheck = (path) => {
+    // Known media folders we want to include
+    const validFolders = ['assets/', 'Commercial/', 'data/'];
+    
+    // Valid media file extensions
+    const validExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.avif', '.mp4', '.webm', '.pdf'];
+    
+    // Check if path starts with a valid folder
+    const isInValidFolder = validFolders.some(folder => 
+      path.includes(folder) || path.includes(folder.toLowerCase())
+    );
+    
+    // Check if path has a valid file extension
+    const hasValidExtension = validExtensions.some(ext => 
+      path.toLowerCase().endsWith(ext)
+    );
+    
+    return isInValidFolder || hasValidExtension;
+  };
+  
+  // Clean up the URL (remove leading slash) for validating
+  const cleanPath = url.startsWith('/') ? url.substring(1) : url;
+  
+  // Only process valid paths
+  return validPathCheck(cleanPath);
+}
+
+// Recursive function to traverse data, collect assets, and return cleaned data for ZIP
+function traverseAndModifyDataForZip(originalDataNode, assetsToCollect, pathContext, uploadBaseDir) {
+  if (originalDataNode === null || originalDataNode === undefined) {
+    return originalDataNode;
+  }
+
+  // Handle arrays by creating a new array with processed items
+  if (Array.isArray(originalDataNode)) {
+    return originalDataNode.map((item, index) =>
+      traverseAndModifyDataForZip(item, assetsToCollect, `${pathContext}[${index}]`, uploadBaseDir)
+    );
+  }
+
+  // Handle objects (including potential file upload objects)
+  if (typeof originalDataNode === 'object' && !(originalDataNode instanceof File)) {
+    // Check if it's our structure for a file upload (e.g., contains a File object)
+    if (originalDataNode.file && originalDataNode.file instanceof File && typeof originalDataNode.name === 'string') {
+      const file = originalDataNode.file;
+      const fileName = originalDataNode.name || file.name || 'untitled_asset';
+      const sanitizedPathContext = pathContext.replace(/[\[\].]/g, '_').replace(/[^a-zA-Z0-9_/-]/g, '').slice(0, 100);
+      const pathInZip = `media/${uploadBaseDir}/${sanitizedPathContext}_${fileName}`;
+
+      assetsToCollect.push({
+        pathInZip,
+        dataSource: file,
+        type: 'file',
+      });
+      
+      // Return a new, cleaned object for the JSON structure
+      const cleanedFileObject = { ...originalDataNode };
+      delete cleanedFileObject.file;
+      cleanedFileObject.url = pathInZip;
+      return cleanedFileObject;
+    }
+    
+    // Handle objects with url property (from pasted URLs)
+    else if (originalDataNode.url && typeof originalDataNode.url === 'string' && isProcessableAssetUrl(originalDataNode.url)) {
+      let url = originalDataNode.url;
+      let pathInZip = url;
+      if (pathInZip.startsWith('/')) {
+        pathInZip = pathInZip.substring(1);
+      }
+      
+      // Add 'media/' prefix
+      pathInZip = `media/${pathInZip}`;
+      
+      // Avoid duplicating asset collection
+      if (!assetsToCollect.some(asset => asset.pathInZip === pathInZip && asset.type === 'url')) {
+        assetsToCollect.push({
+          pathInZip,
+          dataSource: url,
+          type: 'url',
+        });
+      }
+      
+      // Return a cloned object with updated url
+      return { ...originalDataNode, url: pathInZip };
+    }
+
+    // Otherwise, it's a generic object; traverse its properties and build a new object
+    const newObj = {};
+    for (const key in originalDataNode) {
+      if (Object.prototype.hasOwnProperty.call(originalDataNode, key)) {
+        newObj[key] = traverseAndModifyDataForZip(
+          originalDataNode[key],
+          assetsToCollect,
+          `${pathContext}.${key}`,
+          uploadBaseDir
+        );
+      }
+    }
+    return newObj;
+  }
+
+  // Handle string URLs that might be existing assets
+  if (typeof originalDataNode === 'string' && isProcessableAssetUrl(originalDataNode)) {
+    let pathInZip = originalDataNode;
+    if (pathInZip.startsWith('/')) {
+      pathInZip = pathInZip.substring(1);
+    }
+    
+    // Add 'media/' prefix
+    pathInZip = `media/${pathInZip}`;
+
+    // Avoid duplicating asset collection
+    if (!assetsToCollect.some(asset => asset.pathInZip === pathInZip && asset.type === 'url')) {
+        assetsToCollect.push({
+          pathInZip,
+          dataSource: originalDataNode,
+          type: 'url',
+        });
+    }
+    return pathInZip;
+  }
+
+  // Return primitives and other types as is
+  return originalDataNode;
+}
+
 // Tab style button component
 const TabButton = ({ id, label, isActive, onClick }) => (
   <button
@@ -55,7 +198,12 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
       try {
         // If initialData is provided, use it directly (for single block editing like /edit/hero)
         if (initialData && blockName) {
-          setFormData({ [blockName]: initialData, navbar: initialData.navbar }); // Ensure navbar is also included if present
+          // Make sure initialData for single block also includes navbar if needed for preview/context
+          const baseData = { ...initialData };
+          if (!baseData.navbar && initialData.navbar) baseData.navbar = initialData.navbar;
+          else if (!baseData.navbar) baseData.navbar = { navLinks: [{name: "Home", href: "/"}], logo: { url: '/assets/images/logo.png', name: 'logo.png' }, whiteLogo: { url: '/assets/images/logo-white.png', name: 'logo-white.png'} };
+
+          setFormData({ [blockName]: baseData[blockName] || baseData, navbar: baseData.navbar });
           setLoading(false);
           return;
         }
@@ -76,6 +224,8 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
             setFormData(combinedData); // This will include navbar and mainPageBlocks
             setLoading(false);
             return;
+          } else {
+            console.error("Failed to load combined_data.json, status:", combinedResponse.status);
           }
         } catch (combinedError) {
           console.error("Error loading combined data:", combinedError);
@@ -83,8 +233,9 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         }
 
         // Fallback: Create a default configuration (simplified, ensure navbar exists)
+        console.warn("Falling back to default data structure for OneForm.");
         const defaultData = {
-          navbar: { navLinks: [{name: "Home", href: "/"}], logo: '/assets/images/logo.png', whiteLogo: '/assets/images/logo-white.png' },
+          navbar: { navLinks: [{name: "Home", href: "/"}], logo: { url: '/assets/images/logo.png', name: 'logo.png' }, whiteLogo: { url: '/assets/images/logo-white.png', name: 'logo-white.png'} },
           mainPageBlocks: [], // Default to empty blocks
           hero: { title: "Welcome" }, // Keep some defaults for single block editors if they rely on this path
           // ... (other default block structures if needed by single block editors)
@@ -103,32 +254,15 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   }, [initialData, blockName]);
 
   const handleMainPageFormChange = (newMainPageFormData) => {
-    // MainPageForm now manages its blocks based on mainPageBlocks in combined_data
-    // It will call setFormData with the complete structure including its specific block changes.
-    // For OneForm, we need to merge this carefully if it's just a partial update for a single block from MainPageForm.
-    // However, if MainPageForm is used in full edit mode here, it should return the whole page structure.
-    
-    // Let's assume MainPageForm used within OneForm's "Main Page" tab will update the *entire* formData related to main page blocks.
-    // We need to ensure that the 'navbar' and other top-level data in OneForm's state are preserved.
-    
     setFormData(prev => ({
-        ...prev, // Keep existing top-level things like navbar, services data etc.
-        ...newMainPageFormData // This would overwrite keys like 'hero', 'richText' if MainPageForm still outputs them flatly.
-                               // If MainPageForm now gives { mainPageBlocks: [...] }, this needs to be handled.
-                               // For now, assuming newMainPageFormData IS the new state of mainPageBlocks etc.
+        ...prev, 
+        ...newMainPageFormData 
     }));
-    // If MainPageForm passes the *entire* formData structure (including navbar potentially from its own state)
-    // then the above is fine. If it passes only its own managed parts, merging is key.
-    // Given previous changes, MainPageForm when not in singleBlockMode, passes its whole data via setFormData.
-    // So, this setFormData should correctly update the main page content part.
 };
 
   const handleAboutConfigChange = (newAboutConfig) => {
     console.log("About config changed:", newAboutConfig);
-    // Assuming 'aboutPage' is a top-level key in formData, or handled within mainPageBlocks
-    // If it's a top-level key:
     setFormData((prev) => ({ ...prev, aboutPage: newAboutConfig }));
-    // If 'aboutPage' is an object within mainPageBlocks, this needs more specific targeting.
   };
 
   /**
@@ -141,52 +275,123 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         alert("No data available to download.");
         return;
       }
-      console.log("Creating ZIP with data:", formData);
+      console.log("Creating ZIP with initial data (a copy will be processed):", formData);
 
       const zip = new JSZip();
-      const dataClone = JSON.parse(JSON.stringify(formData)); // Deep clone
+      const collectedAssets = [];
 
-      // Clean File objects (if any were introduced directly into formData, e.g. for images/videos)
-      // cleanFileReferences(dataClone); // Placeholder for a more robust cleaning function if needed
+      // Process formData (for combined_data.json)
+      const cleanedCombinedData = traverseAndModifyDataForZip(
+        formData,
+        collectedAssets,
+        'formDataRoot',
+        'user_uploads/combined_data'
+      );
+      zip.file("json/combined_data.json", JSON.stringify(cleanedCombinedData, null, 2));
+      console.log("Cleaned combined_data for ZIP:", cleanedCombinedData);
+      
+      // Log what assets are being collected
+      console.log("Assets collected from combined_data:", collectedAssets.map(a => a.pathInZip));
 
-      // Add combined_data.json (which includes navbar, mainPageBlocks, etc.)
-      zip.file("combined_data.json", JSON.stringify(dataClone, null, 2));
-
-      // Fetch and add services.json if not editing a single block (i.e., full OneForm mode)
+      // Fetch and process services.json
       if (!blockName) {
-        const services = await getServicesData();
-        if (services) {
-          // (Ensure service slugs are formatted - this logic might be better in getServicesData or ServiceEditPage)
-          zip.file("services.json", JSON.stringify(services, null, 2));
+        try {
+          // Direct fetch for services.json
+          const servicesResponse = await fetch("/data/ignore/services.json");
+          if (!servicesResponse.ok) {
+            throw new Error(`Failed to fetch services.json: ${servicesResponse.status}`);
+          }
+          
+          const servicesData = await servicesResponse.json();
+          if (servicesData) {
+            console.log("Raw services_data fetched");
+            const cleanedServicesData = traverseAndModifyDataForZip(
+              servicesData,
+              collectedAssets,
+              'servicesDataRoot',
+              'user_uploads/services_data'
+            );
+            zip.file("json/services.json", JSON.stringify(cleanedServicesData, null, 2));
+            console.log("Assets collected after services_data processing:", 
+              collectedAssets.map(a => a.pathInZip).filter(p => 
+                !p.includes('formDataRoot') // Only show newly added assets
+              )
+            );
+          }
+        } catch (serviceError) {
+          console.error("Error processing services.json for ZIP:", serviceError);
+          alert(`Error processing services.json: ${serviceError.message}. ZIP may be incomplete.`);
         }
       }
+      
+      // Filter out any assets that might have slipped through but should be excluded
+      const filteredAssets = collectedAssets.filter(asset => {
+        // Skip any asset that isn't in a folder structure
+        if (asset.pathInZip.split('/').length <= 2) {
+          console.log(`Excluding non-folder asset: ${asset.pathInZip}`);
+          return false;
+        }
+        
+        // Skip document files that might have passed the initial check
+        const baseFileName = asset.pathInZip.split('/').pop();
+        if (baseFileName === 'about' || baseFileName === 'inspection' || 
+            baseFileName === 'shingleinstallation' || baseFileName.startsWith('#')) {
+          console.log(`Excluding document file: ${asset.pathInZip}`);
+          return false;
+        }
+        
+        return true;
+      });
+      
+      console.log(`Filtered out ${collectedAssets.length - filteredAssets.length} assets`);
+      console.log("Final assets for ZIP:", filteredAssets.map(a => a.pathInZip));
 
-      // Collect and add uploaded files (images/videos) to the ZIP
-      // This part needs a robust `collectFiles` function that understands the structure of `formData`
-      // including `formData.navbar.logoFile` (if we add file uploads for logos),
-      // images in `formData.mainPageBlocks[...].config.images`, etc.
-      // const filesToZip = []; 
-      // collectFiles(formData, filesToZip); // formData here is the one from OneForm's state
-      // for (const { file, path } of filesToZip) { ... }
+      // Add all collected assets to the ZIP
+      const assetProcessingPromises = filteredAssets.map(async (asset) => {
+        try {
+          if (asset.type === 'file' && asset.dataSource instanceof File) {
+            zip.file(asset.pathInZip, asset.dataSource);
+            console.log(`Added file ${asset.pathInZip} to ZIP`);
+          } else if (asset.type === 'url' && typeof asset.dataSource === 'string') {
+            if (asset.dataSource.startsWith('/') || !asset.dataSource.includes(':')) {
+              try {
+                const response = await fetch(asset.dataSource);
+                if (!response.ok) {
+                  throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                const blob = await response.blob();
+                zip.file(asset.pathInZip, blob);
+                console.log(`Fetched and added ${asset.pathInZip} to ZIP`);
+              } catch (fetchError) {
+                console.error(`Error fetching ${asset.dataSource}:`, fetchError);
+                // Skip adding error files to keep the ZIP clean
+              }
+            } else {
+              console.warn(`Skipping external URL: ${asset.dataSource}`);
+            }
+          }
+        } catch (assetError) {
+          console.error(`Error processing asset ${asset.pathInZip}:`, assetError);
+        }
+      });
+
+      await Promise.all(assetProcessingPromises);
 
       const content = await zip.generateAsync({ type: "blob" });
       const date = new Date();
       const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
       const timeStr = `${String(date.getHours()).padStart(2, "0")}-${String(date.getMinutes()).padStart(2, "0")}`;
-      const fileName = blockName
+      const zipFileName = blockName
         ? `${blockName}_edit_${dateStr}_${timeStr}.zip`
         : `website_content_${dateStr}_${timeStr}.zip`;
-      saveAs(content, fileName);
+      saveAs(content, zipFileName);
+      console.log("ZIP file generation complete:", zipFileName);
 
     } catch (error) {
       console.error("Error creating ZIP file:", error);
       alert("Error creating ZIP file. See console for details.");
     }
   };
-
-  // cleanFileReferences and collectFiles would need to be robustly defined here
-  // similar to how they were sketched out before, but adapted for OneForm's formData structure.
-  // For brevity, I'm omitting their full re-implementation here but they are crucial for ZIP generation.
 
   if (loading) {
     return (

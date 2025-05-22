@@ -239,8 +239,7 @@ export default function TestimonialBlock({ readOnly = false, config = {}, onConf
 
   useEffect(() => {
     if (config) {
-      let updatedGoogleReviewsForCarousel = [];
-
+      // The setLocalData updater function will now also handle setting the googleReviews state for the carousel.
       setLocalData(prevLocalData => {
         // Define defaults for top-level fields
         const defaultTitle = "Testimonials";
@@ -253,9 +252,9 @@ export default function TestimonialBlock({ readOnly = false, config = {}, onConf
           logo: "/assets/images/hero/googleimage.png", link: "https://www.google.com/maps"
         };
 
-        let mergedGoogleReviews = [];
+        let calculatedMergedGoogleReviews = [];
         if (config.googleReviews) {
-          mergedGoogleReviews = config.googleReviews.map((reviewFromProp, propIndex) => {
+          calculatedMergedGoogleReviews = config.googleReviews.map((reviewFromProp, propIndex) => {
             const localReview = prevLocalData.googleReviews?.find(lr => lr.id && lr.id === reviewFromProp.id) || 
                                 prevLocalData.googleReviews?.[propIndex] || 
                                 {};
@@ -279,10 +278,11 @@ export default function TestimonialBlock({ readOnly = false, config = {}, onConf
             };
           });
         } else if (prevLocalData.googleReviews) {
-          mergedGoogleReviews = prevLocalData.googleReviews; // Keep local if prop provides no reviews
+          calculatedMergedGoogleReviews = prevLocalData.googleReviews; // Keep local if prop provides no reviews
         }
         
-        updatedGoogleReviewsForCarousel = mergedGoogleReviews; // Capture for setGoogleReviews call
+        // Update the separate state for the carousel directly here
+        setGoogleReviews(calculatedMergedGoogleReviews || []);
 
         return {
           ...prevLocalData, // Base with previous local data
@@ -298,16 +298,13 @@ export default function TestimonialBlock({ readOnly = false, config = {}, onConf
                  ? prevLocalData.reviewButtonLink
                  : (config.reviewButtonLink || defaultReviewButtonLink),
           
-          googleReviews: mergedGoogleReviews,
+          googleReviews: calculatedMergedGoogleReviews,
         };
       });
-      
-      // Update the separate state for the carousel with the merged reviews
-      setGoogleReviews(updatedGoogleReviewsForCarousel || []);
-
+      // The direct setGoogleReviews call that was here has been moved into the setLocalData updater.
     }
     // If config is null/undefined, localData remains as is.
-  }, [config]);
+  }, [config, setGoogleReviews]); // Added setGoogleReviews to dependency array
 
   useEffect(() => {
     if (prevReadOnlyRef.current === false && readOnly === true) {

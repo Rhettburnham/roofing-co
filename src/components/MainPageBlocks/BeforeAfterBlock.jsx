@@ -45,6 +45,7 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
 
   // Safely destructure data and ensure paths are properly formatted
   const { sectionTitle = "BEFORE & AFTER", items = [] } = beforeAfterData || {};
+  const showNailAnimation = beforeAfterData?.showNailAnimation !== undefined ? beforeAfterData.showNailAnimation : true; // Default to true
 
   // Initialize viewStates when items change
   useEffect(() => {
@@ -98,52 +99,42 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
 
     const nailElement = nailRef.current;
     const textElement = textRef.current;
+    const headerElement = headerRef.current; // Added for clarity in cleanup
 
-    // Initial states
-    gsap.set(nailElement, {
-      x: "120vw",
-      opacity: 1,
+    // Kill any existing ScrollTriggers associated with these elements
+    ScrollTrigger.getAll().forEach(st => {
+      if (st.trigger === headerElement && (st.animation?.targets?.includes(nailElement) || st.animation?.targets?.includes(textElement))) {
+        st.kill();
+      }
     });
-    gsap.set(textElement, {
-      opacity: 0,
-      x: "100%",
-    });
+    // Kill any active tweens on these elements
+    gsap.killTweensOf([nailElement, textElement]);
 
-    // HeaderRef timeline - trigger when header is at 20% of viewport
-    const masterTimeline = gsap.timeline({
-      scrollTrigger: {
-        trigger: headerRef.current,
-        start: "top 50%", // Changed from 80% to 20% to trigger when div appears at 20% of viewport
-        end: "top 50%", // Adjusted to match new trigger approach
-        toggleActions: "play none none none", // Play once when entering trigger area
-        markers: false,
-        once: true, // Added to ensure it only plays once
-      },
-    });
+    // Initial states reset before applying new logic
+    gsap.set(nailElement, { x: "120vw", opacity: 1 });
+    gsap.set(textElement, { opacity: 0, x: "100%" });
 
-    masterTimeline
-      .to(nailElement, {
-        x: 0,
-        duration: 1,
-        ease: "power2.out",
-      })
-      .to(
-        textElement,
-        {
-          opacity: 1,
-          duration: 0.5,
+    if (showNailAnimation) {
+      const masterTimeline = gsap.timeline({
+        scrollTrigger: {
+          trigger: headerElement, // Use headerElement
+          start: "top 50%",
+          end: "top 50%", 
+          toggleActions: "play none none none",
+          markers: false,
+          once: true, 
         },
-        "+=0.2"
-      )
-      .to(
-        [nailElement, textElement],
-        {
-          x: (index) => (index === 0 ? "-10vw" : "-50%"),
-          duration: 0.8,
-          ease: "power2.inOut",
-        },
-        "+=0.3"
-      );
+      });
+
+      masterTimeline
+        .to(nailElement, { x: 0, duration: 1, ease: "power2.out" })
+        .to(textElement, { opacity: 1, duration: 0.5 }, "+=0.2")
+        .to([nailElement, textElement], { x: (index) => (index === 0 ? "-10vw" : "-50%"), duration: 0.8, ease: "power2.inOut" }, "+=0.3");
+    } else {
+      gsap.set(nailElement, { opacity: 0 });
+      gsap.set(textElement, { x: "-50%", opacity: 1 });
+    }
+
     // Box animations
     const boxEls = boxesRef.current.filter((box) => box !== null);
 
@@ -242,11 +233,20 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
       });
     });
 
-    // Cleanup on unmount
+    // Cleanup on unmount or when showNailAnimation changes
     return () => {
-      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+      ScrollTrigger.getAll().forEach(st => {
+        if (st.trigger === headerElement && (st.animation?.targets?.includes(nailElement) || st.animation?.targets?.includes(textElement))) {
+          st.kill();
+        }
+      });
+      gsap.killTweensOf([nailElement, textElement]);
+      //Potentially kill box animations too if they get re-triggered undesirably
+      //ScrollTrigger.getAll().forEach(st => { if(boxEls.includes(st.trigger)) st.kill(); });
+      //gsap.killTweensOf(boxEls.map(b => b.querySelector(".overlay-text")));
+      //gsap.killTweensOf(boxEls);
     };
-  }, [items]);
+  }, [items, showNailAnimation]); // Added showNailAnimation dependency
 
   // Handle view state changes for card flipping
   useEffect(() => {
@@ -527,6 +527,11 @@ function BeforeAfterEditorPanel({ localData, onPanelChange }) {
     });
   };
 
+  const handleToggleNailAnimation = () => {
+    const currentShowState = localData.showNailAnimation !== undefined ? localData.showNailAnimation : true;
+    onPanelChange({ showNailAnimation: !currentShowState });
+  };
+
   return (
     <div className="bg-white text-gray-800 p-4 rounded">
       <div className="flex items-center justify-between mb-4">
@@ -557,6 +562,17 @@ function BeforeAfterEditorPanel({ localData, onPanelChange }) {
         ))}
       </div>
       <button type="button" onClick={handleAddItem} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded w-full mt-3 text-sm font-medium">+ Add Gallery Item</button>
+      <div className="mt-4 pt-3 border-t">
+        <label className="flex items-center space-x-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={localData.showNailAnimation !== undefined ? localData.showNailAnimation : true}
+            onChange={handleToggleNailAnimation}
+            className="form-checkbox h-5 w-5 text-blue-600 rounded"
+          />
+          <span className="text-sm font-medium text-gray-700">Show Nail Animation</span>
+        </label>
+      </div>
     </div>
   );
 }
@@ -586,6 +602,7 @@ export default function BeforeAfterBlock({
     const initialConfig = beforeAfterData || {};
     return {
       sectionTitle: initialConfig.sectionTitle || "GALLERY",
+      showNailAnimation: initialConfig.showNailAnimation !== undefined ? initialConfig.showNailAnimation : true, // Initialize here
       items: (initialConfig.items || []).map((item, index) => ({
         ...item,
         id: item.id || `item_init_${index}_${Date.now()}`,
@@ -613,46 +630,57 @@ export default function BeforeAfterBlock({
             URL.revokeObjectURL(oldItemFromLocal.after.url);
           }
 
-          // Merge item data: start with old local, overlay with new prop, then specifically protect inline editable fields
           const mergedItem = {
-            ...oldItemFromLocal, // Contains local inline edits for shingle/sqft
-            ...newItemFromProp,  // Contains panel edits (e.g. image changes, structural changes if items are added/removed via panel)
+            ...oldItemFromLocal,
+            ...newItemFromProp,
             id: newItemFromProp.id || oldItemFromLocal.id || `item_update_${index}_${Date.now()}`,
             before: newBeforeImg,
             after: newAfterImg,
           };
 
-          // Prioritize local shingle if it differs and is not just default/empty
-          if (oldItemFromLocal.shingle !== newItemFromProp.shingle && 
-              oldItemFromLocal.shingle !== (newItemFromProp.shingle || "")) { // Default for shingle might be empty string
+          // Preserve local shingle if editing and different from prop
+          if (!readOnly && oldItemFromLocal.shingle !== (newItemFromProp.shingle || "")) {
             mergedItem.shingle = oldItemFromLocal.shingle;
           } else {
-            mergedItem.shingle = newItemFromProp.shingle || ""; // Ensure a value, fallback to empty if prop is undefined
+            mergedItem.shingle = newItemFromProp.shingle || "";
           }
 
-          // Prioritize local sqft if it differs and is not just default/empty
-          if (oldItemFromLocal.sqft !== newItemFromProp.sqft && 
-              oldItemFromLocal.sqft !== (newItemFromProp.sqft || "")) { // Default for sqft might be empty string
+          // Preserve local sqft if editing and different from prop
+          if (!readOnly && oldItemFromLocal.sqft !== (newItemFromProp.sqft || "")) {
             mergedItem.sqft = oldItemFromLocal.sqft;
           } else {
-            mergedItem.sqft = newItemFromProp.sqft || ""; // Ensure a value
+            mergedItem.sqft = newItemFromProp.sqft || "";
           }
           return mergedItem;
         });
+        
+        let resolvedSectionTitle;
+        // Preserve local sectionTitle if editing and different from prop
+        if (!readOnly && prevLocalData.sectionTitle !== (beforeAfterData.sectionTitle || "GALLERY")) {
+            resolvedSectionTitle = prevLocalData.sectionTitle;
+        } else {
+            resolvedSectionTitle = beforeAfterData.sectionTitle || "GALLERY";
+        }
+        
+        // Handle showNailAnimation using BookingBlock pattern: prop if defined, else local, else default
+        const resolvedShowNailAnimation = beforeAfterData.showNailAnimation !== undefined
+                                     ? beforeAfterData.showNailAnimation
+                                     : (prevLocalData.showNailAnimation !== undefined
+                                          ? prevLocalData.showNailAnimation
+                                          : true);
 
         return {
-          ...prevLocalData, // Start with existing local data
-          ...beforeAfterData, // Overlay with incoming prop data for panel-driven changes
-          // Explicitly prioritize prevLocalData.sectionTitle if it holds an uncommitted inline edit
-          sectionTitle: (prevLocalData.sectionTitle !== beforeAfterData.sectionTitle && 
-                           prevLocalData.sectionTitle !== (beforeAfterData.sectionTitle || "GALLERY"))
-                        ? prevLocalData.sectionTitle
-                        : beforeAfterData.sectionTitle || "GALLERY",
+          ...prevLocalData, // Start with current local state
+          ...beforeAfterData, // Overlay with all incoming props for general structure/defaults
+
+          // Specifically set fields with merge logic or editor state preference
+          sectionTitle: resolvedSectionTitle,
           items: newItems,
+          showNailAnimation: resolvedShowNailAnimation,
         };
       });
     }
-  }, [beforeAfterData]);
+  }, [beforeAfterData, readOnly]);
 
   useEffect(() => {
     return () => {
@@ -671,9 +699,10 @@ export default function BeforeAfterBlock({
             ...localData,
             items: localData.items.map(item => ({
                 ...item,
-                before: item.before?.file ? item.before.name : item.before?.url,
-                after: item.after?.file ? item.after.name : item.after?.url,
-            }))
+                before: item.before?.file ? (item.before.name || 'default_before.jpg') : item.before?.url,
+                after: item.after?.file ? (item.after.name || 'default_after.jpg') : item.after?.url,
+            })),
+            showNailAnimation: localData.showNailAnimation !== undefined ? localData.showNailAnimation : true,
         };
         onConfigChange(dataToSave);
       }

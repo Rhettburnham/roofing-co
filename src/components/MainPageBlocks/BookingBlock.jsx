@@ -95,28 +95,50 @@ const BookingPreview = memo(({ bookingData, readOnly, onHeaderTextChange, onPhon
     if (!bannerRef.current || !contentRef.current || !formContainerRef.current) return;
     const leftNails = Array.from(bannerRef.current.querySelectorAll('[id^="left-nail-"]')).filter(Boolean);
     const rightNails = Array.from(bannerRef.current.querySelectorAll('[id^="right-nail-"]')).filter(Boolean);
+    
+    // Kill existing animations on these elements
+    gsap.killTweensOf([bannerRef.current, contentRef.current, formContainerRef.current, ...leftNails, ...rightNails]);
+    ScrollTrigger.getAll().forEach(st => {
+      if (st.trigger === bannerRef.current) {
+        st.kill();
+      }
+    });
+
     gsap.set(bannerRef.current, { y: "-120%", opacity: 0 });
-    gsap.set(contentRef.current, { opacity: 1 });
+    gsap.set(contentRef.current, { opacity: 1 }); // Assuming content within banner should be visible initially
     gsap.set(formContainerRef.current, { opacity: 0, scale: 0.95 });
     gsap.set(leftNails, { x: "-100vw" }); 
     gsap.set(rightNails, { x: "100vw" }); 
 
+    const showNailAnimation = bookingData?.showNailAnimation !== undefined ? bookingData.showNailAnimation : true;
+
     const masterTimeline = gsap.timeline({
         scrollTrigger: {
             trigger: bannerRef.current,
-            start: "top 70%",
+            start: "top 80%",
             toggleActions: "play none none none", 
             once: true,
         },
     });
+
     masterTimeline.to(bannerRef.current, { y: 0, opacity: 1, duration: 0.8, ease: "bounce.out" })
-                  .to(formContainerRef.current, { opacity: 1, scale: 1, duration: 0.6, ease: "back.out(1.4)" }, "-=0.2")
-                  .to(leftNails, { x: "-20%", duration: 0.4, ease: "power2.out", stagger: 0.12 }, "+=0.2")
-                  .to(rightNails, { x: "20%", duration: 0.4, ease: "power2.out", stagger: 0.12 }, "-=0.4");
+                  .to(formContainerRef.current, { opacity: 1, scale: 1, duration: 0.6, ease: "back.out(1.4)" }, "-=0.2");
+
+    if (showNailAnimation) {
+      masterTimeline.to(leftNails, { x: "-20%", duration: 0.4, ease: "power2.out", stagger: 0.12 }, "+=0.2")
+                    .to(rightNails, { x: "20%", duration: 0.4, ease: "power2.out", stagger: 0.12 }, "-=0.4");
+    } else {
+      // Set nails to a static/hidden state if animation is off
+      gsap.set(leftNails, { opacity: 0 }); // Hide left nails
+      gsap.set(rightNails, { opacity: 0 }); // Hide right nails
+    }
+    
     return () => { 
       masterTimeline.kill();
+      // It might be good to also kill tweens specifically if the component unmounts while animation is running
+      gsap.killTweensOf([bannerRef.current, contentRef.current, formContainerRef.current, ...leftNails, ...rightNails]);
     };
-  }, []); // Empty dependency array for mount-once animation
+  }, [bookingData?.showNailAnimation]); // Depend on showNailAnimation prop
 
   const toggleFormVisibility = useCallback(() => {
     if (!isMobile || isAnimating || readOnly) return;
@@ -299,7 +321,7 @@ BookingPreview.propTypes = {
    and the logo image on the left of the header.
 =============================================== */
 function BookingEditorPanel({ localData, onPanelChange }) { 
-  const { logo, socialLinks = [], mainBackgroundColor, headerTextColor, formBackgroundColor, inputTextColor, buttonTextColor, buttonBackgroundColor } = localData;
+  const { logo, socialLinks = [], mainBackgroundColor, headerTextColor, formBackgroundColor, inputTextColor, buttonTextColor, buttonBackgroundColor, showNailAnimation } = localData;
 
   const handleFieldChange = (field, value) => {
     onPanelChange(prev => ({ ...prev, [field]: value }));
@@ -329,6 +351,11 @@ function BookingEditorPanel({ localData, onPanelChange }) {
   const handleLogoUrlChange = (urlValue) => {
     if (localData.logo?.url?.startsWith('blob:')) URL.revokeObjectURL(localData.logo.url);
     onPanelChange(prev => ({ ...prev, logo: { file: null, url: urlValue, name: urlValue.split('/').pop() } }));
+  };
+
+  const handleToggleNailAnimation = () => {
+    const currentShowState = localData.showNailAnimation !== undefined ? localData.showNailAnimation : true;
+    onPanelChange({ showNailAnimation: !currentShowState });
   };
 
   return (
@@ -361,6 +388,17 @@ function BookingEditorPanel({ localData, onPanelChange }) {
         <div><label className="block text-sm font-medium">Submit Button Text Color:</label><input type="color" className="mt-1 block w-full h-10 px-1 py-1 bg-gray-700 border border-gray-600 rounded-md shadow-sm" value={buttonTextColor || '#FFFFFF'} onChange={(e) => handleFieldChange('buttonTextColor', e.target.value)}/></div>
         <div><label className="block text-sm font-medium">Submit Button Background Color:</label><input type="color" className="mt-1 block w-full h-10 px-1 py-1 bg-gray-700 border border-gray-600 rounded-md shadow-sm" value={buttonBackgroundColor || '#F97316'} onChange={(e) => handleFieldChange('buttonBackgroundColor', e.target.value)}/></div>
       </div>
+      <div className="pt-3 border-t border-gray-700">
+        <label className="flex items-center space-x-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={localData.showNailAnimation !== undefined ? localData.showNailAnimation : true}
+            onChange={handleToggleNailAnimation}
+            className="form-checkbox h-5 w-5 text-blue-600 rounded bg-gray-700 border-gray-600 focus:ring-blue-500"
+          />
+          <span className="text-sm font-medium">Show Nail Animation</span>
+        </label>
+      </div>
     </div>
   );
 }
@@ -391,6 +429,7 @@ export default function BookingBlock({
       inputTextColor: initialConfig.inputTextColor || '#374151',
       buttonTextColor: initialConfig.buttonTextColor || '#FFFFFF',
       buttonBackgroundColor: initialConfig.buttonBackgroundColor || '#F97316',
+      showNailAnimation: initialConfig.showNailAnimation !== undefined ? initialConfig.showNailAnimation : true,
     };
   });
 
@@ -445,6 +484,7 @@ export default function BookingBlock({
           inputTextColor: bookingData.inputTextColor !== undefined ? bookingData.inputTextColor : prevLocal.inputTextColor,
           buttonTextColor: bookingData.buttonTextColor !== undefined ? bookingData.buttonTextColor : prevLocal.buttonTextColor,
           buttonBackgroundColor: bookingData.buttonBackgroundColor !== undefined ? bookingData.buttonBackgroundColor : prevLocal.buttonBackgroundColor,
+          showNailAnimation: bookingData.showNailAnimation !== undefined ? bookingData.showNailAnimation : (prevLocal.showNailAnimation !== undefined ? prevLocal.showNailAnimation : true),
         };
       });
     }
@@ -459,34 +499,38 @@ export default function BookingBlock({
     if (prevReadOnlyRef.current === false && readOnly === true) {
       if (onConfigChange) {
         console.log("BookingBlock: Editing finished. Calling onConfigChange.");
-        const dataToSave = { ...localData, logo: localData.logo?.file ? localData.logo.name : localData.logo?.url };
+        const dataToSave = { 
+            ...localData, 
+            logo: localData.logo?.file ? (localData.logo.name || 'default_logo.svg') : localData.logo?.url,
+            showNailAnimation: localData.showNailAnimation !== undefined ? localData.showNailAnimation : true,
+        };
         onConfigChange(dataToSave);
       }
     }
     prevReadOnlyRef.current = readOnly;
-  }, [readOnly, localData, onConfigChange]);
+  }, [readOnly, onConfigChange]);
 
   const handleLocalDataChange = (updater) => {
     setLocalData(prevState => typeof updater === 'function' ? updater(prevState) : { ...prevState, ...updater });
   };
 
   if (readOnly) {
-    // If truly readOnly (e.g., final page view), show only the preview.
     return <BookingPreview bookingData={localData} readOnly={true} />;
   }
   
-  // If not readOnly (i.e., being edited within MainPageForm):
-  // Render the preview part with inline editing enabled (readOnly={false} for BookingPreview).
-  // The BookingEditorPanel is rendered by MainPageForm via the exported BookingBlock.EditorPanel.
   return (
-    <BookingPreview 
-      bookingData={localData} 
-      readOnly={false} // Allows inline editing of header/phone in the preview
-      onHeaderTextChange={(newText) => handleLocalDataChange(prev => ({ ...prev, headerText: newText }))}
-      onPhoneChange={(newPhone) => handleLocalDataChange(prev => ({ ...prev, phone: newPhone }))}
-    /> 
-    // The <BookingEditorPanel /> is no longer rendered directly here by BookingBlock itself.
-    // MainPageForm will render BookingBlock.EditorPanel when appropriate.
+    <>
+      <BookingPreview 
+        bookingData={localData} 
+        readOnly={false}
+        onHeaderTextChange={(newText) => handleLocalDataChange(prev => ({ ...prev, headerText: newText }))}
+        onPhoneChange={(newPhone) => handleLocalDataChange(prev => ({ ...prev, phone: newPhone }))}
+      />
+      <BookingEditorPanel 
+        localData={localData}
+        onPanelChange={handleLocalDataChange}
+      />
+    </>
   );
 }
 
@@ -503,6 +547,7 @@ BookingBlock.defaultProps = {
     logo: "/assets/images/logo.svg",
     headerText: "Contact Us!",
     phone: "(770) 880-1319",
+    showNailAnimation: true,
     socialLinks: [
       { platform: "twitter", url: "https://twitter.com" },
       { platform: "linkedin", url: "https://linkedin.com" },
@@ -512,5 +557,3 @@ BookingBlock.defaultProps = {
   },
   onConfigChange: () => {},
 };
-
-BookingBlock.EditorPanel = BookingEditorPanel; // Expose the editor panel

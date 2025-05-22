@@ -50,6 +50,7 @@ function EmployeesPreview({
   
   const employeesListOriginal = employeesData?.employee || [];
   const sectionTitle = employeesData?.sectionTitle || "OUR TEAM";
+  const showNailAnimation = employeesData?.showNailAnimation !== undefined ? employeesData.showNailAnimation : true;
 
   const formattedEmployees = employeesListOriginal.map((emp) => ({
     ...emp,
@@ -88,14 +89,47 @@ function EmployeesPreview({
   }, [numTotalEmployees, slideInterval]);
 
   useEffect(() => {
-    gsap.set(nailRef.current, { x: "100vw" });
-    gsap.set(textRef.current, { x: "-100vw" });
-    const masterTimeline = gsap.timeline({ scrollTrigger: { trigger: headerRef.current, start: "top 90%", end: "top 90%", toggleActions: "play none none none", once: true } });
-    masterTimeline.to(nailRef.current, { x: "10vw", duration: 0.8, ease: "power2.out" });
-    masterTimeline.to(nailRef.current, { x: "1vw", duration: 0.6, ease: "power2.inOut" }, "+=0.5")
-                  .to(textRef.current, { x: "-50%", duration: 0.6, ease: "power2.inOut" }, "<");
-    return () => { ScrollTrigger.getAll().forEach((trigger) => trigger.kill()); };
-  }, []);
+    const nail = nailRef.current;
+    const text = textRef.current;
+    const header = headerRef.current;
+
+    ScrollTrigger.getAll().forEach(st => {
+      if (st.trigger === header && (st.animation?.targets?.includes(nail) || st.animation?.targets?.includes(text))) {
+        st.kill();
+      }
+    });
+    gsap.killTweensOf([nail, text]);
+
+    if (showNailAnimation) {
+      gsap.set(nail, { x: "100vw", opacity: 1 });
+      gsap.set(text, { x: "-100vw", opacity: 1 });
+      const masterTimeline = gsap.timeline({
+        scrollTrigger: {
+          trigger: header,
+          start: "top 80%",
+          end: "top 80%",
+          toggleActions: "play none none none",
+          once: true,
+        },
+      });
+      masterTimeline
+        .to(nail, { x: "10vw", duration: 0.8, ease: "power2.out" })
+        .to(nail, { x: "1vw", duration: 0.6, ease: "power2.inOut" }, "+=0.5")
+        .to(text, { x: "-50%", duration: 0.6, ease: "power2.inOut" }, "<");
+    } else {
+      gsap.set(nail, { opacity: 0 });
+      gsap.set(text, { x: "-50%", opacity: 1 });
+    }
+
+    return () => {
+      ScrollTrigger.getAll().forEach(st => {
+        if (st.trigger === header && (st.animation?.targets?.includes(nail) || st.animation?.targets?.includes(text))) {
+          st.kill();
+        }
+      });
+      gsap.killTweensOf([nail, text]);
+    };
+  }, [showNailAnimation]);
 
   const renderEmployeeCard = (employee, index, cardStyle = {}) => (
     <div key={employee.id || index} className="flex-shrink-0 flex flex-col items-center justify-start px-2" style={cardStyle}>
@@ -207,6 +241,11 @@ function EmployeesEditorPanel({ localData, onPanelChange }) {
     });
   };
 
+  const handleToggleNailAnimation = () => {
+    const currentShowState = localData.showNailAnimation !== undefined ? localData.showNailAnimation : true;
+    onPanelChange({ showNailAnimation: !currentShowState });
+  };
+
   return (
     <div className="bg-white text-gray-800 p-4 rounded mt-0">
       <h2 className="text-lg font-semibold mb-2 border-b pb-2">Manage Employees & Images</h2>
@@ -227,6 +266,17 @@ function EmployeesEditorPanel({ localData, onPanelChange }) {
       ))}
       </div>
       <button type="button" onClick={handleAddItem} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm w-full mt-3 font-medium">+ Add Employee</button>
+      <div className="mt-4 pt-3 border-t">
+        <label className="flex items-center space-x-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={localData.showNailAnimation !== undefined ? localData.showNailAnimation : true}
+            onChange={handleToggleNailAnimation}
+            className="form-checkbox h-5 w-5 text-blue-600 rounded"
+          />
+          <span className="text-sm font-medium text-gray-700">Show Nail Animation</span>
+        </label>
+      </div>
     </div>
   );
 }
@@ -247,6 +297,7 @@ export default function EmployeesBlock({
     const initialConfig = employeesData || {};
     return {
       sectionTitle: initialConfig.sectionTitle || "OUR TEAM",
+      showNailAnimation: initialConfig.showNailAnimation !== undefined ? initialConfig.showNailAnimation : true,
       employee: (initialConfig.employee || []).map((emp, index) => ({
         ...emp,
         id: emp.id || `emp_init_${index}_${Date.now()}`,
@@ -268,45 +319,50 @@ export default function EmployeesBlock({
             URL.revokeObjectURL(oldEmpFromLocal.image.url);
           }
 
-          // Merge employee data: start with old local, overlay with new prop, then specifically protect inline editable fields
           const mergedEmp = {
-            ...oldEmpFromLocal, // Has local inline edits for name/role
-            ...newEmpFromProp,  // Has panel edits (e.g. image changes, structural if added/removed from panel)
+            ...oldEmpFromLocal,
+            ...newEmpFromProp,
             id: newEmpFromProp.id || oldEmpFromLocal.id || `emp_update_${index}_${Date.now()}`,
             image: newImageState,
           };
 
-          // Prioritize local name if it differs meaningfully
-          if (oldEmpFromLocal.name !== newEmpFromProp.name && 
-              oldEmpFromLocal.name !== (newEmpFromProp.name || "")) {
+          if (!readOnly && oldEmpFromLocal.name !== (newEmpFromProp.name || "")) {
             mergedEmp.name = oldEmpFromLocal.name;
           } else {
-            mergedEmp.name = newEmpFromProp.name || ""; // Ensure value
+            mergedEmp.name = newEmpFromProp.name || "";
           }
 
-          // Prioritize local role if it differs meaningfully
-          if (oldEmpFromLocal.role !== newEmpFromProp.role && 
-              oldEmpFromLocal.role !== (newEmpFromProp.role || "")) {
+          if (!readOnly && oldEmpFromLocal.role !== (newEmpFromProp.role || "")) {
             mergedEmp.role = oldEmpFromLocal.role;
           } else {
-            mergedEmp.role = newEmpFromProp.role || ""; // Ensure value
+            mergedEmp.role = newEmpFromProp.role || "";
           }
           return mergedEmp;
         });
+        
+        let resolvedSectionTitle;
+        if (!readOnly && prevLocalData.sectionTitle !== (employeesData.sectionTitle || "OUR TEAM")) {
+            resolvedSectionTitle = prevLocalData.sectionTitle;
+        } else {
+            resolvedSectionTitle = employeesData.sectionTitle || "OUR TEAM";
+        }
+
+        const resolvedShowNailAnimation = employeesData.showNailAnimation !== undefined
+                                     ? employeesData.showNailAnimation
+                                     : (prevLocalData.showNailAnimation !== undefined
+                                          ? prevLocalData.showNailAnimation
+                                          : true);
 
         return {
-          ...prevLocalData, // Start with existing local data
-          ...employeesData, // Overlay with incoming prop data for panel-driven changes
-          // Explicitly prioritize prevLocalData.sectionTitle if it holds an uncommitted inline edit
-          sectionTitle: (prevLocalData.sectionTitle !== employeesData.sectionTitle && 
-                         prevLocalData.sectionTitle !== (employeesData.sectionTitle || "OUR TEAM"))
-                      ? prevLocalData.sectionTitle
-                      : employeesData.sectionTitle || "OUR TEAM",
+          ...prevLocalData,
+          ...employeesData,
+          sectionTitle: resolvedSectionTitle,
           employee: newEmployeeList,
+          showNailAnimation: resolvedShowNailAnimation,
         };
       });
     }
-  }, [employeesData]);
+  }, [employeesData, readOnly]);
 
   useEffect(() => {
     return () => {
@@ -326,8 +382,9 @@ export default function EmployeesBlock({
             ...localData,
             employee: localData.employee.map(emp => ({
                 ...emp,
-                image: emp.image?.file ? emp.image.name : emp.image?.url,
-            }))
+                image: emp.image?.file ? (emp.image.name || 'default_employee.png') : emp.image?.url,
+            })),
+            showNailAnimation: localData.showNailAnimation !== undefined ? localData.showNailAnimation : true,
         };
         onConfigChange(dataToSave);
       }
@@ -342,7 +399,6 @@ export default function EmployeesBlock({
     });
   };
 
-  // Inline handlers for EmployeesPreview
   const handleSectionTitleChange = (newTitle) => {
     handleLocalDataChange(prev => ({ ...prev, sectionTitle: newTitle }));
   };
