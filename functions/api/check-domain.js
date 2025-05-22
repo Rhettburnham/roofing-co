@@ -37,7 +37,7 @@ export async function onRequestGet(context) {
         }
       });
     }
-
+ 
     // Check if we have the required API keys
     if (!env.GODADDY_API_KEY || !env.GODADDY_API_SECRET) {
       console.error('Missing API credentials:', {
