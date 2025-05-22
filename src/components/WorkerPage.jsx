@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Box, TextField, Button, Typography, Paper, List, ListItem, ListItemText, CircularProgress } from '@mui/material';
 
 const WorkerPage = () => {
   const [domain, setDomain] = useState('');
@@ -29,73 +28,67 @@ const WorkerPage = () => {
   };
 
   return (
-    <Box sx={{ p: 3, maxWidth: 800, mx: 'auto' }}>
-      <Typography variant="h4" gutterBottom>
-        Domain Checker
-      </Typography>
+    <div className="p-6 max-w-3xl mx-auto">
+      <h1 className="text-3xl font-bold mb-6">Domain Checker</h1>
       
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-          <TextField
-            fullWidth
-            label="Enter domain"
+      <div className="bg-white p-4 rounded-lg shadow mb-6">
+        <div className="flex gap-4 mb-4">
+          <input
+            type="text"
+            className="flex-1 p-2 border rounded"
+            placeholder="Enter domain (e.g., example.com)"
             value={domain}
             onChange={(e) => setDomain(e.target.value)}
-            placeholder="example.com"
             onKeyPress={(e) => e.key === 'Enter' && checkDomain()}
           />
-          <Button 
-            variant="contained" 
+          <button 
+            className={`px-4 py-2 rounded text-white ${
+              loading || !domain ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'
+            }`}
             onClick={checkDomain}
             disabled={loading || !domain}
           >
-            {loading ? <CircularProgress size={24} /> : 'Check'}
-          </Button>
-        </Box>
-      </Paper>
+            {loading ? 'Checking...' : 'Check'}
+          </button>
+        </div>
+      </div>
 
       {error && (
-        <Paper sx={{ p: 2, mb: 3, bgcolor: 'error.light' }}>
-          <Typography color="error">{error}</Typography>
-        </Paper>
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+          {error}
+        </div>
       )}
 
       {results && (
-        <Paper sx={{ p: 2 }}>
-          <Typography variant="h6" gutterBottom>
+        <div className="bg-white p-4 rounded-lg shadow">
+          <h2 className="text-xl font-semibold mb-4">
             Results for {results.originalDomain.name}
-          </Typography>
+          </h2>
           
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="subtitle1" gutterBottom>
-              Original Domain Status:
-            </Typography>
-            <Typography>
+          <div className="mb-6">
+            <h3 className="text-lg font-medium mb-2">Original Domain Status:</h3>
+            <p>
               {results.originalDomain.available ? '✅ Available' : '❌ Not Available'}
               {results.originalDomain.price && ` - $${results.originalDomain.price} ${results.originalDomain.currency}`}
-            </Typography>
-          </Box>
+            </p>
+          </div>
 
           {results.alternatives.length > 0 && (
-            <Box>
-              <Typography variant="subtitle1" gutterBottom>
-                Affordable Alternatives:
-              </Typography>
-              <List>
+            <div>
+              <h3 className="text-lg font-medium mb-2">Affordable Alternatives:</h3>
+              <ul className="divide-y">
                 {results.alternatives.map((alt, index) => (
-                  <ListItem key={index} divider>
-                    <ListItemText
-                      primary={alt.name}
-                      secondary={`$${alt.price} ${alt.currency}`}
-                    />
-                  </ListItem>
+                  <li key={index} className="py-2">
+                    <div className="font-medium">{alt.name}</div>
+                    <div className="text-gray-600">${alt.price} {alt.currency}</div>
+                  </li>
                 ))}
-              </List>
-            </Box>
+              </ul>
+            </div>
           )}
-        </Paper>
+        </div>
       )}
-    </Box>
+    </div>
   );
 };
 
