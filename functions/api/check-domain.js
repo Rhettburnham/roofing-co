@@ -30,70 +30,54 @@ export async function onRequestGet(context) {
       });
     }
 
-    // Check if we have the required API token
-    if (!env.CLOUDFLARE_API_TOKEN) {
-      console.error('Cloudflare API token is not set in environment variables');
-      throw new Error('Cloudflare API token is not configured');
+    // Check if we have the required API keys
+    if (!env.GODADDY_API_KEY || !env.GODADDY_API_SECRET) {
+      console.error('GoDaddy API credentials are not set in environment variables');
+      throw new Error('GoDaddy API credentials are not configured');
     }
 
-    // Generate alternative domain suggestions
-    const baseName = domain.split('.')[0];
-    const suggestions = [
-      `${baseName}roofing.com`,
-      `${baseName}roofs.com`,
-      `${baseName}contractor.com`,
-      `${baseName}roof.com`,
-      `${baseName}roofingco.com`,
-      `${baseName}roofingpro.com`,
-      `${baseName}roofingpros.com`,
-      `${baseName}roofingcompany.com`,
-      `${baseName}roofingcontractor.com`,
-      `${baseName}roofingcontractors.com`
-    ];
-
-    // Check availability for all suggestions using the availability endpoint
-    const registrarResponse = await fetch(`https://api.cloudflare.com/client/v4/registrar/domains/availability`, {
-      method: 'POST',
+    // Check availability of the requested domain
+    const availabilityResponse = await fetch(`https://api.godaddy.com/v1/domains/available?domain=${domain}`, {
       headers: {
-        'Authorization': `Bearer ${env.CLOUDFLARE_API_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        domains: [domain, ...suggestions]
-      })
+        'Authorization': `sso-key ${env.GODADDY_API_KEY}:${env.GODADDY_API_SECRET}`,
+        'Accept': 'application/json',
+      }
     });
 
-    const registrarData = await registrarResponse.json();
+    const availabilityData = await availabilityResponse.json();
 
-    if (!registrarData.success) {
-      throw new Error(`Registrar API error: ${JSON.stringify(registrarData.errors)}`);
-    }
+    // Get similar domain suggestions from GoDaddy
+    const baseName = domain.split('.')[0];
+    const similarDomainsResponse = await fetch(`https://api.godaddy.com/v1/domains/suggestions?query=${baseName}&limit=10`, {
+      headers: {
+        'Authorization': `sso-key ${env.GODADDY_API_KEY}:${env.GODADDY_API_SECRET}`,
+        'Accept': 'application/json',
+      }
+    });
 
-    // Process results
-    const results = registrarData.result;
-    const originalDomain = results[0];
-    const alternatives = results.slice(1)
-      .filter(domain => domain.available && domain.price <= 20)
+    const similarDomains = await similarDomainsResponse.json();
+    const similarSuggestions = similarDomains
+      .filter(domain => domain.available && domain.price <= 30)
       .map(domain => ({
-        name: domain.name,
+        name: domain.domain,
         price: domain.price,
-        currency: domain.currency
+        currency: domain.currency || 'USD'
       }))
       .sort((a, b) => a.price - b.price);
 
     return new Response(JSON.stringify({
       success: true,
       originalDomain: {
-        name: originalDomain.name,
-        available: originalDomain.available,
-        price: originalDomain.price,
-        currency: originalDomain.currency,
-        message: originalDomain.available ? "Domain is available" : "Domain is not available"
+        name: availabilityData.domain,
+        available: availabilityData.available,
+        price: availabilityData.price,
+        currency: availabilityData.currency || 'USD',
+        message: availabilityData.available ? "Domain is available" : "Domain is not available"
       },
-      alternatives: alternatives,
-      message: originalDomain.available 
+      similarDomains: similarSuggestions,
+      message: availabilityData.available 
         ? "Domain is available" 
-        : `Domain is not available. Here are ${alternatives.length} affordable alternatives:`
+        : `Domain is not available. Here are ${similarSuggestions.length} similar domains:`
     }), {
       status: 200,
       headers: {
