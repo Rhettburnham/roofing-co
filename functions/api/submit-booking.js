@@ -59,6 +59,22 @@ export async function onRequestPost(context) {
       from: { email: 'info@cowboy-vaqueros.com' },
       content: [
         {
+          type: 'text/plain',
+          value: `
+New Booking Request
+
+Name: ${firstName} ${lastName}
+Email: ${email}
+Phone: ${phone}
+Service: ${service}
+Message: ${message || "No message provided"}
+Submitted from: ${originUrl}
+
+This booking request was submitted from your website.
+Please respond to the client via email or phone. CC if necessary.
+          `
+        },
+        {
           type: 'text/html',
           value: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -74,22 +90,6 @@ export async function onRequestPost(context) {
               <p style="color: #666; font-size: 14px; margin-top: 20px;">This booking request was submitted from your website.</p>
               <p style="color: #666; font-size: 14px;">Please respond to the client via email or phone. CC if necessary.</p>
             </div>
-          `
-        },
-        {
-          type: 'text/plain',
-          value: `
-New Booking Request
-
-Name: ${firstName} ${lastName}
-Email: ${email}
-Phone: ${phone}
-Service: ${service}
-Message: ${message || "No message provided"}
-Submitted from: ${originUrl}
-
-This booking request was submitted from your website.
-Please respond to the client via email or phone. CC if necessary.
           `
         }
       ]
