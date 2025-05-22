@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AdminButton from './AdminButton';
+import WorkerButton from './WorkerButton';
 
 export default function OneFormAuthButton({ formData }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -232,6 +233,7 @@ export default function OneFormAuthButton({ formData }) {
                 Sign Out
               </motion.button>
                 <AdminButton />
+                <WorkerButton />
               </>
             )}
           </AnimatePresence>

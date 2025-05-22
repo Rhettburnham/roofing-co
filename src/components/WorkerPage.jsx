@@ -1,10 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const WorkerPage = () => {
   const [domain, setDomain] = useState('');
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    checkWorkerAccess();
+  }, []);
+
+  const checkWorkerAccess = async () => {
+    try {
+      const response = await fetch('/api/auth/status', {
+        credentials: 'include',
+      });
+      const data = await response.json();
+      
+      if (data.configId !== 'worker' && data.configId !== 'admin') {
+        // Redirect unauthorized users
+        window.location.href = '/';
+        return;
+      }
+      
+      setIsAuthorized(true);
+    } catch (error) {
+      console.error('Error checking worker access:', error);
+      window.location.href = '/';
+    } finally {
+      setCheckingAuth(false);
+    }
+  };
 
   const checkDomain = async () => {
     if (!domain) return;
@@ -26,6 +54,26 @@ const WorkerPage = () => {
       setLoading(false);
     }
   };
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-xl text-gray-600">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="bg-white p-8 rounded-lg shadow-lg text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h1>
+          <p className="text-gray-600 mb-4">You are not authorized to view this page.</p>
+          <p className="text-sm text-gray-500">Redirecting to homepage...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-3xl mx-auto">

@@ -588,10 +588,6 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
     return filename.split(".").pop().toLowerCase() || "png";
   };
 
-  const handleWorkerPage = () => {
-    navigate('/worker');
-  };
-
   // If editing a specific block, render a simplified interface
   if (blockName && title) {
     console.log(`Editing specific block: ${blockName}`, formData);
