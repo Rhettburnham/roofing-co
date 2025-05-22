@@ -2,9 +2,42 @@ users should see a logout option if they manually access the login page while lo
 users cant signup with repeat codes
 
 
-connect real domain, adjust code to work with localhost and domain
-try enterprise saas 100 free hosting thing
+connect real domain, adjust code to work with localhost and domain <>
 
-send to both emails for booking, make sure it doenst have a cc
-folder of jsons, services.json, aboutpage.json, legalagreement.json
+connect to cowboy-vaqueros <>
+fix logout<>
+fix save changes<>
+check to see if custom json loads<>
+
+load a custom json for cowboy-vaqueros based on client1(Setup link) <>
+    - but it broke part of the page<>
+
+
+
+
+try enterprise saas 100 free hosting thing
+  waiting on alec way and regular way: max:48 hours
+
+send to both emails for booking, make sure it doenst have a cc, very important
+  remove success message, have a popup???, should only be able to send one message(after merge)<>
+  add images back to the booking email
+  do .env var on pages and see if it works for all sites<worked for cowboys>
+
+lookup cloudflare domains api for monkeys
+
+pages fix for admin stuff
 ui bugs on admin page(double clicking, no green upload, no modal popup etc)
+
+
+SWITCH TO DB Call
+  booking emails
+
+admin/employee acounts can edit any custom
+  page, not if the user has signed up
+  let the user revert to a baseline
+
+Make it testable on localhost, at least ui is
+
+folder of jsons, services.json, aboutpage.json, legalagreement.json
+
+custom business cards, first 100 free, qr code to the website
