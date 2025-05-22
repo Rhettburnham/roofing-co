@@ -16,6 +16,8 @@ import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
+import { useNavigate } from 'react-router-dom';
+import { Box, Button } from '@mui/material';
 
 import ServiceEditPage, { getServicesData } from "./ServiceEditPage";
 import MainPageForm from "./MainPageForm";
@@ -49,6 +51,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("mainPage");
   const [isCustomDomain, setIsCustomDomain] = useState(false);
+  const navigate = useNavigate();
 
   // On mount, fetch combined_data.json to populate the form if no initialData is provided
   useEffect(() => {
@@ -584,6 +587,10 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
    */
   const getFileExtension = (filename) => {
     return filename.split(".").pop().toLowerCase() || "png";
+  };
+
+  const handleWorkerPage = () => {
+    navigate('/worker');
   };
 
   // If editing a specific block, render a simplified interface

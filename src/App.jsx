@@ -12,6 +12,7 @@ import LoadingScreen from "./components/loadingScreen";
 import ServicePage from "./components/ServicePage";
 import LoginPage from "./components/auth/LoginPage";
 import AdminPage from './pages/AdminPage';
+import WorkerPage from './components/WorkerPage';
 
 // Import the new ServicePageCreator component
 const ServicePageCreator = lazy(() => import("./components/ServicePageCreator"));
@@ -364,6 +365,9 @@ const AppRoutes = ({
 
       {/* Admin route */}
       <Route path="/admin" element={<AdminPage />} />
+
+      {/* Worker Page route */}
+      <Route path="/worker" element={<WorkerPage />} />
     </Routes>
   );
 };
