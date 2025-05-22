@@ -372,7 +372,7 @@ const BookingPreview = memo(({ bookingData }) => {
 
       try {
         // Show some form of loading indicator if needed
-        const response = await axios.post("/api/sendForm", formData);
+        const response = await axios.post("/submit-booking", formData);
 
         if (response.status === 200) {
           alert("Form submitted successfully!");

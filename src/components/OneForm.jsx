@@ -621,21 +621,25 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
 
   // Render the tab header
   const renderTabHeader = () => (
-    <div className="flex justify-between items-center mb-6">
-      <div className="flex space-x-2">
-        <TabButton
-          id="mainPage"
-          label="Main Page"
-          isActive={activeTab === "mainPage"}
-          onClick={() => setActiveTab("mainPage")}
-        />
-        <TabButton
-          id="services"
-          label="Services"
-          isActive={activeTab === "services"}
-          onClick={() => setActiveTab("services")}
-        />
-      </div>
+    <div className="bg-gray-800 px-4 flex border-b border-gray-700 shadow-md">
+      <TabButton
+        id="mainPage"
+        label="Main Page"
+        isActive={activeTab === "mainPage"}
+        onClick={() => setActiveTab("mainPage")}
+      />
+      <TabButton
+        id="services"
+        label="Service Pages"
+        isActive={activeTab === "services"}
+        onClick={() => setActiveTab("services")}
+      />
+      <TabButton
+        id="about"
+        label="About Page"
+        isActive={activeTab === "about"}
+        onClick={() => setActiveTab("about")}
+      />
       {!isCustomDomain && <OneFormAuthButton />}
     </div>
   );
@@ -651,43 +655,42 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   }
   return (
     <div className="min-h-screen bg-gray-100">
-      <OneFormAuthButton formData={formData} />
       <div className="container mx-auto px-4 py-8">
-      <div className="bg-gray-900 text-white p-3 shadow-md sticky top-0 z-50 flex justify-between items-center">
-        <h1 className="text-[5vh] font-serif">WebEdit </h1>
-        <button
-          onClick={handleSubmit}
-          type="button"
-          className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-white text-sm"
-        >
-          Download ZIP
-        </button>
-      </div>
+        <div className="bg-gray-900 text-white p-3 shadow-md sticky top-0 z-50 flex justify-between items-center">
+          <h1 className="text-[5vh] font-serif">WebEdit </h1>
+          <button
+            onClick={handleSubmit}
+            type="button"
+            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-white text-sm"
+          >
+            Download ZIP
+          </button>
+        </div>
 
-      {/* Tab Navigation */}
-      {renderTabHeader()}
+        {/* Tab Navigation */}
+        {renderTabHeader()}
 
-      {/* Tab Content - Only one is shown at a time */}
-      <div className="tab-content">
-        {activeTab === "mainPage" && (
-          <MainPageForm formData={formData} setFormData={setFormData} />
-        )}
-        {activeTab === "services" && <ServiceEditPage />}
-        {activeTab === "about" && (
-          <div className="container mx-auto px-4 py-6 bg-gray-100">
-            <div className="mb-4 bg-gray-800 text-white p-4 rounded">
-              <h1 className="text-2xl font-bold">About Page</h1>
-              <p className="text-gray-300 mt-1">Edit the about page content</p>
+        {/* Tab Content - Only one is shown at a time */}
+        <div className="tab-content">
+          {activeTab === "mainPage" && (
+            <MainPageForm formData={formData} setFormData={setFormData} />
+          )}
+          {activeTab === "services" && <ServiceEditPage />}
+          {activeTab === "about" && (
+            <div className="container mx-auto px-4 py-6 bg-gray-100">
+              <div className="mb-4 bg-gray-800 text-white p-4 rounded">
+                <h1 className="text-2xl font-bold">About Page</h1>
+                <p className="text-gray-300 mt-1">Edit the about page content</p>
+              </div>
+              <div className="relative border border-gray-300 bg-white overflow-hidden">
+                <AboutBlock
+                  readOnly={false}
+                  aboutData={formData.aboutPage}
+                  onConfigChange={handleAboutConfigChange}
+                />
+              </div>
             </div>
-            <div className="relative border border-gray-300 bg-white overflow-hidden">
-              <AboutBlock
-                readOnly={false}
-                aboutData={formData.aboutPage}
-                onConfigChange={handleAboutConfigChange}
-              />
-            </div>
-          </div>
-        )}
+          )}
         </div>
       </div>
     </div>

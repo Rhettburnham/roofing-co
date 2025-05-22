@@ -85,6 +85,11 @@ export default defineConfig({
         secure: true,
         rewrite: (path) => path,
       },
+      '/submit-booking': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
 });
