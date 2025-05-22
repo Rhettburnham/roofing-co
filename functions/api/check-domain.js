@@ -36,48 +36,6 @@ export async function onRequestGet(context) {
       throw new Error('Cloudflare API token is not configured');
     }
 
-    // First get the account ID
-    const accountsResponse = await fetch('https://api.cloudflare.com/client/v4/accounts', {
-      headers: {
-        'Authorization': `Bearer ${env.CLOUDFLARE_API_TOKEN}`,
-        'Content-Type': 'application/json',
-      }
-    });
-
-    const accountsData = await accountsResponse.json();
-    
-    if (!accountsData.success || !accountsData.result.length) {
-      throw new Error('Failed to get account information');
-    }
-
-    const accountId = accountsData.result[0].id;
-
-    // Check domain availability using account-specific endpoint
-    const domainCheckResponse = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/registrar/domains/${domain}`, {
-      headers: {
-        'Authorization': `Bearer ${env.CLOUDFLARE_API_TOKEN}`,
-        'Content-Type': 'application/json',
-      }
-    });
-
-    const domainCheckData = await domainCheckResponse.json();
-
-    // If domain is already registered, return that information
-    if (domainCheckData.success) {
-      return new Response(JSON.stringify({
-        success: true,
-        available: false,
-        message: "Domain is already registered",
-        details: domainCheckData.result
-      }), {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        }
-      });
-    }
-
     // Generate alternative domain suggestions
     const baseName = domain.split('.')[0];
     const suggestions = [
