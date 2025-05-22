@@ -45,14 +45,28 @@ export async function onRequestPost(context) {
       throw new Error('SendGrid API key is not configured');
     }
 
+    // Determine recipient email based on origin
+    let primaryRecipient;
+    if (originUrl.includes('cowboy-vaqueros.com')) {
+      primaryRecipient = 'devinstuddard@gmail.com';
+    } else if (originUrl.includes('roofing-co.pages.dev')) {
+      primaryRecipient = 'tiredthoughtles@gmail.com';
+    } else {
+      // Default recipient for any other domains
+      primaryRecipient = 'devinstuddard@gmail.com';
+    }
+
+    console.log('Sending email to:', primaryRecipient, 'and vmpatton@gmail.com');
+
     // Construct email content
     const emailContent = {
       personalizations: [
         {
-          to: [
-            { email: 'devinstuddard@gmail.com' },
-            { email: 'tiredthoughtles@gmail.com' }
-          ],
+          to: [{ email: primaryRecipient }],
+          subject: `New Booking Request: ${service}`
+        },
+        {
+          to: [{ email: 'vmpatton@gmail.com' }],
           subject: `New Booking Request: ${service}`
         }
       ],
