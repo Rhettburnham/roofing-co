@@ -1,4 +1,4 @@
-import { getDomainByDomain } from '../utils/domains.js';
+import { getDomainByDomain } from '../../utils/domains.js';
 
 export async function onRequest(context) {
   console.log("=== Public Config Handler ===");
