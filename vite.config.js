@@ -59,9 +59,11 @@ export default defineConfig({
         secure: false,
       },
       "/api/admin": {
-        target: "http://localhost:5001",
+        target: process.env.NODE_ENV === 'production'
+          ? 'https://roofing-co.pages.dev'
+          : 'http://localhost:5001',
         changeOrigin: true,
-        secure: false,
+        secure: true,
       },
       "/api/submit-booking": {
         target: process.env.NODE_ENV === 'production' 
