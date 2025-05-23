@@ -61,7 +61,7 @@ export default defineConfig({
       "/api/admin": {
         target: process.env.NODE_ENV === 'production'
           ? 'https://roofing-co.pages.dev'
-          : 'http://localhost:5001',
+          : 'http://localhost:8788',
         changeOrigin: true,
         secure: true,
       },
