@@ -1,6 +1,8 @@
 export async function onRequest(context) {
   try {
     console.log("=== Admin Status Handler ===");
+    console.log('Request method:', context.request.method);
+    console.log('Request URL:', context.request.url);
     
     // CORS headers
     const corsHeaders = {
@@ -13,12 +15,16 @@ export async function onRequest(context) {
 
     // Handle preflight requests
     if (context.request.method === 'OPTIONS') {
+      console.log('Handling OPTIONS request');
       return new Response(null, { headers: corsHeaders });
     }
 
     // Verify admin access
     const sessionId = context.request.cookies.get('session_id')?.value;
+    console.log('Session ID from cookies:', sessionId ? 'Present' : 'Missing');
+    
     if (!sessionId) {
+      console.log('No session ID found');
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: {
@@ -32,7 +38,14 @@ export async function onRequest(context) {
       'SELECT s.*, u.config_id FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.session_id = ? AND s.expires_at > datetime("now")'
     ).bind(sessionId).first();
 
+    console.log('Session lookup result:', session ? {
+      hasConfigId: !!session.config_id,
+      configId: session.config_id,
+      expiresAt: session.expires_at
+    } : 'No session found');
+
     if (!session || session.config_id !== 'admin') {
+      console.log('Invalid session or not admin');
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: {
@@ -45,6 +58,7 @@ export async function onRequest(context) {
     // Get the action from the URL
     const url = new URL(context.request.url);
     const action = url.pathname.split('/api/admin/')[1];
+    console.log('Admin action:', action);
 
     switch (action) {
       case 'list-configs':
@@ -54,6 +68,7 @@ export async function onRequest(context) {
       case 'create-folder':
         return handleCreateFolder(context);
       default:
+        console.log('Unknown admin action:', action);
         return new Response(JSON.stringify({ error: 'Not found' }), {
           status: 404,
           headers: {
@@ -67,11 +82,8 @@ export async function onRequest(context) {
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
       headers: {
+        ...corsHeaders,
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Cookie',
-        'Access-Control-Allow-Credentials': 'true',
       },
     });
   }
@@ -80,7 +92,17 @@ export async function onRequest(context) {
 async function handleListConfigs(context) {
   try {
     console.log('=== Starting handleListConfigs ===');
-    const { prefix } = await context.request.json();
+    console.log('Request method:', context.request.method);
+    
+    let prefix;
+    if (context.request.method === 'POST') {
+      const body = await context.request.json();
+      prefix = body.prefix;
+    } else {
+      const url = new URL(context.request.url);
+      prefix = url.searchParams.get('prefix');
+    }
+    
     console.log('Request prefix:', prefix);
     
     // List with configs prefix without delimiter first to get all objects
