@@ -5,7 +5,6 @@ export async function onRequestPost(context) {
       method: context.request.method,
       url: context.request.url,
       headers: Object.fromEntries(context.request.headers.entries()),
-      cookies: context.request.cookies.getAll().map(c => c.name),
       hasDB: !!context.env?.DB,
       hasROOFING_CONFIGS: !!context.env?.ROOFING_CONFIGS
     });
@@ -25,9 +24,21 @@ export async function onRequestPost(context) {
       return new Response(null, { headers: corsHeaders });
     }
 
-    // Verify admin access
-    const sessionId = context.request.cookies.get('session_id')?.value;
-    console.log('Session ID from cookies:', sessionId ? 'Present' : 'Missing');
+    // Read session_id from cookie
+    const cookieHeader = context.request.headers.get('Cookie');
+    console.log('Cookie header:', cookieHeader);
+    
+    let sessionId = null;
+    if (cookieHeader) {
+      const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
+        const [key, value] = cookie.trim().split('=');
+        acc[key] = value;
+        return acc;
+      }, {});
+      sessionId = cookies['session_id'];
+    }
+    
+    console.log('Session ID from cookie:', sessionId ? 'present' : 'missing');
     
     if (!sessionId) {
       console.log('No session ID found');
