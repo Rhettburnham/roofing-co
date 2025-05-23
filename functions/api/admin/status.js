@@ -86,8 +86,6 @@ export async function onRequestPost(context) {
     console.log('Admin action:', action);
 
     switch (action) {
-      case 'list-configs':
-        return handleListConfigs(context);
       case 'upload-config':
         return handleUploadConfig(context);
       case 'create-folder':
@@ -122,128 +120,6 @@ export async function onRequestPost(context) {
 // Keep the existing onRequest for GET requests
 export async function onRequest(context) {
   return onRequestPost(context);
-}
-
-async function handleListConfigs(context) {
-  try {
-    console.log('=== Starting handleListConfigs ===');
-    console.log('Request method:', context.request.method);
-    
-    let prefix;
-    if (context.request.method === 'POST') {
-      const body = await context.request.json();
-      prefix = body.prefix;
-      console.log('POST request body:', body);
-    } else {
-      const url = new URL(context.request.url);
-      prefix = url.searchParams.get('prefix');
-      console.log('GET request prefix:', prefix);
-    }
-    
-    console.log('Using prefix:', prefix);
-    
-    // List with configs prefix without delimiter first to get all objects
-    console.log('\nListing all objects with configs prefix...');
-    const allObjects = await context.env.ROOFING_CONFIGS.list({
-      prefix: 'configs/'
-    });
-    console.log('All objects found:', allObjects.objects?.length || 0);
-
-    // Now list with delimiter to get folder structure
-    console.log('\nListing with delimiter for folder structure...');
-    const listOptions = {
-      prefix: prefix || 'configs/',
-      delimiter: '/',
-    };
-    console.log('List options:', listOptions);
-
-    const listed = await context.env.ROOFING_CONFIGS.list(listOptions);
-    console.log('Listed objects:', listed.objects?.length || 0);
-    console.log('Common prefixes:', listed.commonPrefixes?.length || 0);
-    
-    // Process the results to get folders and files
-    const folders = new Set();
-    const files = [];
-
-    // First, add any common prefixes (folders)
-    if (listed.commonPrefixes) {
-      for (const prefix of listed.commonPrefixes) {
-        const parts = prefix.split('/');
-        const folder = parts[parts.length - 2];
-        if (folder) {
-          folders.add(folder);
-          console.log('Added folder from prefix:', folder);
-        }
-      }
-    }
-
-    // Then process all objects to ensure we get everything
-    for (const object of allObjects.objects) {
-      const path = object.key;
-      const parts = path.split('/');
-      
-      if (parts.length > 2) {
-        const folder = parts[1];
-        
-        if (prefix && path.startsWith(prefix)) {
-          const relativePath = path.slice(prefix.length);
-          const relativeParts = relativePath.split('/');
-          
-          if (relativeParts.length === 1) {
-            files.push({
-              name: relativeParts[0],
-              folder,
-              size: object.size,
-              uploaded: object.uploaded,
-            });
-            console.log('Added file:', relativeParts[0], 'to folder:', folder);
-          } else if (relativeParts.length > 1) {
-            const subfolder = relativeParts[0];
-            if (subfolder) {
-              folders.add(subfolder);
-              console.log('Added subfolder:', subfolder);
-            }
-          }
-        }
-      }
-    }
-
-    const response = {
-      folders: Array.from(folders),
-      files,
-    };
-    console.log('Final response:', {
-      folders: response.folders,
-      fileCount: response.files.length
-    });
-
-    return new Response(JSON.stringify(response), {
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Cookie',
-        'Access-Control-Allow-Credentials': 'true',
-      },
-    });
-  } catch (error) {
-    console.error('List configs error:', error);
-    console.error('Error stack:', error.stack);
-    return new Response(JSON.stringify({ 
-      error: 'Failed to list configs',
-      details: error.message,
-      stack: error.stack
-    }), {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Cookie',
-        'Access-Control-Allow-Credentials': 'true',
-      },
-    });
-  }
 }
 
 async function handleUploadConfig(context) {
