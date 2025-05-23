@@ -18,12 +18,8 @@ function getCorsHeaders(origin) {
 }
 
 export async function onRequestPost(context) {
-  return onRequest(context);
-}
-
-export async function onRequest(context) {
   try {
-    console.log("=== Admin Status Handler ===");
+    console.log("=== Admin Status Handler (POST) ===");
     console.log('Request details:', {
       method: context.request.method,
       url: context.request.url,
@@ -33,14 +29,19 @@ export async function onRequest(context) {
       hasROOFING_CONFIGS: !!context.env?.ROOFING_CONFIGS
     });
     
-    const origin = context.request.headers.get('Origin') || '';
-    console.log('Request origin:', origin);
-    const cors = getCorsHeaders(origin);
+    // CORS headers
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Cookie',
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Expose-Headers': 'Set-Cookie',
+    };
 
     // Handle preflight requests
     if (context.request.method === 'OPTIONS') {
       console.log('Handling OPTIONS request');
-      return new Response(null, { headers: cors });
+      return new Response(null, { headers: corsHeaders });
     }
 
     // Verify admin access
@@ -52,7 +53,7 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: {
-          ...cors,
+          ...corsHeaders,
           'Content-Type': 'application/json',
         },
       });
@@ -73,7 +74,7 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: {
-          ...cors,
+          ...corsHeaders,
           'Content-Type': 'application/json',
         },
       });
@@ -96,7 +97,7 @@ export async function onRequest(context) {
         return new Response(JSON.stringify({ error: 'Not found' }), {
           status: 404,
           headers: {
-            ...cors,
+            ...corsHeaders,
             'Content-Type': 'application/json',
           },
         });
@@ -111,11 +112,16 @@ export async function onRequest(context) {
     }), {
       status: 500,
       headers: {
-        ...cors,
+        ...corsHeaders,
         'Content-Type': 'application/json',
       },
     });
   }
+}
+
+// Keep the existing onRequest for GET requests
+export async function onRequest(context) {
+  return onRequestPost(context);
 }
 
 async function handleListConfigs(context) {
