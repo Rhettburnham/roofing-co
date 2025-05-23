@@ -1,3 +1,5 @@
+import { getDomainByDomain } from '../utils/domains.js';
+
 export async function onRequest(context) {
   console.log("=== Public Config Handler ===");
   try {
@@ -26,19 +28,31 @@ export async function onRequest(context) {
     const host = request.headers.get('host');
     console.log('Request host:', host);
 
-    // Map domains to config IDs
-    const domainConfigMap = {
-      'cowboy-vaqueros.com': 'client1',
-      'www.cowboy-vaqueros.com': 'client1',
-      'localhost': 'client1' // For local development
-    };
+    // Extract domain from host
+    let domain;
+    try {
+      const url = new URL(`https://${host}`);
+      domain = url.hostname;
+      // Remove 'www.' if present
+      domain = domain.replace(/^www\./, '');
+      console.log('Extracted domain:', domain);
+    } catch (error) {
+      console.error('Error parsing host:', error);
+      domain = host;
+    }
 
-    // Get the config ID for this domain
-    const configId = domainConfigMap[host];
-    console.log('Config ID for domain:', configId);
+    // Look up domain in database
+    console.log('Looking up domain in database:', domain);
+    const domainEntry = await getDomainByDomain(env.DB, domain);
+    console.log('Domain lookup result:', domainEntry ? {
+      email: domainEntry.email,
+      config_id: domainEntry.config_id,
+      is_active: domainEntry.is_active,
+      is_paid: domainEntry.is_paid
+    } : 'Not found');
 
-    if (!configId) {
-      console.log('No config mapping found for domain');
+    if (!domainEntry) {
+      console.log('No domain mapping found in database');
       return new Response(JSON.stringify({ error: 'Configuration not found for this domain' }), {
         status: 404,
         headers: {
@@ -47,6 +61,10 @@ export async function onRequest(context) {
         },
       });
     }
+
+    // Get the config ID from the domain entry
+    const configId = domainEntry.config_id;
+    console.log('Config ID from domain entry:', configId);
 
     // Fetch the config from R2
     const configKey = `configs/${configId}/combined_data.json`;

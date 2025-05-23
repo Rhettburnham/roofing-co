@@ -1,3 +1,5 @@
+import { getDomainByDomain } from '../utils/domains.js';
+
 export async function onRequestPost(context) {
   const { request, env } = context;
   console.log('Booking request received');
@@ -45,18 +47,26 @@ export async function onRequestPost(context) {
       throw new Error('SendGrid API key is not configured');
     }
 
-    // Determine recipient email based on origin
-    let primaryRecipient;
-    if (originUrl.includes('cowboy-vaqueros.com')) {
-      primaryRecipient = 'devinstuddard@gmail.com';
-    } else if (originUrl.includes('roofing-co.pages.dev')) {
-      primaryRecipient = 'tiredthoughtles@gmail.com';
-    } else {
-      // Default recipient for any other domains
-      primaryRecipient = 'devinstuddard@gmail.com';
+    // Extract domain from origin URL
+    let domain;
+    try {
+      const url = new URL(originUrl);
+      domain = url.hostname;
+      // Remove 'www.' if present
+      domain = domain.replace(/^www\./, '');
+    } catch (error) {
+      console.error('Error parsing origin URL:', error);
+      domain = originUrl;
     }
 
-    console.log('Sending email to:', primaryRecipient, 'and vmpatton@gmail.com');
+    console.log('Looking up domain:', domain);
+
+    // Get the primary recipient from the database
+    const domainEntry = await getDomainByDomain(env.DB, domain);
+    const primaryRecipient = domainEntry?.email || 'devinstuddard@gmail.com';
+    const secondaryRecipient = 'devinstuddard@gmail.com';
+
+    console.log('Sending email to:', primaryRecipient, 'and', secondaryRecipient);
 
     // Construct email content
     const emailContent = {
@@ -66,7 +76,7 @@ export async function onRequestPost(context) {
           subject: `New Booking Request: ${service}`
         },
         {
-          to: [{ email: 'vmpatton@gmail.com' }],
+          to: [{ email: secondaryRecipient }],
           subject: `New Booking Request: ${service}`
         }
       ],
