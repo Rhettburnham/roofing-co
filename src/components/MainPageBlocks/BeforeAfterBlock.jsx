@@ -46,6 +46,7 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
   // Safely destructure data and ensure paths are properly formatted
   const { sectionTitle = "BEFORE & AFTER", items = [] } = beforeAfterData || {};
   const showNailAnimation = beforeAfterData?.showNailAnimation !== undefined ? beforeAfterData.showNailAnimation : true; // Default to true
+  console.log(`[BeforeAfterPreview] Instance created/re-rendered. Initial showNailAnimation prop from beforeAfterData: ${showNailAnimation}`);
 
   // Initialize viewStates when items change
   useEffect(() => {
@@ -97,6 +98,8 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
   useEffect(() => {
     if (!items.length) return;
 
+    console.log(`[BeforeAfterPreview GSAP Effect] Running. showNailAnimation: ${showNailAnimation}, items count: ${items.length}`);
+
     const nailElement = nailRef.current;
     const textElement = textRef.current;
     const headerElement = headerRef.current; // Added for clarity in cleanup
@@ -130,9 +133,11 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
         .to(nailElement, { x: 0, duration: 1, ease: "power2.out" })
         .to(textElement, { opacity: 1, duration: 0.5 }, "+=0.2")
         .to([nailElement, textElement], { x: (index) => (index === 0 ? "-10vw" : "-50%"), duration: 0.8, ease: "power2.inOut" }, "+=0.3");
+      console.log("[BeforeAfterPreview GSAP Effect] Applied nail animation timeline.");
     } else {
       gsap.set(nailElement, { opacity: 0 });
       gsap.set(textElement, { x: "-50%", opacity: 1 });
+      console.log("[BeforeAfterPreview GSAP Effect] Set nail opacity to 0 and text position because showNailAnimation is false.");
     }
 
     // Box animations
@@ -235,6 +240,7 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
 
     // Cleanup on unmount or when showNailAnimation changes
     return () => {
+      console.log(`[BeforeAfterPreview GSAP Effect] Cleanup. showNailAnimation was: ${showNailAnimation}`);
       ScrollTrigger.getAll().forEach(st => {
         if (st.trigger === headerElement && (st.animation?.targets?.includes(nailElement) || st.animation?.targets?.includes(textElement))) {
           st.kill();
@@ -544,7 +550,9 @@ function BeforeAfterEditorPanel({ localData, onPanelChange }) {
 
   const handleToggleNailAnimation = () => {
     const currentShowState = localData.showNailAnimation !== undefined ? localData.showNailAnimation : true;
-    onPanelChange({ showNailAnimation: !currentShowState });
+    const newShowState = !currentShowState;
+    console.log(`[BeforeAfterEditorPanel] handleToggleNailAnimation: Current: ${currentShowState}, New: ${newShowState}`);
+    onPanelChange({ showNailAnimation: newShowState });
   };
 
   return (
@@ -633,9 +641,11 @@ export default function BeforeAfterBlock({
 }) {
   const [localData, setLocalData] = useState(() => {
     const initialConfig = beforeAfterData || {};
+    const initialShowNailAnimation = initialConfig.showNailAnimation !== undefined ? initialConfig.showNailAnimation : true;
+    console.log(`[BeforeAfterBlock useState init] initialConfig.showNailAnimation: ${initialConfig.showNailAnimation}, Resolved to: ${initialShowNailAnimation}`);
     return {
       sectionTitle: initialConfig.sectionTitle || "GALLERY",
-      showNailAnimation: initialConfig.showNailAnimation !== undefined ? initialConfig.showNailAnimation : true, // Initialize here
+      showNailAnimation: initialShowNailAnimation, // Initialize here
       items: (initialConfig.items || []).map((item, index) => ({
         ...item,
         id: item.id || `item_init_${index}_${Date.now()}`,
@@ -722,7 +732,7 @@ export default function BeforeAfterBlock({
   useEffect(() => {
     if (prevReadOnlyRef.current === false && readOnly === true) {
       if (onConfigChange) {
-        console.log("BeforeAfterBlock: Editing finished. Calling onConfigChange.");
+        console.log("[BeforeAfterBlock onConfigChange Effect] Editing finished. Calling onConfigChange.");
         const dataToSave = {
             ...localData,
             items: localData.items.map(item => {
@@ -742,8 +752,9 @@ export default function BeforeAfterBlock({
                     after: afterImageState,
                 };
             }),
-            showNailAnimation: localData.showNailAnimation !== undefined ? localData.showNailAnimation : true,
+            showNailAnimation: localData.showNailAnimation,
         };
+        console.log("[BeforeAfterBlock onConfigChange Effect] dataToSave:", JSON.parse(JSON.stringify(dataToSave, (k,v) => v instanceof File ? ({name: v.name, type: v.type, size: v.size}) : v)));
         onConfigChange(dataToSave);
       }
     }
@@ -753,6 +764,7 @@ export default function BeforeAfterBlock({
   const handleLocalDataChange = (updater) => {
     setLocalData(prevState => {
       const newState = typeof updater === 'function' ? updater(prevState) : { ...prevState, ...updater };
+      console.log('[BeforeAfterBlock handleLocalDataChange] prevState.showNailAnimation:', prevState.showNailAnimation, 'newState.showNailAnimation:', newState.showNailAnimation);
       return newState;
     });
   };

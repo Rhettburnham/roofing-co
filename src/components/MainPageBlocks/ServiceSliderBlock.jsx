@@ -124,8 +124,8 @@ export default function ServiceSliderBlock({ readOnly = false, config = {}, onCo
         iconColor: "#FFFFFF",
       },
 
-      residentialServices: initialConfig.residentialServices?.map(s => ({...s, id: s.id || Math.random().toString(36).substr(2,9), iconPack: s.iconPack || 'fa'})) || [],
-      commercialServices: initialConfig.commercialServices?.map(s => ({...s, id: s.id || Math.random().toString(36).substr(2,9), iconPack: s.iconPack || 'fa'})) || [],
+      residentialServices: initialConfig.residentialServices?.map(s => ({...s, id: s.id || Math.random().toString(36).substr(2,9), iconPack: s.iconPack || 'fa', originalTitle: s.originalTitle || s.title })) || [],
+      commercialServices: initialConfig.commercialServices?.map(s => ({...s, id: s.id || Math.random().toString(36).substr(2,9), iconPack: s.iconPack || 'fa', originalTitle: s.originalTitle || s.title })) || [],
       largeResidentialImg: initializeImageState(initialConfig.largeResidentialImg, "/assets/images/main_image_expanded.jpg"),
       largeCommercialImg: initializeImageState(initialConfig.largeCommercialImg, "/assets/images/commercialservices.jpg"),
       isCommercial: initialConfig.isCommercial || false, 
@@ -157,12 +157,12 @@ export default function ServiceSliderBlock({ readOnly = false, config = {}, onCo
           return {
             ...serviceConfig, // Base from prop or existing local if prop is sparse
             id: serviceConfig.id || localService?.id || Math.random().toString(36).substr(2,9),
-            // link: serviceConfig.link !== undefined ? serviceConfig.link : localService?.link || "#", // Link removed
             icon: serviceConfig.icon !== undefined ? serviceConfig.icon : localService?.icon || 'FaTools',
             iconPack: serviceConfig.iconPack !== undefined ? serviceConfig.iconPack : localService?.iconPack || 'fa',
-            title: (localService && localService.title !== serviceConfig.title && localService.title !== (serviceConfig.title || "")) 
+            title: (localService && localService.title !== serviceConfig.title && localService.title !== (config.title || "")) 
                    ? localService.title 
                    : serviceConfig.title || "",
+            originalTitle: serviceConfig.originalTitle || localService?.originalTitle || serviceConfig.title || "",
           };
         });
 
@@ -171,12 +171,12 @@ export default function ServiceSliderBlock({ readOnly = false, config = {}, onCo
           return {
             ...serviceConfig,
             id: serviceConfig.id || localService?.id || Math.random().toString(36).substr(2,9),
-            // link: serviceConfig.link !== undefined ? serviceConfig.link : localService?.link || "#", // Link removed
             icon: serviceConfig.icon !== undefined ? serviceConfig.icon : localService?.icon || 'FaTools',
             iconPack: serviceConfig.iconPack !== undefined ? serviceConfig.iconPack : localService?.iconPack || 'fa',
-            title: (localService && localService.title !== serviceConfig.title && localService.title !== (serviceConfig.title || "")) 
+            title: (localService && localService.title !== serviceConfig.title && localService.title !== (config.title || "")) 
                    ? localService.title 
                    : serviceConfig.title || "",
+            originalTitle: serviceConfig.originalTitle || localService?.originalTitle || serviceConfig.title || "",
           };
         });
         
@@ -549,6 +549,7 @@ function ServiceSliderEditorPanel({ localData, onPanelChange }) {
       icon: iconOptions[Math.floor(Math.random() * iconOptions.length)],
       iconPack: 'fa', // Default new icons to FontAwesome
       title: `New ${serviceType.charAt(0).toUpperCase() + serviceType.slice(1)} Service`,
+      originalTitle: `New ${serviceType.charAt(0).toUpperCase() + serviceType.slice(1)} Service`, // Initialize originalTitle
     };
     onPanelChange({ [serviceListKey]: [...(localData[serviceListKey] || []), newService] });
   };

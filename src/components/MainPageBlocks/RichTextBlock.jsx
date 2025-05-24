@@ -8,7 +8,7 @@ import PropTypes from "prop-types";
 import IconSelectorModal from '../common/IconSelectorModal';
 
 // Module-level flag to track if animation has played this page load
-let pageLoadAnimationHasPlayed = false;
+// let pageLoadAnimationHasPlayed = false; // Will be replaced by a ref
 
 // =============================================
 // Helper function to derive local state from props
@@ -57,7 +57,7 @@ const deriveInitialLocalData = (richTextDataInput, currentBannerColor) => {
 Displays content. If not readOnly, allows inline editing of text fields and card icons.
 =============================================
 */
-function RichTextPreview({ richTextData, readOnly, onInlineChange, bannerColor, openIconModalForCard }) {
+function RichTextPreview({ richTextData, readOnly, onInlineChange, bannerColor, openIconModalForCard, onCardTextChange }) {
   const [currentImage, setCurrentImage] = useState(0);
   const videoRefs = useRef([]);
   const [activeVideo, setActiveVideo] = useState(0);
@@ -70,6 +70,12 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange, bannerColor, 
 
   // State for image slideshow
   const [currentImageSlideshowIndex, setCurrentImageSlideshowIndex] = useState(0);
+
+  // Ref to track if intro animation has played for this instance of RichTextPreview
+  const introAnimationPlayedRef = useRef(false); // Initialize with false directly
+                                                                    // For true per-pageload-once, the global might still be needed or a context. Let's make it per-instance for now.
+                                                                    // Let's simplify and use a ref that's initially false and set to true after first animation.
+  const animationPlayedThisInstanceRef = useRef(false);
 
   // State to control whether the intro animation should play for cards
   const [playIntroAnimationForCards, setPlayIntroAnimationForCards] = useState(false);
@@ -88,9 +94,9 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange, bannerColor, 
 
   useEffect(() => {
     // This effect runs once on mount to decide if animations should play
-    if (!pageLoadAnimationHasPlayed) {
+    if (!animationPlayedThisInstanceRef.current) {
       setPlayIntroAnimationForCards(true); // Allow animation
-      pageLoadAnimationHasPlayed = true;    // Mark as played for this page load
+      animationPlayedThisInstanceRef.current = true;    // Mark as played for this instance
     } else {
       setPlayIntroAnimationForCards(false); // Skip animation, cards should appear in final state
     }
@@ -287,15 +293,17 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange, bannerColor, 
     overlayImages,
     playIntroAnimation,
     readOnlyCard,
-    openIconModalForCard
+    openIconModalForCard,
+    onInlineChange
   }) {
     const IconComponent = Icons[IconName] || Icons.Star;
     const baseClasses =
       "relative bg-white p-2 rounded-lg shadow-lg flex flex-col items-center justify-center";
-    const sizeClasses =
-      variant === "md"
-        ? "md:w-[12vw] w-[40vw] w-full max-w-[12vw] h-auto min-h-[18vw] md:min-h-[14vw] lg:min-h-[12vw]"
-        : "w-[40vw] md:w-[12vw] h-auto min-h-[18vw] md:min-h-[14vw] lg:min-h-[12vw]";
+    
+    // New size classes based on the request
+    const sizeClasses = 
+      "w-full md:w-[24vw] " + // Single column full width below md, 24vw width on md and up
+      "min-h-[9vw] md:min-h-[7vw] lg:min-h-[6vw]"; // Adjusted heights
 
     const cardAnimationVariants = {
       hidden: { x: "-100%", rotate: -30, opacity: 0 },
@@ -325,30 +333,11 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange, bannerColor, 
       },
     };
 
-    const [internalTitle, setInternalTitle] = useState(title);
-    const [internalDesc, setInternalDesc] = useState(desc);
-
-    // Sync internal state with props if props change from outside (e.g., initial load, parent changes)
-    useEffect(() => {
-        if (title !== internalTitle) setInternalTitle(title);
-    }, [title, internalTitle]);
-
-    useEffect(() => {
-        if (desc !== internalDesc) setInternalDesc(desc);
-    }, [desc, internalDesc]);
-
-    const handleTitleChange = (e) => setInternalTitle(e.target.value);
-    const handleDescChange = (e) => setInternalDesc(e.target.value);
-
-    const handleTitleBlur = () => {
-      if (internalTitle !== title) { // Only propagate if changed from original prop
-        onInlineChange(index, 'title', internalTitle);
-      }
+    const handleTitleChange = (e) => {
+      onInlineChange(index, 'title', e.target.value);
     };
-    const handleDescBlur = () => {
-      if (internalDesc !== desc) { // Only propagate if changed from original prop
-        onInlineChange(index, 'desc', internalDesc);
-      }
+    const handleDescChange = (e) => {
+      onInlineChange(index, 'desc', e.target.value);
     };
 
     return (
@@ -397,16 +386,15 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange, bannerColor, 
         <div className="relative flex flex-col z-30 w-full h-full items-start justify-start p-1 md:p-2">
           <div className="relative w-full mb-1 md:mb-2" style={{ zIndex: 51 }}>
             {readOnlyCard ? (
-              <h3 className="ml-1 md:ml-0 mr-10 md:mr-12 leading-tight text-[2.3vw] md:text-[1.9vh] font-semibold text-gray-900 font-sans break-words">
+              <h3 className="ml-1 md:ml-0 mr-10 md:mr-12 leading-tight text-xs sm:text-sm md:text-base font-semibold text-gray-900 font-sans break-words">
                 {title}
               </h3>
             ) : (
               <input
                 type="text"
-                value={internalTitle}
+                value={title}
                 onChange={handleTitleChange}
-                onBlur={handleTitleBlur}
-                className="ml-1 md:ml-0 mr-10 md:mr-12 leading-tight text-[2.3vw] md:text-[1.9vh] font-semibold text-gray-900 font-sans bg-transparent focus:bg-white/50 focus:backdrop-blur-sm border-none focus:border-b focus:border-brand-accent outline-none w-[calc(100%-2.5rem)] md:w-[calc(100%-3rem)] p-[1px] rounded-sm placeholder-gray-500"
+                className="ml-1 md:ml-0 mr-10 md:mr-12 leading-tight text-xs sm:text-sm md:text-base font-semibold text-gray-900 font-sans bg-transparent focus:bg-white/50 focus:backdrop-blur-sm border-none focus:border-b focus:border-brand-accent outline-none w-[calc(100%-2.5rem)] md:w-[calc(100%-3rem)] p-[1px] rounded-sm placeholder-gray-500"
                 onClick={(e) => e.stopPropagation()} 
                 placeholder="Edit title..."
                 style={{ lineHeight: 'normal' }}
@@ -416,15 +404,14 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange, bannerColor, 
 
           <div className="relative w-full flex-grow" style={{ zIndex: 51 }}>
             {readOnlyCard ? (
-              <p className="ml-1 md:ml-0 text-[2.2vw] md:text-[1.5vh] text-gray-700 text-left font-serif leading-tight break-words">
+              <p className="ml-1 md:ml-0 text-xs sm:text-sm md:text-[0.9rem] text-gray-700 text-left font-serif leading-tight break-words">
                 {desc}
               </p>
             ) : (
               <textarea
-                value={internalDesc}
+                value={desc}
                 onChange={handleDescChange}
-                onBlur={handleDescBlur}
-                className="ml-1 md:ml-0 text-[2.2vw] md:text-[1.5vh] text-gray-700 font-serif leading-tight bg-transparent focus:bg-white/50 focus:backdrop-blur-sm border-none focus:border-b focus:border-brand-accent outline-none w-full h-full resize-none p-[1px] rounded-sm placeholder-gray-500"
+                className="ml-1 md:ml-0 text-xs sm:text-sm md:text-[0.9rem] text-gray-700 font-serif leading-tight bg-transparent focus:bg-white/50 focus:backdrop-blur-sm border-none focus:border-b focus:border-brand-accent outline-none w-full h-full resize-none p-[1px] rounded-sm placeholder-gray-500"
                 onClick={(e) => e.stopPropagation()} 
                 placeholder="Edit description..."
                 style={{ lineHeight: 'normal', overflowY: 'auto' }}
@@ -447,6 +434,7 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange, bannerColor, 
     playIntroAnimation: PropTypes.bool.isRequired,
     readOnlyCard: PropTypes.bool.isRequired,
     openIconModalForCard: PropTypes.func,
+    onInlineChange: PropTypes.func.isRequired,
   };
 
   const RenderProcessSteps = () => {
@@ -651,11 +639,10 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange, bannerColor, 
       {/* Feature Cards Section */}
       {hasCards && (
         <div className="w-full my-4 md:my-2">
-          <div className="flex flex-row flex-wrap justify-around items-start gap-4 md:gap-6">
+          <div className="flex flex-col md:flex-row md:flex-wrap md:justify-around items-stretch md:items-start gap-4 md:gap-6">
             {cards.map((card, idx) => (
               <FeatureCard
                 key={card.id || idx}
-                variant="md"
                 icon={card.icon}
                 title={card.title}
                 desc={card.desc}
@@ -664,6 +651,7 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange, bannerColor, 
                 playIntroAnimation={playIntroAnimationForCards}
                 readOnlyCard={readOnly}
                 openIconModalForCard={openIconModalForCard}
+                onInlineChange={onInlineChange}
               />
             ))}
           </div>
@@ -692,6 +680,7 @@ RichTextPreview.propTypes = {
   onInlineChange: PropTypes.func.isRequired,
   bannerColor: PropTypes.string,
   openIconModalForCard: PropTypes.func,
+  onCardTextChange: PropTypes.func.isRequired,
 };
 
 /* 
@@ -860,9 +849,9 @@ function RichTextControlsPanel({ localData, onDataChange, currentBannerColor }) 
           <h2 className="text-lg font-semibold text-gray-300">Edit Slideshow Images</h2>
           <button onClick={handleAddImage} type="button" className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1.5 rounded shadow">+ Add Image Slot</button>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2  gap-4">
           {(images || []).map((imgState, idx) => { 
-            // const currentUpload = imageUploads && imageUploads[idx]; // No longer needed
+            // const currentUpload = imageUploads && imageUploads[idx]; // No longer neededcols-3
             let displayFileName = 'Empty';
             if (imgState && imgState.name) {
                 displayFileName = imgState.name;
@@ -1171,6 +1160,23 @@ export default function RichTextBlock({
     setEditingCardIndexForIcon(null);
   }, [editingCardIndexForIcon, showControls, onConfigChange]);
 
+  // Define handleCardChange here
+  const handleCardChange = useCallback((cardIndex, field, value) => {
+    setLocalData(prevLocalData => {
+      const updatedCards = (prevLocalData.cards || []).map((card, idx) => 
+        idx === cardIndex ? { ...card, [field]: value } : card
+      );
+      const newLocalData = { ...prevLocalData, cards: updatedCards };
+      // If controls are open, propagate immediately.
+      // Otherwise, changes are local and will be saved when controls are closed/edit finishes.
+      if (showControls && onConfigChange) {
+        // console.log("RichTextBlock: Card text changed (from handleCardChange), propagating immediately.", newLocalData);
+        onConfigChange(newLocalData);
+      }
+      return newLocalData;
+    });
+  }, [showControls, onConfigChange]);
+
   return (
     <>
       <RichTextPreview 
@@ -1179,6 +1185,7 @@ export default function RichTextBlock({
         onInlineChange={handleInlineChange} 
         bannerColor={bannerColor} 
         openIconModalForCard={openIconModalForCard}
+        onCardTextChange={handleCardChange}
       />
       {showControls && (
         <div className="bg-gray-800 text-white p-4 rounded-lg mt-4 shadow-lg">

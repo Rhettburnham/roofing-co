@@ -66,6 +66,7 @@ function EmployeesPreview({
   const employeesListOriginal = employeesData?.employee || [];
   const sectionTitle = employeesData?.sectionTitle || "OUR TEAM";
   const showNailAnimation = employeesData?.showNailAnimation !== undefined ? employeesData.showNailAnimation : true;
+  console.log(`[EmployeesPreview] Instance created/re-rendered. Initial showNailAnimation prop from employeesData: ${showNailAnimation}`);
 
   const formattedEmployees = employeesListOriginal.map((emp) => ({
     ...emp,
@@ -108,6 +109,8 @@ function EmployeesPreview({
     const text = textRef.current;
     const header = headerRef.current;
 
+    console.log(`[EmployeesPreview GSAP Effect] Running. showNailAnimation: ${showNailAnimation}`);
+
     ScrollTrigger.getAll().forEach(st => {
       if (st.trigger === header && (st.animation?.targets?.includes(nail) || st.animation?.targets?.includes(text))) {
         st.kill();
@@ -131,12 +134,15 @@ function EmployeesPreview({
         .to(nail, { x: "10vw", duration: 0.8, ease: "power2.out" })
         .to(nail, { x: "1vw", duration: 0.6, ease: "power2.inOut" }, "+=0.5")
         .to(text, { x: "-50%", duration: 0.6, ease: "power2.inOut" }, "<");
+      console.log("[EmployeesPreview GSAP Effect] Applied nail animation timeline.");
     } else {
       gsap.set(nail, { opacity: 0 });
       gsap.set(text, { x: "-50%", opacity: 1 });
+      console.log("[EmployeesPreview GSAP Effect] Set nail opacity to 0 and text position because showNailAnimation is false.");
     }
 
     return () => {
+      console.log(`[EmployeesPreview GSAP Effect] Cleanup. showNailAnimation was: ${showNailAnimation}`);
       ScrollTrigger.getAll().forEach(st => {
         if (st.trigger === header && (st.animation?.targets?.includes(nail) || st.animation?.targets?.includes(text))) {
           st.kill();
@@ -272,7 +278,9 @@ function EmployeesEditorPanel({ localData, onPanelChange }) {
 
   const handleToggleNailAnimation = () => {
     const currentShowState = localData.showNailAnimation !== undefined ? localData.showNailAnimation : true;
-    onPanelChange({ showNailAnimation: !currentShowState });
+    const newShowState = !currentShowState;
+    console.log(`[EmployeesEditorPanel] handleToggleNailAnimation: Current: ${currentShowState}, New: ${newShowState}`);
+    onPanelChange({ showNailAnimation: newShowState });
   };
 
   return (
@@ -324,9 +332,11 @@ export default function EmployeesBlock({
 }) {
   const [localData, setLocalData] = useState(() => {
     const initialConfig = employeesData || {};
+    const initialShowNailAnimation = initialConfig.showNailAnimation !== undefined ? initialConfig.showNailAnimation : true;
+    console.log(`[EmployeesBlock useState init] initialConfig.showNailAnimation: ${initialConfig.showNailAnimation}, Resolved to: ${initialShowNailAnimation}`);
     return {
       sectionTitle: initialConfig.sectionTitle || "OUR TEAM",
-      showNailAnimation: initialConfig.showNailAnimation !== undefined ? initialConfig.showNailAnimation : true,
+      showNailAnimation: initialShowNailAnimation,
       employee: (initialConfig.employee || []).map((emp, index) => ({
         ...emp,
         id: emp.id || `emp_init_${index}_${Date.now()}`,
@@ -405,7 +415,7 @@ export default function EmployeesBlock({
   useEffect(() => {
     if (prevReadOnlyRef.current === false && readOnly === true) {
       if (onConfigChange) {
-        console.log("EmployeesBlock: Editing finished. Calling onConfigChange.");
+        console.log("[EmployeesBlock onConfigChange Effect] Editing finished. Calling onConfigChange.");
         const dataToSave = {
             ...localData,
             employee: localData.employee.map(emp => {
@@ -417,8 +427,9 @@ export default function EmployeesBlock({
                     image: imageState,
                 };
             }),
-            showNailAnimation: localData.showNailAnimation !== undefined ? localData.showNailAnimation : true,
+            showNailAnimation: localData.showNailAnimation,
         };
+        console.log("[EmployeesBlock onConfigChange Effect] dataToSave:", JSON.parse(JSON.stringify(dataToSave, (k,v) => v instanceof File ? ({name: v.name, type: v.type, size: v.size}) : v)));
         onConfigChange(dataToSave);
       }
     }
@@ -428,6 +439,7 @@ export default function EmployeesBlock({
   const handleLocalDataChange = (updater) => {
     setLocalData(prevState => {
       const newState = typeof updater === 'function' ? updater(prevState) : { ...prevState, ...updater };
+      console.log('[EmployeesBlock handleLocalDataChange] prevState.showNailAnimation:', prevState.showNailAnimation, 'newState.showNailAnimation:', newState.showNailAnimation);
       return newState;
     });
   };

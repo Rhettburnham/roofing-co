@@ -505,9 +505,71 @@ const MainPageForm = ({ formData: formDataProp, setFormData: setFormDataProp, si
   const handleBlockConfigChange = (blockUniqueKey, newConfigFromBlock) => {
     console.log(`MainPageForm: Block ${blockUniqueKey} is committing changes to internalFormData.`, newConfigFromBlock);
     setInternalFormData((prev) => {
-      const newMainPageBlocks = (prev.mainPageBlocks || []).map(block =>
+      const blockBeingChanged = (prev.mainPageBlocks || []).find(b => b.uniqueKey === blockUniqueKey);
+      let newMainPageBlocks = (prev.mainPageBlocks || []).map(block =>
         block.uniqueKey === blockUniqueKey ? { ...block, config: newConfigFromBlock } : block
       );
+
+      // Link service name changes from HeroBlock to ServiceSliderBlock
+      if (blockBeingChanged && blockBeingChanged.blockName === 'HeroBlock' && newConfigFromBlock) {
+        const oldHeroConfig = blockBeingChanged.config;
+        const serviceSliderBlockIndex = newMainPageBlocks.findIndex(b => b.blockName === 'ServiceSliderBlock');
+
+        if (serviceSliderBlockIndex !== -1) {
+          const serviceSliderConfig = { ...newMainPageBlocks[serviceSliderBlockIndex].config };
+          let sliderResidentialServices = [...(serviceSliderConfig.residentialServices || [])];
+          let sliderCommercialServices = [...(serviceSliderConfig.commercialServices || [])];
+          let changed = false;
+
+          // Check residential services
+          (newConfigFromBlock.residential?.subServices || []).forEach(heroService => {
+            const oldHeroService = oldHeroConfig.residential?.subServices?.find(s => s.id === heroService.id);
+            if (oldHeroService && oldHeroService.title !== heroService.title) { // Title has changed
+              const sliderServiceIndex = sliderResidentialServices.findIndex(
+                sliderService => sliderService.title === oldHeroService.originalTitle || sliderService.title === oldHeroService.title // Match by original or current title
+              );
+              if (sliderServiceIndex !== -1) {
+                sliderResidentialServices[sliderServiceIndex] = {
+                  ...sliderResidentialServices[sliderServiceIndex],
+                  title: heroService.title, // Update to new title
+                };
+                changed = true;
+                console.log(`Linked Resi Service Title: '${oldHeroService.title}' to '${heroService.title}' in ServiceSlider`);
+              }
+            }
+          });
+
+          // Check commercial services
+          (newConfigFromBlock.commercial?.subServices || []).forEach(heroService => {
+            const oldHeroService = oldHeroConfig.commercial?.subServices?.find(s => s.id === heroService.id);
+            if (oldHeroService && oldHeroService.title !== heroService.title) { // Title has changed
+              const sliderServiceIndex = sliderCommercialServices.findIndex(
+                sliderService => sliderService.title === oldHeroService.originalTitle || sliderService.title === oldHeroService.title
+              );
+              if (sliderServiceIndex !== -1) {
+                sliderCommercialServices[sliderServiceIndex] = {
+                  ...sliderCommercialServices[sliderServiceIndex],
+                  title: heroService.title, // Update to new title
+                };
+                changed = true;
+                console.log(`Linked Comm Service Title: '${oldHeroService.title}' to '${heroService.title}' in ServiceSlider`);
+              }
+            }
+          });
+
+          if (changed) {
+            newMainPageBlocks[serviceSliderBlockIndex] = {
+              ...newMainPageBlocks[serviceSliderBlockIndex],
+              config: {
+                ...serviceSliderConfig,
+                residentialServices: sliderResidentialServices,
+                commercialServices: sliderCommercialServices,
+              },
+            };
+          }
+        }
+      }
+
       const heroBlockInNewState = newMainPageBlocks.find(b => b.blockName === 'HeroBlock');
       if (heroBlockInNewState && heroBlockInNewState.config) {
           console.log("MainPageForm: HeroBlock config after update in newMainPageBlocks (File check):", 

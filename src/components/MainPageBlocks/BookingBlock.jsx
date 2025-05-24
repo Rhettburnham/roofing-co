@@ -66,6 +66,9 @@ const BookingPreview = memo(({ bookingData, readOnly, onHeaderTextChange, onPhon
   const residentialIcons = useMemo(() => [FaTools, FaFan, FaTint, FaPaintRoller], []);
   const commercialIcons = useMemo(() => [FaTools, FaPaintRoller, FaTint, FaFan], []);
 
+  const showNailAnimationProp = bookingData?.showNailAnimation !== undefined ? bookingData.showNailAnimation : true;
+  console.log(`[BookingPreview] Instance created/re-rendered. Initial showNailAnimation prop from bookingData: ${showNailAnimationProp}`);
+
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile(); window.addEventListener("resize", checkMobile); return () => window.removeEventListener("resize", checkMobile);
@@ -96,6 +99,8 @@ const BookingPreview = memo(({ bookingData, readOnly, onHeaderTextChange, onPhon
     const leftNails = Array.from(bannerRef.current.querySelectorAll('[id^="left-nail-"]')).filter(Boolean);
     const rightNails = Array.from(bannerRef.current.querySelectorAll('[id^="right-nail-"]')).filter(Boolean);
     
+    console.log(`[BookingPreview GSAP Effect] Running. bookingData.showNailAnimation: ${bookingData?.showNailAnimation}`);
+
     // Kill existing animations on these elements
     gsap.killTweensOf([bannerRef.current, contentRef.current, formContainerRef.current, ...leftNails, ...rightNails]);
     ScrollTrigger.getAll().forEach(st => {
@@ -111,6 +116,7 @@ const BookingPreview = memo(({ bookingData, readOnly, onHeaderTextChange, onPhon
     gsap.set(rightNails, { x: "100vw" }); 
 
     const showNailAnimation = bookingData?.showNailAnimation !== undefined ? bookingData.showNailAnimation : true;
+    console.log(`[BookingPreview GSAP Effect] Resolved showNailAnimation for GSAP: ${showNailAnimation}`);
 
     const masterTimeline = gsap.timeline({
         scrollTrigger: {
@@ -127,13 +133,16 @@ const BookingPreview = memo(({ bookingData, readOnly, onHeaderTextChange, onPhon
     if (showNailAnimation) {
       masterTimeline.to(leftNails, { x: "-20%", duration: 0.4, ease: "power2.out", stagger: 0.12 }, "+=0.2")
                     .to(rightNails, { x: "20%", duration: 0.4, ease: "power2.out", stagger: 0.12 }, "-=0.4");
+      console.log("[BookingPreview GSAP Effect] Applied nail animation timeline.");
     } else {
       // Set nails to a static/hidden state if animation is off
       gsap.set(leftNails, { opacity: 0 }); // Hide left nails
       gsap.set(rightNails, { opacity: 0 }); // Hide right nails
+      console.log("[BookingPreview GSAP Effect] Set nail opacity to 0 because showNailAnimation is false.");
     }
     
     return () => { 
+      console.log(`[BookingPreview GSAP Effect] Cleanup. bookingData.showNailAnimation was: ${bookingData?.showNailAnimation}`);
       masterTimeline.kill();
       // It might be good to also kill tweens specifically if the component unmounts while animation is running
       gsap.killTweensOf([bannerRef.current, contentRef.current, formContainerRef.current, ...leftNails, ...rightNails]);
@@ -355,7 +364,9 @@ function BookingEditorPanel({ localData, onPanelChange }) {
 
   const handleToggleNailAnimation = () => {
     const currentShowState = localData.showNailAnimation !== undefined ? localData.showNailAnimation : true;
-    onPanelChange({ showNailAnimation: !currentShowState });
+    const newShowState = !currentShowState;
+    console.log(`[BookingEditorPanel] handleToggleNailAnimation: Current: ${currentShowState}, New: ${newShowState}`);
+    onPanelChange({ showNailAnimation: newShowState });
   };
 
   return (
@@ -418,6 +429,8 @@ export default function BookingBlock({
 }) {
   const [localData, setLocalData] = useState(() => {
     const initialConfig = bookingData || {};
+    const initialShowNailAnimation = initialConfig.showNailAnimation !== undefined ? initialConfig.showNailAnimation : true;
+    console.log(`[BookingBlock useState init] initialConfig.showNailAnimation: ${initialConfig.showNailAnimation}, Resolved to: ${initialShowNailAnimation}`);
     return {
       logo: initializeLogoState(initialConfig.logo), 
       headerText: initialConfig.headerText || "Contact Us!",
@@ -429,7 +442,7 @@ export default function BookingBlock({
       inputTextColor: initialConfig.inputTextColor || '#374151',
       buttonTextColor: initialConfig.buttonTextColor || '#FFFFFF',
       buttonBackgroundColor: initialConfig.buttonBackgroundColor || '#F97316',
-      showNailAnimation: initialConfig.showNailAnimation !== undefined ? initialConfig.showNailAnimation : true,
+      showNailAnimation: initialShowNailAnimation,
     };
   });
 
@@ -448,6 +461,8 @@ export default function BookingBlock({
         const defaultPhone = "(770) 880-1319";
 
         // Social links: Panel driven, prop is authoritative if defined, else keep local, else default to empty.
+        // The original `BookingBlock.defaultProps` has a more extensive default, but useState initializes with a simpler one.
+        // We'll use the useState initializer's perspective for "is it different from default".
         // The original `BookingBlock.defaultProps` has a more extensive default, but useState initializes with a simpler one.
         // We'll use the useState initializer's perspective for "is it different from default".
         const defaultSocialLinks = [{ platform: "twitter", url: "" }, { platform: "facebook", url: "" }];
@@ -498,12 +513,13 @@ export default function BookingBlock({
   useEffect(() => {
     if (prevReadOnlyRef.current === false && readOnly === true) {
       if (onConfigChange) {
-        console.log("BookingBlock: Editing finished. Calling onConfigChange.");
+        console.log("[BookingBlock onConfigChange Effect] Editing finished. Calling onConfigChange.");
         const dataToSave = { 
             ...localData, 
             logo: localData.logo?.file ? (localData.logo.name || 'default_logo.svg') : localData.logo?.url,
-            showNailAnimation: localData.showNailAnimation !== undefined ? localData.showNailAnimation : true,
+            showNailAnimation: localData.showNailAnimation, // Already simplified
         };
+        console.log("[BookingBlock onConfigChange Effect] dataToSave:", JSON.parse(JSON.stringify(dataToSave, (k,v) => v instanceof File ? ({name: v.name, type: v.type, size: v.size}) : v)));
         onConfigChange(dataToSave);
       }
     }
@@ -511,7 +527,11 @@ export default function BookingBlock({
   }, [readOnly, onConfigChange]);
 
   const handleLocalDataChange = (updater) => {
-    setLocalData(prevState => typeof updater === 'function' ? updater(prevState) : { ...prevState, ...updater });
+    setLocalData(prevState => {
+      const newState = typeof updater === 'function' ? updater(prevState) : { ...prevState, ...updater };
+      console.log('[BookingBlock handleLocalDataChange] prevState.showNailAnimation:', prevState.showNailAnimation, 'newState.showNailAnimation:', newState.showNailAnimation);
+      return newState;
+    });
   };
 
   if (readOnly) {

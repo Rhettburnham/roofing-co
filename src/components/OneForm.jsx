@@ -21,6 +21,7 @@ import ServiceEditPage, { getServicesData } from "./ServiceEditPage";
 import MainPageForm from "./MainPageForm";
 import AboutBlock from "./MainPageBlocks/AboutBlock";
 import Navbar from "./Navbar"; // Import Navbar for preview
+import ColorEditor from "./ColorEditor"; // Import the new ColorEditor component
 
 // Helper function to check if a URL is a local asset to be processed
 function isProcessableAssetUrl(url) {
@@ -300,11 +301,40 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   const [initialFormDataForOldExport, setInitialFormDataForOldExport] = useState(null); // For "old" export
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("mainPage");
+  const [themeColors, setThemeColors] = useState(null); // State for current theme colors
+  const [initialThemeColors, setInitialThemeColors] = useState(null); // State for initial theme colors for "old" export
 
   // On mount, fetch combined_data.json to populate the form if no initialData is provided
   useEffect(() => {
-    const fetchCombinedData = async () => {
+    const fetchAllData = async () => {
+      setLoading(true);
       try {
+        // Fetch theme colors first
+        try {
+          const colorsResponse = await fetch("/data/colors_output.json"); // Ensure this path is correct
+          if (colorsResponse.ok) {
+            const colors = await colorsResponse.json();
+            setThemeColors(colors);
+            setInitialThemeColors(JSON.parse(JSON.stringify(colors))); // Deep copy for "old" export
+            // Apply colors as CSS variables
+            Object.keys(colors).forEach(key => {
+              const cssVarName = `--color-${key.replace('_', '-')}`;
+              document.documentElement.style.setProperty(cssVarName, colors[key]);
+            });
+            console.log("OneForm: Loaded theme colors:", colors);
+          } else {
+            console.warn("OneForm: Failed to load theme colors from colors_output.json. Using defaults or previously set.");
+            const defaultColors = { accent: '#2B4C7E', banner: '#1A2F4D', "second-accent": '#FFF8E1', "faint-color": '#E0F7FA' };
+            setThemeColors(defaultColors);
+            setInitialThemeColors(JSON.parse(JSON.stringify(defaultColors)));
+          }
+        } catch (colorsError) {
+          console.error("OneForm: Error loading theme colors:", colorsError);
+           const defaultColorsOnError = { accent: '#2B4C7E', banner: '#1A2F4D', "second-accent": '#FFF8E1', "faint-color": '#E0F7FA' };
+           setThemeColors(defaultColorsOnError);
+           setInitialThemeColors(JSON.parse(JSON.stringify(defaultColorsOnError)));
+        }
+
         let dataToSet;
         // If initialData is provided, use it directly (for single block editing like /edit/hero)
         if (initialData && blockName) {
@@ -360,7 +390,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
       }
     };
 
-    fetchCombinedData();
+    fetchAllData();
   }, [initialData, blockName]);
 
   const handleMainPageFormChange = (newMainPageFormData) => {
@@ -373,6 +403,15 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   const handleAboutConfigChange = (newAboutConfig) => {
     console.log("About config changed:", newAboutConfig);
     setFormData((prev) => ({ ...prev, aboutPage: newAboutConfig }));
+  };
+
+  const handleThemeColorChange = (newColors) => {
+    setThemeColors(newColors);
+    // Live update CSS variables from OneForm as well, in case ColorEditor's direct update has issues or for redundancy
+    Object.keys(newColors).forEach(key => {
+        const cssVarName = `--color-${key.replace('_', '-')}`; // Ensure hyphens for CSS vars
+        document.documentElement.style.setProperty(cssVarName, newColors[key]);
+    });
   };
 
   /**
@@ -388,6 +427,22 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
       
       const zip = new JSZip();
       let collectedAssets = []; // Re-initialize for each export section if needed, or manage carefully
+
+      // Fetch services.json once if needed for both old and new processing
+      let servicesJsonData = null;
+      if (!blockName) { // Only fetch if not in single block mode, as services.json is for full site context
+        try {
+          const servicesResponse = await fetch("/data/ignore/services.json");
+          if (servicesResponse.ok) {
+            servicesJsonData = await servicesResponse.json();
+            console.log("[OneForm] Fetched services.json for ZIP processing.");
+          } else {
+            console.warn("[OneForm] Failed to fetch services.json for ZIP processing.");
+          }
+        } catch (err) {
+          console.error("[OneForm] Error fetching services.json for ZIP:", err);
+        }
+      }
 
       // --- Process "OLD" data if available (for full OneForm, not single block mode) ---
       const oldAssetPaths = new Set(); // To store paths of assets in the "old" export
@@ -425,14 +480,14 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         });
         await Promise.all(oldAssetProcessingPromises);
 
-        if (!blockName) {
+        if (!blockName && servicesJsonData) { // Check if servicesJsonData was successfully fetched
             try {
-                const servicesResponse = await fetch("/data/ignore/services.json"); 
-                if (servicesResponse.ok) {
-                    const servicesDataOld = await servicesResponse.json();
+                // const servicesResponse = await fetch("/data/ignore/services.json"); 
+                // if (servicesResponse.ok) {
+                    // const servicesDataOld = await servicesResponse.json();
                     let oldServiceAssets = []; 
                     const cleanedServicesDataOld = traverseAndModifyDataForZip(
-                        servicesDataOld,
+                        servicesJsonData, // Use pre-fetched data
                         oldServiceAssets,
                         'oldServicesDataRoot',
                         'user_uploads/old_services_data'
@@ -450,12 +505,18 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
                         }
                     });
                     await Promise.all(oldServiceAssetPromises);
-                }
+                // }
             } catch (serviceError) {
                 console.error("Error processing OLD services.json for ZIP:", serviceError);
             }
         }
         console.log("[OneForm] Paths of assets included in OLD export:", Array.from(oldAssetPaths));
+
+        // Add old colors_output.json
+        if (initialThemeColors) {
+            zip.file("old/json/colors_output.json", JSON.stringify(initialThemeColors, null, 2));
+            console.log("[OneForm] Added old/json/colors_output.json to ZIP.");
+        }
       }
 
       // --- Process "NEW" (current formData) data ---
@@ -473,21 +534,21 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
       console.log("Cleaned NEW combined_data for ZIP:", cleanedNewCombinedData);
       // console.log("Assets collected from NEW combined_data:", newCollectedAssets); // Log raw newCollectedAssets
 
-      if (!blockName) { 
+      if (!blockName && servicesJsonData) { // Check if servicesJsonData was successfully fetched
         try {
-          const servicesResponse = await fetch("/data/ignore/services.json"); 
-          if (servicesResponse.ok) {
-            const servicesDataNew = await servicesResponse.json();
+          // const servicesResponse = await fetch("/data/ignore/services.json"); 
+          // if (servicesResponse.ok) {
+            // const servicesDataNew = await servicesResponse.json();
             const serviceAssetsForNew = []; // Separate asset collection for services
             const cleanedServicesDataNew = traverseAndModifyDataForZip(
-                servicesDataNew,
+                servicesJsonData, // Use pre-fetched data
                 serviceAssetsForNew,
                 newPathPrefix ? 'newServicesDataRoot' : 'servicesDataRoot',
                 newPathPrefix ? 'user_uploads/new_services_data' : 'user_uploads/services_data'
             );
             zip.file(`${newPathPrefix}json/services.json`, JSON.stringify(cleanedServicesDataNew, null, 2));
             newCollectedAssets.push(...serviceAssetsForNew); // Add service assets to the main new list
-          }
+          // }
         } catch (serviceError) {
           console.error(`Error processing ${newPathPrefix}services.json for ZIP:`, serviceError);
         }
@@ -586,6 +647,12 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
       });
       await Promise.all(newAssetProcessingPromises);
 
+      // Add new colors_output.json
+      if (themeColors) {
+        zip.file(`${newPathPrefix}json/colors_output.json`, JSON.stringify(themeColors, null, 2));
+        console.log(`[OneForm] Added ${newPathPrefix}json/colors_output.json to ZIP.`);
+      }
+
       const content = await zip.generateAsync({ type: "blob" });
       const date = new Date();
       const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -671,6 +738,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
             <TabButton id="mainPage" label="Main Page Blocks" isActive={activeTab === "mainPage"} onClick={() => setActiveTab("mainPage")} />
             <TabButton id="services" label="Service Pages" isActive={activeTab === "services"} onClick={() => setActiveTab("services")} />
             <TabButton id="about" label="About Page Block" isActive={activeTab === "about"} onClick={() => setActiveTab("about")} />
+            <TabButton id="colors" label="Theme Colors" isActive={activeTab === "colors"} onClick={() => setActiveTab("colors")} />
           </div>
         </div>
 
@@ -699,6 +767,12 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
                 />
               </div>
             </div>
+          )}
+          {activeTab === "colors" && (
+            <ColorEditor
+              initialColors={themeColors}
+              onColorChange={handleThemeColorChange}
+            />
           )}
         </div>
       </div>

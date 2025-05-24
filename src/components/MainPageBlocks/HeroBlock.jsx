@@ -105,8 +105,8 @@ function HeroPreview({ heroconfig }) {
   const iconAnimationVariants = {
     neutral: { x: 0, y: 0, scale: 1, opacity: 1, transition: { duration: 0.3, ease: "easeInOut" } },
     active: { // Icon shifts up slightly when active, and sub-services appear below it
-      y: -10, // Example: shift icon up a bit
-      x: 0,     // Icon does not slide left in this revised columnar approach
+      y: 0, 
+      x: -20, // Icon slides left slightly to make space for sub-services to its right
       scale: 1.1,
       opacity: 1,
       transition: { duration: 0.3, ease: "easeInOut" }
@@ -115,24 +115,24 @@ function HeroPreview({ heroconfig }) {
   };
 
   const textLabelAnimationVariants = {
-    exit: { opacity: 0, x: 0, transition: { duration: 0.2, ease: "easeOut" } }, // Label fades out in place or slides subtly
+    exit: { opacity: 0, x: 10, transition: { duration: 0.2, ease: "easeOut" } }, // Label slides out to the right
     enter: { opacity: 1, x: 0, transition: { duration: 0.3, ease: "easeIn" } },
   };
 
-  // Variants for the sub-service column container
-  const subServiceColumnVariants = {
-    hidden: { opacity: 0, height: 0, y: -10, transition: { duration: 0.3, ease: "easeInOut", when: "afterChildren" } },
+  // Variants for the sub-service column container (now a row/horizontal container)
+  const subServiceContainerVariants = {
+    hidden: { opacity: 0, width: 0, x: -10, transition: { duration: 0.3, ease: "easeInOut", when: "afterChildren" } },
     visible: { 
       opacity: 1, 
-      height: 'auto', // Animate to auto height
-      y: 0, 
+      width: 'auto', // Animate to auto width
+      x: 0, 
       transition: { duration: 0.4, delay: 0.1, ease: "easeInOut", when: "beforeChildren", staggerChildren: 0.07 } 
     }
   };
 
   const subServiceItemVariants = {
-    hidden: { opacity: 0, x: -10 }, // Items slide in from left slightly
-    visible: { opacity: 1, x: 0, transition: { duration: 0.2, ease: "easeOut" } }
+    hidden: { opacity: 0, y: -10 }, // Items slide in from top slightly
+    visible: { opacity: 1, y: 0, transition: { duration: 0.2, ease: "easeOut" } }
   };
 
   const renderServiceSection = (type, services, iconDetails) => {
@@ -161,8 +161,8 @@ function HeroPreview({ heroconfig }) {
         className="w-1/2 h-full flex flex-col items-center justify-start pt-2 md:pt-4 cursor-pointer"
         onClick={handleSectionAreaClick}
       >
-        {/* Icon and Main Label (Horizontal when neutral) */}
-        <div className="flex items-center justify-center mb-2 md:mb-3 min-h-[40px] md:min-h-[50px]">
+        {/* Icon and Main Label (Horizontal when neutral, Icon slides left and sub-services appear right when active) */}
+        <div className="flex items-center justify-center mb-2 md:mb-3 min-h-[40px] md:min-h-[50px] relative">
           <motion.div
             className={`${iconWrapperBaseClass} ${!isPreviewReadOnly ? 'hover:bg-white/10 rounded-md' : ''}`}
             variants={iconAnimationVariants}
@@ -175,14 +175,15 @@ function HeroPreview({ heroconfig }) {
           >
             {renderDynamicIcon(iconDetails.iconPack, iconDetails.icon, type === 'residential' ? DefaultHomeIcon : DefaultWarehouseIcon)}
           </motion.div>
+          
           {/* Main Label - only shown when its section is NOT active OR if neutral */}
           <AnimatePresence mode="wait">
             {(isNeutral || !isActive) && (
               <motion.p
                 key={`${type}-text-label-main`}
-                className={serviceSectionTextBaseClass} // Restored class with ml for spacing
+                className={serviceSectionTextBaseClass}
                 variants={textLabelAnimationVariants}
-                initial="exit" // Start from exit to animate in if becoming visible
+                initial="exit"
                 animate="enter"
                 exit="exit"
               >
@@ -190,28 +191,28 @@ function HeroPreview({ heroconfig }) {
               </motion.p>
             )}
           </AnimatePresence>
-        </div>
 
-        {/* Sub-Services Column - Appears below the icon/label area when active */}
-        <AnimatePresence>
-          {isActive && (
-            <motion.div
-              className={`relative w-[90%] md:w-[85%] mt-1 rounded-lg shadow-xl overflow-hidden 
-                          ${isPreviewReadOnly ? 'bg-transparent' : 'bg-second-accent/30'} // Subtle bg in edit mode for container
-                        `}
-              variants={subServiceColumnVariants}
-              initial="hidden"
-              animate="visible"
-              exit="hidden"
-              style={{ pointerEvents: isActive ? 'auto' : 'none' }} 
-            >
-              <motion.ul className="flex flex-col items-center text-center p-2 space-y-1 md:space-y-1.5 text-sm md:text-base font-normal">
+          {/* Sub-Services Horizontal Container - Appears to the right of the icon when active */}
+          <AnimatePresence>
+            {isActive && (
+              <motion.div
+                className={`absolute left-[calc(100%_-_10px)] md:left-[calc(100%_-_5px)] top-1/2 transform -translate-y-1/2 flex items-center space-x-2 md:space-x-3
+                            p-1 md:p-1.5 rounded-lg shadow-xl overflow-hidden 
+                            ${isPreviewReadOnly ? 'bg-transparent' : 'bg-second-accent/20'} 
+                          `}
+                variants={subServiceContainerVariants}
+                initial="hidden"
+                animate="visible"
+                exit="hidden"
+                style={{ pointerEvents: isActive ? 'auto' : 'none' }} 
+                onClick={(e) => e.stopPropagation()}
+              >
                 {services.map((service, idx) => (
-                  <motion.li
+                  <motion.div
                     key={service.id || idx}
                     variants={subServiceItemVariants}
-                    className={`whitespace-nowrap flex items-center justify-center group w-full py-0.5 md:py-1 rounded-md 
-                                ${!isPreviewReadOnly ? 'hover:bg-white/10' : ''} // Hover effect for inputs
+                    className={`whitespace-nowrap flex items-center justify-center group py-0.5 md:py-1 rounded-md 
+                                ${!isPreviewReadOnly ? 'hover:bg-white/10 px-1.5 md:px-2' : 'px-1 md:px-1.5'}
                               `}
                   >
                     {!isPreviewReadOnly ? (
@@ -219,41 +220,41 @@ function HeroPreview({ heroconfig }) {
                         type="text"
                         value={service.label}
                         onChange={(e) => onServiceNameChange(type, service.id, e.target.value)}
-                        className="py-1 px-2 bg-transparent text-white focus:bg-white/20 outline-none text-center w-auto max-w-[80%] text-sm md:text-base rounded-sm"
+                        className="py-0.5 px-1 bg-transparent text-white focus:bg-white/20 outline-none text-center w-auto max-w-[100px] md:max-w-[120px] text-xs md:text-sm rounded-sm"
                         onClick={(e) => e.stopPropagation()}
                       />
                     ) : (
                       <Link 
                         to={service.route} 
-                        onClick={(e) => e.stopPropagation()} 
-                        className="block py-0.5 text-white hover:underline"
+                        onClick={(e) => e.stopPropagation()}
+                        className="block py-0.5 text-white hover:underline text-xs md:text-sm"
                       >
                         {service.label}
                       </Link>
                     )}
-                    {!isPreviewReadOnly && ( // Critical: Only show remove button if not in previewReadOnly mode
+                    {!isPreviewReadOnly && (
                       <button
                         onClick={(e) => { e.stopPropagation(); onRemoveService(type, service.id); }}
-                        className="ml-2 text-red-400 hover:text-red-300 opacity-50 group-hover:opacity-100 transition-opacity"
+                        className="ml-1 md:ml-1.5 text-red-400 hover:text-red-300 opacity-30 group-hover:opacity-100 transition-opacity"
                         title="Remove Service"
                       >
-                        <LucideIcons.MinusCircle size={14} />
+                        <LucideIcons.MinusCircle size={12} />
                       </button>
                     )}
-                  </motion.li>
+                  </motion.div>
                 ))}
                 {services.length === 0 && isActive && (
                   <motion.p
                     variants={subServiceItemVariants}
-                    className="text-xs text-gray-400 italic py-1"
+                    className="text-xs text-gray-400 italic py-1 px-2"
                   >
-                    No services listed.
+                    No services.
                   </motion.p>
                 )}
-              </motion.ul>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
     );
   };
@@ -797,7 +798,8 @@ export default function HeroBlock({
 
   if (readOnly) {
     // Pass the original heroconfig, which might include a path or a blob URL if it came from an edited state
-    return <HeroPreview heroconfig={heroconfig} />; 
+    // Also explicitly pass readOnly: true to ensure HeroPreview knows it's in a read-only context
+    return <HeroPreview heroconfig={{ ...(heroconfig || {}), readOnly: true }} />; 
   }
 
   const previewHandlers = {

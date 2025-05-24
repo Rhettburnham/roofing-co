@@ -2,7 +2,7 @@
 // This application loads data from JSON files and allows for local editing
 // of content. The edited content can be downloaded as JSON files and sent
 // to the developer for permanent integration into the site.
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect, lazy, Suspense, useMemo } from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import PropTypes from "prop-types";
 
@@ -342,7 +342,7 @@ const AppRoutes = ({
       <Route 
         path="/edit/service/:serviceType/:serviceId"
         element={
-          <Suspense fallback={<LoadingScreen />}>
+          <Suspense fallback={<LoadingScreen />}>πservice
             <div>Service Page Specific Editor (Placeholder)</div>
           </Suspense>
         }
@@ -385,39 +385,74 @@ const App = () => {
   const [loading, setLoading] = useState(true);
   const [siteData, setSiteData] = useState(null);
   const [aboutPageData, setAboutPageData] = useState(null);
+  const [themeColors, setThemeColors] = useState(null);
+
+  // Moved useMemo hooks to the top level, before any conditional returns.
+  const navbarConfig = useMemo(() => siteData?.navbar, [siteData]);
+  const heroConfig = useMemo(() => siteData?.mainPageBlocks?.find(b => b.blockName === 'HeroBlock')?.config, [siteData]);
+  const richTextConfig = useMemo(() => siteData?.mainPageBlocks?.find(b => b.blockName === 'RichTextBlock')?.config, [siteData]);
+  const buttonconfig = useMemo(() => siteData?.mainPageBlocks?.find(b => b.blockName === 'ButtonBlock')?.config, [siteData]);
+  const mapConfig = useMemo(() => siteData?.mainPageBlocks?.find(b => b.blockName === 'BasicMapBlock')?.config, [siteData]);
+  const bookingConfig = useMemo(() => siteData?.mainPageBlocks?.find(b => b.blockName === 'BookingBlock')?.config, [siteData]);
+  const serviceSliderConfig = useMemo(() => siteData?.mainPageBlocks?.find(b => b.blockName === 'ServiceSliderBlock')?.config, [siteData]);
+  const testimonialsConfig = useMemo(() => siteData?.mainPageBlocks?.find(b => b.blockName === 'TestimonialBlock')?.config, [siteData]);
+  const beforeAfterConfig = useMemo(() => siteData?.mainPageBlocks?.find(b => b.blockName === 'BeforeAfterBlock')?.config, [siteData]);
+  const employeesConfig = useMemo(() => siteData?.mainPageBlocks?.find(b => b.blockName === 'EmployeesBlock')?.config, [siteData]);
+  const aboutPageConfigForRoutes = useMemo(() => aboutPageData || siteData?.mainPageBlocks?.find(b => b.blockName === 'AboutBlock')?.config || {}, [aboutPageData, siteData]);
+
   const dataUrl = "/data/raw_data/step_4/combined_data.json";
   const aboutDataUrl = "/data/raw_data/step_3/about_page.json";
+  const colorsUrl = "/data/colors_output.json";
 
   // Fetch the combined_data.json (for navbar, and potentially About page if not separate)
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const response = await fetch(dataUrl);
-        if (!response.ok) {
+        // Fetch all data concurrently
+        const [colorsResponse, siteDataResponse, aboutDataResponseOptional] = await Promise.all([
+          fetch(colorsUrl).catch(e => { console.error("Error fetching colors:", e); return null; }), // Catch individual fetch errors
+          fetch(dataUrl).catch(e => { console.error("Error fetching site data:", e); return null; }),
+          fetch(aboutDataUrl).catch(e => { console.error("Error fetching about data:", e); return null; })
+        ]);
+
+        // Process theme colors
+        if (colorsResponse && colorsResponse.ok) {
+          const colors = await colorsResponse.json();
+          setThemeColors(colors);
+          document.documentElement.style.setProperty('--color-accent', colors.accent);
+          document.documentElement.style.setProperty('--color-banner', colors.banner);
+          document.documentElement.style.setProperty('--color-second-accent', colors['second-accent']);
+          document.documentElement.style.setProperty('--color-faint-color', colors['faint-color']);
+        } else {
+          console.warn("Failed to load theme colors from colors_output.json or fetch failed.");
+        }
+
+        // Process site data
+        if (!siteDataResponse || !siteDataResponse.ok) {
           throw new Error("Failed to fetch site-wide content (combined_data.json)");
         }
-        const data = await response.json();
+        const data = await siteDataResponse.json();
         setSiteData(data);
         console.log("App.jsx fetched combined_data:", data);
 
-        // Fetch and parse the about_page.json file (optional, could be part of combined_data)
-        // If you decide to manage about page content within combined_data.json, this can be simplified.
-        try {
-          const aboutResponse = await fetch(aboutDataUrl);
-          if (aboutResponse.ok) {
-            const aboutData = await aboutResponse.json();
-            setAboutPageData(aboutData);
-          } else {
-            // Fallback: if about_page.json doesn't exist, look for aboutPage in combined_data
-            // Or, if AboutBlock is now just another block in mainPageBlocks, this separate fetch might not be needed.
-            setAboutPageData(data.aboutPage || {});
-            console.warn("About page data (about_page.json) not found, using fallback from combined_data or default.");
-          }
-        } catch (aboutError) {
-          console.error("Error loading separate about page data:", aboutError);
-          setAboutPageData(data.aboutPage || {});
+        // Process about page data
+        let aboutDataToSet = data.aboutPage || {}; // Default to aboutPage from combined_data or empty object
+        if (aboutDataResponseOptional && aboutDataResponseOptional.ok) {
+          const aboutData = await aboutDataResponseOptional.json();
+          setAboutPageData(aboutData);
+          aboutDataToSet = aboutData; // Prioritize successfully fetched separate about_page.json
+        } else if (aboutDataResponseOptional === null && !data.aboutPage) {
+            // This case means fetch failed AND aboutPage is not in combined_data
+            console.warn("About page data (about_page.json) fetch failed and not found in combined_data, using default empty object.");
+        } else if (aboutDataResponseOptional && !aboutDataResponseOptional.ok) {
+            // This case means fetch attempted but failed (e.g. 404)
+            console.warn(`About page data (about_page.json) could not be fetched (status: ${aboutDataResponseOptional.status}), using fallback from combined_data or default.`);
         }
+        // If about_page.json was not found or failed, and data.aboutPage exists, it's already used as default.
+        // If fetched, setAboutPageData was called. If using from combined_data, ensure state reflects that.
+        setAboutPageData(aboutDataToSet);
+
 
         setLoading(false);
       } catch (error) {
@@ -426,7 +461,7 @@ const App = () => {
       }
     };
     fetchData();
-  }, [dataUrl, aboutDataUrl]);
+  }, [dataUrl, aboutDataUrl, colorsUrl]);
 
   if (loading) {
     return (
@@ -443,25 +478,6 @@ const App = () => {
       </div>
     );
   }
-
-  // Extract navbarConfig from siteData
-  const navbarConfig = siteData.navbar;
-  
-  // Extract configs for OneForm. These might still be needed if OneForm doesn't fetch its own initial data.
-  // This part needs review based on how OneForm gets its `initialData`.
-  // If OneForm fetches based on `blockName`, these might not be needed here.
-  const heroConfig = siteData.mainPageBlocks?.find(b => b.blockName === 'HeroBlock')?.config;
-  const richTextConfig = siteData.mainPageBlocks?.find(b => b.blockName === 'RichTextBlock')?.config;
-  const buttonconfig = siteData.mainPageBlocks?.find(b => b.blockName === 'ButtonBlock')?.config;
-  const mapConfig = siteData.mainPageBlocks?.find(b => b.blockName === 'BasicMapBlock')?.config;
-  const bookingConfig = siteData.mainPageBlocks?.find(b => b.blockName === 'BookingBlock')?.config;
-  const serviceSliderConfig = siteData.mainPageBlocks?.find(b => b.blockName === 'ServiceSliderBlock')?.config;
-  const testimonialsConfig = siteData.mainPageBlocks?.find(b => b.blockName === 'TestimonialBlock')?.config;
-  const beforeAfterConfig = siteData.mainPageBlocks?.find(b => b.blockName === 'BeforeAfterBlock')?.config;
-  const employeesConfig = siteData.mainPageBlocks?.find(b => b.blockName === 'EmployeesBlock')?.config;
-  
-  // Use separately loaded about page data or a config from siteData if available
-  const aboutPageConfigForRoutes = aboutPageData || siteData.mainPageBlocks?.find(b => b.blockName === 'AboutBlock')?.config || {};
 
   return (
     <Router
@@ -494,3 +510,4 @@ const App = () => {
 };
 
 export default App;
+
