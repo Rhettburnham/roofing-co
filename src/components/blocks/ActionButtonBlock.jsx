@@ -1,8 +1,10 @@
 // src/components/blocks/ActionButtonBlock.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom'; // Assuming you use React Router for internal links
 import { HashLink } from "react-router-hash-link";
+import IconSelectorModal from '../common/IconSelectorModal';
+import * as LucideIcons from 'lucide-react';
 
 // Helper to render an SVG icon dynamically if 'icon' prop is an object { name, style, etc. }
 // This is a placeholder; you'll need a more robust SVG rendering solution or library.
@@ -34,10 +36,18 @@ const renderIcon = (iconConfig, baseClassName = "w-6 h-6 mr-2", isEditing) => {
   return iconElement;
 };
 
+// Helper to render dynamic icons
+const renderDynamicIcon = (pack, iconName, fallback = null, props = {}) => {
+    const icons = pack === 'lucide' ? LucideIcons : {}; // Add other packs if needed
+    const IconComponent = icons[iconName];
+    return IconComponent ? <IconComponent {...props} /> : fallback;
+};
+
 const ActionButtonBlock = ({
   config = {},
   readOnly = false,
   onConfigChange,
+  onFileChange,
   getDisplayUrl,
 }) => {
   const {
@@ -69,12 +79,22 @@ const ActionButtonBlock = ({
     return { ...defaultConfig, ...config }; // Merge with incoming config
   });
 
+  const [isIconModalOpen, setIsIconModalOpen] = useState(false);
+  const textInputRef = useRef(null);
+
   // Sync localConfig with prop changes if not in edit mode (readOnly = true)
   useEffect(() => {
     if (readOnly) {
       setLocalConfig(prevConfig => ({ ...prevConfig, ...config }));
     }
   }, [config, readOnly]);
+
+  useEffect(() => {
+    if (!readOnly && textInputRef.current) {
+      textInputRef.current.style.height = "auto";
+      textInputRef.current.style.height = `${textInputRef.current.scrollHeight}px`;
+    }
+  }, [localConfig.buttonText, readOnly]);
 
   // When editing finishes (readOnly becomes true), call onConfigChange with the local state
   useEffect(() => {
@@ -89,15 +109,27 @@ const ActionButtonBlock = ({
   }, [readOnly, localConfig, onConfigChange, config]);
 
   const handleInputChange = (field, value) => {
-    if (!readOnly) {
-      setLocalConfig(prev => ({ ...prev, [field]: value }));
+    const updatedConfig = { ...localConfig, [field]: value };
+    setLocalConfig(updatedConfig);
+    if (readOnly) { // Should ideally only call onConfigChange when edit mode is exited or explicitly saved
+      onConfigChange(updatedConfig);
     }
   };
 
   const handleTextChange = (e) => {
-    if (!readOnly) {
-      handleInputChange('text', e.target.value);
+    const newText = e.target.value;
+    setLocalConfig(prev => ({...prev, buttonText: newText}));
+    // Live update to parent if not readOnly
+    if(!readOnly) {
+      onConfigChange({...localConfig, buttonText: newText});
     }
+  };
+
+  const handleIconSelect = (pack, iconName) => {
+    const updatedConfig = { ...localConfig, iconPack: pack, iconName: iconName };
+    setLocalConfig(updatedConfig);
+    onConfigChange(updatedConfig); // Propagate change immediately
+    setIsIconModalOpen(false);
   };
 
   const { text, link, style, alignment, icon, backgroundColor, textColor, openInNewTab } = localConfig;
@@ -150,11 +182,14 @@ const ActionButtonBlock = ({
       {/* Text */}
       <label className="block text-sm mb-1">
         Button Text:
-        <input
-          type="text"
+        <textarea
+          ref={textInputRef}
           value={text}
           onChange={handleTextChange}
+          onBlur={() => onConfigChange(localConfig)}
           className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
+          rows={1}
+          placeholder="Button Text"
         />
       </label>
 
@@ -263,12 +298,14 @@ ActionButtonBlock.propTypes = {
   }).isRequired,
   readOnly: PropTypes.bool,
   onConfigChange: PropTypes.func,
+  onFileChange: PropTypes.func, // Not used in this block but good for consistency
   getDisplayUrl: PropTypes.func, // Though not used directly by button, good to keep consistent
 };
 
 // Define the EditorPanel as a static property of ActionButtonBlock
 ActionButtonBlock.EditorPanel = ({ currentConfig, onPanelConfigChange, onPanelFileChange }) => {
   const [localPanelData, setLocalPanelData] = useState(currentConfig);
+  const [isIconModalOpen, setIsIconModalOpen] = useState(false);
 
   useEffect(() => {
     setLocalPanelData(currentConfig);
@@ -277,6 +314,12 @@ ActionButtonBlock.EditorPanel = ({ currentConfig, onPanelConfigChange, onPanelFi
   const handlePanelChange = (field, value) => {
     const updatedValue = (field === 'openInNewTab') ? (value === true || value === 'true') : value;
     setLocalPanelData(prev => ({ ...prev, [field]: updatedValue }));
+  };
+
+  const handleIconSelect = (pack, iconName) => {
+    handlePanelChange('iconPack', pack);
+    handlePanelChange('iconName', iconName);
+    setIsIconModalOpen(false);
   };
 
   // Debounce or onBlur to call onPanelConfigChange to avoid too frequent updates
@@ -380,6 +423,26 @@ ActionButtonBlock.EditorPanel = ({ currentConfig, onPanelConfigChange, onPanelFi
         />
         <label htmlFor={`openInNewTab-${currentConfig.text?.replace(/\s+/g, '') || 'actionbutton'}`} className="ml-2 block text-sm font-medium text-gray-300">Open link in new tab</label>
       </div>
+
+      <div className="flex items-center space-x-2">
+        <label className="block text-sm font-medium text-gray-300">Icon:</label>
+        <button 
+          type="button" 
+          onClick={() => setIsIconModalOpen(true)} 
+          className="px-3 py-1.5 text-xs bg-indigo-500 hover:bg-indigo-600 text-white rounded-md shadow-sm"
+        >
+          {localPanelData.iconName ? `Change Icon (${localPanelData.iconPack} - ${localPanelData.iconName})` : 'Select Icon'}
+        </button>
+        {localPanelData.iconName && (
+          <button 
+            type="button" 
+            onClick={() => { handlePanelChange('iconName', null); handlePanelChange('iconPack', null); }} 
+            className="text-xs text-red-500 hover:text-red-700"
+          >
+            Remove Icon
+          </button>
+        )}
+      </div>
     </div>
   );
 };
@@ -387,7 +450,8 @@ ActionButtonBlock.EditorPanel = ({ currentConfig, onPanelConfigChange, onPanelFi
 ActionButtonBlock.EditorPanel.propTypes = {
   currentConfig: PropTypes.object.isRequired,
   onPanelConfigChange: PropTypes.func.isRequired,
-  onPanelFileChange: PropTypes.func, // Not used in this block, but good for consistency
+  onPanelFileChange: PropTypes.func, // Not used here but good practice for consistency
 };
 
 export default ActionButtonBlock;
+

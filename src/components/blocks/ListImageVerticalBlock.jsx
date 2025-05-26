@@ -1,361 +1,273 @@
-// src/components/blocks/ListImageVerticalBlock.jsx
-import React, { useState, useEffect, useRef } from "react";
-import PropTypes from "prop-types";
-import { motion } from "framer-motion";
-import { Check } from "lucide-react"; // Using Lucide Check
+import React, { useState, useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
 
-/**
- * ListImageVerticalBlock
- * 
- * Showcases a group of items with benefits and images in a vertical layout
- * 
- * config = {
- *   listTitle: string,
- *   items: [
- *     {
- *       id: number,
- *       title: string,
- *       description: string,
- *       benefits: string[],
- *       image: string or {url: string}
- *     }
- *   ]
- * }
- */
+const ListImageVerticalBlock = ({ config, readOnly, onConfigChange, getDisplayUrl, onFileChange }) => {
+    const [localConfig, setLocalConfig] = useState(() => {
+        const defaultConfig = {
+            title: 'Our Process',
+            items: [
+                { id: 1, number: '1', title: 'Consultation', description: 'We start with a detailed consultation.', image: '' },
+            ],
+            enableAnimation: true,
+            backgroundColor: '#FFFFFF',
+            titleColor: '#1A202C',
+            itemNumberColor: '#3B82F6', // Blue for numbers
+            itemTitleColor: '#2D3748',
+            itemDescriptionColor: '#4A5568',
+            lineColor: '#D1D5DB', // Connecting line color
+            imageBorderColor: '#E2E8F0'
+        };
+        return { ...defaultConfig, ...(config || {}) };
+    });
 
-// Shared image state helpers (ensure these are consistent or from a shared util)
-const initializeImageState = (imageValue, defaultPath = '') => {
-  let fileObject = null;
-  let urlToDisplay = defaultPath;
-  let nameToStore = defaultPath.split('/').pop();
-  let originalUrlToStore = defaultPath;
+    const sectionTitleRef = useRef(null);
+    const itemRefs = useRef({});
 
-  if (imageValue && typeof imageValue === 'object') {
-    urlToDisplay = imageValue.url || defaultPath;
-    nameToStore = imageValue.name || urlToDisplay.split('/').pop();
-    fileObject = imageValue.file || null;
-    originalUrlToStore = imageValue.originalUrl || (typeof imageValue.url === 'string' && !imageValue.url.startsWith('blob:') ? imageValue.url : defaultPath);
-  } else if (typeof imageValue === 'string') {
-    urlToDisplay = imageValue;
-    nameToStore = imageValue.split('/').pop();
-    originalUrlToStore = imageValue;
-  }
-  return { file: fileObject, url: urlToDisplay, name: nameToStore, originalUrl: originalUrlToStore };
-};
+    useEffect(() => {
+        const defaultConfig = { 
+            title: 'Our Process', items: [], enableAnimation: true, backgroundColor: '#FFFFFF', 
+            titleColor: '#1A202C', itemNumberColor: '#3B82F6', itemTitleColor: '#2D3748', 
+            itemDescriptionColor: '#4A5568', lineColor: '#D1D5DB', imageBorderColor: '#E2E8F0'
+        };
+        const newEffectiveConfig = { ...defaultConfig, ...(config || {}) };
+        if (readOnly || JSON.stringify(newEffectiveConfig) !== JSON.stringify(localConfig)) {
+            setLocalConfig(newEffectiveConfig);
+        }
+    }, [config, readOnly]);
 
-const getEffectiveDisplayUrl = (imageState, getDisplayUrlProp, defaultPath = '') => {
-  if (getDisplayUrlProp && imageState) return getDisplayUrlProp(imageState);
-  if (imageState && typeof imageState === 'object' && imageState.url) return imageState.url;
-  if (typeof imageState === 'string' && imageState) return imageState.startsWith('/') || imageState.startsWith('blob:') || imageState.startsWith('data:') ? imageState : (imageState.startsWith('.') ? imageState : `/${imageState.replace(/^\/*/, "")}`);
-  return defaultPath;
-};
+    useEffect(() => {
+        if (!readOnly) {
+            if (sectionTitleRef.current) {
+                sectionTitleRef.current.style.height = 'auto';
+                sectionTitleRef.current.style.height = `${sectionTitleRef.current.scrollHeight}px`;
+            }
+            (localConfig.items || []).forEach((_, index) => {
+                if (itemRefs.current[index]) {
+                    Object.values(itemRefs.current[index]).forEach(ref => {
+                        if (ref && ref.current) {
+                            ref.current.style.height = 'auto';
+                            ref.current.style.height = `${ref.current.scrollHeight}px`;
+                        }
+                    });
+                }
+            });
+        }
+    }, [localConfig.title, localConfig.items, readOnly]);
 
-// Helper for inline editable fields
-const EditableField = ({ value, onChange, placeholder, type = 'text', className, style, rows }) => (
-  type === 'textarea' ?
-    <textarea value={value || ''} onChange={onChange} placeholder={placeholder} className={`bg-transparent border-b-2 border-dashed focus:border-gray-400 outline-none w-full ${className}`} style={style} rows={rows} /> :
-    <input type={type} value={value || ''} onChange={onChange} placeholder={placeholder} className={`bg-transparent border-b-2 border-dashed focus:border-gray-400 outline-none w-full ${className}`} style={style} />
-);
+    const handleInputChange = (field, value, itemIndex = null, subField = null) => {
+        setLocalConfig(prev => {
+            let updatedConfig;
+            if (itemIndex !== null && subField) {
+                const updatedItems = prev.items.map((item, i) => 
+                    i === itemIndex ? { ...item, [subField]: value } : item
+                );
+                updatedConfig = { ...prev, items: updatedItems };
+            } else {
+                updatedConfig = { ...prev, [field]: value };
+            }
+            if (!readOnly) onConfigChange(updatedConfig);
+            return updatedConfig;
+        });
+    };
 
-// Preview Component
-function ListImageVerticalPreview({ localConfig, readOnly, onInlineChange, getDisplayUrl }) {
-  const { sectionTitle, items, defaultImage, titleColor, descriptionColor, imageStyle, benefitTextColor, benefitIconColor } = localConfig;
+    const handleBlur = () => {
+        if (!readOnly) onConfigChange(localConfig);
+    };
 
-  const getImageClasses = (style) => {
-    switch (style) {
-      case "circle": return "rounded-full aspect-square";
-      case "rounded": return "rounded-lg aspect-video";
-      default: return "aspect-video"; // Default to aspect-video for consistency if no specific style
-    }
-  };
+    const getItemRef = (itemIndex, field) => (el) => {
+        if (!itemRefs.current[itemIndex]) itemRefs.current[itemIndex] = {};
+        itemRefs.current[itemIndex][field] = { current: el }; 
+    };
+
+    const { 
+        title, items, enableAnimation, backgroundColor, titleColor, 
+        itemNumberColor, itemTitleColor, itemDescriptionColor, lineColor, imageBorderColor
+    } = localConfig;
 
   return (
-    <section className="py-8 md:py-12 px-4">
+        <div className="py-12" style={{ backgroundColor }}>
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       {readOnly ? (
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-8 md:mb-12" style={{ color: titleColor }}>
-          {sectionTitle}
-        </h2>
-      ) : (
-        <EditableField 
-          value={sectionTitle} 
-          onChange={(e) => onInlineChange('sectionTitle', e.target.value)} 
-          placeholder="Section Title" 
-          className="text-3xl md:text-4xl font-bold text-center mb-8 md:mb-12" 
-          style={{ color: titleColor }}
-        />
-      )}
-      
-      <div className="space-y-8 md:space-y-12 max-w-4xl mx-auto">
-        {(items || []).map((item, index) => {
-          const imageUrl = getEffectiveDisplayUrl(item.image, getDisplayUrl, defaultImage);
-          return (
-            <motion.div 
+                    title && <h2 className="text-3xl font-extrabold text-center mb-12" style={{ color: titleColor }}>{title}</h2>
+                ) : (
+                    title && <textarea
+                        ref={sectionTitleRef}
+                        value={title}
+                        onChange={(e) => handleInputChange('title', e.target.value)}
+                        onBlur={handleBlur}
+                        className="text-3xl font-extrabold text-center mb-12 bg-transparent focus:outline-none focus:ring-1 focus:ring-gray-400 rounded p-1 w-full resize-none"
+                        rows={1} placeholder="Section Title" style={{ color: titleColor }}
+                    />
+                )}
+
+                <div className="relative">
+                    {(items || []).length > 1 && (
+                        <div className="absolute left-6 top-0 bottom-0 w-0.5" style={{ backgroundColor: lineColor, zIndex: 0, marginLeft:'-1px' }}></div>
+                    )}
+                    {(items || []).map((item, index) => (
+                        <div 
               key={item.id || index}
-              className={`flex flex-col md:flex-row items-center gap-6 md:gap-8 p-4 bg-white rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300 ${index % 2 !== 0 && localConfig.layoutAlternating ? 'md:flex-row-reverse' : ''}`}
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-            >
-              {imageUrl && (
-                <div className={`w-full md:w-1/3 flex-shrink-0 overflow-hidden ${getImageClasses(imageStyle)}`}>
-                  <img 
-                    src={imageUrl} 
-                    alt={item.title || "Item image"} 
-                    className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                            className={`flex items-start mb-10 last:mb-0 relative pl-16`}
+                        >
+                            <div className="absolute left-0 top-0 flex items-center justify-center w-12 h-12 rounded-full text-xl font-bold z-10" style={{ backgroundColor: itemNumberColor, color: 'white' }}>
+                                {readOnly ? (
+                                    <span>{item.number}</span>
+                                ) : (
+                                    <input type="text" value={item.number || ''} onChange={(e) => handleInputChange(null, e.target.value, index, 'number')} onBlur={handleBlur} placeholder="#" className="w-8 text-center bg-transparent focus:outline-none text-white placeholder-gray-200" />
+                                )}
+                            </div>
+
+                            <div className="flex-grow">
+                                <div className="flex flex-col md:flex-row md:items-center">
+                                    {item.image && (
+                                        <div className="md:w-1/3 md:pr-6 mb-4 md:mb-0 flex-shrink-0">
+                                            <img 
+                                                src={getDisplayUrl ? getDisplayUrl(item.image) : item.image} 
+                                                alt={item.title || 'Step image'} 
+                                                className="w-full h-auto rounded-lg shadow-md object-cover aspect-video"
+                                                style={{ border: !readOnly ? `2px dashed ${imageBorderColor}` : 'none'}}
                   />
                 </div>
               )}
-              <div className="flex-grow text-center md:text-left">
+                                    <div className={item.image ? 'md:w-2/3' : 'w-full'}>
                 {readOnly ? (
-                  <h3 className="text-xl md:text-2xl font-semibold mb-2" style={{ color: titleColor }}>{item.title}</h3>
+                                            <h3 className="text-xl font-semibold" style={{ color: itemTitleColor }}>{item.title}</h3>
                 ) : (
-                  <EditableField value={item.title} onChange={(e) => onInlineChange('items', e.target.value, index, 'title')} placeholder="Item Title" className="text-xl md:text-2xl font-semibold mb-2" style={{ color: titleColor }} />
+                                            <input type="text" value={item.title || ''} onChange={(e) => handleInputChange(null, e.target.value, index, 'title')} onBlur={handleBlur} placeholder="Item Title" className="text-xl font-semibold bg-transparent focus:outline-none focus:ring-1 focus:ring-gray-300 rounded p-1 w-full" style={{ color: itemTitleColor }}/>
                 )}
                 {readOnly ? (
-                  <p className="text-sm md:text-base leading-relaxed mb-3" style={{ color: descriptionColor }}>{item.description}</p>
-                ) : (
-                  <EditableField value={item.description} onChange={(e) => onInlineChange('items', e.target.value, index, 'description')} placeholder="Item description" className="text-sm md:text-base leading-relaxed mb-3" style={{ color: descriptionColor }} type="textarea" rows={3}/>
-                )}
-                
-                {(item.benefits && item.benefits.length > 0) || !readOnly ? (
-                  <div className="mt-3">
-                    <ul className="space-y-2">
-                      {(item.benefits || []).map((benefit, benefitIdx) => (
-                        <li key={benefitIdx} className="flex items-center">
-                          <Check size={18} className="mr-2 flex-shrink-0" style={{color: benefitIconColor || '#10B981'}} />
-                          {readOnly ? (
-                            <span className="text-sm" style={{color: benefitTextColor}}>{benefit}</span>
-                          ) : (
-                            <EditableField value={benefit} onChange={(e) => onInlineChange('items', e.target.value, index, 'benefits', benefitIdx)} placeholder="Benefit description" className="text-sm flex-grow" style={{color: benefitTextColor}}/>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
+                                            <p className="mt-1 text-sm" style={{ color: itemDescriptionColor }}>{item.description}</p>
+                                        ) : (
+                                            <textarea ref={getItemRef(index, 'description')} value={item.description || ''} onChange={(e) => handleInputChange(null, e.target.value, index, 'description')} onBlur={handleBlur} placeholder="Item Description" rows={2} className="mt-1 text-sm bg-transparent focus:outline-none focus:ring-1 focus:ring-gray-300 rounded p-1 w-full resize-none" style={{ color: itemDescriptionColor }}/>
+                                        )}
                   </div>
-                ) : null}
               </div>
-            </motion.div>
-          );
-        })}
       </div>
-    </section>
-  );
-}
-ListImageVerticalPreview.propTypes = {
-  localConfig: PropTypes.object.isRequired, readOnly: PropTypes.bool.isRequired, onInlineChange: PropTypes.func.isRequired, getDisplayUrl: PropTypes.func
-};
-
-// Panel Component
-function ListImageVerticalPanel({ localConfig, onPanelChange, onAddItem, onRemoveItem, onUpdateItemImage, onAddBenefit, onRemoveBenefit }) {
-  const { items, defaultImage, titleColor, descriptionColor, imageStyle, layoutAlternating, benefitTextColor, benefitIconColor, itemBackgroundColor } = localConfig;
-
-  const handleColorChange = (field, value) => onPanelChange({ ...localConfig, [field]: value });
-  const handleStyleChange = (field, value) => onPanelChange({ ...localConfig, [field]: value });
-
-  return (
-    <div className="p-4 bg-gray-800 text-white rounded-lg space-y-4">
-      <h3 className="text-lg font-semibold border-b border-gray-700 pb-2">List Settings</h3>
-      <div><label className="block text-sm mb-1">Default Fallback Image URL:</label><input type="text" value={defaultImage || ''} onChange={(e) => handleStyleChange('defaultImage', e.target.value)} className="panel-text-input" /></div>
-      <div><label className="block text-sm mb-1">Image Style:</label><select value={imageStyle || 'rounded'} onChange={(e) => handleStyleChange('imageStyle', e.target.value)} className="panel-select"><option value="rounded">Rounded</option><option value="circle">Circle</option><option value="none">None</option></select></div>
-      <div><label className="flex items-center text-sm"><input type="checkbox" checked={layoutAlternating || false} onChange={(e) => handleStyleChange('layoutAlternating', e.target.checked)} className="mr-2" /> Alternate Layout (Image Left/Right)</label></div>
-      
-      <h4 className="text-md font-semibold border-t border-gray-700 pt-3">Color Settings</h4>
-      <div className="grid grid-cols-2 gap-4">
-        <div><label className="block text-xs mb-1">Section Title:</label><input type="color" value={titleColor || '#1A202C'} onChange={(e) => handleColorChange('titleColor', e.target.value)} className="panel-color-input" /></div>
-        <div><label className="block text-xs mb-1">Description Text:</label><input type="color" value={descriptionColor || '#4A5568'} onChange={(e) => handleColorChange('descriptionColor', e.target.value)} className="panel-color-input" /></div>
-        <div><label className="block text-xs mb-1">Benefit Text:</label><input type="color" value={benefitTextColor || '#374151'} onChange={(e) => handleColorChange('benefitTextColor', e.target.value)} className="panel-color-input" /></div>
-        <div><label className="block text-xs mb-1">Benefit Icon:</label><input type="color" value={benefitIconColor || '#10B981'} onChange={(e) => handleColorChange('benefitIconColor', e.target.value)} className="panel-color-input" /></div>
-         <div><label className="block text-xs mb-1">Item BG (unused currently):</label><input type="color" value={itemBackgroundColor || '#FFFFFF'} onChange={(e) => handleColorChange('itemBackgroundColor', e.target.value)} className="panel-color-input" /></div>
       </div>
-
-      <h4 className="text-md font-semibold border-t border-gray-700 pt-3">Manage Items</h4>
-      {(items || []).map((item, index) => (
-        <div key={item.id || index} className="p-3 bg-gray-700 rounded-md space-y-2">
-          <div className="flex justify-between items-center"><span className="text-sm font-medium">Item: {item.title || `(Item ${index + 1})`}</span><button onClick={() => onRemoveItem(index)} className="panel-button-sm-danger">Remove Item</button></div>
-          <div><label className="block text-xs mb-0.5">Image for "{item.title || 'Item'}":</label><input type="file" accept="image/*" onChange={(e) => e.target.files && onUpdateItemImage(index, e.target.files[0])} className="panel-file-input" /></div>
-          <div><label className="block text-xs mb-0.5">Current Image URL (or paste new):</label><input type="text" value={typeof item.image ==='string' ? item.image : (item.image?.url || '')} onChange={(e)=> onUpdateItemImage(index, e.target.value)} className="panel-text-input-xs"/></div>
-          {item.image && <img src={typeof item.image === 'string' ? item.image : item.image.url} alt="Preview" className="panel-img-preview-xs" onError={(e)=>e.target.style.display='none'}/>}
-          
-          <div className="border-t border-gray-600 pt-2 mt-2"><div className="flex justify-between items-center"><label className="text-xs font-medium">Benefits:</label><button onClick={() => onAddBenefit(index)} className="panel-button-xs-action">+ Benefit</button></div>
-            {(item.benefits || []).map((_, benefitIdx) => (
-              <div key={benefitIdx} className="flex items-center mt-1"><span className="text-xs text-gray-300 w-full truncate">{item.benefits[benefitIdx] || '(Empty benefit)'}</span><button onClick={() => onRemoveBenefit(index, benefitIdx)} className="panel-button-xs-danger ml-2">✕</button></div>
             ))}
           </div>
         </div>
-      ))}
-      <button onClick={onAddItem} className="panel-button-action w-full">+ Add Item</button>
     </div>
   );
-}
-ListImageVerticalPanel.propTypes = {
- localConfig: PropTypes.object.isRequired, onPanelChange: PropTypes.func.isRequired, onAddItem: PropTypes.func.isRequired, onRemoveItem: PropTypes.func.isRequired, onUpdateItemImage: PropTypes.func.isRequired, onAddBenefit: PropTypes.func.isRequired, onRemoveBenefit: PropTypes.func.isRequired
 };
 
-// Main Block Component
-export default function ListImageVerticalBlock({ config = {}, readOnly = true, onConfigChange, getDisplayUrl: getDisplayUrlProp }) {
-  const [localConfig, setLocalConfig] = useState(() => {
-    const defaultConfig = {
-      sectionTitle: "Our Process",
-      items: [
-        { id: `item_${Date.now()}_1`, title: "Step 1: Consultation", image: initializeImageState(null, "/assets/images/placeholder_rect_1.jpg"), description: "Detailed consultation to understand your precise needs and goals.", benefits: ["Understand Requirements", "Site Assessment"] },
-        { id: `item_${Date.now()}_2`, title: "Step 2: Design & Planning", image: initializeImageState(null, "/assets/images/placeholder_rect_2.jpg"), description: "Our expert team crafts a tailored solution and meticulous execution plan.", benefits: ["Custom Solution Design", "Material Selection"] },
-        { id: `item_${Date.now()}_3`, title: "Step 3: Execution & Quality Check", image: initializeImageState(null, "/assets/images/placeholder_rect_3.jpg"), description: "Skilled professionals carry out the work with rigorous quality assurance.", benefits: ["Professional Installation", "Final Inspection"] },
-      ],
-      defaultImage: "/assets/images/placeholder-icon.png",
-      titleColor: "#1A202C",
-      descriptionColor: "#4A5568",
-      benefitTextColor: "#374151",
-      benefitIconColor: "#10B981",
-      imageStyle: "rounded",
-      layoutAlternating: false,
-      itemBackgroundColor: '#FFFFFF', // Added for panel, though not directly used in preview render style yet
+ListImageVerticalBlock.propTypes = {
+    config: PropTypes.shape({
+        title: PropTypes.string,
+        items: PropTypes.arrayOf(PropTypes.shape({
+            id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+            number: PropTypes.string,
+            title: PropTypes.string,
+            description: PropTypes.string,
+            image: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
+        })),
+        enableAnimation: PropTypes.bool,
+        backgroundColor: PropTypes.string,
+        titleColor: PropTypes.string,
+        itemNumberColor: PropTypes.string,
+        itemTitleColor: PropTypes.string,
+        itemDescriptionColor: PropTypes.string,
+        lineColor: PropTypes.string,
+        imageBorderColor: PropTypes.string,
+    }),
+    readOnly: PropTypes.bool,
+    onConfigChange: PropTypes.func.isRequired,
+    getDisplayUrl: PropTypes.func,
+    onFileChange: PropTypes.func,
+};
+
+ListImageVerticalBlock.EditorPanel = function ListImageVerticalBlockEditorPanel({ currentConfig, onPanelConfigChange, onPanelFileChange, getDisplayUrl: getDisplayUrlFromProp }) {
+    const [formData, setFormData] = useState(currentConfig || {});
+
+    useEffect(() => { setFormData(currentConfig || {}); }, [currentConfig]);
+
+    const handleChange = (field, value) => {
+        const newFormData = { ...formData, [field]: value };
+        setFormData(newFormData);
+        onPanelConfigChange(newFormData);
     };
-    const initialData = { ...defaultConfig, ...config };
-    return {
-      ...initialData,
-      items: (initialData.items || []).map((item, idx) => ({
-        ...defaultConfig.items[0], 
-        ...item,
-        id: item.id || `item_init_${idx}_${Date.now()}`,
-        image: initializeImageState(item.image, defaultConfig.items[idx % defaultConfig.items.length]?.image?.originalUrl || "/assets/images/placeholder_general.jpg"),
-        benefits: item.benefits || [],
-      }))
+
+    const handleItemChange = (itemIndex, field, value) => {
+        const updatedItems = (formData.items || []).map((item, i) => i === itemIndex ? { ...item, [field]: value } : item);
+        handleChange('items', updatedItems);
     };
-  });
 
-  const prevReadOnlyRef = useRef(readOnly);
+    const handleAddItem = () => {
+        const newItem = { id: `vert_${Date.now()}`, number: ((formData.items || []).length + 1).toString(), title: 'New Step', description: '', image: '' };
+        handleChange('items', [...(formData.items || []), newItem]);
+    };
 
-  useEffect(() => {
-    if (config) {
-      setLocalConfig(prevLocal => {
-        const newItems = (config.items || []).map((propItem, idx) => {
-          const localItem = prevLocal.items.find(li => li.id === propItem.id) || prevLocal.items[idx] || {};
-          const newImageState = initializeImageState(propItem.image, localItem.image?.originalUrl);
-          if (localItem.image?.file && localItem.image.url?.startsWith('blob:') && localItem.image.url !== newImageState.url) {
-            URL.revokeObjectURL(localItem.image.url);
-          }
-          return {
-            ...localItem, ...propItem,
-            image: newImageState,
-            title: !readOnly && localItem.title !== (propItem.title || '') ? localItem.title : (propItem.title || localItem.title || ''),
-            description: !readOnly && localItem.description !== (propItem.description || '') ? localItem.description : (propItem.description || localItem.description || ''),
-            benefits: !readOnly && JSON.stringify(localItem.benefits) !== JSON.stringify(propItem.benefits || []) ? localItem.benefits : (propItem.benefits || localItem.benefits || []),
-          };
-        });
-        return { ...prevLocal, ...config, items: newItems };
-      });
-    }
-  }, [config, readOnly]);
-
-  useEffect(() => {
-    if (prevReadOnlyRef.current === false && readOnly === true && onConfigChange) {
-      const dataToSave = { ...localConfig, items: localConfig.items.map(item => ({ ...item, image: item.image?.file ? { ...item.image } : { url: item.image?.originalUrl || item.image?.url } })) };
-      onConfigChange(dataToSave);
-    }
-    prevReadOnlyRef.current = readOnly;
-  }, [readOnly, localConfig, onConfigChange]);
-
-  useEffect(() => {
-    localConfig.items.forEach(item => { if (item.image?.file && item.image.url?.startsWith('blob:')) URL.revokeObjectURL(item.image.url); });
-    return () => { localConfig.items.forEach(item => { if (item.image?.file && item.image.url?.startsWith('blob:')) URL.revokeObjectURL(item.image.url); }); };
-  }, []); // Run once on mount for initial cleanup, and on unmount. Re-run if localConfig.items identity changes significantly.
-
-  const handleInlineChange = (field, value, itemIndex = null, itemSubField = null, benefitIndex = null) => {
-    if (!readOnly) {
-      setLocalConfig(prev => {
-        if (field === 'items' && itemIndex !== null && itemSubField) {
-          const newItems = prev.items.map((item, idx) => {
-            if (idx === itemIndex) {
-              if (itemSubField === 'benefits' && benefitIndex !== null) {
-                const newBenefits = (item.benefits || []).map((ben, bIdx) => bIdx === benefitIndex ? value : ben);
-                return { ...item, benefits: newBenefits };
-              }
-              return { ...item, [itemSubField]: value };
-            }
-            return item;
-          });
-          return { ...prev, items: newItems };
-        } else {
-          return { ...prev, [field]: value };
+    const handleRemoveItem = (itemIndex) => {
+        const itemToRemove = formData.items?.[itemIndex];
+        if (itemToRemove?.image && typeof itemToRemove.image === 'object' && itemToRemove.image.url?.startsWith('blob:')) {
+            URL.revokeObjectURL(itemToRemove.image.url);
         }
-      });
-    }
-  };
+        handleChange('items', (formData.items || []).filter((_, i) => i !== itemIndex));
+    };
 
-  const handlePanelChange = (panelData) => {
-    if (!readOnly) setLocalConfig(prev => ({ ...prev, ...panelData }));
-  };
-
-  const handleUpdateItemImage = (itemIndex, fileOrUrl) => {
-    if (!readOnly) {
-      setLocalConfig(prev => {
-        const newItems = [...prev.items];
-        const oldItemImage = newItems[itemIndex].image;
-        if (oldItemImage?.file && oldItemImage.url?.startsWith('blob:')) URL.revokeObjectURL(oldItemImage.url);
-        
-        if (fileOrUrl instanceof File) {
-          newItems[itemIndex].image = { file: fileOrUrl, url: URL.createObjectURL(fileOrUrl), name: fileOrUrl.name, originalUrl: oldItemImage?.originalUrl };
-        } else if (typeof fileOrUrl === 'string') {
-          newItems[itemIndex].image = initializeImageState(fileOrUrl, oldItemImage?.originalUrl);
+    const handleItemImageChange = (itemIndex, file) => {
+        if (file && onPanelFileChange) {
+            onPanelFileChange({ blockItemIndex: itemIndex, field: 'image' }, file);
         }
-        return { ...prev, items: newItems };
-      });
-    }
-  };
-
-  const handleAddItem = () => {
-    if (!readOnly) setLocalConfig(prev => ({ ...prev, items: [...(prev.items || []), { id: `item_new_${Date.now()}`, title: "New Item", image: initializeImageState(null, prev.defaultImage), description: "New item description.", benefits: ["New Benefit"] }] }));
-  };
-  const handleRemoveItem = (indexToRemove) => {
-    if (!readOnly) setLocalConfig(prev => ({ ...prev, items: prev.items.filter((_, index) => index !== indexToRemove) }));
-  };
-  const handleAddBenefit = (itemIndex) => {
-    if (!readOnly) setLocalConfig(prev => ({ ...prev, items: prev.items.map((item, idx) => idx === itemIndex ? { ...item, benefits: [...(item.benefits || []), "Another Benefit"] } : item) }));
-  };
-  const handleRemoveBenefit = (itemIndex, benefitIndexToRemove) => {
-    if (!readOnly) setLocalConfig(prev => ({ ...prev, items: prev.items.map((item, idx) => idx === itemIndex ? { ...item, benefits: (item.benefits || []).filter((_, bIdx) => bIdx !== benefitIndexToRemove) } : item) }));
   };
 
   return (
-    <>
-      <ListImageVerticalPreview localConfig={localConfig} readOnly={readOnly} onInlineChange={handleInlineChange} getDisplayUrl={getDisplayUrlProp} />
-      {!readOnly && (
-        <div className="bg-gray-900 p-0 rounded-b-lg shadow-xl mt-0">
-          <ListImageVerticalPanel 
-            localConfig={localConfig} 
-            onPanelChange={handlePanelChange} 
-            onAddItem={handleAddItem}
-            onRemoveItem={handleRemoveItem}
-            onUpdateItemImage={handleUpdateItemImage}
-            onAddBenefit={handleAddBenefit}
-            onRemoveBenefit={handleRemoveBenefit}
-          />
-        </div>
-      )}
-    </>
-  );
-}
+        <div className="space-y-4 p-2 bg-gray-50 rounded-md shadow">
+            <div><label className="input-label">Section Title (Panel Edit):</label><input type="text" value={formData.title || ''} onChange={(e) => handleChange('title', e.target.value)} className="input-text-class" /></div>
+            <div className="flex items-center"><input type="checkbox" checked={formData.enableAnimation || false} onChange={(e) => handleChange('enableAnimation', e.target.checked)} className="mr-2" /><label className="input-label">Enable Animation (if applicable)</label></div>
 
-ListImageVerticalBlock.propTypes = {
-  config: PropTypes.shape({
-    sectionTitle: PropTypes.string,
-    items: PropTypes.arrayOf(PropTypes.shape({
-      id: PropTypes.string,
-      title: PropTypes.string,
-      image: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
-      description: PropTypes.string,
-      benefits: PropTypes.arrayOf(PropTypes.string),
-    })),
-    defaultImage: PropTypes.string,
-    titleColor: PropTypes.string,
-    descriptionColor: PropTypes.string,
-    benefitTextColor: PropTypes.string,
-    benefitIconColor: PropTypes.string,
-    imageStyle: PropTypes.oneOf(["rounded", "circle", "none"]),
-    layoutAlternating: PropTypes.bool,
-    itemBackgroundColor: PropTypes.string,
-  }), // .isRequired removed as defaults are provided
-  readOnly: PropTypes.bool,
-  onConfigChange: PropTypes.func,
-  getDisplayUrl: PropTypes.func, // Renamed to getDisplayUrlProp in usage
+            <h4 className="h4-style">Color Scheme</h4>
+            <div className="grid grid-cols-2 gap-2">
+                <div><label className="input-label-sm">Overall BG:</label><input type="color" value={formData.backgroundColor || '#FFFFFF'} onChange={(e) => handleChange('backgroundColor', e.target.value)} className="input-color-sm" /></div>
+                <div><label className="input-label-sm">Section Title:</label><input type="color" value={formData.titleColor || '#1A202C'} onChange={(e) => handleChange('titleColor', e.target.value)} className="input-color-sm" /></div>
+                <div><label className="input-label-sm">Item Number BG/Text:</label><input type="color" value={formData.itemNumberColor || '#3B82F6'} onChange={(e) => handleChange('itemNumberColor', e.target.value)} className="input-color-sm" /></div>
+                <div><label className="input-label-sm">Item Title:</label><input type="color" value={formData.itemTitleColor || '#2D3748'} onChange={(e) => handleChange('itemTitleColor', e.target.value)} className="input-color-sm" /></div>
+                <div><label className="input-label-sm">Item Desc:</label><input type="color" value={formData.itemDescriptionColor || '#4A5568'} onChange={(e) => handleChange('itemDescriptionColor', e.target.value)} className="input-color-sm" /></div>
+                <div><label className="input-label-sm">Connecting Line:</label><input type="color" value={formData.lineColor || '#D1D5DB'} onChange={(e) => handleChange('lineColor', e.target.value)} className="input-color-sm" /></div>
+                <div><label className="input-label-sm">Image Border (Edit):</label><input type="color" value={formData.imageBorderColor || '#E2E8F0'} onChange={(e) => handleChange('imageBorderColor', e.target.value)} className="input-color-sm" /></div>
+            </div>
+
+            <h4 className="h4-style">Manage Vertical List Items</h4>
+            {(formData.items || []).map((item, itemIndex) => (
+                <div key={item.id || itemIndex} className="panel-item-container">
+                    <div className="flex justify-between items-center"><h5 className="h5-style">Item {itemIndex + 1} (Number: {item.number})</h5><button onClick={() => handleRemoveItem(itemIndex)} className="btn-remove-xs">Remove</button></div>
+                    <div><label className="input-label-xs">Number Text:</label><input type="text" value={item.number || ''} onChange={(e) => handleItemChange(itemIndex, 'number', e.target.value)} className="input-text-xs" /></div>
+                    <div><label className="input-label-xs">Title:</label><input type="text" value={item.title || ''} onChange={(e) => handleItemChange(itemIndex, 'title', e.target.value)} className="input-text-xs" /></div>
+                    <div><label className="input-label-xs">Description:</label><textarea value={item.description || ''} onChange={(e) => handleItemChange(itemIndex, 'description', e.target.value)} rows={2} className="input-textarea-xs" /></div>
+                    <div>
+                        <label className="input-label-xs">Image:</label>
+                        <input type="file" accept="image/*" onChange={(e) => handleItemImageChange(itemIndex, e.target.files[0])} className="input-file-xs" />
+                        {(getDisplayUrlFromProp && getDisplayUrlFromProp(item.image)) && <img src={getDisplayUrlFromProp(item.image)} alt="Preview" className="img-preview-xs" />}
+                        <input type="text" placeholder="Or paste URL" value={typeof item.image === 'string' ? item.image : (item.image?.originalUrl || item.image?.url || '')} onChange={(e) => handleItemChange(itemIndex, 'image', e.target.value)} className="input-text-xs mt-1" />
+                    </div>
+                </div>
+            ))}
+            <button onClick={handleAddItem} className="btn-add-item">+ Add Item</button>
+            <style jsx>{`
+                .input-label { display: block; font-size: 0.875rem; font-weight: 500; color: #4A5568; margin-bottom: 0.25rem; }
+                .input-label-sm { display: block; font-size: 0.8rem; font-weight: 500; color: #4A5568; margin-bottom: 0.1rem; }
+                .input-label-xs { display: block; font-size: 0.75rem; font-weight: 500; color: #555; margin-bottom: 0.1rem; }
+                .input-text-class { display: block; width: 100%; padding: 0.5rem 0.75rem; background-color: white; border: 1px solid #D1D5DB; border-radius: 0.375rem; }
+                .input-text-xs { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; }
+                .input-textarea-xs { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; resize: vertical; min-height: 40px; }
+                .input-color-sm { margin-top: 0.1rem; height: 1.75rem; width: 100%; padding: 0.1rem; border: 1px solid #D1D5DB; border-radius: 0.25rem; }
+                .input-file-xs { display:block; width:100%; font-size: 0.8rem; margin-bottom: 0.25rem; }
+                .img-preview-xs { height: 3rem; width: 3rem; object-fit: cover; border-radius: 0.25rem; border: 1px solid #E5E7EB; margin-top: 0.25rem; }
+                .h4-style { font-size: 1.1rem; font-weight: 600; color: #374151; padding-top: 0.75rem; border-top: 1px solid #E5E7EB; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+                .h5-style { font-size: 0.95rem; font-weight: 600; color: #4A5568; }
+                .panel-item-container { padding: 0.75rem; border: 1px solid #E5E7EB; border-radius: 0.375rem; background-color: white; margin-bottom: 0.75rem; }
+                .btn-remove-xs { font-size: 0.75rem; color: #EF4444; font-weight: 500; }
+                .btn-add-item { margin-top: 1rem; padding: 0.5rem 1rem; font-size: 0.9rem; background-color: #10B981; color: white; border-radius: 0.375rem; font-weight: 500; }
+            `}</style>
+        </div>
+    );
 };
+
+ListImageVerticalBlock.EditorPanel.propTypes = {
+    currentConfig: PropTypes.object.isRequired,
+    onPanelConfigChange: PropTypes.func.isRequired,
+    onPanelFileChange: PropTypes.func.isRequired,
+    getDisplayUrl: PropTypes.func.isRequired,
+};
+
+export default ListImageVerticalBlock;

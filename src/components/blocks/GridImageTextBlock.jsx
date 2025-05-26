@@ -1,291 +1,283 @@
-// src/components/blocks/GridImageTextBlock.jsx
-import React, { useState, useEffect, useRef } from "react";
-import PropTypes from "prop-types";
+import React, { useState, useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
 
-/**
- * GridImageTextBlock
- *
- * config = {
- *   columns: number, // number of columns (1-6)
- *   items: [
- *     { title, image, alt, description }
- *   ]
- * }
- */
+const GridImageTextBlock = ({ config, readOnly, onConfigChange, getDisplayUrl, onFileChange }) => {
+    const [localConfig, setLocalConfig] = useState(() => {
+        const defaultConfig = {
+            title: 'Our Core Features',
+            columns: 3, // Default to 3 columns
+            items: [
+                { id: 1, title: 'Feature 1', description: 'Description for feature 1', image: '', alt: 'Feature 1' },
+            ],
+            backgroundColor: '#FFFFFF',
+            titleColor: '#1A202C',
+            itemTitleColor: '#2D3748',
+            itemDescriptionColor: '#4A5568',
+            itemBackgroundColor: 'transparent', // Or specific item card color like '#F9FAFB'
+            imageBorderColor: '#E2E8F0',
+        };
+        return { ...defaultConfig, ...(config || {}) };
+    });
 
-// Shared image state helpers
-const initializeImageState = (imageValue, defaultPath = '') => {
-  let fileObject = null;
-  let urlToDisplay = defaultPath;
-  let nameToStore = defaultPath.split('/').pop();
-  let originalUrlToStore = defaultPath;
-  if (imageValue && typeof imageValue === 'object') {
-    urlToDisplay = imageValue.url || defaultPath;
-    nameToStore = imageValue.name || urlToDisplay.split('/').pop();
-    fileObject = imageValue.file || null;
-    originalUrlToStore = imageValue.originalUrl || (typeof imageValue.url === 'string' && !imageValue.url.startsWith('blob:') ? imageValue.url : defaultPath);
-  } else if (typeof imageValue === 'string') {
-    urlToDisplay = imageValue;
-    nameToStore = imageValue.split('/').pop();
-    originalUrlToStore = imageValue;
-  }
-  return { file: fileObject, url: urlToDisplay, name: nameToStore, originalUrl: originalUrlToStore };
-};
+    const sectionTitleRef = useRef(null);
+    const itemRefs = useRef({}); // For item title and description
 
-const getEffectiveDisplayUrl = (imageState, getDisplayUrlProp, defaultPath = '') => {
-  if (getDisplayUrlProp && imageState) return getDisplayUrlProp(imageState);
-  if (imageState && typeof imageState === 'object' && imageState.url) return imageState.url;
-  if (typeof imageState === 'string' && imageState) return imageState.startsWith('/') || imageState.startsWith('blob:') || imageState.startsWith('data:') ? imageState : (imageState.startsWith('.') ? imageState : `/${imageState.replace(/^\/*/, "")}`);
-  return defaultPath;
-};
+    useEffect(() => {
+        const defaultConfig = {
+            title: 'Our Core Features', columns: 3, items: [], backgroundColor: '#FFFFFF',
+            titleColor: '#1A202C', itemTitleColor: '#2D3748', itemDescriptionColor: '#4A5568',
+            itemBackgroundColor: 'transparent', imageBorderColor: '#E2E8F0',
+        };
+        const newEffectiveConfig = { ...defaultConfig, ...(config || {}) };
+        if (readOnly || JSON.stringify(newEffectiveConfig) !== JSON.stringify(localConfig)) {
+            setLocalConfig(newEffectiveConfig);
+        }
+    }, [config, readOnly]);
 
-// Helper for inline editable fields
-const EditableField = ({ value, onChange, placeholder, type = 'text', className, style, rows }) => (
-  type === 'textarea' ?
-    <textarea value={value || ''} onChange={onChange} placeholder={placeholder} className={`bg-transparent border-b-2 border-dashed focus:border-gray-400 outline-none w-full ${className}`} style={style} rows={rows} /> :
-    <input type={type} value={value || ''} onChange={onChange} placeholder={placeholder} className={`bg-transparent border-b-2 border-dashed focus:border-gray-400 outline-none w-full ${className}`} style={style} />
-);
+    useEffect(() => {
+        if (!readOnly) {
+            if (sectionTitleRef.current) {
+                sectionTitleRef.current.style.height = 'auto';
+                sectionTitleRef.current.style.height = `${sectionTitleRef.current.scrollHeight}px`;
+            }
+            (localConfig.items || []).forEach((_, index) => {
+                if (itemRefs.current[index]) {
+                    Object.values(itemRefs.current[index]).forEach(ref => {
+                        if (ref && ref.current) {
+                            ref.current.style.height = 'auto';
+                            ref.current.style.height = `${ref.current.scrollHeight}px`;
+                        }
+                    });
+                }
+            });
+        }
+    }, [localConfig.title, localConfig.items, readOnly]);
 
-// Preview Component
-function GridImageTextPreview({ localConfig, readOnly, onInlineChange, getDisplayUrl }) {
-  const { sectionTitle, columns, items, titleColor, descriptionColor, imageBorderRadius, itemBackgroundColor } = localConfig;
-  const gridColsClass = `grid-cols-1 sm:grid-cols-2 md:grid-cols-${Math.min(Math.max(columns || 1, 1), 6)}`; // Clamp columns
+    const handleInputChange = (field, value, itemIndex = null, subField = null) => {
+        setLocalConfig(prev => {
+            let updatedConfig;
+            if (itemIndex !== null && subField) {
+                const updatedItems = prev.items.map((item, i) => 
+                    i === itemIndex ? { ...item, [subField]: value } : item
+                );
+                updatedConfig = { ...prev, items: updatedItems };
+            } else {
+                updatedConfig = { ...prev, [field]: value };
+            }
+            if (!readOnly) onConfigChange(updatedConfig);
+            return updatedConfig;
+        });
+    };
+
+    const handleBlur = () => {
+        if (!readOnly) onConfigChange(localConfig);
+    };
+
+    const getItemRef = (itemIndex, field) => (el) => {
+        if (!itemRefs.current[itemIndex]) itemRefs.current[itemIndex] = {};
+        itemRefs.current[itemIndex][field] = { current: el }; 
+    };
+
+    const { 
+        title, columns, items, backgroundColor, titleColor, 
+        itemTitleColor, itemDescriptionColor, itemBackgroundColor, imageBorderColor
+    } = localConfig;
+
+    const gridColsClass = {
+        1: 'md:grid-cols-1',
+        2: 'md:grid-cols-2',
+        3: 'md:grid-cols-3',
+        4: 'md:grid-cols-4',
+    }[columns] || 'md:grid-cols-3'; // Default to 3 if columns value is invalid
 
   return (
-    <div className="py-8 md:py-12 bg-gray-100">
-      <div className="container mx-auto px-4">
+        <div className="py-12" style={{ backgroundColor }}>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {readOnly ? (
-          <h2 className="text-2xl md:text-3xl font-semibold text-center mb-6 md:mb-8" style={{ color: titleColor }}>{sectionTitle}</h2>
-        ) : (
-          <EditableField
-            value={sectionTitle}
-            onChange={(e) => onInlineChange("sectionTitle", e.target.value)}
-            placeholder="Section Title"
-            className="text-2xl md:text-3xl font-semibold text-center mb-6 md:mb-8 block mx-auto"
-            style={{ color: titleColor }}
-          />
-        )}
-        <div className={`grid ${gridColsClass} gap-6 md:gap-8`}>
-          {(items || []).map((item, index) => {
-            const imageUrl = getDisplayUrl(item.image, null, '/assets/images/placeholder_sq_1.jpg'); // Use own getDisplayUrl for preview
-            return (
-              <div key={item.id || index}
-                className="text-center p-4 md:p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300"
-                style={{ backgroundColor: itemBackgroundColor }}>
-                {imageUrl ? (
-                  <img
-                    src={imageUrl}
-                    alt={item.alt || item.title}
-                    className="w-full h-48 object-cover mb-4 mx-auto"
-                    style={{ borderRadius: imageBorderRadius }}
-                  />
+                    title && <h2 className="text-3xl font-extrabold text-center mb-10" style={{ color: titleColor }}>{title}</h2>
                 ) : (
-                  !readOnly && <div className="w-full h-48 mb-4 mx-auto flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg text-gray-400" style={{ borderRadius: imageBorderRadius }}>Set Image in Panel</div>
+                    title && <textarea
+                        ref={sectionTitleRef}
+                        value={title}
+                        onChange={(e) => handleInputChange('title', e.target.value)}
+                        onBlur={handleBlur}
+                        className="text-3xl font-extrabold text-center mb-10 bg-transparent focus:outline-none focus:ring-1 focus:ring-gray-400 rounded p-1 w-full resize-none"
+                        rows={1} placeholder="Section Title" style={{ color: titleColor }}
+                    />
                 )}
-
+                <div className={`grid grid-cols-1 gap-8 ${gridColsClass}`}>
+                    {(items || []).map((item, index) => (
+                        <div key={item.id || index} className="flex flex-col rounded-lg shadow-lg overflow-hidden" style={{ backgroundColor: itemBackgroundColor }}>
+                            {item.image && (
+                                <div className="flex-shrink-0">
+                                    <img 
+                                        className="h-48 w-full object-cover"
+                                        src={getDisplayUrl ? getDisplayUrl(item.image) : item.image} 
+                                        alt={item.alt || item.title || 'Grid item image'}
+                                        style={{ borderBottom: !readOnly ? `2px dashed ${imageBorderColor}` : '' }}
+                                    />
+                                </div>
+                            )}
+                            <div className="flex-1 p-6 flex flex-col justify-between">
+                                <div className="flex-1">
                 {readOnly ? (
-                  <h3 className="text-xl font-medium mb-1" style={{ color: titleColor }}>{item.title}</h3>
-                ) : (
-                  <EditableField
-                    value={item.title}
-                    onChange={(e) => onInlineChange('items', e.target.value, index, "title")}
+                                        <h3 className="mt-2 text-xl font-semibold" style={{ color: itemTitleColor }}>{item.title}</h3>
+                                    ) : (
+                                        <input
+                                            type="text"
+                                            value={item.title || ''}
+                                            onChange={(e) => handleInputChange(null, e.target.value, index, 'title')}
+                                            onBlur={handleBlur}
                     placeholder="Item Title"
-                    className="text-xl font-medium mb-1 text-center"
-                    style={{ color: titleColor }}
+                                            className="mt-2 text-xl font-semibold bg-transparent focus:outline-none focus:ring-1 focus:ring-gray-300 rounded p-1 w-full"
+                                            style={{ color: itemTitleColor }}
                   />
                 )}
                 {readOnly ? (
-                  <p className="text-sm leading-relaxed" style={{ color: descriptionColor }}>{item.description}</p>
-                ) : (
-                  <EditableField
-                    value={item.description}
-                    onChange={(e) => onInlineChange('items', e.target.value, index, "description")}
+                                        <p className="mt-3 text-base" style={{ color: itemDescriptionColor }}>{item.description}</p>
+                                    ) : (
+                                        <textarea
+                                            ref={getItemRef(index, 'description')}
+                                            value={item.description || ''}
+                                            onChange={(e) => handleInputChange(null, e.target.value, index, 'description')}
+                                            onBlur={handleBlur}
                     placeholder="Item Description"
-                    className="text-sm leading-relaxed text-center min-h-[60px]"
-                    style={{ color: descriptionColor }}
-                    type="textarea"
                     rows={3}
-                  />
-                )}
-                {!readOnly && (
-                  <EditableField
-                    value={item.alt || ""}
-                    placeholder="Image Alt Text"
-                    onChange={(e) => onInlineChange('items', e.target.value, index, "alt")}
-                    className="text-xs mt-2 text-center text-gray-500"
+                                            className="mt-3 text-base bg-transparent focus:outline-none focus:ring-1 focus:ring-gray-300 rounded p-1 w-full resize-none"
+                                            style={{ color: itemDescriptionColor }}
                   />
                 )}
               </div>
-            );
-          })}
+                            </div>
+                        </div>
+                    ))}
         </div>
       </div>
     </div>
   );
-}
-GridImageTextPreview.propTypes = { localConfig: PropTypes.object.isRequired, readOnly: PropTypes.bool.isRequired, onInlineChange: PropTypes.func.isRequired, getDisplayUrl: PropTypes.func.isRequired };
-
-// Panel Component
-function GridImageTextPanel({ localConfig, onPanelChange, onAddItem, onRemoveItem, onUpdateItemImage }) {
-  const { items, columns, titleColor, descriptionColor, imageBorderRadius, itemBackgroundColor } = localConfig;
-
-  const handleSettingChange = (field, value) => onPanelChange({ ...localConfig, [field]: value });
-
-  return (
-    <div className="p-4 bg-gray-800 text-white rounded-lg space-y-4">
-      <h3 className="text-lg font-semibold border-b border-gray-700 pb-2">Grid Settings</h3>
-      <div><label className="block text-sm mb-1">Number of Columns (1-6):</label><input type="number" min="1" max="6" value={columns || 3} onChange={(e) => handleSettingChange('columns', parseInt(e.target.value,10) || 3)} className="panel-text-input" /></div>
-      <div><label className="block text-sm mb-1">Image Border Radius (e.g., 0.5rem):</label><input type="text" value={imageBorderRadius || '0.5rem'} onChange={(e) => handleSettingChange('imageBorderRadius', e.target.value)} className="panel-text-input" /></div>
-      
-      <h4 className="text-md font-semibold border-t border-gray-700 pt-3">Color Settings</h4>
-      <div className="grid grid-cols-2 gap-4">
-        <div><label className="block text-xs mb-1">Section/Item Title:</label><input type="color" value={titleColor || '#1A202C'} onChange={(e) => handleSettingChange('titleColor', e.target.value)} className="panel-color-input" /></div>
-        <div><label className="block text-xs mb-1">Description Text:</label><input type="color" value={descriptionColor || '#4A5568'} onChange={(e) => handleSettingChange('descriptionColor', e.target.value)} className="panel-color-input" /></div>
-        <div><label className="block text-xs mb-1">Item Background:</label><input type="color" value={itemBackgroundColor || '#FFFFFF'} onChange={(e) => handleSettingChange('itemBackgroundColor', e.target.value)} className="panel-color-input" /></div>
-      </div>
-
-      <h4 className="text-md font-semibold border-t border-gray-700 pt-3">Manage Grid Items</h4>
-      {(items || []).map((item, index) => (
-        <div key={item.id || index} className="p-3 bg-gray-700 rounded-md space-y-2">
-          <div className="flex justify-between items-center"><span className="text-sm font-medium">{item.title || `(Item ${index + 1})`}</span><button onClick={() => onRemoveItem(index)} className="panel-button-sm-danger">Remove</button></div>
-          <div><label className="block text-xs mb-0.5">Image for "{item.title || 'Item'}":</label><input type="file" accept="image/*" onChange={(e) => e.target.files && onUpdateItemImage(index, e.target.files[0])} className="panel-file-input" /></div>
-          <div><label className="block text-xs mb-0.5">Or Image URL:</label><input type="text" value={typeof item.image ==='string' ? item.image : (item.image?.url || '')} onChange={(e)=> onUpdateItemImage(index, e.target.value)} className="panel-text-input-xs"/></div>
-          {item.image && <img src={typeof item.image === 'string' ? item.image : getEffectiveDisplayUrl(item.image, null)} alt="Preview" className="panel-img-preview-xs" onError={(e)=>e.target.style.display='none'}/>}
-        </div>
-      ))}
-      <button onClick={onAddItem} className="panel-button-action w-full">+ Add Grid Item</button>
-    </div>
-  );
-}
-GridImageTextPanel.propTypes = { localConfig: PropTypes.object.isRequired, onPanelChange: PropTypes.func.isRequired, onAddItem: PropTypes.func.isRequired, onRemoveItem: PropTypes.func.isRequired, onUpdateItemImage: PropTypes.func.isRequired };
-
-// Main Block Component
-export default function GridImageTextBlock({ config = {}, readOnly = true, onConfigChange, getDisplayUrl: getDisplayUrlProp }) {
-  const [localConfig, setLocalConfig] = useState(() => {
-    const defaultConfig = {
-      sectionTitle: "Our Features", columns: 3,
-      items: [
-        { id: `item_${Date.now()}_1`, title: "Feature One", image: initializeImageState(null, "/assets/images/placeholder_sq_1.jpg"), alt: "Feature 1 Image", description: "Description for feature one." },
-        { id: `item_${Date.now()}_2`, title: "Feature Two", image: initializeImageState(null, "/assets/images/placeholder_sq_2.jpg"), alt: "Feature 2 Image", description: "Description for feature two." },
-        { id: `item_${Date.now()}_3`, title: "Feature Three", image: initializeImageState(null, "/assets/images/placeholder_sq_3.jpg"), alt: "Feature 3 Image", description: "Description for feature three." },
-      ],
-      titleColor: "#1A202C", descriptionColor: "#4A5568", imageBorderRadius: "0.5rem", itemBackgroundColor: "#FFFFFF",
-    };
-    const initialData = { ...defaultConfig, ...config };
-    return {
-      ...initialData,
-      items: (initialData.items || []).map((item, idx) => ({
-        ...defaultConfig.items[0], ...item, id: item.id || `item_init_${idx}_${Date.now()}`,
-        image: initializeImageState(item.image, defaultConfig.items[idx % defaultConfig.items.length]?.image?.originalUrl || "/assets/images/placeholder_sq_1.jpg")
-      }))
-    };
-  });
-
-  const prevReadOnlyRef = useRef(readOnly);
-
-  useEffect(() => {
-    if (config) {
-      setLocalConfig(prevLocal => {
-        const newItems = (config.items || []).map((propItem, idx) => {
-          const localItem = prevLocal.items.find(li => li.id === propItem.id) || prevLocal.items[idx] || {};
-          const newImageState = initializeImageState(propItem.image, localItem.image?.originalUrl);
-          if (localItem.image?.file && localItem.image.url?.startsWith('blob:') && localItem.image.url !== newImageState.url) URL.revokeObjectURL(localItem.image.url);
-          return {
-            ...localItem, ...propItem, image: newImageState,
-            title: !readOnly && localItem.title !== (propItem.title || '') ? localItem.title : (propItem.title || localItem.title || ''),
-            description: !readOnly && localItem.description !== (propItem.description || '') ? localItem.description : (propItem.description || localItem.description || ''),
-            alt: !readOnly && localItem.alt !== (propItem.alt || '') ? localItem.alt : (propItem.alt || localItem.alt || ''),
-          };
-        });
-        return { ...prevLocal, ...config, items: newItems };
-      });
-    }
-  }, [config, readOnly]);
-
-  useEffect(() => {
-    if (prevReadOnlyRef.current === false && readOnly === true && onConfigChange) {
-      const dataToSave = { ...localConfig, items: localConfig.items.map(item => ({ ...item, image: item.image?.file ? { ...item.image } : { url: item.image?.originalUrl || item.image?.url } })) };
-      onConfigChange(dataToSave);
-    }
-    prevReadOnlyRef.current = readOnly;
-  }, [readOnly, localConfig, onConfigChange]);
-
-  useEffect(() => {
-    const cleanup = () => localConfig.items.forEach(item => { if (item.image?.file && item.image.url?.startsWith('blob:')) URL.revokeObjectURL(item.image.url); });
-    cleanup(); // For initial load / prop changes that might remove a blob
-    return cleanup; // For unmount
-  }, [localConfig.items]);
-
-  const handleInlineChange = (field, value, itemIndex = null, itemSubField = null) => {
-    if (!readOnly) {
-      setLocalConfig(prev => {
-        if (field === 'items' && itemIndex !== null && itemSubField) {
-          const newItems = prev.items.map((item, idx) => idx === itemIndex ? { ...item, [itemSubField]: value } : item);
-          return { ...prev, items: newItems };
-        } else {
-          return { ...prev, [field]: value };
-        }
-      });
-    }
-  };
-
-  const handlePanelChange = (panelData) => { if (!readOnly) setLocalConfig(prev => ({ ...prev, ...panelData })); };
-
-  const handleUpdateItemImage = (itemIndex, fileOrUrl) => {
-    if (!readOnly) {
-      setLocalConfig(prev => {
-        const newItems = [...prev.items];
-        const oldItemImage = newItems[itemIndex].image;
-        if (oldItemImage?.file && oldItemImage.url?.startsWith('blob:')) URL.revokeObjectURL(oldItemImage.url);
-        if (fileOrUrl instanceof File) newItems[itemIndex].image = { file: fileOrUrl, url: URL.createObjectURL(fileOrUrl), name: fileOrUrl.name, originalUrl: oldItemImage?.originalUrl };
-        else if (typeof fileOrUrl === 'string') newItems[itemIndex].image = initializeImageState(fileOrUrl, oldItemImage?.originalUrl);
-        return { ...prev, items: newItems };
-      });
-    }
-  };
-
-  const handleAddItem = () => {
-    if (!readOnly) setLocalConfig(prev => ({ ...prev, items: [...(prev.items || []), { id: `item_new_${Date.now()}`, title: "New Item", image: initializeImageState(null, '/assets/images/placeholder_sq_1.jpg'), alt: "New item alt", description: "New item description." }] }));
-  };
-  const handleRemoveItem = (indexToRemove) => {
-    if (!readOnly) setLocalConfig(prev => ({ ...prev, items: prev.items.filter((_, index) => index !== indexToRemove) }));
-  };
-
-  return (
-    <>
-      <GridImageTextPreview localConfig={localConfig} readOnly={readOnly} onInlineChange={handleInlineChange} getDisplayUrl={getDisplayUrlProp || getEffectiveDisplayUrl} />
-      {!readOnly && (
-        <div className="bg-gray-900 p-0 rounded-b-lg shadow-xl mt-0">
-          <GridImageTextPanel 
-            localConfig={localConfig} 
-            onPanelChange={handlePanelChange} 
-            onAddItem={handleAddItem}
-            onRemoveItem={handleRemoveItem}
-            onUpdateItemImage={handleUpdateItemImage}
-          />
-        </div>
-      )}
-    </>
-  );
-}
+};
 
 GridImageTextBlock.propTypes = {
-  config: PropTypes.shape({
-    sectionTitle: PropTypes.string,
-    columns: PropTypes.number,
-    items: PropTypes.arrayOf(PropTypes.shape({
-      id: PropTypes.string,
-      title: PropTypes.string,
-      image: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
-      alt: PropTypes.string,
-      description: PropTypes.string,
-    })),
-    titleColor: PropTypes.string,
-    descriptionColor: PropTypes.string,
-    imageBorderRadius: PropTypes.string,
-    itemBackgroundColor: PropTypes.string,
-  }), // .isRequired removed
-  readOnly: PropTypes.bool,
-  onConfigChange: PropTypes.func,
-  getDisplayUrl: PropTypes.func,
+    config: PropTypes.shape({
+        title: PropTypes.string,
+        columns: PropTypes.oneOf([1, 2, 3, 4]),
+        items: PropTypes.arrayOf(PropTypes.shape({
+            id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+            title: PropTypes.string,
+            description: PropTypes.string,
+            image: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
+            alt: PropTypes.string,
+        })),
+        backgroundColor: PropTypes.string,
+        titleColor: PropTypes.string,
+        itemTitleColor: PropTypes.string,
+        itemDescriptionColor: PropTypes.string,
+        itemBackgroundColor: PropTypes.string,
+        imageBorderColor: PropTypes.string,
+    }),
+    readOnly: PropTypes.bool,
+    onConfigChange: PropTypes.func.isRequired,
+    getDisplayUrl: PropTypes.func,
+    onFileChange: PropTypes.func,
 };
+
+GridImageTextBlock.EditorPanel = function GridImageTextBlockEditorPanel({ currentConfig, onPanelConfigChange, onPanelFileChange, getDisplayUrl: getDisplayUrlFromProp }) {
+    const [formData, setFormData] = useState(currentConfig || {});
+
+    useEffect(() => { setFormData(currentConfig || {}); }, [currentConfig]);
+
+    const handleChange = (field, value) => {
+        const newFormData = { ...formData, [field]: value };
+        setFormData(newFormData);
+        onPanelConfigChange(newFormData);
+    };
+
+    const handleItemChange = (itemIndex, field, value) => {
+        const updatedItems = (formData.items || []).map((item, i) => i === itemIndex ? { ...item, [field]: value } : item);
+        handleChange('items', updatedItems);
+    };
+
+    const handleAddItem = () => {
+        const newItem = { id: `grid_${Date.now()}`, title: 'New Item', description: '', image: '', alt: '' };
+        handleChange('items', [...(formData.items || []), newItem]);
+    };
+
+    const handleRemoveItem = (itemIndex) => {
+        const itemToRemove = formData.items?.[itemIndex];
+        if (itemToRemove?.image && typeof itemToRemove.image === 'object' && itemToRemove.image.url?.startsWith('blob:')) {
+            URL.revokeObjectURL(itemToRemove.image.url);
+        }
+        handleChange('items', (formData.items || []).filter((_, i) => i !== itemIndex));
+    };
+
+    const handleItemImageChange = (itemIndex, file) => {
+        if (file && onPanelFileChange) {
+            onPanelFileChange({ blockItemIndex: itemIndex, field: 'image' }, file);
+        }
+    };
+
+  return (
+        <div className="space-y-4 p-2 bg-gray-50 rounded-md shadow">
+            <div><label className="input-label">Section Title (Panel Edit):</label><input type="text" value={formData.title || ''} onChange={(e) => handleChange('title', e.target.value)} className="input-text-class" /></div>
+            <div>
+                <label className="input-label">Number of Columns (1-4):</label>
+                <select value={formData.columns || 3} onChange={(e) => handleChange('columns', parseInt(e.target.value, 10))} className="input-select-class">
+                    {[1,2,3,4].map(num => <option key={num} value={num}>{num}</option>)}
+                </select>
+            </div>
+
+            <h4 className="h4-style">Color Scheme</h4>
+            <div className="grid grid-cols-2 gap-2">
+                <div><label className="input-label-sm">Overall BG:</label><input type="color" value={formData.backgroundColor || '#FFFFFF'} onChange={(e) => handleChange('backgroundColor', e.target.value)} className="input-color-sm" /></div>
+                <div><label className="input-label-sm">Section Title:</label><input type="color" value={formData.titleColor || '#1A202C'} onChange={(e) => handleChange('titleColor', e.target.value)} className="input-color-sm" /></div>
+                <div><label className="input-label-sm">Item BG:</label><input type="color" value={formData.itemBackgroundColor || 'transparent'} onChange={(e) => handleChange('itemBackgroundColor', e.target.value)} className="input-color-sm" /></div>
+                <div><label className="input-label-sm">Item Title:</label><input type="color" value={formData.itemTitleColor || '#2D3748'} onChange={(e) => handleChange('itemTitleColor', e.target.value)} className="input-color-sm" /></div>
+                <div><label className="input-label-sm">Item Desc:</label><input type="color" value={formData.itemDescriptionColor || '#4A5568'} onChange={(e) => handleChange('itemDescriptionColor', e.target.value)} className="input-color-sm" /></div>
+                <div><label className="input-label-sm">Image Border (Edit):</label><input type="color" value={formData.imageBorderColor || '#E2E8F0'} onChange={(e) => handleChange('imageBorderColor', e.target.value)} className="input-color-sm" /></div>
+            </div>
+
+            <h4 className="h4-style">Manage Grid Items</h4>
+            {(formData.items || []).map((item, itemIndex) => (
+                <div key={item.id || itemIndex} className="panel-item-container">
+                    <div className="flex justify-between items-center"><h5 className="h5-style">Item {itemIndex + 1}</h5><button onClick={() => handleRemoveItem(itemIndex)} className="btn-remove-xs">Remove</button></div>
+                    <div><label className="input-label-xs">Title:</label><input type="text" value={item.title || ''} onChange={(e) => handleItemChange(itemIndex, 'title', e.target.value)} className="input-text-xs" /></div>
+                    <div><label className="input-label-xs">Description:</label><textarea value={item.description || ''} onChange={(e) => handleItemChange(itemIndex, 'description', e.target.value)} rows={2} className="input-textarea-xs" /></div>
+                    <div>
+                        <label className="input-label-xs">Image:</label>
+                        <input type="file" accept="image/*" onChange={(e) => handleItemImageChange(itemIndex, e.target.files[0])} className="input-file-xs" />
+                        {(getDisplayUrlFromProp && getDisplayUrlFromProp(item.image)) && <img src={getDisplayUrlFromProp(item.image)} alt="Preview" className="img-preview-xs" />}
+                        <input type="text" placeholder="Or paste URL" value={typeof item.image === 'string' ? item.image : (item.image?.originalUrl || item.image?.url || '')} onChange={(e) => handleItemChange(itemIndex, 'image', e.target.value)} className="input-text-xs mt-1" />
+                    </div>
+                    <div><label className="input-label-xs">Image Alt Text:</label><input type="text" value={item.alt || ''} onChange={(e) => handleItemChange(itemIndex, 'alt', e.target.value)} className="input-text-xs" /></div>
+                </div>
+            ))}
+            <button onClick={handleAddItem} className="btn-add-item">+ Add Grid Item</button>
+            <style jsx>{`
+                .input-label { display: block; font-size: 0.875rem; font-weight: 500; color: #4A5568; margin-bottom: 0.25rem; }
+                .input-label-sm { display: block; font-size: 0.8rem; font-weight: 500; color: #4A5568; margin-bottom: 0.1rem; }
+                .input-label-xs { display: block; font-size: 0.75rem; font-weight: 500; color: #555; margin-bottom: 0.1rem; }
+                .input-text-class { display: block; width: 100%; padding: 0.5rem 0.75rem; background-color: white; border: 1px solid #D1D5DB; border-radius: 0.375rem; }
+                .input-text-xs { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; }
+                .input-textarea-xs { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; resize: vertical; min-height: 40px; }
+                .input-select-class { display: block; width: 100%; padding: 0.5rem 0.75rem; background-color: white; border: 1px solid #D1D5DB; border-radius: 0.375rem; }
+                .input-color-sm { margin-top: 0.1rem; height: 1.75rem; width: 100%; padding: 0.1rem; border: 1px solid #D1D5DB; border-radius: 0.25rem; }
+                .input-file-xs { display:block; width:100%; font-size: 0.8rem; margin-bottom: 0.25rem; }
+                .img-preview-xs { height: 3rem; width: 3rem; object-fit: cover; border-radius: 0.25rem; border: 1px solid #E5E7EB; margin-top: 0.25rem; }
+                .h4-style { font-size: 1.1rem; font-weight: 600; color: #374151; padding-top: 0.75rem; border-top: 1px solid #E5E7EB; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+                .h5-style { font-size: 0.95rem; font-weight: 600; color: #4A5568; }
+                .panel-item-container { padding: 0.75rem; border: 1px solid #E5E7EB; border-radius: 0.375rem; background-color: white; margin-bottom: 0.75rem; }
+                .btn-remove-xs { font-size: 0.75rem; color: #EF4444; font-weight: 500; }
+                .btn-add-item { margin-top: 1rem; padding: 0.5rem 1rem; font-size: 0.9rem; background-color: #10B981; color: white; border-radius: 0.375rem; font-weight: 500; }
+            `}</style>
+        </div>
+    );
+};
+
+GridImageTextBlock.EditorPanel.propTypes = {
+    currentConfig: PropTypes.object.isRequired,
+    onPanelConfigChange: PropTypes.func.isRequired,
+    onPanelFileChange: PropTypes.func.isRequired,
+    getDisplayUrl: PropTypes.func.isRequired,
+};
+
+export default GridImageTextBlock;

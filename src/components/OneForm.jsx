@@ -22,6 +22,8 @@ import MainPageForm from "./MainPageForm";
 import AboutBlock from "./MainPageBlocks/AboutBlock";
 import Navbar from "./Navbar"; // Import Navbar for preview
 import ColorEditor from "./ColorEditor"; // Import the new ColorEditor component
+import ServicePage from "./ServicePage"; // For rendering all blocks
+import { blockMap as serviceBlockMap } from './ServiceEditPage'; // Import blockMap for rendering service blocks
 
 // Helper function to check if a URL is a local asset to be processed
 function isProcessableAssetUrl(url) {
@@ -304,6 +306,11 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   const [themeColors, setThemeColors] = useState(null); // State for current theme colors
   const [initialThemeColors, setInitialThemeColors] = useState(null); // State for initial theme colors for "old" export
 
+  // State for the "All Service Blocks" tab
+  const [allServiceBlocksData, setAllServiceBlocksData] = useState(null);
+  const [loadingAllServiceBlocks, setLoadingAllServiceBlocks] = useState(false);
+  const [activeEditShowcaseBlockIndex, setActiveEditShowcaseBlockIndex] = useState(null);
+
   // On mount, fetch combined_data.json to populate the form if no initialData is provided
   useEffect(() => {
     const fetchAllData = async () => {
@@ -384,6 +391,11 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         }
         setLoading(false);
 
+        // Fetch data for "All Service Blocks" tab if it becomes active and data isn't loaded
+        if (activeTab === 'allServiceBlocks' && !allServiceBlocksData) {
+            fetchShowcaseData();
+        }
+
       } catch (error) {
         console.error("Error loading form data:", error);
         setLoading(false);
@@ -391,7 +403,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
     };
 
     fetchAllData();
-  }, [initialData, blockName]);
+  }, [initialData, blockName, activeTab]);
 
   const handleMainPageFormChange = (newMainPageFormData) => {
     setFormData(prev => ({
@@ -412,6 +424,136 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         const cssVarName = `--color-${key.replace('_', '-')}`; // Ensure hyphens for CSS vars
         document.documentElement.style.setProperty(cssVarName, newColors[key]);
     });
+  };
+
+  const fetchShowcaseData = async () => {
+    setLoadingAllServiceBlocks(true);
+    try {
+      const response = await fetch("/data/all_blocks_showcase.json");
+      if (!response.ok) {
+        throw new Error('Failed to fetch all_blocks_showcase.json');
+      }
+      const data = await response.json();
+      setAllServiceBlocksData(data);
+    } catch (error) {
+      console.error("Error loading all_blocks_showcase.json:", error);
+      // Optionally set an error state to display to the user
+    } finally {
+      setLoadingAllServiceBlocks(false);
+    }
+  };
+
+  // Handler to update showcase block config (similar to ServiceEditPage's handleBlockConfigUpdate)
+  const handleShowcaseBlockConfigUpdate = (blockIndex, newConfig) => {
+    setAllServiceBlocksData(prevData => {
+      if (!prevData || !prevData.blocks) return prevData;
+      const updatedBlocks = prevData.blocks.map((block, index) => {
+        if (index === blockIndex) {
+          return { ...block, config: newConfig };
+        }
+        return block;
+      });
+      return { ...prevData, blocks: updatedBlocks };
+    });
+  };
+
+  // Handler for file changes in showcase blocks (similar to ServiceEditPage's handleFileChangeForBlock)
+  const handleShowcaseFileChangeForBlock = (blockIndex, configKeyOrPathData, fileOrFileObject) => {
+    if (!fileOrFileObject) return;
+
+    let newMediaConfig;
+    const currentBlock = allServiceBlocksData.blocks[blockIndex];
+    let existingMediaConfig;
+
+    let isNestedPath = typeof configKeyOrPathData === 'object' && configKeyOrPathData !== null;
+    let fieldToUpdate = isNestedPath ? configKeyOrPathData.field : configKeyOrPathData;
+
+    if (isNestedPath) {
+      if (configKeyOrPathData.field === 'pictures' && currentBlock.config.items && currentBlock.config.items[configKeyOrPathData.blockItemIndex]) {
+        existingMediaConfig = currentBlock.config.items[configKeyOrPathData.blockItemIndex].pictures?.[configKeyOrPathData.pictureIndex];
+      } else if (currentBlock.config.items && currentBlock.config.items[configKeyOrPathData.blockItemIndex]) {
+        existingMediaConfig = currentBlock.config.items[configKeyOrPathData.blockItemIndex][fieldToUpdate];
+      } else {
+        existingMediaConfig = currentBlock.config[fieldToUpdate]; // Fallback for direct config if item path is wrong
+      }
+    } else {
+      existingMediaConfig = currentBlock?.config?.[fieldToUpdate];
+    }
+
+    if (fileOrFileObject instanceof File) {
+      if (existingMediaConfig && typeof existingMediaConfig === 'object' && existingMediaConfig.url && existingMediaConfig.url.startsWith('blob:')) {
+        URL.revokeObjectURL(existingMediaConfig.url);
+      }
+      const fileURL = URL.createObjectURL(fileOrFileObject);
+      newMediaConfig = {
+        file: fileOrFileObject,
+        url: fileURL,
+        name: fileOrFileObject.name,
+        originalUrl: (typeof existingMediaConfig === 'object' ? existingMediaConfig.originalUrl : typeof existingMediaConfig === 'string' ? existingMediaConfig : null) || `assets/showcase_uploads/generated/${fileOrFileObject.name}`
+      };
+    } else if (typeof fileOrFileObject === 'object' && fileOrFileObject.url !== undefined) {
+      if (existingMediaConfig && typeof existingMediaConfig === 'object' && existingMediaConfig.file && existingMediaConfig.url && existingMediaConfig.url.startsWith('blob:')) {
+        if (existingMediaConfig.url !== fileOrFileObject.url) { 
+          URL.revokeObjectURL(existingMediaConfig.url);
+        }
+      }
+      newMediaConfig = fileOrFileObject;
+    } else if (typeof fileOrFileObject === 'string') { 
+      if (existingMediaConfig && typeof existingMediaConfig === 'object' && existingMediaConfig.file && existingMediaConfig.url && existingMediaConfig.url.startsWith('blob:')) {
+        URL.revokeObjectURL(existingMediaConfig.url);
+      }
+      newMediaConfig = {
+        file: null,
+        url: fileOrFileObject,
+        name: fileOrFileObject.split('/').pop(),
+        originalUrl: fileOrFileObject
+      };
+    } else {
+      console.warn("Unsupported file/URL type in handleShowcaseFileChangeForBlock", fileOrFileObject);
+      return;
+    }
+
+    setAllServiceBlocksData(prevData => {
+      const updatedBlocks = prevData.blocks.map((block, index) => {
+        if (index === blockIndex) {
+          let newBlockConfig = { ...block.config };
+          if (isNestedPath) {
+            if (!newBlockConfig.items) newBlockConfig.items = [];
+             while (newBlockConfig.items.length <= configKeyOrPathData.blockItemIndex) {
+                newBlockConfig.items.push({ pictures: [] }); 
+              }
+              if(configKeyOrPathData.field === 'pictures'){
+                if (!newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures) {
+                  newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures = [];
+                }
+                while (newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures.length <= configKeyOrPathData.pictureIndex) {
+                  newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures.push(null);
+                }
+                newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures[configKeyOrPathData.pictureIndex] = newMediaConfig;
+              } else {
+                // General nested field like item.image
+                newBlockConfig.items[configKeyOrPathData.blockItemIndex] = {
+                  ...newBlockConfig.items[configKeyOrPathData.blockItemIndex],
+                  [fieldToUpdate]: newMediaConfig
+                };
+              }
+          } else {
+            newBlockConfig[fieldToUpdate] = newMediaConfig;
+          }
+          return { ...block, config: newBlockConfig };
+        }
+        return block;
+      });
+      return { ...prevData, blocks: updatedBlocks };
+    });
+  };
+
+  // Helper to get display URL, can be passed to blocks
+  const getShowcaseDisplayUrl = (value) => {
+    if (!value) return null;
+    if (typeof value === "string") return value; // Handles direct URLs or blob URLs
+    if (typeof value === "object" && value.url) return value.url; // Handles { url: '...', ... }
+    return null;
   };
 
   /**
@@ -718,6 +860,15 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   console.log("Rendering OneForm full editor with data:", formData);
   const oneFormNavbarConfig = formData.navbar || { navLinks: [], logo: '', whiteLogo: '' };
 
+  // Tab Button data
+  const tabs = [
+    { id: "mainPage", label: "Main Page Blocks" },
+    { id: "services", label: "Service Pages" },
+    { id: "about", label: "About Page Block" },
+    { id: "colors", label: "Theme Colors" },
+    { id: "allServiceBlocks", label: "All Service Blocks" } // New tab
+  ];
+
   return (
     <div className="min-h-screen bg-gray-100 text-black flex flex-col">
       {/* Top OneForm Navigation Bar - Always Sticky */}
@@ -735,10 +886,15 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
           {/* This sticky positioning for tabs might be complex to get right with dynamic navbar height */}
           {/* For simplicity, let's make tabs not sticky for now, or assume fixed height for navbar */}
           <div className="bg-gray-800 px-4 flex border-b border-gray-700 shadow-md">
-            <TabButton id="mainPage" label="Main Page Blocks" isActive={activeTab === "mainPage"} onClick={() => setActiveTab("mainPage")} />
-            <TabButton id="services" label="Service Pages" isActive={activeTab === "services"} onClick={() => setActiveTab("services")} />
-            <TabButton id="about" label="About Page Block" isActive={activeTab === "about"} onClick={() => setActiveTab("about")} />
-            <TabButton id="colors" label="Theme Colors" isActive={activeTab === "colors"} onClick={() => setActiveTab("colors")} />
+            {tabs.map(tabInfo => (
+              <TabButton 
+                key={tabInfo.id} 
+                id={tabInfo.id} 
+                label={tabInfo.label} 
+                isActive={activeTab === tabInfo.id} 
+                onClick={() => setActiveTab(tabInfo.id)} 
+              />
+            ))}
           </div>
         </div>
 
@@ -752,7 +908,9 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
                 setFormData={handleMainPageFormChange} // Use the new handler
             />
           )}
-          {activeTab === "services" && <ServiceEditPage />} 
+          {activeTab === "services" && 
+            <ServiceEditPage />
+          } 
           {activeTab === "about" && (
             <div className="container mx-auto px-4 py-6 bg-gray-100">
               <div className="mb-4 bg-gray-800 text-white p-4 rounded">
@@ -773,6 +931,66 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
               initialColors={themeColors}
               onColorChange={handleThemeColorChange}
             />
+          )}
+          {activeTab === "allServiceBlocks" && (
+            <div className="p-4">
+              <h2 className="text-2xl font-semibold mb-4 text-gray-800">All Service Blocks Showcase</h2>
+              {loadingAllServiceBlocks && <p>Loading showcase blocks...</p>}
+              {(!loadingAllServiceBlocks && !allServiceBlocksData) && <p>Could not load showcase data. Check console.</p>}
+              {allServiceBlocksData && allServiceBlocksData.blocks && (
+                <div className="space-y-0"> {/* No space for tight packing like ServiceEditPage */}
+                  {allServiceBlocksData.blocks.map((block, index) => {
+                    const BlockComponent = serviceBlockMap[block.blockName];
+                    const isEditingThisBlock = activeEditShowcaseBlockIndex === index;
+                    if (!BlockComponent) {
+                      return <div key={index} className="p-2 my-1 bg-red-100 text-red-700 rounded">Unknown block: {block.blockName}</div>;
+                    }
+                    return (
+                      <div key={block.uniqueKey || `showcase-${index}`} className="relative border-t border-b border-gray-300 mb-0 bg-white overflow-hidden">
+                        <div className="absolute top-2 right-2 z-40">
+                          <button
+                            type="button"
+                            onClick={() => setActiveEditShowcaseBlockIndex(isEditingThisBlock ? null : index)}
+                            className={`${isEditingThisBlock ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-700 hover:bg-gray-600'} text-white rounded-full p-1.5 shadow-lg transition-colors`}
+                            title={isEditingThisBlock ? "Done Editing" : "Edit Block"}
+                          >
+                            {isEditingThisBlock ? (
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                            ) : (
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487a2.032 2.032 0 112.872 2.872L7.5 21.613H4v-3.5L16.862 4.487z"/></svg>
+                            )}
+                          </button>
+                        </div>
+                        <BlockComponent 
+                          config={block.config || {}} 
+                          readOnly={!isEditingThisBlock} 
+                          onConfigChange={(newFullConfig) => handleShowcaseBlockConfigUpdate(index, newFullConfig)}
+                          getDisplayUrl={getShowcaseDisplayUrl} 
+                          onFileChange={(fieldKeyOrPathData, file) => handleShowcaseFileChangeForBlock(index, fieldKeyOrPathData, file)}
+                        />
+                        {isEditingThisBlock && BlockComponent.EditorPanel && (
+                          <div className="border-t border-gray-200 bg-gray-100 p-4">
+                            <h3 className="text-md font-semibold text-gray-700 mb-3">{block.blockName} - Edit Panel</h3>
+                            <BlockComponent.EditorPanel
+                              currentConfig={block.config || {}}
+                              onPanelConfigChange={(updatedFields) => {
+                                const currentBlockConfig = allServiceBlocksData.blocks[index].config || {};
+                                const newConfig = { ...currentBlockConfig, ...updatedFields };
+                                handleShowcaseBlockConfigUpdate(index, newConfig);
+                              }}
+                              onPanelFileChange={(fieldKeyOrPathData, file) => {
+                                handleShowcaseFileChangeForBlock(index, fieldKeyOrPathData, file);
+                              }}
+                              getDisplayUrl={getShowcaseDisplayUrl}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>

@@ -1,16 +1,5 @@
-// src/components/blocks/VideoCTA.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
-import { Link } from 'react-router-dom';
-import IconSelectorModal from '../common/IconSelectorModal';
-import * as LucideIcons from 'lucide-react';
-
-// Helper to render dynamic icons
-const renderDynamicIcon = (pack, iconName, fallback = null, props = {}) => {
-    const IconsSet = pack === 'lucide' ? LucideIcons : {}; // Expand with other packs if needed
-    const IconComponent = IconsSet[iconName];
-    return IconComponent ? <IconComponent {...props} /> : fallback;
-};
 
 // Helper to initialize image state
 const initializeImageState = (imageValue, defaultPath = '') => {
@@ -56,7 +45,7 @@ const getEffectiveDisplayUrl = (imageState, getDisplayUrlProp) => {
 };
 
 // Preview Component (Handles inline editing)
-function VideoCTAPreview({ localConfig, readOnly, onInlineChange, getDisplayUrl }) {
+function VideoHighlightPreview({ localConfig, readOnly, onInlineChange, getDisplayUrl }) {
   const {
     title, text, videoUrl, videoType, posterImage, buttonText, buttonLink,
     backgroundColor, titleColor, textColor, buttonBackgroundColor, buttonTextColor, textAlignment
@@ -163,7 +152,7 @@ function VideoCTAPreview({ localConfig, readOnly, onInlineChange, getDisplayUrl 
   );
 }
 
-VideoCTAPreview.propTypes = {
+VideoHighlightPreview.propTypes = {
   localConfig: PropTypes.object.isRequired,
   readOnly: PropTypes.bool.isRequired,
   onInlineChange: PropTypes.func.isRequired,
@@ -171,7 +160,7 @@ VideoCTAPreview.propTypes = {
 };
 
 // Panel Component
-function VideoCTAPanel({ localConfigData, onPanelDataChange, getDisplayUrl }) {
+function VideoHighlightPanel({ localConfigData, onPanelDataChange, getDisplayUrl }) {
   const [videoUrlInput, setVideoUrlInput] = useState(localConfigData.videoUrl || '');
   const [videoTypeInput, setVideoTypeInput] = useState(localConfigData.videoType || 'youtube');
   const [posterImageDisplay, setPosterImageDisplay] = useState(
@@ -193,7 +182,6 @@ function VideoCTAPanel({ localConfigData, onPanelDataChange, getDisplayUrl }) {
   const handlePosterImageUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
-      // Pass the file object up; main component handles blob URL creation/revocation
       onPanelDataChange({ 
         ...localConfigData, 
         posterImage: { file: file, url: '', name: file.name, originalUrl: localConfigData.posterImage?.originalUrl || '' } 
@@ -202,7 +190,6 @@ function VideoCTAPanel({ localConfigData, onPanelDataChange, getDisplayUrl }) {
   };
 
   const handlePosterImageUrlChange = (newUrl) => {
-    // Pass a new image state object for URL change
     onPanelDataChange({ 
         ...localConfigData, 
         posterImage: { file: null, url: newUrl, name: newUrl.split('/').pop(), originalUrl: newUrl }
@@ -250,8 +237,8 @@ function VideoCTAPanel({ localConfigData, onPanelDataChange, getDisplayUrl }) {
             type="text"
             placeholder="Or enter direct image URL for poster"
             value={posterImageDisplay && !posterImageDisplay.startsWith('blob:') ? posterImageDisplay : ''}
-            onBlur={(e) => handlePosterImageUrlChange(e.target.value)} // Use onBlur to commit, or onChange if preferred
-            onChange={(e) => setPosterImageDisplay(e.target.value)} // Allow typing
+            onBlur={(e) => handlePosterImageUrlChange(e.target.value)}
+            onChange={(e) => setPosterImageDisplay(e.target.value)}
             className="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:ring-blue-500 focus:border-blue-500 text-sm mt-1"
           />
           {posterImageDisplay && <img src={posterImageDisplay} alt="Poster preview" className="mt-2 max-h-32 rounded object-contain border border-gray-600" onError={(e) => e.target.style.display='none'} />}
@@ -308,24 +295,24 @@ function VideoCTAPanel({ localConfigData, onPanelDataChange, getDisplayUrl }) {
   );
 }
 
-VideoCTAPanel.propTypes = {
+VideoHighlightPanel.propTypes = {
   localConfigData: PropTypes.object.isRequired,
   onPanelDataChange: PropTypes.func.isRequired,
   getDisplayUrl: PropTypes.func,
 };
 
-// Main export: VideoCTABlock
-export default function VideoCTABlock({ 
+// Main component export
+const VideoHighlightBlock = ({ 
   config, 
   readOnly = true, 
   onConfigChange, 
   getDisplayUrl 
-}) {
+}) => {
   const [localConfig, setLocalConfig] = useState(() => {
     const defaultConfig = {
       title: 'Watch Our Process',
       text: 'See how we deliver top-quality roofing solutions from start to finish. Our transparent process ensures you know what to expect every step of the way.',
-      videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ', // Default placeholder
+      videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ', 
       videoType: 'youtube',
       posterImage: initializeImageState(null, '/assets/images/placeholder_video_poster.jpg'),
       buttonText: 'Request a Free Quote',
@@ -346,7 +333,6 @@ export default function VideoCTABlock({
 
   const prevReadOnlyRef = useRef(readOnly);
 
-  // Effect to synchronize localConfig with config prop
   useEffect(() => {
     if (config) {
       setLocalConfig(prevLocal => {
@@ -356,7 +342,6 @@ export default function VideoCTABlock({
           prevLocal.posterImage?.originalUrl || '/assets/images/placeholder_video_poster.jpg'
         );
 
-        // Revoke old blob URL if it was a file and is now being replaced by a new file or different URL
         if (prevLocal.posterImage?.file && prevLocal.posterImage.url?.startsWith('blob:')) {
             if (!newPosterImage.file || newPosterImage.url !== prevLocal.posterImage.url) {
                  URL.revokeObjectURL(prevLocal.posterImage.url);
@@ -366,11 +351,9 @@ export default function VideoCTABlock({
         return {
           ...newBaseFromProps,
           posterImage: newPosterImage,
-          // Preserve inline edits if not readOnly
           title: !readOnly && prevLocal.title !== (config.title || '') ? prevLocal.title : (config.title || prevLocal.title || 'Watch Our Process'),
           text: !readOnly && prevLocal.text !== (config.text || '') ? prevLocal.text : (config.text || prevLocal.text || 'Default text...'),
           buttonText: !readOnly && prevLocal.buttonText !== (config.buttonText || '') ? prevLocal.buttonText : (config.buttonText || prevLocal.buttonText || 'Request Quote'),
-          // Panel controlled fields take precedence from config if available
           buttonLink: config.buttonLink ?? prevLocal.buttonLink,
           backgroundColor: config.backgroundColor ?? prevLocal.backgroundColor,
           titleColor: config.titleColor ?? prevLocal.titleColor,
@@ -385,16 +368,14 @@ export default function VideoCTABlock({
     }
   }, [config, readOnly]);
 
-  // Effect to call onConfigChange when exiting edit mode (readOnly becomes true)
   useEffect(() => {
     if (prevReadOnlyRef.current === false && readOnly === true) {
       if (onConfigChange) {
-        // Prepare posterImage for saving: use originalUrl if it's a file, otherwise the current URL
         const posterToSave = localConfig.posterImage?.file 
-          ? { ...localConfig.posterImage, url: localConfig.posterImage.originalUrl, file: null } // Save original URL, nullify file
-          : { ...localConfig.posterImage }; // Save as is (likely already a URL)
+          ? { ...localConfig.posterImage, url: localConfig.posterImage.originalUrl, file: null } 
+          : { ...localConfig.posterImage }; 
         
-        if (posterToSave.file) delete posterToSave.file; // Ensure file object isn't in saved config
+        if (posterToSave.file) delete posterToSave.file; 
 
         onConfigChange({ ...localConfig, posterImage: posterToSave });
       }
@@ -402,7 +383,6 @@ export default function VideoCTABlock({
     prevReadOnlyRef.current = readOnly;
   }, [readOnly, localConfig, onConfigChange]);
 
-  // Cleanup blob URL on unmount or when posterImage (that is a file) changes
   useEffect(() => {
     const currentPoster = localConfig.posterImage;
     return () => {
@@ -412,14 +392,12 @@ export default function VideoCTABlock({
     };
   }, [localConfig.posterImage]);
 
-  // For VideoCTAPreview (inline text edits): updates localConfig only.
   const handleInlineChange = (field, value) => {
     if (!readOnly) {
       setLocalConfig(prev => ({ ...prev, [field]: value }));
     }
   };
 
-  // For VideoCTAPanel: updates localConfig.
   const handlePanelDataChange = (newDataFromPanel) => {
     if (!readOnly) {
       setLocalConfig(prevLocalConfig => {
@@ -428,35 +406,34 @@ export default function VideoCTABlock({
         if (newDataFromPanel.posterImage) {
           const panelPoster = newDataFromPanel.posterImage;
 
-          // If there was an old blob URL from a file, revoke it before updating
           if (prevLocalConfig.posterImage?.file && prevLocalConfig.posterImage.url?.startsWith('blob:')) {
-            if (!panelPoster.file || prevLocalConfig.posterImage.url !== panelPoster.url) { // Revoke if new is not a file or is a different blob
+            if (!panelPoster.file || prevLocalConfig.posterImage.url !== panelPoster.url) { 
                 URL.revokeObjectURL(prevLocalConfig.posterImage.url);
             }
           }
 
-          if (panelPoster.file instanceof File) { // New file uploaded from panel
+          if (panelPoster.file instanceof File) { 
             const blobUrl = URL.createObjectURL(panelPoster.file);
             newPosterState = { 
               file: panelPoster.file, 
               url: blobUrl, 
               name: panelPoster.file.name, 
-              originalUrl: prevLocalConfig.posterImage?.originalUrl // Preserve old original URL if any
+              originalUrl: prevLocalConfig.posterImage?.originalUrl 
             };
-          } else if (typeof panelPoster.url === 'string') { // URL string provided from panel
+          } else if (typeof panelPoster.url === 'string') { 
             newPosterState = { 
               file: null, 
               url: panelPoster.url, 
               name: panelPoster.name || panelPoster.url.split('/').pop(),
-              originalUrl: panelPoster.url // This string URL is the new original
+              originalUrl: panelPoster.url 
             };
           }
         }
         
         return {
           ...prevLocalConfig,
-          ...newDataFromPanel, // Apply other changes from panel
-          posterImage: newPosterState, // Apply the updated poster image state
+          ...newDataFromPanel, 
+          posterImage: newPosterState, 
         };
       });
     }
@@ -464,7 +441,7 @@ export default function VideoCTABlock({
 
   return (
     <>
-      <VideoCTAPreview 
+      <VideoHighlightPreview 
         localConfig={localConfig} 
         readOnly={readOnly} 
         onInlineChange={handleInlineChange} 
@@ -472,7 +449,7 @@ export default function VideoCTABlock({
       />
       {!readOnly && (
         <div className="bg-gray-900 p-4 rounded-b-lg shadow-xl mt-0">
-          <VideoCTAPanel 
+          <VideoHighlightPanel 
             localConfigData={localConfig} 
             onPanelDataChange={handlePanelDataChange} 
             getDisplayUrl={getDisplayUrl} 
@@ -481,11 +458,15 @@ export default function VideoCTABlock({
       )}
     </>
   );
-}
+};
 
-VideoCTABlock.propTypes = {
+VideoHighlightBlock.propTypes = {
   config: PropTypes.object,
   readOnly: PropTypes.bool,
   onConfigChange: PropTypes.func,
   getDisplayUrl: PropTypes.func, 
 };
+
+VideoHighlightBlock.EditorPanel = VideoHighlightPanel;
+
+export default VideoHighlightBlock; 

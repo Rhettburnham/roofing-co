@@ -4,37 +4,37 @@ import PropTypes from "prop-types";
 import LoadingScreen from "./loadingScreen";
 
 // Import ALL block components used across commercial & residential
-import HeroBlock from "./blocks/HeroBlock";
-import GeneralList from "./blocks/GeneralList";
-import VideoCTA from "./blocks/VideoCTA";
-import GeneralListVariant2 from "./blocks/GeneralListVariant2";
-import OverviewAndAdvantagesBlock from "./blocks/OverviewAndAdvantagesBlock";
-import ActionButtonBlock from "./blocks/ActionButtonBlock";
-import HeaderBannerBlock from "./blocks/HeaderBannerBlock";
-import PricingGrid from "./blocks/PricingGrid";
-import ListDropdown from "./blocks/ListDropdown";
-import ListImageVerticalBlock from "./blocks/ListImageVerticalBlock";
-import ShingleSelectorBlock from "./blocks/ShingleSelectorBlock";
-import ImageWrapBlock from "./blocks/ImageWrapBlock";
-import ThreeGridWithRichTextBlock from "./blocks/ThreeGridWithRichTextBlock";
-import GridImageTextBlock from "./blocks/GridImageTextBlock";
+import PageHeroBlock from "./blocks/PageHeroBlock";
+import DetailedListBlock from "./blocks/DetailedListBlock";
+import VideoHighlightBlock from "./blocks/VideoHighlightBlock";
+import ImageFeatureListBlock from "./blocks/ImageFeatureListBlock";
+import FeatureOverviewBlock from "./blocks/FeatureOverviewBlock";
+import CallToActionButtonBlock from "./blocks/CallToActionButtonBlock";
+import SectionBannerBlock from "./blocks/SectionBannerBlock";
+import PricingTableBlock from "./blocks/PricingTableBlock";
+import AccordionBlock from "./blocks/AccordionBlock";
+import NumberedImageTextBlock from "./blocks/NumberedImageTextBlock";
+import OptionSelectorBlock from "./blocks/OptionSelectorBlock";
+import TextImageBlock from "./blocks/TextImageBlock";
+import CardGridBlock from "./blocks/CardGridBlock";
+import IconTextBlockGrid from "./blocks/IconTextBlockGrid";
 
 // Lookup object to map block names to components
 const blockComponents = {
-  HeroBlock,
-  GeneralList,
-  VideoCTA,
-  GeneralListVariant2,
-  OverviewAndAdvantagesBlock,
-  ActionButtonBlock,
-  HeaderBannerBlock,
-  PricingGrid,
-  ListDropdown,
-  ListImageVerticalBlock,
-  ShingleSelectorBlock,
-  ImageWrapBlock,
-  ThreeGridWithRichTextBlock,
-  GridImageTextBlock,
+  PageHeroBlock,
+  DetailedListBlock,
+  VideoHighlightBlock,
+  ImageFeatureListBlock,
+  FeatureOverviewBlock,
+  CallToActionButtonBlock,
+  SectionBannerBlock,
+  PricingTableBlock,
+  AccordionBlock,
+  NumberedImageTextBlock,
+  OptionSelectorBlock,
+  TextImageBlock,
+  CardGridBlock,
+  IconTextBlockGrid,
 };
 
 /**
@@ -226,6 +226,7 @@ const ServicePage = ({ forcedServiceData = null }) => {
     // Block-specific adaptations to ensure proper prop mapping
     switch (blockName) {
       case "HeroBlock":
+      case "PageHeroBlock":
         // Ensure critical props are set correctly
         if (adaptedConfig.sectionTitle && !adaptedConfig.title) {
           adaptedConfig.title = cleanTextContent(adaptedConfig.sectionTitle);
@@ -233,10 +234,12 @@ const ServicePage = ({ forcedServiceData = null }) => {
         break;
         
       case "HeaderBannerBlock":
+      case "SectionBannerBlock":
         // Nothing special needed, main props already cleaned
         break;
         
       case "GeneralList":
+      case "DetailedListBlock":
         // Ensure sectionTitle is properly set
         if (adaptedConfig.title && !adaptedConfig.sectionTitle) {
           adaptedConfig.sectionTitle = cleanTextContent(adaptedConfig.title);
@@ -244,6 +247,7 @@ const ServicePage = ({ forcedServiceData = null }) => {
         break;
         
       case "GridImageTextBlock":
+      case "IconTextBlockGrid":
         // Ensure items have image property
         if (adaptedConfig.items && Array.isArray(adaptedConfig.items)) {
           adaptedConfig.items = adaptedConfig.items.map(item => {
@@ -260,6 +264,7 @@ const ServicePage = ({ forcedServiceData = null }) => {
         break;
         
       case "PricingGrid":
+      case "PricingTableBlock":
         // Ensure items structure is correct
         if (adaptedConfig.items && Array.isArray(adaptedConfig.items)) {
           adaptedConfig.items = adaptedConfig.items.map(item => {
@@ -278,6 +283,7 @@ const ServicePage = ({ forcedServiceData = null }) => {
         break;
         
       case "VideoCTA":
+      case "VideoHighlightBlock":
         // Ensure all required properties are correctly mapped
         if (adaptedConfig.buttonLink && !adaptedConfig.buttonUrl) {
           adaptedConfig.buttonUrl = adaptedConfig.buttonLink;
@@ -288,10 +294,12 @@ const ServicePage = ({ forcedServiceData = null }) => {
         break;
         
       case "OverviewAndAdvantagesBlock":
+      case "FeatureOverviewBlock":
         // Nothing special needed, main props already cleaned
         break;
         
       case "ShingleSelectorBlock":
+      case "OptionSelectorBlock":
         // Ensure shingleOptions are properly formatted
         if (adaptedConfig.shingleOptions && Array.isArray(adaptedConfig.shingleOptions)) {
           adaptedConfig.shingleOptions = adaptedConfig.shingleOptions.map(option => {
@@ -302,6 +310,7 @@ const ServicePage = ({ forcedServiceData = null }) => {
         break;
         
       case "ListImageVerticalBlock":
+      case "NumberedImageTextBlock":
         // Make sure any number property is converted to string
         if (adaptedConfig.items && Array.isArray(adaptedConfig.items)) {
           adaptedConfig.items = adaptedConfig.items.map(item => {
@@ -316,6 +325,7 @@ const ServicePage = ({ forcedServiceData = null }) => {
         break;
         
       case "ActionButtonBlock":
+      case "CallToActionButtonBlock":
         // Ensure buttonUrl and buttonLink are synchronized
         if (adaptedConfig.buttonLink && !adaptedConfig.buttonUrl) {
           adaptedConfig.buttonUrl = adaptedConfig.buttonLink;
@@ -326,10 +336,12 @@ const ServicePage = ({ forcedServiceData = null }) => {
         break;
       
       case "ThreeGridWithRichTextBlock":
+      case "CardGridBlock":
         // Nothing special needed, main props already cleaned
         break;
         
       case "ImageWrapBlock":
+      case "TextImageBlock":
         // Ensure imageUrl is set
         if (adaptedConfig.imageUrl && !adaptedConfig.imagePath) {
           adaptedConfig.imagePath = adaptedConfig.imageUrl;
@@ -340,10 +352,12 @@ const ServicePage = ({ forcedServiceData = null }) => {
         break;
           
       case "GeneralListVariant2":
+      case "ImageFeatureListBlock":
         // Nothing special needed, main props already cleaned
         break;
         
       case "ListDropdown":
+      case "AccordionBlock":
         // Ensure items have correct structure
         if (adaptedConfig.items && Array.isArray(adaptedConfig.items)) {
           adaptedConfig.items = adaptedConfig.items.map(item => {
@@ -397,7 +411,7 @@ const ServicePage = ({ forcedServiceData = null }) => {
       delete mergedConfig.config;
       
       // Extra logging to debug the HeroBlock title issue
-      if (blockName === "HeroBlock") {
+      if (blockName === "HeroBlock" || blockName === "PageHeroBlock") {
         console.log("HeroBlock Original Config:", block.config);
         console.log("HeroBlock Merged Config:", mergedConfig);
       }
@@ -418,7 +432,7 @@ const ServicePage = ({ forcedServiceData = null }) => {
       };
       
       // For HeroBlock specifically, ensure the title is correct
-      if (blockName === "HeroBlock" && block.config.title) {
+      if ((blockName === "HeroBlock" || blockName === "PageHeroBlock") && block.config.title) {
         propsToPass.title = cleanTextContent(block.config.title);
         console.log("Explicitly set HeroBlock title to:", propsToPass.title);
       }
@@ -491,7 +505,7 @@ const ServicePage = ({ forcedServiceData = null }) => {
 
     // Try to find the first HeroBlock
     const heroBlock = serviceData?.blocks?.find(
-      (b) => b.blockName === "HeroBlock"
+      (b) => b.blockName === "HeroBlock" || b.blockName === "PageHeroBlock"
     );
     return heroBlock?.config?.title || "Service Page";
   };

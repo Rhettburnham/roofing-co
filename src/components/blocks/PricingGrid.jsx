@@ -30,349 +30,341 @@ const PricingGrid = ({
   config = {},
   readOnly = false,
   onConfigChange,
+  getDisplayUrl,
+  onFileChange,
 }) => {
   const [localConfig, setLocalConfig] = useState(() => {
     const defaultConfig = {
-      sectionTitle: 'Our Pricing Plans',
-      tiers: [
-        { id: `tier_${Date.now()}_1`, name: 'Basic', price: '$29', frequency: '/month', description: 'Basic features for individuals.', features: ['Feature 1', 'Feature 2'], ctaText: 'Get Started', ctaLink: '#basic', isFeatured: false, featuredText: 'Popular' },
-        { id: `tier_${Date.now()}_2`, name: 'Pro', price: '$79', frequency: '/month', description: 'Advanced features for professionals.', features: ['All Basic Features', 'Feature 3', 'Feature 4'], ctaText: 'Choose Pro', ctaLink: '#pro', isFeatured: true, featuredText: 'Best Value' },
-        { id: `tier_${Date.now()}_3`, name: 'Enterprise', price: 'Contact Us', frequency: '', description: 'Custom solutions for large teams.', features: ['All Pro Features', 'Dedicated Support', 'Custom Integrations'], ctaText: 'Contact Sales', ctaLink: '#enterprise', isFeatured: false, featuredText: '' },
+      title: 'Our Pricing Plans',
+      items: [
+        { id: 1, title: 'Basic Plan', image: '', alt: 'Basic plan image', description: 'Essential features for starters.', rate: '$19/mo', features: ['Feature 1', 'Feature 2'], buttonText: 'Choose Plan', buttonLink: '#basic' },
       ],
+      showPrice: true,
+      backgroundColor: '#FFFFFF',
       titleColor: '#1A202C',
-      tierNameColor: '#2D3748',
-      priceColor: '#2C5282',
-      descriptionColor: '#4A5568',
-      featureTextColor: '#4A5568',
-      ctaButtonColor: '#3182CE',
-      ctaTextColor: '#FFFFFF',
-      featuredBadgeColor: '#DD6B20',
-      featuredBadgeTextColor: '#FFFFFF',
-      tierBackgroundColor: '#FFFFFF',
-      featuredTierBackgroundColor: '#EBF8FF',
+      itemBackgroundColor: '#F7FAFC',
+      itemTitleColor: '#2D3748',
+      itemDescriptionColor: '#4A5568',
+      itemRateColor: '#2C5282', // Blue for rate
+      itemFeatureTextColor: '#718096',
+      buttonBgColor: '#3182CE',
+      buttonTextColor: '#FFFFFF',
+      imageBorderColor: '#E2E8F0',
     };
-    const initialData = config || {};
-    return {
-      ...defaultConfig,
-      ...initialData,
-      tiers: (initialData.tiers || defaultConfig.tiers).map((tier, index) => ({
-        ...defaultConfig.tiers[0], // Base defaults for a tier
-        ...tier,
-        id: tier.id || `tier_init_${index}_${Date.now()}`,
-        features: tier.features || [], // Ensure features is an array
-      })),
-    };
+    return { ...defaultConfig, ...(config || {}) };
   });
 
-  const prevReadOnlyRef = useRef(readOnly);
+  const titleRef = useRef(null);
+  const itemRefs = useRef({}); // For item title, desc, rate, features
 
   useEffect(() => {
-    if (config) {
-      setLocalConfig(prevLocal => {
-        const newTiers = (config.tiers || []).map((propTier) => {
-          const localTier = prevLocal.tiers.find(lt => lt.id === propTier.id) || {}; 
-          // Preserve inline editable fields if in edit mode, otherwise take from prop
-          return {
-            ...localTier, // local first to keep unsaved changes
-            ...propTier,  // then prop to update structure/IDs/isFeatured
-            id: propTier.id || localTier.id || `tier_prop_${Date.now()}`,
-            name: readOnly ? (propTier.name ?? localTier.name) : localTier.name,
-            price: readOnly ? (propTier.price ?? localTier.price) : localTier.price,
-            frequency: readOnly ? (propTier.frequency ?? localTier.frequency) : localTier.frequency,
-            description: readOnly ? (propTier.description ?? localTier.description) : localTier.description,
-            features: readOnly ? (propTier.features ?? localTier.features) : localTier.features,
-            ctaText: readOnly ? (propTier.ctaText ?? localTier.ctaText) : localTier.ctaText,
-            ctaLink: readOnly ? (propTier.ctaLink ?? localTier.ctaLink) : localTier.ctaLink,
-            featuredText: readOnly ? (propTier.featuredText ?? localTier.featuredText) : localTier.featuredText,
-            // isFeatured is handled by panel, so prop takes precedence if defined
-            isFeatured: propTier.isFeatured !== undefined ? propTier.isFeatured : localTier.isFeatured,
-          };
-        });
-
-        return {
-          ...prevLocal,
-          ...config, // Apply other top-level config like colors
-          sectionTitle: readOnly ? (config.sectionTitle ?? prevLocal.sectionTitle) : prevLocal.sectionTitle,
-          tiers: newTiers,
-        };
-      });
+    const defaultConfig = { title: 'Pricing', items: [], showPrice: true, backgroundColor: '#fff', titleColor: '#000', /*...other colors*/ };
+    const newEffectiveConfig = { ...defaultConfig, ...(config || {}) };
+    if (readOnly || JSON.stringify(newEffectiveConfig) !== JSON.stringify(localConfig)) {
+      setLocalConfig(newEffectiveConfig);
     }
   }, [config, readOnly]);
 
   useEffect(() => {
-    if (prevReadOnlyRef.current === false && readOnly === true && onConfigChange) {
-      console.log("PricingGridBlock: Editing finished. Calling onConfigChange.");
-      onConfigChange(localConfig);
-    }
-    prevReadOnlyRef.current = readOnly;
-  }, [readOnly, localConfig, onConfigChange]);
-
-  // Handler for inline text edits
-  const handleLocalChange = (path, value) => {
-    if (readOnly) return;
-    const [field, tierId, itemField, featureIndexStr] = path.split('.');
-
-    setLocalConfig(prev => {
-      if (field === 'tiers' && tierId) {
-        const newTiers = prev.tiers.map(tier => {
-          if (tier.id === tierId) {
-            if (itemField === 'features' && featureIndexStr !== undefined) {
-              const featureIndex = parseInt(featureIndexStr, 10);
-              const newFeatures = tier.features.map((feat, fIdx) => fIdx === featureIndex ? value : feat);
-              return { ...tier, features: newFeatures };
-            }
-            return { ...tier, [itemField]: value };
-          }
-          return tier;
-        });
-        return { ...prev, tiers: newTiers };
-      } else {
-        return { ...prev, [field]: value };
+    if (!readOnly) {
+      if (titleRef.current) {
+        titleRef.current.style.height = 'auto';
+        titleRef.current.style.height = `${titleRef.current.scrollHeight}px`;
       }
+      (localConfig.items || []).forEach((_, index) => {
+        if (itemRefs.current[index]) {
+          Object.values(itemRefs.current[index]).forEach(fieldGroup => {
+            if (fieldGroup && typeof fieldGroup === 'object') { // Check if it's the object holding refs
+              Object.values(fieldGroup).forEach(ref => {
+                if (ref && ref.current) {
+                  ref.current.style.height = 'auto';
+                  ref.current.style.height = `${ref.current.scrollHeight}px`;
+                }
+              });
+            }
+          });
+        }
+      });
+    }
+  }, [localConfig.title, localConfig.items, readOnly]);
+
+  const handleInputChange = (field, value, itemIndex = null, subField = null, featureIndex = null) => {
+    setLocalConfig(prev => {
+      let updatedConfig;
+      if (itemIndex !== null) {
+        const updatedItems = prev.items.map((item, i) => {
+          if (i === itemIndex) {
+            if (subField === 'features' && featureIndex !== null) {
+              const updatedFeatures = (item.features || []).map((feat, fIdx) => 
+                fIdx === featureIndex ? value : feat
+              );
+              return { ...item, features: updatedFeatures };
+            }
+            return { ...item, [subField]: value };
+          }
+          return item;
+        });
+        updatedConfig = { ...prev, items: updatedItems };
+      } else {
+        updatedConfig = { ...prev, [field]: value };
+      }
+      if (!readOnly) onConfigChange(updatedConfig);
+      return updatedConfig;
     });
   };
 
-  // Handler for panel changes (structure, colors, isFeatured)
-  const handlePanelDataChange = (newData) => {
-    if (readOnly) return;
-    setLocalConfig(prev => ({ ...prev, ...newData }));
+  const handleBlur = () => {
+    if (!readOnly) onConfigChange(localConfig);
   };
 
-  const addFeatureToTierInline = (tierId) => {
-    if (readOnly) return;
-    setLocalConfig(prev => ({
-      ...prev,
-      tiers: prev.tiers.map(tier => 
-        tier.id === tierId ? { ...tier, features: [...(tier.features || []), 'New Feature'] } : tier
-      )
-    }));
+  const getItemRef = (itemIndex, field) => (el) => {
+    if (!itemRefs.current[itemIndex]) itemRefs.current[itemIndex] = {};
+    itemRefs.current[itemIndex][field] = { current: el }; 
   };
 
-  const removeFeatureFromTierInline = (tierId, featureIndex) => {
-    if (readOnly) return;
-    setLocalConfig(prev => ({
-      ...prev,
-      tiers: prev.tiers.map(tier => {
-        if (tier.id === tierId) {
-          return { ...tier, features: tier.features.filter((_, fIdx) => fIdx !== featureIndex) };
-        }
-        return tier;
-      })
-    }));
-  };
-
-  const { sectionTitle, tiers } = localConfig;
-  const { titleColor, tierNameColor, priceColor, descriptionColor, featureTextColor, ctaButtonColor, ctaTextColor, featuredBadgeColor, featuredBadgeTextColor, tierBackgroundColor, featuredTierBackgroundColor } = localConfig;
-
-  const EditableField = ({ value, onChange, placeholder, type='text', className, style, rows}) => (
-    type === 'textarea' ?
-    <textarea value={value} onChange={onChange} placeholder={placeholder} className={`bg-transparent border-b-2 border-dashed focus:border-gray-400 outline-none w-full ${className}`} style={style} rows={rows} /> :
-    <input type={type} value={value} onChange={onChange} placeholder={placeholder} className={`bg-transparent border-b-2 border-dashed focus:border-gray-400 outline-none w-full ${className}`} style={style} />
-  );
+  const { 
+    title, items, showPrice, backgroundColor, titleColor,
+    itemBackgroundColor, itemTitleColor, itemDescriptionColor, itemRateColor,
+    itemFeatureTextColor, buttonBgColor, buttonTextColor, imageBorderColor
+  } = localConfig;
   
   return (
-    <>
-      <div className="pricing-grid-block py-8 md:py-12 bg-gray-100">
-        <div className="container mx-auto px-4">
+    <div className="py-12" style={{ backgroundColor }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {readOnly ? (
+          <h2 className="text-3xl font-extrabold text-center mb-10" style={{ color: titleColor }}>{title}</h2>
+        ) : (
+          <textarea
+            ref={titleRef}
+            value={title}                        
+            onChange={(e) => handleInputChange('title', e.target.value)}
+            onBlur={handleBlur}
+            className="text-3xl font-extrabold text-center mb-10 bg-transparent focus:outline-none focus:ring-1 focus:ring-gray-400 rounded p-1 w-full resize-none"
+            rows={1} placeholder="Section Title" style={{ color: titleColor }}
+          />
+        )}
+
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          {(items || []).map((item, index) => (
+            <div key={item.id || index} className="border border-gray-200 rounded-lg shadow-lg flex flex-col" style={{ backgroundColor: itemBackgroundColor }}>
+              {item.image && (
+                <img 
+                  src={getDisplayUrl ? getDisplayUrl(item.image) : item.image} 
+                  alt={item.alt || item.title || 'Plan image'} 
+                  className="w-full h-48 object-cover rounded-t-lg"
+                  style={{ borderBottom: !readOnly ? `2px dashed ${imageBorderColor}` : '' }}
+                />
+              )}
+              <div className="p-6 flex flex-col flex-grow">
+                {readOnly ? (
+                  <h3 className="text-2xl font-semibold" style={{ color: itemTitleColor }}>{item.title}</h3>
+                ) : (
+                  <input type="text" value={item.title || ''} onChange={(e) => handleInputChange(null, e.target.value, index, 'title')} onBlur={handleBlur} placeholder="Plan Title" className="text-2xl font-semibold bg-transparent focus:outline-none focus:ring-1 focus:ring-gray-300 rounded p-1 w-full" style={{ color: itemTitleColor }} />
+                )}
           {readOnly ? (
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-8 md:mb-12" style={{ color: titleColor }}>{sectionTitle}</h2>
-          ) : (
-            <EditableField value={sectionTitle} onChange={(e) => handleLocalChange('sectionTitle', e.target.value)} placeholder="Section Title" className="text-3xl md:text-4xl font-bold text-center mb-8 md:mb-12 block mx-auto" style={{ color: titleColor }} />
-          )}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 items-stretch">
-            {(tiers || []).map((tier) => (
-              <div
-                key={tier.id}
-                className={`p-6 rounded-xl shadow-lg flex flex-col relative overflow-hidden ${tier.isFeatured ? 'border-2' : 'border'}`}
-                style={{
-                  backgroundColor: tier.isFeatured ? featuredTierBackgroundColor : tierBackgroundColor,
-                  borderColor: tier.isFeatured ? featuredBadgeColor : '#E2E8F0' // Using featuredBadgeColor for border of featured
-                }}
-              >
-                {tier.isFeatured && (
+                  <p className="mt-2 text-sm flex-grow" style={{ color: itemDescriptionColor }}>{item.description}</p>
+                ) : (
+                  <textarea ref={getItemRef(index, 'description')} value={item.description || ''} onChange={(e) => handleInputChange(null, e.target.value, index, 'description')} onBlur={handleBlur} placeholder="Plan Description" rows={3} className="mt-2 text-sm flex-grow bg-transparent focus:outline-none focus:ring-1 focus:ring-gray-300 rounded p-1 w-full resize-none" style={{ color: itemDescriptionColor }} />
+                )}
+                {showPrice && item.rate && (
                   readOnly ? (
-                    <div className="absolute top-0 -right-10 transform rotate-45 px-8 py-1 text-xs font-semibold tracking-wider uppercase z-10" style={{ backgroundColor: featuredBadgeColor, color: featuredBadgeTextColor }}>{tier.featuredText || 'Featured'}</div>
+                    <p className="mt-4 text-3xl font-bold" style={{ color: itemRateColor }}>{item.rate}</p>
                   ) : (
-                    <>
-                      <EditableField value={tier.featuredText || 'Featured'} onChange={(e) => handleLocalChange(`tiers.${tier.id}.featuredText`, e.target.value)} placeholder="Badge Text" className="absolute top-2.5 right-[-35px] transform rotate-45 w-[150px] text-xs font-semibold tracking-wider uppercase text-center bg-transparent border-0 z-20" style={{ backgroundColor: 'transparent', color: featuredBadgeTextColor}}/>
-                      {/* Fake background for text input area for featured badge */}
-                      {/* Note: True transparent background for the input relies on parent having the color. This is a visual trick. */}
-                      <div className="absolute top-0 -right-10 transform rotate-45 px-8 py-1 z-10 pointer-events-none" style={{ backgroundColor: featuredBadgeColor, color: featuredBadgeTextColor}}><span className="opacity-0">{tier.featuredText || 'Featured'}</span></div>
-                    </>
+                    <input type="text" value={item.rate || ''} onChange={(e) => handleInputChange(null, e.target.value, index, 'rate')} onBlur={handleBlur} placeholder="Price/Rate e.g. $XX/mo" className="mt-4 text-3xl font-bold bg-transparent focus:outline-none focus:ring-1 focus:ring-gray-300 rounded p-1 w-full" style={{ color: itemRateColor }} />
                   )
                 )}
-
-                {readOnly ? <h3 className="text-2xl font-semibold mb-2" style={{ color: tierNameColor }}>{tier.name}</h3> : <EditableField value={tier.name} onChange={(e) => handleLocalChange(`tiers.${tier.id}.name`, e.target.value)} placeholder="Tier Name" className="text-2xl font-semibold mb-2" style={{ color: tierNameColor }} />}
-                
-                {readOnly ? <p className="text-4xl font-bold mb-1" style={{ color: priceColor }}>{tier.price}<span className="text-lg font-normal" style={{ color: descriptionColor }}>{tier.frequency}</span></p> :
-                  <div className="flex items-baseline mb-1">
-                    <EditableField value={tier.price} onChange={(e) => handleLocalChange(`tiers.${tier.id}.price`, e.target.value)} placeholder="$XX" className="text-4xl font-bold w-auto mr-1" style={{ color: priceColor }} />
-                    <EditableField value={tier.frequency} onChange={(e) => handleLocalChange(`tiers.${tier.id}.frequency`, e.target.value)} placeholder="/month" className="text-lg font-normal w-auto" style={{ color: descriptionColor }} />
-                  </div>}
-                {readOnly ? <p className="text-sm mb-6 min-h-[40px]" style={{ color: descriptionColor }}>{tier.description}</p> : <EditableField value={tier.description} onChange={(e) => handleLocalChange(`tiers.${tier.id}.description`, e.target.value)} placeholder="Tier description" className="text-sm mb-6 min-h-[40px] resize-none" style={{ color: descriptionColor }} type="textarea" rows={2}/>}
-
-                <ul className="space-y-3 flex-grow mb-8">
-                  {(tier.features || []).map((feature, featureIndex) => (
-                    <li key={featureIndex} className="flex items-start">
-                      <CheckIcon className="w-5 h-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                      {readOnly ? <span style={{ color: featureTextColor }}>{feature}</span> :
-                        <div className="flex-grow flex items-center">
-                          <EditableField value={feature} onChange={(e) => handleLocalChange(`tiers.${tier.id}.features.${featureIndex}`, e.target.value)} placeholder="Feature description" className="text-sm" style={{ color: featureTextColor }} />
-                          <button onClick={() => removeFeatureFromTierInline(tier.id, featureIndex)} className="ml-2 text-red-500 hover:text-red-700 text-xs p-1">✕</button>
-                        </div>
-                      }
+                <ul className="mt-6 space-y-2 text-sm">
+                  {(item.features || []).map((feature, fIndex) => (
+                    <li key={fIndex} className="flex items-center">
+                      <svg className="flex-shrink-0 h-5 w-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path></svg>
+                      {readOnly ? (
+                        <span style={{ color: itemFeatureTextColor }}>{feature}</span>
+                      ) : (
+                        <input type="text" value={feature} onChange={(e) => handleInputChange(null, e.target.value, index, 'features', fIndex)} onBlur={handleBlur} placeholder={`Feature ${fIndex + 1}`} className="bg-transparent focus:outline-none focus:ring-1 focus:ring-gray-300 rounded p-0.5 w-full" style={{ color: itemFeatureTextColor }} />
+                      )}
                     </li>
                   ))}
-                  {!readOnly && <button onClick={() => addFeatureToTierInline(tier.id)} className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium">+ Add feature</button>}
                 </ul>
-
-                <div className="mt-auto">
-                  {readOnly ? (
-                    <a href={tier.ctaLink || '#'} className="block w-full text-center py-3 px-6 rounded-lg font-semibold transition-colors hover:opacity-90" style={{ backgroundColor: ctaButtonColor, color: ctaTextColor }}>{tier.ctaText}</a>
-                  ) : (
-                    <>
-                      <EditableField value={tier.ctaText} onChange={(e) => handleLocalChange(`tiers.${tier.id}.ctaText`, e.target.value)} placeholder="Button Text" className="block w-full text-center py-3 px-6 rounded-lg font-semibold border border-dashed mb-2" style={{ backgroundColor: ctaButtonColor, color: ctaTextColor, borderColor: ctaTextColor }} />
-                      <EditableField value={tier.ctaLink} onChange={(e) => handleLocalChange(`tiers.${tier.id}.ctaLink`, e.target.value)} placeholder="Button Link (#contact)" className="block w-full text-center py-1 px-2 rounded-md text-xs mt-1" style={{color: descriptionColor}}/>
-                    </>
+                <div className="mt-auto pt-6">
+                  {item.buttonText && item.buttonLink && (
+                    <a href={item.buttonLink} className="block w-full text-center px-6 py-3 rounded-md font-semibold shadow-md hover:opacity-90 transition-colors" style={{ backgroundColor: buttonBgColor, color: buttonTextColor }}>
+                      {readOnly ? item.buttonText : <input type="text" value={item.buttonText} onChange={(e) => handleInputChange(null, e.target.value, index, 'buttonText')} onBlur={handleBlur} placeholder="Button Text" className="bg-transparent text-center focus:outline-none focus:ring-1 focus:ring-white/50 rounded p-0.5 w-full" style={{ color: buttonTextColor }}/>}
+                    </a>
                   )}
+                </div>
                 </div>
               </div>
             ))}
           </div>
         </div>
       </div>
-      {!readOnly && (
-        <PricingGrid.EditorPanel currentConfig={localConfig} onPanelConfigChange={handlePanelDataChange} />
-      )}
-    </>
   );
 };
 
 PricingGrid.propTypes = {
   config: PropTypes.shape({
-    sectionTitle: PropTypes.string,
-    tiers: PropTypes.arrayOf(PropTypes.shape({
-      id: PropTypes.string.isRequired,
-      name: PropTypes.string,
-      price: PropTypes.string,
-      frequency: PropTypes.string,
+    title: PropTypes.string,
+    items: PropTypes.arrayOf(PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      title: PropTypes.string,
+      image: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
+      alt: PropTypes.string,
       description: PropTypes.string,
+      rate: PropTypes.string,
       features: PropTypes.arrayOf(PropTypes.string),
-      ctaText: PropTypes.string,
-      ctaLink: PropTypes.string,
-      isFeatured: PropTypes.bool,
-      featuredText: PropTypes.string,
+      buttonText: PropTypes.string,
+      buttonLink: PropTypes.string,
     })),
-    // Color props
+    showPrice: PropTypes.bool,
+    backgroundColor: PropTypes.string,
     titleColor: PropTypes.string,
-    tierNameColor: PropTypes.string,
-    priceColor: PropTypes.string,
-    descriptionColor: PropTypes.string,
-    featureTextColor: PropTypes.string,
-    ctaButtonColor: PropTypes.string,
-    ctaTextColor: PropTypes.string,
-    featuredBadgeColor: PropTypes.string,
-    featuredBadgeTextColor: PropTypes.string,
-    tierBackgroundColor: PropTypes.string,
-    featuredTierBackgroundColor: PropTypes.string,
-  }), // Not .isRequired, defaults provided
+    itemBackgroundColor: PropTypes.string,
+    itemTitleColor: PropTypes.string,
+    itemDescriptionColor: PropTypes.string,
+    itemRateColor: PropTypes.string,
+    itemFeatureTextColor: PropTypes.string,
+    buttonBgColor: PropTypes.string,
+    buttonTextColor: PropTypes.string,
+    imageBorderColor: PropTypes.string,
+  }),
   readOnly: PropTypes.bool,
-  onConfigChange: PropTypes.func,
+  onConfigChange: PropTypes.func.isRequired,
+  getDisplayUrl: PropTypes.func,
+  onFileChange: PropTypes.func,
 };
 
-PricingGrid.EditorPanel = ({ currentConfig, onPanelConfigChange }) => {
-  const { tiers = [] } = currentConfig;
+PricingGrid.EditorPanel = function PricingGridEditorPanel({ currentConfig, onPanelConfigChange, onPanelFileChange, getDisplayUrl: getDisplayUrlFromProp }) {
+  const [formData, setFormData] = useState(currentConfig || {});
 
-  const handleTierUpdate = (tierId, field, value) => {
-    const updatedTiers = tiers.map(tier => 
-      tier.id === tierId ? { ...tier, [field]: value } : tier
-    );
-    onPanelConfigChange({ tiers: updatedTiers });
+  useEffect(() => {
+    setFormData(currentConfig || {});
+  }, [currentConfig]);
+
+  const handleChange = (field, value) => {
+    const newFormData = { ...formData, [field]: value };
+    setFormData(newFormData);
+    onPanelConfigChange(newFormData);
   };
 
-  const addTier = () => {
-    const newTier = {
-      id: `tier_${Date.now()}`,
-      name: 'New Plan', price: '$0', frequency: '/month', 
-      description: 'New plan description.', features: ['Feature A'], 
-      ctaText: 'Sign Up', ctaLink: '#new', 
-      isFeatured: false, featuredText: ''
-    };
-    onPanelConfigChange({ tiers: [...tiers, newTier] });
+  const handleItemChange = (itemIndex, field, value) => {
+    const updatedItems = (formData.items || []).map((item, i) => i === itemIndex ? { ...item, [field]: value } : item);
+    handleChange('items', updatedItems);
   };
 
-  const removeTier = (tierIdToRemove) => {
-    onPanelConfigChange({ tiers: tiers.filter(tier => tier.id !== tierIdToRemove) });
+  const handleItemFeatureChange = (itemIndex, featureIndex, value) => {
+    const updatedItems = (formData.items || []).map((item, i) => {
+      if (i === itemIndex) {
+        const updatedFeatures = (item.features || []).map((feat, fIdx) => fIdx === featureIndex ? value : feat);
+        return { ...item, features: updatedFeatures };
+      }
+      return item;
+    });
+    handleChange('items', updatedItems);
   };
 
-  const handleColorChange = (field, value) => {
-    onPanelConfigChange({ [field]: value });
+  const handleAddItemFeature = (itemIndex) => {
+    const updatedItems = (formData.items || []).map((item, i) => {
+      if (i === itemIndex) return { ...item, features: [...(item.features || []), 'New Feature'] };
+      return item;
+    });
+    handleChange('items', updatedItems);
   };
 
-  const colorFields = [
-    { label: 'Section Title Color', field: 'titleColor', default: '#1A202C' },
-    { label: 'Tier Name Color', field: 'tierNameColor', default: '#2D3748' },
-    { label: 'Price Color', field: 'priceColor', default: '#2C5282' },
-    { label: 'Description Color', field: 'descriptionColor', default: '#4A5568' },
-    { label: 'Feature Text Color', field: 'featureTextColor', default: '#4A5568' },
-    { label: 'CTA Button Color', field: 'ctaButtonColor', default: '#3182CE' },
-    { label: 'CTA Text Color', field: 'ctaTextColor', default: '#FFFFFF' },
-    { label: 'Featured Badge BG', field: 'featuredBadgeColor', default: '#DD6B20' },
-    { label: 'Featured Badge Text', field: 'featuredBadgeTextColor', default: '#FFFFFF' },
-    { label: 'Tier Background', field: 'tierBackgroundColor', default: '#FFFFFF' },
-    { label: 'Featured Tier BG', field: 'featuredTierBackgroundColor', default: '#EBF8FF' },
-  ];
+  const handleRemoveItemFeature = (itemIndex, featureIndex) => {
+    const updatedItems = (formData.items || []).map((item, i) => {
+      if (i === itemIndex) return { ...item, features: (item.features || []).filter((_, fIdx) => fIdx !== featureIndex) };
+      return item;
+    });
+    handleChange('items', updatedItems);
+  };
+
+  const handleAddItem = () => {
+    const newItem = { id: `plan_${Date.now()}`, title: 'New Plan', image: '', description: '', rate: '', features: [], buttonText: 'Sign Up', buttonLink: '#' };
+    handleChange('items', [...(formData.items || []), newItem]);
+  };
+
+  const handleRemoveItem = (itemIndex) => {
+    const itemToRemove = formData.items?.[itemIndex];
+    if (itemToRemove?.image && typeof itemToRemove.image === 'object' && itemToRemove.image.url?.startsWith('blob:')) {
+      URL.revokeObjectURL(itemToRemove.image.url);
+    }
+    handleChange('items', (formData.items || []).filter((_, i) => i !== itemIndex));
+  };
+
+  const handleItemImageChange = (itemIndex, file) => {
+    if (file && onPanelFileChange) {
+      onPanelFileChange({ blockItemIndex: itemIndex, field: 'image' }, file);
+    }
+  };
 
   return (
-    <div className="p-4 bg-gray-800 text-white rounded-b-md space-y-6">
-      <h3 className="text-xl font-semibold border-b border-gray-700 pb-2 mb-4">Pricing Grid Settings</h3>
+    <div className="space-y-4 p-2 bg-gray-50 rounded-md shadow">
+      {/* Overall Settings */}
+      <div><label className="input-label">Section Title (Panel Edit):</label><input type="text" value={formData.title || ''} onChange={(e) => handleChange('title', e.target.value)} className="input-text-class" /></div>
+      <div className="flex items-center"><input type="checkbox" checked={formData.showPrice || false} onChange={(e) => handleChange('showPrice', e.target.checked)} className="mr-2" /><label className="input-label">Show Price/Rate</label></div>
 
-      {/* Tier Management */}
-      <div className="space-y-3">
-        <div className="flex justify-between items-center">
-          <h4 className="text-lg font-medium text-gray-200">Pricing Tiers:</h4>
-          <button onClick={addTier} className="bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded text-xs font-medium">+ Add Tier</button>
-        </div>
-        <div className="max-h-[40vh] overflow-y-auto space-y-2 pr-2">
-          {tiers.map((tier) => (
-            <div key={tier.id} className="p-3 bg-gray-750 rounded-md border border-gray-600 flex justify-between items-center">
-              <span className="text-gray-200 text-sm truncate w-2/3" title={tier.name}>{tier.name || '(Untitled Tier)'}</span>
-              <div className="flex items-center space-x-2">
-                 <label htmlFor={`featured-${tier.id}`} className="text-xs text-gray-300 flex items-center">
-                    <input 
-                        type="checkbox" 
-                        id={`featured-${tier.id}`} 
-                        checked={tier.isFeatured || false} 
-                        onChange={(e) => handleTierUpdate(tier.id, 'isFeatured', e.target.checked)} 
-                        className="form-checkbox h-4 w-4 text-orange-500 bg-gray-600 border-gray-500 rounded mr-1.5 focus:ring-orange-400"
-                    />
-                    Featured
-                </label>
-                <button onClick={() => removeTier(tier.id)} className="text-red-400 hover:text-red-300 text-xs font-semibold">Remove</button>
-              </div>
-            </div>
-          ))}
-          {tiers.length === 0 && <p className="text-xs text-gray-400 text-center py-2">No pricing tiers defined. Add one to get started.</p>}
-        </div>
+      {/* Color Scheme */}
+      <h4 className="h4-style">Color Scheme</h4>
+      <div className="grid grid-cols-2 gap-2">
+        <div><label className="input-label-sm">Overall BG:</label><input type="color" value={formData.backgroundColor || '#FFFFFF'} onChange={(e) => handleChange('backgroundColor', e.target.value)} className="input-color-sm" /></div>
+        <div><label className="input-label-sm">Title Text:</label><input type="color" value={formData.titleColor || '#1A202C'} onChange={(e) => handleChange('titleColor', e.target.value)} className="input-color-sm" /></div>
+        <div><label className="input-label-sm">Item BG:</label><input type="color" value={formData.itemBackgroundColor || '#F7FAFC'} onChange={(e) => handleChange('itemBackgroundColor', e.target.value)} className="input-color-sm" /></div>
+        <div><label className="input-label-sm">Item Title:</label><input type="color" value={formData.itemTitleColor || '#2D3748'} onChange={(e) => handleChange('itemTitleColor', e.target.value)} className="input-color-sm" /></div>
+        <div><label className="input-label-sm">Item Desc:</label><input type="color" value={formData.itemDescriptionColor || '#4A5568'} onChange={(e) => handleChange('itemDescriptionColor', e.target.value)} className="input-color-sm" /></div>
+        <div><label className="input-label-sm">Item Rate:</label><input type="color" value={formData.itemRateColor || '#2C5282'} onChange={(e) => handleChange('itemRateColor', e.target.value)} className="input-color-sm" /></div>
+        <div><label className="input-label-sm">Item Feature:</label><input type="color" value={formData.itemFeatureTextColor || '#718096'} onChange={(e) => handleChange('itemFeatureTextColor', e.target.value)} className="input-color-sm" /></div>
+        <div><label className="input-label-sm">Button BG:</label><input type="color" value={formData.buttonBgColor || '#3182CE'} onChange={(e) => handleChange('buttonBgColor', e.target.value)} className="input-color-sm" /></div>
+        <div><label className="input-label-sm">Button Text:</label><input type="color" value={formData.buttonTextColor || '#FFFFFF'} onChange={(e) => handleChange('buttonTextColor', e.target.value)} className="input-color-sm" /></div>
+        <div><label className="input-label-sm">Image Border (Edit):</label><input type="color" value={formData.imageBorderColor || '#E2E8F0'} onChange={(e) => handleChange('imageBorderColor', e.target.value)} className="input-color-sm" /></div>
       </div>
 
-      {/* Color Settings */}
-      <div className="border-t border-gray-700 pt-4">
-        <h4 className="text-lg font-medium text-gray-200 mb-3">Color Customization:</h4>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-3">
-          {colorFields.map(cf => (
-            <div key={cf.field}>
-              <label className="block text-xs font-medium text-gray-300 mb-1">{cf.label}:</label>
-              <input 
-                type="color" 
-                value={currentConfig[cf.field] || cf.default} 
-                onChange={(e) => handleColorChange(cf.field, e.target.value)} 
-                className="mt-1 h-9 w-full border-gray-600 rounded-md bg-gray-700 cursor-pointer p-0.5"
-              />
+      {/* Items Management */}
+      <h4 className="h4-style">Manage Pricing Items</h4>
+      {(formData.items || []).map((item, itemIndex) => (
+        <div key={item.id || itemIndex} className="panel-item-container">
+          <div className="flex justify-between items-center"><h5 className="h5-style">Item {itemIndex + 1}: {item.title}</h5><button onClick={() => handleRemoveItem(itemIndex)} className="btn-remove-xs">Remove</button></div>
+          <div><label className="input-label-xs">Title:</label><input type="text" value={item.title || ''} onChange={(e) => handleItemChange(itemIndex, 'title', e.target.value)} className="input-text-xs" /></div>
+          <div><label className="input-label-xs">Description:</label><textarea value={item.description || ''} onChange={(e) => handleItemChange(itemIndex, 'description', e.target.value)} rows={2} className="input-textarea-xs" /></div>
+          {formData.showPrice && <div><label className="input-label-xs">Rate:</label><input type="text" value={item.rate || ''} onChange={(e) => handleItemChange(itemIndex, 'rate', e.target.value)} className="input-text-xs" /></div>}
+          <div>
+            <label className="input-label-xs">Image:</label>
+            <input type="file" accept="image/*" onChange={(e) => handleItemImageChange(itemIndex, e.target.files[0])} className="input-file-xs" />
+            {(getDisplayUrlFromProp && getDisplayUrlFromProp(item.image)) && <img src={getDisplayUrlFromProp(item.image)} alt="Preview" className="img-preview-xs" />}
+            <input type="text" placeholder="Or paste URL" value={typeof item.image === 'string' ? item.image : (item.image?.originalUrl || item.image?.url || '')} onChange={(e) => handleItemChange(itemIndex, 'image', e.target.value)} className="input-text-xs mt-1" />
             </div>
+          <div><label className="input-label-xs">Image Alt Text:</label><input type="text" value={item.alt || ''} onChange={(e) => handleItemChange(itemIndex, 'alt', e.target.value)} className="input-text-xs" /></div>
+          <div>
+            <label className="input-label-xs">Features:</label>
+            {(item.features || []).map((feature, fIdx) => (
+              <div key={fIdx} className="flex items-center space-x-1 mt-1"><input type="text" value={feature} onChange={(e) => handleItemFeatureChange(itemIndex, fIdx, e.target.value)} className="input-text-xs flex-grow" /><button onClick={() => handleRemoveItemFeature(itemIndex, fIdx)} className="btn-remove-feature-xs">&times;</button></div>
           ))}
+            <button onClick={() => handleAddItemFeature(itemIndex)} className="btn-add-xs mt-1">+ Add Feature</button>
+          </div>
+          <div><label className="input-label-xs">Button Text:</label><input type="text" value={item.buttonText || ''} onChange={(e) => handleItemChange(itemIndex, 'buttonText', e.target.value)} className="input-text-xs" /></div>
+          <div><label className="input-label-xs">Button Link:</label><input type="text" value={item.buttonLink || ''} onChange={(e) => handleItemChange(itemIndex, 'buttonLink', e.target.value)} className="input-text-xs" /></div>
         </div>
-      </div>
+      ))}
+      <button onClick={handleAddItem} className="btn-add-item">+ Add Pricing Item</button>
+
+      {/* Basic styling for panel inputs - can be Tailwind classes or <style jsx> */}
+      <style jsx>{`
+        .input-label { display: block; text-sm; font-medium; color: #4A5568; margin-bottom: 0.25rem; }
+        .input-label-sm { display: block; font-size: 0.8rem; font-medium; color: #4A5568; margin-bottom: 0.1rem; }
+        .input-label-xs { display: block; font-size: 0.75rem; font-medium; color: #555; margin-bottom: 0.1rem; }
+        .input-text-class { display: block; width: 100%; padding: 0.5rem 0.75rem; background-color: white; border: 1px solid #D1D5DB; border-radius: 0.375rem; }
+        .input-text-xs { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; }
+        .input-textarea-xs { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; resize: vertical; min-height: 40px; }
+        .input-color-sm { margin-top: 0.1rem; height: 1.75rem; width: 100%; padding: 0.1rem; border: 1px solid #D1D5DB; border-radius: 0.25rem; }
+        .input-file-xs { display:block; width:100%; font-size: 0.8rem; margin-bottom: 0.25rem; }
+        .img-preview-xs { height: 3rem; width: 3rem; object-fit: cover; border-radius: 0.25rem; border: 1px solid #E5E7EB; margin-top: 0.25rem; }
+        .h4-style { font-size: 1.1rem; font-weight: 600; color: #374151; padding-top: 0.75rem; border-top: 1px solid #E5E7EB; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+        .h5-style { font-size: 0.95rem; font-weight: 600; color: #4A5568; }
+        .panel-item-container { padding: 0.75rem; border: 1px solid #E5E7EB; border-radius: 0.375rem; background-color: white; margin-bottom: 0.75rem; }
+        .btn-remove-xs { font-size: 0.75rem; color: #EF4444; font-weight: 500; }
+        .btn-remove-feature-xs { font-size: 0.8rem; color: #F87171; padding:0 0.2rem; }
+        .btn-add-xs { font-size: 0.8rem; color: #3B82F6; font-weight: 500; }
+        .btn-add-item { margin-top: 1rem; padding: 0.5rem 1rem; font-size: 0.9rem; background-color: #10B981; color: white; border-radius: 0.375rem; font-weight: 500; }
+      `}</style>
     </div>
   );
 };
@@ -380,6 +372,8 @@ PricingGrid.EditorPanel = ({ currentConfig, onPanelConfigChange }) => {
 PricingGrid.EditorPanel.propTypes = {
   currentConfig: PropTypes.object.isRequired,
   onPanelConfigChange: PropTypes.func.isRequired,
+  onPanelFileChange: PropTypes.func.isRequired,
+  getDisplayUrl: PropTypes.func.isRequired,
 };
 
 export default PricingGrid;

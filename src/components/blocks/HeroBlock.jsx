@@ -1,6 +1,9 @@
 // src/components/blocks/HeroBlock.jsx
-import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import React, { useState, useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
+import { Link } from 'react-router-dom';
+import IconSelectorModal from '../common/IconSelectorModal';
+import * as LucideIcons from 'lucide-react';
 
 /**
  * HeroBlock
@@ -16,6 +19,14 @@ import { motion } from "framer-motion";
  *  - readOnly: boolean => if true, render "live" version with the shrinking effect
  *  - onConfigChange: function => called in edit mode to update config
  */
+
+// Helper to render dynamic icons (can be moved to a shared util if used more widely)
+const renderDynamicIcon = (pack, iconName, fallback = null, props = {}) => {
+    const IconsSet = pack === 'lucide' ? LucideIcons : {}; // Add other packs if needed
+    const IconComponent = IconsSet[iconName];
+    return IconComponent ? <IconComponent {...props} /> : fallback;
+};
+
 const HeroBlock = ({ config = {}, readOnly = false, onConfigChange }) => {
   // Update destructuring to handle empty strings
   const {
@@ -60,32 +71,25 @@ const HeroBlock = ({ config = {}, readOnly = false, onConfigChange }) => {
   // RENDER: READONLY => replicate the snippet
   if (readOnly) {
     return (
-      <motion.section
-        className="relative bg-banner"
-        style={{ zIndex: 20 }} // Setting z-index lower than Navbar (z-50) but still high
-        initial={{ height: initialHeight }}
-        animate={{ height: isShrunk ? finalHeight : initialHeight }}
-        transition={{ duration: 1 }}
+      <div 
+        className="relative w-full flex items-center justify-center text-center bg-cover bg-center p-8"
+        style={{
+          backgroundImage: `url('${displayBackgroundImage}')`,
+          backgroundSize: "120%", // Expanded image size
+          backgroundPosition: isShrunk ? "center right" : "center left",
+          minHeight: isShrunk ? finalHeight : initialHeight,
+        }}
       >
-        <div
-          className="absolute inset-0 bg-cover bg-center w-full h-full transition-all duration-1000"
-          style={{
-            backgroundImage: `url('${displayBackgroundImage}')`,
-            backgroundSize: "120%", // Expanded image size
-            backgroundPosition: isShrunk ? "center right" : "center left",
-          }}
-        ></div>
-        <div className="relative z-10 h-full flex items-center justify-center">
-          <motion.h1
-            initial={{ y: -50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 1 }}
-            className="text-center text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-50 tracking-wider"
-          >
-            {title}
-          </motion.h1>
+        {displayBackgroundImage && (
+          <div 
+            className="absolute inset-0 z-0"
+            style={{ backgroundColor: `rgba(0,0,0,0.3)` }}
+          ></div>
+        )}
+        <div className="relative z-10 max-w-3xl mx-auto">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 break-words" style={{color: 'inherit'}}>{title}</h1>
         </div>
-      </motion.section>
+      </div>
     );
   }
 
@@ -183,6 +187,130 @@ const HeroBlock = ({ config = {}, readOnly = false, onConfigChange }) => {
       </div>
     </div>
   );
+};
+
+HeroBlock.propTypes = {
+  config: PropTypes.shape({
+    title: PropTypes.string,
+    subtitle: PropTypes.string,
+    backgroundImage: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
+    backgroundColor: PropTypes.string,
+    textColor: PropTypes.string,
+    buttonText: PropTypes.string,
+    buttonLink: PropTypes.string,
+    buttonBgColor: PropTypes.string,
+    buttonTextColor: PropTypes.string,
+    buttonIconPack: PropTypes.string,
+    buttonIconName: PropTypes.string,
+    buttonIconColor: PropTypes.string,
+    overlayOpacity: PropTypes.number,
+    minHeight: PropTypes.string,
+  }),
+  readOnly: PropTypes.bool,
+  onConfigChange: PropTypes.func.isRequired,
+  getDisplayUrl: PropTypes.func,
+  onFileChange: PropTypes.func,
+};
+
+HeroBlock.EditorPanel = function HeroBlockEditorPanel({ currentConfig, onPanelConfigChange, onPanelFileChange, getDisplayUrl: getDisplayUrlFromProp }) {
+  const [formData, setFormData] = useState(currentConfig || {});
+  const [isIconModalOpen, setIsIconModalOpen] = useState(false);
+
+  useEffect(() => { setFormData(currentConfig || {}); }, [currentConfig]);
+
+  const handleChange = (field, value) => {
+    let parsedValue = value;
+    if (field === 'overlayOpacity') parsedValue = parseFloat(value) || 0;
+    const newFormData = { ...formData, [field]: parsedValue };
+    setFormData(newFormData);
+    onPanelConfigChange(newFormData);
+  };
+
+  const handleImageFileChange = (file) => {
+    if (file && onPanelFileChange) {
+      onPanelFileChange('backgroundImage', file);
+    }
+  };
+
+  const handleIconSelect = (pack, iconName) => {
+    handleChange('buttonIconPack', pack);
+    handleChange('buttonIconName', iconName);
+    setIsIconModalOpen(false);
+  };
+
+  const bgImageUrl = getDisplayUrlFromProp ? getDisplayUrlFromProp(formData.backgroundImage) : '';
+
+  return (
+    <div className="space-y-4 p-2 bg-gray-50 rounded-md shadow">
+      <h4 className="h4-style">Content (Panel Edit)</h4>
+      <div><label className="input-label">Title:</label><input type="text" value={formData.title || ''} onChange={(e) => handleChange('title', e.target.value)} className="input-text-class" /></div>
+      <div><label className="input-label">Subtitle:</label><textarea value={formData.subtitle || ''} onChange={(e) => handleChange('subtitle', e.target.value)} rows={2} className="input-textarea-class" /></div>
+      
+      <h4 className="h4-style">Call to Action Button</h4>
+      <div><label className="input-label">Button Text:</label><input type="text" value={formData.buttonText || ''} onChange={(e) => handleChange('buttonText', e.target.value)} className="input-text-class" /></div>
+      <div><label className="input-label">Button Link URL:</label><input type="text" value={formData.buttonLink || ''} onChange={(e) => handleChange('buttonLink', e.target.value)} className="input-text-class" placeholder="e.g., /contact" /></div>
+      <div className="flex items-center space-x-2">
+        <label className="input-label">Button Icon:</label>
+        <button type="button" onClick={() => setIsIconModalOpen(true)} className="btn-secondary-sm">
+          {formData.buttonIconName ? `Change (${formData.buttonIconPack} - ${formData.buttonIconName})` : 'Select Icon'}
+        </button>
+        {formData.buttonIconName && (
+          <button type="button" onClick={() => { handleChange('buttonIconName', null); handleChange('buttonIconPack', null);}} className="btn-danger-xs">Remove</button>
+        )}
+      </div>
+
+      <h4 className="h4-style">Appearance & Background</h4>
+      <div>
+        <label className="input-label">Background Image:</label>
+        <input type="file" accept="image/*" onChange={(e) => handleImageFileChange(e.target.files[0])} className="input-file-class" />
+        {bgImageUrl && <img src={bgImageUrl} alt="BG Preview" className="img-preview-sm mt-2" />}
+        <input type="text" placeholder="Or paste BG Image URL" value={typeof formData.backgroundImage === 'string' ? formData.backgroundImage : (formData.backgroundImage?.originalUrl || formData.backgroundImage?.url || '')} onChange={(e) => handleChange('backgroundImage', e.target.value)} className="input-text-class mt-1" />
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div><label className="input-label-sm">Overlay Opacity (0-1):</label><input type="number" min="0" max="1" step="0.05" value={formData.overlayOpacity || 0} onChange={(e) => handleChange('overlayOpacity', e.target.value)} className="input-text-xs" /></div>
+        <div><label className="input-label-sm">Min Height (e.g., 60vh):</label><input type="text" value={formData.minHeight || '60vh'} onChange={(e) => handleChange('minHeight', e.target.value)} className="input-text-xs" /></div>
+      </div>
+
+      <h4 className="h4-style">Color Scheme</h4>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
+        <div><label>BG (No Image):</label><input type="color" value={formData.backgroundColor || ''} onChange={(e) => handleChange('backgroundColor', e.target.value)} className="input-color-xs" /></div>
+        <div><label>Text Color:</label><input type="color" value={formData.textColor || ''} onChange={(e) => handleChange('textColor', e.target.value)} className="input-color-xs" /></div>
+        <div><label>Button BG:</label><input type="color" value={formData.buttonBgColor || ''} onChange={(e) => handleChange('buttonBgColor', e.target.value)} className="input-color-xs" /></div>
+        <div><label>Button Text:</label><input type="color" value={formData.buttonTextColor || ''} onChange={(e) => handleChange('buttonTextColor', e.target.value)} className="input-color-xs" /></div>
+        <div><label>Button Icon:</label><input type="color" value={formData.buttonIconColor || ''} onChange={(e) => handleChange('buttonIconColor', e.target.value)} className="input-color-xs" /></div>
+      </div>
+
+      {isIconModalOpen && (
+        <IconSelectorModal 
+          isOpen={isIconModalOpen} 
+          onClose={() => setIsIconModalOpen(false)} 
+          onIconSelect={handleIconSelect} 
+          currentIconPack={formData.buttonIconPack || 'lucide'} 
+          currentIconName={formData.buttonIconName}
+        />
+      )}
+      <style jsx>{`
+        .input-label { display: block; font-size: 0.875rem; font-weight: 500; color: #4A5568; margin-bottom: 0.25rem; }
+        .input-label-sm { font-size: 0.75rem; font-weight: 500; color: #4A5568; }
+        .input-text-class, .input-textarea-class { display: block; width: 100%; padding: 0.5rem 0.75rem; background-color: white; border: 1px solid #D1D5DB; border-radius: 0.375rem; margin-top: 0.25rem; }
+        .input-text-xs {display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; margin-top: 0.25rem;}
+        .input-textarea-class { resize: vertical; min-height: 60px; }
+        .input-file-class { display: block; width: 100%; font-size: 0.875rem; margin-top: 0.25rem; }
+        .img-preview-sm { max-height: 4rem; border-radius: 0.25rem; border: 1px solid #E5E7EB; margin-top: 0.25rem; }
+        .input-color-xs { margin-top: 0.1rem; height: 1.5rem; width: 100%; padding: 0.1rem; border: 1px solid #D1D5DB; border-radius: 0.25rem; }
+        .h4-style { font-size: 1.1rem; font-weight: 600; color: #374151; padding-top: 0.75rem; border-top: 1px solid #E5E7EB; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+        .btn-secondary-sm { padding: 0.375rem 0.75rem; font-size: 0.875rem; background-color: #6B7280; color: white; border-radius: 0.375rem; font-weight: 500; }
+        .btn-danger-xs { font-size: 0.75rem; color: #EF4444; padding: 0.25rem 0.5rem; border: 1px solid #FCA5A5; border-radius: 0.25rem; }
+      `}</style>
+    </div>
+  );
+};
+
+HeroBlock.EditorPanel.propTypes = {
+  currentConfig: PropTypes.object.isRequired,
+  onPanelConfigChange: PropTypes.func.isRequired,
+  onPanelFileChange: PropTypes.func.isRequired,
+  getDisplayUrl: PropTypes.func.isRequired,
 };
 
 export default HeroBlock;

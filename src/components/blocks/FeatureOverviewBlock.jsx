@@ -1,11 +1,9 @@
-// src/components/blocks/OverviewAndAdvantagesBlock.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
-import * as LucideIcons from "lucide-react"; // Import all for dynamic selection
-import { CheckCircle } from 'lucide-react'; // Example icon
+import * as LucideIcons from "lucide-react";
 
 /**
- * OverviewAndAdvantagesBlock
+ * FeatureOverviewBlock
  *
  * config = {
  *   heading: "Overview & Advantages",
@@ -19,29 +17,26 @@ import { CheckCircle } from 'lucide-react'; // Example icon
  * }
  */
 
-// Helper for inline editable fields
 const EditableField = ({ value, onChange, placeholder, type = 'text', className, style, rows }) => (
   type === 'textarea' ?
     <textarea value={value || ''} onChange={onChange} placeholder={placeholder} className={`bg-transparent border-b-2 border-dashed focus:border-gray-400 outline-none w-full ${className}`} style={style} rows={rows} /> :
     <input type={type} value={value || ''} onChange={onChange} placeholder={placeholder} className={`bg-transparent border-b-2 border-dashed focus:border-gray-400 outline-none w-full ${className}`} style={style} />
 );
 
-// Preview Component
-function OverviewAndAdvantagesPreview({ localConfig, readOnly, onInlineChange, onIconClick }) {
+function FeatureOverviewPreview({ localConfig, readOnly, onInlineChange, onIconClick }) {
   const {
     overviewTitle, overviewText, advantagesTitle, advantages,
     overviewTitleColor, overviewTextColor, advantagesTitleColor, advantageTextColor, advantageIconColor, backgroundColor
   } = localConfig;
 
   const getIconComponent = (iconName) => {
-    const IconComponent = LucideIcons[iconName] || LucideIcons.HelpCircle; // Default to HelpCircle if not found
+    const IconComponent = LucideIcons[iconName] || LucideIcons.HelpCircle;
     return <IconComponent />;
   };
 
   return (
     <section className="py-8 md:py-12 px-4 md:px-8" style={{ backgroundColor: backgroundColor || '#F9FAFB' }}>
       <div className="max-w-5xl mx-auto">
-        {/* Overview Section */}
         <div className="mb-8 md:mb-12 text-center">
           {readOnly ? (
             <h2 className="text-3xl md:text-4xl font-bold mb-3" style={{ color: overviewTitleColor }}>{overviewTitle}</h2>
@@ -69,7 +64,6 @@ function OverviewAndAdvantagesPreview({ localConfig, readOnly, onInlineChange, o
           )}
         </div>
 
-        {/* Advantages Section */}
         {(advantages && advantages.length > 0) || !readOnly ? (
           <div className="text-center">
             {readOnly ? (
@@ -120,15 +114,14 @@ function OverviewAndAdvantagesPreview({ localConfig, readOnly, onInlineChange, o
   );
 }
 
-OverviewAndAdvantagesPreview.propTypes = {
+FeatureOverviewPreview.propTypes = {
   localConfig: PropTypes.object.isRequired,
   readOnly: PropTypes.bool.isRequired,
   onInlineChange: PropTypes.func.isRequired,
-  onIconClick: PropTypes.func, // For opening icon selector
+  onIconClick: PropTypes.func,
 };
 
-// Panel Component
-function OverviewAndAdvantagesPanel({ localConfig, onPanelChange, onAddAdvantage, onRemoveAdvantage }) {
+function FeatureOverviewPanel({ localConfig, onPanelChange, onAddAdvantage, onRemoveAdvantage }) {
   const {
     advantages,
     overviewTitleColor, overviewTextColor, advantagesTitleColor, advantageTextColor, advantageIconColor, backgroundColor
@@ -140,9 +133,8 @@ function OverviewAndAdvantagesPanel({ localConfig, onPanelChange, onAddAdvantage
 
   return (
     <div className="p-4 bg-gray-800 text-white rounded-lg space-y-4">
-      <h3 className="text-lg font-semibold border-b border-gray-700 pb-2">Overview & Advantages Settings</h3>
+      <h3 className="text-lg font-semibold border-b border-gray-700 pb-2">Feature Overview Settings</h3>
       
-      {/* Color Settings */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-1">Overall BG Color:</label>
@@ -170,7 +162,6 @@ function OverviewAndAdvantagesPanel({ localConfig, onPanelChange, onAddAdvantage
         </div>
       </div>
 
-      {/* Advantages List Management */}
       <div className="border-t border-gray-700 pt-4">
         <div className="flex justify-between items-center mb-2">
           <h4 className="text-md font-medium text-gray-200">Advantages List:</h4>
@@ -190,45 +181,43 @@ function OverviewAndAdvantagesPanel({ localConfig, onPanelChange, onAddAdvantage
   );
 }
 
-OverviewAndAdvantagesPanel.propTypes = {
+FeatureOverviewPanel.propTypes = {
   localConfig: PropTypes.object.isRequired,
   onPanelChange: PropTypes.func.isRequired,
   onAddAdvantage: PropTypes.func.isRequired,
   onRemoveAdvantage: PropTypes.func.isRequired,
 };
 
-// Main Block Component
-export default function OverviewAndAdvantagesBlock({
+const FeatureOverviewBlock = ({
   config = {},
   readOnly = true,
   onConfigChange,
-  // IconSelectorModal related props could be passed if integrated
-  // For now, assuming simple icon name string handling in localConfig
-}) {
+}) => {
   const [localConfig, setLocalConfig] = useState(() => {
     const defaultConfig = {
-      heading: 'Overview & Advantages',
-      description: 'Detailed description of the service or product, highlighting its key aspects and benefits to the customer.',
-      bullets: [
-        { title: 'Key Advantage 1', desc: 'Description for advantage 1.' },
-        { title: 'Key Advantage 2', desc: 'Description for advantage 2.' },
+      overviewTitle: 'Project Overview',
+      overviewText: 'Detailed description of the project, its goals, and expected outcomes. This section provides a comprehensive look at what the project entails.',
+      advantagesTitle: 'Key Advantages',
+      advantages: [
+        { id: `adv_${Date.now()}_1`, text: 'High-quality materials', icon: 'CheckCircle' },
+        { id: `adv_${Date.now()}_2`, text: 'Experienced team', icon: 'Users' },
+        { id: `adv_${Date.now()}_3`, text: 'Timely completion', icon: 'Clock' },
       ],
-      footnote: 'Additional important information or a small disclaimer.',
-      backgroundColor: '#F3F4F6', // Light gray background
-      headingColor: '#111827',    // Darker gray for heading
-      descriptionColor: '#374151', // Medium gray for description/footnote
-      bulletTitleColor: '#1F2937', // Dark gray for bullet titles
-      bulletDescColor: '#4B5563',  // Slightly lighter for bullet descriptions
-      bulletIconColor: '#10B981',  // Green for bullet icons
+      overviewTitleColor: '#1A202C',
+      overviewTextColor: '#4A5568',
+      advantagesTitleColor: '#1A202C',
+      advantageTextColor: '#333333',
+      advantageIconColor: '#2C5282',
+      backgroundColor: '#F9FAFB'
     };
     const initialData = { ...defaultConfig, ...config };
     return {
       ...initialData,
       advantages: (initialData.advantages || []).map((adv, idx) => ({
-        ...defaultConfig.advantages[0], // Base defaults for an advantage
+        ...defaultConfig.advantages[0],
         ...adv,
         id: adv.id || `adv_init_${idx}_${Date.now()}`,
-        icon: adv.icon || 'CheckCircle', // Ensure icon has a default
+        icon: adv.icon || 'CheckCircle',
       }))
     };
   });
@@ -236,11 +225,6 @@ export default function OverviewAndAdvantagesBlock({
   const prevReadOnlyRef = useRef(readOnly);
   const [editingAdvantageIconIndex, setEditingAdvantageIconIndex] = useState(null);
   const [isIconModalOpen, setIsIconModalOpen] = useState(false);
-
-  const headingRef = useRef(null);
-  const descriptionRef = useRef(null);
-  const footnoteRef = useRef(null);
-  const bulletRefs = useRef({}); // Stores { title_idx: ref, desc_idx: ref }
 
   useEffect(() => {
     if (config) {
@@ -273,53 +257,6 @@ export default function OverviewAndAdvantagesBlock({
     }
     prevReadOnlyRef.current = readOnly;
   }, [readOnly, localConfig, onConfigChange]);
-
-  useEffect(() => {
-    if (!readOnly) {
-      const refsToResize = [headingRef, descriptionRef, footnoteRef];
-      refsToResize.forEach(ref => {
-        if (ref.current) {
-          ref.current.style.height = 'auto';
-          ref.current.style.height = `${ref.current.scrollHeight}px`;
-        }
-      });
-      Object.values(bulletRefs.current).forEach(bulletFieldRefs => {
-        if(bulletFieldRefs) {
-          Object.values(bulletFieldRefs).forEach(ref => {
-            if (ref && ref.current) {
-              ref.current.style.height = 'auto';
-              ref.current.style.height = `${ref.current.scrollHeight}px`;
-            }
-          });
-        }
-      });
-    }
-  }, [localConfig.heading, localConfig.description, localConfig.footnote, localConfig.bullets, readOnly]);
-
-  const handleInputChange = (field, value, bulletIndex = null, bulletField = null) => {
-    setLocalConfig(prev => {
-      let updatedConfig;
-      if (bulletIndex !== null && bulletField) {
-        const updatedBullets = prev.bullets.map((bullet, i) => 
-          i === bulletIndex ? { ...bullet, [bulletField]: value } : bullet
-        );
-        updatedConfig = { ...prev, bullets: updatedBullets };
-      } else {
-        updatedConfig = { ...prev, [field]: value };
-      }
-      if (!readOnly) onConfigChange(updatedConfig);
-      return updatedConfig;
-    });
-  };
-
-  const handleBlur = () => {
-    if (!readOnly) onConfigChange(localConfig);
-  };
-
-  const getBulletRef = (index, field) => (el) => {
-    if (!bulletRefs.current[index]) bulletRefs.current[index] = {};
-    bulletRefs.current[index][field] = { current: el };
-  };
 
   const handleInlineChange = (field, value, itemIndex = null, itemSubField = null) => {
     if (!readOnly) {
@@ -377,7 +314,7 @@ export default function OverviewAndAdvantagesBlock({
 
   return (
     <>
-      <OverviewAndAdvantagesPreview 
+      <FeatureOverviewPreview 
         localConfig={localConfig} 
         readOnly={readOnly} 
         onInlineChange={handleInlineChange}
@@ -385,7 +322,7 @@ export default function OverviewAndAdvantagesBlock({
       />
       {!readOnly && (
         <div className="bg-gray-900 p-0 rounded-b-lg shadow-xl mt-0">
-          <OverviewAndAdvantagesPanel 
+          <FeatureOverviewPanel 
             localConfig={localConfig} 
             onPanelChange={handlePanelChange}
             onAddAdvantage={handleAddAdvantage}
@@ -393,7 +330,6 @@ export default function OverviewAndAdvantagesBlock({
           />
         </div>
       )}
-      {/* Basic IconSelectorModal - Consider enhancing or using a shared one */}
       {isIconModalOpen && (
         <div style={{position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', padding: '20px', zIndex: 100, border: '1px solid #ccc', boxShadow: '0 4px 8px rgba(0,0,0,0.1)'}}>
           <h4>Select Icon</h4>
@@ -414,107 +350,27 @@ export default function OverviewAndAdvantagesBlock({
   );
 }
 
-OverviewAndAdvantagesBlock.propTypes = {
+FeatureOverviewBlock.propTypes = {
   config: PropTypes.shape({
-    heading: PropTypes.string,
-    description: PropTypes.string,
-    bullets: PropTypes.arrayOf(PropTypes.shape({
-      title: PropTypes.string,
-      desc: PropTypes.string,
-      // icon field could be added here if icons per bullet are needed
+    overviewTitle: PropTypes.string,
+    overviewText: PropTypes.string,
+    advantagesTitle: PropTypes.string,
+    advantages: PropTypes.arrayOf(PropTypes.shape({
+      id: PropTypes.string,
+      text: PropTypes.string,
+      icon: PropTypes.string,
     })),
-    footnote: PropTypes.string,
+    overviewTitleColor: PropTypes.string,
+    overviewTextColor: PropTypes.string,
+    advantagesTitleColor: PropTypes.string,
+    advantageTextColor: PropTypes.string,
+    advantageIconColor: PropTypes.string,
     backgroundColor: PropTypes.string,
-    headingColor: PropTypes.string,
-    descriptionColor: PropTypes.string,
-    bulletTitleColor: PropTypes.string,
-    bulletDescColor: PropTypes.string,
-    bulletIconColor: PropTypes.string,
-  }), // config is not .isRequired, defaults are provided in useState
+  }),
   readOnly: PropTypes.bool,
   onConfigChange: PropTypes.func,
 };
 
-OverviewAndAdvantagesBlock.EditorPanel = function OverviewAndAdvantagesEditorPanel({ currentConfig, onPanelConfigChange }) {
-  const [formData, setFormData] = useState(currentConfig || {});
+FeatureOverviewBlock.EditorPanel = FeatureOverviewPanel;
 
-  useEffect(() => {
-    setFormData(currentConfig || {});
-  }, [currentConfig]);
-
-  const handleChange = (field, value) => {
-    const newFormData = { ...formData, [field]: value };
-    setFormData(newFormData);
-    onPanelConfigChange(newFormData); 
-  };
-
-  const handleBulletChange = (index, field, value) => {
-    const updatedBullets = (formData.bullets || []).map((bullet, i) => 
-      i === index ? { ...bullet, [field]: value } : bullet
-    );
-    handleChange('bullets', updatedBullets);
-  };
-
-  const handleAddBullet = () => {
-    const newBullet = { title: 'New Advantage', desc: 'Description for new advantage.' };
-    handleChange('bullets', [...(formData.bullets || []), newBullet]);
-  };
-
-  const handleRemoveBullet = (index) => {
-    const updatedBullets = (formData.bullets || []).filter((_, i) => i !== index);
-    handleChange('bullets', updatedBullets);
-  };
-
-  return (
-    <div className="space-y-4 p-2 bg-gray-50 rounded-md shadow">
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Heading (Panel Edit):</label>
-        <input type="text" value={formData.heading || ''} onChange={(e) => handleChange('heading', e.target.value)} className="input-class" />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Description (Panel Edit):</label>
-        <textarea value={formData.description || ''} onChange={(e) => handleChange('description', e.target.value)} rows={3} className="input-class resize-none" />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Footnote (Panel Edit):</label>
-        <textarea value={formData.footnote || ''} onChange={(e) => handleChange('footnote', e.target.value)} rows={2} className="input-class resize-none" />
-      </div>
-
-      <h4 className="text-md font-semibold text-gray-700 pt-2 border-t mt-4">Color Scheme</h4>
-      <div className="grid grid-cols-2 gap-4">
-        <div><label className="text-sm font-medium">Background:</label><input type="color" value={formData.backgroundColor || '#F3F4F6'} onChange={(e) => handleChange('backgroundColor', e.target.value)} className="input-color-class" /></div>
-        <div><label className="text-sm font-medium">Heading Text:</label><input type="color" value={formData.headingColor || '#111827'} onChange={(e) => handleChange('headingColor', e.target.value)} className="input-color-class" /></div>
-        <div><label className="text-sm font-medium">Desc/Footnote Text:</label><input type="color" value={formData.descriptionColor || '#374151'} onChange={(e) => handleChange('descriptionColor', e.target.value)} className="input-color-class" /></div>
-        <div><label className="text-sm font-medium">Bullet Title Text:</label><input type="color" value={formData.bulletTitleColor || '#1F2937'} onChange={(e) => handleChange('bulletTitleColor', e.target.value)} className="input-color-class" /></div>
-        <div><label className="text-sm font-medium">Bullet Desc Text:</label><input type="color" value={formData.bulletDescColor || '#4B5563'} onChange={(e) => handleChange('bulletDescColor', e.target.value)} className="input-color-class" /></div>
-        <div><label className="text-sm font-medium">Bullet Icon:</label><input type="color" value={formData.bulletIconColor || '#10B981'} onChange={(e) => handleChange('bulletIconColor', e.target.value)} className="input-color-class" /></div>
-      </div>
-
-      <h4 className="text-md font-semibold text-gray-700 pt-2 border-t mt-4">Manage Bullets/Advantages</h4>
-      {(formData.bullets || []).map((bullet, index) => (
-        <div key={index} className="p-2 border border-gray-200 rounded bg-white">
-          <div className="flex justify-between items-center mb-1">
-            <h5 className="text-sm font-semibold">Bullet {index + 1}</h5>
-            <button onClick={() => handleRemoveBullet(index)} className="text-xs text-red-500 hover:text-red-600">Remove</button>
-          </div>
-          <div><label className="text-xs">Title:</label><input type="text" value={bullet.title || ''} onChange={(e) => handleBulletChange(index, 'title', e.target.value)} className="input-xs-class" /></div>
-          <div><label className="text-xs">Description:</label><textarea value={bullet.desc || ''} onChange={(e) => handleBulletChange(index, 'desc', e.target.value)} rows={2} className="input-xs-class resize-none" /></div>
-        </div>
-      ))}
-      <button onClick={handleAddBullet} className="mt-2 btn-primary-sm">+ Add Bullet</button>
-      
-      <style jsx>{`
-        .input-class { display: block; width: 100%; padding: 0.5rem 0.75rem; background-color: white; border: 1px solid #D1D5DB; border-radius: 0.375rem; }
-        .input-xs-class { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; }
-        .input-color-class { margin-top: 0.25rem; height: 2rem; width: 100%; padding: 0.125rem; border: 1px solid #D1D5DB; border-radius: 0.375rem; }
-        .btn-primary-sm { padding: 0.25rem 0.75rem; font-size: 0.875rem; background-color: #4F46E5; color: white; border-radius: 0.375rem; font-weight: 500; }
-      `}</style>
-    </div>
-  );
-};
-
-OverviewAndAdvantagesBlock.EditorPanel.propTypes = {
-  currentConfig: PropTypes.object.isRequired,
-  onPanelConfigChange: PropTypes.func.isRequired,
-  // No onPanelFileChange needed for this block currently
-};
+export default FeatureOverviewBlock; 

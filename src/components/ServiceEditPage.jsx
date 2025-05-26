@@ -46,38 +46,15 @@ const blockMap = {
 };
 
 // EditOverlay component
-const EditOverlay = ({ children, onClose }) => (
-  <div className="absolute inset-0 bg-black bg-opacity-80 z-50 flex flex-col overflow-auto">
-    <div className="flex justify-end p-2">
-      <button
-        type="button"
-        onClick={onClose}
-        className="bg-gray-800 rounded-full p-2 text-white hover:bg-gray-700"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          strokeWidth="1.5"
-          stroke="currentColor"
-          className="w-6 h-6"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M6 18L18 6M6 6l12 12"
-          />
-        </svg>
-      </button>
-    </div>
-    <div className="flex-1 overflow-auto p-4">{children}</div>
-  </div>
-);
+// Remove EditOverlay as it's being replaced by inline panels
+// const EditOverlay = ({ children, onClose }) => (
+// ... EditOverlay code ...
+// );
 
-EditOverlay.propTypes = {
-  children: PropTypes.node.isRequired,
-  onClose: PropTypes.func.isRequired,
-};
+// EditOverlay.propTypes = {
+// children: PropTypes.node.isRequired,
+// onClose: PropTypes.func.isRequired,
+// };
 
 // Export a reference to the services data
 let servicesDataRef = null;
@@ -290,8 +267,15 @@ const ServiceEditPage = () => {
     // Create a URL for display
     const fileURL = URL.createObjectURL(file);
 
-    // Store just the URL for display
-    handleConfigChange(blockIndex, key, fileURL);
+    // Store the file object itself for later processing (e.g., zipping)
+    // and the URL for display. The config field should store an object.
+    const fileData = {
+      file: file,
+      url: fileURL, // For preview
+      name: file.name,
+      // originalUrl will be set/preserved if this file replaces an existing one
+    };
+    handleConfigChange(blockIndex, key, fileData);
   };
 
   /**
@@ -325,15 +309,28 @@ const ServiceEditPage = () => {
 
   // New handler for file changes from within a block's EditorPanel or in-place edit.
   // This is designed to store the file object correctly for ZIP export.
-  const handleFileChangeForBlock = (blockIndex, configKey, fileOrFileObject) => {
+  const handleFileChangeForBlock = (blockIndex, configKeyOrPathData, fileOrFileObject) => {
     if (!fileOrFileObject) return;
 
     let newImageConfig;
     const currentBlock = currentPage.blocks[blockIndex];
-    const existingImageConfig = currentBlock?.config?.[configKey];
+    let existingImageConfig;
+
+    // Determine if we are updating a direct config key or a nested path
+    let isNestedPath = typeof configKeyOrPathData === 'object' && configKeyOrPathData !== null;
+    let configKeyToUpdate = isNestedPath ? configKeyOrPathData.field : configKeyOrPathData;
+
+    if (isNestedPath) {
+        // Accessing nested existing config, e.g., items[itemIndex].pictures[picIndex]
+        // This is a simplified example; a robust solution would use a helper to get/set nested properties.
+        if (configKeyOrPathData.field === 'pictures' && currentBlock.config.items && currentBlock.config.items[configKeyOrPathData.blockItemIndex]) {
+            existingImageConfig = currentBlock.config.items[configKeyOrPathData.blockItemIndex].pictures?.[configKeyOrPathData.pictureIndex];
+        }
+    } else {
+        existingImageConfig = currentBlock?.config?.[configKeyToUpdate];
+    }
 
     if (fileOrFileObject instanceof File) { // A new file is uploaded
-        // Revoke old blob URL if it exists and was part of a file object
         if (existingImageConfig && typeof existingImageConfig === 'object' && existingImageConfig.url && existingImageConfig.url.startsWith('blob:')) {
             URL.revokeObjectURL(existingImageConfig.url);
         }
@@ -342,7 +339,7 @@ const ServiceEditPage = () => {
             file: fileOrFileObject,
             url: fileURL,
             name: fileOrFileObject.name,
-            originalUrl: (typeof existingImageConfig === 'object' ? existingImageConfig.originalUrl : null) || `assets/service_uploads/generated/${fileOrFileObject.name}` // Preserve or generate
+            originalUrl: (typeof existingImageConfig === 'object' ? existingImageConfig.originalUrl : typeof existingImageConfig === 'string' ? existingImageConfig : null) || `assets/service_uploads/generated/${fileOrFileObject.name}` // Preserve or generate
         };
     } else if (typeof fileOrFileObject === 'object' && fileOrFileObject.url !== undefined) { // It's already a file object structure (e.g., from pasting a URL)
         // If the existing one was a blob from a file, revoke it
@@ -371,12 +368,26 @@ const ServiceEditPage = () => {
     const updatedPage = { ...currentPage };
     updatedPage.blocks = updatedPage.blocks.map((block, index) => {
         if (index === blockIndex) {
+            let newBlockConfig = { ...block.config };
+            if (isNestedPath && configKeyOrPathData.field === 'pictures') {
+                if (!newBlockConfig.items) newBlockConfig.items = [];
+                while (newBlockConfig.items.length <= configKeyOrPathData.blockItemIndex) {
+                    newBlockConfig.items.push({ pictures: [] }); // Ensure item and pictures array exist
+                }
+                if (!newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures) {
+                    newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures = [];
+                }
+                // Ensure picture slot exists
+                 while (newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures.length <= configKeyOrPathData.pictureIndex) {
+                    newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures.push(null);
+                }
+                newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures[configKeyOrPathData.pictureIndex] = newImageConfig;
+            } else {
+                newBlockConfig[configKeyToUpdate] = newImageConfig;
+            }
             return {
                 ...block,
-                config: {
-                    ...block.config,
-                    [configKey]: newImageConfig,
-                },
+                config: newBlockConfig,
             };
         }
         return block;
@@ -400,7 +411,7 @@ const ServiceEditPage = () => {
   const renderArrayField = (blockIndex, key, arr) => {
     return (
       <div key={key} className="mb-3 border p-2 rounded">
-        <label className="block mb-1 font-semibold">{key} (Array):</label>
+        <label className="block mb-1 font-semibold text-gray-300">{key} (Array):</label>
         {arr.map((item, idx) => {
           // Handle items that are images (string URL or object with a file)
           if (
@@ -416,12 +427,13 @@ const ServiceEditPage = () => {
                   onChange={(e) => {
                     const file = e.target.files[0];
                     if (file) {
-                      // Create a URL for display
+                      // Create a URL for display and store file object
                       const fileURL = URL.createObjectURL(file);
+                      const fileData = { file: file, url: fileURL, name: file.name };
 
-                      // Update the array with just the URL
+                      // Update the array with the file data object
                       const newArr = [...arr];
-                      newArr[idx] = fileURL;
+                      newArr[idx] = fileData;
                       handleConfigChange(blockIndex, key, newArr);
                     }
                   }}
@@ -438,7 +450,11 @@ const ServiceEditPage = () => {
                       type="button"
                       onClick={() => {
                         const newArr = [...arr];
-                        newArr.splice(idx, 1);
+                        const removedItem = newArr.splice(idx, 1)[0];
+                        // Revoke blob URL if it's a file object
+                        if (typeof removedItem === 'object' && removedItem.url && removedItem.url.startsWith('blob:')) {
+                          URL.revokeObjectURL(removedItem.url);
+                        }
                         handleConfigChange(blockIndex, key, newArr);
                       }}
                       className="ml-2 bg-red-500 text-white p-1 rounded"
@@ -476,7 +492,7 @@ const ServiceEditPage = () => {
                       <label className="block text-sm">{subKey}:</label>
                       <input
                         type="text"
-                        value={subValue}
+                        value={subValue || ''} // Ensure value is not null/undefined for input
                         onChange={(e) => {
                           const newArr = [...arr];
                           newArr[idx] = {
@@ -485,7 +501,7 @@ const ServiceEditPage = () => {
                           };
                           handleConfigChange(blockIndex, key, newArr);
                         }}
-                        className="w-full border px-2 py-1 rounded"
+                        className="w-full p-1 border rounded text-gray-800"
                       />
                     </div>
                   );
@@ -505,7 +521,7 @@ const ServiceEditPage = () => {
                   newArr[idx] = e.target.value;
                   handleConfigChange(blockIndex, key, newArr);
                 }}
-                className="flex-grow border px-2 py-1 rounded"
+                className="flex-grow border px-2 py-1 rounded text-gray-800"
               />
               <button
                 type="button"
@@ -616,13 +632,19 @@ const ServiceEditPage = () => {
       viewBox="0 0 24 24"
       strokeWidth="1.5"
       stroke="currentColor"
-      className="w-6 h-6"
+      className="w-5 h-5" // Adjusted size for toggle button
     >
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M16.862 4.487a2.032 2.032 0 112.872 2.872L7.5 21.613H4v-3.5L16.862 4.487z"
       />
+    </svg>
+  );
+
+  const CheckIcon = (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
     </svg>
   );
 
@@ -639,191 +661,69 @@ const ServiceEditPage = () => {
 
     if (!Component) {
       return (
-        <div className="bg-red-100 p-4 mb-0">
+        <div key={`unknown-${blockIndex}`} className="bg-red-100 p-4 mb-0">
           <p className="text-red-700">Unknown block type: {block.blockName}</p>
         </div>
       );
     }
 
-    // Always show HeroBlock without toggle option if it's the first block
-    const isHeroBlock = block.blockName === "HeroBlock" && blockIndex === 0;
+    // Ensure block.config is an object
+    const blockConfig = block.config || {};
 
     return (
       <div
-        key={blockIndex}
+        key={block.uniqueKey || blockIndex} // Use uniqueKey if available
         className="relative border-t border-b border-gray-300 mb-0 bg-white overflow-hidden"
       >
-        <div className="absolute top-4 right-4 z-40">
+        <div className="absolute top-2 right-2 z-40"> {/* Adjusted positioning for better visibility */}
           <button
             type="button"
-            onClick={() => setActiveEditBlockIndex(isEditingThisBlock ? null : blockIndex)}
-            className={`${isEditingThisBlock ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-800 hover:bg-gray-700'} text-white rounded-full p-2 shadow-lg transition-colors`}
+            onClick={() => {
+              if (isEditingThisBlock) {
+                // If was editing this block, and it has an EditorPanel with a commit function (optional)
+                // This is a placeholder for a more robust commit mechanism if needed from panel
+                // For now, changes are live or via onConfigChange from the block itself.
+                setActiveEditBlockIndex(null);
+              } else {
+                setActiveEditBlockIndex(blockIndex);
+              }
+            }}
+            className={`${isEditingThisBlock ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-700 hover:bg-gray-600'} text-white rounded-full p-2 shadow-lg transition-colors`}
+            title={isEditingThisBlock ? "Done Editing" : "Edit Block"}
           >
-            {isEditingThisBlock ? (
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
-            ) : PencilIcon}
+            {isEditingThisBlock ? CheckIcon : PencilIcon}
           </button>
         </div>
 
-        {/* Always show the preview, pass readOnly and onConfigChange */}
+        {/* Block Preview */}
         <Component 
-          config={block.config} 
+          config={blockConfig} 
           readOnly={!isEditingThisBlock} 
           onConfigChange={(newFullConfig) => handleBlockConfigUpdate(blockIndex, newFullConfig)}
-          // Pass a version of getDisplayUrl if blocks need it internally for rendering images from complex objects
-          getDisplayUrl={getDisplayUrlHelper}
+          getDisplayUrl={getDisplayUrlHelper} // Pass display helper
+          // Pass file handler for blocks that manage files directly in their preview (e.g., in-place image upload)
+          onFileChange={(fieldKey, fileOrFileObject) => handleFileChangeForBlock(blockIndex, fieldKey, fileOrFileObject)}
         />
 
-        {/* Show editing overlay when activeEditBlockIndex matches this block's index */}
-        {isEditingThisBlock && (
-          <EditOverlay onClose={() => setActiveEditBlockIndex(null)}>
-            <div className="bg-gray-800 p-4 text-white">
-              <h3 className="text-lg font-semibold mb-3">{block.blockName} Settings</h3>
-              
-              {Component.EditorPanel ? (
-                <Component.EditorPanel
-                  currentConfig={block.config}
-                  onPanelConfigChange={(updatedFields) => {
-                    // This updates the block's config live from the panel
-                    const currentBlockConfig = currentPage.blocks[blockIndex].config;
-                    const newConfig = { ...currentBlockConfig, ...updatedFields };
-                    handleBlockConfigUpdate(blockIndex, newConfig);
-                  }}
-                  onPanelFileChange={(fieldKey, file) => {
-                    // For file inputs within the EditorPanel
-                    handleFileChangeForBlock(blockIndex, fieldKey, file);
-                  }}
-                   getDisplayUrl={getDisplayUrlHelper} // Pass display helper to panel too
-                />
-              ) : (
-                <div className="space-y-3 max-h-[600px] overflow-y-auto p-3 bg-gray-700 rounded">
-                  <p className="text-gray-300">
-                    This block's content is primarily edited in-place on the preview. 
-                    Legacy editor fields (if any) are shown below.
-                  </p>
-                  {Object.entries(block.config).map(([key, value]) => {
-                    // THIS SECTION IS NOW FALLBACK - ideally EditorPanel handles all panel-worthy fields.
-                    // Or, this renders fields NOT handled by in-place editing or EditorPanel.
-                    // For now, keep the old logic for non-panel blocks or non-in-place fields.
-                    if (key === "id") return null;
-                    if (Array.isArray(value)) {
-                      return renderArrayField(blockIndex, key, value);
-                    } else if (typeof value === "object" && value !== null && !(value instanceof File) && !value.file) { // Avoid rendering file objects here
-                      return renderObjectField(blockIndex, key, value);
-                    } else if (typeof value === "boolean") {
-                      return (
-                        <div key={key} className="mb-3">
-                          <label className="flex items-center">
-                            <input
-                              type="checkbox"
-                              checked={value}
-                              onChange={(e) => handleConfigChange(blockIndex, key, e.target.checked)}
-                              className="mr-2"
-                            />
-                            <span>{key}</span>
-                          </label>
-                        </div>
-                      );
-                    } else if (typeof value === "number") {
-                      return (
-                        <div key={key} className="mb-3">
-                          <label className="block mb-1">{key}:</label>
-                          <input
-                            type="number"
-                            value={value}
-                            onChange={(e) => handleConfigChange(blockIndex, key, parseFloat(e.target.value))}
-                            className="w-full p-1 border rounded text-gray-800" 
-                          />
-                        </div>
-                      );
-                    } else if (
-                        (key.toLowerCase().includes("image") ||
-                        key.toLowerCase().includes("picture") ||
-                        key.toLowerCase().includes("photo")) && 
-                        !(typeof value === 'object' && value.file) // Don't render if it's our file object structure
-                      ) {
-                        return (
-                          <div key={key} className="mb-3">
-                            <label className="block mb-1">{key}:</label>
-                            <input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => {
-                                    if (e.target.files && e.target.files[0]) {
-                                        handleFileChangeForBlock(blockIndex, key, e.target.files[0]);
-                                    }
-                                }}
-                                className="p-1 border rounded w-full"
-                            />
-                            {getDisplayUrlHelper(value) && (
-                                <div className="mt-2">
-                                <img
-                                    src={getDisplayUrlHelper(value)}
-                                    alt={`Preview for ${key}`}
-                                    className="h-24 object-cover rounded"
-                                />
-                                </div>
-                            )}
-                          </div>
-                        );
-                      } else if (!(typeof value === 'object' && value.file)) { // Default text input, skip our file objects
-                        return (
-                          <div key={key} className="mb-3">
-                            <label className="block mb-1">{key}:</label>
-                            <input
-                              type="text"
-                              value={typeof value === 'string' ? value : ""} // Handle non-strings safely
-                              onChange={(e) => handleConfigChange(blockIndex, key, e.target.value)}
-                              className="w-full p-1 border rounded text-gray-800"
-                            />
-                          </div>
-                        );
-                      }
-                    return null; // Fallthrough for handled cases like file objects
-                  })}
-                </div>
-              )}
-
-              {/* Block action buttons */}
-              <div className="mt-4 flex justify-between">
-                <div className="flex space-x-2">
-                  <button
-                    type="button"
-                    onClick={() => handleMoveBlock(blockIndex, "up")}
-                    disabled={blockIndex === 0}
-                    className={`px-3 py-1 rounded ${
-                      blockIndex === 0
-                        ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-                        : "bg-blue-500 text-white hover:bg-blue-600"
-                    }`}
-                  >
-                    Move Up
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleMoveBlock(blockIndex, "down")}
-                    disabled={blockIndex === currentPage.blocks.length - 1}
-                    className={`px-3 py-1 rounded ${
-                      blockIndex === currentPage.blocks.length - 1
-                        ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-                        : "bg-blue-500 text-white hover:bg-blue-600"
-                    }`}
-                  >
-                    Move Down
-                  </button>
-                </div>
-                {!isHeroBlock && (
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveBlock(blockIndex)}
-                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                  >
-                    Remove Block
-                  </button>
-                )}
-              </div>
-            </div>
-          </EditOverlay>
+        {/* Inline Editor Panel - Render if isEditingThisBlock and Component.EditorPanel exists */}
+        {isEditingThisBlock && Component.EditorPanel && (
+          <div className="border-t border-gray-200 bg-gray-100 p-4">
+            <h3 className="text-md font-semibold text-gray-700 mb-3">{block.blockName} - Edit Panel</h3>
+            <Component.EditorPanel
+              currentConfig={blockConfig}
+              onPanelConfigChange={(updatedFields) => {
+                // This merges specific field updates from the panel into the block's config
+                const currentBlockConfig = currentPage.blocks[blockIndex].config || {};
+                const newConfig = { ...currentBlockConfig, ...updatedFields };
+                handleBlockConfigUpdate(blockIndex, newConfig);
+              }}
+              onPanelFileChange={(fieldKey, fileOrFileObject) => {
+                // For file inputs within the EditorPanel
+                handleFileChangeForBlock(blockIndex, fieldKey, fileOrFileObject);
+              }}
+              getDisplayUrl={getDisplayUrlHelper} // Pass display helper to panel too
+            />
+          </div>
         )}
       </div>
     );
@@ -897,7 +797,7 @@ const ServiceEditPage = () => {
   const renderObjectField = (blockIndex, key, obj) => {
     return (
       <div key={key} className="mb-3 border p-2 rounded">
-        <label className="block mb-1 font-semibold">{key} (Object):</label>
+        <label className="block mb-1 font-semibold text-gray-300">{key} (Object):</label>
         <div className="space-y-2">
           {Object.entries(obj).map(([subKey, subValue]) => {
             if (typeof subValue === "boolean") {
@@ -934,7 +834,7 @@ const ServiceEditPage = () => {
                       };
                       handleConfigChange(blockIndex, key, updatedObj);
                     }}
-                    className="w-full p-1 border rounded"
+                    className="w-full p-1 border rounded text-gray-800"
                   />
                 </div>
               );
@@ -949,7 +849,7 @@ const ServiceEditPage = () => {
                       const updatedObj = { ...obj, [subKey]: e.target.value };
                       handleConfigChange(blockIndex, key, updatedObj);
                     }}
-                    className="w-full p-1 border rounded"
+                    className="w-full p-1 border rounded text-gray-800"
                   />
                 </div>
               );
@@ -997,6 +897,9 @@ const ServiceEditPage = () => {
       const blockDefaults = getDefaultConfigForBlock(selectedBlockType);
 
       const updatedPage = { ...currentPage };
+      // Ensure blocks array exists
+      if (!updatedPage.blocks) updatedPage.blocks = [];
+
       // Insert the new block at the beginning of the array (after any HeroBlock)
       const heroBlockIndex = updatedPage.blocks.findIndex(
         (block) => block.blockName === "HeroBlock"
@@ -1115,3 +1018,4 @@ const ServiceEditPage = () => {
 // Export the component and the services data getter
 export default ServiceEditPage;
 export const getServicesData = () => servicesDataRef;
+export { blockMap }; // Export blockMap
