@@ -4,8 +4,15 @@ const cors = require("cors");
 require("dotenv").config(); // Load environment variables
 const sgMail = require('@sendgrid/mail');
 
+// Get SendGrid API key from environment
+const sendgridApiKey = process.env.SENDGRID_API_KEY || process.env.CLOUDFLARE_SENDGRID_API_KEY;
+if (!sendgridApiKey) {
+  console.error('SendGrid API key not found in environment variables');
+  process.exit(1);
+}
+
 // Initialize SendGrid with your API key
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+sgMail.setApiKey(sendgridApiKey);
 
 const app = express();
 
@@ -31,6 +38,10 @@ app.post("/submit-booking", async (req, res) => {
     // Extract form data from request body
     const { firstName, lastName, email, phone, service, message } = req.body;
     
+    // Get the origin URL from the request headers
+    const originUrl = req.headers.origin || 'Unknown Origin';
+    console.log('Booking request received from:', originUrl);
+    
     // Validate required fields
     if (!firstName || !lastName || !email || !phone || !service) {
       return res.status(400).json({
@@ -41,37 +52,22 @@ app.post("/submit-booking", async (req, res) => {
 
     // Construct email content with HTML formatting
     const msg = {
-      to: 'rhettburnham64@gmail.com', // Recipient email
-      from: 'rhettburnham@gmail.com', // Verified sender email in SendGrid
+      to: 'devinstuddard@gmail.com', // Recipient email
+      from: 'info@cowboy-vaqueros.com', // Verified sender email in SendGrid
       subject: `New Booking Request: ${service}`,
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 5px;">
-          <h2 style="color: #333; border-bottom: 1px solid #eee; padding-bottom: 10px;">New Booking Request</h2>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #333;">New Booking Request</h2>
           
-          <table style="width: 100%; border-collapse: collapse;">
-            <tr>
-              <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Name:</td>
-              <td style="padding: 8px; border-bottom: 1px solid #eee;">${firstName} ${lastName}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Email:</td>
-              <td style="padding: 8px; border-bottom: 1px solid #eee;"><a href="mailto:${email}">${email}</a></td>
-            </tr>
-            <tr>
-              <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Phone:</td>
-              <td style="padding: 8px; border-bottom: 1px solid #eee;"><a href="tel:${phone}">${phone}</a></td>
-            </tr>
-            <tr>
-              <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Service:</td>
-              <td style="padding: 8px; border-bottom: 1px solid #eee;">${service}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Message:</td>
-              <td style="padding: 8px; border-bottom: 1px solid #eee;">${message || "No message provided"}</td>
-            </tr>
-          </table>
+          <p><strong>Name:</strong> ${firstName} ${lastName}</p>
+          <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
+          <p><strong>Phone:</strong> <a href="tel:${phone}">${phone}</a></p>
+          <p><strong>Service:</strong> ${service}</p>
+          <p><strong>Message:</strong> ${message || "No message provided"}</p>
+          <p><strong>Submitted from:</strong> ${originUrl}</p>
           
           <p style="color: #666; font-size: 14px; margin-top: 20px;">This booking request was submitted from your website.</p>
+          <p style="color: #666; font-size: 14px;">Please respond to the client via email or phone. CC if necessary.</p>
         </div>
       `,
       // Also include plain text version for email clients that don't support HTML
@@ -83,16 +79,25 @@ Email: ${email}
 Phone: ${phone}
 Service: ${service}
 Message: ${message || "No message provided"}
+Submitted from: ${originUrl}
 
 This booking request was submitted from your website.
+Please respond to the client via email or phone. CC if necessary.
       `
     };
 
-    // Send email using SendGrid
+    // Send first email
     await sgMail.send(msg);
     
+    // Send second email to rhettburnham64@gmail.com
+    const secondMsg = {
+      ...msg,
+      to: 'tiredthoughtles@gmail.com',
+    };
+    await sgMail.send(secondMsg);
+    
     // Log success and return response
-    console.log('Booking email sent successfully');
+    console.log('Booking emails sent successfully');
     res.status(200).json({
       success: true,
       message: "Booking submitted successfully"

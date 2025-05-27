@@ -1,0 +1,51 @@
+users should see a logout option if they manually access the login page while logged in
+users cant signup with repeat codes
+
+
+c
+try enterprise saas 100 free hosting thing
+  waiting on alec way and regular way: max:48 hours
+  now doing normal way
+
+
+  add images back to the booking email
+do .env var on pages and see if it works for all sites<worked for cowboys>
+
+
+
+
+
+TODAY:
+  SWITCH TO DB Call
+    booking emails<>
+    need to store what domain they have <>
+    switch url testing to db call<>
+
+
+finish merge:
+  edit oneform if needed to load combined_data.json and test on live site
+  then edit oneform to also pull the other jsons(manually add them)
+  add or adjust the save changes button to add the jsons aswell
+  adjust again to add images(the whole folder??)
+  upload and check all functionality
+
+  pages fix for admin stuff
+
+  folder of jsons, services.json, aboutpage.json, legalagreement.json
+  workers can update/set the domain, test util/domains
+    add api for adding domains
+  move oneformloading logic to app.jsx(replace???)
+
+  ui bugs on admin page(double clicking, no green upload, no modal popup etc)
+
+admin/employee acounts can edit any custom( a load config button)
+  page, not if the user has signed up
+  let the user revert to a baseline
+
+
+Make it testable on localhost, at least ui is
+
+flow: employee gens something, manual edit, download, set config name, save,
+  if they want to redit, add a download from db button and setcurrent files button
+
+custom business cards, first 100 free, qr code to the website

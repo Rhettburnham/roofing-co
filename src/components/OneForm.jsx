@@ -16,10 +16,12 @@ import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
-
+import { useNavigate } from 'react-router-dom';
+import OneFormAuthButton from "./auth/OneFormAuthButton";
 import ServiceEditPage, { getServicesData } from "./ServiceEditPage";
 import MainPageForm from "./MainPageForm";
 import AboutBlock from "./MainPageBlocks/AboutBlock";
+
 import Navbar from "./Navbar"; // Import Navbar for preview
 import ColorEditor from "./ColorEditor"; // Import the new ColorEditor component
 import ServicePage from "./ServicePage"; // For rendering all blocks
@@ -276,6 +278,8 @@ function traverseAndModifyDataForZip(originalDataNode, assetsToCollect, pathCont
   return originalDataNode;
 }
 
+
+
 // Tab style button component
 const TabButton = ({ id, label, isActive, onClick }) => (
   <button
@@ -311,6 +315,10 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   const [loadingAllServiceBlocks, setLoadingAllServiceBlocks] = useState(false);
   const [activeEditShowcaseBlockIndex, setActiveEditShowcaseBlockIndex] = useState(null);
 
+  const [isCustomDomain, setIsCustomDomain] = useState(false);
+  const navigate = useNavigate();
+
+
   // On mount, fetch combined_data.json to populate the form if no initialData is provided
   useEffect(() => {
     const fetchAllData = async () => {
@@ -318,86 +326,154 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
       try {
         // Fetch theme colors first
         try {
-          const colorsResponse = await fetch("/data/colors_output.json"); // Ensure this path is correct
+          const colorsResponse = await fetch("/data/colors_output.json");
           if (colorsResponse.ok) {
             const colors = await colorsResponse.json();
             setThemeColors(colors);
-            setInitialThemeColors(JSON.parse(JSON.stringify(colors))); // Deep copy for "old" export
-            // Apply colors as CSS variables
+            setInitialThemeColors(JSON.parse(JSON.stringify(colors)));
             Object.keys(colors).forEach(key => {
               const cssVarName = `--color-${key.replace('_', '-')}`;
               document.documentElement.style.setProperty(cssVarName, colors[key]);
             });
             console.log("OneForm: Loaded theme colors:", colors);
           } else {
-            console.warn("OneForm: Failed to load theme colors from colors_output.json. Using defaults or previously set.");
+            console.warn("OneForm: Failed to load theme colors from colors_output.json. Using defaults.");
             const defaultColors = { accent: '#2B4C7E', banner: '#1A2F4D', "second-accent": '#FFF8E1', "faint-color": '#E0F7FA' };
             setThemeColors(defaultColors);
             setInitialThemeColors(JSON.parse(JSON.stringify(defaultColors)));
           }
         } catch (colorsError) {
           console.error("OneForm: Error loading theme colors:", colorsError);
-           const defaultColorsOnError = { accent: '#2B4C7E', banner: '#1A2F4D', "second-accent": '#FFF8E1', "faint-color": '#E0F7FA' };
-           setThemeColors(defaultColorsOnError);
-           setInitialThemeColors(JSON.parse(JSON.stringify(defaultColorsOnError)));
+          const defaultColorsOnError = { accent: '#2B4C7E', banner: '#1A2F4D', "second-accent": '#FFF8E1', "faint-color": '#E0F7FA' };
+          setThemeColors(defaultColorsOnError);
+          setInitialThemeColors(JSON.parse(JSON.stringify(defaultColorsOnError)));
         }
 
-        let dataToSet;
-        // If initialData is provided, use it directly (for single block editing like /edit/hero)
-        if (initialData && blockName) {
-          const baseData = { ...initialData };
-          if (!baseData.navbar && initialData.navbar) baseData.navbar = initialData.navbar;
-          else if (!baseData.navbar) baseData.navbar = { navLinks: [{name: "Home", href: "/"}], logo: { url: '/assets/images/logo.png', name: 'logo.png' }, whiteLogo: { url: '/assets/images/logo-white.png', name: 'logo-white.png'} };
-          dataToSet = { [blockName]: baseData[blockName] || baseData, navbar: baseData.navbar };
-        } else if (initialData && !blockName) { // Case where OneForm is loaded with full data but not for a single block.
-          dataToSet = initialData;
+        console.log("Starting fetchCombinedData...");
+        
+        // Check if we're on a custom domain
+        const customDomain = window.location.hostname !== 'roofing-co.pages.dev' && 
+                           window.location.hostname !== 'roofing-www.pages.dev' &&
+                           window.location.hostname !== 'localhost';
+        setIsCustomDomain(customDomain);
+        
+        // If initialData is provided, use it directly within the appropriate block structure
+        if (initialData) {
+          console.log("Using provided initialData:", initialData);
+          if (blockName) {
+            // For editing a specific block, structure the data properly
+            setFormData({ [blockName]: initialData });
+          } else {
+            setFormData(initialData);
+          }
         } else {
           // Default: fetch the full combined_data.json for the main OneForm editor
           try {
-            const combinedResponse = await fetch(
-              "/data/raw_data/step_4/combined_data.json"
-            );
+            const combinedResponse = await fetch("/data/raw_data/step_4/combined_data.json");
             if (combinedResponse.ok) {
-              dataToSet = await combinedResponse.json();
+              const dataToSet = await combinedResponse.json();
               console.log("Loaded combined data:", dataToSet);
+              setFormData(dataToSet);
             } else {
               console.error("Failed to load combined_data.json, status:", combinedResponse.status);
+              setFormData({
+                navbar: { navLinks: [{name: "Home", href: "/"}], logo: { url: '/assets/images/logo.png', name: 'logo.png' }, whiteLogo: { url: '/assets/images/logo-white.png', name: 'logo-white.png'} },
+                mainPageBlocks: [], 
+                hero: { title: "Welcome" }, 
+              });
             }
           } catch (combinedError) {
             console.error("Error loading combined data:", combinedError);
-          }
-        }
-
-        if (!dataToSet) { // Fallback if fetching or initialData failed
-            console.warn("Falling back to default data structure for OneForm.");
-            dataToSet = {
+            setFormData({
               navbar: { navLinks: [{name: "Home", href: "/"}], logo: { url: '/assets/images/logo.png', name: 'logo.png' }, whiteLogo: { url: '/assets/images/logo-white.png', name: 'logo-white.png'} },
               mainPageBlocks: [], 
               hero: { title: "Welcome" }, 
-            };
+            });
+          }
         }
-        
-        setFormData(dataToSet);
-        // Store a deep copy for the "old" export state, only if not in single block mode for simplicity of "old" state
+
+        // Store a deep copy for the "old" export state, only if not in single block mode
         if (!blockName) {
-            try {
-                setInitialFormDataForOldExport(JSON.parse(JSON.stringify(dataToSet)));
-            } catch (e) {
-                console.error("Could not deep clone initial data for old export:", e);
-                setInitialFormDataForOldExport(null); // or some other fallback
-            }
+          try {
+            setInitialFormDataForOldExport(JSON.parse(JSON.stringify(formData)));
+          } catch (e) {
+            console.error("Could not deep clone initial data for old export:", e);
+            setInitialFormDataForOldExport(null);
+          }
         } else {
-            setInitialFormDataForOldExport(null); // Don't create "old" folder for single block edits
+          setInitialFormDataForOldExport(null);
         }
+
+        if (customDomain) {
+          console.log("On custom domain:", window.location.hostname);
+          try {
+            // Fetch the domain-specific config
+            const domainConfigResponse = await fetch('/api/public/config');
+            console.log("Domain config response status:", domainConfigResponse.status);
+            
+            if (domainConfigResponse.ok) {
+              const domainData = await domainConfigResponse.json();
+              console.log("Successfully loaded domain config data");
+              setFormData(domainData);
+              setLoading(false);
+              return;
+            } else {
+              console.error("Failed to load domain config. Status:", domainConfigResponse.status);
+              const errorText = await domainConfigResponse.text();
+              console.error("Error response:", errorText);
+            }
+          } catch (domainConfigError) {
+            console.error("Error loading domain config:", domainConfigError);
+          }
+        }
+
+        // If not on custom domain or domain config failed, check authentication
+        console.log("Checking authentication status...");
+        const authResponse = await fetch('/api/auth/status', {
+          credentials: 'include'
+        });
+        console.log("Auth response status:", authResponse.status);
+        
+        const authData = await authResponse.json();
+        console.log("Auth data received:", authData);
+
+        if (authData.isAuthenticated) {
+          console.log("User is authenticated. Config ID:", authData.configId);
+          try {
+            // Fetch the user's custom config
+            console.log("Fetching custom config from:", `/api/config/combined_data.json`);
+            const customConfigResponse = await fetch(`/api/config/combined_data.json`, {
+              credentials: 'include'
+            });
+            console.log("Custom config response status:", customConfigResponse.status);
+            
+            if (customConfigResponse.ok) {
+              const customData = await customConfigResponse.json();
+              console.log("Successfully loaded custom config data");
+              setFormData(customData);
+              setLoading(false);
+              return;
+            } else {
+              console.error("Failed to load custom config. Status:", customConfigResponse.status);
+              const errorText = await customConfigResponse.text();
+              console.error("Error response:", errorText);
+            }
+          } catch (customConfigError) {
+            console.error("Error loading custom config:", customConfigError);
+          }
+        } else {
+          console.log("User is not authenticated");
+        }
+
         setLoading(false);
 
         // Fetch data for "All Service Blocks" tab if it becomes active and data isn't loaded
         if (activeTab === 'allServiceBlocks' && !allServiceBlocksData) {
-            fetchShowcaseData();
+          fetchShowcaseData();
         }
 
       } catch (error) {
-        console.error("Error loading form data:", error);
+        console.error("Error in fetchCombinedData:", error);
         setLoading(false);
       }
     };
@@ -811,6 +887,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
     }
   };
 
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 text-black flex items-center justify-center">
@@ -842,13 +919,10 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
             Download JSON for {blockName}
           </button>
         </div>
-        {/* For single block editing, we might not show the OneForm Navbar editor, just the block's form */}
-        {/* Or, if `initialData` was meant to be the *entire* site structure, this changes */}
-        {/* The current logic in useEffect for initialData aims to make `formData` hold the full structure or the specific block. */}
         <div className="p-4">
           <MainPageForm
-            formData={{ [blockName]: singleBlockData, navbar: navbarDataForSingleBlock }} // Pass necessary data for the single block
-            setFormData={setFormData} // This would update OneForm's main formData state
+            formData={{ [blockName]: singleBlockData, navbar: navbarDataForSingleBlock }}
+            setFormData={setFormData}
             singleBlockMode={blockName}
           />
         </div>
@@ -866,7 +940,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
     { id: "services", label: "Service Pages" },
     { id: "about", label: "About Page Block" },
     { id: "colors", label: "Theme Colors" },
-    { id: "allServiceBlocks", label: "All Service Blocks" } // New tab
+    { id: "allServiceBlocks", label: "All Service Blocks" }
   ];
 
   return (
@@ -879,38 +953,29 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         </button>
       </div>
       
-      {/* Tab Navigation and Content - below the sticky navbar editor */}
+      {/* Tab Navigation and Content */}
       <div className="flex-grow">
-        <div className="bg-gray-800 px-4 flex border-b border-gray-700 shadow-md sticky top-[calc(3.5rem+env(safe-area-inset-top,0px)+Xpx)] z-[50]">
-          {/* Xpx needs to be the height of the rendered Navbar preview section */}
-          {/* This sticky positioning for tabs might be complex to get right with dynamic navbar height */}
-          {/* For simplicity, let's make tabs not sticky for now, or assume fixed height for navbar */}
-          <div className="bg-gray-800 px-4 flex border-b border-gray-700 shadow-md">
-            {tabs.map(tabInfo => (
-              <TabButton 
-                key={tabInfo.id} 
-                id={tabInfo.id} 
-                label={tabInfo.label} 
-                isActive={activeTab === tabInfo.id} 
-                onClick={() => setActiveTab(tabInfo.id)} 
-              />
-            ))}
-          </div>
+        <div className="bg-gray-800 px-4 flex border-b border-gray-700 shadow-md">
+          {tabs.map(tabInfo => (
+            <TabButton 
+              key={tabInfo.id} 
+              id={tabInfo.id} 
+              label={tabInfo.label} 
+              isActive={activeTab === tabInfo.id} 
+              onClick={() => setActiveTab(tabInfo.id)} 
+            />
+          ))}
+          {!isCustomDomain && <OneFormAuthButton />}
         </div>
 
         <div className="tab-content">
           {activeTab === "mainPage" && (
-            // Pass formData.mainPageBlocks if that's how MainPageForm expects it,
-            // or the whole formData if MainPageForm is meant to extract what it needs.
-            // Assuming MainPageForm expects the full formData that includes .navbar, .mainPageBlocks etc.
             <MainPageForm 
-                formData={formData} 
-                setFormData={handleMainPageFormChange} // Use the new handler
+              formData={formData} 
+              setFormData={handleMainPageFormChange}
             />
           )}
-          {activeTab === "services" && 
-            <ServiceEditPage />
-          } 
+          {activeTab === "services" && <ServiceEditPage />}
           {activeTab === "about" && (
             <div className="container mx-auto px-4 py-6 bg-gray-100">
               <div className="mb-4 bg-gray-800 text-white p-4 rounded">
@@ -921,7 +986,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
                 <AboutBlock
                   readOnly={false}
                   aboutData={formData.aboutPage || formData.mainPageBlocks?.find(b => b.blockName === 'AboutBlock')?.config || {}}
-                  onConfigChange={handleAboutConfigChange} // Use the new handler
+                  onConfigChange={handleAboutConfigChange}
                 />
               </div>
             </div>
@@ -938,7 +1003,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
               {loadingAllServiceBlocks && <p>Loading showcase blocks...</p>}
               {(!loadingAllServiceBlocks && !allServiceBlocksData) && <p>Could not load showcase data. Check console.</p>}
               {allServiceBlocksData && allServiceBlocksData.blocks && (
-                <div className="space-y-0"> {/* No space for tight packing like ServiceEditPage */}
+                <div className="space-y-0">
                   {allServiceBlocksData.blocks.map((block, index) => {
                     const BlockComponent = serviceBlockMap[block.blockName];
                     const isEditingThisBlock = activeEditShowcaseBlockIndex === index;

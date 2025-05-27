@@ -1,0 +1,8 @@
+wrangler deploy
+wrangler tail  <to see live logs
+wrangler deploy --config admin.wrangler.toml
+wrangler tail --config admin.wrangler.toml
+
+
+
+wrangler pages deployment tail

@@ -10,6 +10,9 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import LoadingScreen from "./components/loadingScreen";
 import ServicePage from "./components/ServicePage";
+import LoginPage from "./components/auth/LoginPage";
+import AdminPage from './pages/AdminPage';
+import WorkerPage from './components/WorkerPage';
 
 // Import the new ServicePageCreator and MainPageCreator components
 const ServicePageCreator = lazy(() => import("./components/ServicePageCreator"));
@@ -147,7 +150,18 @@ const AppRoutes = ({
 }) => {
   return (
     <Routes>
-      {/* Main page route - now uses MainPageCreator */}
+
+      {/* Login route */}
+      <Route
+        path="/login"
+        element={
+          <Suspense fallback={<LoadingScreen />}>
+            <LoginPage />
+          </Suspense>
+        }
+      />
+
+      {/* Main page route */}
       <Route
         path="/"
         element={
@@ -347,6 +361,11 @@ const AppRoutes = ({
           </Suspense>
         }
       />
+      {/* Admin route */}
+      <Route path="/admin" element={<AdminPage />} />
+
+      {/* Worker Page route */}
+      <Route path="/worker" element={<WorkerPage />} />
     </Routes>
   );
 };

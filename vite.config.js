@@ -51,6 +51,45 @@ export default defineConfig({
     fs: {
       strict: false,
       allow: ['..']
-    }
+    },
+    proxy: {
+      "/api/auth": {
+        target: "http://localhost:5001",
+        changeOrigin: true,
+        secure: false,
+      },
+      "/api/admin": {
+        target: process.env.NODE_ENV === 'production'
+          ? 'https://roofing-co.pages.dev'
+          : 'http://localhost:8788',
+        changeOrigin: true,
+        secure: true,
+      },
+      "/api/submit-booking": {
+        target: process.env.NODE_ENV === 'production' 
+          ? 'https://roofing-co.pages.dev'
+          : 'http://localhost:8788',
+        changeOrigin: true,
+        secure: true,
+      },
+      '/api/config': {
+        target: process.env.NODE_ENV === 'production'
+          ? 'https://auth-worker.roofing-co-with-workers.pages.dev'
+          : 'https://auth-worker.roofing-www.workers.dev',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path,
+      },
+      "/api/upload": {
+        target: "http://localhost:5001",
+        changeOrigin: true,
+        secure: false,
+      },
+      "/api/download": {
+        target: "http://localhost:5001",
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
 });
