@@ -161,7 +161,7 @@ const PricingGrid = ({
                 ) : (
                   <input type="text" value={item.title || ''} onChange={(e) => handleInputChange(null, e.target.value, index, 'title')} onBlur={handleBlur} placeholder="Plan Title" className="text-2xl font-semibold bg-transparent focus:outline-none focus:ring-1 focus:ring-gray-300 rounded p-1 w-full" style={{ color: itemTitleColor }} />
                 )}
-          {readOnly ? (
+                {readOnly ? (
                   <p className="mt-2 text-sm flex-grow" style={{ color: itemDescriptionColor }}>{item.description}</p>
                 ) : (
                   <textarea ref={getItemRef(index, 'description')} value={item.description || ''} onChange={(e) => handleInputChange(null, e.target.value, index, 'description')} onBlur={handleBlur} placeholder="Plan Description" rows={3} className="mt-2 text-sm flex-grow bg-transparent focus:outline-none focus:ring-1 focus:ring-gray-300 rounded p-1 w-full resize-none" style={{ color: itemDescriptionColor }} />
@@ -180,7 +180,7 @@ const PricingGrid = ({
                       {readOnly ? (
                         <span style={{ color: itemFeatureTextColor }}>{feature}</span>
                       ) : (
-                        <input type="text" value={feature} onChange={(e) => handleInputChange(null, e.target.value, index, 'features', fIndex)} onBlur={handleBlur} placeholder={`Feature ${fIndex + 1}`} className="bg-transparent focus:outline-none focus:ring-1 focus:ring-gray-300 rounded p-0.5 w-full" style={{ color: itemFeatureTextColor }} />
+                        <input type="text" value={feature} onChange={(e) => handleInputChange(null, e.target.value, index, 'features', fIndex)} onBlur={handleBlur} placeholder={`Feature ${fIndex + 1}`} className="text-sm bg-transparent focus:outline-none focus:ring-1 focus:ring-gray-300 rounded p-0.5 w-full" style={{ color: itemFeatureTextColor }} />
                       )}
                     </li>
                   ))}
@@ -188,16 +188,16 @@ const PricingGrid = ({
                 <div className="mt-auto pt-6">
                   {item.buttonText && item.buttonLink && (
                     <a href={item.buttonLink} className="block w-full text-center px-6 py-3 rounded-md font-semibold shadow-md hover:opacity-90 transition-colors" style={{ backgroundColor: buttonBgColor, color: buttonTextColor }}>
-                      {readOnly ? item.buttonText : <input type="text" value={item.buttonText} onChange={(e) => handleInputChange(null, e.target.value, index, 'buttonText')} onBlur={handleBlur} placeholder="Button Text" className="bg-transparent text-center focus:outline-none focus:ring-1 focus:ring-white/50 rounded p-0.5 w-full" style={{ color: buttonTextColor }}/>}
+                      {readOnly ? item.buttonText : <input type="text" value={item.buttonText} onChange={(e) => handleInputChange(null, e.target.value, index, 'buttonText')} onBlur={handleBlur} placeholder="Button Text" className="font-semibold bg-transparent text-center focus:outline-none focus:ring-1 focus:ring-white/50 rounded p-0.5 w-full" style={{ color: buttonTextColor }}/>}
                     </a>
                   )}
                 </div>
-                </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       </div>
+    </div>
   );
 };
 
@@ -300,7 +300,7 @@ PricingGrid.EditorPanel = function PricingGridEditorPanel({ currentConfig, onPan
   return (
     <div className="space-y-4 p-2 bg-gray-50 rounded-md shadow">
       {/* Overall Settings */}
-      <div><label className="input-label">Section Title (Panel Edit):</label><input type="text" value={formData.title || ''} onChange={(e) => handleChange('title', e.target.value)} className="input-text-class" /></div>
+      <div><label className="input-label">Section Title (Panel Edit):</label><input type="text" value={formData.title || ''} onChange={(e) => handleChange('title', e.target.value)} className="input-text-class input-section-title-pg" /></div>
       <div className="flex items-center"><input type="checkbox" checked={formData.showPrice || false} onChange={(e) => handleChange('showPrice', e.target.checked)} className="mr-2" /><label className="input-label">Show Price/Rate</label></div>
 
       {/* Color Scheme */}
@@ -323,24 +323,24 @@ PricingGrid.EditorPanel = function PricingGridEditorPanel({ currentConfig, onPan
       {(formData.items || []).map((item, itemIndex) => (
         <div key={item.id || itemIndex} className="panel-item-container">
           <div className="flex justify-between items-center"><h5 className="h5-style">Item {itemIndex + 1}: {item.title}</h5><button onClick={() => handleRemoveItem(itemIndex)} className="btn-remove-xs">Remove</button></div>
-          <div><label className="input-label-xs">Title:</label><input type="text" value={item.title || ''} onChange={(e) => handleItemChange(itemIndex, 'title', e.target.value)} className="input-text-xs" /></div>
+          <div><label className="input-label-xs">Title:</label><input type="text" value={item.title || ''} onChange={(e) => handleItemChange(itemIndex, 'title', e.target.value)} className="input-text-xs input-item-title-pg" /></div>
           <div><label className="input-label-xs">Description:</label><textarea value={item.description || ''} onChange={(e) => handleItemChange(itemIndex, 'description', e.target.value)} rows={2} className="input-textarea-xs" /></div>
-          {formData.showPrice && <div><label className="input-label-xs">Rate:</label><input type="text" value={item.rate || ''} onChange={(e) => handleItemChange(itemIndex, 'rate', e.target.value)} className="input-text-xs" /></div>}
+          {formData.showPrice && <div><label className="input-label-xs">Rate:</label><input type="text" value={item.rate || ''} onChange={(e) => handleItemChange(itemIndex, 'rate', e.target.value)} className="input-text-xs input-item-rate-pg" /></div>}
           <div>
             <label className="input-label-xs">Image:</label>
             <input type="file" accept="image/*" onChange={(e) => handleItemImageChange(itemIndex, e.target.files[0])} className="input-file-xs" />
             {(getDisplayUrlFromProp && getDisplayUrlFromProp(item.image)) && <img src={getDisplayUrlFromProp(item.image)} alt="Preview" className="img-preview-xs" />}
             <input type="text" placeholder="Or paste URL" value={typeof item.image === 'string' ? item.image : (item.image?.originalUrl || item.image?.url || '')} onChange={(e) => handleItemChange(itemIndex, 'image', e.target.value)} className="input-text-xs mt-1" />
-            </div>
+          </div>
           <div><label className="input-label-xs">Image Alt Text:</label><input type="text" value={item.alt || ''} onChange={(e) => handleItemChange(itemIndex, 'alt', e.target.value)} className="input-text-xs" /></div>
           <div>
             <label className="input-label-xs">Features:</label>
             {(item.features || []).map((feature, fIdx) => (
               <div key={fIdx} className="flex items-center space-x-1 mt-1"><input type="text" value={feature} onChange={(e) => handleItemFeatureChange(itemIndex, fIdx, e.target.value)} className="input-text-xs flex-grow" /><button onClick={() => handleRemoveItemFeature(itemIndex, fIdx)} className="btn-remove-feature-xs">&times;</button></div>
-          ))}
+            ))}
             <button onClick={() => handleAddItemFeature(itemIndex)} className="btn-add-xs mt-1">+ Add Feature</button>
           </div>
-          <div><label className="input-label-xs">Button Text:</label><input type="text" value={item.buttonText || ''} onChange={(e) => handleItemChange(itemIndex, 'buttonText', e.target.value)} className="input-text-xs" /></div>
+          <div><label className="input-label-xs">Button Text:</label><input type="text" value={item.buttonText || ''} onChange={(e) => handleItemChange(itemIndex, 'buttonText', e.target.value)} className="input-text-xs input-button-text-pg" /></div>
           <div><label className="input-label-xs">Button Link:</label><input type="text" value={item.buttonLink || ''} onChange={(e) => handleItemChange(itemIndex, 'buttonLink', e.target.value)} className="input-text-xs" /></div>
         </div>
       ))}
@@ -348,12 +348,12 @@ PricingGrid.EditorPanel = function PricingGridEditorPanel({ currentConfig, onPan
 
       {/* Basic styling for panel inputs - can be Tailwind classes or <style jsx> */}
       <style jsx>{`
-        .input-label { display: block; text-sm; font-medium; color: #4A5568; margin-bottom: 0.25rem; }
-        .input-label-sm { display: block; font-size: 0.8rem; font-medium; color: #4A5568; margin-bottom: 0.1rem; }
-        .input-label-xs { display: block; font-size: 0.75rem; font-medium; color: #555; margin-bottom: 0.1rem; }
-        .input-text-class { display: block; width: 100%; padding: 0.5rem 0.75rem; background-color: white; border: 1px solid #D1D5DB; border-radius: 0.375rem; }
-        .input-text-xs { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; }
-        .input-textarea-xs { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; resize: vertical; min-height: 40px; }
+        .input-label { display: block; font-size: 0.875rem; font-weight: 500; color: #4A5568; margin-bottom: 0.25rem; }
+        .input-label-sm { display: block; font-size: 0.875rem; font-weight: 500; color: #4A5568; margin-bottom: 0.1rem; }
+        .input-label-xs { display: block; font-size: 0.75rem; font-weight: 500; color: #555; margin-bottom: 0.1rem; }
+        .input-text-class { display: block; width: 100%; padding: 0.5rem 0.75rem; background-color: white; border: 1px solid #D1D5DB; border-radius: 0.375rem; color: #374151; }
+        .input-text-xs { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; color: #374151; }
+        .input-textarea-xs { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; resize: vertical; min-height: 40px; color: #374151; }
         .input-color-sm { margin-top: 0.1rem; height: 1.75rem; width: 100%; padding: 0.1rem; border: 1px solid #D1D5DB; border-radius: 0.25rem; }
         .input-file-xs { display:block; width:100%; font-size: 0.8rem; margin-bottom: 0.25rem; }
         .img-preview-xs { height: 3rem; width: 3rem; object-fit: cover; border-radius: 0.25rem; border: 1px solid #E5E7EB; margin-top: 0.25rem; }
@@ -364,6 +364,10 @@ PricingGrid.EditorPanel = function PricingGridEditorPanel({ currentConfig, onPan
         .btn-remove-feature-xs { font-size: 0.8rem; color: #F87171; padding:0 0.2rem; }
         .btn-add-xs { font-size: 0.8rem; color: #3B82F6; font-weight: 500; }
         .btn-add-item { margin-top: 1rem; padding: 0.5rem 1rem; font-size: 0.9rem; background-color: #10B981; color: white; border-radius: 0.375rem; font-weight: 500; }
+        .input-section-title-pg { font-size: 1.875rem; line-height: 2.25rem; font-weight: 800; color: #374151; }
+        .input-item-title-pg { font-size: 1.5rem; line-height: 2rem; font-weight: 600; color: #374151; }
+        .input-item-rate-pg { font-size: 1.875rem; line-height: 2.25rem; font-weight: 700; color: #374151; }
+        .input-button-text-pg { font-size: 0.875rem; font-weight: 600; color: #374151; }
       `}</style>
     </div>
   );

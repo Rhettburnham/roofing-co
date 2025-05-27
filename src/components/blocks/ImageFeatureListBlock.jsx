@@ -189,7 +189,7 @@ const ImageFeatureListBlock = ({
           type="text"
           value={title}
           onChange={(e) => handleChange("title", e.target.value)}
-          className="mt-1 w-full px-2 py-1 bg-gray-600 text-white border border-gray-500 rounded"
+          className="text-[4vw] md:text-[3vh] font-bold text-center bg-transparent focus:outline-none focus:ring-1 focus:ring-gray-400 rounded p-1 w-full text-white placeholder-gray-300"
         />
       </label>
 
@@ -212,7 +212,7 @@ const ImageFeatureListBlock = ({
                 type="text"
                 value={item.name}
                 onChange={(e) => updateItemField(idx, "name", e.target.value)}
-                className="mt-1 w-full px-2 py-1 bg-gray-600 text-white border border-gray-500 rounded"
+                className="text-xl font-semibold mt-1 w-full px-2 py-1 bg-gray-600 text-white border border-gray-500 rounded text-center placeholder-gray-300"
               />
             </label>
             <label className="block text-sm mb-1">
@@ -221,7 +221,7 @@ const ImageFeatureListBlock = ({
                 rows={2}
                 value={item.description}
                 onChange={(e) => updateItemField(idx, "description", e.target.value)}
-                className="mt-1 w-full px-2 py-1 bg-gray-600 text-white border border-gray-500 rounded"
+                className="text-base mt-1 w-full px-2 py-1 bg-gray-600 text-white border border-gray-500 rounded placeholder-gray-300"
               />
             </label>
             {/* features */}
@@ -236,7 +236,7 @@ const ImageFeatureListBlock = ({
                     updatedFeat[fIdx] = e.target.value;
                     updateItemField(idx, "features", updatedFeat);
                   }}
-                  className="w-full px-2 py-1 bg-gray-600 text-white border border-gray-500 rounded"
+                  className="text-sm w-full px-2 py-1 bg-gray-600 text-white border border-gray-500 rounded placeholder-gray-300"
                 />
                 <button
                   type="button"
@@ -268,7 +268,7 @@ const ImageFeatureListBlock = ({
                 type="text"
                 value={item.uses}
                 onChange={(e) => updateItemField(idx, "uses", e.target.value)}
-                className="mt-1 w-full px-2 py-1 bg-gray-600 text-white border border-gray-500 rounded"
+                className="text-sm mt-1 w-full px-2 py-1 bg-gray-600 text-white border border-gray-500 rounded placeholder-gray-300"
               />
             </label>
             <label className="block text-sm mt-1">
@@ -277,7 +277,7 @@ const ImageFeatureListBlock = ({
                 type="text"
                 value={item.limitations}
                 onChange={(e) => updateItemField(idx, "limitations", e.target.value)}
-                className="mt-1 w-full px-2 py-1 bg-gray-600 text-white border border-gray-500 rounded"
+                className="text-sm mt-1 w-full px-2 py-1 bg-gray-600 text-white border border-gray-500 rounded placeholder-gray-300"
               />
             </label>
             <label className="block text-sm mt-1">
@@ -286,7 +286,7 @@ const ImageFeatureListBlock = ({
                 type="text"
                 value={item.imageUrl}
                 onChange={(e) => updateItemField(idx, "imageUrl", e.target.value)}
-                className="mt-1 w-full px-2 py-1 bg-gray-600 text-white border border-gray-500 rounded"
+                className="text-sm mt-1 w-full px-2 py-1 bg-gray-600 text-white border border-gray-500 rounded placeholder-gray-300"
               />
             </label>
           </div>

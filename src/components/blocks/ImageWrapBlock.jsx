@@ -204,7 +204,12 @@ ImageWrapBlock.EditorPanel = ({ currentConfig, onPanelConfigChange, onPanelFileC
         .input-label { display: block; font-size: 0.875rem; font-weight: 500; color: #4A5568; margin-bottom: 0.25rem; }
         .input-label-sm { font-size: 0.8rem; font-weight: 500; color: #4A5568; }
         .input-text-class, .input-textarea-class, .input-select-class { display: block; width: 100%; padding: 0.5rem 0.75rem; background-color: white; border: 1px solid #D1D5DB; border-radius: 0.375rem; margin-top: 0.25rem; }
-        .input-textarea-class { resize: vertical; min-height: 80px; }
+        .input-textarea-class { 
+          resize: vertical; 
+          min-height: 80px; 
+          font-size: 1rem; /* text-base */
+          line-height: 1.625; /* leading-relaxed */
+        }
         .input-file-class { display: block; width: 100%; font-size: 0.875rem; margin-top: 0.25rem; }
         .img-preview-sm { max-height: 4rem; border-radius: 0.25rem; border: 1px solid #E5E7EB; }
         .input-color-sm { margin-top: 0.25rem; height: 1.75rem; width: 100%; padding: 0.1rem; border: 1px solid #D1D5DB; border-radius: 0.25rem; }

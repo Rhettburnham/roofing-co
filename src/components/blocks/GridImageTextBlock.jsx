@@ -218,7 +218,7 @@ GridImageTextBlock.EditorPanel = function GridImageTextBlockEditorPanel({ curren
 
   return (
         <div className="space-y-4 p-2 bg-gray-50 rounded-md shadow">
-            <div><label className="input-label">Section Title (Panel Edit):</label><input type="text" value={formData.title || ''} onChange={(e) => handleChange('title', e.target.value)} className="input-text-class" /></div>
+            <div><label className="input-label">Section Title (Panel Edit):</label><input type="text" value={formData.title || ''} onChange={(e) => handleChange('title', e.target.value)} className="input-text-class input-section-title-gitb" /></div>
             <div>
                 <label className="input-label">Number of Columns (1-4):</label>
                 <select value={formData.columns || 3} onChange={(e) => handleChange('columns', parseInt(e.target.value, 10))} className="input-select-class">
@@ -240,8 +240,8 @@ GridImageTextBlock.EditorPanel = function GridImageTextBlockEditorPanel({ curren
             {(formData.items || []).map((item, itemIndex) => (
                 <div key={item.id || itemIndex} className="panel-item-container">
                     <div className="flex justify-between items-center"><h5 className="h5-style">Item {itemIndex + 1}</h5><button onClick={() => handleRemoveItem(itemIndex)} className="btn-remove-xs">Remove</button></div>
-                    <div><label className="input-label-xs">Title:</label><input type="text" value={item.title || ''} onChange={(e) => handleItemChange(itemIndex, 'title', e.target.value)} className="input-text-xs" /></div>
-                    <div><label className="input-label-xs">Description:</label><textarea value={item.description || ''} onChange={(e) => handleItemChange(itemIndex, 'description', e.target.value)} rows={2} className="input-textarea-xs" /></div>
+                    <div><label className="input-label-xs">Title:</label><input type="text" value={item.title || ''} onChange={(e) => handleItemChange(itemIndex, 'title', e.target.value)} className="input-text-xs input-item-title-gitb-panel" /></div>
+                    <div><label className="input-label-xs">Description:</label><textarea value={item.description || ''} onChange={(e) => handleItemChange(itemIndex, 'description', e.target.value)} rows={2} className="input-textarea-xs input-item-desc-gitb-panel" /></div>
                     <div>
                         <label className="input-label-xs">Image:</label>
                         <input type="file" accept="image/*" onChange={(e) => handleItemImageChange(itemIndex, e.target.files[0])} className="input-file-xs" />
@@ -256,9 +256,9 @@ GridImageTextBlock.EditorPanel = function GridImageTextBlockEditorPanel({ curren
                 .input-label { display: block; font-size: 0.875rem; font-weight: 500; color: #4A5568; margin-bottom: 0.25rem; }
                 .input-label-sm { display: block; font-size: 0.8rem; font-weight: 500; color: #4A5568; margin-bottom: 0.1rem; }
                 .input-label-xs { display: block; font-size: 0.75rem; font-weight: 500; color: #555; margin-bottom: 0.1rem; }
-                .input-text-class { display: block; width: 100%; padding: 0.5rem 0.75rem; background-color: white; border: 1px solid #D1D5DB; border-radius: 0.375rem; }
-                .input-text-xs { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; }
-                .input-textarea-xs { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; resize: vertical; min-height: 40px; }
+                .input-text-class { display: block; width: 100%; padding: 0.5rem 0.75rem; background-color: white; border: 1px solid #D1D5DB; border-radius: 0.375rem; color: #374151; }
+                .input-text-xs { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; color: #374151; }
+                .input-textarea-xs { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; resize: vertical; min-height: 40px; color: #374151; }
                 .input-select-class { display: block; width: 100%; padding: 0.5rem 0.75rem; background-color: white; border: 1px solid #D1D5DB; border-radius: 0.375rem; }
                 .input-color-sm { margin-top: 0.1rem; height: 1.75rem; width: 100%; padding: 0.1rem; border: 1px solid #D1D5DB; border-radius: 0.25rem; }
                 .input-file-xs { display:block; width:100%; font-size: 0.8rem; margin-bottom: 0.25rem; }
@@ -268,6 +268,9 @@ GridImageTextBlock.EditorPanel = function GridImageTextBlockEditorPanel({ curren
                 .panel-item-container { padding: 0.75rem; border: 1px solid #E5E7EB; border-radius: 0.375rem; background-color: white; margin-bottom: 0.75rem; }
                 .btn-remove-xs { font-size: 0.75rem; color: #EF4444; font-weight: 500; }
                 .btn-add-item { margin-top: 1rem; padding: 0.5rem 1rem; font-size: 0.9rem; background-color: #10B981; color: white; border-radius: 0.375rem; font-weight: 500; }
+                .input-section-title-gitb { font-size: 1.875rem; line-height: 2.25rem; font-weight: 800; /* text-3xl font-extrabold */ }
+                .input-item-title-gitb-panel { font-size: 1.25rem; line-height: 1.75rem; font-weight: 600; /* text-xl font-semibold */ }
+                .input-item-desc-gitb-panel { font-size: 1rem; line-height: 1.625; /* text-base, leading-relaxed for textarea */ }
             `}</style>
         </div>
     );

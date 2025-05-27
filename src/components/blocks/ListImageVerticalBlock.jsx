@@ -113,7 +113,7 @@ const ListImageVerticalBlock = ({ config, readOnly, onConfigChange, getDisplayUr
                                 {readOnly ? (
                                     <span>{item.number}</span>
                                 ) : (
-                                    <input type="text" value={item.number || ''} onChange={(e) => handleInputChange(null, e.target.value, index, 'number')} onBlur={handleBlur} placeholder="#" className="w-8 text-center bg-transparent focus:outline-none text-white placeholder-gray-200" />
+                                    <input type="text" value={item.number || ''} onChange={(e) => handleInputChange(null, e.target.value, index, 'number')} onBlur={handleBlur} placeholder="#" className="w-8 text-center bg-transparent focus:outline-none text-white placeholder-gray-200 text-xl font-bold" />
                                 )}
                             </div>
 
@@ -213,7 +213,7 @@ ListImageVerticalBlock.EditorPanel = function ListImageVerticalBlockEditorPanel(
 
   return (
         <div className="space-y-4 p-2 bg-gray-50 rounded-md shadow">
-            <div><label className="input-label">Section Title (Panel Edit):</label><input type="text" value={formData.title || ''} onChange={(e) => handleChange('title', e.target.value)} className="input-text-class" /></div>
+            <div><label className="input-label">Section Title (Panel Edit):</label><input type="text" value={formData.title || ''} onChange={(e) => handleChange('title', e.target.value)} className="input-text-class input-section-title-liv" /></div>
             <div className="flex items-center"><input type="checkbox" checked={formData.enableAnimation || false} onChange={(e) => handleChange('enableAnimation', e.target.checked)} className="mr-2" /><label className="input-label">Enable Animation (if applicable)</label></div>
 
             <h4 className="h4-style">Color Scheme</h4>
@@ -231,8 +231,8 @@ ListImageVerticalBlock.EditorPanel = function ListImageVerticalBlockEditorPanel(
             {(formData.items || []).map((item, itemIndex) => (
                 <div key={item.id || itemIndex} className="panel-item-container">
                     <div className="flex justify-between items-center"><h5 className="h5-style">Item {itemIndex + 1} (Number: {item.number})</h5><button onClick={() => handleRemoveItem(itemIndex)} className="btn-remove-xs">Remove</button></div>
-                    <div><label className="input-label-xs">Number Text:</label><input type="text" value={item.number || ''} onChange={(e) => handleItemChange(itemIndex, 'number', e.target.value)} className="input-text-xs" /></div>
-                    <div><label className="input-label-xs">Title:</label><input type="text" value={item.title || ''} onChange={(e) => handleItemChange(itemIndex, 'title', e.target.value)} className="input-text-xs" /></div>
+                    <div><label className="input-label-xs">Number Text:</label><input type="text" value={item.number || ''} onChange={(e) => handleItemChange(itemIndex, 'number', e.target.value)} className="input-text-xs input-item-number-liv-panel" /></div>
+                    <div><label className="input-label-xs">Title:</label><input type="text" value={item.title || ''} onChange={(e) => handleItemChange(itemIndex, 'title', e.target.value)} className="input-text-xs input-item-title-liv-panel" /></div>
                     <div><label className="input-label-xs">Description:</label><textarea value={item.description || ''} onChange={(e) => handleItemChange(itemIndex, 'description', e.target.value)} rows={2} className="input-textarea-xs" /></div>
                     <div>
                         <label className="input-label-xs">Image:</label>
@@ -247,9 +247,14 @@ ListImageVerticalBlock.EditorPanel = function ListImageVerticalBlockEditorPanel(
                 .input-label { display: block; font-size: 0.875rem; font-weight: 500; color: #4A5568; margin-bottom: 0.25rem; }
                 .input-label-sm { display: block; font-size: 0.8rem; font-weight: 500; color: #4A5568; margin-bottom: 0.1rem; }
                 .input-label-xs { display: block; font-size: 0.75rem; font-weight: 500; color: #555; margin-bottom: 0.1rem; }
-                .input-text-class { display: block; width: 100%; padding: 0.5rem 0.75rem; background-color: white; border: 1px solid #D1D5DB; border-radius: 0.375rem; }
-                .input-text-xs { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; }
-                .input-textarea-xs { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; resize: vertical; min-height: 40px; }
+                .input-text-class { display: block; width: 100%; padding: 0.5rem 0.75rem; background-color: white; border: 1px solid #D1D5DB; border-radius: 0.375rem; color: #374151; }
+                .input-text-xs { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; color: #374151; }
+                .input-textarea-xs { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; resize: vertical; min-height: 40px; color: #374151; }
+                
+                .input-section-title-liv { font-size: 1.875rem; line-height: 2.25rem; font-weight: 800; /* extrabold */ }
+                .input-item-number-liv-panel { font-size: 1.25rem; line-height: 1.75rem; font-weight: 700; /* text-xl font-bold */ }
+                .input-item-title-liv-panel { font-size: 1.25rem; line-height: 1.75rem; font-weight: 600; /* text-xl font-semibold */ }
+
                 .input-color-sm { margin-top: 0.1rem; height: 1.75rem; width: 100%; padding: 0.1rem; border: 1px solid #D1D5DB; border-radius: 0.25rem; }
                 .input-file-xs { display:block; width:100%; font-size: 0.8rem; margin-bottom: 0.25rem; }
                 .img-preview-xs { height: 3rem; width: 3rem; object-fit: cover; border-radius: 0.25rem; border: 1px solid #E5E7EB; margin-top: 0.25rem; }

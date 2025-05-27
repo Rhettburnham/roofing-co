@@ -13,6 +13,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import * as FaIcons from "react-icons/fa";
 import IconSelectorModal from "../common/IconSelectorModal";
+import ThemeColorPicker from "../common/ThemeColorPicker";
 
 // Register ScrollTrigger plugin with GSAP
 gsap.registerPlugin(ScrollTrigger);
@@ -326,30 +327,26 @@ function BasicMapPreview({
 
     // Define different animations for small vs medium+ viewports
     if (isSmallScreen) {
-      // Small viewport: Slide in from right when 30% from bottom of viewport
+      // Small viewport: Fade in
       gsap.set(titleRef.current, {
-        x: "100vw", // Start off-screen to the right
         opacity: 0,
       });
 
       gsap.to(titleRef.current, {
-        x: "50%", // Center horizontally
-        xPercent: -50, // Adjust for width of element
         opacity: 1,
         duration: 1,
         ease: "power3.out",
         scrollTrigger: {
           id: "titleAnimation",
           trigger: sectionRef.current,
-          start: "bottom 70%", // Trigger when bottom of section is 30% from bottom (70% down viewport)
+          start: "bottom 70%", 
           toggleActions: "play none none none",
           once: true,
         },
       });
     } else {
-      // Medium+ viewport: Center the title
+      // Medium+ viewport: Fade in
       gsap.set(titleRef.current, {
-        x: 0,
         opacity: 0,
       });
 
@@ -360,7 +357,7 @@ function BasicMapPreview({
         scrollTrigger: {
           id: "titleAnimation",
           trigger: sectionRef.current,
-          start: "top 40%", // Trigger when top of section reaches 40% down the viewport
+          start: "top 40%", 
           toggleActions: "play none none none",
           once: true,
         },
@@ -424,37 +421,37 @@ function BasicMapPreview({
 
   return (
     <section className="overflow-hidden" ref={sectionRef}>
-      <div className="pb-2">
-        <div className="flex justify-center">
-          {/* Title with animation - conditionally editable */}
-          {readOnly ? (
-            <h1
-              ref={titleRef}
-              className="text-[3vh] md:text-[4vh] font-normal text-black font-serif title-animation text-center"
-            >
-              {title || "Are we in your area?"}
-            </h1>
-          ) : (
-            <input
-              type="text"
-              ref={titleRef} // GSAP might still target this for initial animation even if it's an input
-              className="text-[3vh] md:text-[4vh] font-normal text-black font-serif text-center w-full bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 rounded p-1"
-              value={title || ""}
-              onChange={(e) => onInlineChange('title', e.target.value)}
-              placeholder="Section Title"
-            />
-          )}
-        </div>
-        <div className="relative flex flex-col md:flex-row gap-4 px-10 md:px-6 h-auto md:h-[40vh] md:justify-between w-full mt-4"> {/* Added mt-4 for spacing after title */}
+      <div className="py-4 px-[10vw]">
+        <div className="relative flex flex-col md:flex-row gap-4 px-10 md:px-6 h-auto md:h-[40vh] md:justify-between w-full"> {/* Removed mt-4 */}
           {/* Left: Map */}
           <div className="flex flex-col w-full md:w-[55%]">
             <div className="relative h-[22vh] md:h-full w-full z-10">
               <div className="w-full h-full rounded-xl overflow-hidden shadow-lg border border-gray-300 relative">
+                {/* Title with animation - conditionally editable - MOVED HERE */}
+                {readOnly ? (
+                  <h1
+                    ref={titleRef}
+                    className="absolute top-2 left-1 text-[2.5vh] md:text-[3vh] font-normal text-white font-serif title-animation z-20 p-2 bg-banner bg-opacity-30 pl-6 -ml-4 rounded"
+                  >
+                    {title || "Are we in your area?"}
+                  </h1>
+                ) : (
+                  <input
+                    type="text"
+                    ref={titleRef}
+                    className="absolute top-2 left-1 text-[2.5vh] md:text-[3vh] font-normal text-white font-serif z-20 p-2 bg-banner bg-opacity-30 pl-6 -ml-4 focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded placeholder-gray-300"
+                    value={title || ""}
+                    onChange={(e) => onInlineChange('title', e.target.value)}
+                    placeholder="Section Title"
+                    style={{mixBlendMode: 'difference'}} // Helps with visibility over varied map parts
+                  />
+                )}
                 <MapContainer
                   center={center}
                   zoom={zoomLevel}
                   style={{ height: "100%", width: "100%" }}
                   scrollWheelZoom={mapActive}
+                  zoomControl={false} // Removed zoom controls
                   className="z-0"
                 >
                   <TileLayer
@@ -528,7 +525,7 @@ function BasicMapPreview({
             <button
               type="button"
               onClick={() => setIsServiceHoursVisible(!isServiceHoursVisible)}
-              className="dark_button bg-gray-700 rounded-t-xl py-1 md:py-2 px-4 flex justify-center items-center w-full text-white transition-all duration-300 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] font-serif z-30 relative"
+              className="absolute dark_button bg-gray-700 rounded-t-xl py-1 md:py-2 px-4 flex justify-end items-center w-full text-white transition-all duration-300 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] font-serif z-30 relative"
               style={{ willChange: "transform" }}
             >
               <span className="font-serif text-[2vh]">
@@ -634,7 +631,7 @@ function StatItemEditor({ stat, onChange, onRemove }) {
   );
 }
 
-function BasicMapEditorPanel({ localMapData, onPanelChange }) {
+function BasicMapEditorPanel({ localMapData, onPanelChange, themeColors }) {
   const handleAddStat = () => {
     onPanelChange(prev => ({ ...prev, stats: [...(prev.stats || []), { id: `stat_new_${Date.now()}`, icon: 'FaAward', value: '0', title: 'New Stat'}] }));
   };
@@ -678,12 +675,22 @@ function BasicMapEditorPanel({ localMapData, onPanelChange }) {
 
           <div className="pt-2 border-t border-gray-600">
             <h3 className="text-lg font-medium text-gray-200 mt-2 mb-1">Banner Styling</h3>
-            <label className="block text-sm"><span className="font-medium text-gray-400">Info Banner Text Color:</span>
-              <input type="color" className="mt-1 block w-full h-8 px-1 py-0.5 bg-gray-700 border border-gray-600 rounded-md shadow-sm" value={localMapData.bannerTextColor || '#FFFFFF'} onChange={(e) => handleMapFieldChange('bannerTextColor', e.target.value)}/>
-            </label>
-            <label className="block text-sm mt-2"><span className="font-medium text-gray-400">Info Banner Background Color:</span>
-              <input type="color" className="mt-1 block w-full h-8 px-1 py-0.5 bg-gray-700 border border-gray-600 rounded-md shadow-sm" value={localMapData.bannerBackgroundColor || '#1f2937'} onChange={(e) => handleMapFieldChange('bannerBackgroundColor', e.target.value)}/>
-            </label>
+            <ThemeColorPicker
+              label="Info Banner Text Color"
+              currentColorValue={localMapData.bannerTextColor || '#FFFFFF'}
+              themeColors={themeColors}
+              onColorChange={handleMapFieldChange} // handleMapFieldChange now directly takes (field, value)
+              fieldName="bannerTextColor"
+            />
+            <div className="mt-2">
+              <ThemeColorPicker
+                label="Info Banner Background Color"
+                currentColorValue={localMapData.bannerBackgroundColor || '#1f2937'}
+                themeColors={themeColors}
+                onColorChange={handleMapFieldChange}
+                fieldName="bannerBackgroundColor"
+              />
+            </div>
           </div>
         </div>
 
@@ -696,9 +703,13 @@ function BasicMapEditorPanel({ localMapData, onPanelChange }) {
             <label className="block text-sm"><span className="font-medium text-gray-400">'Hide Hours' Button Text:</span>
               <input type="text" className="bg-gray-700 mt-1 px-2 py-1 rounded w-full text-xs" placeholder="Hide Hours" value={localMapData.hideHoursButtonText || ''} onChange={(e) => handleMapFieldChange('hideHoursButtonText', e.target.value)}/>
             </label>
-            <label className="block text-sm"><span className="font-medium text-gray-400">Stats Panel Text Color:</span>
-              <input type="color" className="mt-1 block w-full h-8 px-1 py-0.5 bg-gray-700 border border-gray-600 rounded-md shadow-sm" value={localMapData.statsTextColor || '#FFFFFF'} onChange={(e) => handleMapFieldChange('statsTextColor', e.target.value)}/>
-            </label>
+            <ThemeColorPicker
+              label="Stats Panel Text Color"
+              currentColorValue={localMapData.statsTextColor || '#FFFFFF'}
+              themeColors={themeColors}
+              onColorChange={handleMapFieldChange}
+              fieldName="statsTextColor"
+            />
           </div>
           
           <div className="pt-3 border-t border-gray-700 mt-4">
@@ -732,6 +743,7 @@ export default function BasicMapBlock({
   readOnly = false,
   mapData,
   onConfigChange,
+  themeColors,
 }) {
   // Add console log to debug incoming mapData
   console.log("BasicMapBlock received mapData:", mapData);
@@ -929,6 +941,7 @@ export default function BasicMapBlock({
       <BasicMapEditorPanel
         localMapData={localMapData}
         onPanelChange={handleLocalDataChange} 
+        themeColors={themeColors}
       />
       <IconSelectorModal
         isOpen={isIconModalOpen}

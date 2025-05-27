@@ -236,7 +236,7 @@ ListDropdownBlock.EditorPanel = function ListDropdownEditorPanel({ currentConfig
 
   return (
     <div className="space-y-4 p-2 bg-gray-50 rounded-md shadow">
-      <div><label className="input-label">Section Title (Panel Edit):</label><input type="text" value={formData.title || ''} onChange={(e) => handleChange('title', e.target.value)} className="input-text-class" /></div>
+      <div><label className="input-label">Section Title (Panel Edit):</label><input type="text" value={formData.title || ''} onChange={(e) => handleChange('title', e.target.value)} className="input-text-class input-section-title-ld" /></div>
       <div className="flex items-center"><input type="checkbox" checked={formData.openMultiple || false} onChange={(e) => handleChange('openMultiple', e.target.checked)} className="mr-2" /><label className="input-label">Allow Multiple Open</label></div>
 
       <h4 className="h4-style">Color Scheme</h4>
@@ -262,9 +262,14 @@ ListDropdownBlock.EditorPanel = function ListDropdownEditorPanel({ currentConfig
         .input-label { display: block; font-size: 0.875rem; font-weight: 500; color: #4A5568; margin-bottom: 0.25rem; }
         .input-label-sm { display: block; font-size: 0.8rem; font-weight: 500; color: #4A5568; margin-bottom: 0.1rem; }
         .input-label-xs { display: block; font-size: 0.75rem; font-weight: 500; color: #555; margin-bottom: 0.1rem; }
-        .input-text-class { display: block; width: 100%; padding: 0.5rem 0.75rem; background-color: white; border: 1px solid #D1D5DB; border-radius: 0.375rem; }
-        .input-text-xs { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; }
-        .input-textarea-xs { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; resize: vertical; min-height: 60px; }
+        .input-text-class { display: block; width: 100%; padding: 0.5rem 0.75rem; background-color: white; border: 1px solid #D1D5DB; border-radius: 0.375rem; color: #374151; }
+        .input-section-title-ld { /* Applied on top of .input-text-class or as a standalone if it includes all base styles */
+            font-size: 1.5rem; /* text-2xl */
+            font-weight: 600; /* font-semibold */
+            /* color is inherited from .input-text-class or set here if standalone */
+        }
+        .input-text-xs { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; font-weight: 500; /* font-medium */ color: #374151; }
+        .input-textarea-xs { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; resize: vertical; min-height: 60px; color: #374151; }
         .input-color-sm { margin-top: 0.1rem; height: 1.75rem; width: 100%; padding: 0.1rem; border: 1px solid #D1D5DB; border-radius: 0.25rem; }
         .h4-style { font-size: 1.1rem; font-weight: 600; color: #374151; padding-top: 0.75rem; border-top: 1px solid #E5E7EB; margin-top: 1.25rem; margin-bottom: 0.5rem; }
         .h5-style { font-size: 0.95rem; font-weight: 600; color: #4A5568; }

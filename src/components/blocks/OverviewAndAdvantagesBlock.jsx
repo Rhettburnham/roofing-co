@@ -469,15 +469,15 @@ OverviewAndAdvantagesBlock.EditorPanel = function OverviewAndAdvantagesEditorPan
     <div className="space-y-4 p-2 bg-gray-50 rounded-md shadow">
       <div>
         <label className="block text-sm font-medium text-gray-700">Heading (Panel Edit):</label>
-        <input type="text" value={formData.heading || ''} onChange={(e) => handleChange('heading', e.target.value)} className="input-class" />
+        <input type="text" value={formData.heading || ''} onChange={(e) => handleChange('heading', e.target.value)} className="input-class input-heading-oa-panel" />
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700">Description (Panel Edit):</label>
-        <textarea value={formData.description || ''} onChange={(e) => handleChange('description', e.target.value)} rows={3} className="input-class resize-none" />
+        <textarea value={formData.description || ''} onChange={(e) => handleChange('description', e.target.value)} rows={3} className="input-class resize-none input-description-oa-panel" />
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700">Footnote (Panel Edit):</label>
-        <textarea value={formData.footnote || ''} onChange={(e) => handleChange('footnote', e.target.value)} rows={2} className="input-class resize-none" />
+        <textarea value={formData.footnote || ''} onChange={(e) => handleChange('footnote', e.target.value)} rows={2} className="input-class resize-none input-description-oa-panel" />
       </div>
 
       <h4 className="text-md font-semibold text-gray-700 pt-2 border-t mt-4">Color Scheme</h4>
@@ -497,15 +497,19 @@ OverviewAndAdvantagesBlock.EditorPanel = function OverviewAndAdvantagesEditorPan
             <h5 className="text-sm font-semibold">Bullet {index + 1}</h5>
             <button onClick={() => handleRemoveBullet(index)} className="text-xs text-red-500 hover:text-red-600">Remove</button>
           </div>
-          <div><label className="text-xs">Title:</label><input type="text" value={bullet.title || ''} onChange={(e) => handleBulletChange(index, 'title', e.target.value)} className="input-xs-class" /></div>
-          <div><label className="text-xs">Description:</label><textarea value={bullet.desc || ''} onChange={(e) => handleBulletChange(index, 'desc', e.target.value)} rows={2} className="input-xs-class resize-none" /></div>
+          <div><label className="text-xs">Title:</label><input type="text" value={bullet.title || ''} onChange={(e) => handleBulletChange(index, 'title', e.target.value)} className="input-xs-class input-bullet-title-oa-panel" /></div>
+          <div><label className="text-xs">Description:</label><textarea value={bullet.desc || ''} onChange={(e) => handleBulletChange(index, 'desc', e.target.value)} rows={2} className="input-xs-class resize-none input-bullet-desc-oa-panel" /></div>
         </div>
       ))}
       <button onClick={handleAddBullet} className="mt-2 btn-primary-sm">+ Add Bullet</button>
       
       <style jsx>{`
-        .input-class { display: block; width: 100%; padding: 0.5rem 0.75rem; background-color: white; border: 1px solid #D1D5DB; border-radius: 0.375rem; }
-        .input-xs-class { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; }
+        .input-class { display: block; width: 100%; padding: 0.5rem 0.75rem; background-color: white; border: 1px solid #D1D5DB; border-radius: 0.375rem; color: #374151; }
+        .input-xs-class { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; color: #374151; }
+        .input-heading-oa-panel { font-size: 1.875rem; line-height: 2.25rem; font-weight: 700; /* text-3xl font-bold */ }
+        .input-description-oa-panel { font-size: 1rem; line-height: 1.625; /* text-base leading-relaxed */ }
+        .input-bullet-title-oa-panel { font-size: 1rem; /* text-base */ line-height: 1.5rem; /* Ensure good line height for input */ }
+        .input-bullet-desc-oa-panel { /* .input-xs-class already sets font-size: 0.875rem (text-sm) */ line-height: 1.5; /* Adjust if needed for text-sm textarea */ }
         .input-color-class { margin-top: 0.25rem; height: 2rem; width: 100%; padding: 0.125rem; border: 1px solid #D1D5DB; border-radius: 0.375rem; }
         .btn-primary-sm { padding: 0.25rem 0.75rem; font-size: 0.875rem; background-color: #4F46E5; color: white; border-radius: 0.375rem; font-weight: 500; }
       `}</style>

@@ -213,8 +213,8 @@
         "bannerTextColor": "#FFFFFF",
         "bannerBackgroundColor": "#1F2937",
         "statsTextColor": "#FFFFFF",
-        "showHoursButtonText": "View Our Hours",
-        "hideHoursButtonText": "Hide Our Hours",
+        "showHoursButtonText": "View Hours",
+        "hideHoursButtonText": "Hide Hours",
         "serviceHours": [
           {
             "id": "sh_mon",

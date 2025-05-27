@@ -243,7 +243,7 @@ HeroBlock.EditorPanel = function HeroBlockEditorPanel({ currentConfig, onPanelCo
   return (
     <div className="space-y-4 p-2 bg-gray-50 rounded-md shadow">
       <h4 className="h4-style">Content (Panel Edit)</h4>
-      <div><label className="input-label">Title:</label><input type="text" value={formData.title || ''} onChange={(e) => handleChange('title', e.target.value)} className="input-text-class" /></div>
+      <div><label className="input-label">Title:</label><input type="text" value={formData.title || ''} onChange={(e) => handleChange('title', e.target.value)} className="input-text-class input-title-hero" /></div>
       <div><label className="input-label">Subtitle:</label><textarea value={formData.subtitle || ''} onChange={(e) => handleChange('subtitle', e.target.value)} rows={2} className="input-textarea-class" /></div>
       
       <h4 className="h4-style">Call to Action Button</h4>
@@ -293,6 +293,13 @@ HeroBlock.EditorPanel = function HeroBlockEditorPanel({ currentConfig, onPanelCo
         .input-label { display: block; font-size: 0.875rem; font-weight: 500; color: #4A5568; margin-bottom: 0.25rem; }
         .input-label-sm { font-size: 0.75rem; font-weight: 500; color: #4A5568; }
         .input-text-class, .input-textarea-class { display: block; width: 100%; padding: 0.5rem 0.75rem; background-color: white; border: 1px solid #D1D5DB; border-radius: 0.375rem; margin-top: 0.25rem; }
+        .input-title-hero { /* Specific styles for HeroBlock title input */
+          font-size: 2.25rem; /* Tailwind text-4xl is 2.25rem, md:text-5xl is 3rem. Let's start with 2.25rem for edit mode */
+          line-height: 2.5rem; /* Corresponding line height */
+          font-weight: 700; /* Tailwind font-bold */
+          color: #374151; /* Dark gray, similar to h4-style for readability in editor */
+          /* Retain other input-text-class properties like padding, border, background for editable look */
+        }
         .input-text-xs {display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; margin-top: 0.25rem;}
         .input-textarea-class { resize: vertical; min-height: 60px; }
         .input-file-class { display: block; width: 100%; font-size: 0.875rem; margin-top: 0.25rem; }

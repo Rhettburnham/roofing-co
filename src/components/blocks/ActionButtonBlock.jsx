@@ -187,7 +187,7 @@ const ActionButtonBlock = ({
           value={text}
           onChange={handleTextChange}
           onBlur={() => onConfigChange(localConfig)}
-          className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
+          className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500 text-lg font-semibold"
           rows={1}
           placeholder="Button Text"
         />
