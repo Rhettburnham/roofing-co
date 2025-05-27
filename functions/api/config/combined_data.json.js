@@ -69,8 +69,23 @@ export async function onRequest(context) {
     const configId = session.config_id;
     console.log('Config ID from session:', configId);
 
-    // Fetch the config data
-    const configKey = `configs/${configId}/combined_data.json`;
+    // Determine which config file to fetch based on the URL
+    const url = new URL(request.url);
+    const pathParts = url.pathname.split('/');
+    const requestedFile = pathParts[pathParts.length - 1];
+    
+    let configKey;
+    switch (requestedFile) {
+      case 'services.json':
+        configKey = `configs/${configId}/services.json`;
+        break;
+      case 'colors.json':
+        configKey = `configs/${configId}/colors.json`;
+        break;
+      default:
+        configKey = `configs/${configId}/combined_data.json`;
+    }
+    
     console.log('Fetching config from R2:', configKey);
     const configObject = await env.ROOFING_CONFIGS.get(configKey);
     

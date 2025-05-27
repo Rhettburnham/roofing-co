@@ -164,6 +164,12 @@ const ServicePageCreator = () => {
     <div className="service-page-container">
       <Suspense fallback={<LoadingScreen />}>
         {servicePageContent.blocks.map((block, index) => {
+          // Ensure block has required properties
+          if (!block || !block.blockName) {
+            console.warn(`ServicePageCreator: Invalid block at index ${index}.`);
+            return null;
+          }
+
           const BlockComponent = serviceEditBlockMap[block.blockName];
           if (!BlockComponent) {
             console.warn(`ServicePageCreator: Unknown block type "${block.blockName}" at index ${index}.`);
@@ -179,15 +185,24 @@ const ServicePageCreator = () => {
           const uniqueKey = block.uniqueKey || `block-${index}`;
 
           // Log props being passed to each block for debugging
-           console.log(`Rendering block: ${block.blockName} (key: ${uniqueKey}) with config:`, config);
+          console.log(`Rendering block: ${block.blockName} (key: ${uniqueKey}) with config:`, config);
 
-          // For HeroBlock, ensure it gets its config directly if the blockMap uses PageHeroBlock or HeroBlock
-          if (block.blockName === "HeroBlock" || block.blockName === "PageHeroBlock") {
-             return <BlockComponent key={uniqueKey} config={config} readOnly={true} />;
+          try {
+            // For HeroBlock, ensure it gets its config directly if the blockMap uses PageHeroBlock or HeroBlock
+            if (block.blockName === "HeroBlock" || block.blockName === "PageHeroBlock") {
+              return <BlockComponent key={uniqueKey} config={config} readOnly={true} />;
+            }
+            
+            // Standard rendering for other blocks
+            return <BlockComponent key={uniqueKey} config={config} readOnly={true} />;
+          } catch (renderError) {
+            console.error(`Error rendering block ${block.blockName}:`, renderError);
+            return (
+              <div key={uniqueKey} className="p-4 my-2 text-center bg-red-100 text-red-700 border border-red-300 rounded">
+                Error rendering block "{block.blockName}". Please check configuration.
+              </div>
+            );
           }
-          
-          // Standard rendering for other blocks
-          return <BlockComponent key={uniqueKey} config={config} readOnly={true} />;
         })}
       </Suspense>
     </div>

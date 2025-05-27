@@ -90,7 +90,7 @@ export function ConfigProvider({ children }) {
               
               // Fetch colors and services for authenticated user
               try {
-                const colorsResponse = await fetch('/api/config/colors_output.json', {
+                const colorsResponse = await fetch('/api/config/colors.json', {
                   credentials: 'include'
                 });
                 if (colorsResponse.ok) {
