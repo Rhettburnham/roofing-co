@@ -72,7 +72,7 @@ export async function onRequest(context) {
     // Fetch all config files
     const configKeys = [
       `configs/${configId}/combined_data.json`,
-      `configs/${configId}/colors.json`,
+      `configs/${configId}/colors_output.json`,
       `configs/${configId}/services.json`
     ];
     
@@ -107,7 +107,7 @@ export async function onRequest(context) {
       if (result) {
         if (result.key.includes('combined_data.json')) {
           responseData.combined_data = result.data;
-        } else if (result.key.includes('colors.json')) {
+        } else if (result.key.includes('colors_output.json')) {
           responseData.colors = result.data;
         } else if (result.key.includes('services.json')) {
           responseData.services = result.data;
