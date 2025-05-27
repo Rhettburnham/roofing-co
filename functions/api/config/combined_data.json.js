@@ -69,41 +69,54 @@ export async function onRequest(context) {
     const configId = session.config_id;
     console.log('Config ID from session:', configId);
 
-    // Determine which config file to fetch based on the URL
-    const url = new URL(request.url);
-    console.log('Request URL:', url.pathname);
+    // Fetch all config files
+    const configKeys = [
+      `configs/${configId}/combined_data.json`,
+      `configs/${configId}/colors.json`,
+      `configs/${configId}/services.json`
+    ];
     
-    let configKey;
-    if (url.pathname.endsWith('/services.json')) {
-      configKey = `configs/${configId}/services.json`;
-      console.log('Fetching services.json');
-    } else if (url.pathname.endsWith('/colors.json')) {
-      configKey = `configs/${configId}/colors.json`;
-      console.log('Fetching colors.json');
-    } else {
-      configKey = `configs/${configId}/combined_data.json`;
-      console.log('Fetching combined_data.json');
-    }
+    console.log('Fetching all configs from R2:', configKeys);
     
-    console.log('Fetching config from R2:', configKey);
-    const configObject = await env.ROOFING_CONFIGS.get(configKey);
-    
-    if (!configObject) {
-      console.log('No config found in R2 for key:', configKey);
-      return new Response(JSON.stringify({ error: 'Failed to fetch config' }), {
-        status: 404,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
-      });
-    }
+    // Fetch all configs in parallel
+    const configPromises = configKeys.map(async (key) => {
+      const configObject = await env.ROOFING_CONFIGS.get(key);
+      if (!configObject) {
+        console.log(`No config found in R2 for key: ${key}`);
+        return null;
+      }
+      try {
+        const data = await configObject.json();
+        return { key, data };
+      } catch (error) {
+        console.error(`Error parsing config for key ${key}:`, error);
+        return null;
+      }
+    });
 
-    console.log('Parsing config data...');
-    const configData = await configObject.json();
+    const configResults = await Promise.all(configPromises);
+    
+    // Combine all configs into a single response
+    const responseData = {
+      combined_data: null,
+      colors: null,
+      services: null
+    };
+
+    configResults.forEach(result => {
+      if (result) {
+        if (result.key.includes('combined_data.json')) {
+          responseData.combined_data = result.data;
+        } else if (result.key.includes('colors.json')) {
+          responseData.colors = result.data;
+        } else if (result.key.includes('services.json')) {
+          responseData.services = result.data;
+        }
+      }
+    });
+
     console.log('Config data fetched successfully');
-
-    return new Response(JSON.stringify(configData), {
+    return new Response(JSON.stringify(responseData), {
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/json',

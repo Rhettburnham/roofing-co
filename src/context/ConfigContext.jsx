@@ -12,8 +12,6 @@ export function ConfigProvider({ children }) {
   const [services, setServices] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [configId, setConfigId] = useState(null);
 
   useEffect(() => {
     async function fetchConfig() {
@@ -78,50 +76,36 @@ export function ConfigProvider({ children }) {
         if (authData.isAuthenticated) {
           console.log("User is authenticated. Config ID:", authData.configId);
           try {
-            // Fetch the user's custom config
-            console.log("Fetching custom config from:", `/api/config/combined_data.json`);
-            const customConfigResponse = await fetch(`/api/config/combined_data.json`, {
+            // Fetch all configs in a single request
+            console.log("Fetching all configs from:", `/api/config/combined_data.json`);
+            const configResponse = await fetch(`/api/config/combined_data.json`, {
               credentials: 'include'
             });
-            console.log("Custom config response status:", customConfigResponse.status);
+            console.log("Config response status:", configResponse.status);
             
-            if (customConfigResponse.ok) {
-              const customData = await customConfigResponse.json();
-              console.log("Successfully loaded custom config data");
-              setConfig(customData);
+            if (configResponse.ok) {
+              const { combined_data, colors: colorsData, services: servicesData } = await configResponse.json();
+              console.log("Successfully loaded all config data");
               
-              // Fetch colors and services for authenticated user
-              try {
-                const colorsResponse = await fetch('/api/config/colors.json', {
-                  credentials: 'include'
-                });
-                if (colorsResponse.ok) {
-                  const colorsData = await colorsResponse.json();
-                  setColors(colorsData);
-                }
-                
-                const servicesResponse = await fetch('/api/config/services.json', {
-                  credentials: 'include'
-                });
-                if (servicesResponse.ok) {
-                  const servicesData = await servicesResponse.json();
-                  setServices(servicesData);
-                }
-              } catch (error) {
-                console.error("Error loading authenticated colors/services:", error);
+              if (combined_data) {
+                setConfig(combined_data);
+              }
+              if (colorsData) {
+                setColors(colorsData);
+              }
+              if (servicesData) {
+                setServices(servicesData);
               }
               
               setLoading(false);
-              setIsAuthenticated(true);
-              setConfigId(authData.configId);
               return;
             } else {
-              console.error("Failed to load custom config. Status:", customConfigResponse.status);
-              const errorText = await customConfigResponse.text();
+              console.error("Failed to load configs. Status:", configResponse.status);
+              const errorText = await configResponse.text();
               console.error("Error response:", errorText);
             }
-          } catch (customConfigError) {
-            console.error("Error loading custom config:", customConfigError);
+          } catch (configError) {
+            console.error("Error loading configs:", configError);
           }
         } else {
           console.log("User is not authenticated");
@@ -168,45 +152,6 @@ export function ConfigProvider({ children }) {
     }
     fetchConfig();
   }, []);
-
-  // Fetch colors and services if authenticated
-  useEffect(() => {
-    const fetchAuthenticatedData = async () => {
-      if (!isAuthenticated || !configId) return;
-
-      try {
-        // Fetch colors
-        console.log('Fetching authenticated colors...');
-        const colorsResponse = await fetch('/api/config/colors.json', {
-          credentials: 'include'
-        });
-        if (colorsResponse.ok) {
-          const colorsData = await colorsResponse.json();
-          console.log('Authenticated colors loaded:', colorsData);
-          setColors(colorsData);
-        } else {
-          console.warn('Failed to load authenticated colors:', colorsResponse.status);
-        }
-
-        // Fetch services
-        console.log('Fetching authenticated services...');
-        const servicesResponse = await fetch('/api/config/services.json', {
-          credentials: 'include'
-        });
-        if (servicesResponse.ok) {
-          const servicesData = await servicesResponse.json();
-          console.log('Authenticated services loaded:', servicesData);
-          setServices(servicesData);
-        } else {
-          console.warn('Failed to load authenticated services:', servicesResponse.status);
-        }
-      } catch (error) {
-        console.error('Error loading authenticated data:', error);
-      }
-    };
-
-    fetchAuthenticatedData();
-  }, [isAuthenticated, configId]);
 
   return (
     <ConfigContext.Provider value={{ config, colors, services, loading, error }}>
