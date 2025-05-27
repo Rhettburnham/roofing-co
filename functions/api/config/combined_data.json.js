@@ -71,26 +71,25 @@ export async function onRequest(context) {
 
     // Determine which config file to fetch based on the URL
     const url = new URL(request.url);
-    const pathParts = url.pathname.split('/');
-    const requestedFile = pathParts[pathParts.length - 1];
+    console.log('Request URL:', url.pathname);
     
     let configKey;
-    switch (requestedFile) {
-      case 'services.json':
-        configKey = `configs/${configId}/services.json`;
-        break;
-      case 'colors.json':
-        configKey = `configs/${configId}/colors.json`;
-        break;
-      default:
-        configKey = `configs/${configId}/combined_data.json`;
+    if (url.pathname.endsWith('/services.json')) {
+      configKey = `configs/${configId}/services.json`;
+      console.log('Fetching services.json');
+    } else if (url.pathname.endsWith('/colors.json')) {
+      configKey = `configs/${configId}/colors.json`;
+      console.log('Fetching colors.json');
+    } else {
+      configKey = `configs/${configId}/combined_data.json`;
+      console.log('Fetching combined_data.json');
     }
     
     console.log('Fetching config from R2:', configKey);
     const configObject = await env.ROOFING_CONFIGS.get(configKey);
     
     if (!configObject) {
-      console.log('No config found in R2');
+      console.log('No config found in R2 for key:', configKey);
       return new Response(JSON.stringify({ error: 'Failed to fetch config' }), {
         status: 404,
         headers: {

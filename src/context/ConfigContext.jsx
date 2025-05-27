@@ -12,6 +12,8 @@ export function ConfigProvider({ children }) {
   const [services, setServices] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [configId, setConfigId] = useState(null);
 
   useEffect(() => {
     async function fetchConfig() {
@@ -110,6 +112,8 @@ export function ConfigProvider({ children }) {
               }
               
               setLoading(false);
+              setIsAuthenticated(true);
+              setConfigId(authData.configId);
               return;
             } else {
               console.error("Failed to load custom config. Status:", customConfigResponse.status);
@@ -164,6 +168,45 @@ export function ConfigProvider({ children }) {
     }
     fetchConfig();
   }, []);
+
+  // Fetch colors and services if authenticated
+  useEffect(() => {
+    const fetchAuthenticatedData = async () => {
+      if (!isAuthenticated || !configId) return;
+
+      try {
+        // Fetch colors
+        console.log('Fetching authenticated colors...');
+        const colorsResponse = await fetch('/api/config/colors.json', {
+          credentials: 'include'
+        });
+        if (colorsResponse.ok) {
+          const colorsData = await colorsResponse.json();
+          console.log('Authenticated colors loaded:', colorsData);
+          setColors(colorsData);
+        } else {
+          console.warn('Failed to load authenticated colors:', colorsResponse.status);
+        }
+
+        // Fetch services
+        console.log('Fetching authenticated services...');
+        const servicesResponse = await fetch('/api/config/services.json', {
+          credentials: 'include'
+        });
+        if (servicesResponse.ok) {
+          const servicesData = await servicesResponse.json();
+          console.log('Authenticated services loaded:', servicesData);
+          setServices(servicesData);
+        } else {
+          console.warn('Failed to load authenticated services:', servicesResponse.status);
+        }
+      } catch (error) {
+        console.error('Error loading authenticated data:', error);
+      }
+    };
+
+    fetchAuthenticatedData();
+  }, [isAuthenticated, configId]);
 
   return (
     <ConfigContext.Provider value={{ config, colors, services, loading, error }}>
