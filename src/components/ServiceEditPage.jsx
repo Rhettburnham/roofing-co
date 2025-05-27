@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
+import JSZip from "jszip";
 
 // Import preview components for blocks
 import HeroBlock from "./blocks/HeroBlock";
@@ -45,41 +46,114 @@ const blockMap = {
 };
 
 // EditOverlay component
-const EditOverlay = ({ children, onClose }) => (
-  <div className="absolute inset-0 bg-black bg-opacity-80 z-50 flex flex-col overflow-auto">
-    <div className="flex justify-end p-2">
-      <button
-        type="button"
-        onClick={onClose}
-        className="bg-gray-800 rounded-full p-2 text-white hover:bg-gray-700"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          strokeWidth="1.5"
-          stroke="currentColor"
-          className="w-6 h-6"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M6 18L18 6M6 6l12 12"
-          />
-        </svg>
-      </button>
-    </div>
-    <div className="flex-1 overflow-auto p-4">{children}</div>
-  </div>
-);
+// Remove EditOverlay as it's being replaced by inline panels
+// const EditOverlay = ({ children, onClose }) => (
+// ... EditOverlay code ...
+// );
 
-EditOverlay.propTypes = {
-  children: PropTypes.node.isRequired,
-  onClose: PropTypes.func.isRequired,
-};
+// EditOverlay.propTypes = {
+// children: PropTypes.node.isRequired,
+// onClose: PropTypes.func.isRequired,
+// };
 
 // Export a reference to the services data
 let servicesDataRef = null;
+
+// Helper to get display URL (can be enhanced for file objects later)
+const getDisplayUrlHelper = (value) => {
+  if (!value) return null;
+  if (typeof value === "string") return value; // Handles direct URLs or blob URLs
+  if (typeof value === "object" && value.url) return value.url; // Handles { url: '...', ... }
+  return null;
+};
+
+// Simplified traversal function for ServiceEditPage (adapt as needed for its specific data structure)
+// This version focuses on finding string URLs that might be local assets.
+// If service blocks start containing File objects, this needs to be expanded like OneForm's version.
+function traverseAndCleanServiceData(originalDataNode, assetsToCollect, pathContext, uploadBaseDir) {
+  if (originalDataNode === null || originalDataNode === undefined) {
+    return originalDataNode;
+  }
+
+  if (Array.isArray(originalDataNode)) {
+    return originalDataNode.map((item, index) =>
+      traverseAndCleanServiceData(item, assetsToCollect, `${pathContext}[${index}]`, uploadBaseDir)
+    );
+  }
+
+  if (typeof originalDataNode === 'object' && !(originalDataNode instanceof File)) {
+    // Check for our specific image object structure: { file: File, url: blobUrl, name: string, originalUrl?: string }
+    if (originalDataNode.file && originalDataNode.file instanceof File && typeof originalDataNode.name === 'string') {
+      console.log(`[traverseAndCleanServiceData - ServiceEdit] Detected FileObject. PathContext: ${pathContext}, File: ${originalDataNode.name}`);
+      const file = originalDataNode.file;
+      const fileName = originalDataNode.name || file.name || 'untitled_service_asset';
+      let pathInZip;
+      let jsonUrl;
+
+      // Use originalUrl for path if it exists and seems valid, otherwise generate one.
+      if (originalDataNode.originalUrl && typeof originalDataNode.originalUrl === 'string' && !originalDataNode.originalUrl.startsWith('blob:')) {
+        let tempPath = originalDataNode.originalUrl;
+        if (tempPath.startsWith('/')) tempPath = tempPath.substring(1);
+        // Ensure it goes into an assets directory within the ZIP
+        pathInZip = tempPath.startsWith('assets/') ? tempPath : `assets/${tempPath}`;
+        jsonUrl = pathInZip;
+        console.log(`[traverseAndCleanServiceData - ServiceEdit] Using originalUrl for FileObject: ${pathInZip}`);
+      } else {
+        const sanitizedPathContext = pathContext.replace(/[\W_]+/g, '_').slice(0, 50);
+        pathInZip = `assets/${uploadBaseDir}/${sanitizedPathContext}_${fileName}`.replace(/\/{2,}/g, '/'); // Normalize slashes
+        jsonUrl = pathInZip;
+        console.log(`[traverseAndCleanServiceData - ServiceEdit] Generating new path for FileObject: ${pathInZip}`);
+      }
+      assetsToCollect.push({ pathInZip, dataSource: file, type: 'file' });
+      // Replace the file object with just the URL for the JSON
+      // Important: The key in JSON should point to jsonUrl. Often this is 'image' or 'imageUrl' or 'backgroundImage'.
+      // The structure that held the file object might be { image: { file, url, ...} } or image: 'path_string'.
+      // We return JUST the jsonUrl string, assuming the calling traversal will place it correctly.
+      // This simplification means the block config should expect a string URL after this processing.
+      // Example: if original was { config: { heroImage: {file: F, url: B} } }, it becomes { config: { heroImage: "assets/..." } }
+      return jsonUrl; // Return only the URL string for the field that held the file object.
+    }
+    // Handle objects that are not file objects but might contain URLs (e.g., { imageUrl: 'path/to/image.jpg' })
+    const newObj = {};
+    for (const key in originalDataNode) {
+      if (Object.prototype.hasOwnProperty.call(originalDataNode, key)) {
+        newObj[key] = traverseAndCleanServiceData(originalDataNode[key], assetsToCollect, `${pathContext}.${key}`, uploadBaseDir);
+      }
+    }
+    return newObj;
+  }
+
+  // Handle direct string URLs that might be existing assets
+  if (typeof originalDataNode === 'string') {
+    // Simplified check: if it doesn't start with http/https/data/blob and contains typical asset paths or extensions.
+    const isLikelyLocalAsset = (url) => 
+        !url.startsWith('http') && 
+        !url.startsWith('data:') && 
+        !url.startsWith('blob:') &&
+        (url.includes('assets/') || url.includes('Commercial/') || url.includes('uploads/') || url.match(/\.(jpeg|jpg|gif|png|svg|webp|avif|pdf|mp4|webm)$/i) !== null);
+
+    if (isLikelyLocalAsset(originalDataNode)) {
+      let pathInZip = originalDataNode.startsWith('/') ? originalDataNode.substring(1) : originalDataNode;
+      // Ensure it is placed under an 'assets/' directory in the ZIP if not already structured that way.
+      if (!pathInZip.startsWith('assets/')) {
+        pathInZip = `assets/${pathInZip}`.replace(/\/{2,}/g, '/'); // Normalize slashes
+      }
+      // Avoid duplicating asset collection for these existing URLs
+      if (!assetsToCollect.some(asset => asset.pathInZip === pathInZip && asset.type === 'url')) {
+        assetsToCollect.push({
+          pathInZip,
+          dataSource: originalDataNode, // The original URL to fetch from
+          type: 'url',
+        });
+        console.log(`[traverseAndCleanServiceData - ServiceEdit] Collected string asset URL: ${pathInZip} from ${originalDataNode}`);
+      }
+      return pathInZip; // Return the path that will be in the JSON
+    }
+  }
+
+  // Return primitives and other types (like already processed blob URLs which won't match isLikelyLocalAsset) as is
+  return originalDataNode;
+}
 
 /* 
 =============================================
@@ -92,14 +166,15 @@ service page content.
 */
 const ServiceEditPage = () => {
   const [servicesData, setServicesData] = useState(null);
+  const [initialServicesDataForOldExport, setInitialServicesDataForOldExport] = useState(null); // For "old" export
   const [selectedCategory, setSelectedCategory] = useState("commercial");
   const [selectedPageId, setSelectedPageId] = useState(1);
   const [currentPage, setCurrentPage] = useState(null);
   const [selectedBlockType, setSelectedBlockType] = useState(
     Object.keys(blockMap)[0]
   );
-  // Track which block is being edited
-  const [activeEditBlock, setActiveEditBlock] = useState(null);
+  // Track which block is being edited (stores blockIndex)
+  const [activeEditBlockIndex, setActiveEditBlockIndex] = useState(null);
 
   // Update the reference when servicesData changes
   useEffect(() => {
@@ -114,6 +189,12 @@ const ServiceEditPage = () => {
       .then((res) => res.json())
       .then((data) => {
         setServicesData(data);
+        try {
+            setInitialServicesDataForOldExport(JSON.parse(JSON.stringify(data))); // Deep copy for "old" export
+        } catch (e) {
+            console.error("Could not deep clone initial services data for old export:", e);
+            setInitialServicesDataForOldExport(null);
+        }
         const page = data[selectedCategory].find(
           (p) => p.id === Number(selectedPageId)
         );
@@ -129,6 +210,7 @@ const ServiceEditPage = () => {
         (p) => p.id === Number(selectedPageId)
       );
       setCurrentPage(page);
+      setActiveEditBlockIndex(null); // Reset active edit block when page changes
     }
   }, [selectedCategory, selectedPageId, servicesData]);
 
@@ -139,25 +221,7 @@ const ServiceEditPage = () => {
   Downloads the edited services data as a JSON file
   =============================================
   */
-  const handleDownloadJSON = () => {
-    if (!servicesData) return;
-
-    const dataStr = JSON.stringify(servicesData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'services.json';
-    document.body.appendChild(link);
-    link.click();
-    
-    // Clean up
-    setTimeout(() => {
-      URL.revokeObjectURL(url);
-      document.body.removeChild(link);
-    }, 100);
-  };
+  // const handleDownloadJSON = async () => { ... }; // Commented out for now
 
   /* 
   =============================================
@@ -203,8 +267,15 @@ const ServiceEditPage = () => {
     // Create a URL for display
     const fileURL = URL.createObjectURL(file);
 
-    // Store just the URL for display
-    handleConfigChange(blockIndex, key, fileURL);
+    // Store the file object itself for later processing (e.g., zipping)
+    // and the URL for display. The config field should store an object.
+    const fileData = {
+      file: file,
+      url: fileURL, // For preview
+      name: file.name,
+      // originalUrl will be set/preserved if this file replaces an existing one
+    };
+    handleConfigChange(blockIndex, key, fileData);
   };
 
   /**
@@ -217,6 +288,119 @@ const ServiceEditPage = () => {
     return null;
   };
 
+  // New handler for when a block commits its entire config.
+  // This will be passed as onConfigChange to each block component.
+  const handleBlockConfigUpdate = (blockIndex, newConfig) => {
+    const updatedPage = { ...currentPage };
+    updatedPage.blocks = updatedPage.blocks.map((block, index) => {
+      if (index === blockIndex) {
+        return { ...block, config: newConfig };
+      }
+      return block;
+    });
+    setCurrentPage(updatedPage);
+
+    const updatedData = { ...servicesData };
+    updatedData[selectedCategory] = updatedData[selectedCategory].map((page) =>
+      page.id === updatedPage.id ? updatedPage : page
+    );
+    setServicesData(updatedData);
+  };
+
+  // New handler for file changes from within a block's EditorPanel or in-place edit.
+  // This is designed to store the file object correctly for ZIP export.
+  const handleFileChangeForBlock = (blockIndex, configKeyOrPathData, fileOrFileObject) => {
+    if (!fileOrFileObject) return;
+
+    let newImageConfig;
+    const currentBlock = currentPage.blocks[blockIndex];
+    let existingImageConfig;
+
+    // Determine if we are updating a direct config key or a nested path
+    let isNestedPath = typeof configKeyOrPathData === 'object' && configKeyOrPathData !== null;
+    let configKeyToUpdate = isNestedPath ? configKeyOrPathData.field : configKeyOrPathData;
+
+    if (isNestedPath) {
+        // Accessing nested existing config, e.g., items[itemIndex].pictures[picIndex]
+        // This is a simplified example; a robust solution would use a helper to get/set nested properties.
+        if (configKeyOrPathData.field === 'pictures' && currentBlock.config.items && currentBlock.config.items[configKeyOrPathData.blockItemIndex]) {
+            existingImageConfig = currentBlock.config.items[configKeyOrPathData.blockItemIndex].pictures?.[configKeyOrPathData.pictureIndex];
+        }
+    } else {
+        existingImageConfig = currentBlock?.config?.[configKeyToUpdate];
+    }
+
+    if (fileOrFileObject instanceof File) { // A new file is uploaded
+        if (existingImageConfig && typeof existingImageConfig === 'object' && existingImageConfig.url && existingImageConfig.url.startsWith('blob:')) {
+            URL.revokeObjectURL(existingImageConfig.url);
+        }
+        const fileURL = URL.createObjectURL(fileOrFileObject);
+        newImageConfig = {
+            file: fileOrFileObject,
+            url: fileURL,
+            name: fileOrFileObject.name,
+            originalUrl: (typeof existingImageConfig === 'object' ? existingImageConfig.originalUrl : typeof existingImageConfig === 'string' ? existingImageConfig : null) || `assets/service_uploads/generated/${fileOrFileObject.name}` // Preserve or generate
+        };
+    } else if (typeof fileOrFileObject === 'object' && fileOrFileObject.url !== undefined) { // It's already a file object structure (e.g., from pasting a URL)
+        // If the existing one was a blob from a file, revoke it
+        if (existingImageConfig && typeof existingImageConfig === 'object' && existingImageConfig.file && existingImageConfig.url && existingImageConfig.url.startsWith('blob:')) {
+           if (existingImageConfig.url !== fileOrFileObject.url) { // Only revoke if URL is different
+             URL.revokeObjectURL(existingImageConfig.url);
+           }
+        }
+        newImageConfig = fileOrFileObject; // Assume it's correctly formatted { file?, url, name?, originalUrl? }
+    } else if (typeof fileOrFileObject === 'string') { // Pasted URL string
+        if (existingImageConfig && typeof existingImageConfig === 'object' && existingImageConfig.file && existingImageConfig.url && existingImageConfig.url.startsWith('blob:')) {
+            URL.revokeObjectURL(existingImageConfig.url);
+        }
+        newImageConfig = {
+            file: null,
+            url: fileOrFileObject,
+            name: fileOrFileObject.split('/').pop(),
+            originalUrl: fileOrFileObject
+        };
+    } else {
+        console.warn("Unsupported file/URL type in handleFileChangeForBlock", fileOrFileObject);
+        return;
+    }
+
+    // Update master servicesData
+    const updatedPage = { ...currentPage };
+    updatedPage.blocks = updatedPage.blocks.map((block, index) => {
+        if (index === blockIndex) {
+            let newBlockConfig = { ...block.config };
+            if (isNestedPath && configKeyOrPathData.field === 'pictures') {
+                if (!newBlockConfig.items) newBlockConfig.items = [];
+                while (newBlockConfig.items.length <= configKeyOrPathData.blockItemIndex) {
+                    newBlockConfig.items.push({ pictures: [] }); // Ensure item and pictures array exist
+                }
+                if (!newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures) {
+                    newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures = [];
+                }
+                // Ensure picture slot exists
+                 while (newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures.length <= configKeyOrPathData.pictureIndex) {
+                    newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures.push(null);
+                }
+                newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures[configKeyOrPathData.pictureIndex] = newImageConfig;
+            } else {
+                newBlockConfig[configKeyToUpdate] = newImageConfig;
+            }
+            return {
+                ...block,
+                config: newBlockConfig,
+            };
+        }
+        return block;
+    });
+    setCurrentPage(updatedPage);
+
+    const updatedData = { ...servicesData };
+    updatedData[selectedCategory] = updatedData[selectedCategory].map((page) =>
+        page.id === updatedPage.id ? updatedPage : page
+    );
+    setServicesData(updatedData);
+  };
+
   /* 
   =============================================
   renderArrayField
@@ -227,7 +411,7 @@ const ServiceEditPage = () => {
   const renderArrayField = (blockIndex, key, arr) => {
     return (
       <div key={key} className="mb-3 border p-2 rounded">
-        <label className="block mb-1 font-semibold">{key} (Array):</label>
+        <label className="block mb-1 font-semibold text-gray-300">{key} (Array):</label>
         {arr.map((item, idx) => {
           // Handle items that are images (string URL or object with a file)
           if (
@@ -243,12 +427,13 @@ const ServiceEditPage = () => {
                   onChange={(e) => {
                     const file = e.target.files[0];
                     if (file) {
-                      // Create a URL for display
+                      // Create a URL for display and store file object
                       const fileURL = URL.createObjectURL(file);
+                      const fileData = { file: file, url: fileURL, name: file.name };
 
-                      // Update the array with just the URL
+                      // Update the array with the file data object
                       const newArr = [...arr];
-                      newArr[idx] = fileURL;
+                      newArr[idx] = fileData;
                       handleConfigChange(blockIndex, key, newArr);
                     }
                   }}
@@ -265,7 +450,11 @@ const ServiceEditPage = () => {
                       type="button"
                       onClick={() => {
                         const newArr = [...arr];
-                        newArr.splice(idx, 1);
+                        const removedItem = newArr.splice(idx, 1)[0];
+                        // Revoke blob URL if it's a file object
+                        if (typeof removedItem === 'object' && removedItem.url && removedItem.url.startsWith('blob:')) {
+                          URL.revokeObjectURL(removedItem.url);
+                        }
                         handleConfigChange(blockIndex, key, newArr);
                       }}
                       className="ml-2 bg-red-500 text-white p-1 rounded"
@@ -303,7 +492,7 @@ const ServiceEditPage = () => {
                       <label className="block text-sm">{subKey}:</label>
                       <input
                         type="text"
-                        value={subValue}
+                        value={subValue || ''} // Ensure value is not null/undefined for input
                         onChange={(e) => {
                           const newArr = [...arr];
                           newArr[idx] = {
@@ -312,7 +501,7 @@ const ServiceEditPage = () => {
                           };
                           handleConfigChange(blockIndex, key, newArr);
                         }}
-                        className="w-full border px-2 py-1 rounded"
+                        className="w-full p-1 border rounded text-gray-800"
                       />
                     </div>
                   );
@@ -332,7 +521,7 @@ const ServiceEditPage = () => {
                   newArr[idx] = e.target.value;
                   handleConfigChange(blockIndex, key, newArr);
                 }}
-                className="flex-grow border px-2 py-1 rounded"
+                className="flex-grow border px-2 py-1 rounded text-gray-800"
               />
               <button
                 type="button"
@@ -391,26 +580,26 @@ const ServiceEditPage = () => {
     if (!servicesData) return null;
 
     return (
-      <div className="mb-6">
-        <div className="flex flex-wrap gap-2 mb-4">
+      <div className="mb-6 flex justify-between items-start">
+        <div className="flex flex-col space-y-2 items-start">
           {Object.keys(servicesData).map((category) => (
             <button
               key={category}
-              onClick={() => setSelectedCategory(category)}
-              className={`px-3 py-1 rounded ${
-                selectedCategory === category
-                  ? "bg-blue text-white drop-shadow-[0_1.2px_1.2px_rgba(255,30,0,0.8)]"
-                  : "bg-gray-200"
-              }`}
+              onClick={() => {
+                setSelectedCategory(category);
+                if (servicesData[category] && servicesData[category].length > 0) {
+                  setSelectedPageId(servicesData[category][0].id);
+                }
+              }}
+              className={`px-4 py-2 rounded text-sm font-medium w-full text-left ${selectedCategory === category ? 'bg-blue text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
             >
               {category.charAt(0).toUpperCase() + category.slice(1)}
             </button>
           ))}
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 justify-start items-start w-3/4">
           {servicesData[selectedCategory].map((page) => {
-            // Find the service name from the HeroBlock or first block
             const heroBlock =
               page.blocks.find((b) => b.blockName === "HeroBlock") ||
               page.blocks[0];
@@ -424,11 +613,7 @@ const ServiceEditPage = () => {
               <button
                 key={page.id}
                 onClick={() => setSelectedPageId(page.id)}
-                className={`px-3 py-1 rounded ${
-                  selectedPageId === page.id
-                    ? "bg-blue text-white drop-shadow-[0_1.2px_1.2px_rgba(255,30,0,0.8)]"
-                    : "bg-gray-200"
-                }`}
+                className={`px-3 py-1 rounded text-xs ${selectedPageId === page.id ? 'bg-blue text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
               >
                 {serviceName}
               </button>
@@ -447,13 +632,19 @@ const ServiceEditPage = () => {
       viewBox="0 0 24 24"
       strokeWidth="1.5"
       stroke="currentColor"
-      className="w-6 h-6"
+      className="w-5 h-5" // Adjusted size for toggle button
     >
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M16.862 4.487a2.032 2.032 0 112.872 2.872L7.5 21.613H4v-3.5L16.862 4.487z"
       />
+    </svg>
+  );
+
+  const CheckIcon = (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
     </svg>
   );
 
@@ -466,189 +657,73 @@ const ServiceEditPage = () => {
   */
   const renderBlockEditor = (block, blockIndex) => {
     const Component = blockMap[block.blockName];
+    const isEditingThisBlock = activeEditBlockIndex === blockIndex;
 
     if (!Component) {
       return (
-        <div className="bg-red-100 p-4 mb-0">
+        <div key={`unknown-${blockIndex}`} className="bg-red-100 p-4 mb-0">
           <p className="text-red-700">Unknown block type: {block.blockName}</p>
         </div>
       );
     }
 
-    // Always show HeroBlock without toggle option if it's the first block
-    const isHeroBlock = block.blockName === "HeroBlock" && blockIndex === 0;
+    // Ensure block.config is an object
+    const blockConfig = block.config || {};
 
     return (
       <div
-        key={blockIndex}
+        key={block.uniqueKey || blockIndex} // Use uniqueKey if available
         className="relative border-t border-b border-gray-300 mb-0 bg-white overflow-hidden"
       >
-        <div className="absolute top-4 right-4 z-40">
+        <div className="absolute top-2 right-2 z-40"> {/* Adjusted positioning for better visibility */}
           <button
             type="button"
-            onClick={() => setActiveEditBlock(blockIndex)}
-            className="bg-gray-800 text-white rounded-full p-2 shadow-lg"
+            onClick={() => {
+              if (isEditingThisBlock) {
+                // If was editing this block, and it has an EditorPanel with a commit function (optional)
+                // This is a placeholder for a more robust commit mechanism if needed from panel
+                // For now, changes are live or via onConfigChange from the block itself.
+                setActiveEditBlockIndex(null);
+              } else {
+                setActiveEditBlockIndex(blockIndex);
+              }
+            }}
+            className={`${isEditingThisBlock ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-700 hover:bg-gray-600'} text-white rounded-full p-2 shadow-lg transition-colors`}
+            title={isEditingThisBlock ? "Done Editing" : "Edit Block"}
           >
-            {PencilIcon}
+            {isEditingThisBlock ? CheckIcon : PencilIcon}
           </button>
         </div>
 
-        {/* Always show the preview */}
-        <Component config={block.config} readOnly={true} />
+        {/* Block Preview */}
+        <Component 
+          config={blockConfig} 
+          readOnly={!isEditingThisBlock} 
+          onConfigChange={(newFullConfig) => handleBlockConfigUpdate(blockIndex, newFullConfig)}
+          getDisplayUrl={getDisplayUrlHelper} // Pass display helper
+          // Pass file handler for blocks that manage files directly in their preview (e.g., in-place image upload)
+          onFileChange={(fieldKey, fileOrFileObject) => handleFileChangeForBlock(blockIndex, fieldKey, fileOrFileObject)}
+        />
 
-        {/* Show editing overlay when activeEditBlock matches this block's index */}
-        {activeEditBlock === blockIndex && (
-          <EditOverlay onClose={() => setActiveEditBlock(null)}>
-            <div className="bg-gray-800 p-4 mb-0 text-white">
-              <h3 className="text-lg font-semibold">{block.blockName}</h3>
-              <div className="mt-4">
-                <div className="space-y-3 max-h-[600px] overflow-y-auto p-3 bg-gray-700 rounded">
-                  {Object.entries(block.config).map(([key, value]) => {
-                    // Skip rendering certain fields that are handled specially
-                    if (key === "id") return null;
-
-                    // Handle different field types
-                    if (Array.isArray(value)) {
-                      return renderArrayField(blockIndex, key, value);
-                    } else if (typeof value === "object" && value !== null) {
-                      return renderObjectField(blockIndex, key, value);
-                    } else if (typeof value === "boolean") {
-                      return (
-                        <div key={key} className="mb-3">
-                          <label className="flex items-center">
-                            <input
-                              type="checkbox"
-                              checked={value}
-                              onChange={(e) =>
-                                handleConfigChange(
-                                  blockIndex,
-                                  key,
-                                  e.target.checked
-                                )
-                              }
-                              className="mr-2"
-                            />
-                            <span>{key}</span>
-                          </label>
-                        </div>
-                      );
-                    } else if (typeof value === "number") {
-                      return (
-                        <div key={key} className="mb-3">
-                          <label className="block mb-1">{key}:</label>
-                          <input
-                            type="number"
-                            value={value}
-                            onChange={(e) =>
-                              handleConfigChange(
-                                blockIndex,
-                                key,
-                                parseFloat(e.target.value)
-                              )
-                            }
-                            className="w-full p-1 border rounded"
-                          />
-                        </div>
-                      );
-                    } else {
-                      // Handle image fields specially
-                      if (
-                        key.toLowerCase().includes("image") ||
-                        key.toLowerCase().includes("picture") ||
-                        key.toLowerCase().includes("photo")
-                      ) {
-                        return (
-                          <div key={key} className="mb-3">
-                            <label className="block mb-1">{key}:</label>
-                            <div className="flex flex-col space-y-2">
-                              <input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => {
-                                  if (e.target.files && e.target.files[0]) {
-                                    const file = e.target.files[0];
-                                    handleFileChange(blockIndex, key, file);
-                                  }
-                                }}
-                                className="p-1 border rounded"
-                              />
-                              {getDisplayUrl(value) && (
-                                <div className="mt-2">
-                                  <img
-                                    src={getDisplayUrl(value)}
-                                    alt={`Preview for ${key}`}
-                                    className="h-24 object-cover rounded"
-                                  />
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      } else {
-                        // Default text input
-                        return (
-                          <div key={key} className="mb-3">
-                            <label className="block mb-1">{key}:</label>
-                            <input
-                              type="text"
-                              value={value || ""}
-                              onChange={(e) =>
-                                handleConfigChange(
-                                  blockIndex,
-                                  key,
-                                  e.target.value
-                                )
-                              }
-                              className="w-full p-1 border rounded"
-                            />
-                          </div>
-                        );
-                      }
-                    }
-                  })}
-                </div>
-              </div>
-
-              {/* Block action buttons */}
-              <div className="mt-4 flex justify-between">
-                <div className="flex space-x-2">
-                  <button
-                    type="button"
-                    onClick={() => handleMoveBlock(blockIndex, "up")}
-                    disabled={blockIndex === 0}
-                    className={`px-3 py-1 rounded ${
-                      blockIndex === 0
-                        ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-                        : "bg-blue-500 text-white hover:bg-blue-600"
-                    }`}
-                  >
-                    Move Up
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleMoveBlock(blockIndex, "down")}
-                    disabled={blockIndex === currentPage.blocks.length - 1}
-                    className={`px-3 py-1 rounded ${
-                      blockIndex === currentPage.blocks.length - 1
-                        ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-                        : "bg-blue-500 text-white hover:bg-blue-600"
-                    }`}
-                  >
-                    Move Down
-                  </button>
-                </div>
-                {!isHeroBlock && (
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveBlock(blockIndex)}
-                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                  >
-                    Remove Block
-                  </button>
-                )}
-              </div>
-            </div>
-          </EditOverlay>
+        {/* Inline Editor Panel - Render if isEditingThisBlock and Component.EditorPanel exists */}
+        {isEditingThisBlock && Component.EditorPanel && (
+          <div className="border-t border-gray-200 bg-gray-100 p-4">
+            <h3 className="text-md font-semibold text-gray-700 mb-3">{block.blockName} - Edit Panel</h3>
+            <Component.EditorPanel
+              currentConfig={blockConfig}
+              onPanelConfigChange={(updatedFields) => {
+                // This merges specific field updates from the panel into the block's config
+                const currentBlockConfig = currentPage.blocks[blockIndex].config || {};
+                const newConfig = { ...currentBlockConfig, ...updatedFields };
+                handleBlockConfigUpdate(blockIndex, newConfig);
+              }}
+              onPanelFileChange={(fieldKey, fileOrFileObject) => {
+                // For file inputs within the EditorPanel
+                handleFileChangeForBlock(blockIndex, fieldKey, fileOrFileObject);
+              }}
+              getDisplayUrl={getDisplayUrlHelper} // Pass display helper to panel too
+            />
+          </div>
         )}
       </div>
     );
@@ -722,7 +797,7 @@ const ServiceEditPage = () => {
   const renderObjectField = (blockIndex, key, obj) => {
     return (
       <div key={key} className="mb-3 border p-2 rounded">
-        <label className="block mb-1 font-semibold">{key} (Object):</label>
+        <label className="block mb-1 font-semibold text-gray-300">{key} (Object):</label>
         <div className="space-y-2">
           {Object.entries(obj).map(([subKey, subValue]) => {
             if (typeof subValue === "boolean") {
@@ -759,7 +834,7 @@ const ServiceEditPage = () => {
                       };
                       handleConfigChange(blockIndex, key, updatedObj);
                     }}
-                    className="w-full p-1 border rounded"
+                    className="w-full p-1 border rounded text-gray-800"
                   />
                 </div>
               );
@@ -774,7 +849,7 @@ const ServiceEditPage = () => {
                       const updatedObj = { ...obj, [subKey]: e.target.value };
                       handleConfigChange(blockIndex, key, updatedObj);
                     }}
-                    className="w-full p-1 border rounded"
+                    className="w-full p-1 border rounded text-gray-800"
                   />
                 </div>
               );
@@ -822,6 +897,9 @@ const ServiceEditPage = () => {
       const blockDefaults = getDefaultConfigForBlock(selectedBlockType);
 
       const updatedPage = { ...currentPage };
+      // Ensure blocks array exists
+      if (!updatedPage.blocks) updatedPage.blocks = [];
+
       // Insert the new block at the beginning of the array (after any HeroBlock)
       const heroBlockIndex = updatedPage.blocks.findIndex(
         (block) => block.blockName === "HeroBlock"
@@ -831,6 +909,7 @@ const ServiceEditPage = () => {
       updatedPage.blocks.splice(insertIndex, 0, {
         blockName: selectedBlockType,
         config: blockDefaults,
+        uniqueKey: `${selectedBlockType}_${Date.now()}` // Add unique key
       });
 
       // Update the current page
@@ -844,7 +923,7 @@ const ServiceEditPage = () => {
       setServicesData(updatedData);
 
       // Automatically open edit mode for the new block
-      setActiveEditBlock(insertIndex);
+      setActiveEditBlockIndex(insertIndex);
     };
 
     return (
@@ -922,22 +1001,7 @@ const ServiceEditPage = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 bg-gray-100">
-      <div className="mb-4 flex justify-between items-center bg-gray-800 text-white p-4 rounded">
-        <div>
-          <h1 className="text-2xl font-bold">Service Pages</h1>
-          <p className="text-gray-300 mt-1">
-            Edit individual service pages and their blocks
-          </p>
-        </div>
-        <button
-          onClick={handleDownloadJSON}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-        >
-          Download JSON
-        </button>
-      </div>
-
+    <div className="">
       {renderPageButtons()}
       {renderAddBlockSection()}
 
@@ -954,3 +1018,4 @@ const ServiceEditPage = () => {
 // Export the component and the services data getter
 export default ServiceEditPage;
 export const getServicesData = () => servicesDataRef;
+export { blockMap }; // Export blockMap

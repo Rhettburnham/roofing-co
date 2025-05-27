@@ -41,11 +41,11 @@ module.exports = {
         rye: ["Rye", "serif"],
       },
       colors: {
-        // Use our website's color scheme
-        accent: customColors.accent,
-        banner: customColors.banner,
-        "second-accent": customColors["second-accent"],
-        "faint-color": customColors["faint-color"],
+        // Use CSS variables for dynamic theming, with fallbacks to the JSON-loaded values
+        accent: `var(--color-accent, ${customColors.accent})`,
+        banner: `var(--color-banner, ${customColors.banner})`,
+        "second-accent": `var(--color-second-accent, ${customColors["second-accent"]})`,
+        "faint-color": `var(--color-faint-color, ${customColors["faint-color"]})`,
         // Add utility colors
         blue: {
           DEFAULT: "#2997FF",

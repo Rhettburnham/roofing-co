@@ -1,0 +1,235 @@
+{
+  "id": "all-blocks-showcase",
+  "name": "All Service Blocks Showcase",
+  "title": "All Service Blocks (Development Preview)",
+  "blocks": [
+    {
+      "blockName": "HeroBlock",
+      "config": {
+        "title": "Showcase Hero Block",
+        "backgroundImage": "/assets/images/placeholder_banner.jpg",
+        "backgroundColor": "#222222",
+        "textColor": "#FFFFFF",
+        "buttonText": "Explore",
+        "buttonLink": "#",
+        "buttonBgColor": "#007BFF",
+        "buttonTextColor": "#FFFFFF",
+        "shrinkAfterMs": 1000,
+        "initialHeight": "40vh",
+        "finalHeight": "20vh"
+      }
+    },
+    {
+      "blockName": "ActionButtonBlock",
+      "config": {
+        "buttonText": "Showcase Action Button",
+        "buttonLink": "#action",
+        "buttonBgColor": "#28A745",
+        "buttonTextColor": "#FFFFFF",
+        "iconPack": "lucide",
+        "iconName": "MousePointerClick",
+        "iconColor": "#FFFFFF",
+        "containerBgColor": "transparent"
+      }
+    },
+    {
+      "blockName": "HeaderBannerBlock",
+      "config": {
+        "title": "Showcase Header Banner",
+        "textAlign": "text-center",
+        "fontSize": "text-4xl",
+        "textColor": "#F0F0F0",
+        "bannerHeight": "h-48",
+        "paddingY": "py-12",
+        "backgroundImage": "/assets/images/placeholder_banner.jpg",
+        "backgroundColor": "#1F2937"
+      }
+    },
+    {
+      "blockName": "GeneralList",
+      "config": {
+        "title": "Showcase General List",
+        "backgroundColor": "#F0F8FF",
+        "textColor": "#2F4F4F",
+        "itemBackgroundColor": "#FFFFFF",
+        "itemTextColor": "#333333",
+        "imageBorderColor": "#ADD8E6",
+        "items": [
+          { "id": "gl1", "name": "List Item 1", "description": "Description for GL item 1.", "advantages": ["Advantage A"], "pictures": ["/assets/images/placeholder_content.png"] },
+          { "id": "gl2", "name": "List Item 2", "description": "Description for GL item 2.", "advantages": ["Advantage B"], "pictures": ["/assets/images/placeholder_content_alt.png"] }
+        ]
+      }
+    },
+    {
+      "blockName": "VideoCTA",
+      "config": {
+        "videoSrc": "https://www.youtube.com/embed/L_LUpnjgPso",
+        "videoType": "youtube",
+        "title": "Showcase VideoCTA",
+        "description": "This is a showcase of the VideoCTA block with placeholder content.",
+        "buttonText": "Watch Now",
+        "buttonLink": "#video-cta",
+        "textColor": "#FFFFFF",
+        "textAlignment": "center",
+        "overlayOpacity": 0.5,
+        "backgroundColor": "#111827",
+        "buttonBgColor": "#D97706",
+        "buttonTextColor": "#FFFFFF",
+        "buttonIconPack": "lucide",
+        "buttonIconName": "PlayCircle"
+      }
+    },
+    {
+      "blockName": "GeneralListVariant2",
+      "config": {
+        "title": "Showcase General List Variant 2",
+        "backgroundColor": "#EFF6FF",
+        "textColor": "#1E3A8A",
+        "itemCardBackgroundColor": "#FFFFFF",
+        "itemTitleColor": "#1E40AF",
+        "itemTextColor": "#374151",
+        "imageBorderColor": "#93C5FD",
+        "items": [
+          { "id": "glv1", "name": "Feature Item A", "description": "Detailed description of feature A.", "features": ["Benefit 1", "Benefit 2"], "imageUrl": "/assets/images/placeholder_feature_a.png" },
+          { "id": "glv2", "name": "Feature Item B", "description": "Detailed description of feature B.", "features": ["Benefit X", "Benefit Y"], "imageUrl": "/assets/images/placeholder_feature_b.png" }
+        ]
+      }
+    },
+    {
+      "blockName": "OverviewAndAdvantagesBlock",
+      "config": {
+        "heading": "Showcase Overview & Advantages",
+        "description": "A comprehensive look at the features and benefits provided by this showcase block.",
+        "bullets": [
+          { "title": "Advantage One", "desc": "Description of the first advantage." },
+          { "title": "Advantage Two", "desc": "Description of the second advantage." }
+        ],
+        "footnote": "This is a footnote for the showcase.",
+        "backgroundColor": "#F9FAFB",
+        "headingColor": "#111827",
+        "descriptionColor": "#374151",
+        "bulletTitleColor": "#1F2937",
+        "bulletDescColor": "#4B5563",
+        "bulletIconColor": "#10B981"
+      }
+    },
+    {
+      "blockName": "PricingGrid",
+      "config": {
+        "title": "Showcase Pricing Grid",
+        "showPrice": true,
+        "backgroundColor": "#F9FAFB",
+        "titleColor": "#111827",
+        "itemBackgroundColor": "#FFFFFF",
+        "itemTitleColor": "#1F2937",
+        "itemDescriptionColor": "#4B5563",
+        "itemRateColor": "#059669",
+        "itemFeatureTextColor": "#374151",
+        "buttonBgColor": "#065F46",
+        "buttonTextColor": "#FFFFFF",
+        "imageBorderColor": "#D1D5DB",
+        "items": [
+          { "id": "pg1", "title": "Basic Plan", "image": "/assets/images/placeholder_plan.png", "description": "Basic features.", "rate": "$10/mo", "features": ["Core Feature"], "buttonText": "Choose Basic", "buttonLink": "#basic" }
+        ]
+      }
+    },
+    {
+      "blockName": "ListDropdown",
+      "config": {
+        "title": "Showcase FAQs",
+        "openMultiple": true,
+        "backgroundColor": "#FFFFFF",
+        "titleColor": "#111827",
+        "itemTitleColor": "#1F2937",
+        "itemContentColor": "#374151",
+        "iconColor": "#6B7280",
+        "borderColor": "#D1D5DB",
+        "items": [
+          { "id": "faq_s1", "title": "Showcase Question 1?", "content": "Answer for showcase question 1." },
+          { "id": "faq_s2", "title": "Showcase Question 2?", "content": "Answer for showcase question 2." }
+        ]
+      }
+    },
+    {
+      "blockName": "GridImageTextBlock", 
+      "config": {
+        "title": "Showcase Grid Image Text",
+        "columns": 2,
+        "backgroundColor": "#FFFFFF",
+        "titleColor": "#1A202C",
+        "itemTitleColor": "#2D3748",
+        "itemDescriptionColor": "#4A5568",
+        "itemBackgroundColor": "#F9FAFB",
+        "imageBorderColor": "#E2E8F0",
+        "items": [
+          { "id": "git1", "title": "Grid Item 1", "description": "Description for grid item 1.", "image": "/assets/images/placeholder_grid_1.png", "alt":"Item 1" },
+          { "id": "git2", "title": "Grid Item 2", "description": "Description for grid item 2.", "image": "/assets/images/placeholder_grid_2.png", "alt":"Item 2" }
+        ]
+      }
+    },
+    {
+      "blockName": "ListImageVerticalBlock", 
+      "config": {
+        "title": "Showcase Vertical List",
+        "enableAnimation": false,
+        "backgroundColor": "#FFFFFF",
+        "titleColor": "#1A202C",
+        "itemNumberColor": "#3B82F6",
+        "itemTitleColor": "#2D3748",
+        "itemDescriptionColor": "#4A5568",
+        "lineColor": "#D1D5DB",
+        "imageBorderColor": "#E2E8F0",
+        "items": [
+          { "id": "liv1", "number": "A", "title": "Vertical Step A", "description": "Description for step A.", "image": "/assets/images/placeholder_step_a.png" },
+          { "id": "liv2", "number": "B", "title": "Vertical Step B", "description": "Description for step B.", "image": "/assets/images/placeholder_step_b.png" }
+        ]
+      }
+    },
+    {
+        "blockName": "ShingleSelectorBlock", 
+        "config": {
+            "sectionTitle": "Showcase Shingle Selector",
+            "shingleOptions": [
+                {"title": "Asphalt Showcase", "description": "Popular and affordable.", "benefit": "Cost-effective for showcase.", "image": "/assets/images/placeholder_shingle_asphalt.png" },
+                {"title": "Metal Showcase", "description": "Durable and modern.", "benefit": "Long-lasting for showcase.", "image": "/assets/images/placeholder_shingle_metal.png" }
+            ],
+            "detailBackgroundColor": "#F3F4F6",
+            "detailTitleColor": "#111827",
+            "detailDescriptionColor": "#374151",
+            "detailBenefitColor": "#057A55",
+            "selectorBackgroundColor": "#FFFFFF",
+            "selectorTitleColor": "#1F2937",
+            "selectorDescriptionColor": "#4B5563",
+            "activeSelectorBorderColor": "#2563EB"
+        }
+    },
+    {
+        "blockName": "ImageWrapBlock", 
+        "config": {
+            "imageUrl": "/assets/images/placeholder_wrap.jpg",
+            "altText": "Showcase Wrapped Image",
+            "floatSide": "left",
+            "maxWidthPx": 300,
+            "paragraph": "This is a paragraph of text that will wrap around the showcase image. It demonstrates how content flows when an image is floated to one side. More text can be added here to see the full effect of the wrapping behavior.",
+            "textColor": "#333333",
+            "backgroundColor": "#FAFAFA"
+        }
+    },
+    {
+        "blockName": "ThreeGridWithRichTextBlock", 
+        "config": {
+            "paragraphText": "This showcase demonstrates the Three Grid with Rich Text Block. Below are three items, each with an image and title. The rich text above can be used to introduce the grid or provide context.",
+            "items": [
+                {"title": "Grid Item Alpha", "image": "/assets/images/placeholder_3grid_alpha.png", "alt": "Alpha"},
+                {"title": "Grid Item Beta", "image": "/assets/images/placeholder_3grid_beta.png", "alt": "Beta"},
+                {"title": "Grid Item Gamma", "image": "/assets/images/placeholder_3grid_gamma.png", "alt": "Gamma"}
+            ],
+            "paragraphColor": "#374151",
+            "itemTitleColor": "#1F2937",
+            "itemBackgroundColor": "#FFFFFF",
+            "gridBackgroundColor": "#F3F4F6",
+            "imageBorderColor": "#E2E8F0"
+        }
+    }
+  ]
+} 

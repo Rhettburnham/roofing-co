@@ -587,7 +587,7 @@
               {
                 "title": "Clogged Gutters",
                 "causes": "Over time, gutters can become clogged with leaves, debris, and dirt.",
-                "impact": "Water that doesn't drain properly can seep into the roof, walls, and foundation, causing water damage, mold, and erosion.",
+                "impact": "Water that doesn\\'t drain properly can seep into the roof, walls, and foundation, causing water damage, mold, and erosion.",
                 "diagnosis": [
                   "Inspect gutters after heavy rains for overflowing water.",
                   "Look for debris buildup in gutters or downspouts.",
@@ -616,7 +616,7 @@
               },
               {
                 "title": "Improper Gutter Slope",
-                "causes": "Gutters must have a slight slope to allow water flow. If it's wrong, water pools inside.",
+                "causes": "Gutters must have a slight slope to allow water flow. If it\\'s wrong, water pools inside.",
                 "impact": "Standing water leads to corrosion, leaks, and gutter damage, plus mosquito breeding.",
                 "diagnosis": [
                   "Check for standing water post-rainstorm.",
@@ -739,7 +739,7 @@
         {
           "blockName": "ThreeGridWithRichTextBlock",
           "config": {
-            "paragraphText": "Whether your roof is made of shingles, metal, or tiles, our expert team provides customized ventilation solutions that seamlessly integrate with your roof's aesthetic and structural integrity.",
+            "paragraphText": "Whether your roof is made of shingles, metal, or tiles, our expert team provides customized ventilation solutions that seamlessly integrate with your roof\\'s aesthetic and structural integrity.",
             "items": [
               {
                 "title": "Shingle Roofs",
@@ -770,7 +770,7 @@
         {
           "blockName": "HeaderBannerBlock",
           "config": {
-            "title": "Boost Your Home's Energy Efficiency",
+            "title": "Boost Your Home\\'s Energy Efficiency",
             "textAlign": "center",
             "fontSize": "text-3xl",
             "textColor": "#ffffff",
@@ -786,7 +786,7 @@
             "altText": "Energy Efficiency",
             "floatSide": "left",
             "maxWidthPx": 280,
-            "paragraph": "Proper roof ventilation is essential for reducing your home's cooling costs. According to the U.S. Department of Energy, effective ventilation can lower cooling expenses by up to 10% by allowing trapped hot air to escape, thereby decreasing the reliance on air conditioning systems (Energy.gov). Implementing adequate roof ventilation creates a more comfortable living environment, lowers energy bills, and extends the lifespan of your roofing materials. The National Roofing Contractors Association highlights that proper ventilation helps prevent heat-related damage, which can extend roof longevity by several years (NRCA)."
+            "paragraph": "Proper roof ventilation is essential for reducing your home\\'s cooling costs. According to the U.S. Department of Energy, effective ventilation can lower cooling expenses by up to 10% by allowing trapped hot air to escape, thereby decreasing the reliance on air conditioning systems (Energy.gov). Implementing adequate roof ventilation creates a more comfortable living environment, lowers energy bills, and extends the lifespan of your roofing materials. The National Roofing Contractors Association highlights that proper ventilation helps prevent heat-related damage, which can extend roof longevity by several years (NRCA)."
           }
         }
       ]
@@ -861,7 +861,7 @@
               {
                 "number": "1",
                 "title": "Roof Inspection & Preparation",
-                "description": "We perform a thorough roof inspection to ensure the structure is sound and free from damage. We'll repair or replace any issues before installing new shingles.",
+                "description": "We perform a thorough roof inspection to ensure the structure is sound and free from damage. We\\'ll repair or replace any issues before installing new shingles.",
                 "image": "assets/images/shingleinstallation/inspection.jpg"
               },
               {

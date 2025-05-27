@@ -2,8 +2,8 @@
 // This application loads data from JSON files and allows for local editing
 // of content. The edited content can be downloaded as JSON files and sent
 // to the developer for permanent integration into the site.
-import { useState, useEffect, lazy, Suspense } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { useState, useEffect, lazy, Suspense, useMemo } from "react";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import PropTypes from "prop-types";
 
 import Navbar from "./components/Navbar";
@@ -11,15 +11,16 @@ import Footer from "./components/Footer";
 import LoadingScreen from "./components/loadingScreen";
 import ServicePage from "./components/ServicePage";
 
-// Import the new ServicePageCreator component
+// Import the new ServicePageCreator and MainPageCreator components
 const ServicePageCreator = lazy(() => import("./components/ServicePageCreator"));
+const MainPageCreator = lazy(() => import("./components/MainPageCreator"));
 
 // Lazy load components to improve initial load time
 const OneForm = lazy(() => import("./components/OneForm"));
 const ServiceEditPage = lazy(() => import("./components/ServiceEditPage"));
 const LegalAgreement = lazy(() => import("./components/LegalAgreement"));
 
-// --- Main Page Blocks ---
+// --- Main Page Blocks (Imports might be removable if MainPageCreator handles them all) ---
 // These components render different sections of the main page
 // Each loads data from the combined_data.json file
 const HeroBlock = lazy(() => import("./components/MainPageBlocks/HeroBlock"));
@@ -35,8 +36,11 @@ const BasicMapBlock = lazy(
 const BookingBlock = lazy(
   () => import("./components/MainPageBlocks/BookingBlock")
 );
-const CombinedPageBlock = lazy(
-  () => import("./components/MainPageBlocks/CombinedPageBlock")
+const ServiceSliderBlock = lazy(
+  () => import("./components/MainPageBlocks/ServiceSliderBlock")
+);
+const TestimonialBlock = lazy(
+  () => import("./components/MainPageBlocks/TestimonialBlock")
 );
 const BeforeAfterBlock = lazy(
   () => import("./components/MainPageBlocks/BeforeAfterBlock")
@@ -102,14 +106,18 @@ const AllServiceBlocksPage = (props) => {
  * Conditionally renders the Navbar based on the current route
  * Hides the navbar on edit routes and OneForm
  */
-const NavbarWrapper = () => {
+const NavbarWrapper = ({ navbarConfig }) => {
   const location = useLocation();
   const isEditRoute = location.pathname.includes('/edit/') || location.pathname === '/oneform';
   
   // Don't render navbar on edit routes
   if (isEditRoute) return null;
   
-  return <Navbar />;
+  return <Navbar config={navbarConfig} />;
+};
+
+NavbarWrapper.propTypes = {
+  navbarConfig: PropTypes.object,
 };
 
 /**
@@ -120,74 +128,32 @@ const NavbarWrapper = () => {
  * and passes it to the appropriate components
  *
  * This component is responsible for rendering:
- * - The main page with all its blocks
+ * - The main page with all its blocks (now handled by MainPageCreator)
  * - Individual service pages
  * - The service editor page
  * - The OneForm editor for individual blocks
  */
-const AppRoutes = ({
+const AppRoutes = ({ 
+  aboutPageConfig,
   heroConfig,
   richTextConfig,
   buttonconfig,
   mapConfig,
   bookingConfig,
-  combinedPageCfg,
+  serviceSliderConfig,
+  testimonialsConfig,
   beforeAfterConfig,
   employeesConfig,
-  aboutPageConfig,
 }) => {
   return (
     <Routes>
-      {/* Main page route */}
+      {/* Main page route - now uses MainPageCreator */}
       <Route
         path="/"
         element={
-          <>
-            <section id="hero" className="mt-[-3.5rem]">
-              <Suspense fallback={<LoadingScreen />}>
-                <HeroBlock readOnly heroconfig={heroConfig} />
-              </Suspense>
-            </section>
-
-            <section id="richtext">
-              <Suspense fallback={<LoadingScreen />}>
-                <RichTextBlock readOnly richTextData={richTextConfig} />
-              </Suspense>
-            </section>
-            <section id="button">
-              <Suspense fallback={<LoadingScreen />}>
-                <ButtonBlock readOnly buttonconfig={buttonconfig} />
-              </Suspense>
-            </section>
-            <section id="map">
-              <Suspense fallback={<LoadingScreen />}>
-                <BasicMapBlock readOnly mapData={mapConfig} />
-              </Suspense>
-            </section>
-            <section id="booking">
-              <Suspense fallback={<LoadingScreen />}>
-                <BookingBlock readOnly bookingData={bookingConfig} />
-              </Suspense>
-            </section>
-            <section id="combinedPage">
-              <Suspense fallback={<LoadingScreen />}>
-                <CombinedPageBlock readOnly config={combinedPageCfg} />
-              </Suspense>
-            </section>
-            <section id="beforeAfter">
-              <Suspense fallback={<LoadingScreen />}>
-                <BeforeAfterBlock
-                  readOnly
-                  beforeAfterData={beforeAfterConfig}
-                />
-              </Suspense>
-            </section>
-            <section id="employees">
-              <Suspense fallback={<LoadingScreen />}>
-                <EmployeesBlock readOnly employeesData={employeesConfig} />
-              </Suspense>
-            </section>
-          </>
+          <Suspense fallback={<LoadingScreen />}>
+            <MainPageCreator />
+          </Suspense>
         }
       />
 
@@ -207,12 +173,12 @@ const AppRoutes = ({
         element={<AllServiceBlocksPage />}
       />
 
-      {/* New Service Routes using ServicePageCreator */}
+      {/* Route for displaying individual service pages */}
       <Route
-        path="/service/:serviceType/:serviceId"
+        path="/service/:serviceType/:slug"
         element={
           <Suspense fallback={<LoadingScreen />}>
-            <ServicePageCreator />
+            <ServicePage />
           </Suspense>
         }
       />
@@ -311,13 +277,25 @@ const AppRoutes = ({
         }
       />
       <Route
-        path="/edit/combinedPage"
+        path="/edit/serviceSlider"
         element={
           <Suspense fallback={<LoadingScreen />}>
             <OneForm
-              initialData={combinedPageCfg}
-              blockName="combinedPage"
-              title="Combined Page Block Editor"
+              initialData={serviceSliderConfig}
+              blockName="serviceSlider"
+              title="Service Slider Block Editor"
+            />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/edit/testimonials"
+        element={
+          <Suspense fallback={<LoadingScreen />}>
+            <OneForm
+              initialData={testimonialsConfig}
+              blockName="testimonials"
+              title="Testimonial Block Editor"
             />
           </Suspense>
         }
@@ -349,34 +327,55 @@ const AppRoutes = ({
 
       {/* Legal Agreement route */}
       <Route path="/legal" element={<LegalAgreement />} />
+
+      {/* Route for the service page editor/creator (ServicePageCreator fetches its own data) */}
+      <Route
+        path="/service-editor"
+        element={
+          <Suspense fallback={<LoadingScreen />}>
+            <ServicePageCreator />
+          </Suspense>
+        }
+      />
+      
+      {/* New route for editing service pages by ID, if needed */}
+      <Route 
+        path="/edit/service/:serviceType/:serviceId"
+        element={
+          <Suspense fallback={<LoadingScreen />}>πservice
+            <div>Service Page Specific Editor (Placeholder)</div>
+          </Suspense>
+        }
+      />
     </Routes>
   );
 };
 
 AppRoutes.propTypes = {
+  aboutPageConfig: PropTypes.object,
   heroConfig: PropTypes.object,
   richTextConfig: PropTypes.object,
   buttonconfig: PropTypes.object,
   mapConfig: PropTypes.object,
   bookingConfig: PropTypes.object,
-  combinedPageCfg: PropTypes.object,
+  serviceSliderConfig: PropTypes.object,
+  testimonialsConfig: PropTypes.object,
   beforeAfterConfig: PropTypes.object,
   employeesConfig: PropTypes.object,
-  aboutPageConfig: PropTypes.object,
 };
 
 /**
  * App Component - Main application entry point
  *
  * This component:
- * 1. Fetches the combined_data.json file containing configuration for all main page blocks
- * 2. Extracts configuration for each block
+ * 1. Fetches the combined_data.json file containing configuration for all main page blocks and navbar
+ * 2. Extracts configuration for navbar and about page (if needed separately)
  * 3. Sets up the router with all application routes
  *
  * The application uses three main JSON files:
- * - combined_data.json: Configuration for the main page blocks
+ * - combined_data.json: Configuration for the main page blocks and navbar
  * - services.json: Configuration for all service pages
- * - about_page.json: Configuration for the about page (loaded separately)
+ * - about_page.json: Configuration for the about page (loaded separately or part of combined_data)
  *
  * The application allows for local editing of these JSON files through
  * dedicated editor interfaces. The edited content can be downloaded and
@@ -384,79 +383,101 @@ AppRoutes.propTypes = {
  */
 const App = () => {
   const [loading, setLoading] = useState(true);
-  const [pageData, setPageData] = useState(null);
+  const [siteData, setSiteData] = useState(null);
   const [aboutPageData, setAboutPageData] = useState(null);
+  const [themeColors, setThemeColors] = useState(null);
+
+  // Moved useMemo hooks to the top level, before any conditional returns.
+  const navbarConfig = useMemo(() => siteData?.navbar, [siteData]);
+  const heroConfig = useMemo(() => siteData?.mainPageBlocks?.find(b => b.blockName === 'HeroBlock')?.config, [siteData]);
+  const richTextConfig = useMemo(() => siteData?.mainPageBlocks?.find(b => b.blockName === 'RichTextBlock')?.config, [siteData]);
+  const buttonconfig = useMemo(() => siteData?.mainPageBlocks?.find(b => b.blockName === 'ButtonBlock')?.config, [siteData]);
+  const mapConfig = useMemo(() => siteData?.mainPageBlocks?.find(b => b.blockName === 'BasicMapBlock')?.config, [siteData]);
+  const bookingConfig = useMemo(() => siteData?.mainPageBlocks?.find(b => b.blockName === 'BookingBlock')?.config, [siteData]);
+  const serviceSliderConfig = useMemo(() => siteData?.mainPageBlocks?.find(b => b.blockName === 'ServiceSliderBlock')?.config, [siteData]);
+  const testimonialsConfig = useMemo(() => siteData?.mainPageBlocks?.find(b => b.blockName === 'TestimonialBlock')?.config, [siteData]);
+  const beforeAfterConfig = useMemo(() => siteData?.mainPageBlocks?.find(b => b.blockName === 'BeforeAfterBlock')?.config, [siteData]);
+  const employeesConfig = useMemo(() => siteData?.mainPageBlocks?.find(b => b.blockName === 'EmployeesBlock')?.config, [siteData]);
+  const aboutPageConfigForRoutes = useMemo(() => aboutPageData || siteData?.mainPageBlocks?.find(b => b.blockName === 'AboutBlock')?.config || {}, [aboutPageData, siteData]);
+
   const dataUrl = "/data/raw_data/step_4/combined_data.json";
   const aboutDataUrl = "/data/raw_data/step_3/about_page.json";
+  const colorsUrl = "/data/colors_output.json";
 
-  // Fetch the combined_data.json and about_page.json files on component mount
+  // Fetch the combined_data.json (for navbar, and potentially About page if not separate)
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Fetch and parse the combined_data.json file
-        const response = await fetch(dataUrl);
-        if (!response.ok) {
-          throw new Error("Failed to fetch site content");
+        // Fetch all data concurrently
+        const [colorsResponse, siteDataResponse, aboutDataResponseOptional] = await Promise.all([
+          fetch(colorsUrl).catch(e => { console.error("Error fetching colors:", e); return null; }), // Catch individual fetch errors
+          fetch(dataUrl).catch(e => { console.error("Error fetching site data:", e); return null; }),
+          fetch(aboutDataUrl).catch(e => { console.error("Error fetching about data:", e); return null; })
+        ]);
+
+        // Process theme colors
+        if (colorsResponse && colorsResponse.ok) {
+          const colors = await colorsResponse.json();
+          setThemeColors(colors);
+          document.documentElement.style.setProperty('--color-accent', colors.accent);
+          document.documentElement.style.setProperty('--color-banner', colors.banner);
+          document.documentElement.style.setProperty('--color-second-accent', colors['second-accent']);
+          document.documentElement.style.setProperty('--color-faint-color', colors['faint-color']);
+        } else {
+          console.warn("Failed to load theme colors from colors_output.json or fetch failed.");
         }
 
-        const data = await response.json();
-        setPageData(data);
-
-        // Fetch and parse the about_page.json file
-        try {
-          const aboutResponse = await fetch(aboutDataUrl);
-          if (aboutResponse.ok) {
-            const aboutData = await aboutResponse.json();
-            setAboutPageData(aboutData);
-          } else {
-            // If about_page.json doesn't exist yet, use aboutPage from combined_data as fallback
-            setAboutPageData(data.aboutPage || {});
-            console.warn("About page data not found, using fallback data");
-          }
-        } catch (aboutError) {
-          console.error("Error loading about page data:", aboutError);
-          // Use aboutPage from combined_data as fallback
-          setAboutPageData(data.aboutPage || {});
+        // Process site data
+        if (!siteDataResponse || !siteDataResponse.ok) {
+          throw new Error("Failed to fetch site-wide content (combined_data.json)");
         }
+        const data = await siteDataResponse.json();
+        setSiteData(data);
+        console.log("App.jsx fetched combined_data:", data);
+
+        // Process about page data
+        let aboutDataToSet = data.aboutPage || {}; // Default to aboutPage from combined_data or empty object
+        if (aboutDataResponseOptional && aboutDataResponseOptional.ok) {
+          const aboutData = await aboutDataResponseOptional.json();
+          setAboutPageData(aboutData);
+          aboutDataToSet = aboutData; // Prioritize successfully fetched separate about_page.json
+        } else if (aboutDataResponseOptional === null && !data.aboutPage) {
+            // This case means fetch failed AND aboutPage is not in combined_data
+            console.warn("About page data (about_page.json) fetch failed and not found in combined_data, using default empty object.");
+        } else if (aboutDataResponseOptional && !aboutDataResponseOptional.ok) {
+            // This case means fetch attempted but failed (e.g. 404)
+            console.warn(`About page data (about_page.json) could not be fetched (status: ${aboutDataResponseOptional.status}), using fallback from combined_data or default.`);
+        }
+        // If about_page.json was not found or failed, and data.aboutPage exists, it's already used as default.
+        // If fetched, setAboutPageData was called. If using from combined_data, ensure state reflects that.
+        setAboutPageData(aboutDataToSet);
+
 
         setLoading(false);
       } catch (error) {
-        console.error("Error loading data:", error);
+        console.error("Error loading site data in App.jsx:", error);
         setLoading(false);
       }
     };
     fetchData();
-  }, [dataUrl, aboutDataUrl]);
+  }, [dataUrl, aboutDataUrl, colorsUrl]);
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p>Loading main page data...</p>
+        <p>Loading site configuration...</p>
       </div>
     );
   }
 
-  if (!pageData) {
+  if (!siteData) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p>No data available. Please check your connection and try again.</p>
+        <p>Site data not available. Please check configuration.</p>
       </div>
     );
   }
-
-  // Extract blocks from pageData
-  const heroConfig = pageData.hero;
-  const richTextConfig = pageData.richText;
-  const buttonconfig = pageData.button;
-  const mapConfig = pageData.map;
-  const bookingConfig = pageData.booking;
-  const combinedPageCfg = pageData.combinedPage;
-  const beforeAfterConfig = pageData.before_after;
-  const employeesConfig = pageData.employees;
-  
-  // Use separately loaded about page data instead of pageData.aboutPage
-  const aboutPageConfig = aboutPageData || {};
 
   return (
     <Router
@@ -466,19 +487,19 @@ const App = () => {
       }}
     >
       <ScrollRestoration />
-      <NavbarWrapper />
+      <NavbarWrapper navbarConfig={navbarConfig} />
       <main className="bg-white">
-        {/* Pass all block configurations to AppRoutes */}
         <AppRoutes
+          aboutPageConfig={aboutPageConfigForRoutes}
           heroConfig={heroConfig}
           richTextConfig={richTextConfig}
           buttonconfig={buttonconfig}
           mapConfig={mapConfig}
           bookingConfig={bookingConfig}
-          combinedPageCfg={combinedPageCfg}
+          serviceSliderConfig={serviceSliderConfig}
+          testimonialsConfig={testimonialsConfig}
           beforeAfterConfig={beforeAfterConfig}
           employeesConfig={employeesConfig}
-          aboutPageConfig={aboutPageConfig}
         />
       </main>
       <section id="footer">
@@ -489,3 +510,4 @@ const App = () => {
 };
 
 export default App;
+

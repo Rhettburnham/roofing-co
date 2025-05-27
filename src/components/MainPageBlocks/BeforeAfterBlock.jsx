@@ -6,6 +6,20 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 // Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger);
 
+// Helper to get display URL from string path or {url, file} object
+const getDisplayUrl = (imageValue, defaultPath = null) => {
+  if (imageValue && typeof imageValue === 'object' && imageValue.url) {
+    return imageValue.url;
+  }
+  if (typeof imageValue === 'string') {
+    if (imageValue.startsWith('/') || imageValue.startsWith('blob:') || imageValue.startsWith('data:')) {
+      return imageValue;
+    }
+    return `/${imageValue.replace(/^\.\//, "")}`;
+  }
+  return defaultPath;
+};
+
 /* ==============================================
    1) BEFORE-AFTER PREVIEW (Read-Only)
    ----------------------------------------------
@@ -13,39 +27,58 @@ gsap.registerPlugin(ScrollTrigger);
    Expects props.beforeAfterData = {
      sectionTitle: string,
      items: [
-       { before, after, shingle, sqft }, ...
+       { id, before, after, shingle, sqft }, ...
      ]
    }
 =============================================== */
-function BeforeAfterPreview({ beforeAfterData }) {
+function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleChange, onItemTextChange }) {
   const boxesRef = useRef([]);
   const headerRef = useRef(null);
   const nailRef = useRef(null);
   const textRef = useRef(null);
-  const buttonRef = useRef(null);
 
   // Local states for modal and card flipping
   const [selectedImages, setSelectedImages] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [viewState, setViewState] = useState("before");
+  // Initialize viewStates as an object to hold state for each card
+  const [viewStates, setViewStates] = useState({});
 
   // Safely destructure data and ensure paths are properly formatted
   const { sectionTitle = "BEFORE & AFTER", items = [] } = beforeAfterData || {};
+  const showNailAnimation = beforeAfterData?.showNailAnimation !== undefined ? beforeAfterData.showNailAnimation : true; // Default to true
+  console.log(`[BeforeAfterPreview] Instance created/re-rendered. Initial showNailAnimation prop from beforeAfterData: ${showNailAnimation}`);
 
-  // Format paths to ensure they start with / if they don't already
-  const formattedItems = items.map((item) => ({
+  // Initialize viewStates when items change
+  useEffect(() => {
+    const initialViewStates = {};
+    items.forEach((_, index) => {
+      initialViewStates[index] = "before"; // Default to 'before'
+    });
+    setViewStates(initialViewStates);
+  }, [items]);
+
+  // Use getDisplayUrl for formattedItems
+  // Ensure default paths are robust
+  const formattedItems = items.map((item, index) => ({
     ...item,
-    before: item.before?.startsWith("/")
-      ? item.before
-      : `/${item.before?.replace(/^\.\//, "")}`,
-    after: item.after?.startsWith("/")
-      ? item.after
-      : `/${item.after?.replace(/^\.\//, "")}`,
+    id: item.id || `item-preview-${index}`,
+    beforeDisplayUrl: getDisplayUrl(item.before, "/assets/images/beforeafter/default_before.jpg"),
+    afterDisplayUrl: getDisplayUrl(item.after, "/assets/images/beforeafter/default_after.jpg"),
   }));
 
-  const handleBoxClick = (images) => {
-    setSelectedImages(images);
-    setShowModal(true);
+  const handleBoxClick = (item) => {
+    // In edit mode, clicking the card might be for editing, not opening modal
+    // Or, keep modal functionality but ensure it doesn't interfere with text editing clicks.
+    // For now, modal is primary for read-only, can be re-evaluated.
+    if (readOnly) {
+        setSelectedImages({
+            before: item.beforeDisplayUrl,
+            after: item.afterDisplayUrl,
+            shingle: item.shingle,
+            sqft: item.sqft
+        });
+        setShowModal(true);
+    }
   };
 
   const closeModal = () => {
@@ -53,75 +86,60 @@ function BeforeAfterPreview({ beforeAfterData }) {
     setSelectedImages(null);
   };
 
-  const toggleViewState = () => {
-    setViewState((prev) => (prev === "before" ? "after" : "before"));
+  const toggleCardViewState = (index) => {
+    // Allow toggling view even in edit mode for the preview.
+    setViewStates((prevStates) => ({
+      ...prevStates,
+      [index]: prevStates[index] === "before" ? "after" : "before",
+    }));
   };
 
   // GSAP animations
   useEffect(() => {
     if (!items.length) return;
 
+    console.log(`[BeforeAfterPreview GSAP Effect] Running. showNailAnimation: ${showNailAnimation}, items count: ${items.length}`);
+
     const nailElement = nailRef.current;
     const textElement = textRef.current;
-    const buttonElement = buttonRef.current;
+    const headerElement = headerRef.current; // Added for clarity in cleanup
 
-    // Initial states
-    gsap.set(nailElement, {
-      x: "120vw",
-      opacity: 1,
+    // Kill any existing ScrollTriggers associated with these elements
+    ScrollTrigger.getAll().forEach(st => {
+      if (st.trigger === headerElement && (st.animation?.targets?.includes(nailElement) || st.animation?.targets?.includes(textElement))) {
+        st.kill();
+      }
     });
-    gsap.set(textElement, {
-      opacity: 0,
-      x: "100%",
-    });
-    gsap.set(buttonElement, {
-      opacity: 0,
-    });
+    // Kill any active tweens on these elements
+    gsap.killTweensOf([nailElement, textElement]);
 
-    // HeaderRef timeline - trigger when header is at 20% of viewport
-    const masterTimeline = gsap.timeline({
-      scrollTrigger: {
-        trigger: headerRef.current,
-        start: "top 50%", // Changed from 80% to 20% to trigger when div appears at 20% of viewport
-        end: "top 50%", // Adjusted to match new trigger approach
-        toggleActions: "play none none none", // Play once when entering trigger area
-        markers: false,
-        once: true, // Added to ensure it only plays once
-      },
-    });
+    // Initial states reset before applying new logic
+    gsap.set(nailElement, { x: "120vw", opacity: 1 });
+    gsap.set(textElement, { opacity: 0, x: "100%" });
 
-    masterTimeline
-      .to(nailElement, {
-        x: 0,
-        duration: 1,
-        ease: "power2.out",
-      })
-      .to(
-        textElement,
-        {
-          opacity: 1,
-          duration: 0.5,
+    if (showNailAnimation) {
+      const masterTimeline = gsap.timeline({
+        scrollTrigger: {
+          trigger: headerElement, // Use headerElement
+          start: "top 50%",
+          end: "top 50%", 
+          toggleActions: "play none none none",
+          markers: false,
+          once: true, 
         },
-        "+=0.2"
-      )
-      .to(
-        [nailElement, textElement],
-        {
-          x: (index) => (index === 0 ? "-10vw" : "-50%"),
-          duration: 0.8,
-          ease: "power2.inOut",
-        },
-        "+=0.3"
-      )
-      .to(
-        buttonElement,
-        {
-          opacity: 1,
-          delay: 1.5,
-          duration: 0.5,
-        },
-        "+=0.3"
-      );
+      });
+
+      masterTimeline
+        .to(nailElement, { x: 0, duration: 1, ease: "power2.out" })
+        .to(textElement, { opacity: 1, duration: 0.5 }, "+=0.2")
+        .to([nailElement, textElement], { x: (index) => (index === 0 ? "-10vw" : "-50%"), duration: 0.8, ease: "power2.inOut" }, "+=0.3");
+      console.log("[BeforeAfterPreview GSAP Effect] Applied nail animation timeline.");
+    } else {
+      gsap.set(nailElement, { opacity: 0 });
+      gsap.set(textElement, { x: "-50%", opacity: 1 });
+      console.log("[BeforeAfterPreview GSAP Effect] Set nail opacity to 0 and text position because showNailAnimation is false.");
+    }
+
     // Box animations
     const boxEls = boxesRef.current.filter((box) => box !== null);
 
@@ -220,17 +238,27 @@ function BeforeAfterPreview({ beforeAfterData }) {
       });
     });
 
-    // Cleanup on unmount
+    // Cleanup on unmount or when showNailAnimation changes
     return () => {
-      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+      console.log(`[BeforeAfterPreview GSAP Effect] Cleanup. showNailAnimation was: ${showNailAnimation}`);
+      ScrollTrigger.getAll().forEach(st => {
+        if (st.trigger === headerElement && (st.animation?.targets?.includes(nailElement) || st.animation?.targets?.includes(textElement))) {
+          st.kill();
+        }
+      });
+      gsap.killTweensOf([nailElement, textElement]);
+      //Potentially kill box animations too if they get re-triggered undesirably
+      //ScrollTrigger.getAll().forEach(st => { if(boxEls.includes(st.trigger)) st.kill(); });
+      //gsap.killTweensOf(boxEls.map(b => b.querySelector(".overlay-text")));
+      //gsap.killTweensOf(boxEls);
     };
-  }, [items]);
+  }, [items, showNailAnimation]); // Added showNailAnimation dependency
 
   // Handle view state changes for card flipping
   useEffect(() => {
     const boxEls = boxesRef.current.filter((box) => box !== null);
 
-    boxEls.forEach((box) => {
+    boxEls.forEach((box, index) => {
       if (!box) return;
       const cardElement = box.querySelector(".card");
       if (!cardElement) return;
@@ -239,8 +267,8 @@ function BeforeAfterPreview({ beforeAfterData }) {
       const afterImage = cardElement.querySelector(".after");
       if (!beforeImage || !afterImage) return;
 
-      // Create flip animation between states
-      if (viewState === "after") {
+      // Create flip animation based on the individual card's state
+      if (viewStates[index] === "after") {
         gsap.to(beforeImage, {
           rotationY: -180,
           duration: 0.4,
@@ -264,19 +292,19 @@ function BeforeAfterPreview({ beforeAfterData }) {
         });
       }
     });
-  }, [viewState]);
+  }, [viewStates, items]); // items dependency added for safety if card count changes
 
   return (
     <>
-      <section className="relative w-full overflow-visible bg-gradient-to-b from-black to-white">
+      <section className="relative w-full overflow-hidden ">
         {/* Header / Title */}
         <div
           ref={headerRef}
-          className="relative flex items-center py-6 md:py-8 md:pb-14 w-full "
+          className="relative flex items-center py-6 md:py-10 md:pb-10 w-full "
         >
           <div
             ref={nailRef}
-            className="absolute left-[25%] md:left-[17%] w-[30%] h-[15vh] md:h-[5vh]"
+            className="absolute left-[25%] md:left-[17%] w-[30%] h-[15vh] md:h-[5vh] flex items-center z-50"
           >
             <div
               className="w-full h-full dynamic-shadow"
@@ -294,53 +322,93 @@ function BeforeAfterPreview({ beforeAfterData }) {
             ref={textRef}
             className="absolute left-1/2 z-10 flex flex-row items-center"
           >
-            <h2 className="text-[6vw] md:text-[4vh] text-white font-normal font-condensed font-rye mt-2 py-3 z-30 text-center">
-              {sectionTitle}
-            </h2>
+            {readOnly ? (
+              <h2 className="text-[6vw] md:text-[4vh] text-black font-normal font-condensed font-rye items-center py-3 z-30 text-center">
+                {sectionTitle}
+              </h2>
+            ) : (
+              <input
+                type="text"
+                value={sectionTitle}
+                onChange={(e) => onSectionTitleChange && onSectionTitleChange(e.target.value)}
+                className="text-[6vw] md:text-[4vh] text-black font-normal font-condensed font-rye items-center py-3 z-30 text-center bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-2 min-w-[300px] md:min-w-[400px]"
+                placeholder="Section Title"
+              />
+            )}
           </div>
-          <button
-            ref={buttonRef}
-            onClick={toggleViewState}
-            className="absolute right-10 md:right-[20%]  px-2 text-[1vh] md:text-[2vh] md:px-6 py-1 md:py-2  md:mt-2 bg-banner text-white rounded-lg transition-all transform hover:scale-105 hover:shadow-lg border border-white"
-          >
-            {viewState === "before" ? "See After" : "See Before"}
-          </button>
         </div>
 
         {/* Gallery Grid - Now always 3 columns */}
         <div className="w-full flex justify-center">
-          <div className="grid grid-cols-3 gap-4 md:gap-6 px-6 md:px-10 md:pb-10">
-            {formattedItems.map((img, index) => (
+          <div className="grid grid-cols-3 gap-8 md:space-x-14 px-2 md:px-5 md:pb-5">
+            {formattedItems.map((item, index) => (
               <div
-                key={index}
+                key={item.id}
                 ref={(el) => (boxesRef.current[index] = el)}
-                className="relative flex flex-col md:flex-row items-center"
+                className="relative flex flex-col md:flex-row items-center justify-between w-full"
               >
                 <div
                   className="relative cursor-pointer"
-                  onClick={() => handleBoxClick(img)}
+                  onClick={() => handleBoxClick(item)}
                 >
-                  <div className="card w-[25vw] aspect-[4/3]">
+                  <div
+                    className="card w-[25vw] aspect-[4/3]"
+                  >
                     <img
-                      src={img.before}
+                      src={item.beforeDisplayUrl}
                       alt={`Before ${index + 1}`}
                       className="before absolute top-0 left-0 w-full h-full object-cover rounded-lg"
                     />
                     <img
-                      src={img.after}
+                      src={item.afterDisplayUrl}
                       alt={`After ${index + 1}`}
                       className="after absolute top-0 left-0 w-full h-full object-cover rounded-lg"
                     />
                   </div>
-                  {/* Move info to the right of image with padding */}
-                  <div className="overlay-text absolute bottom-0 right-0 pl-3 px-3 py-1 md:px-4 md:py-2">
+                  {/* Individual Toggle Button for each card */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleCardViewState(index);
+                    }}
+                    className="absolute top-2 right-2 z-10 px-2 py-1 bg-banner text-white rounded-md text-xs md:text-sm transition-all transform hover:scale-105 hover:shadow-lg hover:bg-white hover:text-black"
+                  >
+                    {viewStates[index] === "before"
+                      ? "After"
+                      : "Before"}
+                  </button>
+                  {/* Move info to the top left of image with padding */}
+                  <div className="overlay-text absolute top-0 left-0 pt-1 pl-2 md:pt-2 md:pl-3 w-full pr-12">
                     <div className="flex flex-col items-start text-white text-left leading-tight">
-                      <span className="font-bold text-[2.5vw] md:text-xl whitespace-nowrap drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
-                        {img.shingle}
-                      </span>
-                      <span className="font-semibold text-[2.5vw] md:text-lg text-gray-200 drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
-                        {img.sqft}
-                      </span>
+                      {readOnly ? (
+                        <>
+                          <span className="font-bold text-[2.5vw] md:text-xl whitespace-nowrap drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] mb-0">
+                            {item.shingle}
+                          </span>
+                          <span className="font-semibold text-[2.5vw] md:text-lg text-white drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
+                            {item.sqft}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <input
+                            type="text"
+                            value={item.shingle || ""}
+                            onChange={(e) => onItemTextChange && onItemTextChange(index, "shingle", e.target.value)}
+                            className="font-bold text-[2.5vw] md:text-xl whitespace-nowrap bg-transparent focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 mb-0 w-full text-white placeholder-gray-300 drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"
+                            placeholder="Shingle Type"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <input
+                            type="text"
+                            value={item.sqft || ""}
+                            onChange={(e) => onItemTextChange && onItemTextChange(index, "sqft", e.target.value)}
+                            className="font-semibold text-[2.5vw] md:text-lg bg-transparent focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 w-full text-white placeholder-gray-300 drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"
+                            placeholder="Sqft"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -353,47 +421,55 @@ function BeforeAfterPreview({ beforeAfterData }) {
       {/* Modal */}
       {showModal && selectedImages && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[1000] p-4"
           onClick={closeModal}
         >
           <div
-            className="relative w-[90vw] h-[80vh] md:h-[85vh] bg-white rounded-lg p-4 md:p-8"
+            className="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-lg p-4 md:p-6 flex flex-col overflow-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <button
-              className="absolute top-2 right-2 text-gray-700 bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center hover:bg-gray-300 focus:outline-none"
+              className="absolute top-2 right-2 text-gray-700 bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center hover:bg-gray-300 focus:outline-none z-10"
               onClick={closeModal}
               aria-label="Close Modal"
             >
               &times;
             </button>
 
-            <h3 className="text-xl md:text-2xl font-bold mb-4">
-              Before / After
-            </h3>
-
-            <div className="flex flex-col md:flex-row justify-between items-center h-[85%] gap-4">
-              <div className="relative w-full md:w-1/2 h-[40%] md:h-full">
-                <h4 className="text-lg font-semibold mb-2">Before</h4>
-                <img
-                  src={selectedImages.before}
-                  alt="Before"
-                  className="w-full h-full object-cover rounded-lg"
-                />
+            <div className="flex flex-col md:flex-row justify-between items-stretch flex-grow gap-3 md:gap-4 overflow-hidden">
+              <div className="relative w-full md:w-1/2 flex flex-col h-1/2 md:h-full">
+                <h4 className="text-lg font-semibold mb-1 md:mb-2 text-center">
+                  Before
+                </h4>
+                <div className="relative flex-grow">
+                  <img
+                    src={selectedImages.before}
+                    alt="Before"
+                    className="absolute top-0 left-0 w-full h-full object-contain rounded-lg"
+                  />
+                </div>
               </div>
-              <div className="relative w-full md:w-1/2 h-[40%] md:h-full">
-                <h4 className="text-lg font-semibold mb-2">After</h4>
-                <img
-                  src={selectedImages.after}
-                  alt="After"
-                  className="w-full h-full object-cover rounded-lg"
-                />
+              <div className="relative w-full md:w-1/2 flex flex-col h-1/2 md:h-full">
+                <h4 className="text-lg font-semibold mb-1 md:mb-2 text-center">
+                  After
+                </h4>
+                <div className="relative flex-grow">
+                  <img
+                    src={selectedImages.after}
+                    alt="After"
+                    className="absolute top-0 left-0 w-full h-full object-contain rounded-lg"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="mt-4 text-center">
-              <p className="font-bold text-xl">{selectedImages.shingle}</p>
-              <p className="text-gray-700">{selectedImages.sqft}</p>
+            <div className="mt-3 md:mt-4 text-center">
+              <p className="font-bold text-lg md:text-xl">
+                {selectedImages.shingle}
+              </p>
+              <p className="text-gray-700 text-base md:text-lg">
+                {selectedImages.sqft}
+              </p>
             </div>
           </div>
         </div>
@@ -407,190 +483,118 @@ function BeforeAfterPreview({ beforeAfterData }) {
    ----------------------------------------------
    This panel now uses file inputs for the before and after images.
 =============================================== */
-function BeforeAfterEditorPanel({ localData, setLocalData, onSave }) {
-  const { sectionTitle = "", items = [] } = localData;
+function BeforeAfterEditorPanel({ localData, onPanelChange }) {
+  const { items = [] } = localData;
 
   const handleAddItem = () => {
     const newItem = {
-      before: "/assets/images/beforeafter/default_before.jpg",
-      after: "/assets/images/beforeafter/default_after.jpg",
+      id: `new_item_${Date.now()}`,
+      before: initializeImageState(null, "/assets/images/beforeafter/default_before.jpg"),
+      after: initializeImageState(null, "/assets/images/beforeafter/default_after.jpg"),
       shingle: "New Shingle Type",
       sqft: "0000 sqft",
     };
-    setLocalData((prev) => ({
-      ...prev,
-      items: [...prev.items, newItem],
-    }));
+    onPanelChange((prev) => ({ ...prev, items: [...(prev.items || []), newItem] }));
   };
 
   const handleRemoveItem = (index) => {
-    const updated = [...items];
-    updated.splice(index, 1);
-    setLocalData((prev) => ({
-      ...prev,
-      items: updated,
-    }));
+    const itemToRemove = items[index];
+    if (itemToRemove?.before?.url?.startsWith('blob:')) URL.revokeObjectURL(itemToRemove.before.url);
+    if (itemToRemove?.after?.url?.startsWith('blob:')) URL.revokeObjectURL(itemToRemove.after.url);
+    onPanelChange((prev) => ({ ...prev, items: prev.items.filter((_, i) => i !== index) }));
   };
 
-  const handleChangeItem = (index, field, value) => {
-    const updated = [...items];
-    updated[index] = { ...updated[index], [field]: value };
-    setLocalData((prev) => ({
-      ...prev,
-      items: updated,
-    }));
-  };
-
-  /**
-   * Handles file uploads for before/after images
-   * Stores both the URL for display and the file object for the ZIP
-   *
-   * @param {number} index - The index of the item in the items array
-   * @param {string} field - The field to update ('before' or 'after')
-   * @param {File} file - The uploaded file
-   */
-  const handleImageUpload = (index, field, file) => {
+  const handleItemImageChange = (index, field, file) => {
     if (!file) return;
+    const currentItem = items[index];
+    const currentImageFieldState = currentItem?.[field];
 
-    // Create a URL for display
+    if (currentImageFieldState?.url?.startsWith('blob:')) {
+      URL.revokeObjectURL(currentImageFieldState.url);
+    }
     const fileURL = URL.createObjectURL(file);
+    const updatedImageState = {
+        file: file, 
+        url: fileURL, 
+        name: file.name, 
+        originalUrl: currentImageFieldState?.originalUrl // Preserve originalUrl
+    };
+    
+    onPanelChange(prev => {
+      const updatedItems = [...prev.items];
+      updatedItems[index] = { ...updatedItems[index], [field]: updatedImageState };
+      return { ...prev, items: updatedItems };
+    });
+  };
+  
+  const handleItemImageUrlChange = (index, field, urlValue) => {
+    const currentItem = items[index];
+    const currentImageFieldState = currentItem?.[field];
 
-    // Store just the URL for display
-    handleChangeItem(index, field, fileURL);
+    if (currentImageFieldState?.url?.startsWith('blob:')) {
+      URL.revokeObjectURL(currentImageFieldState.url);
+    }
+    // When pasting a URL, this becomes the new originalUrl as well, and file is null
+    const updatedImageState = { 
+        file: null, 
+        url: urlValue, 
+        name: urlValue.split('/').pop(),
+        originalUrl: urlValue // New URL is the new original reference
+    };
+    onPanelChange(prev => {
+      const updatedItems = [...prev.items];
+      updatedItems[index] = { ...updatedItems[index], [field]: updatedImageState };
+      return { ...prev, items: updatedItems };
+    });
   };
 
-  /**
-   * Gets the display URL from either a string URL or an object with a URL property
-   *
-   * @param {string|Object} value - The value to extract URL from
-   * @returns {string|null} - The URL to display
-   */
-  const getDisplayUrl = (value) => {
-    if (!value) return null;
-    if (typeof value === "string") return value;
-    if (typeof value === "object" && value.url) return value.url;
-    return null;
+  const handleToggleNailAnimation = () => {
+    const currentShowState = localData.showNailAnimation !== undefined ? localData.showNailAnimation : true;
+    const newShowState = !currentShowState;
+    console.log(`[BeforeAfterEditorPanel] handleToggleNailAnimation: Current: ${currentShowState}, New: ${newShowState}`);
+    onPanelChange({ showNailAnimation: newShowState });
   };
 
   return (
-    <div className="bg-black text-white p-4 rounded max-h-[75vh] overflow-auto">
+    <div className="bg-white text-gray-800 p-4 rounded">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-lg md:text-2xl font-semibold">
-          Before/After Editor
-        </h1>
-        <button
-          type="button"
-          onClick={onSave}
-          className="bg-green-600 hover:bg-green-500 px-4 py-2 rounded text-white font-semibold"
-        >
-          Save
-        </button>
+        <h2 className="text-lg font-semibold">Manage Gallery Items</h2>
       </div>
 
-      <div className="mb-6">
-        <label className="block text-sm mb-1">Section Title:</label>
-        <input
-          type="text"
-          className="w-full bg-gray-700 px-2 py-1 rounded"
-          value={sectionTitle}
-          onChange={(e) =>
-            setLocalData((prev) => ({ ...prev, sectionTitle: e.target.value }))
-          }
-        />
-      </div>
-
-      <div>
-        <h2 className="text-lg font-semibold mb-2">Gallery Items</h2>
+      <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
         {items.map((item, index) => (
-          <div key={index} className="bg-gray-800 p-3 rounded mb-3 relative">
-            <button
-              onClick={() => handleRemoveItem(index)}
-              className="bg-red-600 text-white text-xs px-2 py-1 rounded absolute top-2 right-2"
-            >
-              Remove
-            </button>
-
-            {/* Before Image Upload */}
-            <label className="block text-sm mb-1">
-              Before Image:
-              <input
-                type="file"
-                accept="image/*"
-                className="w-full bg-gray-700 px-2 py-1 rounded mt-1"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    handleImageUpload(index, "before", file);
-                  }
-                }}
-              />
-            </label>
-            {item.before && (
-              <img
-                src={item.before}
-                alt="Before"
-                className="mt-2 h-24 rounded shadow"
-              />
-            )}
-
-            {/* After Image Upload */}
-            <label className="block text-sm mb-1">
-              After Image:
-              <input
-                type="file"
-                accept="image/*"
-                className="w-full bg-gray-700 px-2 py-1 rounded mt-1"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    handleImageUpload(index, "after", file);
-                  }
-                }}
-              />
-            </label>
-            {item.after && (
-              <img
-                src={item.after}
-                alt="After"
-                className="mt-2 h-24 rounded shadow"
-              />
-            )}
-
-            {/* Shingle Type */}
-            <label className="block text-sm mb-1">
-              Shingle Type:
-              <input
-                type="text"
-                className="w-full bg-gray-700 px-2 py-1 rounded mt-1"
-                value={item.shingle}
-                onChange={(e) =>
-                  handleChangeItem(index, "shingle", e.target.value)
-                }
-              />
-            </label>
-
-            {/* Square Footage */}
-            <label className="block text-sm mb-1">
-              Square Footage:
-              <input
-                type="text"
-                className="w-full bg-gray-700 px-2 py-1 rounded mt-1"
-                value={item.sqft}
-                onChange={(e) =>
-                  handleChangeItem(index, "sqft", e.target.value)
-                }
-              />
-            </label>
+          <div key={item.id || index} className="bg-gray-100 p-3 rounded mb-3 relative border border-gray-300">
+            <button onClick={() => handleRemoveItem(index)} className="bg-red-500 text-white text-xs px-2 py-1 rounded absolute top-2 right-2 hover:bg-red-600 z-10">Remove</button>
+            <p className="text-sm text-gray-600 mb-2">Item: {item.shingle || `Item ${index+1}`} ({item.sqft || 'N/A'})</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                    <label className="block text-xs mb-1 text-gray-700">Before Image:</label>
+                    <input type="file" accept="image/*" className="w-full bg-gray-200 text-gray-800 px-2 py-1 rounded mt-1 text-xs file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600 cursor-pointer" onChange={(e) => handleItemImageChange(index, "before", e.target.files?.[0])} />
+                    <input type="text" className="w-full bg-gray-200 text-gray-800 px-2 py-1 rounded mt-1 text-xs placeholder-gray-500" placeholder="Or paste direct image URL" value={getDisplayUrl(item.before, '')} onChange={(e) => handleItemImageUrlChange(index, 'before', e.target.value)} />
+                    {getDisplayUrl(item.before) && <img src={getDisplayUrl(item.before)} alt="Before Preview" className="mt-2 h-20 w-20 object-cover rounded shadow bg-gray-200 p-1"/>}
+                </div>
+                <div>
+                    <label className="block text-xs mb-1 text-gray-700">After Image:</label>
+                    <input type="file" accept="image/*" className="w-full bg-gray-200 text-gray-800 px-2 py-1 rounded mt-1 text-xs file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600 cursor-pointer" onChange={(e) => handleItemImageChange(index, "after", e.target.files?.[0])} />
+                    <input type="text" className="w-full bg-gray-200 text-gray-800 px-2 py-1 rounded mt-1 text-xs placeholder-gray-500" placeholder="Or paste direct image URL" value={getDisplayUrl(item.after, '')} onChange={(e) => handleItemImageUrlChange(index, 'after', e.target.value)} />
+                    {getDisplayUrl(item.after) && <img src={getDisplayUrl(item.after)} alt="After Preview" className="mt-2 h-20 w-20 object-cover rounded shadow bg-gray-200 p-1"/>}
+                </div>
+            </div>
           </div>
         ))}
-
-        <button
-          type="button"
-          onClick={handleAddItem}
-          className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded w-full mt-2"
-        >
-          Add New Item
-        </button>
+      </div>
+      <button type="button" onClick={handleAddItem} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded w-full mt-3 text-sm font-medium">+ Add Gallery Item</button>
+      <div className="mt-4 pt-3 border-t">
+        <label className="flex items-center space-x-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={localData.showNailAnimation !== undefined ? localData.showNailAnimation : true}
+            onChange={handleToggleNailAnimation}
+            className="form-checkbox h-5 w-5 text-blue-600 rounded"
+          />
+          <span className="text-sm font-medium text-gray-700">Show Nail Animation</span>
+        </label>
       </div>
     </div>
   );
@@ -601,33 +605,196 @@ function BeforeAfterEditorPanel({ localData, setLocalData, onSave }) {
    ----------------------------------------------
    Toggles between preview (read-only) and editor panel.
 =============================================== */
+// Helper to initialize image state: handles string path or {file, url, name} object
+const initializeImageState = (imageConfig, defaultPath) => {
+  let originalUrlToStore = defaultPath;
+  let nameToStore = defaultPath.split('/').pop();
+  let urlToDisplay = defaultPath;
+  let fileObject = null;
+
+  if (imageConfig && typeof imageConfig === 'object') {
+    // If imageConfig is an object, it might be from a previous state or a new upload
+    urlToDisplay = imageConfig.url || defaultPath;
+    nameToStore = imageConfig.name || urlToDisplay.split('/').pop();
+    fileObject = imageConfig.file || null; // Preserve file object if it exists
+    // Crucially, preserve originalUrl if it already exists in imageConfig, otherwise use the determined urlToDisplay or defaultPath
+    originalUrlToStore = imageConfig.originalUrl || (typeof imageConfig.url === 'string' && !imageConfig.url.startsWith('blob:') ? imageConfig.url : defaultPath) ;
+  } else if (typeof imageConfig === 'string') {
+    // If imageConfig is a string, it's an initial path
+    urlToDisplay = imageConfig;
+    nameToStore = imageConfig.split('/').pop();
+    originalUrlToStore = imageConfig; // This path is the original
+  }
+  
+  return { 
+    file: fileObject, 
+    url: urlToDisplay, // This could be a path or a blob URL for preview
+    name: nameToStore,
+    originalUrl: originalUrlToStore // The persistent original path
+  }; 
+};
+
 export default function BeforeAfterBlock({
   readOnly = false,
   beforeAfterData,
   onConfigChange,
 }) {
   const [localData, setLocalData] = useState(() => {
-    if (!beforeAfterData) {
-      return { sectionTitle: "GALLERY", items: [] };
-    }
+    const initialConfig = beforeAfterData || {};
+    const initialShowNailAnimation = initialConfig.showNailAnimation !== undefined ? initialConfig.showNailAnimation : true;
+    console.log(`[BeforeAfterBlock useState init] initialConfig.showNailAnimation: ${initialConfig.showNailAnimation}, Resolved to: ${initialShowNailAnimation}`);
     return {
-      sectionTitle: beforeAfterData.sectionTitle || "GALLERY",
-      items: (beforeAfterData.items || []).map((item) => ({ ...item })),
+      sectionTitle: initialConfig.sectionTitle || "GALLERY",
+      showNailAnimation: initialShowNailAnimation, // Initialize here
+      items: (initialConfig.items || []).map((item, index) => ({
+        ...item,
+        id: item.id || `item_init_${index}_${Date.now()}`,
+        before: initializeImageState(item.before, "/assets/images/beforeafter/default_before.jpg"),
+        after: initializeImageState(item.after, "/assets/images/beforeafter/default_after.jpg"),
+      })),
     };
   });
 
-  const handleSave = () => {
-    onConfigChange?.(localData);
+  const prevReadOnlyRef = useRef(readOnly);
+
+  useEffect(() => {
+    if (beforeAfterData) {
+      setLocalData(prevLocalData => {
+        const defaultTitle = "GALLERY";
+        const defaultShingle = "";
+        const defaultSqft = "";
+
+        const resolvedSectionTitle =
+          (prevLocalData.sectionTitle !== undefined && prevLocalData.sectionTitle !== (beforeAfterData.sectionTitle || defaultTitle) && prevLocalData.sectionTitle !== defaultTitle)
+          ? prevLocalData.sectionTitle
+          : (beforeAfterData.sectionTitle || defaultTitle);
+
+        const newItems = (beforeAfterData.items || []).map((newItemFromProp, index) => {
+          const oldItemFromLocal = prevLocalData.items?.find(pi => pi.id === newItemFromProp.id) || 
+                                   prevLocalData.items?.[index] || 
+                                   { shingle: "", sqft: "", before: initializeImageState(null), after: initializeImageState(null), id: `item_fallback_${index}_${Date.now()}` };
+
+          const newBeforeImg = initializeImageState(newItemFromProp.before, oldItemFromLocal.before?.originalUrl || oldItemFromLocal.before?.url);
+          const newAfterImg = initializeImageState(newItemFromProp.after, oldItemFromLocal.after?.originalUrl || oldItemFromLocal.after?.url);
+
+          if (oldItemFromLocal.before?.file && oldItemFromLocal.before.url?.startsWith('blob:') && 
+              (oldItemFromLocal.before.url !== newBeforeImg.url || (newBeforeImg.url && !newBeforeImg.url.startsWith('blob:')))) {
+            URL.revokeObjectURL(oldItemFromLocal.before.url);
+          }
+          if (oldItemFromLocal.after?.file && oldItemFromLocal.after.url?.startsWith('blob:') && 
+              (oldItemFromLocal.after.url !== newAfterImg.url || (newAfterImg.url && !newAfterImg.url.startsWith('blob:')))) {
+            URL.revokeObjectURL(oldItemFromLocal.after.url);
+          }
+          
+          const resolvedShingle = 
+            (oldItemFromLocal.shingle !== undefined && oldItemFromLocal.shingle !== (newItemFromProp.shingle || defaultShingle) && oldItemFromLocal.shingle !== defaultShingle)
+            ? oldItemFromLocal.shingle
+            : (newItemFromProp.shingle || defaultShingle);
+
+          const resolvedSqft =
+            (oldItemFromLocal.sqft !== undefined && oldItemFromLocal.sqft !== (newItemFromProp.sqft || defaultSqft) && oldItemFromLocal.sqft !== defaultSqft)
+            ? oldItemFromLocal.sqft
+            : (newItemFromProp.sqft || defaultSqft);
+
+          return {
+            ...newItemFromProp,
+            id: newItemFromProp.id || oldItemFromLocal.id,
+            before: newBeforeImg,
+            after: newAfterImg,
+            shingle: resolvedShingle,
+            sqft: resolvedSqft,
+          };
+        });
+        
+        const resolvedShowNailAnimation = beforeAfterData.showNailAnimation !== undefined
+                                     ? beforeAfterData.showNailAnimation
+                                     : (prevLocalData.showNailAnimation !== undefined
+                                          ? prevLocalData.showNailAnimation
+                                          : true);
+        return {
+          sectionTitle: resolvedSectionTitle,
+          items: newItems,
+          showNailAnimation: resolvedShowNailAnimation,
+        };
+      });
+    }
+  }, [beforeAfterData]); // MODIFIED: Only depends on beforeAfterData prop
+
+  useEffect(() => {
+    return () => {
+      localData.items.forEach(item => {
+        if (item.before?.file && item.before.url?.startsWith('blob:')) URL.revokeObjectURL(item.before.url);
+        if (item.after?.file && item.after.url?.startsWith('blob:')) URL.revokeObjectURL(item.after.url);
+      });
+    };
+  }, [localData.items]);
+
+  useEffect(() => {
+    if (prevReadOnlyRef.current === false && readOnly === true) {
+      if (onConfigChange) {
+        console.log("[BeforeAfterBlock onConfigChange Effect] Editing finished. Calling onConfigChange.");
+        const dataToSave = {
+            ...localData,
+            items: localData.items.map(item => {
+                // For each image (before, after), pass the full state if a file exists (includes File & originalUrl)
+                // Otherwise, pass an object with just the url (which should be the originalUrl or a pasted one)
+                const beforeImageState = item.before?.file 
+                    ? { ...item.before } // Pass the whole object {file, name, url (blob), originalUrl}
+                    : { url: item.before?.originalUrl || item.before?.url }; // Fallback to url if originalUrl somehow missing
+                
+                const afterImageState = item.after?.file
+                    ? { ...item.after } // Pass the whole object {file, name, url (blob), originalUrl}
+                    : { url: item.after?.originalUrl || item.after?.url };
+
+                return {
+                    ...item,
+                    before: beforeImageState,
+                    after: afterImageState,
+                };
+            }),
+            showNailAnimation: localData.showNailAnimation,
+        };
+        console.log("[BeforeAfterBlock onConfigChange Effect] dataToSave:", JSON.parse(JSON.stringify(dataToSave, (k,v) => v instanceof File ? ({name: v.name, type: v.type, size: v.size}) : v)));
+        onConfigChange(dataToSave);
+      }
+    }
+    prevReadOnlyRef.current = readOnly;
+  }, [readOnly, localData, onConfigChange]);
+
+  const handleLocalDataChange = (updater) => {
+    setLocalData(prevState => {
+      const newState = typeof updater === 'function' ? updater(prevState) : { ...prevState, ...updater };
+      console.log('[BeforeAfterBlock handleLocalDataChange] prevState.showNailAnimation:', prevState.showNailAnimation, 'newState.showNailAnimation:', newState.showNailAnimation);
+      return newState;
+    });
   };
 
   if (readOnly) {
-    return <BeforeAfterPreview beforeAfterData={beforeAfterData} />;
+    return <BeforeAfterPreview beforeAfterData={localData} readOnly={true} />;
   }
+  
   return (
-    <BeforeAfterEditorPanel
-      localData={localData}
-      setLocalData={setLocalData}
-      onSave={handleSave}
-    />
+    <>
+      <BeforeAfterPreview 
+        beforeAfterData={localData} 
+        readOnly={false}
+        onSectionTitleChange={(newTitle) => {
+          handleLocalDataChange(prev => ({ ...prev, sectionTitle: newTitle }));
+        }}
+        onItemTextChange={(index, field, value) => {
+          handleLocalDataChange(prev => {
+            const updatedItems = [...prev.items];
+            if (updatedItems[index]) {
+              updatedItems[index] = { ...updatedItems[index], [field]: value };
+            }
+            return { ...prev, items: updatedItems };
+          });
+        }}
+      />
+      <BeforeAfterEditorPanel
+        localData={localData}
+        onPanelChange={handleLocalDataChange} 
+      />
+    </>
   );
 }

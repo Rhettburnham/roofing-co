@@ -1,7 +1,10 @@
 // src/components/blocks/ListDropdown.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
 import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from 'react-markdown'; // Make sure this is installed or comment it out if not
+import { PlusIcon, MinusIcon } from '@heroicons/react/24/solid'; // Using Heroicons for +/-
+import { ChevronDown, ChevronUp } from 'lucide-react'; // Using lucide-react for icons
 
 /**
  * ListDropdown
@@ -22,311 +25,261 @@ import ReactMarkdown from 'react-markdown'; // Make sure this is installed or co
  *   textColor: "#000000"
  * }
  */
-const ListDropdown = ({
+const ListDropdownBlock = ({
   config = {},
   readOnly = false,
   onConfigChange,
 }) => {
-  const {
-    title = "Maintenance Guide",
-    items = [],
-    textColor = "#000000",
-  } = config;
+  const [localConfig, setLocalConfig] = useState(() => {
+    const defaultConfig = {
+      title: 'Frequently Asked Questions',
+      items: [
+        { id: 1, title: 'What is your return policy?', content: 'Our return policy lasts 30 days...' },
+        { id: 2, title: 'How do I track my order?', content: 'You can track your order using the link...' },
+      ],
+      openMultiple: false, // Allow multiple items to be open at once
+      backgroundColor: '#FFFFFF',
+      titleColor: '#1A202C',
+      itemTitleColor: '#2D3748',
+      itemContentColor: '#4A5568',
+      iconColor: '#718096',
+      borderColor: '#E2E8F0',
+    };
+    return { ...defaultConfig, ...config };
+  });
 
-  const [openIndexes, setOpenIndexes] = useState([]);
+  const [openIndices, setOpenIndices] = useState([]);
+  const titleRef = useRef(null);
+  const itemRefs = useRef({}); // For item title and content textareas
 
-  const toggleIndex = (i) => {
-    if (openIndexes.includes(i)) {
-      setOpenIndexes(openIndexes.filter((x) => x !== i));
-    } else {
-      setOpenIndexes([...openIndexes, i]);
+  useEffect(() => {
+    const defaultConfig = { /* ... same as above ... */ };
+    const newEffectiveConfig = { ...defaultConfig, ...(config || {}) };
+    if (readOnly || JSON.stringify(newEffectiveConfig) !== JSON.stringify(localConfig)) {
+      setLocalConfig(newEffectiveConfig);
     }
-  };
+    // Reset open state if items change or openMultiple changes
+    if (config && (JSON.stringify(config.items) !== JSON.stringify(localConfig.items) || config.openMultiple !== localConfig.openMultiple)) {
+      setOpenIndices([]);
+    }
+  }, [config, readOnly]);
 
-  // READ ONLY
-  if (readOnly) {
-    return (
-      <div className="container mx-auto w-full px-4 pb-4 md:pb-8">
-        {title && (
-          <h2 className="text-2xl font-semibold mb-4 text-center">{title}</h2>
-        )}
-        
-        {items.map((item, idx) => (
-          <div key={idx} className="border rounded-lg overflow-hidden shadow-lg mb-2">
-            <button
-              onClick={() => toggleIndex(idx)}
-              className="w-full text-left px-3 py-2 md:px-6 md:py-4 dark_button group hover:bg-white transition-all duration-300 focus:outline-none"
-              style={{ color: "#fff" }}
-              aria-expanded={openIndexes.includes(idx)}
-            >
-              <div className="flex justify-between items-center">
-                <h2
-                  className="text-base md:text-2xl font-semibold transition-colors duration-300"
-                  style={{ color: openIndexes.includes(idx) ? "#000" : "#fff" }}
-                >
-                  {item.title}
-                </h2>
-                <svg
-                  className={`w-6 h-6 transform transition-transform duration-300 ${
-                    openIndexes.includes(idx) ? "rotate-180" : "-rotate-90"
-                  }`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                  style={{ color: openIndexes.includes(idx) ? "#000" : "#fff" }}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={3}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </div>
-            </button>
-            <AnimatePresence>
-              {openIndexes.includes(idx) && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  style={{ overflow: "hidden" }}
-                >
-                  <div
-                    className="px-4 md:px-6 py-2 md:py-4 bg-white text-sm md:text-base"
-                    style={{ color: textColor }}
-                  >
-                    {/* Content section - try to use markdown rendering if available */}
-                    {item.content && (
-                      <div className="content">
-                        {typeof ReactMarkdown !== 'undefined' ? (
-                          <ReactMarkdown>{item.content}</ReactMarkdown>
-                        ) : (
-                          <p>{item.content}</p>
-                        )}
-                      </div>
-                    )}
-                    
-                    {/* Legacy properties support */}
-                    {!item.content && (
-                      <>
-                        {item.causes && (
-                          <p className="mt-1">
-                            <strong>Causes:</strong> {item.causes}
-                          </p>
-                        )}
-                        {item.impact && (
-                          <p className="mt-1">
-                            <strong>Impact:</strong> {item.impact}
-                          </p>
-                        )}
-                        {item.diagnosis?.length > 0 && (
-                          <div className="mt-1">
-                            <strong>Diagnosis:</strong>
-                            <ul className="list-disc list-inside ml-5 mt-1">
-                              {item.diagnosis.map((d, dIdx) => (
-                                <li key={dIdx}>{d}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        ))}
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (!readOnly) {
+      if (titleRef.current) {
+        titleRef.current.style.height = 'auto';
+        titleRef.current.style.height = `${titleRef.current.scrollHeight}px`;
+      }
+      (localConfig.items || []).forEach((_, index) => {
+        if (itemRefs.current[index]) {
+          Object.values(itemRefs.current[index]).forEach(ref => {
+            if (ref && ref.current) {
+              ref.current.style.height = 'auto';
+              ref.current.style.height = `${ref.current.scrollHeight}px`;
+            }
+          });
+        }
+      });
+    }
+  }, [localConfig.title, localConfig.items, readOnly]);
 
-  // EDIT MODE
-  const handleChange = (field, value) => {
-    onConfigChange?.({
-      ...config,
-      [field]: value,
+  const handleInputChange = (field, value, itemIndex = null, subField = null) => {
+    setLocalConfig(prev => {
+      let updatedConfig;
+      if (itemIndex !== null && subField) {
+        const updatedItems = prev.items.map((item, i) => 
+          i === itemIndex ? { ...item, [subField]: value } : item
+        );
+        updatedConfig = { ...prev, items: updatedItems };
+      } else {
+        updatedConfig = { ...prev, [field]: value };
+      }
+      if (!readOnly) onConfigChange(updatedConfig);
+      return updatedConfig;
     });
   };
 
-  const addItem = () => {
-    const newItem = {
-      title: "",
-      content: "",
-      causes: "",
-      impact: "",
-      diagnosis: [],
-    };
-    handleChange("items", [...items, newItem]);
+  const handleBlur = () => {
+    if (!readOnly) onConfigChange(localConfig);
   };
 
-  const removeItem = (index) => {
-    const updated = [...items];
-    updated.splice(index, 1);
-    handleChange("items", updated);
-  };
-
-  const updateItemField = (index, field, val) => {
-    const updated = [...items];
-    updated[index][field] = val;
-    handleChange("items", updated);
-  };
-
-  const addDiagnosis = (index) => {
-    const updated = [...items];
-    if (!updated[index].diagnosis) {
-      updated[index].diagnosis = [];
+  const toggleItem = (index) => {
+    if (localConfig.openMultiple) {
+      setOpenIndices(prev => 
+        prev.includes(index) ? prev.filter(i => i !== index) : [...prev, index]
+      );
+    } else {
+      setOpenIndices(prev => (prev.includes(index) ? [] : [index]));
     }
-    updated[index].diagnosis.push("");
-    handleChange("items", updated);
   };
 
-  const updateDiagnosis = (index, dIndex, val) => {
-    const updated = [...items];
-    if (!updated[index].diagnosis) {
-      updated[index].diagnosis = [];
-    }
-    updated[index].diagnosis[dIndex] = val;
-    handleChange("items", updated);
+  const getItemRef = (itemIndex, field) => (el) => {
+    if (!itemRefs.current[itemIndex]) itemRefs.current[itemIndex] = {};
+    itemRefs.current[itemIndex][field] = { current: el }; 
   };
 
-  const removeDiagnosis = (index, dIndex) => {
-    const updated = [...items];
-    if (!updated[index].diagnosis) {
-      updated[index].diagnosis = [];
-    }
-    updated[index].diagnosis.splice(dIndex, 1);
-    handleChange("items", updated);
-  };
+  const { 
+    title, items, backgroundColor, titleColor, itemTitleColor, 
+    itemContentColor, iconColor, borderColor 
+  } = localConfig;
 
   return (
-    <div className="p-2 bg-gray-700 rounded text-white">
-      <h3 className="font-bold mb-2">ListDropdown Editor</h3>
-
-      {/* Title */}
-      <label className="block text-sm mb-2">
-        Block Title:
-        <input
-          type="text"
+    <div className="max-w-3xl mx-auto py-8 px-4" style={{ backgroundColor }}>
+      {readOnly ? (
+        <h2 className="text-2xl font-semibold text-center mb-6" style={{ color: titleColor }}>{title}</h2>
+      ) : (
+        <textarea
+          ref={titleRef}
           value={title}
-          onChange={(e) => handleChange("title", e.target.value)}
-          className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
+          onChange={(e) => handleInputChange('title', e.target.value)}
+          onBlur={handleBlur}
+          className="text-2xl font-semibold text-center mb-6 bg-transparent focus:outline-none focus:ring-1 focus:ring-gray-400 rounded p-1 w-full resize-none"
+          rows={1} placeholder="Section Title" style={{ color: titleColor }}
         />
-      </label>
-
-      {/* textColor */}
-      <label className="block text-sm mb-2">
-        Content Text Color:
-        <input
-          type="color"
-          value={textColor}
-          onChange={(e) => handleChange("textColor", e.target.value)}
-          className="mt-1 w-16 h-8 border border-gray-600 rounded"
-        />
-      </label>
-
-      {/* items */}
-      {items.map((item, idx) => (
-        <div key={idx} className="border border-gray-600 p-2 rounded mb-2">
-          <div className="flex justify-between items-center mb-1">
-            <span className="font-semibold">Item {idx + 1}</span>
-            <button
-              className="bg-red-600 text-white px-2 py-1 rounded text-sm"
-              onClick={() => removeItem(idx)}
+      )}
+      <div className="space-y-3">
+        {(items || []).map((item, index) => (
+          <div key={item.id || index} className="border rounded-lg" style={{ borderColor }}>
+            <button 
+              onClick={() => !readOnly && toggleItem(index)} 
+              disabled={readOnly} // Button is only for visual toggling in readOnly mode if content is visible
+              className={`w-full flex justify-between items-center p-4 text-left focus:outline-none ${readOnly ? 'cursor-default' : 'hover:bg-gray-50'}`}
+              style={{ color: itemTitleColor, backgroundColor: readOnly ? 'transparent' : (openIndices.includes(index) ? '#f0f0f0' : 'transparent') }}
             >
-              Remove
+              {readOnly ? (
+                <span className="font-medium">{item.title}</span>
+              ) : (
+                <input
+                  type="text"
+                  value={item.title || ''}
+                  onChange={(e) => handleInputChange(null, e.target.value, index, 'title')}
+                  onBlur={handleBlur}
+                  className="font-medium bg-transparent focus:outline-none focus:ring-1 focus:ring-gray-300 rounded p-1 w-[calc(100%-2rem)]"
+                  placeholder="Question/Title" style={{ color: 'inherit' }}
+                  onClick={(e) => e.stopPropagation()} // Prevent toggle when clicking input
+                />
+              )}
+              {openIndices.includes(index) ? 
+                <ChevronUp size={20} style={{ color: iconColor }} /> : 
+                <ChevronDown size={20} style={{ color: iconColor }} />
+              }
             </button>
-          </div>
-
-          {/* Title */}
-          <label className="block text-sm mb-1">
-            Title:
-            <input
-              type="text"
-              value={item.title || ""}
-              onChange={(e) => updateItemField(idx, "title", e.target.value)}
-              className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
-            />
-          </label>
-
-          {/* Content */}
-          <label className="block text-sm mb-1">
-            Content:
-            <textarea
-              rows={4}
-              value={item.content || ""}
-              onChange={(e) => updateItemField(idx, "content", e.target.value)}
-              className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
-              placeholder="Enter content with markdown support"
-            />
-          </label>
-
-          {/* Legacy Fields - show collapsible section */}
-          <details className="mt-2 mb-2">
-            <summary className="text-sm font-semibold cursor-pointer">Legacy Fields (Optional)</summary>
-            <div className="pl-2 mt-2 border-l-2 border-gray-600">
-              {/* Causes */}
-              <label className="block text-sm mb-1">
-                Causes:
-                <textarea
-                  rows={2}
-                  value={item.causes || ""}
-                  onChange={(e) => updateItemField(idx, "causes", e.target.value)}
-                  className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
-                />
-              </label>
-
-              {/* Impact */}
-              <label className="block text-sm mb-1">
-                Impact:
-                <textarea
-                  rows={2}
-                  value={item.impact || ""}
-                  onChange={(e) => updateItemField(idx, "impact", e.target.value)}
-                  className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
-                />
-              </label>
-
-              {/* Diagnosis */}
-              <label className="block text-sm font-semibold mb-1 mt-2">Diagnosis:</label>
-              {(item.diagnosis || []).map((d, dIndex) => (
-                <div key={dIndex} className="flex mb-1">
-                  <input
-                    type="text"
-                    value={d}
-                    onChange={(e) => updateDiagnosis(idx, dIndex, e.target.value)}
-                    className="flex-grow px-2 py-1 bg-gray-600 text-white rounded-l border border-gray-500"
+            {openIndices.includes(index) && (
+              <div className="p-4 border-t" style={{ borderColor, color: itemContentColor }}>
+                {readOnly ? (
+                  <p className="text-sm">{item.content}</p>
+                ) : (
+                  <textarea
+                    ref={getItemRef(index, 'content')}
+                    value={item.content || ''}
+                    onChange={(e) => handleInputChange(null, e.target.value, index, 'content')}
+                    onBlur={handleBlur}
+                    className="text-sm bg-transparent focus:outline-none focus:ring-1 focus:ring-gray-300 rounded p-1 w-full resize-none"
+                    rows={3} placeholder="Answer/Content" style={{ color: 'inherit' }}
                   />
-                  <button
-                    className="bg-red-600 text-white px-2 py-1 rounded-r border border-red-700"
-                    onClick={() => removeDiagnosis(idx, dIndex)}
-                  >
-                    &times;
-                  </button>
-                </div>
-              ))}
-              <button
-                className="bg-blue-600 text-white px-2 py-1 rounded text-sm"
-                onClick={() => addDiagnosis(idx)}
-              >
-                Add Diagnosis
-              </button>
-            </div>
-          </details>
-        </div>
-      ))}
-
-      <button
-        className="bg-blue-600 text-white px-3 py-2 rounded font-semibold"
-        onClick={addItem}
-      >
-        Add Item
-      </button>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
 
-export default ListDropdown;
+ListDropdownBlock.propTypes = {
+  config: PropTypes.shape({
+    title: PropTypes.string,
+    items: PropTypes.arrayOf(PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      title: PropTypes.string,
+      content: PropTypes.string,
+    })),
+    openMultiple: PropTypes.bool,
+    backgroundColor: PropTypes.string,
+    titleColor: PropTypes.string,
+    itemTitleColor: PropTypes.string,
+    itemContentColor: PropTypes.string,
+    iconColor: PropTypes.string,
+    borderColor: PropTypes.string,
+  }),
+  readOnly: PropTypes.bool,
+  onConfigChange: PropTypes.func.isRequired,
+};
+
+ListDropdownBlock.EditorPanel = function ListDropdownEditorPanel({ currentConfig, onPanelConfigChange }) {
+  const [formData, setFormData] = useState(currentConfig || {});
+
+  useEffect(() => {
+    setFormData(currentConfig || {});
+  }, [currentConfig]);
+
+  const handleChange = (field, value) => {
+    const newFormData = { ...formData, [field]: value };
+    setFormData(newFormData);
+    onPanelConfigChange(newFormData);
+  };
+
+  const handleItemChange = (itemIndex, field, value) => {
+    const updatedItems = (formData.items || []).map((item, i) => i === itemIndex ? { ...item, [field]: value } : item);
+    handleChange('items', updatedItems);
+  };
+
+  const handleAddItem = () => {
+    const newItem = { id: `faq_${Date.now()}`, title: 'New Question?', content: 'Answer to the new question.' };
+    handleChange('items', [...(formData.items || []), newItem]);
+  };
+
+  const handleRemoveItem = (itemIndex) => {
+    handleChange('items', (formData.items || []).filter((_, i) => i !== itemIndex));
+  };
+
+  return (
+    <div className="space-y-4 p-2 bg-gray-50 rounded-md shadow">
+      <div><label className="input-label">Section Title (Panel Edit):</label><input type="text" value={formData.title || ''} onChange={(e) => handleChange('title', e.target.value)} className="input-text-class" /></div>
+      <div className="flex items-center"><input type="checkbox" checked={formData.openMultiple || false} onChange={(e) => handleChange('openMultiple', e.target.checked)} className="mr-2" /><label className="input-label">Allow Multiple Open</label></div>
+
+      <h4 className="h4-style">Color Scheme</h4>
+      <div className="grid grid-cols-2 gap-2">
+        <div><label className="input-label-sm">Background:</label><input type="color" value={formData.backgroundColor || '#FFFFFF'} onChange={(e) => handleChange('backgroundColor', e.target.value)} className="input-color-sm" /></div>
+        <div><label className="input-label-sm">Main Title:</label><input type="color" value={formData.titleColor || '#1A202C'} onChange={(e) => handleChange('titleColor', e.target.value)} className="input-color-sm" /></div>
+        <div><label className="input-label-sm">Item Title:</label><input type="color" value={formData.itemTitleColor || '#2D3748'} onChange={(e) => handleChange('itemTitleColor', e.target.value)} className="input-color-sm" /></div>
+        <div><label className="input-label-sm">Item Content:</label><input type="color" value={formData.itemContentColor || '#4A5568'} onChange={(e) => handleChange('itemContentColor', e.target.value)} className="input-color-sm" /></div>
+        <div><label className="input-label-sm">Icon Color:</label><input type="color" value={formData.iconColor || '#718096'} onChange={(e) => handleChange('iconColor', e.target.value)} className="input-color-sm" /></div>
+        <div><label className="input-label-sm">Border Color:</label><input type="color" value={formData.borderColor || '#E2E8F0'} onChange={(e) => handleChange('borderColor', e.target.value)} className="input-color-sm" /></div>
+      </div>
+
+      <h4 className="h4-style">Manage Items (FAQ)</h4>
+      {(formData.items || []).map((item, itemIndex) => (
+        <div key={item.id || itemIndex} className="panel-item-container">
+          <div className="flex justify-between items-center"><h5 className="h5-style">Item {itemIndex + 1}</h5><button onClick={() => handleRemoveItem(itemIndex)} className="btn-remove-xs">Remove</button></div>
+          <div><label className="input-label-xs">Question/Title:</label><input type="text" value={item.title || ''} onChange={(e) => handleItemChange(itemIndex, 'title', e.target.value)} className="input-text-xs" /></div>
+          <div><label className="input-label-xs">Answer/Content:</label><textarea value={item.content || ''} onChange={(e) => handleItemChange(itemIndex, 'content', e.target.value)} rows={3} className="input-textarea-xs" /></div>
+        </div>
+      ))}
+      <button onClick={handleAddItem} className="btn-add-item">+ Add FAQ Item</button>
+      <style jsx>{`
+        .input-label { display: block; font-size: 0.875rem; font-weight: 500; color: #4A5568; margin-bottom: 0.25rem; }
+        .input-label-sm { display: block; font-size: 0.8rem; font-weight: 500; color: #4A5568; margin-bottom: 0.1rem; }
+        .input-label-xs { display: block; font-size: 0.75rem; font-weight: 500; color: #555; margin-bottom: 0.1rem; }
+        .input-text-class { display: block; width: 100%; padding: 0.5rem 0.75rem; background-color: white; border: 1px solid #D1D5DB; border-radius: 0.375rem; }
+        .input-text-xs { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; }
+        .input-textarea-xs { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; resize: vertical; min-height: 60px; }
+        .input-color-sm { margin-top: 0.1rem; height: 1.75rem; width: 100%; padding: 0.1rem; border: 1px solid #D1D5DB; border-radius: 0.25rem; }
+        .h4-style { font-size: 1.1rem; font-weight: 600; color: #374151; padding-top: 0.75rem; border-top: 1px solid #E5E7EB; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+        .h5-style { font-size: 0.95rem; font-weight: 600; color: #4A5568; }
+        .panel-item-container { padding: 0.75rem; border: 1px solid #E5E7EB; border-radius: 0.375rem; background-color: white; margin-bottom: 0.75rem; }
+        .btn-remove-xs { font-size: 0.75rem; color: #EF4444; font-weight: 500; }
+        .btn-add-item { margin-top: 1rem; padding: 0.5rem 1rem; font-size: 0.9rem; background-color: #10B981; color: white; border-radius: 0.375rem; font-weight: 500; }
+      `}</style>
+    </div>
+  );
+};
+
+ListDropdownBlock.EditorPanel.propTypes = {
+  currentConfig: PropTypes.object.isRequired,
+  onPanelConfigChange: PropTypes.func.isRequired,
+};
+
+export default ListDropdownBlock;
+

@@ -5,6 +5,46 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 // Register GSAP's ScrollTrigger plugin
 gsap.registerPlugin(ScrollTrigger);
 
+// Helper to initialize image state: handles string path or {file, url, name} object
+const initializeEmployeeImageState = (imageValue, defaultPath = "/assets/images/team/roofer.png") => {
+  let originalUrlToStore = defaultPath;
+  let nameToStore = defaultPath.split('/').pop();
+  let urlToDisplay = defaultPath;
+  let fileObject = null;
+
+  if (imageValue && typeof imageValue === 'object') {
+    urlToDisplay = imageValue.url || defaultPath;
+    nameToStore = imageValue.name || urlToDisplay.split('/').pop();
+    fileObject = imageValue.file || null;
+    originalUrlToStore = imageValue.originalUrl || (typeof imageValue.url === 'string' && !imageValue.url.startsWith('blob:') ? imageValue.url : defaultPath);
+  } else if (typeof imageValue === 'string') {
+    urlToDisplay = imageValue;
+    nameToStore = imageValue.split('/').pop();
+    originalUrlToStore = imageValue;
+  }
+  
+  return { 
+    file: fileObject, 
+    url: urlToDisplay, 
+    name: nameToStore,
+    originalUrl: originalUrlToStore
+  }; 
+};
+
+// Helper to get display URL from string path or {url, file} object
+const getEmployeeImageUrl = (imageState, defaultImgPath = "/assets/images/team/roofer.png") => {
+  let path = defaultImgPath;
+  if (imageState && typeof imageState === 'object' && imageState.url) {
+    path = imageState.url;
+  } else if (typeof imageState === 'string') {
+    path = imageState; 
+  }
+  if (path && !path.startsWith('blob:') && !path.startsWith('http:') && !path.startsWith('https:') && !path.startsWith('/')) {
+    return `/assets/images/team/${path.split("/").pop()}`;
+  }
+  return path; 
+};
+
 /* ======================================================
    READ-ONLY VIEW: EmployeesPreview
    ------------------------------------------------------
@@ -13,186 +53,155 @@ gsap.registerPlugin(ScrollTrigger);
    carousel that empows the employees.
 ========================================================= */
 
-
-
-function EmployeesPreview({ employeesData }) {
+function EmployeesPreview({ 
+  employeesData, 
+  readOnly = true, 
+  onSectionTitleChange,
+  onEmployeeDetailChange 
+}) {
   if (!employeesData) {
     return <p>No Employee data found.</p>;
   }
-  // Use the employees data passed in or default to an empty array
-  const employeesList = employeesData?.employee || [];
   
-  // Ensure we have a section title, default to "OUR TEAM" if none provided
+  const employeesListOriginal = employeesData?.employee || [];
   const sectionTitle = employeesData?.sectionTitle || "OUR TEAM";
-  
-  // Format image paths to ensure they have proper format
-  const formattedEmployees = employeesList.map(emp => ({
+  const showNailAnimation = employeesData?.showNailAnimation !== undefined ? employeesData.showNailAnimation : true;
+  console.log(`[EmployeesPreview] Instance created/re-rendered. Initial showNailAnimation prop from employeesData: ${showNailAnimation}`);
+
+  const formattedEmployees = employeesListOriginal.map((emp) => ({
     ...emp,
-    image: emp.image?.startsWith('/') ? emp.image : `/assets/images/team/${emp.image?.split('/').pop() || 'roofer.png'}`
+    image: getEmployeeImageUrl(emp.image), 
   }));
-  
+
   const headerRef = useRef(null);
   const nailRef = useRef(null);
   const textRef = useRef(null);
-
-  // Carousel state
   const [currentIndex, setCurrentIndex] = useState(0);
   const [transitionDuration, setTransitionDuration] = useState(0.5);
-  const itemsToShow = useItemsToShow(); // custom hook for responsive count
   const slideInterval = 2500;
-  
-  // Get employee data from employeesData, default to empty array
-  const employee = employeesData?.employee || [];
+  const numTotalEmployees = formattedEmployees.length;
+  const ITEMS_TO_SHOW_ANIMATION = 4;
 
-  // Extend the employees array for a seamless loop (use formattedEmployees)
   const extendedEmployees = useMemo(() => {
-    return formattedEmployees.concat(formattedEmployees.slice(0, itemsToShow));
-  }, [formattedEmployees, itemsToShow]);
+    if (numTotalEmployees >= 5) {
+      return formattedEmployees.concat(formattedEmployees.slice(0, ITEMS_TO_SHOW_ANIMATION));
+    }
+    return formattedEmployees;
+  }, [formattedEmployees, numTotalEmployees, ITEMS_TO_SHOW_ANIMATION]);
 
-  // Auto-slide the carousel
   useEffect(() => {
+    if (numTotalEmployees < 5) return;
     const interval = setInterval(() => {
       setCurrentIndex((prevIndex) => {
-        if (prevIndex >= employeesList.length - 1) {
-          // Reset the transition to jump instantly back to the beginning,
-          // then restore the smooth transition
-          setTransitionDuration(0);
-          setTimeout(() => setTransitionDuration(0.5), 50);
-          return 0;
+        if (prevIndex >= numTotalEmployees - 1) {
+          setTransitionDuration(0); 
+          setTimeout(() => setTransitionDuration(0.5), 50); 
+          return 0; 
         }
         return prevIndex + 1;
       });
     }, slideInterval);
-
     return () => clearInterval(interval);
-  }, [employeesList.length, slideInterval]);
+  }, [numTotalEmployees, slideInterval]);
 
-  // GSAP header animations (nail and text slide in)
   useEffect(() => {
-    // Starting positions: nail off-screen right, text off-screen left.
-    gsap.set(nailRef.current, { x: "100vw" });
-    gsap.set(textRef.current, { x: "-100vw" });
+    const nail = nailRef.current;
+    const text = textRef.current;
+    const header = headerRef.current;
 
-    const masterTimeline = gsap.timeline({
-      scrollTrigger: {
-        trigger: headerRef.current,
-        start: "top 90%", // Changed from 80% to 20% to trigger when div appears at 20% of viewport
-        end: "top 90%",   // Adjusted to match new trigger approach
-        toggleActions: "play none none none", // Play once when entering trigger area
-        markers: false,
-        once: true,       // Added to ensure it only plays once
-      },     
+    console.log(`[EmployeesPreview GSAP Effect] Running. showNailAnimation: ${showNailAnimation}`);
+
+    ScrollTrigger.getAll().forEach(st => {
+      if (st.trigger === header && (st.animation?.targets?.includes(nail) || st.animation?.targets?.includes(text))) {
+        st.kill();
+      }
     });
+    gsap.killTweensOf([nail, text]);
 
-    // 1) Nail slides in (from 100vw to -7vw)
-    masterTimeline.to(nailRef.current, {
-      x: "10vw",
-      duration: 0.8,
-      ease: "power2.out",
-    });
-
-    // 2) After a short delay, nail moves further left and text slides in simultaneously.
-    masterTimeline
-      .to(
-        nailRef.current,
-        {
-          x: "1vw",
-          duration: 0.6,
-          ease: "power2.inOut",
+    if (showNailAnimation) {
+      gsap.set(nail, { x: "100vw", opacity: 1 });
+      gsap.set(text, { x: "-100vw", opacity: 1 });
+      const masterTimeline = gsap.timeline({
+        scrollTrigger: {
+          trigger: header,
+          start: "top 80%",
+          end: "top 80%",
+          toggleActions: "play none none none",
+          once: true,
         },
-        "+=0.5"
-      )
-      .to(
-        textRef.current,
-        {
-          x: "-50%",
-          duration: 0.6,
-          ease: "power2.inOut",
-        },
-        "<"
-      );
+      });
+      masterTimeline
+        .to(nail, { x: "10vw", duration: 0.8, ease: "power2.out" })
+        .to(nail, { x: "1vw", duration: 0.6, ease: "power2.inOut" }, "+=0.5")
+        .to(text, { x: "-50%", duration: 0.6, ease: "power2.inOut" }, "<");
+      console.log("[EmployeesPreview GSAP Effect] Applied nail animation timeline.");
+    } else {
+      gsap.set(nail, { opacity: 0 });
+      gsap.set(text, { x: "-50%", opacity: 1 });
+      console.log("[EmployeesPreview GSAP Effect] Set nail opacity to 0 and text position because showNailAnimation is false.");
+    }
 
-    // Cleanup ScrollTrigger instances when unmounting
     return () => {
-      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+      console.log(`[EmployeesPreview GSAP Effect] Cleanup. showNailAnimation was: ${showNailAnimation}`);
+      ScrollTrigger.getAll().forEach(st => {
+        if (st.trigger === header && (st.animation?.targets?.includes(nail) || st.animation?.targets?.includes(text))) {
+          st.kill();
+        }
+      });
+      gsap.killTweensOf([nail, text]);
     };
-  }, []);
+  }, [showNailAnimation]);
+
+  const renderEmployeeCard = (employee, index, cardStyle = {}) => (
+    <div key={employee.id || index} className="flex-shrink-0 flex flex-col items-center justify-start px-2" style={cardStyle}>
+      <div className="relative mb-4">
+        <div className="bg-white w-[12.5vh] h-[12.5vh] md:w-32 md:h-32 rounded-full overflow-hidden flex items-center justify-center shadow-lg">
+          <img src={employee.image} alt={employee.name} className="w-full h-full object-cover" loading="lazy" onError={(e) => { e.target.src = "/assets/images/team/roofer.png"; }}/>
+        </div>
+        <div className="flex flex-col items-center mt-1">
+          {readOnly ? (
+            <>
+              <p className="whitespace-nowrap text-[1.4vw] md:text-[1.5vh] text-black font-semibold text-center">{employee.name}</p>
+              <p className="whitespace-nowrap text-[1.4vw] md:text-[1.5vh] font-semibold -mt-2 text-black text-center">{employee.role}</p>
+            </>
+          ) : (
+            <>
+              <input type="text" value={employee.name || ""} onChange={(e) => onEmployeeDetailChange(index, 'name', e.target.value)} className="whitespace-nowrap text-[1.4vw] md:text-[1.5vh] text-black font-semibold text-center bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 w-full" placeholder="Name"/>
+              <input type="text" value={employee.role || ""} onChange={(e) => onEmployeeDetailChange(index, 'role', e.target.value)} className="whitespace-nowrap text-[1.4vw] md:text-[1.5vh] font-semibold -mt-0 text-black text-center bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 w-full" placeholder="Role"/>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div>
-      {/* Header Section with animated nail and title */}
-      <div
-        ref={headerRef}
-        className="relative flex items-center w-full py-8 md:py-10"
-      >
-        {/* Nail element (animated from the right) */}
-        <div
-          ref={nailRef}
-          className="absolute right-[17vw] md:right-[17%] w-[30%] h-[6vh] md:h-[4vh]"
-
-        >
-          <div
-            className="w-full h-full dynamic-shadow"
-            style={{
-              backgroundImage: "url('/assets/images/nail.png')",
-              backgroundPosition: "right center",
-              backgroundRepeat: "no-repeat",
-              backgroundSize: "contain",
-              transform: "scale(3) scaleX(-1)",
-              transformOrigin: "right center",
-            }}
-          />
+      <div ref={headerRef} className="relative flex items-center w-full py-8 md:py-10">
+        <div ref={nailRef} className="absolute right-[17vw] md:right-[17%] w-[30%] h-[6vh] md:h-[4vh]">
+          <div className="w-full h-full dynamic-shadow" style={{ backgroundImage: "url('/assets/images/nail.png')", backgroundPosition: "right center", backgroundRepeat: "no-repeat", backgroundSize: "contain", transform: "scale(3) scaleX(-1)", transformOrigin: "right center" }}/>
         </div>
-        {/* Section title (animated from the left) */}
-        <div ref={textRef} className="absolute left-1/2 z-30">
-          <h2 className="text-[6vw] md:text-[4vh] text-black font-normal font-ultra-condensed font-rye pt-3">
-            {sectionTitle}
-          </h2>
+        <div ref={textRef} className="absolute left-1/2 z-30 w-auto">
+          {readOnly ? (
+            <h2 className="text-[6vw] md:text-[4vh] text-black font-normal font-ultra-condensed font-rye pt-3 whitespace-nowrap">{sectionTitle}</h2>
+          ) : (
+            <input type="text" value={sectionTitle} onChange={(e) => onSectionTitleChange && onSectionTitleChange(e.target.value)} className="text-[6vw] md:text-[4vh] text-black font-normal font-ultra-condensed font-rye pt-3 bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 rounded p-1 text-center whitespace-nowrap min-w-[300px] md:min-w-[400px]" placeholder="Section Title"/>
+          )}
         </div>
       </div>
-
-      {/* Employees Carousel */}
       <div className="relative employee-section flex flex-col items-center justify-center px-6 overflow-hidden">
         <div className="w-full max-w-screen-lg">
-          <div
-            className="flex transition-transform"
-            style={{
-              transform: `translateX(-${currentIndex * (100 / itemsToShow)}%)`,
-              transitionDuration: `${transitionDuration}s`,
-              transitionTimingFunction: "cubic-bezier(0.65, 0, 0.35, 1)",
-              width: `${(extendedEmployees.length * 100) / itemsToShow}%`,
-            }}
-          >
-            {extendedEmployees.map((employee, idx) => (
-              <div
-                key={idx}
-                className="flex-shrink-0 flex flex-col items-center justify-start px-2"
-                style={{ width: `${100 / itemsToShow}%` }}
-              >
-                <div className="relative mb-4">
-                  <div className="bg-white w-[12.5vh] h-[12.5vh] md:w-32 md:h-32 rounded-full overflow-hidden flex items-center justify-center shadow-lg">
-                    <img
-                      src={employee.image}
-                      alt={employee.name}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                      onError={(e) => {
-                        e.target.src = "/assets/images/team/roofer.png";
-                      }}
-                    />
-                  </div>
-                  <div className="flex flex-col  items-center mt-1">
-                    <p className="whitespace-nowrap text-[1.4vw] md:text-[1.5vh] text-black font-semibold text-center">
-                      {employee.name}
-                    </p>
-                    <p className=" whitespace-nowrap text-[1.4vw] md:text-[1.5vh] font-semibold -mt-2 text-black text-center">
-                      {employee.role}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          {numTotalEmployees > 0 && numTotalEmployees <= 4 ? (
+            <div className="flex justify-around items-start py-4">
+              {formattedEmployees.map((employee, idx) => renderEmployeeCard(employee, idx))}
+            </div>
+          ) : numTotalEmployees >= 5 ? (
+            <div className="flex transition-transform" style={{ transform: `translateX(-${currentIndex * (100 / ITEMS_TO_SHOW_ANIMATION)}%)`, transitionDuration: `${transitionDuration}s`, transitionTimingFunction: "cubic-bezier(0.65, 0, 0.35, 1)", width: `${(extendedEmployees.length * 100) / ITEMS_TO_SHOW_ANIMATION}%` }}>
+              {extendedEmployees.map((employee, idx) => renderEmployeeCard(employee, idx, { width: `${100 / ITEMS_TO_SHOW_ANIMATION}%` }))}
+            </div>
+          ) : (
+            <p className="text-center py-4">No employees to display.</p>
+          )}
         </div>
       </div>
     </div>
@@ -206,124 +215,104 @@ function EmployeesPreview({ employeesData }) {
    and the list of employees. Changes here are stored in
    local state until the admin clicks "Save."
 ========================================================= */
-function EmployeesEditorPanel({ localEmployees, setLocalEmployees, onSave }) {
+function EmployeesEditorPanel({ localData, onPanelChange }) {
+  const handleAddItem = () => {
+    const newItem = {
+      id: `new_emp_${Date.now()}`,
+      name: "New Employee",
+      role: "Role",
+      image: initializeEmployeeImageState("/assets/images/team/roofer.png"),
+    };
+    onPanelChange(prev => ({ ...prev, employee: [...(prev.employee || []), newItem] }));
+  };
+
+  const handleRemoveItem = (index) => {
+    const itemToRemove = localData.employee[index];
+    if (itemToRemove?.image?.url?.startsWith('blob:')) {
+      URL.revokeObjectURL(itemToRemove.image.url);
+    }
+    onPanelChange(prev => ({ ...prev, employee: prev.employee.filter((_, i) => i !== index) }));
+  };
+
+  const handleImageUpload = (index, file) => {
+    if (!file) return;
+    const currentItem = localData.employee[index];
+    const currentImageState = currentItem?.image;
+
+    if (currentImageState?.url?.startsWith('blob:')) {
+      URL.revokeObjectURL(currentImageState.url);
+    }
+    const fileURL = URL.createObjectURL(file);
+    const updatedImageState = { 
+        file: file, 
+        url: fileURL, 
+        name: file.name, 
+        originalUrl: currentImageState?.originalUrl
+    };
+    onPanelChange(prev => {
+      const updatedEmployees = [...prev.employee];
+      updatedEmployees[index] = { ...updatedEmployees[index], image: updatedImageState };
+      return { ...prev, employee: updatedEmployees };
+    });
+  };
+
+  const handleImageUrlChange = (index, urlValue) => {
+    const currentItem = localData.employee[index];
+    const currentImageState = currentItem?.image;
+
+    if (currentImageState?.url?.startsWith('blob:')) {
+      URL.revokeObjectURL(currentImageState.url);
+    }
+    const updatedImageState = { 
+        file: null, 
+        url: urlValue, 
+        name: urlValue.split('/').pop(),
+        originalUrl: urlValue
+    };
+    onPanelChange(prev => {
+      const updatedEmployees = [...prev.employee];
+      updatedEmployees[index] = { ...updatedEmployees[index], image: updatedImageState };
+      return { ...prev, employee: updatedEmployees };
+    });
+  };
+
+  const handleToggleNailAnimation = () => {
+    const currentShowState = localData.showNailAnimation !== undefined ? localData.showNailAnimation : true;
+    const newShowState = !currentShowState;
+    console.log(`[EmployeesEditorPanel] handleToggleNailAnimation: Current: ${currentShowState}, New: ${newShowState}`);
+    onPanelChange({ showNailAnimation: newShowState });
+  };
+
   return (
-    <div className="bg-black text-white p-4 rounded max-h-[75vh] overflow-auto">
-      {/* Top bar with "Save" button */}
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-lg md:text-2xl font-semibold">Employees Editor</h1>
-        <button
-          type="button"
-          onClick={onSave}
-          className="bg-green-600 hover:bg-green-500 px-4 py-2 rounded text-white font-semibold"
-        >
-          Save
-        </button>
-      </div>
-
-      {/* Editable Section Title */}
-      <div className="mb-6">
-        <label className="block text-sm mb-1">Section Title:</label>
-        <input
-          type="text"
-          className="w-full bg-gray-700 px-2 py-1 rounded"
-          value={localEmployees.sectionTitle || ""}
-          onChange={(e) =>
-            setLocalEmployees((prev) => ({
-              ...prev,
-              sectionTitle: e.target.value,
-            }))
-          }
-        />
-      </div>
-
-      {/* Editable Employees List */}
-      <div>
-        <h2 className="text-lg font-semibold mb-2">Employees</h2>
-        {localEmployees.employee.map((emp, index) => (
-          <div key={index} className="bg-gray-800 p-3 rounded mb-3 relative">
-            <button
-              onClick={() => {
-                const updated = [...localEmployees.employee];
-                updated.splice(index, 1);
-                setLocalEmployees((prev) => ({
-                  ...prev,
-                  employee: updated,
-                }));
-              }}
-              className="bg-red-600 text-white text-xs px-2 py-1 rounded absolute top-2 right-2"
-            >
-              Remove
-            </button>
-            <label className="block text-sm mb-1">
-              Name:
-              <input
-                type="text"
-                className="w-full bg-gray-700 px-2 py-1 rounded mt-1"
-                value={emp.name || ""}
-                onChange={(e) => {
-                  const updated = [...localEmployees.employee];
-                  updated[index] = { ...emp, name: e.target.value };
-                  setLocalEmployees((prev) => ({ ...prev, employee: updated }));
-                }}
-              />
-            </label>
-            <label className="block text-sm mb-1">
-              Role:
-              <input
-                type="text"
-                className="w-full bg-gray-700 px-2 py-1 rounded mt-1"
-                value={emp.role || ""}
-                onChange={(e) => {
-                  const updated = [...localEmployees.employee];
-                  updated[index] = { ...emp, role: e.target.value };
-                  setLocalEmployees((prev) => ({ ...prev, employee: updated }));
-                }}
-              />
-            </label>
-            {/* New file upload for employee image */}
-            <label className="block text-sm mb-1">
-              Upload Employee Image:
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    const fileURL = URL.createObjectURL(file);
-                    const updated = [...localEmployees.employee];
-                    updated[index] = { ...emp, image: fileURL };
-                    setLocalEmployees((prev) => ({ ...prev, employee: updated }));
-                  }
-                }}
-                className="w-full bg-gray-700 px-2 py-1 rounded mt-1"
-              />
-            </label>
-            {emp.image && (
-              <img
-                src={emp.image}
-                alt={`Preview of ${emp.name}`}
-                className="mt-2 h-24 rounded shadow"
-              />
-            )}
+    <div className="bg-white text-gray-800 p-4 rounded mt-0">
+      <h2 className="text-lg font-semibold mb-2 border-b pb-2">Manage Employees & Images</h2>
+      <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+      {(localData.employee || []).map((emp, index) => (
+        <div key={emp.id || index} className="bg-gray-100 p-3 rounded mb-3 relative border border-gray-300">
+          <button onClick={() => handleRemoveItem(index)} className="bg-red-600 text-white text-xs px-2 py-1 rounded absolute top-2 right-2 hover:bg-red-700 z-10">Remove</button>
+          <p className="text-sm mb-1 text-gray-600">Editing: {emp.name || "New Employee"} ({emp.role || "Role"})</p>
+          <div className="grid grid-cols-1 gap-3">
+            <div>
+                <label className="block text-xs mb-1 text-gray-700">Employee Image:</label>
+                <input type="file" accept="image/*" onChange={(e) => handleImageUpload(index, e.target.files?.[0])} className="w-full bg-gray-200 text-gray-800 px-2 py-1 rounded mt-1 text-xs file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600 cursor-pointer" />
+                <input type="text" value={getEmployeeImageUrl(emp.image, '')} onChange={(e) => handleImageUrlChange(index, e.target.value)} className="w-full bg-gray-200 text-gray-800 px-2 py-1 rounded mt-1 text-xs placeholder-gray-500" placeholder="Or paste direct image URL" />
+                {getEmployeeImageUrl(emp.image) && <img src={getEmployeeImageUrl(emp.image)} alt={`Preview of ${emp.name}`} className="mt-2 h-20 w-20 object-cover rounded shadow bg-gray-200 p-1"/>}
+            </div>
           </div>
-        ))}
-        <button
-          onClick={() => {
-            const updated = [
-              ...localEmployees.employee,
-              {
-                name: "New Employee",
-                role: "Role",
-                image: "/assets/images/placeholder.png",
-              },
-            ];
-            setLocalEmployees((prev) => ({ ...prev, employee: updated }));
-          }}
-          className="bg-blue-600 text-white text-xs px-2 py-1 rounded"
-        >
-          + Add Employee
-        </button>
+        </div>
+      ))}
+      </div>
+      <button type="button" onClick={handleAddItem} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm w-full mt-3 font-medium">+ Add Employee</button>
+      <div className="mt-4 pt-3 border-t">
+        <label className="flex items-center space-x-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={localData.showNailAnimation !== undefined ? localData.showNailAnimation : true}
+            onChange={handleToggleNailAnimation}
+            className="form-checkbox h-5 w-5 text-blue-600 rounded"
+          />
+          <span className="text-sm font-medium text-gray-700">Show Nail Animation</span>
+        </label>
       </div>
     </div>
   );
@@ -341,60 +330,174 @@ export default function EmployeesBlock({
   employeesData,
   onConfigChange,
 }) {
-  // Initialize local state for the editor from the provided data.
-  const [localEmployees, setLocalEmployees] = useState(() => {
-    if (!employeesData) {
-      return {
-        sectionTitle: "",
-        employee: [],
-      };
-    }
+  const [localData, setLocalData] = useState(() => {
+    const initialConfig = employeesData || {};
+    const initialShowNailAnimation = initialConfig.showNailAnimation !== undefined ? initialConfig.showNailAnimation : true;
+    console.log(`[EmployeesBlock useState init] initialConfig.showNailAnimation: ${initialConfig.showNailAnimation}, Resolved to: ${initialShowNailAnimation}`);
     return {
-      ...employeesData,
-      employee: employeesData.employee?.map((emp) => ({...emp})) || [],
+      sectionTitle: initialConfig.sectionTitle || "OUR TEAM",
+      showNailAnimation: initialShowNailAnimation,
+      employee: (initialConfig.employee || []).map((emp, index) => ({
+        ...emp,
+        id: emp.id || `emp_init_${index}_${Date.now()}`,
+        image: initializeEmployeeImageState(emp.image),
+      })),
     };
   });
 
-  // Callback to save the changes back to the parent
-  const handleSave = () => {
-    onConfigChange?.(localEmployees);
+  const prevReadOnlyRef = useRef(readOnly);
+
+  useEffect(() => {
+    if (employeesData) {
+      setLocalData(prevLocalData => {
+        const defaultTitle = "OUR TEAM";
+        
+        const resolvedSectionTitle = 
+          (prevLocalData.sectionTitle !== undefined && prevLocalData.sectionTitle !== (employeesData.sectionTitle || defaultTitle) && prevLocalData.sectionTitle !== defaultTitle)
+          ? prevLocalData.sectionTitle 
+          : (employeesData.sectionTitle || defaultTitle);
+
+        const newEmployeeList = (employeesData.employee || []).map((newEmpFromProp, index) => {
+          const oldEmpFromLocal = prevLocalData.employee?.find(pe => pe.id === newEmpFromProp.id) || 
+                                  prevLocalData.employee?.[index] || 
+                                  { name: "", role: "", image: initializeEmployeeImageState(null), id: `emp_fallback_${index}_${Date.now()}` };
+
+          const newImageState = initializeEmployeeImageState(newEmpFromProp.image, oldEmpFromLocal.image?.originalUrl || oldEmpFromLocal.image?.url);
+
+          if (oldEmpFromLocal.image?.file && oldEmpFromLocal.image.url?.startsWith('blob:') && 
+              (oldEmpFromLocal.image.url !== newImageState.url || (newImageState.url && !newImageState.url.startsWith('blob:')))) {
+            URL.revokeObjectURL(oldEmpFromLocal.image.url);
+          }
+          
+          const resolvedName = 
+            (oldEmpFromLocal.name !== undefined && oldEmpFromLocal.name !== (newEmpFromProp.name || "") && oldEmpFromLocal.name !== "")
+            ? oldEmpFromLocal.name 
+            : (newEmpFromProp.name || "");
+          
+          const resolvedRole = 
+            (oldEmpFromLocal.role !== undefined && oldEmpFromLocal.role !== (newEmpFromProp.role || "") && oldEmpFromLocal.role !== "")
+            ? oldEmpFromLocal.role
+            : (newEmpFromProp.role || "");
+
+          return {
+            ...newEmpFromProp,
+            id: newEmpFromProp.id || oldEmpFromLocal.id,
+            image: newImageState,
+            name: resolvedName,
+            role: resolvedRole,
+          };
+        });
+
+        const resolvedShowNailAnimation = employeesData.showNailAnimation !== undefined
+                                     ? employeesData.showNailAnimation
+                                     : (prevLocalData.showNailAnimation !== undefined
+                                          ? prevLocalData.showNailAnimation
+                                          : true);
+        return {
+          sectionTitle: resolvedSectionTitle,
+          employee: newEmployeeList,
+          showNailAnimation: resolvedShowNailAnimation,
+        };
+      });
+    }
+  }, [employeesData]);
+
+  useEffect(() => {
+    return () => {
+      localData.employee?.forEach(emp => {
+        if (emp.image?.file && emp.image.url?.startsWith('blob:')) {
+          URL.revokeObjectURL(emp.image.url);
+        }
+      });
+    };
+  }, [localData.employee]);
+
+  useEffect(() => {
+    if (prevReadOnlyRef.current === false && readOnly === true) {
+      if (onConfigChange) {
+        console.log("[EmployeesBlock onConfigChange Effect] Editing finished. Calling onConfigChange.");
+        const dataToSave = {
+            ...localData,
+            employee: localData.employee.map(emp => {
+                const imageState = emp.image?.file
+                    ? { ...emp.image }
+                    : { url: emp.image?.originalUrl || emp.image?.url };
+                return {
+                    ...emp,
+                    image: imageState,
+                };
+            }),
+            showNailAnimation: localData.showNailAnimation,
+        };
+        console.log("[EmployeesBlock onConfigChange Effect] dataToSave:", JSON.parse(JSON.stringify(dataToSave, (k,v) => v instanceof File ? ({name: v.name, type: v.type, size: v.size}) : v)));
+        onConfigChange(dataToSave);
+      }
+    }
+    prevReadOnlyRef.current = readOnly;
+  }, [readOnly, localData, onConfigChange]);
+
+  const handleLocalDataChange = (updater) => {
+    setLocalData(prevState => {
+      const newState = typeof updater === 'function' ? updater(prevState) : { ...prevState, ...updater };
+      console.log('[EmployeesBlock handleLocalDataChange] prevState.showNailAnimation:', prevState.showNailAnimation, 'newState.showNailAnimation:', newState.showNailAnimation);
+      return newState;
+    });
   };
 
-  // Render read-only preview or editor panel based on the readOnly prop.
+  const handleSectionTitleChange = (newTitle) => {
+    handleLocalDataChange(prev => ({ ...prev, sectionTitle: newTitle }));
+  };
+
+  const handleEmployeeDetailChange = (index, field, value) => {
+    handleLocalDataChange(prev => {
+      const updatedEmployees = [...prev.employee];
+      if (updatedEmployees[index]) {
+        updatedEmployees[index] = { ...updatedEmployees[index], [field]: value };
+      }
+      return { ...prev, employee: updatedEmployees };
+    });
+  };
+
   if (readOnly) {
-    return <EmployeesPreview employeesData={employeesData} />;
+    return <EmployeesPreview employeesData={localData} readOnly={true} />;
   }
+  
   return (
-    <EmployeesEditorPanel
-      localEmployees={localEmployees}
-      setLocalEmployees={setLocalEmployees}
-      onSave={handleSave}
-    />
+    <>
+      <EmployeesPreview 
+        employeesData={localData} 
+        readOnly={false}
+        onSectionTitleChange={handleSectionTitleChange}
+        onEmployeeDetailChange={handleEmployeeDetailChange}
+      />
+      <EmployeesEditorPanel
+        localData={localData}
+        onPanelChange={handleLocalDataChange} 
+      />
+    </>
   );
 }
 
 /* ======================================================
-   Helper Hook: useItemsToShow
-   ------------------------------------------------------
-   Determines how many carousel items to display at once
-   based on the window width.
+   Helper Hook: useItemsToShow - NO LONGER USED
 ========================================================= */
-function useItemsToShow() {
-  const [itemsToShow, setItemsToShow] = useState(4);
+// This hook is no longer used by EmployeesPreview and can be removed.
+// function useItemsToShow() {
+//   const [itemsToShow, setItemsToShow] = useState(4);
 
-  useEffect(() => {
-    const updateItemsToShow = () => {
-      if (window.innerWidth >= 700) {
-        setItemsToShow(7);
-      } else {
-        setItemsToShow(5);
-      }
-    };
+//   useEffect(() => {
+//     const updateItemsToShow = () => {
+//       if (window.innerWidth >= 700) {
+//         setItemsToShow(7);
+//       } else {
+//         setItemsToShow(5);
+//       }
+//     };
 
-    updateItemsToShow();
-    window.addEventListener("resize", updateItemsToShow);
-    return () => window.removeEventListener("resize", updateItemsToShow);
-  }, []);
+//     updateItemsToShow();
+//     window.addEventListener("resize", updateItemsToShow);
+//     return () => window.removeEventListener("resize", updateItemsToShow);
+//   }, []);
 
-  return itemsToShow;
-}
+//   return itemsToShow;
+// }

@@ -4,19 +4,23 @@ import PropTypes from "prop-types";
 import LoadingScreen from "./loadingScreen";
 
 // Import all blocks
-import HeroBlock from "./blocks/HeroBlock";
-import GeneralList from "./blocks/GeneralList";
-import ListDropdown from "./blocks/ListDropdown";
-import VideoCTA from "./blocks/VideoCTA";
-import ThreeGridWithRichTextBlock from "./blocks/ThreeGridWithRichTextBlock";
-import PricingGrid from "./blocks/PricingGrid";
-import ShingleSelectorBlock from "./blocks/ShingleSelectorBlock";
-import ListImageVerticalBlock from "./blocks/ListImageVerticalBlock";
+import PageHeroBlock from "./blocks/PageHeroBlock";
+import DetailedListBlock from "./blocks/DetailedListBlock";
+import AccordionBlock from "./blocks/AccordionBlock";
+import VideoHighlightBlock from "./blocks/VideoHighlightBlock";
+import CardGridBlock from "./blocks/CardGridBlock";
+import PricingTableBlock from "./blocks/PricingTableBlock";
+import OptionSelectorBlock from "./blocks/OptionSelectorBlock";
+import NumberedImageTextBlock from "./blocks/NumberedImageTextBlock";
 import OverviewAndAdvantagesBlock from "./blocks/OverviewAndAdvantagesBlock";
-import ImageWrapBlock from "./blocks/ImageWrapBlock";
-import HeaderBannerBlock from "./blocks/HeaderBannerBlock";
+import TextImageBlock from "./blocks/TextImageBlock";
+import SectionBannerBlock from "./blocks/SectionBannerBlock";
 import GeneralListVariant2 from "./blocks/GeneralListVariant2";
 import ActionButtonBlock from "./blocks/ActionButtonBlock";
+import ImageFeatureListBlock from "./blocks/ImageFeatureListBlock";
+import FeatureOverviewBlock from "./blocks/FeatureOverviewBlock";
+import CallToActionButtonBlock from "./blocks/CallToActionButtonBlock";
+import IconTextBlockGrid from "./blocks/IconTextBlockGrid";
 
 // Import React to use for our custom component
 import React from "react";
@@ -131,7 +135,7 @@ const normalizeServiceImages = (service) => {
     const newBlock = {...block};
     
     // If this is a GeneralList block, check for pictures arrays in items
-    if (block.blockName === "GeneralList" && block.config && block.config.items) {
+    if ((block.blockName === "GeneralList" || block.blockName === "DetailedListBlock") && block.config && block.config.items) {
       newBlock.config = {...block.config};
       
       // Process each item in the items array
@@ -163,7 +167,7 @@ const SafeHeroBlock = ({ config, readOnly }) => {
   console.log("SafeHeroBlock received config:", config);
   
   // HeroBlock expects config directly as a prop
-  return <HeroBlock config={config} readOnly={readOnly} />;
+  return <PageHeroBlock config={config} readOnly={readOnly} />;
 };
 
 /**
@@ -248,21 +252,27 @@ const getBlockProps = (blockName, config) => {
   
   switch (blockName) {
     case "HeroBlock":
+    case "PageHeroBlock":
       // HeroBlock expects props directly, not wrapped in heroconfig
       return normalizedConfig;
     case "GeneralList":
+    case "DetailedListBlock":
     case "GeneralListVariant2":
-    case "ListDropdown":
+    case "ImageFeatureListBlock":
+    case "AccordionBlock":
     case "VideoCTA":
-    case "ThreeGridWithRichTextBlock":
-    case "PricingGrid":
-    case "ShingleSelectorBlock":
-    case "ListImageVerticalBlock":
+    case "VideoHighlightBlock":
+    case "CardGridBlock":
+    case "PricingTableBlock":
+    case "OptionSelectorBlock":
+    case "NumberedImageTextBlock":
     case "OverviewAndAdvantagesBlock":
-    case "ImageWrapBlock":
-    case "GridImageTextBlock":
-    case "HeaderBannerBlock":
+    case "FeatureOverviewBlock":
+    case "TextImageBlock":
+    case "IconTextBlockGrid":
+    case "SectionBannerBlock":
     case "ActionButtonBlock":
+    case "CallToActionButtonBlock":
       return normalizedConfig;
     default:
       return normalizedConfig;
@@ -377,7 +387,7 @@ const ServicePageCreator = () => {
           const blockProps = getBlockProps(block.blockName, block.config);
           
           // Debug what's being passed to HeroBlock and GeneralList (where images are failing)
-          if (block.blockName === "HeroBlock" || block.blockName === "GeneralList") {
+          if (block.blockName === "HeroBlock" || block.blockName === "PageHeroBlock" || block.blockName === "GeneralList" || block.blockName === "DetailedListBlock") {
             console.log(`${block.blockName} config:`, block.config);
             console.log(`${block.blockName} processed props:`, blockProps);
           }
@@ -385,35 +395,39 @@ const ServicePageCreator = () => {
           // Render the appropriate block component based on blockName
           switch (block.blockName) {
             case "HeroBlock":
+            case "PageHeroBlock":
               // For HeroBlock we need to pass the config directly, not wrapped in heroconfig
               return <SafeHeroBlock key={index} config={blockProps} readOnly={true} />;
             case "GeneralList":
-              return <GeneralList key={index} readOnly={true} config={blockProps} />;
+            case "DetailedListBlock":
+              return <DetailedListBlock key={index} readOnly={true} config={blockProps} />;
             case "GeneralListVariant2":
-              return <GeneralListVariant2 key={index} readOnly={true} config={blockProps} />;
-            case "ListDropdown":
-              return <ListDropdown key={index} readOnly={true} config={blockProps} />;
+            case "ImageFeatureListBlock":
+              return <ImageFeatureListBlock key={index} readOnly={true} config={blockProps} />;
+            case "AccordionBlock":
+              return <AccordionBlock key={index} readOnly={true} config={blockProps} />;
             case "VideoCTA":
-              return <VideoCTA key={index} readOnly={true} config={blockProps} />;
-            case "ThreeGridWithRichTextBlock":
-              return <ThreeGridWithRichTextBlock key={index} readOnly={true} config={blockProps} />;
-            case "PricingGrid":
-              return <PricingGrid key={index} readOnly={true} config={blockProps} />;
-            case "ShingleSelectorBlock":
-              return <ShingleSelectorBlock key={index} readOnly={true} config={blockProps} />;
-            case "ListImageVerticalBlock":
-              return <ListImageVerticalBlock key={index} readOnly={true} config={blockProps} />;
-            case "OverviewAndAdvantagesBlock":
-              return <OverviewAndAdvantagesBlock key={index} readOnly={true} config={blockProps} />;
-            case "ImageWrapBlock":
-              return <ImageWrapBlock key={index} readOnly={true} config={blockProps} />;
-            case "GridImageTextBlock":
-              // Use our fixed version instead of the original component
-              return <FixedGridImageTextBlock key={index} readOnly={true} config={blockProps} />;
-            case "HeaderBannerBlock":
-              return <HeaderBannerBlock key={index} readOnly={true} config={blockProps} />;
+            case "VideoHighlightBlock":
+              return <VideoHighlightBlock key={index} readOnly={true} config={blockProps} />;
+            case "CardGridBlock":
+              return <CardGridBlock key={index} readOnly={true} config={blockProps} />;
+            case "PricingTableBlock":
+              return <PricingTableBlock key={index} readOnly={true} config={blockProps} />;
+            case "OptionSelectorBlock":
+              return <OptionSelectorBlock key={index} readOnly={true} config={blockProps} />;
+            case "NumberedImageTextBlock":
+              return <NumberedImageTextBlock key={index} readOnly={true} config={blockProps} />;
+            case "FeatureOverviewBlock":
+              return <FeatureOverviewBlock key={index} readOnly={true} config={blockProps} />;
+            case "TextImageBlock":
+              return <TextImageBlock key={index} readOnly={true} config={blockProps} />;
+            case "IconTextBlockGrid":
+              return <IconTextBlockGrid key={index} readOnly={true} config={blockProps} />;
+            case "SectionBannerBlock":
+              return <SectionBannerBlock key={index} readOnly={true} config={blockProps} />;
             case "ActionButtonBlock":
-              return <ActionButtonBlock key={index} readOnly={true} config={blockProps} />;
+            case "CallToActionButtonBlock":
+              return <CallToActionButtonBlock key={index} readOnly={true} config={blockProps} />;
             default:
               return (
                 <div key={index} className="p-4 text-center bg-red-100 text-red-500">
