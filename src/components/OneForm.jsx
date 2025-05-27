@@ -577,9 +577,9 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
             console.log("Custom config response status:", customConfigResponse.status);
             
             if (customConfigResponse.ok) {
-              const customData = await customConfigResponse.json();
+              const { combined_data } = await customConfigResponse.json();
               console.log("Successfully loaded custom config data");
-              setFormData(customData);
+              setFormData(combined_data);
               setLoading(false);
               return;
             } else {
