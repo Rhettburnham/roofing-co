@@ -5,6 +5,7 @@
 import { useState, useEffect, lazy, Suspense, useMemo } from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation, Link } from "react-router-dom";
 import PropTypes from "prop-types";
+import { ConfigProvider, useConfig } from "./context/ConfigContext";
 
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -372,25 +373,20 @@ AppRoutes.propTypes = {
  * sent to the developer for permanent integration into the site.
  */
 const App = () => {
-  const [config, setConfig] = useState(null);
   const [navbarConfig, setNavbarConfig] = useState(null);
   const [aboutPageData, setAboutPageData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { config } = useConfig();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch combined_data.json for main page content and navbar
-        const combinedResponse = await fetch("/data/raw_data/step_4/combined_data.json");
-        if (!combinedResponse.ok) throw new Error("Failed to fetch application data (combined_data.json)");
-        const allData = await combinedResponse.json();
-        
-        setConfig(allData); // Set the full config
-        if (allData.navbar) {
-          setNavbarConfig(allData.navbar); // Extract navbar config
+        // Use config from ConfigContext for navbar
+        if (config && config.navbar) {
+          setNavbarConfig(config.navbar);
         } else {
-          console.warn("Navbar configuration not found in combined_data.json, proceeding with no navbar config.");
+          console.warn("Navbar configuration not found in config, proceeding with no navbar config.");
           setNavbarConfig(null); 
         }
 
@@ -408,13 +404,14 @@ const App = () => {
       }
     };
 
-    fetchData();
-  }, []);
+    if (config) {
+      fetchData();
+    }
+  }, [config]);
 
   // Moved useMemo to be called unconditionally before conditional returns
   const memoizedRoutes = useMemo(() => {
-    // Ensure config and config.aboutPage exist before trying to pass them down
-    // This prevents errors if config is null during an early render cycle
+    // Ensure config and aboutPageData exist before trying to pass them down
     if (!config || !aboutPageData) return null;
     return (
       <AppRoutes 
@@ -436,8 +433,6 @@ const App = () => {
   }
 
   // Check for config after loading and error handling, but before using memoizedRoutes
-  // NavbarConfig can be null if not found, NavbarWrapper should handle it
-  // Also check for aboutPageData
   if (!config || !aboutPageData) { 
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -446,9 +441,6 @@ const App = () => {
     );
   }
   
-  // If memoizedRoutes is null (because config was null when useMemo ran), 
-  // you might want to show a specific message or a simplified UI.
-  // However, the sequence above should ensure config is populated before this point if no error occurred.
   if (!memoizedRoutes) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -458,16 +450,18 @@ const App = () => {
   }
 
   return (
-    <Router>
-      <ScrollRestoration />
-      <NavbarWrapper navbarConfig={navbarConfig} />
-      <div className="pt-0"> {/* Adjust pt-16 (or other values) if Navbar height changes or is absent */}
-        <Suspense fallback={<LoadingScreen />}>
-          {memoizedRoutes}
-        </Suspense>
-      </div>
-      <Footer />
-    </Router>
+    <ConfigProvider>
+      <Router>
+        <ScrollRestoration />
+        <NavbarWrapper navbarConfig={navbarConfig} />
+        <div className="pt-0">
+          <Suspense fallback={<LoadingScreen />}>
+            {memoizedRoutes}
+          </Suspense>
+        </div>
+        <Footer />
+      </Router>
+    </ConfigProvider>
   );
 };
 

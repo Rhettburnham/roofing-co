@@ -21,6 +21,7 @@ import OneFormAuthButton from "./auth/OneFormAuthButton";
 import ServiceEditPage, { getServicesData, blockMap as serviceBlockMap } from "./ServiceEditPage";
 import MainPageForm from "./MainPageForm";
 import AboutBlock from "./MainPageBlocks/AboutBlock";
+import { useConfig } from "../context/ConfigContext";
 
 import Navbar from "./Navbar"; // Import Navbar for preview
 import ColorEditor from "./ColorEditor"; // Import the new ColorEditor component
@@ -362,6 +363,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   const [activeTab, setActiveTab] = useState("mainPage");
   const [themeColors, setThemeColors] = useState(null); // State for current theme colors
   const [initialThemeColors, setInitialThemeColors] = useState(null); // State for initial theme colors for "old" export
+  const { colors: configColors } = useConfig();
 
   // State for the "All Service Blocks" tab
   const [allServiceBlocksData, setAllServiceBlocksData] = useState(null);
@@ -372,13 +374,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   const [isCustomDomain, setIsCustomDomain] = useState(false);
   const navigate = useNavigate();
 
-
-  // On mount, fetch combined_data.json to populate the form if no initialData is provided
-  useEffect(() => {
-    const fetchAllData = async () => {
-      setLoading(true);
-      try {
-        // Fetch theme colors first, only if not already loaded
+  /*         // Fetch theme colors first, only if not already loaded
         if (!initialThemeColors) { // Guard condition
           try {
             const colorsResponse = await fetch("/data/colors_output.json");
@@ -408,6 +404,32 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
             setThemeColors(defaultColorsOnError);
             setInitialThemeColors(JSON.parse(JSON.stringify(defaultColorsOnError)));
           }
+*/
+
+  // On mount, fetch combined_data.json to populate the form if no initialData is provided
+  useEffect(() => {
+    const fetchAllData = async () => {
+      setLoading(true);
+      try {
+        // Use colors from ConfigContext if available
+        if (configColors) {
+          const normalizedColors = {};
+          Object.keys(configColors).forEach(key => {
+            normalizedColors[key.replace('_', '-')] = configColors[key];
+          });
+          setThemeColors(normalizedColors);
+          setInitialThemeColors(JSON.parse(JSON.stringify(normalizedColors)));
+          // Apply colors as CSS variables
+          Object.keys(normalizedColors).forEach(key => {
+            const cssVarName = `--color-${key}`;
+            document.documentElement.style.setProperty(cssVarName, normalizedColors[key]);
+          });
+          console.log("OneForm: Loaded and normalized theme colors from ConfigContext:", normalizedColors);
+        } else {
+          console.warn("OneForm: No colors available from ConfigContext. Using defaults.");
+          const defaultColors = { accent: '#2B4C7E', banner: '#1A2F4D', "second-accent": '#FFF8E1', "faint-color": '#E0F7FA' };
+          setThemeColors(defaultColors);
+          setInitialThemeColors(JSON.parse(JSON.stringify(defaultColors)));
         }
 
         console.log("Starting fetchCombinedData...");

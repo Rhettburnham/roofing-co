@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import PropTypes from "prop-types";
 import LoadingScreen from "./loadingScreen";
 import { slugify } from "../utils/slugify"; // Import the slugify utility
+import { useConfig } from "../context/ConfigContext"; // Import ConfigContext
 
 // Import all blocks from ServiceEditPage as a reference for blockMap
 import { blockMap as serviceEditBlockMap } from "./ServiceEditPage";
@@ -85,25 +86,22 @@ const ServicePageCreator = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { serviceType, serviceName: serviceNameFromRoute } = useParams(); // serviceName is the slug
+  const { services: configServices } = useConfig(); // Get services from ConfigContext
 
   useEffect(() => {
-    const fetchAndProcessServiceData = async () => {
+    const processServiceData = () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch("/data/ignore/services.json", {
-          credentials: "same-origin",
-        });
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const allServicesData = await response.json();
-
-        if (!allServicesData[serviceType] || !Array.isArray(allServicesData[serviceType])) {
-          throw new Error(`Service type "${serviceType}" not found or not an array in services.json.`);
+        if (!configServices) {
+          throw new Error("No services data available from ConfigContext");
         }
 
-        const foundService = allServicesData[serviceType].find(service => {
+        if (!configServices[serviceType] || !Array.isArray(configServices[serviceType])) {
+          throw new Error(`Service type "${serviceType}" not found or not an array in services data.`);
+        }
+
+        const foundService = configServices[serviceType].find(service => {
           // Find the HeroBlock to get the title for slugification
           const heroBlock = service.blocks?.find(b => b.blockName === "HeroBlock" || b.blockName === "PageHeroBlock");
           const titleFromHero = heroBlock?.config?.title;
@@ -129,12 +127,12 @@ const ServicePageCreator = () => {
     };
 
     if (serviceType && serviceNameFromRoute) {
-      fetchAndProcessServiceData();
+      processServiceData();
     } else {
       setError("Service type or name missing from route.");
       setLoading(false);
     }
-  }, [serviceType, serviceNameFromRoute]);
+  }, [serviceType, serviceNameFromRoute, configServices]);
 
   if (loading) {
     return <LoadingScreen />;

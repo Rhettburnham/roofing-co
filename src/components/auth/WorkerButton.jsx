@@ -18,7 +18,7 @@ export default function WorkerButton() {
       setIsAuthorized(data.configId === 'worker' || data.configId === 'admin');
     } catch (error) {
       console.error('Error checking worker status:', error);
-    } finally {
+    } finally { 
       setLoading(false);
     }
   };

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, lazy, Suspense } from "react";
 import LoadingScreen from "./loadingScreen"; // Assuming this is a shared component
+import { useConfig } from '../context/ConfigContext';
 
 // Lazy load all main page block components
 const HeroBlock = lazy(() => import("./MainPageBlocks/HeroBlock"));
@@ -42,33 +43,37 @@ const getBlockProps = (blockName, config) => {
 };
 
 const MainPageCreator = () => {
-  const [mainPageData, setMainPageData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const dataUrl = "/data/raw_data/step_4/combined_data.json";
+  const { config, loading, error } = useConfig();
+  // const [mainPageData, setMainPageData] = useState(null);
+  // const [loading, setLoading] = useState(true);
+  // const dataUrl = "/data/raw_data/step_4/combined_data.json";
 
-  useEffect(() => {
-    const fetchMainPageData = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch(dataUrl);
-        if (!response.ok) {
-          throw new Error("Failed to fetch main page content");
-        }
-        const data = await response.json();
-        console.log("MainPageCreator fetched data:", data);
-        setMainPageData(data);
-        setLoading(false);
-      } catch (error) {
-        console.error("Error loading main page data for MainPageCreator:", error);
-        setLoading(false);
-      }
-    };
-    fetchMainPageData();
-  }, [dataUrl]);
+  // useEffect(() => {
+  //   const fetchMainPageData = async () => {
+  //     setLoading(true);
+  //     try {
+  //       const response = await fetch(dataUrl);
+  //       if (!response.ok) {
+  //         throw new Error("Failed to fetch main page content");
+  //       }
+  //       const data = await response.json();
+  //       console.log("MainPageCreator fetched data:", data);
+  //       setMainPageData(data);
+  //       setLoading(false);
+  //     } catch (error) {
+  //       console.error("Error loading main page data for MainPageCreator:", error);
+  //       setLoading(false);
+  //     }
+  //   };
+  //   fetchMainPageData();
+  // }, [dataUrl]);
 
   if (loading) {
     return <LoadingScreen />;
   }
+
+  // Use config if available, otherwise fallback to commented-out method
+  const mainPageData = config && config.mainPageBlocks ? { mainPageBlocks: config.mainPageBlocks } : null;
 
   if (!mainPageData || !mainPageData.mainPageBlocks || mainPageData.mainPageBlocks.length === 0) {
     return (

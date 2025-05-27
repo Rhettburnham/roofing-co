@@ -2,8 +2,10 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { HashLink } from "react-router-hash-link";
 import { motion, AnimatePresence } from "framer-motion";
+import { useConfig } from '../context/ConfigContext';
 
 const Process = () => {
+  const { config, loading, error } = useConfig();
   const [processSteps, setProcessSteps] = useState([
     {
       title: "Book",
@@ -36,9 +38,9 @@ const Process = () => {
   const [initialOrder, setInitialOrder] = useState([]);
   const [dataLoaded, setDataLoaded] = useState(false);
 
-  // Fetch data from combined_data.json
+  // Use config for process steps
   useEffect(() => {
-    fetch('/data/combined_data.json')
+    /* fetch('/data/combined_data.json')
       .then(response => {
         if (!response.ok) {
           throw new Error('Network response was not ok');
@@ -56,7 +58,13 @@ const Process = () => {
         console.error('Process: Error fetching data:', error);
         setDataLoaded(true); // Use default steps
       });
-  }, []);
+  }, []); */
+    if (loading) return;
+    if (config && config.process && config.process.steps) {
+      setProcessSteps(config.process.steps);
+    }
+    setDataLoaded(true);
+  }, [config, loading]);
 
   useEffect(() => {
     if (!dataLoaded) return; // Wait for data to be loaded

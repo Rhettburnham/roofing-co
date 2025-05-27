@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import JSZip from "jszip";
+import { useConfig } from "../context/ConfigContext";
 
 // Import preview components for blocks
 import HeroBlock from "./blocks/HeroBlock";
@@ -166,6 +167,9 @@ service page content.
 */
 const ServiceEditPage = ({ themeColors }) => {
   const [servicesData, setServicesData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { services: configServices } = useConfig();
   const [initialServicesDataForOldExport, setInitialServicesDataForOldExport] = useState(null); // For "old" export
   const [selectedCategory, setSelectedCategory] = useState("commercial");
   const [selectedPageId, setSelectedPageId] = useState(1);
@@ -190,23 +194,24 @@ const ServiceEditPage = ({ themeColors }) => {
 
   // Fetch services.json on mount
   useEffect(() => {
-    fetch("/data/ignore/services.json")
-      .then((res) => res.json())
-      .then((data) => {
-        setServicesData(data);
-        try {
-            setInitialServicesDataForOldExport(JSON.parse(JSON.stringify(data))); // Deep copy for "old" export
-        } catch (e) {
-            console.error("Could not deep clone initial services data for old export:", e);
-            setInitialServicesDataForOldExport(null);
-        }
-        const page = data[selectedCategory].find(
-          (p) => p.id === Number(selectedPageId)
-        );
-        setCurrentPage(page);
-      })
-      .catch((err) => console.error("Error loading services data:", err));
-  }, []);
+    if (configServices) {
+      setServicesData(configServices);
+      setLoading(false);
+      try {
+          setInitialServicesDataForOldExport(JSON.parse(JSON.stringify(configServices))); // Deep copy for "old" export
+      } catch (e) {
+          console.error("Could not deep clone initial services data for old export:", e);
+          setInitialServicesDataForOldExport(null);
+      }
+      const page = configServices[selectedCategory].find(
+        (p) => p.id === Number(selectedPageId)
+      );
+      setCurrentPage(page);
+    } else {
+      setError("No services data available");
+      setLoading(false);
+    }
+  }, [configServices, selectedCategory, selectedPageId]);
 
   // Update current page when category or page ID changes
   useEffect(() => {
