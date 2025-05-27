@@ -136,8 +136,6 @@ const Navbar = ({
 
     if (hasScrolled) {
       tl.to(subTitleElement, { opacity: 0, duration: 0.3, onComplete: () => { if (subTitleElement) subTitleElement.style.display = 'none'; } });
-      // For input or h1, style.fontSize can be used by GSAP
-      tl.to(titleElement, { fontSize: "4vh", duration: 0.2, ease: "power1.out" }, "<");
       tl.to(titleContainerElement, { alignItems: "center", duration: 0.2 }, "<");
       tl.to(logoElement, { scale: 1, duration: 0.4, ease: "power1.out" }, "<");
       const slideAndShrinkStartTime = 0.3 + 0.7;
@@ -151,7 +149,6 @@ const Navbar = ({
       const slideBackStartTime = 0.1;
       tl.to([logoElement, titleElement], { x: "0", duration: 0.4, ease: "power1.out" }, slideBackStartTime);
       const textAlignFontStartTime = slideBackStartTime + 0.6 ;
-      tl.to(titleElement, { fontSize: "7vh", duration: 0.2, ease: "power1.out" }, textAlignFontStartTime);
       tl.to(logoElement, { scale: 2, duration: 0.4, ease: "power1.out" }, "<");
       tl.to(titleContainerElement, { alignItems: "flex-start", duration: 0.9, ease: "power1.out" }, textAlignFontStartTime);
       tl.to(subTitleElement, { opacity: 1, duration: 0.2 }, "<");
@@ -230,7 +227,7 @@ const Navbar = ({
         className={`${navBaseClasses} ${navDynamicClasses}`}
         style={navStyle}
       >
-        <div className="w-full max-w-6xl flex items-center justify-center">
+        <div className="w-full max-w-6xl flex items-center justify-center md:mt-4">
           {/* Conditional rendering for whiteLogoIcon or whiteLogo image */}
           {logoToDisplay === 'icon' ? (
              <div className="w-[12vw] md:w-[4vw] mr-2 cursor-pointer logo-fixed-size transform-gpu" onClick={handleLogoClick}>
@@ -266,15 +263,13 @@ const Navbar = ({
                 ref={titleRef}
                 value={mainTitle}
                 onChange={(e) => onTitleChange(e.target.value)}
-                className="whitespace-nowrap text-white text-center drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:6px_black ] font-rye font-ultra-condensed origin-left bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-300 p-1 rounded-sm z-10 relative"
+                className={`whitespace-nowrap text-white text-center drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:6px_black ] font-rye font-ultra-condensed origin-left bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-300 p-1 rounded-sm z-10 relative ${hasScrolled ? "text-3xl md:text-4xl" : "text-5xl md:text-7xl"}`}
                 onClick={(e) => e.stopPropagation()} 
-                style={{ fontSize: hasScrolled ? "4vh" : "7vh"}} 
               />
             ) : (
               <h1
                 ref={titleRef}
-                className="whitespace-nowrap text-white text-center drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:6px_black ] font-rye font-ultra-condensed origin-left"
-                 style={{ fontSize: hasScrolled ? "4vh" : "7vh"}} // Ensure this style is applied here too
+                className={`whitespace-nowrap text-white text-center  drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:6px_black ] font-rye font-ultra-condensed origin-left ${hasScrolled ? "text-[1.5vh] md:text-[5vh]" : "text-[3vh] md:text-[12vh]"}`}
               >
                 {mainTitle}
               </h1>
@@ -285,14 +280,14 @@ const Navbar = ({
                 ref={subTitleRef}
                 value={mainSubtitle}
                 onChange={(e) => onSubtitleChange(e.target.value)}
-                className="text-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:1px_black ] text-gray-500 font-serif bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-300 p-1 rounded-sm z-10 relative"
+                className={`text-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:1px_black ] text-gray-500 font-serif bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-300 p-1 rounded-sm z-10 relative text-2xl md:text-3xl`}
                 onClick={(e) => e.stopPropagation()} 
-                style={{ opacity: hasScrolled ? 0 : 1, fontSize: "4vh", marginTop: "-2vh" }} // Match span style for consistency
+                style={{ opacity: hasScrolled ? 0 : 1, marginTop: "-2vh" }}
               />
             ) : (
               <span
                 ref={subTitleRef}
-                className="text-[4vh] -mt-[2vh] text-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:1px_black ] text-gray-500 font-serif"
+                className={`-mt-[2vh] text-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:1px_black ] text-gray-500 font-serif text-2xl md:text-3xl`}
                 style={{ opacity: hasScrolled ? 0 : 1 }}
               >
                 {mainSubtitle}

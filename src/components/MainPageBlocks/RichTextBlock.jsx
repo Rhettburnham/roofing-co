@@ -272,7 +272,7 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange, bannerColor, 
     if (displaySlideshowImages.length > 1) {
       const slideshowInterval = setInterval(() => {
         setCurrentImageSlideshowIndex(prevIndex => (prevIndex + 1) % displaySlideshowImages.length);
-      }, 3500); // Change image every 3.5 seconds
+      }, 3000); // Change image every 3 seconds
       return () => clearInterval(slideshowInterval);
     }
   }, [displaySlideshowImages.length]);
@@ -555,39 +555,74 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange, bannerColor, 
 
   return (
     <div className="rich-text-preview-container mx-auto px-6 py-4 flex flex-col gap-y-2 md:gap-y-3">
-      {/* Hero Text Section */}
-      <div className="flex flex-row md:px-[20vw]">
-      {(richTextData.heroText || !readOnly) && (
-        <div className="w-full text-center my-1 md:my-2 ">
-          {readOnly ? (
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 whitespace-pre-line">{heroText}</h2>
-          ) : (
-            <textarea 
-              ref={heroTextAreaRef}
-              value={heroText || ""} 
-              onChange={(e) => {
-                onInlineChange('heroText', e.target.value);
-              }} 
-              placeholder="Enter Hero Text..."
-              className="text-3xl md:text-4xl font-bold text-center w-full max-w-2xl mx-auto bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 rounded p-2 resize-none"
-              rows={2}
-              style={readOnly ? {} : { overflowY: 'hidden' }}
-            />
-          )}
-        </div>
-      )}
 
-      {/* Process Videos Section */}
-      {hasProcessSteps && (
-        <div className="w-full my-1 md:my-2">
-          <RenderProcessSteps />
-        </div>
-      )}
-      </div>
+      {/* NEW TOP CONTAINER: MD is ROW, SM is COL */}
+      <div className="flex flex-col md:flex-row md:items-start md:gap-x-6 lg:gap-x-8 w-full my-1 md:my-2">
 
-      {/* Descriptions and Slideshow Section */}
+        {/* PART 1: Left Column (Header & Videos on MD), or Top Row (Header/Video side-by-side on SM) */}
+        {/* This part should render if either hero text OR process steps are present */}
+        {(richTextData.heroText || !readOnly || hasProcessSteps) && (
+          <div className="flex flex-col md:w-1/2 lg:w-2/5 xl:w-1/3 order-1"> {/* Outer container for this part */}
+            <div className="flex flex-row items-stretch justify-center md:flex-col md:items-center"> {/* items-stretch for mobile row height, justify-center for single item centering */}
+
+              {/* Hero Text */}
+              {(richTextData.heroText || !readOnly) && (
+                <div className={`px-1 md:px-0 my-1 md:my-1 text-center md:max-w-xl md:mx-auto ${hasProcessSteps ? 'w-1/2 md:w-full' : 'w-full'}`}>
+                  {readOnly ? (
+                    <h2 className="text-3xl md:text-4xl font-bold text-gray-800 whitespace-pre-line">{heroText}</h2>
+                  ) : (
+                    <textarea
+                      ref={heroTextAreaRef}
+                      value={heroText || ""}
+                      onChange={(e) => {
+                        onInlineChange('heroText', e.target.value);
+                      }}
+                      placeholder="Enter Hero Text..."
+                      className="text-3xl md:text-4xl font-bold text-center w-full max-w-2xl mx-auto bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 rounded p-2 resize-none"
+                      rows={2}
+                      style={readOnly ? {} : { overflowY: 'hidden' }}
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* Process Videos */}
+              {hasProcessSteps && (
+                <div className={`px-1 md:px-0 my-1 md:my-1 ${(richTextData.heroText || !readOnly) ? 'w-1/2 md:w-full' : 'w-full'}`}>
+                  <RenderProcessSteps />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* PART 2: Right Column (Feature Cards on MD), or Section below Header/Video on SM */}
+        {hasCards && (
+          <div className="w-full md:w-1/2 lg:w-3/5 xl:w-2/3 my-4 md:my-0 order-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 items-stretch">
+              {cards.map((card, idx) => (
+                <FeatureCard
+                  key={card.id || idx}
+                  icon={card.icon}
+                  title={card.title}
+                  desc={card.desc}
+                  index={idx}
+                  overlayImages={overlayImages}
+                  playIntroAnimation={playIntroAnimationForCards}
+                  readOnlyCard={readOnly}
+                  openIconModalForCard={openIconModalForCard}
+                  onInlineChange={onCardTextChange}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </div> {/* END OF NEW TOP CONTAINER */}
+
+
+      {/* DESCRIPTIONS AND SLIDESHOW SECTION (Remains below the new top container) */}
       {(hasDescriptionContent || hasSlideshowImages) && (
-        <div className="flex flex-col px-[10vw] md:px-[15vw] md:flex-row md:items-start md:gap-x-6 lg:gap-x-8 w-full my-1 md:my-2">
+        <div className="flex flex-col px-[10vw] md:px-[15vw] md:flex-row md:items-start md:gap-x-6 lg:gap-x-8 w-full my-1 md:my-2 order-3">
           {/* Descriptions Column */}
           {hasDescriptionContent && (
             <div className={`w-full ${hasSlideshowImages ? 'md:w-1/2' : 'md:w-full'} space-y-4 px-2 md:px-0`}>
@@ -607,7 +642,7 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange, bannerColor, 
                   rows={3} style={readOnly ? {} : { overflowY: 'hidden' }}
                 />
               )}
-            
+
               {readOnly ? (
                 richTextData.bus_description_second && (
                   <p className="text-base md:text-lg text-gray-700 font-serif leading-relaxed indent-8 mt-3">
@@ -633,28 +668,6 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange, bannerColor, 
               <ImageSlideshow />
             </div>
           )}
-        </div>
-      )}
-
-      {/* Feature Cards Section */}
-      {hasCards && (
-        <div className="w-full my-4 md:my-2">
-          <div className="flex flex-col md:flex-row md:flex-wrap md:justify-around items-stretch md:items-start gap-4 md:gap-6">
-            {cards.map((card, idx) => (
-              <FeatureCard
-                key={card.id || idx}
-                icon={card.icon}
-                title={card.title}
-                desc={card.desc}
-                index={idx}
-                overlayImages={overlayImages}
-                playIntroAnimation={playIntroAnimationForCards}
-                readOnlyCard={readOnly}
-                openIconModalForCard={openIconModalForCard}
-                onInlineChange={onInlineChange}
-              />
-            ))}
-          </div>
         </div>
       )}
     </div>

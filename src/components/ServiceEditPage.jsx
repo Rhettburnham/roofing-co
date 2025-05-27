@@ -164,7 +164,7 @@ It loads data from services.json and allows editing of all
 service page content.
 =============================================
 */
-const ServiceEditPage = () => {
+const ServiceEditPage = ({ themeColors }) => {
   const [servicesData, setServicesData] = useState(null);
   const [initialServicesDataForOldExport, setInitialServicesDataForOldExport] = useState(null); // For "old" export
   const [selectedCategory, setSelectedCategory] = useState("commercial");
@@ -182,6 +182,11 @@ const ServiceEditPage = () => {
       servicesDataRef = servicesData;
     }
   }, [servicesData]);
+
+  // DEBUG: Log activeEditBlockIndex changes
+  useEffect(() => {
+    console.log('[ServiceEditPage] activeEditBlockIndex changed to:', activeEditBlockIndex);
+  }, [activeEditBlockIndex]);
 
   // Fetch services.json on mount
   useEffect(() => {
@@ -206,13 +211,18 @@ const ServiceEditPage = () => {
   // Update current page when category or page ID changes
   useEffect(() => {
     if (servicesData) {
-      const page = servicesData[selectedCategory].find(
+      const page = servicesData[selectedCategory]?.find(
         (p) => p.id === Number(selectedPageId)
       );
-      setCurrentPage(page);
-      setActiveEditBlockIndex(null); // Reset active edit block when page changes
+      setCurrentPage(page || null); // Handle page not found if servicesData is temporarily out of sync
     }
   }, [selectedCategory, selectedPageId, servicesData]);
+
+  // Reset activeEditBlockIndex ONLY when category or page ID changes.
+  useEffect(() => {
+    setActiveEditBlockIndex(null);
+    console.log('[ServiceEditPage] Category or Page ID changed, resetting activeEditBlockIndex.');
+  }, [selectedCategory, selectedPageId]);
 
   /* 
   =============================================
@@ -679,13 +689,12 @@ const ServiceEditPage = () => {
           <button
             type="button"
             onClick={() => {
+              // This is the ONLY place activeEditBlockIndex should be set.
+              // Clicking the button toggles the state for the current block.
               if (isEditingThisBlock) {
-                // If was editing this block, and it has an EditorPanel with a commit function (optional)
-                // This is a placeholder for a more robust commit mechanism if needed from panel
-                // For now, changes are live or via onConfigChange from the block itself.
-                setActiveEditBlockIndex(null);
+                setActiveEditBlockIndex(null); // Close if already editing this block
               } else {
-                setActiveEditBlockIndex(blockIndex);
+                setActiveEditBlockIndex(blockIndex); // Open for this block if not already
               }
             }}
             className={`${isEditingThisBlock ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-700 hover:bg-gray-600'} text-white rounded-full p-2 shadow-lg transition-colors`}
@@ -722,6 +731,7 @@ const ServiceEditPage = () => {
                 handleFileChangeForBlock(blockIndex, fieldKey, fileOrFileObject);
               }}
               getDisplayUrl={getDisplayUrlHelper} // Pass display helper to panel too
+              themeColors={themeColors} // Pass themeColors to EditorPanel
             />
           </div>
         )}
@@ -1016,6 +1026,10 @@ const ServiceEditPage = () => {
 };
 
 // Export the component and the services data getter
+ServiceEditPage.propTypes = {
+  themeColors: PropTypes.object, // Add prop type for themeColors
+};
+
 export default ServiceEditPage;
 export const getServicesData = () => servicesDataRef;
 export { blockMap }; // Export blockMap

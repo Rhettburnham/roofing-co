@@ -174,14 +174,14 @@ const ShingleSelectorBlock = ({ config, readOnly, onConfigChange, getDisplayUrl,
                             <input type="text" value={currentShingle.title || ''} onChange={(e) => handleInputChange(null, e.target.value, selectedShingleIndex, 'title')} onBlur={handleBlur} placeholder="Shingle Title (Detail)" className="text-2xl font-bold mb-2 bg-transparent focus:outline-none focus:ring-1 focus:ring-gray-300 rounded p-1 w-full" style={{ color: detailTitleColor }} />
                         )}
                         {readOnly ? (
-                             <p className="text-md mb-4" style={{ color: detailDescriptionColor }}>{currentShingle.description}</p>
+                             <p className="text-base mb-4" style={{ color: detailDescriptionColor }}>{currentShingle.description}</p>
                         ) : (
-                            <textarea value={currentShingle.description || ''} onChange={(e) => handleInputChange(null, e.target.value, selectedShingleIndex, 'description')} onBlur={handleBlur} placeholder="Detailed Description" rows={3} className="text-md mb-4 bg-transparent focus:outline-none focus:ring-1 focus:ring-gray-300 rounded p-1 w-full resize-none" style={{ color: detailDescriptionColor }} />
+                            <textarea value={currentShingle.description || ''} onChange={(e) => handleInputChange(null, e.target.value, selectedShingleIndex, 'description')} onBlur={handleBlur} placeholder="Detailed Description" rows={3} className="text-base mb-4 bg-transparent focus:outline-none focus:ring-1 focus:ring-gray-300 rounded p-1 w-full resize-none" style={{ color: detailDescriptionColor }} />
                         )}
                         {readOnly ? (
-                            currentShingle.benefit && <p className="text-md font-semibold" style={{ color: detailBenefitColor }}>Benefit: {currentShingle.benefit}</p>
+                            currentShingle.benefit && <p className="text-base font-semibold" style={{ color: detailBenefitColor }}>Benefit: {currentShingle.benefit}</p>
                         ) : (
-                           currentShingle.hasOwnProperty('benefit') && <div className="flex items-center"><span className="text-md font-semibold mr-2" style={{color: detailBenefitColor}}>Benefit:</span><input type="text" value={currentShingle.benefit || ''} onChange={(e) => handleInputChange(null, e.target.value, selectedShingleIndex, 'benefit')} onBlur={handleBlur} placeholder="Benefit Statement" className="text-md font-semibold bg-transparent focus:outline-none focus:ring-1 focus:ring-gray-300 rounded p-1 flex-grow" style={{ color: detailBenefitColor }} /></div>
+                           currentShingle.hasOwnProperty('benefit') && <div className="flex items-center"><span className="text-base font-semibold mr-2" style={{color: detailBenefitColor}}>Benefit:</span><input type="text" value={currentShingle.benefit || ''} onChange={(e) => handleInputChange(null, e.target.value, selectedShingleIndex, 'benefit')} onBlur={handleBlur} placeholder="Benefit Statement" className="text-base font-semibold bg-transparent focus:outline-none focus:ring-1 focus:ring-gray-300 rounded p-1 flex-grow" style={{ color: detailBenefitColor }} /></div>
               )}
             </div>
           </div>
@@ -265,7 +265,7 @@ ShingleSelectorBlock.EditorPanel = function ShingleSelectorEditorPanel({ current
 
   return (
         <div className="space-y-4 p-2 bg-gray-50 rounded-md shadow">
-            <div><label className="input-label">Section Title (Panel Edit):</label><input type="text" value={formData.sectionTitle || ''} onChange={(e) => handleChange('sectionTitle', e.target.value)} className="input-text-class" /></div>
+            <div><label className="input-label">Section Title (Panel Edit):</label><input type="text" value={formData.sectionTitle || ''} onChange={(e) => handleChange('sectionTitle', e.target.value)} className="input-text-class input-section-title-ss" /></div>
             
             <h4 className="h4-style">Color Scheme</h4>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
@@ -289,9 +289,9 @@ ShingleSelectorBlock.EditorPanel = function ShingleSelectorEditorPanel({ current
             {(formData.shingleOptions || []).map((item, itemIndex) => (
                 <div key={item.id || itemIndex} className="panel-item-container">
                     <div className="flex justify-between items-center"><h5 className="h5-style">Option {itemIndex + 1}</h5><button onClick={() => handleRemoveItem(itemIndex)} className="btn-remove-xs">Remove</button></div>
-                    <div><label className="input-label-xs">Title:</label><input type="text" value={item.title || ''} onChange={(e) => handleItemChange(itemIndex, 'title', e.target.value)} className="input-text-xs" /></div>
+                    <div><label className="input-label-xs">Title:</label><input type="text" value={item.title || ''} onChange={(e) => handleItemChange(itemIndex, 'title', e.target.value)} className="input-text-xs input-item-title-ss-panel" /></div>
                     <div><label className="input-label-xs">Description (for selector list):</label><textarea value={item.description || ''} onChange={(e) => handleItemChange(itemIndex, 'description', e.target.value)} rows={2} className="input-textarea-xs" /></div>
-                    <div><label className="input-label-xs">Benefit Statement (for detail view):</label><input type="text" value={item.benefit || ''} onChange={(e) => handleItemChange(itemIndex, 'benefit', e.target.value)} className="input-text-xs" /></div>
+                    <div><label className="input-label-xs">Benefit Statement (for detail view):</label><input type="text" value={item.benefit || ''} onChange={(e) => handleItemChange(itemIndex, 'benefit', e.target.value)} className="input-text-xs input-item-benefit-ss-panel" /></div>
                 <div>
                         <label className="input-label-xs">Image:</label>
                         <input type="file" accept="image/*" onChange={(e) => handleItemImageChange(itemIndex, e.target.files[0])} className="input-file-xs" />
@@ -305,9 +305,14 @@ ShingleSelectorBlock.EditorPanel = function ShingleSelectorEditorPanel({ current
                 .input-label { display: block; font-size: 0.875rem; font-weight: 500; color: #4A5568; margin-bottom: 0.25rem; }
                 .input-label-sm { /* For color section labels */ font-size: 0.75rem; font-weight: 500; color: #4A5568; margin-bottom: 0.1rem; }
                 .input-label-xs { display: block; font-size: 0.75rem; font-weight: 500; color: #555; margin-bottom: 0.1rem; }
-                .input-text-class { display: block; width: 100%; padding: 0.5rem 0.75rem; background-color: white; border: 1px solid #D1D5DB; border-radius: 0.375rem; }
-                .input-text-xs { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; }
-                .input-textarea-xs { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; resize: vertical; min-height: 40px; }
+                .input-text-class { display: block; width: 100%; padding: 0.5rem 0.75rem; background-color: white; border: 1px solid #D1D5DB; border-radius: 0.375rem; color: #374151; }
+                .input-text-xs { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; color: #374151; }
+                .input-textarea-xs { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; resize: vertical; min-height: 40px; color: #374151; }
+                
+                .input-section-title-ss { font-size: 1.875rem; line-height: 2.25rem; font-weight: 800; /* extrabold */ }
+                .input-item-title-ss-panel { font-size: 1.125rem; line-height: 1.75rem; font-weight: 600; /* text-lg font-semibold */ }
+                .input-item-benefit-ss-panel { font-size: 1rem; line-height: 1.5rem; font-weight: 600; /* text-base font-semibold */ }
+
                 .input-color-xs { margin-top: 0.1rem; height: 1.5rem; width: 100%; padding: 0.1rem; border: 1px solid #D1D5DB; border-radius: 0.25rem; }
                 .input-file-xs { display:block; width:100%; font-size: 0.8rem; margin-bottom: 0.25rem; }
                 .img-preview-xs { height: 3rem; width: 3rem; object-fit: cover; border-radius: 0.25rem; border: 1px solid #E5E7EB; margin-top: 0.25rem; }

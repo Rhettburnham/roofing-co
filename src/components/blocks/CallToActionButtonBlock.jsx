@@ -176,7 +176,7 @@ CallToActionButtonBlock.EditorPanel = ({ currentConfig, onPanelConfigChange }) =
           type="text" 
           value={localPanelData.text || ''} 
           onChange={(e) => handlePanelChange('text', e.target.value)} 
-          className="mt-1 block w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-white"
+          className="mt-1 block w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-white input-button-text-cta"
         />
       </div>
       <div>
@@ -255,6 +255,15 @@ CallToActionButtonBlock.EditorPanel = ({ currentConfig, onPanelConfigChange }) =
         />
         <label htmlFor={`openInNewTab-${currentConfig.text?.replace(/\s+/g, '') || 'actionbutton'}`} className="ml-2 block text-sm font-medium text-gray-300">Open link in new tab</label>
       </div>
+      <style jsx>{`
+        .input-button-text-cta {
+            font-size: 1.125rem; /* text-lg */
+            line-height: 1.75rem;
+            font-weight: 600; /* font-semibold */
+            /* Base styles like bg-gray-600, text-white, padding, border are on the element */
+        }
+        /* You can add other panel-specific styles here if needed */
+      `}</style>
     </div>
   );
 };

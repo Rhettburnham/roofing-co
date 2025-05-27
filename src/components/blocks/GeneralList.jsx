@@ -201,7 +201,7 @@ const GeneralList = ({ config, readOnly, onConfigChange, getDisplayUrl, onFileCh
                                                         value={advantage}
                                                         onChange={(e) => handleItemAdvantageChange(index, advIndex, e.target.value)}
                                                         onBlur={handleBlur}
-                                                        className="flex-grow px-2 py-1 text-xs bg-gray-50 border border-gray-300 rounded-md"
+                                                        className="flex-grow px-2 py-1 text-sm bg-transparent focus:outline-none focus:ring-1 focus:ring-gray-400 rounded-md"
                                                         style={{ color: 'inherit' }}
                                                         placeholder={`Advantage ${advIndex + 1}`}
                                                     />
@@ -365,7 +365,7 @@ GeneralList.EditorPanel = function GeneralListEditorPanel({ currentConfig, onPan
                     type="text" 
                     value={formData.title || ''} 
                     onChange={(e) => handleOverallChange('title', e.target.value)} 
-                    className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 input-title-general-list-panel"
                 />
             </div>
 
@@ -402,18 +402,18 @@ GeneralList.EditorPanel = function GeneralListEditorPanel({ currentConfig, onPan
                     </div>
                     <div>
                         <label className="block text-xs font-medium text-gray-600">Name (Panel Edit):</label>
-                        <input type="text" value={item.name || ''} onChange={(e) => handleItemDetailChange(itemIndex, 'name', e.target.value)} className="mt-0.5 block w-full px-2 py-1 text-sm bg-gray-50 border border-gray-300 rounded-md" />
+                        <input type="text" value={item.name || ''} onChange={(e) => handleItemDetailChange(itemIndex, 'name', e.target.value)} className="mt-0.5 block w-full px-2 py-1 bg-gray-50 border border-gray-300 rounded-md input-item-name-general-list-panel" />
                     </div>
                     <div>
                         <label className="block text-xs font-medium text-gray-600">Description (Panel Edit):</label>
-                        <textarea value={item.description || ''} onChange={(e) => handleItemDetailChange(itemIndex, 'description', e.target.value)} rows={3} className="mt-0.5 block w-full px-2 py-1 text-sm bg-gray-50 border border-gray-300 rounded-md resize-none" />
+                        <textarea value={item.description || ''} onChange={(e) => handleItemDetailChange(itemIndex, 'description', e.target.value)} rows={3} className="mt-0.5 block w-full px-2 py-1 text-sm bg-gray-50 border border-gray-300 rounded-md resize-none input-item-description-general-list-panel" />
                     </div>
                     
                     <div>
                         <label className="block text-xs font-medium text-gray-600">Advantages (Panel Edit):</label>
                         {(item.advantages || []).map((adv, advIndex) => (
                             <div key={advIndex} className="flex items-center space-x-2 mt-1">
-                                <input type="text" value={adv} onChange={(e) => handleItemAdvantageChange(itemIndex, advIndex, e.target.value)} className="flex-grow px-2 py-1 text-xs bg-gray-50 border border-gray-300 rounded-md" />
+                                <input type="text" value={adv} onChange={(e) => handleItemAdvantageChange(itemIndex, advIndex, e.target.value)} className="flex-grow px-2 py-1 text-sm bg-gray-50 border border-gray-300 rounded-md" />
                                 <button onClick={() => handleRemoveItemAdvantage(itemIndex, advIndex)} className="text-xs text-red-500 hover:text-red-700 font-semibold">&times; Remove</button>
                             </div>
                         ))}
@@ -451,6 +451,29 @@ GeneralList.EditorPanel = function GeneralListEditorPanel({ currentConfig, onPan
                 </div>
             ))}
             <button onClick={handleAddItem} className="mt-4 px-3 py-1.5 text-sm bg-green-500 hover:bg-green-600 text-white rounded-md shadow-sm font-semibold">+ Add New Item</button>
+        
+            {/* Style block for EditorPanel specific styles */}
+            <style jsx>{`
+                .input-title-general-list-panel {
+                    font-size: 1.875rem; /* Tailwind text-3xl */
+                    line-height: 2.25rem;
+                    font-weight: 700; /* bold */
+                    color: #374151; /* Keep panel's text color for inputs */
+                }
+                .input-item-name-general-list-panel {
+                    font-size: 1.25rem; /* Tailwind text-xl */
+                    line-height: 1.75rem;
+                    font-weight: 600; /* semibold */
+                    color: #374151;
+                    /* bg-gray-50 is fine here as it's panel-specific */
+                }
+                .input-item-description-general-list-panel {
+                    /* text-sm is already applied by Tailwind, ensure line-height is comfortable */
+                    line-height: 1.625; /* similar to leading-relaxed (1.625) vs default (1.5 for text-sm) */
+                    /* bg-gray-50 is fine */
+                }
+                /* Other panel inputs maintain their existing sm or xs text sizes */
+            `}</style>
         </div>
     );
 };

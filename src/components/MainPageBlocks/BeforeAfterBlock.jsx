@@ -352,7 +352,7 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
                   onClick={() => handleBoxClick(item)}
                 >
                   <div
-                    className="card w-[25vw] aspect-[4/3]"
+                    className="card w-[20vw] aspect-[2/1]"
                   >
                     <img
                       src={item.beforeDisplayUrl}

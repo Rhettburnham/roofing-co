@@ -445,7 +445,7 @@ NavbarEditForm.displayName = 'NavbarEditForm';
  * MainPageForm is a presentational component for editing the main page.
  * It displays the UI and passes changes upward via setFormData.
  */
-const MainPageForm = ({ formData: formDataProp, setFormData: setFormDataProp, singleBlockMode = null }) => {
+const MainPageForm = ({ formData: formDataProp, setFormData: setFormDataProp, singleBlockMode = null, themeColors }) => {
   const [internalFormData, setInternalFormData] = useState(() => safeDeepClone(formDataProp) || {});
   const [activeEditBlock, setActiveEditBlock] = useState(null);
   const [previewNavbarAsScrolled, setPreviewNavbarAsScrolled] = useState(false);
@@ -677,7 +677,8 @@ const MainPageForm = ({ formData: formDataProp, setFormData: setFormDataProp, si
                     }
                     return newBlockData;
                  });
-            }
+            },
+            themeColors: themeColors,
         };
         if(singleBlockMode === 'RichTextBlock') props.showControls = true;
         
@@ -741,6 +742,7 @@ const MainPageForm = ({ formData: formDataProp, setFormData: setFormDataProp, si
         let componentProps = { 
             readOnly: !isEditingThisBlock,
             [blockSpecificPropName]: block.config || {}, // Ensure config is an object
+            themeColors: themeColors, // Pass themeColors to each block
         };
 
         if (block.blockName === 'RichTextBlock') {
@@ -790,6 +792,7 @@ MainPageForm.propTypes = {
   formData: PropTypes.object, // Can be initially null
   setFormData: PropTypes.func.isRequired,
   singleBlockMode: PropTypes.string,
+  themeColors: PropTypes.object, // Add themeColors prop type
 };
 
 const propsForBlocks = {

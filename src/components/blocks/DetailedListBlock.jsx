@@ -359,7 +359,7 @@ const DetailedListBlock = ({ config = {}, readOnly = false, onConfigChange, getD
                         type="text"
                         value={displayTitle}
                         onChange={(e) => handleFieldChange("sectionTitle", e.target.value)}
-                        className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
+                        className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500 text-2xl md:text-3xl font-semibold placeholder-gray-300"
                     />
                 </label>
 
@@ -391,7 +391,7 @@ const DetailedListBlock = ({ config = {}, readOnly = false, onConfigChange, getD
                                         newItems[idx] = e.target.value;
                                         handleFieldChange("items", newItems);
                                     }}
-                                    className="flex-grow px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
+                                    className="flex-grow px-2 py-1 bg-gray-600 text-white rounded border border-gray-500 text-lg placeholder-gray-300"
                                 />
                                 <button
                                     type="button"
@@ -541,7 +541,7 @@ const DetailedListBlock = ({ config = {}, readOnly = false, onConfigChange, getD
                     type="text"
                     value={displayTitle}
                     onChange={(e) => handleFieldChange("sectionTitle", e.target.value)}
-                    className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
+                    className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500 text-2xl md:text-3xl font-semibold placeholder-gray-300"
                 />
             </label>
 
@@ -572,7 +572,7 @@ const DetailedListBlock = ({ config = {}, readOnly = false, onConfigChange, getD
                                 onChange={(e) =>
                                     updateItemField(item.id, "name", e.target.value)
                                 }
-                                className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
+                                className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500 text-xl font-bold placeholder-gray-300"
                             />
                         </label>
 
@@ -585,7 +585,7 @@ const DetailedListBlock = ({ config = {}, readOnly = false, onConfigChange, getD
                                 onChange={(e) =>
                                     updateItemField(item.id, "description", e.target.value)
                                 }
-                                className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
+                                className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500 text-base md:text-lg leading-relaxed placeholder-gray-300"
                             />
                         </label>
 
@@ -601,7 +601,7 @@ const DetailedListBlock = ({ config = {}, readOnly = false, onConfigChange, getD
                                             onChange={(e) =>
                                                 updateAdvantage(item.id, idx, e.target.value)
                                             }
-                                            className="flex-grow px-2 py-1 bg-gray-600 text-white text-sm rounded border border-gray-500"
+                                            className="flex-grow px-2 py-1 bg-gray-600 text-white text-base md:text-lg rounded border border-gray-500 placeholder-gray-300"
                                         />
                                         <button
                                             onClick={() => removeAdvantage(item.id, idx)}
@@ -623,13 +623,13 @@ const DetailedListBlock = ({ config = {}, readOnly = false, onConfigChange, getD
                         {/* Color Possibilities */}
                         <label className="block text-sm mt-2 mb-1">
                             Color Possibilities:
-                                <input
-                                    type="text"
+                            <input
+                                type="text"
                                 value={item.colorPossibilities || ""}
                                 onChange={(e) =>
                                     updateItemField(item.id, "colorPossibilities", e.target.value)
                                 }
-                                className="mt-1 w-full px-2 py-1 bg-gray-600 text-white text-sm rounded border border-gray-500"
+                                className="mt-1 w-full px-2 py-1 bg-gray-600 text-white text-base rounded border border-gray-500 placeholder-gray-300"
                             />
                         </label>
 
@@ -642,7 +642,7 @@ const DetailedListBlock = ({ config = {}, readOnly = false, onConfigChange, getD
                                 onChange={(e) =>
                                     updateItemField(item.id, "installationTime", e.target.value)
                                 }
-                                className="mt-1 w-full px-2 py-1 bg-gray-600 text-white text-sm rounded border border-gray-500"
+                                className="mt-1 w-full px-2 py-1 bg-gray-600 text-white text-base rounded border border-gray-500 placeholder-gray-300"
                             />
                         </label>
 
@@ -851,7 +851,7 @@ DetailedListBlock.EditorPanel = function DetailedListBlockEditorPanel({ currentC
                     type="text" 
                     value={formData.title || ''} 
                     onChange={(e) => handleOverallChange('title', e.target.value)} 
-                    className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 input-main-title-dl-panel"
                 />
             </div>
 
@@ -888,24 +888,25 @@ DetailedListBlock.EditorPanel = function DetailedListBlockEditorPanel({ currentC
                     </div>
                     <div>
                         <label className="block text-xs font-medium text-gray-600">Name (Panel Edit):</label>
-                        <input type="text" value={item.name || ''} onChange={(e) => handleItemDetailChange(itemIndex, 'name', e.target.value)} className="mt-0.5 block w-full px-2 py-1 text-sm bg-gray-50 border border-gray-300 rounded-md" />
+                        <input type="text" value={item.name || ''} onChange={(e) => handleItemDetailChange(itemIndex, 'name', e.target.value)} className="mt-0.5 block w-full px-2 py-1 text-sm bg-gray-50 border border-gray-300 rounded-md input-item-name-dl-panel" />
                     </div>
                     <div>
                         <label className="block text-xs font-medium text-gray-600">Description (Panel Edit):</label>
-                        <textarea value={item.description || ''} onChange={(e) => handleItemDetailChange(itemIndex, 'description', e.target.value)} rows={3} className="mt-0.5 block w-full px-2 py-1 text-sm bg-gray-50 border border-gray-300 rounded-md resize-none" />
+                        <textarea value={item.description || ''} onChange={(e) => handleItemDetailChange(itemIndex, 'description', e.target.value)} rows={3} className="mt-0.5 block w-full px-2 py-1 text-sm bg-gray-50 border border-gray-300 rounded-md resize-none input-item-desc-dl-panel" />
                     </div>
                     
                     <div>
                         <label className="block text-xs font-medium text-gray-600">Advantages (Panel Edit):</label>
                         {(item.advantages || []).map((adv, advIndex) => (
                             <div key={advIndex} className="flex items-center space-x-2 mt-1">
-                                <input type="text" value={adv} onChange={(e) => handleItemAdvantageChange(itemIndex, advIndex, e.target.value)} className="flex-grow px-2 py-1 text-xs bg-gray-50 border border-gray-300 rounded-md" />
+                                <input type="text" value={adv} onChange={(e) => handleItemAdvantageChange(itemIndex, advIndex, e.target.value)} className="flex-grow px-2 py-1 text-xs bg-gray-50 border border-gray-300 rounded-md input-item-adv-dl-panel" />
                                 <button onClick={() => handleRemoveItemAdvantage(itemIndex, advIndex)} className="text-xs text-red-500 hover:text-red-700 font-semibold">&times; Remove</button>
                             </div>
                         ))}
                         <button onClick={() => handleAddItemAdvantage(itemIndex)} className="mt-1 text-xs text-blue-500 hover:text-blue-700 font-semibold">+ Add Advantage</button>
                     </div>
 
+                    {/* Pictures */}
                     <div>
                         <label className="block text-xs font-medium text-gray-600">Pictures:</label>
                         {(item.pictures || []).map((pic, picIndex) => {
@@ -937,6 +938,44 @@ DetailedListBlock.EditorPanel = function DetailedListBlockEditorPanel({ currentC
                 </div>
             ))}
             <button onClick={handleAddItem} className="mt-4 px-3 py-1.5 text-sm bg-green-500 hover:bg-green-600 text-white rounded-md shadow-sm font-semibold">+ Add New Item</button>
+        
+            {/* Style block for EditorPanel specific styles */}
+            <style jsx>{`
+                /* Base styles for panel inputs (light theme) */
+                .input-main-title-dl-panel { /* Applied to the main title input */
+                    font-size: 1.875rem; /* text-3xl */
+                    line-height: 2.25rem;
+                    font-weight: 600; /* font-semibold */
+                    color: #374151;
+                }
+                .input-item-name-dl-panel { /* For item name inputs */
+                    font-size: 1.25rem; /* text-xl */
+                    line-height: 1.75rem;
+                    font-weight: 700; /* font-bold */
+                    color: #374151;
+                }
+                .input-item-desc-dl-panel { /* For item description textareas */
+                    font-size: 1rem; /* text-base */
+                    line-height: 1.625; /* leading-relaxed */
+                    color: #374151;
+                }
+                .input-item-adv-dl-panel { /* For item advantage inputs */
+                    font-size: 1rem; /* text-base */
+                    line-height: 1.5rem;
+                    color: #374151;
+                }
+                /* Ensure default text color for other small inputs if not covered by Tailwind */
+                .mt-0.5.block.w-full.px-2.py-1.text-sm.bg-gray-50.border.border-gray-300.rounded-md,
+                .flex-grow.px-2.py-1.text-xs.bg-gray-50.border.border-gray-300.rounded-md {
+                    color: #374151; /* Dark gray for text on light bg */
+                }
+                .text-xs.text-red-500:hover {
+                    color: #D90000; /* Darker red on hover */
+                }
+                .text-xs.text-blue-500:hover {
+                    color: #0056B3; /* Darker blue on hover */
+                }
+            `}</style>
         </div>
     );
 };

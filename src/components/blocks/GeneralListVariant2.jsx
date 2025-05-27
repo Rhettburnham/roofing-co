@@ -267,7 +267,7 @@ const GeneralListVariant2 = ({
             <h5 className="text-md font-semibold text-gray-600">Item {itemIndex + 1}: {item.name || 'Unnamed'}</h5>
             <button onClick={() => removeItem(itemIndex)} className="text-xs text-red-500 hover:text-red-700 font-semibold">Remove</button>
           </div>
-          <div><label className="text-xs font-medium">Name:</label><input type="text" value={item.name || ''} onChange={(e) => updateItemField(itemIndex, 'name', e.target.value)} className="mt-0.5 input-xs-class" /></div>
+          <div><label className="text-xs font-medium">Name:</label><input type="text" value={item.name || ''} onChange={(e) => updateItemField(itemIndex, 'name', e.target.value)} className="mt-0.5 input-xs-class input-item-name-glv2" /></div>
           <div><label className="text-xs font-medium">Description:</label><textarea value={item.description || ''} onChange={(e) => updateItemField(itemIndex, 'description', e.target.value)} rows={2} className="mt-0.5 input-xs-class resize-none" /></div>
           <div>
             <label className="text-xs font-medium">Features:</label>
@@ -290,8 +290,8 @@ const GeneralListVariant2 = ({
               updateItemField(itemIndex, 'features', updatedFeatures);
             }} className="mt-1 text-xs text-blue-500">+ Add Feature</button>
           </div>
-          <div><label className="text-xs font-medium">Uses:</label><input type="text" value={item.uses || ''} onChange={(e) => updateItemField(itemIndex, 'uses', e.target.value)} className="mt-0.5 input-xs-class" /></div>
-          <div><label className="text-xs font-medium">Limitations:</label><input type="text" value={item.limitations || ''} onChange={(e) => updateItemField(itemIndex, 'limitations', e.target.value)} className="mt-0.5 input-xs-class" /></div>
+          <div><label className="text-xs font-medium">Uses:</label><input type="text" value={item.uses || ''} onChange={(e) => updateItemField(itemIndex, 'uses', e.target.value)} className="mt-0.5 input-xs-class input-item-meta-glv2" /></div>
+          <div><label className="text-xs font-medium">Limitations:</label><input type="text" value={item.limitations || ''} onChange={(e) => updateItemField(itemIndex, 'limitations', e.target.value)} className="mt-0.5 input-xs-class input-item-meta-glv2" /></div>
           <div>
             <label className="text-xs font-medium">Image:</label>
             <input type="file" accept="image/*" onChange={(e) => {
@@ -308,7 +308,17 @@ const GeneralListVariant2 = ({
       <style jsx>{`
         .input-class { padding: 0.5rem 0.75rem; background-color: white; border: 1px solid #D1D5DB; border-radius: 0.375rem; width: 100%; }
         .input-color-class { padding: 0.125rem; border: 1px solid #D1D5DB; border-radius: 0.375rem; }
-        .input-xs-class { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; }
+        .input-xs-class { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; color: #374151; /* Default text color for inputs */ }
+        .input-item-name-glv2 { /* Applied on top of .input-xs-class */
+            font-size: 1.25rem; /* text-xl */
+            font-weight: 600; /* font-semibold */
+            color: #2D3748; /* itemTitleColor default or similar */
+        }
+        .input-item-meta-glv2 { /* Applied on top of .input-xs-class */
+            font-size: 0.75rem; /* text-xs */
+            font-style: italic;
+            color: #4A5568; /* itemTextColor default or similar for muted italic text */
+        }
         .file-input-xs-class { /* Tailwindify these for consistency */ }
         .btn-primary-sm { padding: 0.25rem 0.75rem; font-size: 0.875rem; background-color: #4F46E5; color: white; border-radius: 0.375rem; font-weight: 500; }
       `}</style>
