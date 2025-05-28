@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import AdminButton from './AdminButton';
 import WorkerButton from './WorkerButton';
 
-export default function OneFormAuthButton({ formData }) {
+export default function OneFormAuthButton({ formData, themeColors, servicesData, aboutPageData, showcaseData }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showSignOut, setShowSignOut] = useState(false);
@@ -19,11 +19,6 @@ export default function OneFormAuthButton({ formData }) {
       console.log("OneFormAuthButton: Starting auth status check...");
       setDebug('Checking auth status...');
       
-      // Log the current cookies for debugging
-      const cookies = document.cookie;
-      console.log("OneFormAuthButton: Current cookies:", cookies);
-      setDebug(`Current cookies: ${cookies}`);
-      
       const response = await fetch('/api/auth/status', {
         method: 'GET',
         credentials: 'include',
@@ -32,17 +27,8 @@ export default function OneFormAuthButton({ formData }) {
         },
       });
 
-      console.log("OneFormAuthButton: Auth status response:", {
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers.entries())
-      });
-      setDebug(`Auth status response: ${response.status}`);
-      setDebug(`Response headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()))}`);
-      
       const data = await response.json();
       console.log("OneFormAuthButton: Auth status data:", data);
-      setDebug(`Auth status data: ${JSON.stringify(data)}`);
       
       if (data.isAuthenticated) {
         console.log("OneFormAuthButton: User is authenticated");
@@ -70,12 +56,6 @@ export default function OneFormAuthButton({ formData }) {
         const response = await fetch('/api/auth/logout', {
           method: 'POST',
           credentials: 'include',
-        });
-        
-        console.log("OneFormAuthButton: Logout response:", {
-          status: response.status,
-          statusText: response.statusText,
-          headers: Object.fromEntries(response.headers.entries())
         });
         
         if (response.ok) {
@@ -121,13 +101,70 @@ export default function OneFormAuthButton({ formData }) {
         return;
       }
 
+      // Collect all assets from the form data
+      const assets = {};
+      const collectAssets = (data) => {
+        if (!data) return;
+        
+        if (typeof data === 'object') {
+          Object.entries(data).forEach(([key, value]) => {
+            if (value instanceof File) {
+              // Handle File objects
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                assets[`assets/${value.name}`] = e.target.result;
+              };
+              reader.readAsArrayBuffer(value);
+            } else if (key === 'url' && typeof value === 'string' && 
+                      (value.startsWith('/assets/') || value.startsWith('assets/'))) {
+              // Handle asset URLs
+              const relativePath = value.startsWith('/') ? value.substring(1) : value;
+              assets[relativePath] = value;
+            } else if (typeof value === 'object') {
+              collectAssets(value);
+            }
+          });
+        } else if (Array.isArray(data)) {
+          data.forEach(item => collectAssets(item));
+        }
+      };
+
+      // Collect assets from all data sources
+      collectAssets(formData);
+      if (servicesData) collectAssets(servicesData);
+      if (aboutPageData) collectAssets(aboutPageData);
+      if (showcaseData) collectAssets(showcaseData);
+
+      // Fetch all assets and convert to ArrayBuffer
+      const assetPromises = Object.entries(assets).map(async ([path, url]) => {
+        if (url instanceof ArrayBuffer) {
+          return [path, url];
+        }
+        try {
+          const response = await fetch(url);
+          if (!response.ok) throw new Error(`Failed to fetch ${url}`);
+          const blob = await response.blob();
+          const buffer = await blob.arrayBuffer();
+          return [path, buffer];
+        } catch (error) {
+          console.error(`Error fetching asset ${url}:`, error);
+          return null;
+        }
+      });
+
+      const assetResults = await Promise.all(assetPromises);
+      const processedAssets = Object.fromEntries(
+        assetResults.filter(result => result !== null)
+      );
+
       // Prepare all data to save
       const dataToSave = {
         combined_data: formData,
         colors: themeColors,
-        services: getServicesData(),
-        about_page: aboutPageJsonData,
-        all_blocks_showcase: allServiceBlocksData
+        services: servicesData,
+        about_page: aboutPageData,
+        all_blocks_showcase: showcaseData,
+        assets: processedAssets
       };
 
       // Save all configs to R2
@@ -184,48 +221,42 @@ export default function OneFormAuthButton({ formData }) {
             className="px-4 py-2 rounded-full bg-blue-600 text-white 
                      border border-blue-700 hover:bg-blue-700 
                      transition-all duration-300 shadow-lg"
+            disabled={saveClicked}
           >
-            {saveClicked ? 'Clicked!' : 'Save Changes'}
+            {saveClicked ? 'Saving...' : 'Save Changes'}
           </button>
-          
-          <motion.button
+          <button
             onClick={() => setShowSignOut(!showSignOut)}
-            className="text-gray-600 hover:text-gray-800 transition-colors"
-            animate={{ rotate: showSignOut ? 180 : 0 }}
+            className="px-4 py-2 rounded-full bg-gray-600 text-white 
+                     border border-gray-700 hover:bg-gray-700 
+                     transition-all duration-300 shadow-lg"
           >
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              className="h-6 w-6" 
-              fill="none" 
-              viewBox="0 0 24 24" 
-              stroke="currentColor"
-            >
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                strokeWidth={2} 
-                d="M19 9l-7 7-7-7" 
-              />
-            </svg>
-          </motion.button>
-
+            {showSignOut ? 'Cancel' : 'Sign Out'}
+          </button>
           <AnimatePresence>
             {showSignOut && (
-              <>
-              <motion.button
+              <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                onClick={handleAuth}
-                className="px-4 py-2 rounded-full bg-red-600 text-white 
-                         border border-red-700 hover:bg-red-700 
-                         transition-all duration-300 shadow-lg"
+                className="bg-white p-4 rounded-lg shadow-lg mt-2"
               >
-                Sign Out
-              </motion.button>
-                <AdminButton />
-                <WorkerButton />
-              </>
+                <p className="text-gray-700 mb-4">Are you sure you want to sign out?</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleAuth}
+                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                  >
+                    Yes, Sign Out
+                  </button>
+                  <button
+                    onClick={() => setShowSignOut(false)}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </motion.div>
             )}
           </AnimatePresence>
         </>

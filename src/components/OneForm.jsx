@@ -378,18 +378,9 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
       try {
         // Use colors from ConfigContext if available
         if (configColors) {
-          const normalizedColors = {};
-          Object.keys(configColors).forEach(key => {
-            normalizedColors[key.replace('_', '-')] = configColors[key];
-          });
-          setThemeColors(normalizedColors);
-          setInitialThemeColors(JSON.parse(JSON.stringify(normalizedColors)));
-          // Apply colors as CSS variables
-          Object.keys(normalizedColors).forEach(key => {
-            const cssVarName = `--color-${key}`;
-            document.documentElement.style.setProperty(cssVarName, normalizedColors[key]);
-          });
-          console.log("OneForm: Loaded and normalized theme colors from ConfigContext:", normalizedColors);
+          setThemeColors(configColors);
+          setInitialThemeColors(JSON.parse(JSON.stringify(configColors)));
+          console.log("OneForm: Using theme colors from ConfigContext:", configColors);
         } else {
           console.warn("OneForm: No colors available from ConfigContext. Using defaults.");
           const defaultColors = { accent: '#2B4C7E', banner: '#1A2F4D', "second-accent": '#FFF8E1', "faint-color": '#E0F7FA' };
@@ -529,17 +520,27 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
           console.log("User is authenticated. Config ID:", authData.configId);
           try {
             // Fetch the user's custom config
-            console.log("Fetching custom config from:", `/api/config/combined_data.json`);
-            const customConfigResponse = await fetch(`/api/config/combined_data.json`, {
+            console.log("Fetching custom config from:", `/api/config/load`);
+            const customConfigResponse = await fetch(`/api/config/load`, {
               credentials: 'include'
             });
             console.log("Custom config response status:", customConfigResponse.status);
             
             if (customConfigResponse.ok) {
-              const { combined_data } = await customConfigResponse.json();
+              const configData = await customConfigResponse.json();
               console.log("Successfully loaded custom config data");
-              setFormData(combined_data);
-              setInitialFormDataForOldExport(JSON.parse(JSON.stringify(combined_data)));
+              if (configData.combined_data) {
+                setFormData(configData.combined_data);
+                setInitialFormDataForOldExport(JSON.parse(JSON.stringify(configData.combined_data)));
+              }
+              if (configData.about_page) {
+                setAboutPageJsonData(configData.about_page);
+                setInitialAboutPageJsonData(JSON.parse(JSON.stringify(configData.about_page)));
+              }
+              if (configData.all_blocks_showcase) {
+                setAllServiceBlocksData(configData.all_blocks_showcase);
+                setInitialAllServiceBlocksData(JSON.parse(JSON.stringify(configData.all_blocks_showcase)));
+              }
               setLoading(false);
               return;
             } else {
@@ -1171,7 +1172,15 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
               onClick={() => handleTabChange(tabInfo.id)} 
             />
           ))}
-          {!isCustomDomain && <OneFormAuthButton />}
+          {!isCustomDomain && (
+            <OneFormAuthButton 
+              formData={formData}
+              themeColors={themeColors}
+              servicesData={getServicesData()}
+              aboutPageData={aboutPageJsonData}
+              showcaseData={allServiceBlocksData}
+            />
+          )}
         </div>
 
         <div className="tab-content">

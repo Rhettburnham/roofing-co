@@ -6,156 +6,177 @@ export function useConfig() {
   return useContext(ConfigContext);
 }
 
-export function ConfigProvider({ children }) {
+// Helper function to normalize color keys
+const normalizeColorKeys = (colors) => {
+  if (!colors) return {};
+  const normalized = {};
+  Object.entries(colors).forEach(([key, value]) => {
+    // Convert snake_case to kebab-case
+    const normalizedKey = key.replace(/_/g, '-');
+    normalized[normalizedKey] = value;
+  });
+  return normalized;
+};
+
+export const ConfigProvider = ({ children }) => {
   const [config, setConfig] = useState(null);
   const [colors, setColors] = useState(null);
   const [services, setServices] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isCustomDomain, setIsCustomDomain] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [configId, setConfigId] = useState(null);
+
+  // Apply colors to CSS variables
+  const applyColorsToCSS = (colorData) => {
+    const normalizedColors = normalizeColorKeys(colorData);
+    Object.entries(normalizedColors).forEach(([key, value]) => {
+      const cssVarName = `--color-${key}`;
+      document.documentElement.style.setProperty(cssVarName, value);
+    });
+    return normalizedColors;
+  };
 
   useEffect(() => {
-    async function fetchConfig() {
-      setLoading(true);
+    const loadConfig = async () => {
       try {
+        setLoading(true);
+        setError(null);
+
         // Check if we're on a custom domain
         const customDomain = window.location.hostname !== 'roofing-co.pages.dev' && 
                            window.location.hostname !== 'roofing-www.pages.dev' &&
                            window.location.hostname !== 'localhost';
+        setIsCustomDomain(customDomain);
 
-        if (customDomain) {
-          console.log("On custom domain:", window.location.hostname);
-          try {
-            // Fetch the domain-specific config
-            const domainConfigResponse = await fetch('/api/public/config');
-            console.log("Domain config response status:", domainConfigResponse.status);
-            
-            if (domainConfigResponse.ok) {
-              const domainData = await domainConfigResponse.json();
-              console.log("Successfully loaded domain config data");
-              setConfig(domainData);
-              
-              // Fetch colors and services for custom domain
-              try {
-                const colorsResponse = await fetch('/api/public/colors');
-                if (colorsResponse.ok) {
-                  const colorsData = await colorsResponse.json();
-                  setColors(colorsData);
-                }
-                
-                const servicesResponse = await fetch('/api/public/services');
-                if (servicesResponse.ok) {
-                  const servicesData = await servicesResponse.json();
-                  setServices(servicesData);
-                }
-              } catch (error) {
-                console.error("Error loading domain colors/services:", error);
-              }
-              
-              setLoading(false);
-              return;
-            } else {
-              console.error("Failed to load domain config. Status:", domainConfigResponse.status);
-              const errorText = await domainConfigResponse.text();
-              console.error("Error response:", errorText);
-            }
-          } catch (domainConfigError) {
-            console.error("Error loading domain config:", domainConfigError);
-          }
-        }
-
-        // If not on custom domain or domain config failed, check authentication
-        console.log("Checking authentication status...");
+        // Check authentication status
         const authResponse = await fetch('/api/auth/status', {
           credentials: 'include'
         });
-        console.log("Auth response status:", authResponse.status);
-        
         const authData = await authResponse.json();
-        console.log("Auth data received:", authData);
+        setIsAuthenticated(authData.isAuthenticated);
+        setConfigId(authData.configId);
 
-        if (authData.isAuthenticated) {
-          console.log("User is authenticated. Config ID:", authData.configId);
-          try {
-            // Fetch all configs in a single request
-            console.log("Fetching all configs from:", `/api/config/combined_data.json`);
-            const configResponse = await fetch(`/api/config/combined_data.json`, {
-              credentials: 'include'
-            });
-            console.log("Config response status:", configResponse.status);
+        // Load config data
+        const configResponse = await fetch('/api/config/load', {
+          credentials: 'include'
+        });
+        const configData = await configResponse.json();
+
+        if (configData.success) {
+          // Update config data
+          if (configData.combined_data) {
+            setConfig(configData.combined_data);
+          }
+          
+          // Handle colors with clear precedence
+          let finalColors = null;
+          
+          // 1. First try colors_output.json
+          if (configData.colors) {
+            finalColors = configData.colors;
+          }
+          
+          // 2. Then try combined_data.colors
+          if (configData.combined_data?.colors) {
+            finalColors = { ...finalColors, ...configData.combined_data.colors };
+          }
+          
+          // 3. Apply colors if we have any
+          if (finalColors) {
+            const normalizedColors = applyColorsToCSS(finalColors);
+            setColors(normalizedColors);
+          }
+          
+          // Handle services with clear precedence
+          let finalServices = null;
+          
+          // 1. First try services.json
+          if (configData.services) {
+            finalServices = configData.services;
+          }
+          
+          // 2. Then try combined_data.services
+          if (configData.combined_data?.services) {
+            finalServices = { ...finalServices, ...configData.combined_data.services };
+          }
+          
+          // 3. Set services if we have any
+          if (finalServices) {
+            setServices(finalServices);
+          }
+
+          // Handle assets if present
+          if (configData.assets) {
+            // Create a virtual file system for the assets
+            const virtualFS = {};
             
-            if (configResponse.ok) {
-              const { combined_data, colors: colorsData, services: servicesData } = await configResponse.json();
-              console.log("Successfully loaded all config data");
+            // Process each asset
+            Object.entries(configData.assets).forEach(([path, asset]) => {
+              // Create a blob URL for the asset
+              const blob = new Blob([asset.data], { type: asset.contentType });
+              const url = URL.createObjectURL(blob);
               
-              if (combined_data) {
-                setConfig(combined_data);
-              }
-              if (colorsData) {
-                setColors(colorsData);
-              }
-              if (servicesData) {
-                setServices(servicesData);
+              // Store in virtual FS
+              virtualFS[path] = url;
+            });
+
+            // Replace public assets with virtual ones
+            const originalFetch = window.fetch;
+            window.fetch = async (input, init) => {
+              const url = typeof input === 'string' ? input : input.url;
+              
+              // Check if this is an asset request
+              if (url.startsWith('/assets/')) {
+                const relativePath = url.substring(1); // Remove leading slash
+                if (virtualFS[relativePath]) {
+                  // Return a Response with the virtual asset
+                  return new Response(await fetch(virtualFS[relativePath]).then(r => r.blob()), {
+                    headers: {
+                      'Content-Type': configData.assets[relativePath].contentType
+                    }
+                  });
+                }
               }
               
-              setLoading(false);
-              return;
-            } else {
-              console.error("Failed to load configs. Status:", configResponse.status);
-              const errorText = await configResponse.text();
-              console.error("Error response:", errorText);
-            }
-          } catch (configError) {
-            console.error("Error loading configs:", configError);
+              // Fall back to original fetch for non-asset requests
+              return originalFetch(input, init);
+            };
+
+            // Clean up function
+            return () => {
+              // Restore original fetch
+              window.fetch = originalFetch;
+              
+              // Revoke all blob URLs
+              Object.values(virtualFS).forEach(url => URL.revokeObjectURL(url));
+            };
           }
-        } else {
-          console.log("User is not authenticated");
         }
-
-        // Fallback to static configs
-        console.log("Falling back to static configs...");
-        try {
-          // Fetch combined_data.json
-          const staticResponse = await fetch("/data/raw_data/step_4/combined_data.json");
-          if (!staticResponse.ok) {
-            throw new Error("Failed to load static combined_data.json");
-          }
-          const staticData = await staticResponse.json();
-          console.log("Successfully loaded static combined_data.json");
-          setConfig(staticData);
-
-          // Fetch colors_output.json
-          const colorsResponse = await fetch("/data/colors_output.json");
-          if (colorsResponse.ok) {
-            const colorsData = await colorsResponse.json();
-            console.log("Successfully loaded static colors_output.json");
-            setColors(colorsData);
-          }
-
-          // Fetch services.json
-          const servicesResponse = await fetch("/data/ignore/services.json");
-          if (servicesResponse.ok) {
-            const servicesData = await servicesResponse.json();
-            console.log("Successfully loaded static services.json");
-            setServices(servicesData);
-          }
-        } catch (err) {
-          console.error("Error loading static configs:", err);
-          throw err;
-        }
-
       } catch (err) {
-        console.error("Error in fetchConfig:", err);
-        setError(err);
+        console.error('Error loading config:', err);
+        setError(err.message);
       } finally {
         setLoading(false);
       }
-    }
-    fetchConfig();
+    };
+
+    loadConfig();
   }, []);
 
   return (
-    <ConfigContext.Provider value={{ config, colors, services, loading, error }}>
+    <ConfigContext.Provider value={{ 
+      config, 
+      colors, 
+      services, 
+      loading, 
+      error,
+      isCustomDomain,
+      isAuthenticated,
+      configId
+    }}>
       {children}
     </ConfigContext.Provider>
   );
-} 
+}; 

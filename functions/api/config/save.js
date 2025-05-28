@@ -83,13 +83,14 @@ export async function onRequest(context) {
 
     // Get the config data from the request body
     console.log('Reading request body...');
-    const { combined_data, colors, services, about_page, all_blocks_showcase } = await request.json();
+    const { combined_data, colors, services, about_page, all_blocks_showcase, assets } = await request.json();
     console.log('Config data received:', {
       hasCombinedData: !!combined_data,
       hasColors: !!colors,
       hasServices: !!services,
       hasAboutPage: !!about_page,
-      hasAllBlocksShowcase: !!all_blocks_showcase
+      hasAllBlocksShowcase: !!all_blocks_showcase,
+      hasAssets: !!assets
     });
 
     // Save all configs to R2
@@ -123,8 +124,32 @@ export async function onRequest(context) {
       }
     });
 
+    // Save assets if provided
+    if (assets) {
+      console.log('Saving assets to R2...');
+      const assetPromises = Object.entries(assets).map(async ([path, data]) => {
+        if (!data) {
+          console.log(`Skipping asset ${path} - no data provided`);
+          return;
+        }
+        try {
+          const assetKey = `configs/${configId}/assets/${path}`;
+          await env.ROOFING_CONFIGS.put(assetKey, data, {
+            httpMetadata: {
+              contentType: getContentType(path)
+            }
+          });
+          console.log(`Saved asset ${path} successfully`);
+        } catch (error) {
+          console.error(`Error saving asset ${path}:`, error);
+          throw error;
+        }
+      });
+      savePromises.push(...assetPromises);
+    }
+
     await Promise.all(savePromises);
-    console.log('All configs saved successfully');
+    console.log('All configs and assets saved successfully');
 
     return new Response(JSON.stringify({ success: true }), {
       headers: {
@@ -153,4 +178,20 @@ export async function onRequest(context) {
       },
     });
   }
+}
+
+function getContentType(path) {
+  const extension = path.split('.').pop().toLowerCase();
+  const contentTypes = {
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'png': 'image/png',
+    'gif': 'image/gif',
+    'webp': 'image/webp',
+    'svg': 'image/svg+xml',
+    'mp4': 'video/mp4',
+    'webm': 'video/webm',
+    'pdf': 'application/pdf'
+  };
+  return contentTypes[extension] || 'application/octet-stream';
 } 
