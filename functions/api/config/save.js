@@ -83,55 +83,48 @@ export async function onRequest(context) {
 
     // Get the config data from the request body
     console.log('Reading request body...');
-    const { config } = await request.json();
+    const { combined_data, colors, services, about_page, all_blocks_showcase } = await request.json();
     console.log('Config data received:', {
-      hasConfig: !!config,
-      type: typeof config,
-      isObject: config instanceof Object,
-      keys: config ? Object.keys(config) : []
+      hasCombinedData: !!combined_data,
+      hasColors: !!colors,
+      hasServices: !!services,
+      hasAboutPage: !!about_page,
+      hasAllBlocksShowcase: !!all_blocks_showcase
     });
 
-    // Validate the config data
-    if (!config || typeof config !== 'object') {
-      console.error('Invalid config data format');
-      return new Response(JSON.stringify({ error: 'Invalid config data format' }), {
-        status: 400,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
-      });
-    }
+    // Save all configs to R2
+    const configsToSave = [
+      { key: `configs/${configId}/combined_data.json`, data: combined_data },
+      { key: `configs/${configId}/colors_output.json`, data: colors },
+      { key: `configs/${configId}/services.json`, data: services },
+      { key: `configs/${configId}/about_page.json`, data: about_page },
+      { key: `configs/${configId}/all_blocks_showcase.json`, data: all_blocks_showcase }
+    ];
 
-    // Save the config data to R2
-    const configKey = `configs/${configId}/combined_data.json`;
-    console.log('Saving config to R2:', configKey);
+    console.log('Saving configs to R2:', configsToSave.map(c => c.key));
     
-    // Ensure the data is properly stringified with consistent formatting
-    const jsonString = JSON.stringify(config, null, 2);
-    console.log('JSON string preview:', jsonString.substring(0, 200) + '...');
-    
-    try {
-      await env.ROOFING_CONFIGS.put(configKey, jsonString, {
-        httpMetadata: {
-          contentType: 'application/json'
-        }
-      });
-      console.log('Config saved successfully');
-
-      // Verify the saved data
-      const savedConfig = await env.ROOFING_CONFIGS.get(configKey);
-      if (savedConfig) {
-        const savedData = await savedConfig.json();
-        console.log('Verification - Saved data keys:', Object.keys(savedData));
+    // Save all configs in parallel
+    const savePromises = configsToSave.map(async ({ key, data }) => {
+      if (!data) {
+        console.log(`Skipping ${key} - no data provided`);
+        return;
       }
-    } catch (saveError) {
-      console.error('Error saving to R2:', {
-        message: saveError.message,
-        stack: saveError.stack
-      });
-      throw saveError;
-    }
+      try {
+        const jsonString = JSON.stringify(data, null, 2);
+        await env.ROOFING_CONFIGS.put(key, jsonString, {
+          httpMetadata: {
+            contentType: 'application/json'
+          }
+        });
+        console.log(`Saved ${key} successfully`);
+      } catch (error) {
+        console.error(`Error saving ${key}:`, error);
+        throw error;
+      }
+    });
+
+    await Promise.all(savePromises);
+    console.log('All configs saved successfully');
 
     return new Response(JSON.stringify({ success: true }), {
       headers: {
