@@ -23,12 +23,23 @@ TODAY:
 
 
 finish merge:
-  edit oneform if needed to load combined_data.json and test on live site
+  edit oneform if needed to load combined_data.json and test on live site<>
+    fix services.json error<>
+      fix color loading error<>
+      
+
+
   then edit oneform to also pull the other jsons(manually add them)
-  add or adjust the save changes button to add the jsons aswell
-  adjust again to add images(the whole folder??)
+    possibles: not editing the bookingblock wierd method of getting services, not editing the zipp method in oneform
+  dont reload oneform data on every tab press <>
+
+  add or adjust the save changes button to add the jsons aswell<committed but delayed>
+
+  adjust again to add images(the whole folder??) <!>
   upload and check all functionality
 
+
+  fix booking, currently cant click into any boxes, test submit again
   pages fix for admin stuff
 
   folder of jsons, services.json, aboutpage.json, legalagreement.json
