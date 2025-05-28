@@ -178,7 +178,7 @@ const BookingPreview = memo(({ bookingData, readOnly, onHeaderTextChange, onPhon
       if (response.data.success) {
         alert("Form submitted successfully!"); 
         setFormData({ firstName: "", lastName: "", email: "", phone: "", service: "", message: "" }); 
-        if(isMobile) setIsFormVisible(false);
+        if(isMobile) setIsFormVisible(false); 
       } else {
         throw new Error(response.data.message || 'Submission failed');
       }
@@ -187,7 +187,7 @@ const BookingPreview = memo(({ bookingData, readOnly, onHeaderTextChange, onPhon
       setError(error.response?.data?.message || error.message || "Error submitting form. Please try again.");
     } finally {
       setSubmitting(false);
-    }
+    } 
   }, [formData, readOnly, isMobile]);
   const handleTabChange = useCallback((tab) => setActiveTab(tab), []);
 

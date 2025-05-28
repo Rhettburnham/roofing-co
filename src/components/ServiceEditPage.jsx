@@ -197,16 +197,16 @@ const ServiceEditPage = ({ themeColors }) => {
     if (configServices) {
       setServicesData(configServices);
       setLoading(false);
-      try {
+        try {
           setInitialServicesDataForOldExport(JSON.parse(JSON.stringify(configServices))); // Deep copy for "old" export
-      } catch (e) {
-          console.error("Could not deep clone initial services data for old export:", e);
-          setInitialServicesDataForOldExport(null);
-      }
+        } catch (e) {
+            console.error("Could not deep clone initial services data for old export:", e);
+            setInitialServicesDataForOldExport(null);
+        }
       const page = configServices[selectedCategory].find(
-        (p) => p.id === Number(selectedPageId)
-      );
-      setCurrentPage(page);
+          (p) => p.id === Number(selectedPageId)
+        );
+        setCurrentPage(page);
     } else {
       setError("No services data available");
       setLoading(false);

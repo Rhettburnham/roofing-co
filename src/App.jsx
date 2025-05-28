@@ -405,7 +405,7 @@ const App = () => {
     };
 
     if (config) {
-      fetchData();
+    fetchData();
     }
   }, [config]);
 
@@ -451,16 +451,16 @@ const App = () => {
 
   return (
     <ConfigProvider>
-      <Router>
-        <ScrollRestoration />
-        <NavbarWrapper navbarConfig={navbarConfig} />
+    <Router>
+      <ScrollRestoration />
+      <NavbarWrapper navbarConfig={navbarConfig} />
         <div className="pt-0">
-          <Suspense fallback={<LoadingScreen />}>
-            {memoizedRoutes}
-          </Suspense>
-        </div>
-        <Footer />
-      </Router>
+        <Suspense fallback={<LoadingScreen />}>
+          {memoizedRoutes}
+        </Suspense>
+      </div>
+      <Footer />
+    </Router>
     </ConfigProvider>
   );
 };

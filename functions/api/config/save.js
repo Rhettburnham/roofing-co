@@ -113,10 +113,10 @@ export async function onRequest(context) {
       try {
         const jsonString = JSON.stringify(data, null, 2);
         await env.ROOFING_CONFIGS.put(key, jsonString, {
-          httpMetadata: {
-            contentType: 'application/json'
-          }
-        });
+        httpMetadata: {
+          contentType: 'application/json'
+        }
+      });
         console.log(`Saved ${key} successfully`);
       } catch (error) {
         console.error(`Error saving ${key}:`, error);

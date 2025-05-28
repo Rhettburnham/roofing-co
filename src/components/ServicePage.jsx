@@ -84,7 +84,7 @@ const ServicePage = ({ forcedServiceData = null }) => {
     } else {
       setError(`Service "${serviceName}" not found`);
     }
-    setLoading(false);
+        setLoading(false);
   }, [serviceName, configServices]);
 
   // Helper function to clean text content of special markdown formatting

@@ -26,7 +26,7 @@ export default function OneFormAuthButton({ formData, themeColors, servicesData,
           'Accept': 'application/json',
         },
       });
-
+      
       const data = await response.json();
       console.log("OneFormAuthButton: Auth status data:", data);
       
@@ -244,7 +244,7 @@ export default function OneFormAuthButton({ formData, themeColors, servicesData,
                 <p className="text-gray-700 mb-4">Are you sure you want to sign out?</p>
                 <div className="flex gap-2">
                   <button
-                    onClick={handleAuth}
+                onClick={handleAuth}
                     className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
                   >
                     Yes, Sign Out
@@ -252,7 +252,7 @@ export default function OneFormAuthButton({ formData, themeColors, servicesData,
                   <button
                     onClick={() => setShowSignOut(false)}
                     className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
-                  >
+              >
                     Cancel
                   </button>
                 </div>

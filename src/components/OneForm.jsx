@@ -369,6 +369,8 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   const [loadingAllServiceBlocks, setLoadingAllServiceBlocks] = useState(false);
   const [activeEditShowcaseBlockIndex, setActiveEditShowcaseBlockIndex] = useState(null);
   const [isCustomDomain, setIsCustomDomain] = useState(false);
+  const [servicesData, setServicesData] = useState(null);
+  const [initialServicesData, setInitialServicesData] = useState(null);
   const navigate = useNavigate();
 
   // On mount, fetch combined_data.json to populate the form if no initialData is provided
@@ -404,6 +406,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
             setFormData({ [blockName]: initialData });
           } else {
             setFormData(initialData);
+            setInitialFormDataForOldExport(JSON.parse(JSON.stringify(initialData)));
           }
         } else {
           // Default: fetch the full combined_data.json for the main OneForm editor
@@ -470,8 +473,9 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
               setFormData(defaultData);
               setInitialFormDataForOldExport(JSON.parse(JSON.stringify(defaultData)));
             }
-          } catch (combinedError) {
-            console.error("Error loading combined data:", combinedError);
+          } catch (error) {
+            console.error("Error loading data:", error);
+            // Set default data for all states
             const defaultData = {
               navbar: { navLinks: [{name: "Home", href: "/"}], logo: { url: '/assets/images/logo.png', name: 'logo.png' }, whiteLogo: { url: '/assets/images/logo-white.png', name: 'logo-white.png'} },
               mainPageBlocks: [], 
@@ -558,19 +562,26 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         setLoading(false);
 
       } catch (error) {
-        console.error("Error in fetchCombinedData:", error);
+        console.error("Error in fetchAllData:", error);
         setLoading(false);
       }
     };
 
     fetchAllData();
-  }, [initialData, blockName, configColors]); // Removed activeTab and other dependencies that were causing reloads
+  }, [initialData, blockName, configColors]);
 
   const handleMainPageFormChange = (newMainPageFormData) => {
-    setFormData(prev => ({
-      ...prev, 
-      ...newMainPageFormData 
-    }));
+    setFormData(prev => {
+      // Ensure we maintain the correct structure
+      const updatedData = {
+        ...prev,
+        mainPageBlocks: newMainPageFormData.mainPageBlocks || prev.mainPageBlocks,
+        navbar: newMainPageFormData.navbar || prev.navbar,
+        hero: newMainPageFormData.hero || prev.hero
+      };
+      console.log("Updated main page form data:", updatedData);
+      return updatedData;
+    });
   };
 
   const handleAboutConfigChange = (newAboutConfig) => {
@@ -727,6 +738,11 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
     if (tabId === 'allServiceBlocks' && !allServiceBlocksData && !loadingAllServiceBlocks) {
       fetchShowcaseData();
     }
+  };
+
+  const handleServicesChange = (newServicesData) => {
+    console.log("Services data changed:", newServicesData);
+    setServicesData(newServicesData);
   };
 
   /**
@@ -1176,7 +1192,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
             <OneFormAuthButton 
               formData={formData}
               themeColors={themeColors}
-              servicesData={getServicesData()}
+              servicesData={servicesData}
               aboutPageData={aboutPageJsonData}
               showcaseData={allServiceBlocksData}
             />
@@ -1192,7 +1208,11 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
             />
           )}
           {activeTab === "services" && 
-            <ServiceEditPage themeColors={themeColors} />
+            <ServiceEditPage 
+              themeColors={themeColors}
+              servicesData={servicesData}
+              onServicesChange={handleServicesChange}
+            />
           }
           {activeTab === "about" && (
             <div className="container mx-auto px-4 py-6 bg-gray-100">

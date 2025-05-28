@@ -185,16 +185,16 @@ const ServicePageCreator = () => {
           const uniqueKey = block.uniqueKey || `block-${index}`;
 
           // Log props being passed to each block for debugging
-          console.log(`Rendering block: ${block.blockName} (key: ${uniqueKey}) with config:`, config);
+           console.log(`Rendering block: ${block.blockName} (key: ${uniqueKey}) with config:`, config);
 
           try {
-            // For HeroBlock, ensure it gets its config directly if the blockMap uses PageHeroBlock or HeroBlock
-            if (block.blockName === "HeroBlock" || block.blockName === "PageHeroBlock") {
-              return <BlockComponent key={uniqueKey} config={config} readOnly={true} />;
-            }
-            
-            // Standard rendering for other blocks
-            return <BlockComponent key={uniqueKey} config={config} readOnly={true} />;
+          // For HeroBlock, ensure it gets its config directly if the blockMap uses PageHeroBlock or HeroBlock
+          if (block.blockName === "HeroBlock" || block.blockName === "PageHeroBlock") {
+             return <BlockComponent key={uniqueKey} config={config} readOnly={true} />;
+          }
+          
+          // Standard rendering for other blocks
+          return <BlockComponent key={uniqueKey} config={config} readOnly={true} />;
           } catch (renderError) {
             console.error(`Error rendering block ${block.blockName}:`, renderError);
             return (
