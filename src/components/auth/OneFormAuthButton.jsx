@@ -464,6 +464,7 @@ export default function OneFormAuthButton({
 
       // Use the same data that was prepared for the ZIP, but only include what exists
       const dataToSave = {};
+      const assetsToSave = {};
       
       // Only add data if it was processed and exists
       if (cleanedNewCombinedData) {
@@ -482,27 +483,61 @@ export default function OneFormAuthButton({
         dataToSave.all_blocks_showcase = cleanedNewShowcaseData;
       }
 
+      // Process all collected assets from the ZIP process
+      console.log("[OneFormAuthButton] Processing collected assets for save:", newCollectedAssets);
+      const assetPromisesSave = newCollectedAssets.map(async (asset) => {
+        try {
+          if (asset.type === 'file' && asset.dataSource instanceof File) {
+            console.log(`[OneFormAuthButton] Processing file for save: ${asset.pathInZip}`);
+            assetsToSave[asset.pathInZip] = asset.dataSource;
+          } else if (asset.type === 'url' && typeof asset.dataSource === 'string') {
+            if (asset.dataSource.startsWith('blob:')) {
+              console.log(`[OneFormAuthButton] Processing blob URL for save: ${asset.pathInZip}`);
+              const response = await fetch(asset.dataSource);
+              if (!response.ok) throw new Error(`Failed to fetch blob ${asset.dataSource}`);
+              const blob = await response.blob();
+              assetsToSave[asset.pathInZip] = blob;
+            } else if (!asset.dataSource.startsWith('http:') && !asset.dataSource.startsWith('https:') && !asset.dataSource.startsWith('data:')) {
+              console.log(`[OneFormAuthButton] Processing local URL for save: ${asset.pathInZip}`);
+              const fetchUrl = asset.dataSource.startsWith('/') ? asset.dataSource : `/${asset.dataSource}`;
+              const response = await fetch(fetchUrl);
+              if (!response.ok) throw new Error(`Failed to fetch ${fetchUrl}`);
+              const blob = await response.blob();
+              assetsToSave[asset.pathInZip] = blob;
+            }
+          }
+        } catch (error) {
+          console.error(`[OneFormAuthButton] Error processing asset ${asset.pathInZip}:`, error);
+        }
+      });
+
+      await Promise.all(assetPromisesSave);
+
       console.log("[OneFormAuthButton] Full dataToSave object:", JSON.stringify(dataToSave, null, 2));
+      console.log("[OneFormAuthButton] Assets to save:", Object.keys(assetsToSave));
       console.log("[OneFormAuthButton] Saving data to server:", {
         hasCombinedData: !!dataToSave.combined_data,
         hasColors: !!dataToSave.colors,
         hasServices: !!dataToSave.services,
         hasAboutPage: !!dataToSave.aboutPageData,
-        hasAllBlocksShowcase: !!dataToSave.all_blocks_showcase
+        hasAllBlocksShowcase: !!dataToSave.all_blocks_showcase,
+        hasAssets: Object.keys(assetsToSave).length > 0
       });
 
       // Only proceed with save if we have some data to save
-      if (Object.keys(dataToSave).length > 0) {
+      if (Object.keys(dataToSave).length > 0 || Object.keys(assetsToSave).length > 0) {
         if (isDevelopment) {
           // In development, save logs to a file
           const logContent = `=== Save Log ${new Date().toISOString()} ===\n\n` +
             `Data being saved:\n${JSON.stringify(dataToSave, null, 2)}\n\n` +
+            `Assets being saved:\n${Object.keys(assetsToSave).join('\n')}\n\n` +
             `Data presence:\n` +
             `- Combined Data: ${!!dataToSave.combined_data}\n` +
             `- Colors: ${!!dataToSave.colors}\n` +
             `- Services: ${!!dataToSave.services}\n` +
             `- About Page: ${!!dataToSave.aboutPageData}\n` +
-            `- All Blocks Showcase: ${!!dataToSave.all_blocks_showcase}\n`;
+            `- All Blocks Showcase: ${!!dataToSave.all_blocks_showcase}\n` +
+            `- Assets: ${Object.keys(assetsToSave).length}\n`;
 
           // Create a blob and save it
           const logBlob = new Blob([logContent], { type: 'text/plain' });
@@ -518,7 +553,10 @@ export default function OneFormAuthButton({
               'Content-Type': 'application/json'
             },
             credentials: 'include',
-            body: JSON.stringify(dataToSave)
+            body: JSON.stringify({
+              ...dataToSave,
+              assets: assetsToSave
+            })
           });
 
           if (!response.ok) {

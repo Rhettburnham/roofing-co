@@ -1,6 +1,13 @@
 export async function onRequest(context) {
+  console.log("=== Config Load Handler ===");
   try {
     const { request, env } = context;
+    console.log('Context received:', { 
+      hasRequest: !!request,
+      hasEnv: !!env,
+      hasDB: !!env?.DB,
+      hasROOFING_CONFIGS: !!env?.ROOFING_CONFIGS
+    });
 
     // CORS headers
     const corsHeaders = {
@@ -12,11 +19,13 @@ export async function onRequest(context) {
 
     // Handle preflight requests
     if (request.method === 'OPTIONS') {
+      console.log('Handling OPTIONS request');
       return new Response(null, { headers: corsHeaders });
     }
 
     // Only allow GET requests
     if (request.method !== 'GET') {
+      console.log('Invalid method:', request.method);
       return new Response(JSON.stringify({ error: 'Method not allowed' }), {
         status: 405,
         headers: {
@@ -26,8 +35,10 @@ export async function onRequest(context) {
       });
     }
 
-    // Get session ID from cookie
+    // Read session_id from cookie
     const cookieHeader = request.headers.get('Cookie');
+    console.log('Cookie header:', cookieHeader);
+    
     let sessionId = null;
     if (cookieHeader) {
       const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
@@ -37,37 +48,12 @@ export async function onRequest(context) {
       }, {});
       sessionId = cookies['session_id'];
     }
+    console.log('Session ID from cookie:', sessionId ? 'present' : 'missing');
 
-    // Get domain from request
-    const domain = request.headers.get('host');
-
-    let configId = null;
-
-    // If authenticated, get config ID from session
-    if (sessionId) {
-      const session = await env.DB.prepare(
-        'SELECT s.*, u.config_id FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.session_id = ? AND s.expires_at > datetime("now")'
-      ).bind(sessionId).first();
-      
-      if (session) {
-        configId = session.config_id;
-      }
-    }
-
-    // If not authenticated, check for custom domain
-    if (!configId) {
-      const domainConfig = await env.DB.prepare(
-        'SELECT config_id FROM domain_configs WHERE domain = ?'
-      ).bind(domain).first();
-      
-      if (domainConfig) {
-        configId = domainConfig.config_id;
-      }
-    }
-
-    // If no config ID found, return empty response
-    if (!configId) {
-      return new Response(JSON.stringify({ success: true }), {
+    if (!sessionId) {
+      console.log('No session ID found');
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
         headers: {
           ...corsHeaders,
           'Content-Type': 'application/json',
@@ -75,91 +61,122 @@ export async function onRequest(context) {
       });
     }
 
-    // Fetch all config files
-    const configKeys = [
-      `configs/${configId}/combined_data.json`,
-      `configs/${configId}/colors_output.json`,
-      `configs/${configId}/services.json`,
-      `configs/${configId}/about_page.json`,
-      `configs/${configId}/all_blocks_showcase.json`
+    // Verify the session and get config ID
+    console.log('Querying database for session...');
+    const session = await env.DB.prepare(
+      'SELECT s.*, u.config_id FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.session_id = ? AND s.expires_at > datetime("now")'
+    ).bind(sessionId).first();
+
+    if (!session) {
+      console.log('No valid session found');
+      return new Response(JSON.stringify({ error: 'Invalid session' }), {
+        status: 401,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
+      });
+    }
+
+    const configId = session.config_id;
+    console.log('Config ID from session:', configId);
+
+    // Load all configs from R2
+    console.log('Loading configs from R2...');
+    const configsToLoad = [
+      { key: `configs/${configId}/combined_data.json`, name: 'combined_data' },
+      { key: `configs/${configId}/colors_output.json`, name: 'colors' },
+      { key: `configs/${configId}/services.json`, name: 'services' },
+      { key: `configs/${configId}/about_page.json`, name: 'aboutPageData' },
+      { key: `configs/${configId}/all_blocks_showcase.json`, name: 'all_blocks_showcase' }
     ];
 
-    // Fetch all configs in parallel
-    const configPromises = configKeys.map(async (key) => {
-      const configObject = await env.ROOFING_CONFIGS.get(key);
-      if (!configObject) {
-        console.log(`No config found in R2 for key: ${key}`);
-        return null;
-      }
+    const configData = {};
+    const loadPromises = configsToLoad.map(async ({ key, name }) => {
       try {
-        const data = await configObject.json();
-        return { key, data };
-      } catch (error) {
-        console.error(`Error parsing config for key ${key}:`, error);
-        return null;
-      }
-    });
-
-    const configResults = await Promise.all(configPromises);
-    
-    // Combine all configs into a single response
-    const responseData = {
-      success: true,
-      combined_data: null,
-      colors: null,
-      services: null,
-      about_page: null,
-      all_blocks_showcase: null
-    };
-
-    configResults.forEach(result => {
-      if (result) {
-        if (result.key.includes('combined_data.json')) {
-          responseData.combined_data = result.data;
-        } else if (result.key.includes('colors_output.json')) {
-          responseData.colors = result.data;
-        } else if (result.key.includes('services.json')) {
-          responseData.services = result.data;
-        } else if (result.key.includes('about_page.json')) {
-          responseData.about_page = result.data;
-        } else if (result.key.includes('all_blocks_showcase.json')) {
-          responseData.all_blocks_showcase = result.data;
+        console.log(`Loading ${name} from ${key}...`);
+        const object = await env.ROOFING_CONFIGS.get(key);
+        if (object) {
+          console.log(`Found ${name}, parsing JSON...`);
+          const text = await object.text();
+          try {
+            const data = JSON.parse(text);
+            console.log(`Successfully loaded ${name}:`, {
+              hasData: !!data,
+              type: typeof data,
+              isArray: Array.isArray(data),
+              keys: Object.keys(data || {})
+            });
+            configData[name] = data;
+          } catch (parseError) {
+            console.error(`Error parsing ${name}:`, parseError);
+          }
+        } else {
+          console.log(`No data found for ${name}`);
         }
+      } catch (error) {
+        console.error(`Error loading ${name}:`, error);
       }
     });
 
-    // List all assets in R2 for this config
-    const assets = await env.ROOFING_CONFIGS.list({ prefix: `configs/${configId}/assets/` });
-    
-    // Create a map of asset paths to their data
-    const assetMap = {};
-    
-    // Fetch all assets in parallel
-    const assetPromises = assets.objects.map(async (asset) => {
-      const assetData = await env.ROOFING_CONFIGS.get(asset.key);
-      if (assetData) {
-        // Remove the config prefix to get the relative path
-        const relativePath = asset.key.replace(`configs/${configId}/assets/`, '');
-        assetMap[relativePath] = {
-          data: await assetData.arrayBuffer(),
-          contentType: assetData.httpMetadata?.contentType || 'application/octet-stream'
-        };
-      }
+    await Promise.all(loadPromises);
+    console.log('All configs loaded:', {
+      hasCombinedData: !!configData.combined_data,
+      hasColors: !!configData.colors,
+      hasServices: !!configData.services,
+      hasAboutPage: !!configData.aboutPageData,
+      hasAllBlocksShowcase: !!configData.all_blocks_showcase
     });
 
-    await Promise.all(assetPromises);
+    // Load assets from R2
+    console.log('Loading assets from R2...');
+    const assets = {};
+    try {
+      const assetList = await env.ROOFING_CONFIGS.list({ prefix: `configs/${configId}/assets/` });
+      console.log(`Found ${assetList.objects.length} assets`);
+      
+      const assetPromises = assetList.objects.map(async (asset) => {
+        try {
+          console.log(`Loading asset: ${asset.key}`);
+          const object = await env.ROOFING_CONFIGS.get(asset.key);
+          if (object) {
+            const blob = await object.blob();
+            const path = asset.key.replace(`configs/${configId}/`, '');
+            console.log(`Successfully loaded asset: ${path}`);
+            assets[path] = blob;
+          } else {
+            console.log(`No data found for asset: ${asset.key}`);
+          }
+        } catch (error) {
+          console.error(`Error loading asset ${asset.key}:`, error);
+        }
+      });
 
-    // Add assets to response
-    responseData.assets = assetMap;
+      await Promise.all(assetPromises);
+      console.log('All assets loaded:', Object.keys(assets));
+    } catch (error) {
+      console.error('Error loading assets:', error);
+    }
 
-    return new Response(JSON.stringify(responseData), {
+    return new Response(JSON.stringify({ 
+      success: true,
+      data: {
+        ...configData,
+        assets
+      }
+    }), {
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/json',
       },
     });
   } catch (error) {
-    console.error('Error in config load handler:', error);
+    console.error('Error in config load handler:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      type: error.constructor.name
+    });
     return new Response(JSON.stringify({ 
       error: 'Failed to load config',
       details: error.message 
@@ -168,6 +185,9 @@ export async function onRequest(context) {
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Cookie',
+        'Access-Control-Allow-Credentials': 'true',
       },
     });
   }
