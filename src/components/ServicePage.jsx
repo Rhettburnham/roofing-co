@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
 import LoadingScreen from "./loadingScreen";
+import { useConfig } from "../context/ConfigContext";
 
 // Import ALL block components used across commercial & residential
 import PageHeroBlock from "./blocks/PageHeroBlock";
@@ -52,90 +53,39 @@ const ServicePage = ({ forcedServiceData = null }) => {
   const [serviceData, setServiceData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { services: configServices } = useConfig();
 
   useEffect(() => {
-    if (forcedServiceData) {
-      setServiceData(forcedServiceData);
+    if (!configServices) {
+      setError("No services data available");
       setLoading(false);
       return;
     }
 
-    const fetchService = async () => {
-      try {
-        if (!serviceType || !serviceName) {
-          throw new Error("Invalid service URL format");
-        }
+    // Find the service in the config
+    const findService = (services) => {
+      // Try to find by ID first
+      const byId = services.find(s => s.id === Number(serviceName));
+      if (byId) return byId;
 
-        // Try to load services.json
-        const possiblePaths = [
-          "/data/ignore/services.json"
-        ];
+      // Then try by slug
+      const bySlug = services.find(s => s.slug === serviceName);
+      if (bySlug) return bySlug;
 
-        let servicesData = null;
-        let succeeded = false;
-        
-        for (const path of possiblePaths) {
-          try {
-            const response = await fetch(path);
-            if (response.ok) {
-              servicesData = await response.json();
-              console.log(`Successfully loaded services from ${path}`);
-              succeeded = true;
-              break;
-            }
-          } catch (err) {
-            console.warn(`Failed to load from ${path}, trying next path...`);
-          }
-        }
-
-        if (!succeeded || !servicesData) {
-          throw new Error("Could not load services data from any path");
-        }
-
-        // Find the service by name or id in the correct category (case-insensitive)
-        let foundService = null;
-        const category = serviceType.toLowerCase();
-        
-        if (servicesData[category]) {
-          // First try to find by slug
-          foundService = servicesData[category].find(
-            (service) => service.slug?.toLowerCase() === `${category}-${serviceName}`.toLowerCase()
-          );
-          
-          // If not found by slug, try to find by name property
-          if (!foundService) {
-            foundService = servicesData[category].find(
-              (service) => service.name?.toLowerCase() === serviceName.toLowerCase()
-            );
-          }
-          
-          // If still not found, try to find by numeric ID
-          if (!foundService) {
-            const numericId = parseInt(serviceName, 10);
-            if (!isNaN(numericId)) {
-              foundService = servicesData[category].find(
-                (service) => service.id === numericId
-              );
-            }
-          }
-        }
-
-        if (!foundService) {
-          throw new Error(`Service not found: ${serviceType}/${serviceName}`);
-        }
-
-        setServiceData(foundService);
-        setError(null);
-      } catch (error) {
-        console.error("Error loading service:", error);
-        setError(`Failed to load service: ${error.message}`);
-      } finally {
-        setLoading(false);
-      }
+      // Finally try by title
+      return services.find(s => s.title.toLowerCase() === serviceName.toLowerCase());
     };
 
-    fetchService();
-  }, [serviceType, serviceName, forcedServiceData]);
+    // Search in both residential and commercial services
+    const service = findService(configServices.residential) || findService(configServices.commercial);
+
+    if (service) {
+      setServiceData(service);
+    } else {
+      setError(`Service "${serviceName}" not found`);
+    }
+        setLoading(false);
+  }, [serviceName, configServices]);
 
   // Helper function to clean text content of special markdown formatting
   const cleanTextContent = (text) => {

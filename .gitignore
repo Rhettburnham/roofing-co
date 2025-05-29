@@ -29,3 +29,15 @@ backend/.env
 frontend/.env
 .env.production
 backend/.env.production
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+data/venv/
+ENV/
+env/
+.venv

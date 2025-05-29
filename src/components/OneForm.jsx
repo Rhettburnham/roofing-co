@@ -16,10 +16,13 @@ import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
-
+import { useNavigate } from 'react-router-dom';
+import OneFormAuthButton from "./auth/OneFormAuthButton";
 import ServiceEditPage, { getServicesData, blockMap as serviceBlockMap } from "./ServiceEditPage";
 import MainPageForm from "./MainPageForm";
 import AboutBlock from "./MainPageBlocks/AboutBlock";
+import { useConfig } from "../context/ConfigContext";
+
 import Navbar from "./Navbar"; // Import Navbar for preview
 import ColorEditor from "./ColorEditor"; // Import the new ColorEditor component
 import ServicePage from "./ServicePage"; // For rendering all blocks
@@ -327,6 +330,8 @@ function traverseAndModifyDataForZip(originalDataNode, assetsToCollect, pathCont
   return originalDataNode;
 }
 
+
+
 // Tab style button component
 const TabButton = ({ id, label, isActive, onClick }) => (
   <button
@@ -351,76 +356,70 @@ TabButton.propTypes = {
 
 const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   const [formData, setFormData] = useState(null);
-  const [initialFormDataForOldExport, setInitialFormDataForOldExport] = useState(null); // For "old" export
-  const [aboutPageJsonData, setAboutPageJsonData] = useState(null); // State for about_page.json content
-  const [initialAboutPageJsonData, setInitialAboutPageJsonData] = useState(null); // For "old" export of about_page.json
+  const [initialFormDataForOldExport, setInitialFormDataForOldExport] = useState(null);
+  const [aboutPageJsonData, setAboutPageJsonData] = useState(null);
+  const [initialAboutPageJsonData, setInitialAboutPageJsonData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("mainPage");
-  const [themeColors, setThemeColors] = useState(null); // State for current theme colors
-  const [initialThemeColors, setInitialThemeColors] = useState(null); // State for initial theme colors for "old" export
-
-  // State for the "All Service Blocks" tab
+  const [themeColors, setThemeColors] = useState(null);
+  const [initialThemeColors, setInitialThemeColors] = useState(null);
+  const { colors: configColors } = useConfig();
   const [allServiceBlocksData, setAllServiceBlocksData] = useState(null);
-  const [initialAllServiceBlocksData, setInitialAllServiceBlocksData] = useState(null); // For "old" export of showcase data
+  const [initialAllServiceBlocksData, setInitialAllServiceBlocksData] = useState(null);
   const [loadingAllServiceBlocks, setLoadingAllServiceBlocks] = useState(false);
   const [activeEditShowcaseBlockIndex, setActiveEditShowcaseBlockIndex] = useState(null);
+  const [isCustomDomain, setIsCustomDomain] = useState(false);
+  const [servicesData, setServicesData] = useState(null);
+  const [initialServicesData, setInitialServicesData] = useState(null);
+  const navigate = useNavigate();
+
+  // Development mode flag - use import.meta.env instead of process.env
+  const isDevelopment = import.meta.env.DEV;
 
   // On mount, fetch combined_data.json to populate the form if no initialData is provided
   useEffect(() => {
     const fetchAllData = async () => {
       setLoading(true);
       try {
-        // Fetch theme colors first, only if not already loaded
-        if (!initialThemeColors) { // Guard condition
-          try {
-            const colorsResponse = await fetch("/data/colors_output.json"); // Ensure this path is correct
-            if (colorsResponse.ok) {
-              const colors = await colorsResponse.json();
-              const normalizedColors = {};
-              Object.keys(colors).forEach(key => {
-                normalizedColors[key.replace('_', '-')] = colors[key];
-              });
-              setThemeColors(normalizedColors);
-              setInitialThemeColors(JSON.parse(JSON.stringify(normalizedColors))); // Deep copy for "old" export
-              // Apply colors as CSS variables
-              Object.keys(normalizedColors).forEach(key => {
-                // Key is already hyphenated here (e.g., 'faint-color')
-                const cssVarName = `--color-${key}`;
-                document.documentElement.style.setProperty(cssVarName, normalizedColors[key]);
-              });
-              console.log("OneForm: Loaded and normalized theme colors for the first time:", normalizedColors);
-            } else {
-              console.warn("OneForm: Failed to load theme colors from colors_output.json. Using defaults.");
-              const defaultColors = { accent: '#2B4C7E', banner: '#1A2F4D', "second-accent": '#FFF8E1', "faint-color": '#E0F7FA' };
-              setThemeColors(defaultColors);
-              setInitialThemeColors(JSON.parse(JSON.stringify(defaultColors))); // Set initial to defaults
-            }
-          } catch (colorsError) {
-            console.error("OneForm: Error loading theme colors:", colorsError);
-            const defaultColorsOnError = { accent: '#2B4C7E', banner: '#1A2F4D', "second-accent": '#FFF8E1', "faint-color": '#E0F7FA' };
-            setThemeColors(defaultColorsOnError);
-            setInitialThemeColors(JSON.parse(JSON.stringify(defaultColorsOnError))); // Set initial to defaults on error
-          }
+        // Use colors from ConfigContext if available
+        if (configColors) {
+          setThemeColors(configColors);
+          setInitialThemeColors(JSON.parse(JSON.stringify(configColors)));
+          console.log("OneForm: Using theme colors from ConfigContext:", configColors);
+        } else {
+          console.warn("OneForm: No colors available from ConfigContext. Using defaults.");
+          const defaultColors = { accent: '#2B4C7E', banner: '#1A2F4D', "second-accent": '#FFF8E1', "faint-color": '#E0F7FA' };
+          setThemeColors(defaultColors);
+          setInitialThemeColors(JSON.parse(JSON.stringify(defaultColors)));
         }
 
-        let dataToSet;
-        // If initialData is provided, use it directly (for single block editing like /edit/hero)
-        if (initialData && blockName) {
-          const baseData = { ...initialData };
-          if (!baseData.navbar && initialData.navbar) baseData.navbar = initialData.navbar;
-          else if (!baseData.navbar) baseData.navbar = { navLinks: [{name: "Home", href: "/"}], logo: { url: '/assets/images/logo.png', name: 'logo.png' }, whiteLogo: { url: '/assets/images/logo-white.png', name: 'logo-white.png'} };
-          dataToSet = { [blockName]: baseData[blockName] || baseData, navbar: baseData.navbar };
-        } else if (initialData && !blockName) { // Case where OneForm is loaded with full data but not for a single block.
-          dataToSet = initialData;
+        console.log("Starting fetchCombinedData...");
+        
+        // Check if we're on a custom domain
+        const customDomain = window.location.hostname !== 'roofing-co.pages.dev' && 
+                           window.location.hostname !== 'roofing-www.pages.dev' &&
+                           window.location.hostname !== 'localhost';
+        setIsCustomDomain(customDomain);
+        
+        // If initialData is provided, use it directly within the appropriate block structure
+        if (initialData) {
+          console.log("Using provided initialData:", initialData);
+          if (blockName) {
+            // For editing a specific block, structure the data properly
+            setFormData({ [blockName]: initialData });
+          } else {
+            setFormData(initialData);
+            setInitialFormDataForOldExport(JSON.parse(JSON.stringify(initialData)));
+          }
         } else {
           // Default: fetch the full combined_data.json for the main OneForm editor
           try {
-            const combinedResponse = await fetch(
-              "/data/raw_data/step_4/combined_data.json"
-            );
+            const combinedResponse = await fetch("/data/raw_data/step_4/combined_data.json");
             if (combinedResponse.ok) {
-              dataToSet = await combinedResponse.json();
+              const dataToSet = await combinedResponse.json();
               console.log("Loaded combined data:", dataToSet);
+              setFormData(dataToSet);
+              setInitialFormDataForOldExport(JSON.parse(JSON.stringify(dataToSet)));
 
               // Also fetch about_page.json if in full editor mode
               if (!blockName) {
@@ -429,11 +428,11 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
                   if (aboutJsonResponse.ok) {
                     const aboutJson = await aboutJsonResponse.json();
                     setAboutPageJsonData(aboutJson);
-                    setInitialAboutPageJsonData(JSON.parse(JSON.stringify(aboutJson))); // Deep copy for "old" export
+                    setInitialAboutPageJsonData(JSON.parse(JSON.stringify(aboutJson)));
                     console.log("OneForm: Loaded about_page.json data:", aboutJson);
                   } else {
                     console.warn("OneForm: Failed to load about_page.json. About page editor might not work as expected.");
-                    setAboutPageJsonData({}); // Set to empty object to avoid errors
+                    setAboutPageJsonData({});
                     setInitialAboutPageJsonData({});
                   }
                 } catch (aboutJsonError) {
@@ -444,20 +443,20 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
               }
 
               // Fetch initial all_blocks_showcase.json for both 'initial' state and current working state
-              if (!blockName) { // For full editor mode
+              if (!blockName) {
                 try {
                   const showcaseResponse = await fetch("/data/all_blocks_showcase.json");
                   if (showcaseResponse.ok) {
                     const showcaseJson = await showcaseResponse.json();
-                    setInitialAllServiceBlocksData(JSON.parse(JSON.stringify(showcaseJson))); // Deep copy for "old" export
-                    if (!allServiceBlocksData) { // Populate current state if not already done
+                    setInitialAllServiceBlocksData(JSON.parse(JSON.stringify(showcaseJson)));
+                    if (!allServiceBlocksData) {
                       setAllServiceBlocksData(showcaseJson);
                     }
                     console.log("OneForm: Loaded initial all_blocks_showcase.json data:", showcaseJson);
                   } else {
                     console.warn("OneForm: Failed to load all_blocks_showcase.json. Showcase tab might be empty or use fallback.");
                     const emptyShowcase = { blocks: [] };
-                    setInitialAllServiceBlocksData(emptyShowcase); 
+                    setInitialAllServiceBlocksData(emptyShowcase);
                     if (!allServiceBlocksData) setAllServiceBlocksData(emptyShowcase);
                   }
                 } catch (showcaseJsonError) {
@@ -469,62 +468,134 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
               }
             } else {
               console.error("Failed to load combined_data.json, status:", combinedResponse.status);
+              const defaultData = {
+                navbar: { navLinks: [{name: "Home", href: "/"}], logo: { url: '/assets/images/logo.png', name: 'logo.png' }, whiteLogo: { url: '/assets/images/logo-white.png', name: 'logo-white.png'} },
+                mainPageBlocks: [], 
+                hero: { title: "Welcome" }, 
+              };
+              setFormData(defaultData);
+              setInitialFormDataForOldExport(JSON.parse(JSON.stringify(defaultData)));
             }
-          } catch (combinedError) {
-            console.error("Error loading combined data:", combinedError);
-          }
-        }
-
-        if (!dataToSet) { // Fallback if fetching or initialData failed
-            console.warn("Falling back to default data structure for OneForm.");
-            dataToSet = {
+          } catch (error) {
+            console.error("Error loading data:", error);
+            // Set default data for all states
+            const defaultData = {
               navbar: { navLinks: [{name: "Home", href: "/"}], logo: { url: '/assets/images/logo.png', name: 'logo.png' }, whiteLogo: { url: '/assets/images/logo-white.png', name: 'logo-white.png'} },
               mainPageBlocks: [], 
               hero: { title: "Welcome" }, 
             };
+            setFormData(defaultData);
+            setInitialFormDataForOldExport(JSON.parse(JSON.stringify(defaultData)));
+          }
+        }
+
+        // Skip auth check in development mode
+        if (isDevelopment) {
+          console.log("Development mode: Skipping auth check");
+          setLoading(false);
+          return;
+        }
+
+        if (customDomain) {
+          console.log("On custom domain:", window.location.hostname);
+          try {
+            // Fetch the domain-specific config
+            const domainConfigResponse = await fetch('/api/public/config');
+            console.log("Domain config response status:", domainConfigResponse.status);
+            
+            if (domainConfigResponse.ok) {
+              const domainData = await domainConfigResponse.json();
+              console.log("Successfully loaded domain config data");
+              setFormData(domainData);
+              setInitialFormDataForOldExport(JSON.parse(JSON.stringify(domainData)));
+              setLoading(false);
+              return;
+            } else {
+              console.error("Failed to load domain config. Status:", domainConfigResponse.status);
+              const errorText = await domainConfigResponse.text();
+              console.error("Error response:", errorText);
+            }
+          } catch (domainConfigError) {
+            console.error("Error loading domain config:", domainConfigError);
+          }
+        }
+
+        // If not on custom domain or domain config failed, check authentication
+        console.log("Checking authentication status...");
+        const authResponse = await fetch('/api/auth/status', {
+          credentials: 'include'
+        });
+        console.log("Auth response status:", authResponse.status);
+        
+        const authData = await authResponse.json();
+        console.log("Auth data received:", authData);
+
+        if (authData.isAuthenticated) {
+          console.log("User is authenticated. Config ID:", authData.configId);
+          try {
+            // Fetch the user's custom config
+            console.log("Fetching custom config from:", `/api/config/load`);
+            const customConfigResponse = await fetch(`/api/config/load`, {
+              credentials: 'include'
+            });
+            console.log("Custom config response status:", customConfigResponse.status);
+            
+            if (customConfigResponse.ok) {
+              const configData = await customConfigResponse.json();
+              console.log("Successfully loaded custom config data");
+              if (configData.combined_data) {
+                setFormData(configData.combined_data);
+                setInitialFormDataForOldExport(JSON.parse(JSON.stringify(configData.combined_data)));
+              }
+              if (configData.about_page) {
+                setAboutPageJsonData(configData.about_page);
+                setInitialAboutPageJsonData(JSON.parse(JSON.stringify(configData.about_page)));
+              }
+              if (configData.all_blocks_showcase) {
+                setAllServiceBlocksData(configData.all_blocks_showcase);
+                setInitialAllServiceBlocksData(JSON.parse(JSON.stringify(configData.all_blocks_showcase)));
+              }
+              setLoading(false);
+              return;
+            } else {
+              console.error("Failed to load custom config. Status:", customConfigResponse.status);
+              const errorText = await customConfigResponse.text();
+              console.error("Error response:", errorText);
+            }
+          } catch (customConfigError) {
+            console.error("Error loading custom config:", customConfigError);
+          }
+        } else {
+          console.log("User is not authenticated");
         }
         
-        setFormData(dataToSet);
-        // Store a deep copy for the "old" export state, only if not in single block mode for simplicity of "old" state
-        if (!blockName) {
-            try {
-                setInitialFormDataForOldExport(JSON.parse(JSON.stringify(dataToSet)));
-            } catch (e) {
-                console.error("Could not deep clone initial data for old export:", e);
-                setInitialFormDataForOldExport(null); // or some other fallback
-            }
-        } else {
-            setInitialFormDataForOldExport(null); // Don't create "old" folder for single block edits
-        }
         setLoading(false);
 
-        // Fetch data for "All Service Blocks" tab if it becomes active and data isn't loaded
-        // This useEffect can be simplified if fetchAllData loads showcase data.
-        // It might still be useful if we want to refresh data upon tab activation under certain conditions,
-        // but for initial load, fetchAllData should cover it.
-        if (activeTab === 'allServiceBlocks' && !allServiceBlocksData && !loadingAllServiceBlocks && !initialData && !blockName) {
-            fetchShowcaseData();
-        }
-
       } catch (error) {
-        console.error("Error loading form data:", error);
+        console.error("Error in fetchAllData:", error);
         setLoading(false);
       }
     };
 
     fetchAllData();
-  }, [initialData, blockName, activeTab, allServiceBlocksData, loadingAllServiceBlocks]); // Added dependencies
+  }, [initialData, blockName, configColors, isDevelopment]);
 
   const handleMainPageFormChange = (newMainPageFormData) => {
-    setFormData(prev => ({
+    setFormData(prev => {
+      // Ensure we maintain the correct structure
+      const updatedData = {
         ...prev, 
-        ...newMainPageFormData 
-    }));
+        mainPageBlocks: newMainPageFormData.mainPageBlocks || prev.mainPageBlocks,
+        navbar: newMainPageFormData.navbar || prev.navbar,
+        hero: newMainPageFormData.hero || prev.hero
+      };
+      console.log("Updated main page form data:", updatedData);
+      return updatedData;
+    });
 };
 
   const handleAboutConfigChange = (newAboutConfig) => {
     console.log("About page JSON data changed:", newAboutConfig);
-    // This now updates the dedicated state for about_page.json content
     setAboutPageJsonData(newAboutConfig);
   };
 
@@ -532,8 +603,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
     setThemeColors(newColors);
     // Live update CSS variables from OneForm as well, in case ColorEditor's direct update has issues or for redundancy
     Object.keys(newColors).forEach(key => {
-        // Assuming newColors keys are already hyphenated as ColorEditor uses hyphenated keys internally
-        const cssVarName = `--color-${key}`;
+      const cssVarName = `--color-${key}`;
         document.documentElement.style.setProperty(cssVarName, newColors[key]);
     });
   };
@@ -543,7 +613,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
       console.log("fetchShowcaseData: Data already exists for showcase, skipping fetch.");
       return;
     }
-    if (loadingAllServiceBlocks) return; // Avoid multiple calls if already loading
+    if (loadingAllServiceBlocks) return;
 
     setLoadingAllServiceBlocks(true);
     try {
@@ -555,13 +625,12 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
       setAllServiceBlocksData(data);
     } catch (error) {
       console.error("Error loading all_blocks_showcase.json:", error);
-      // Optionally set an error state to display to the user
     } finally {
       setLoadingAllServiceBlocks(false);
     }
   };
 
-  // Handler to update showcase block config (similar to ServiceEditPage's handleBlockConfigUpdate)
+  // Handler to update showcase block config
   const handleShowcaseBlockConfigUpdate = (blockIndex, newConfig) => {
     setAllServiceBlocksData(prevData => {
       if (!prevData || !prevData.blocks) return prevData;
@@ -575,7 +644,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
     });
   };
 
-  // Handler for file changes in showcase blocks (similar to ServiceEditPage's handleFileChangeForBlock)
+  // Handler for file changes in showcase blocks
   const handleShowcaseFileChangeForBlock = (blockIndex, configKeyOrPathData, fileOrFileObject) => {
     if (!fileOrFileObject) return;
 
@@ -592,7 +661,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
       } else if (currentBlock.config.items && currentBlock.config.items[configKeyOrPathData.blockItemIndex]) {
         existingMediaConfig = currentBlock.config.items[configKeyOrPathData.blockItemIndex][fieldToUpdate];
       } else {
-        existingMediaConfig = currentBlock.config[fieldToUpdate]; // Fallback for direct config if item path is wrong
+        existingMediaConfig = currentBlock.config[fieldToUpdate];
       }
     } else {
       existingMediaConfig = currentBlock?.config?.[fieldToUpdate];
@@ -649,7 +718,6 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
                 }
                 newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures[configKeyOrPathData.pictureIndex] = newMediaConfig;
               } else {
-                // General nested field like item.image
                 newBlockConfig.items[configKeyOrPathData.blockItemIndex] = {
                   ...newBlockConfig.items[configKeyOrPathData.blockItemIndex],
                   [fieldToUpdate]: newMediaConfig
@@ -669,9 +737,25 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   // Helper to get display URL, can be passed to blocks
   const getShowcaseDisplayUrl = (value) => {
     if (!value) return null;
-    if (typeof value === "string") return value; // Handles direct URLs or blob URLs
-    if (typeof value === "object" && value.url) return value.url; // Handles { url: '...', ... }
+    if (typeof value === "string") return value;
+    if (typeof value === "object" && value.url) return value.url;
     return null;
+  };
+
+  // Handle tab change
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    if (tabId === 'allServiceBlocks' && !allServiceBlocksData && !loadingAllServiceBlocks) {
+      fetchShowcaseData();
+    }
+  };
+
+  const handleServicesChange = (newServicesData) => {
+    // Only update if the data has actually changed
+    if (JSON.stringify(servicesData) !== JSON.stringify(newServicesData)) {
+      console.log("Services data changed, updating state");
+      setServicesData(newServicesData);
+    }
   };
 
   /**
@@ -686,7 +770,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
       }
       
       const zip = new JSZip();
-      let collectedAssets = []; // Re-initialize for each export section if needed, or manage carefully
+      let collectedAssets = [];
 
       // Fetch initial services.json once if needed for "old" processing
       let initialServicesJsonData = null; 
@@ -705,7 +789,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
       }
 
       // --- Process "OLD" data if available (for full OneForm, not single block mode) ---
-      const oldAssetPaths = new Set(); // To store paths of assets in the "old" export
+      const oldAssetPaths = new Set();
       if (initialFormDataForOldExport) {
         console.log("Processing OLD data for ZIP:", initialFormDataForOldExport);
         let oldCollectedAssets = []; 
@@ -717,7 +801,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         );
         zip.file("old/json/combined_data.json", JSON.stringify(cleanedOldCombinedData, null, 2));
         
-        oldCollectedAssets.forEach(asset => oldAssetPaths.add(asset.pathInZip)); // Add relative path to set
+        oldCollectedAssets.forEach(asset => oldAssetPaths.add(asset.pathInZip));
 
         const oldAssetProcessingPromises = oldCollectedAssets.map(async (asset) => {
           const assetPathInZip = `old/${asset.pathInZip}`;
@@ -855,37 +939,37 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
       // --- Process "NEW" (current formData) data ---
       const newPathPrefix = initialFormDataForOldExport ? "new/" : ""; 
       console.log("Processing NEW data for ZIP:", formData);
-      let newCollectedAssets = []; // Use a different variable name to avoid confusion with old assets
+      let newCollectedAssets = [];
+
+      // Ensure we're using the correct data structure for authenticated users
+      const dataToProcess = formData.combined_data || formData;
 
       const cleanedNewCombinedData = traverseAndModifyDataForZip(
-        formData,
-        newCollectedAssets, // Pass the new array
+        dataToProcess,
+        newCollectedAssets,
         newPathPrefix ? 'newFormDataRoot' : 'formDataRoot',
         newPathPrefix ? 'user_uploads/new_combined_data' : 'user_uploads/combined_data'
       );
       zip.file(`${newPathPrefix}json/combined_data.json`, JSON.stringify(cleanedNewCombinedData, null, 2));
       console.log("Cleaned NEW combined_data for ZIP:", cleanedNewCombinedData);
-      // console.log("Assets collected from NEW combined_data:", newCollectedAssets); // Log raw newCollectedAssets
 
-      if (!blockName) { // Process services.json for "NEW" export using live data from ServiceEditPage
-        const currentServicesData = getServicesData(); // Get the live edited data
+      if (!blockName) {
+        const currentServicesData = getServicesData();
         if (currentServicesData) {
-            try {
-                const serviceAssetsForNew = []; 
-                const cleanedServicesDataNew = traverseAndModifyDataForZip(
-                    currentServicesData, // Use live data from ServiceEditPage
-                    serviceAssetsForNew,
-                    newPathPrefix ? 'newServicesDataRoot' : 'servicesDataRoot',
-                    newPathPrefix ? 'user_uploads/new_services_data' : 'user_uploads/services_data'
-                );
-                zip.file(`${newPathPrefix}json/services.json`, JSON.stringify(cleanedServicesDataNew, null, 2));
-                newCollectedAssets.push(...serviceAssetsForNew); // Add service assets to the main new list
-                console.log(`[OneForm] Added ${newPathPrefix}json/services.json to ZIP using live data from ServiceEditPage.`);
-            } catch (serviceError) {
-                console.error(`Error processing ${newPathPrefix}services.json from ServiceEditPage for ZIP:`, serviceError);
-            }
-        } else {
-          console.warn("[OneForm] Could not retrieve current services data for NEW ZIP (getServicesData returned null/undefined).");
+        try {
+            const serviceAssetsForNew = []; 
+            const cleanedServicesDataNew = traverseAndModifyDataForZip(
+              currentServicesData,
+                serviceAssetsForNew,
+                newPathPrefix ? 'newServicesDataRoot' : 'servicesDataRoot',
+                newPathPrefix ? 'user_uploads/new_services_data' : 'user_uploads/services_data'
+            );
+            zip.file(`${newPathPrefix}json/services.json`, JSON.stringify(cleanedServicesDataNew, null, 2));
+            newCollectedAssets.push(...serviceAssetsForNew);
+            console.log(`[OneForm] Added ${newPathPrefix}json/services.json to ZIP using live data from ServiceEditPage.`);
+        } catch (serviceError) {
+            console.error(`Error processing ${newPathPrefix}services.json from ServiceEditPage for ZIP:`, serviceError);
+          }
         }
       }
       
@@ -924,7 +1008,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
       }
 
       newCollectedAssets.forEach(asset => {
-        const assetPathInZip = asset.pathInZip;
+        const assetPathInZip = asset.pathInZip; 
         
         const existingAsset = finalNewAssetsMap.get(assetPathInZip);
         if (existingAsset) {
@@ -1038,6 +1122,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
     }
   };
 
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 text-black flex items-center justify-center">
@@ -1069,13 +1154,10 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
             Download JSON for {blockName}
           </button>
         </div>
-        {/* For single block editing, we might not show the OneForm Navbar editor, just the block's form */}
-        {/* Or, if `initialData` was meant to be the *entire* site structure, this changes */}
-        {/* The current logic in useEffect for initialData aims to make `formData` hold the full structure or the specific block. */}
         <div className="p-4">
           <MainPageForm
-            formData={{ [blockName]: singleBlockData, navbar: navbarDataForSingleBlock }} // Pass necessary data for the single block
-            setFormData={setFormData} // This would update OneForm's main formData state
+            formData={{ [blockName]: singleBlockData, navbar: navbarDataForSingleBlock }}
+            setFormData={setFormData}
             singleBlockMode={blockName}
             themeColors={themeColors} // Pass themeColors
           />
@@ -1094,7 +1176,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
     { id: "services", label: "Service Pages" },
     { id: "about", label: "About Page Block" },
     { id: "colors", label: "Theme Colors" },
-    { id: "allServiceBlocks", label: "All Service Blocks" } // New tab
+    { id: "allServiceBlocks", label: "All Service Blocks" }
   ];
 
   return (
@@ -1107,12 +1189,8 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         </button>
       </div>
       
-      {/* Tab Navigation and Content - below the sticky navbar editor */}
+      {/* Tab Navigation and Content */}
       <div className="flex-grow">
-        <div className="bg-gray-800 px-4 flex border-b border-gray-700 shadow-md sticky top-[calc(3.5rem+env(safe-area-inset-top,0px)+Xpx)] z-[50]">
-          {/* Xpx needs to be the height of the rendered Navbar preview section */}
-          {/* This sticky positioning for tabs might be complex to get right with dynamic navbar height */}
-          {/* For simplicity, let's make tabs not sticky for now, or assume fixed height for navbar */}
           <div className="bg-gray-800 px-4 flex border-b border-gray-700 shadow-md">
             {tabs.map(tabInfo => (
               <TabButton 
@@ -1120,25 +1198,39 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
                 id={tabInfo.id} 
                 label={tabInfo.label} 
                 isActive={activeTab === tabInfo.id} 
-                onClick={() => setActiveTab(tabInfo.id)} 
+              onClick={() => handleTabChange(tabInfo.id)} 
               />
             ))}
-          </div>
+          {!isCustomDomain && (
+            <OneFormAuthButton 
+              formData={formData}
+              themeColors={themeColors}
+              servicesData={servicesData}
+              aboutPageData={aboutPageJsonData}
+              showcaseData={allServiceBlocksData}
+              initialFormDataForOldExport={initialFormDataForOldExport}
+              initialServicesData={initialServicesData}
+              initialAboutPageJsonData={initialAboutPageJsonData}
+              initialAllServiceBlocksData={initialAllServiceBlocksData}
+              initialThemeColors={initialThemeColors}
+            />
+          )}
         </div>
 
         <div className="tab-content">
           {activeTab === "mainPage" && (
-            // Pass formData.mainPageBlocks if that's how MainPageForm expects it,
-            // or the whole formData if MainPageForm is meant to extract what it needs.
-            // Assuming MainPageForm expects the full formData that includes .navbar, .mainPageBlocks etc.
             <MainPageForm 
                 formData={formData} 
-                setFormData={handleMainPageFormChange} // Use the new handler
-                themeColors={themeColors} // Pass themeColors
+              setFormData={handleMainPageFormChange}
+              themeColors={themeColors}
             />
           )}
           {activeTab === "services" && 
-            <ServiceEditPage themeColors={themeColors} /> // Pass themeColors
+            <ServiceEditPage 
+              themeColors={themeColors}
+              servicesData={servicesData}
+              onServicesChange={handleServicesChange}
+            />
           } 
           {activeTab === "about" && (
             <div className="container mx-auto px-4 py-6 bg-gray-100">
@@ -1149,8 +1241,8 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
               <div className="relative border border-gray-300 bg-white overflow-hidden">
                 <AboutBlock
                   readOnly={false}
-                  aboutData={aboutPageJsonData || {}} // Use the dedicated state for about_page.json content
-                  onConfigChange={handleAboutConfigChange} // Use the new handler
+                  aboutData={aboutPageJsonData || {}}
+                  onConfigChange={handleAboutConfigChange}
                 />
               </div>
             </div>
@@ -1167,7 +1259,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
               {loadingAllServiceBlocks && <p>Loading showcase blocks...</p>}
               {(!loadingAllServiceBlocks && !allServiceBlocksData) && <p>Could not load showcase data. Check console.</p>}
               {allServiceBlocksData && allServiceBlocksData.blocks && (
-                <div className="space-y-0"> {/* No space for tight packing like ServiceEditPage */}
+                <div className="space-y-0">
                   {allServiceBlocksData.blocks.map((block, index) => {
                     const BlockComponent = serviceBlockMap[block.blockName];
                     const isEditingThisBlock = activeEditShowcaseBlockIndex === index;
@@ -1190,14 +1282,14 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
                             )}
                           </button>
                         </div>
-                        <BlockComponent
-                          config={block.config || {}}
-                          readOnly={!isEditingThisBlock}
+                        <BlockComponent 
+                          config={block.config || {}} 
+                          readOnly={!isEditingThisBlock} 
                           onConfigChange={(newFullConfig) => handleShowcaseBlockConfigUpdate(index, newFullConfig)}
-                          getDisplayUrl={getShowcaseDisplayUrl}
+                          getDisplayUrl={getShowcaseDisplayUrl} 
                           onFileChange={(fieldKeyOrPathData, file) => handleShowcaseFileChangeForBlock(index, fieldKeyOrPathData, file)}
-                          blockContext="allServiceBlocks" // Pass context if needed by blocks
-                          themeColors={themeColors} // Pass themeColors
+                          blockContext="allServiceBlocks"
+                          themeColors={themeColors}
                         />
                         {isEditingThisBlock && BlockComponent.EditorPanel && (
                           <div className="border-t border-gray-200 bg-gray-100 p-4">
@@ -1213,8 +1305,8 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
                                 handleShowcaseFileChangeForBlock(index, fieldKeyOrPathData, file);
                               }}
                               getDisplayUrl={getShowcaseDisplayUrl}
-                              blockContext="allServiceBlocks" // Pass context
-                              themeColors={themeColors} // Pass themeColors to EditorPanel
+                              blockContext="allServiceBlocks"
+                              themeColors={themeColors}
                             />
                           </div>
                         )}

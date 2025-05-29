@@ -60,7 +60,11 @@ const BookingPreview = memo(({ bookingData, readOnly, onHeaderTextChange, onPhon
   const [commercialServices, setCommercialServices] = useState([]);
   const [activeTab, setActiveTab] = useState("residential");
   const [isMobile, setIsMobile] = useState(false);
+
   const bannerRef = useRef(null); const formContainerRef = useRef(null); const toggleButtonRef = useRef(null); const contentRef = useRef(null);
+
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
 
   const socialIconComponents = { twitter: FaXTwitter, linkedin: FaLinkedin, instagram: FaInstagram, facebook: FaFacebook };
   const residentialIcons = useMemo(() => [FaTools, FaFan, FaTint, FaPaintRoller], []);
@@ -183,13 +187,24 @@ const BookingPreview = memo(({ bookingData, readOnly, onHeaderTextChange, onPhon
   const handleSubmit = useCallback(async (e) => { 
     e.preventDefault(); 
     if (readOnly) { console.log("BookingBlock Preview: Form submission prevented in read-only context."); return; }
+    
+    setSubmitting(true);
+    setError(null);
+    
     try { 
-        await axios.post("/api/sendForm", formData); 
+      const response = await axios.post("/api/submit-booking", formData);
+      if (response.data.success) {
         alert("Form submitted successfully!"); 
         setFormData({ firstName: "", lastName: "", email: "", phone: "", service: "", message: "" }); 
         if(isMobile) setIsFormVisible(false); 
+      } else {
+        throw new Error(response.data.message || 'Submission failed');
+      }
     } catch (error) { 
-        console.error("Error submitting form:", error); alert("Error submitting form."); 
+      console.error("Error submitting form:", error);
+      setError(error.response?.data?.message || error.message || "Error submitting form. Please try again.");
+    } finally {
+      setSubmitting(false);
     } 
   }, [formData, readOnly, isMobile]);
   const handleTabChange = useCallback((tab) => setActiveTab(tab), []);

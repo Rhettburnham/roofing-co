@@ -1,0 +1,2 @@
+wrangler r2 object put roofing-configs/configs/client1/combined_data.json --file=testingOnly/combined_data.json --remote
+^manually upload combined data json whileinside cloudflare folder

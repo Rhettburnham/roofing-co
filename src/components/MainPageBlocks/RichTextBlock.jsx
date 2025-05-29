@@ -285,7 +285,6 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange, bannerColor, 
     "/assets/images/shake_img/3.png",
     "/assets/images/shake_img/4.png",
   ];
-
   function FeatureCard({
     icon: IconName,
     title,
@@ -423,6 +422,7 @@ function RichTextPreview({ richTextData, readOnly, onInlineChange, bannerColor, 
       </motion.div>
     );
   }
+  
 
   FeatureCard.propTypes = {
     icon: PropTypes.string,

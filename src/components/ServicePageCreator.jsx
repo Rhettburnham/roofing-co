@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import PropTypes from "prop-types";
 import LoadingScreen from "./loadingScreen";
 import { slugify } from "../utils/slugify"; // Import the slugify utility
+import { useConfig } from "../context/ConfigContext"; // Import ConfigContext
 
 // Import all blocks from ServiceEditPage as a reference for blockMap
 import { blockMap as serviceEditBlockMap } from "./ServiceEditPage";
@@ -85,25 +86,22 @@ const ServicePageCreator = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { serviceType, serviceName: serviceNameFromRoute } = useParams(); // serviceName is the slug
+  const { services: configServices } = useConfig(); // Get services from ConfigContext
 
   useEffect(() => {
-    const fetchAndProcessServiceData = async () => {
+    const processServiceData = () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch("/data/ignore/services.json", {
-          credentials: "same-origin",
-        });
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const allServicesData = await response.json();
-
-        if (!allServicesData[serviceType] || !Array.isArray(allServicesData[serviceType])) {
-          throw new Error(`Service type "${serviceType}" not found or not an array in services.json.`);
+        if (!configServices) {
+          throw new Error("No services data available from ConfigContext");
         }
 
-        const foundService = allServicesData[serviceType].find(service => {
+        if (!configServices[serviceType] || !Array.isArray(configServices[serviceType])) {
+          throw new Error(`Service type "${serviceType}" not found or not an array in services data.`);
+        }
+
+        const foundService = configServices[serviceType].find(service => {
           // Find the HeroBlock to get the title for slugification
           const heroBlock = service.blocks?.find(b => b.blockName === "HeroBlock" || b.blockName === "PageHeroBlock");
           const titleFromHero = heroBlock?.config?.title;
@@ -129,12 +127,12 @@ const ServicePageCreator = () => {
     };
 
     if (serviceType && serviceNameFromRoute) {
-      fetchAndProcessServiceData();
+      processServiceData();
     } else {
       setError("Service type or name missing from route.");
       setLoading(false);
     }
-  }, [serviceType, serviceNameFromRoute]);
+  }, [serviceType, serviceNameFromRoute, configServices]);
 
   if (loading) {
     return <LoadingScreen />;
@@ -166,6 +164,12 @@ const ServicePageCreator = () => {
     <div className="service-page-container min-h-screen flex flex-col">
       <Suspense fallback={<LoadingScreen />}>
         {servicePageContent.blocks.map((block, index) => {
+          // Ensure block has required properties
+          if (!block || !block.blockName) {
+            console.warn(`ServicePageCreator: Invalid block at index ${index}.`);
+            return null;
+          }
+
           const BlockComponent = serviceEditBlockMap[block.blockName];
           if (!BlockComponent) {
             console.warn(`ServicePageCreator: Unknown block type "${block.blockName}" at index ${index}.`);
@@ -183,6 +187,7 @@ const ServicePageCreator = () => {
           // Log props being passed to each block for debugging
            console.log(`Rendering block: ${block.blockName} (key: ${uniqueKey}) with config:`, config);
 
+          try {
           // For HeroBlock, ensure it gets its config directly if the blockMap uses PageHeroBlock or HeroBlock
           if (block.blockName === "HeroBlock" || block.blockName === "PageHeroBlock") {
              return <BlockComponent key={uniqueKey} config={config} readOnly={true} />;
@@ -199,6 +204,14 @@ const ServicePageCreator = () => {
 
           // Standard rendering for other blocks
           return <BlockComponent key={uniqueKey} config={config} readOnly={true} />;
+          } catch (renderError) {
+            console.error(`Error rendering block ${block.blockName}:`, renderError);
+            return (
+              <div key={uniqueKey} className="p-4 my-2 text-center bg-red-100 text-red-700 border border-red-300 rounded">
+                Error rendering block "{block.blockName}". Please check configuration.
+              </div>
+            );
+          }
         })}
       </Suspense>
     </div>
