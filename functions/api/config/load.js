@@ -160,10 +160,8 @@ export async function onRequest(context) {
 
     return new Response(JSON.stringify({ 
       success: true,
-      data: {
-        ...configData,
-        assets
-      }
+      ...configData,
+      assets
     }), {
       headers: {
         ...corsHeaders,
