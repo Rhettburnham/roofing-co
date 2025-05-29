@@ -459,19 +459,37 @@ export default function OneFormAuthButton({
       if (!isDevelopment) {
         setDebug('Saving to server...');
         
+        // Prepare data for save, using the same structure as ZIP
+        const dataToSave = {};
+        
+        // Only include changed data
+        if (JSON.stringify(dataToProcess) !== JSON.stringify(initialFormDataForOldExport)) {
+          dataToSave.combined_data = cleanedNewCombinedData;
+        }
+        
+        if (servicesData && JSON.stringify(servicesData) !== JSON.stringify(initialServicesData)) {
+          dataToSave.services = cleanedServicesDataNew;
+        }
+        
+        if (aboutPageData && JSON.stringify(aboutPageData) !== JSON.stringify(initialAboutPageJsonData)) {
+          dataToSave.aboutPageData = cleanedNewAboutData;
+        }
+        
+        if (showcaseData && JSON.stringify(showcaseData) !== JSON.stringify(initialAllServiceBlocksData)) {
+          dataToSave.all_blocks_showcase = cleanedNewShowcaseData;
+        }
+        
+        if (themeColors && JSON.stringify(themeColors) !== JSON.stringify(initialThemeColors)) {
+          dataToSave.colors = colorsForNewJson;
+        }
+
         const response = await fetch('/api/config/save', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
           credentials: 'include',
-          body: JSON.stringify({
-            combined_data: cleanedNewCombinedData,
-            colors: colorsForNewJson,
-            services: cleanedServicesDataNew,
-            aboutPageData: cleanedNewAboutData,
-            all_blocks_showcase: cleanedNewShowcaseData
-          })
+          body: JSON.stringify(dataToSave)
         });
 
         if (!response.ok) {
