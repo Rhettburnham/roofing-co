@@ -657,71 +657,127 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
       existingMediaConfig = currentBlock?.config?.[fieldToUpdate];
     }
 
-    if (fileOrFileObject instanceof File) {
-      if (existingMediaConfig && typeof existingMediaConfig === 'object' && existingMediaConfig.url && existingMediaConfig.url.startsWith('blob:')) {
-        URL.revokeObjectURL(existingMediaConfig.url);
+    const processFile = async (file) => {
+      // If it's a blob URL, fetch the actual file data
+      if (typeof file === 'string' && file.startsWith('blob:')) {
+        try {
+          const response = await fetch(file);
+          const blob = await response.blob();
+          return new File([blob], 'pasted_image.png', { type: blob.type });
+        } catch (error) {
+          console.error('Error converting blob URL to file:', error);
+          return null;
+        }
       }
-      const fileURL = URL.createObjectURL(fileOrFileObject);
-      newMediaConfig = {
-        file: fileOrFileObject,
-        url: fileURL,
-        name: fileOrFileObject.name,
-        originalUrl: (typeof existingMediaConfig === 'object' ? existingMediaConfig.originalUrl : typeof existingMediaConfig === 'string' ? existingMediaConfig : null) || `assets/showcase_uploads/generated/${fileOrFileObject.name}`
-      };
-    } else if (typeof fileOrFileObject === 'object' && fileOrFileObject.url !== undefined) {
-      if (existingMediaConfig && typeof existingMediaConfig === 'object' && existingMediaConfig.file && existingMediaConfig.url && existingMediaConfig.url.startsWith('blob:')) {
-        if (existingMediaConfig.url !== fileOrFileObject.url) { 
+      return file;
+    };
+
+    const updateBlockConfig = async () => {
+      if (fileOrFileObject instanceof File) {
+        if (existingMediaConfig && typeof existingMediaConfig === 'object' && existingMediaConfig.url && existingMediaConfig.url.startsWith('blob:')) {
           URL.revokeObjectURL(existingMediaConfig.url);
         }
-      }
-      newMediaConfig = fileOrFileObject;
-    } else if (typeof fileOrFileObject === 'string') { 
-      if (existingMediaConfig && typeof existingMediaConfig === 'object' && existingMediaConfig.file && existingMediaConfig.url && existingMediaConfig.url.startsWith('blob:')) {
-        URL.revokeObjectURL(existingMediaConfig.url);
-      }
-      newMediaConfig = {
-        file: null,
-        url: fileOrFileObject,
-        name: fileOrFileObject.split('/').pop(),
-        originalUrl: fileOrFileObject
-      };
-    } else {
-      console.warn("Unsupported file/URL type in handleShowcaseFileChangeForBlock", fileOrFileObject);
-      return;
-    }
-
-    setAllServiceBlocksData(prevData => {
-      const updatedBlocks = prevData.blocks.map((block, index) => {
-        if (index === blockIndex) {
-          let newBlockConfig = { ...block.config };
-          if (isNestedPath) {
-            if (!newBlockConfig.items) newBlockConfig.items = [];
-            while (newBlockConfig.items.length <= configKeyOrPathData.blockItemIndex) {
-              newBlockConfig.items.push({ pictures: [] }); 
-            }
-            if(configKeyOrPathData.field === 'pictures'){
-              if (!newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures) {
-                newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures = [];
-              }
-              while (newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures.length <= configKeyOrPathData.pictureIndex) {
-                newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures.push(null);
-              }
-              newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures[configKeyOrPathData.pictureIndex] = newMediaConfig;
-            } else {
-              newBlockConfig.items[configKeyOrPathData.blockItemIndex] = {
-                ...newBlockConfig.items[configKeyOrPathData.blockItemIndex],
-                [fieldToUpdate]: newMediaConfig
-              };
-            }
-          } else {
-            newBlockConfig[fieldToUpdate] = newMediaConfig;
+        const fileURL = URL.createObjectURL(fileOrFileObject);
+        newMediaConfig = {
+          file: fileOrFileObject,
+          url: fileURL,
+          name: fileOrFileObject.name,
+          originalUrl: (typeof existingMediaConfig === 'object' ? existingMediaConfig.originalUrl : typeof existingMediaConfig === 'string' ? existingMediaConfig : null) || `assets/showcase_uploads/generated/${fileOrFileObject.name}`
+        };
+      } else if (typeof fileOrFileObject === 'object' && fileOrFileObject.url !== undefined) {
+        if (existingMediaConfig && typeof existingMediaConfig === 'object' && existingMediaConfig.file && existingMediaConfig.url && existingMediaConfig.url.startsWith('blob:')) {
+          if (existingMediaConfig.url !== fileOrFileObject.url) { 
+            URL.revokeObjectURL(existingMediaConfig.url);
           }
-          return { ...block, config: newBlockConfig };
         }
-        return block;
+        // If it's a blob URL, convert it to a File
+        if (fileOrFileObject.url.startsWith('blob:')) {
+          const file = await processFile(fileOrFileObject.url);
+          if (file) {
+            const fileURL = URL.createObjectURL(file);
+            newMediaConfig = {
+              file: file,
+              url: fileURL,
+              name: fileOrFileObject.name || file.name,
+              originalUrl: fileOrFileObject.originalUrl || `assets/showcase_uploads/generated/${file.name}`
+            };
+          } else {
+            newMediaConfig = fileOrFileObject;
+          }
+        } else {
+          newMediaConfig = fileOrFileObject;
+        }
+      } else if (typeof fileOrFileObject === 'string') { 
+        if (existingMediaConfig && typeof existingMediaConfig === 'object' && existingMediaConfig.file && existingMediaConfig.url && existingMediaConfig.url.startsWith('blob:')) {
+          URL.revokeObjectURL(existingMediaConfig.url);
+        }
+        // If it's a blob URL, convert it to a File
+        if (fileOrFileObject.startsWith('blob:')) {
+          const file = await processFile(fileOrFileObject);
+          if (file) {
+            const fileURL = URL.createObjectURL(file);
+            newMediaConfig = {
+              file: file,
+              url: fileURL,
+              name: file.name,
+              originalUrl: fileOrFileObject
+            };
+          } else {
+            newMediaConfig = {
+              file: null,
+              url: fileOrFileObject,
+              name: fileOrFileObject.split('/').pop(),
+              originalUrl: fileOrFileObject
+            };
+          }
+        } else {
+          newMediaConfig = {
+            file: null,
+            url: fileOrFileObject,
+            name: fileOrFileObject.split('/').pop(),
+            originalUrl: fileOrFileObject
+          };
+        }
+      } else {
+        console.warn("Unsupported file/URL type in handleShowcaseFileChangeForBlock", fileOrFileObject);
+        return;
+      }
+
+      setAllServiceBlocksData(prevData => {
+        const updatedBlocks = prevData.blocks.map((block, index) => {
+          if (index === blockIndex) {
+            let newBlockConfig = { ...block.config };
+            if (isNestedPath) {
+              if (!newBlockConfig.items) newBlockConfig.items = [];
+              while (newBlockConfig.items.length <= configKeyOrPathData.blockItemIndex) {
+                newBlockConfig.items.push({ pictures: [] }); 
+              }
+              if(configKeyOrPathData.field === 'pictures'){
+                if (!newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures) {
+                  newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures = [];
+                }
+                while (newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures.length <= configKeyOrPathData.pictureIndex) {
+                  newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures.push(null);
+                }
+                newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures[configKeyOrPathData.pictureIndex] = newMediaConfig;
+              } else {
+                newBlockConfig.items[configKeyOrPathData.blockItemIndex] = {
+                  ...newBlockConfig.items[configKeyOrPathData.blockItemIndex],
+                  [fieldToUpdate]: newMediaConfig
+                };
+              }
+            } else {
+              newBlockConfig[fieldToUpdate] = newMediaConfig;
+            }
+            return { ...block, config: newBlockConfig };
+          }
+          return block;
+        });
+        return { ...prevData, blocks: updatedBlocks };
       });
-      return { ...prevData, blocks: updatedBlocks };
-    });
+    };
+
+    updateBlockConfig();
   };
 
   // Helper to get display URL, can be passed to blocks
@@ -758,6 +814,49 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
       
       const zip = new JSZip();
       let collectedAssets = [];
+
+      // Process all_blocks_showcase.json first to ensure we have all assets
+      if (allServiceBlocksData && !blockName) {
+        console.log("Processing all_blocks_showcase.json for ZIP:", allServiceBlocksData);
+        let showcaseAssets = [];
+        const cleanedShowcaseData = traverseAndModifyDataForZip(
+          allServiceBlocksData,
+          showcaseAssets,
+          'showcaseDataRoot',
+          'user_uploads/showcase_data'
+        );
+
+        // Process showcase assets
+        for (const asset of showcaseAssets) {
+          if (asset.type === 'file' && asset.dataSource instanceof File) {
+            console.log(`Adding showcase file to ZIP: ${asset.pathInZip}`);
+            zip.file(asset.pathInZip, asset.dataSource);
+          } else if (asset.type === 'url' && typeof asset.dataSource === 'string') {
+            if (asset.dataSource.startsWith('blob:')) {
+              try {
+                const response = await fetch(asset.dataSource);
+                const blob = await response.blob();
+                console.log(`Adding blob URL content to ZIP: ${asset.pathInZip}`);
+                zip.file(asset.pathInZip, blob);
+              } catch (error) {
+                console.error(`Error processing blob URL for ZIP: ${asset.pathInZip}`, error);
+              }
+            } else if (!asset.dataSource.startsWith('http:') && !asset.dataSource.startsWith('https:') && !asset.dataSource.startsWith('data:')) {
+              try {
+                const response = await fetch(asset.dataSource);
+                const blob = await response.blob();
+                console.log(`Adding local URL content to ZIP: ${asset.pathInZip}`);
+                zip.file(asset.pathInZip, blob);
+              } catch (error) {
+                console.error(`Error processing local URL for ZIP: ${asset.pathInZip}`, error);
+              }
+            }
+          }
+        }
+
+        zip.file("json/all_blocks_showcase.json", JSON.stringify(cleanedShowcaseData, null, 2));
+        console.log("Added all_blocks_showcase.json to ZIP");
+      }
 
       // Fetch initial services.json once if needed for "old" processing
       let initialServicesJsonData = null; 
