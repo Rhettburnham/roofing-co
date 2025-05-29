@@ -2,186 +2,77 @@ export async function onRequest(context) {
   console.log("=== Config Save Handler ===");
   try {
     const { request, env } = context;
-    console.log('Context received:', { 
-      hasRequest: !!request,
-      hasEnv: !!env,
-      hasDB: !!env?.DB,
-      hasROOFING_CONFIGS: !!env?.ROOFING_CONFIGS
-    });
+    const { DB, ROOFING_CONFIGS } = env;
 
-    // CORS headers
-    const corsHeaders = {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Cookie',
-      'Access-Control-Allow-Credentials': 'true',
+    // Verify authentication
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const user = await verifyToken(token, DB);
+    if (!user) {
+      return new Response(JSON.stringify({ success: false, error: 'Invalid token' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Parse request body
+    const data = await request.json();
+    const { combined_data, colors, services, aboutPageData, all_blocks_showcase, assets } = data;
+
+    // Save JSON files to R2
+    const jsonFiles = {
+      'json/combined_data.json': combined_data,
+      'json/colors_output.json': colors,
+      'json/services.json': services,
+      'json/about_page.json': aboutPageData,
+      'json/all_blocks_showcase.json': all_blocks_showcase
     };
 
-    // Handle preflight requests
-    if (request.method === 'OPTIONS') {
-      console.log('Handling OPTIONS request');
-      return new Response(null, { headers: corsHeaders });
-    }
-
-    // Only allow POST requests
-    if (request.method !== 'POST') {
-      console.log('Invalid method:', request.method);
-      return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-        status: 405,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
-      });
-    }
-
-    // Read session_id from cookie
-    const cookieHeader = request.headers.get('Cookie');
-    console.log('Cookie header:', cookieHeader);
-    
-    let sessionId = null;
-    if (cookieHeader) {
-      const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
-        const [key, value] = cookie.trim().split('=');
-        acc[key] = value;
-        return acc;
-      }, {});
-      sessionId = cookies['session_id'];
-    }
-    console.log('Session ID from cookie:', sessionId ? 'present' : 'missing');
-
-    if (!sessionId) {
-      console.log('No session ID found');
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
-      });
-    }
-
-    // Verify the session and get config ID
-    console.log('Querying database for session...');
-    const session = await env.DB.prepare(
-      'SELECT s.*, u.config_id FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.session_id = ? AND s.expires_at > datetime("now")'
-    ).bind(sessionId).first();
-
-    if (!session) {
-      console.log('No valid session found');
-      return new Response(JSON.stringify({ error: 'Invalid session' }), {
-        status: 401,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
-      });
-    }
-
-    const configId = session.config_id;
-    console.log('Config ID from session:', configId);
-
-    // Get the config data from the request body
-    console.log('Reading request body...');
-    const { combined_data, colors, services, about_page, all_blocks_showcase, assets } = await request.json();
-    console.log('Config data received:', {
-      hasCombinedData: !!combined_data,
-      hasColors: !!colors,
-      hasServices: !!services,
-      hasAboutPage: !!about_page,
-      hasAllBlocksShowcase: !!all_blocks_showcase,
-      hasAssets: !!assets
-    });
-
-    // Save all configs to R2
-    const configsToSave = [
-      { key: `configs/${configId}/combined_data.json`, data: combined_data },
-      { key: `configs/${configId}/colors_output.json`, data: colors },
-      { key: `configs/${configId}/services.json`, data: services },
-      { key: `configs/${configId}/about_page.json`, data: about_page },
-      { key: `configs/${configId}/all_blocks_showcase.json`, data: all_blocks_showcase }
-    ];
-
-    console.log('Saving configs to R2:', configsToSave.map(c => c.key));
-    
-    // Save all configs in parallel
-    const savePromises = configsToSave.map(async ({ key, data }) => {
-      if (!data) {
-        console.log(`Skipping ${key} - no data provided`);
-        return;
+    for (const [path, content] of Object.entries(jsonFiles)) {
+      if (content) {
+        await ROOFING_CONFIGS.put(path, JSON.stringify(content, null, 2), {
+          httpMetadata: { contentType: 'application/json' }
+        });
       }
-      try {
-        const jsonString = JSON.stringify(data, null, 2);
-        await env.ROOFING_CONFIGS.put(key, jsonString, {
-        httpMetadata: {
-          contentType: 'application/json'
-        }
-      });
-        console.log(`Saved ${key} successfully`);
-      } catch (error) {
-        console.error(`Error saving ${key}:`, error);
-        throw error;
-      }
-    });
+    }
 
-    // Save assets if provided
+    // Save assets to R2
     if (assets) {
-      console.log('Saving assets to R2...');
-      const assetPromises = Object.entries(assets).map(async ([path, data]) => {
-        if (!data) {
-          console.log(`Skipping asset ${path} - no data provided`);
-          return;
-        }
-        try {
-          const assetKey = `configs/${configId}/assets/${path}`;
-          await env.ROOFING_CONFIGS.put(assetKey, data, {
-            httpMetadata: {
-              contentType: getContentType(path)
-            }
+      for (const [path, content] of Object.entries(assets)) {
+        if (content) {
+          const contentType = getContentTypeFromPath(path);
+          await ROOFING_CONFIGS.put(path, content, {
+            httpMetadata: { contentType }
           });
-          console.log(`Saved asset ${path} successfully`);
-        } catch (error) {
-          console.error(`Error saving asset ${path}:`, error);
-          throw error;
         }
-      });
-      savePromises.push(...assetPromises);
+      }
     }
-
-    await Promise.all(savePromises);
-    console.log('All configs and assets saved successfully');
 
     return new Response(JSON.stringify({ success: true }), {
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' }
     });
+
   } catch (error) {
-    console.error('Error in config save handler:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name,
-      type: error.constructor.name
-    });
+    console.error('Error in save handler:', error);
     return new Response(JSON.stringify({ 
-      error: 'Failed to save config',
-      details: error.message 
+      success: false, 
+      error: error.message || 'Internal server error' 
     }), {
       status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Cookie',
-        'Access-Control-Allow-Credentials': 'true',
-      },
+      headers: { 'Content-Type': 'application/json' }
     });
   }
 }
 
-function getContentType(path) {
-  const extension = path.split('.').pop().toLowerCase();
+function getContentTypeFromPath(path) {
+  const ext = path.split('.').pop().toLowerCase();
   const contentTypes = {
     'jpg': 'image/jpeg',
     'jpeg': 'image/jpeg',
@@ -189,9 +80,13 @@ function getContentType(path) {
     'gif': 'image/gif',
     'webp': 'image/webp',
     'svg': 'image/svg+xml',
-    'mp4': 'video/mp4',
-    'webm': 'video/webm',
-    'pdf': 'application/pdf'
+    'pdf': 'application/pdf',
+    'doc': 'application/msword',
+    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'xls': 'application/vnd.ms-excel',
+    'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'txt': 'text/plain',
+    'json': 'application/json'
   };
-  return contentTypes[extension] || 'application/octet-stream';
+  return contentTypes[ext] || 'application/octet-stream';
 } 
