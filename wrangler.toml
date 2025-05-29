@@ -10,6 +10,26 @@ pages_build_output_dir = "dist"
 # Directory containing your Functions:
 pages_functions_dir = "functions"
 
+# ── Development Environment ────────────────────────────────────────────────────
+[env.development]
+name = "roofing-co-dev"
+compatibility_flags = ["nodejs_compat"]
+
+# Environment variables for development:
+[env.development.vars]
+ENVIRONMENT = "development"
+
+# D1 database binding for development:
+[[env.development.d1_databases]]
+binding       = "DB"
+database_name = "auth-db"
+database_id   = "bef1c7fa-8bbd-4067-b293-b2dae6132680"
+
+# R2 bucket binding for development:
+[[env.development.r2_buckets]]
+binding     = "ROOFING_CONFIGS"
+bucket_name = "roofing-configs"
+
 # ── Production Environment ─────────────────────────────────────────────────────
 [env.production]
 name = "roofing-co"

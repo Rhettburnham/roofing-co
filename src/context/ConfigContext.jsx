@@ -28,6 +28,9 @@ export const ConfigProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [configId, setConfigId] = useState(null);
 
+  // Development mode flag
+  const isDevelopment = process.env.NODE_ENV === 'development';
+
   // Apply colors to CSS variables
   const applyColorsToCSS = (colorData) => {
     const normalizedColors = normalizeColorKeys(colorData);
@@ -50,6 +53,76 @@ export const ConfigProvider = ({ children }) => {
                            window.location.hostname !== 'localhost';
         setIsCustomDomain(customDomain);
 
+        if (isDevelopment) {
+          console.log("Development mode: Loading local config data");
+          try {
+            // Load local config files
+            const [combinedResponse, colorsResponse, servicesResponse] = await Promise.all([
+              fetch("/data/raw_data/step_4/combined_data.json"),
+              fetch("/data/raw_data/step_4/colors_output.json"),
+              fetch("/data/raw_data/step_4/services.json")
+            ]);
+
+            const configData = {
+              success: true,
+              combined_data: combinedResponse.ok ? await combinedResponse.json() : null,
+              colors: colorsResponse.ok ? await colorsResponse.json() : null,
+              services: servicesResponse.ok ? await servicesResponse.json() : null
+            };
+
+            // Update config data
+            if (configData.combined_data) {
+              setConfig(configData.combined_data);
+            }
+            
+            // Handle colors with clear precedence
+            let finalColors = null;
+            
+            // 1. First try colors_output.json
+            if (configData.colors) {
+              finalColors = configData.colors;
+            }
+            
+            // 2. Then try combined_data.colors
+            if (configData.combined_data?.colors) {
+              finalColors = { ...finalColors, ...configData.combined_data.colors };
+            }
+            
+            // 3. Apply colors if we have any
+            if (finalColors) {
+              const normalizedColors = applyColorsToCSS(finalColors);
+              setColors(normalizedColors);
+            }
+            
+            // Handle services with clear precedence
+            let finalServices = null;
+            
+            // 1. First try services.json
+            if (configData.services) {
+              finalServices = configData.services;
+            }
+            
+            // 2. Then try combined_data.services
+            if (configData.combined_data?.services) {
+              finalServices = { ...finalServices, ...configData.combined_data.services };
+            }
+            
+            // 3. Set services if we have any
+            if (finalServices) {
+              setServices(finalServices);
+            }
+
+            setLoading(false);
+            return;
+          } catch (err) {
+            console.error('Error loading local config:', err);
+            setError(err.message);
+            setLoading(false);
+            return;
+          }
+        }
+
+        // Production mode: Load from API
         // Check authentication status
         const authResponse = await fetch('/api/auth/status', {
           credentials: 'include'
@@ -163,7 +236,7 @@ export const ConfigProvider = ({ children }) => {
     };
 
     loadConfig();
-  }, []);
+  }, [isDevelopment]);
 
   return (
     <ConfigContext.Provider value={{ 

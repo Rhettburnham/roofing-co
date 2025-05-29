@@ -197,21 +197,21 @@ const ServiceEditPage = ({ themeColors }) => {
     if (configServices) {
       setServicesData(configServices);
       setLoading(false);
-        try {
-          setInitialServicesDataForOldExport(JSON.parse(JSON.stringify(configServices))); // Deep copy for "old" export
-        } catch (e) {
-            console.error("Could not deep clone initial services data for old export:", e);
-            setInitialServicesDataForOldExport(null);
-        }
+      try {
+        setInitialServicesDataForOldExport(JSON.parse(JSON.stringify(configServices))); // Deep copy for "old" export
+      } catch (e) {
+        console.error("Could not deep clone initial services data for old export:", e);
+        setInitialServicesDataForOldExport(null);
+      }
       const page = configServices[selectedCategory].find(
-          (p) => p.id === Number(selectedPageId)
-        );
-        setCurrentPage(page);
+        (p) => p.id === Number(selectedPageId)
+      );
+      setCurrentPage(page);
     } else {
       setError("No services data available");
       setLoading(false);
     }
-  }, [configServices, selectedCategory, selectedPageId]);
+  }, [configServices]); // Only depend on configServices
 
   // Update current page when category or page ID changes
   useEffect(() => {
@@ -219,14 +219,15 @@ const ServiceEditPage = ({ themeColors }) => {
       const page = servicesData[selectedCategory]?.find(
         (p) => p.id === Number(selectedPageId)
       );
-      setCurrentPage(page || null); // Handle page not found if servicesData is temporarily out of sync
+      if (page && (!currentPage || page.id !== currentPage.id)) {
+        setCurrentPage(page);
+      }
     }
-  }, [selectedCategory, selectedPageId, servicesData]);
+  }, [selectedCategory, selectedPageId, servicesData, currentPage]);
 
-  // Reset activeEditBlockIndex ONLY when category or page ID changes.
+  // Reset activeEditBlockIndex ONLY when category or page ID changes
   useEffect(() => {
     setActiveEditBlockIndex(null);
-    console.log('[ServiceEditPage] Category or Page ID changed, resetting activeEditBlockIndex.');
   }, [selectedCategory, selectedPageId]);
 
   /* 

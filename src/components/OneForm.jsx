@@ -22,7 +22,6 @@ import ServiceEditPage, { getServicesData, blockMap as serviceBlockMap } from ".
 import MainPageForm from "./MainPageForm";
 import AboutBlock from "./MainPageBlocks/AboutBlock";
 import { useConfig } from "../context/ConfigContext";
-import { handleFileChange } from '../utils/assetUpload';
 
 import Navbar from "./Navbar"; // Import Navbar for preview
 import ColorEditor from "./ColorEditor"; // Import the new ColorEditor component
@@ -374,6 +373,9 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   const [initialServicesData, setInitialServicesData] = useState(null);
   const navigate = useNavigate();
 
+  // Development mode flag
+  const isDevelopment = process.env.NODE_ENV === 'development';
+
   // On mount, fetch combined_data.json to populate the form if no initialData is provided
   useEffect(() => {
     const fetchAllData = async () => {
@@ -487,6 +489,13 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
           }
         }
 
+        // Skip auth check in development mode
+        if (isDevelopment) {
+          console.log("Development mode: Skipping auth check");
+          setLoading(false);
+          return;
+        }
+
         if (customDomain) {
           console.log("On custom domain:", window.location.hostname);
           try {
@@ -559,7 +568,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         } else {
           console.log("User is not authenticated");
         }
-
+        
         setLoading(false);
 
       } catch (error) {
@@ -569,13 +578,13 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
     };
 
     fetchAllData();
-  }, [initialData, blockName, configColors]);
+  }, [initialData, blockName, configColors, isDevelopment]);
 
   const handleMainPageFormChange = (newMainPageFormData) => {
     setFormData(prev => {
       // Ensure we maintain the correct structure
       const updatedData = {
-        ...prev,
+        ...prev, 
         mainPageBlocks: newMainPageFormData.mainPageBlocks || prev.mainPageBlocks,
         navbar: newMainPageFormData.navbar || prev.navbar,
         hero: newMainPageFormData.hero || prev.hero
@@ -583,7 +592,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
       console.log("Updated main page form data:", updatedData);
       return updatedData;
     });
-  };
+};
 
   const handleAboutConfigChange = (newAboutConfig) => {
     console.log("About page JSON data changed:", newAboutConfig);
@@ -595,7 +604,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
     // Live update CSS variables from OneForm as well, in case ColorEditor's direct update has issues or for redundancy
     Object.keys(newColors).forEach(key => {
       const cssVarName = `--color-${key}`;
-      document.documentElement.style.setProperty(cssVarName, newColors[key]);
+        document.documentElement.style.setProperty(cssVarName, newColors[key]);
     });
   };
 
@@ -636,50 +645,68 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   };
 
   // Handler for file changes in showcase blocks
-  const handleShowcaseFileChangeForBlock = async (blockIndex, configKeyOrPathData, fileOrFileObject) => {
+  const handleShowcaseFileChangeForBlock = (blockIndex, configKeyOrPathData, fileOrFileObject) => {
     if (!fileOrFileObject) return;
 
-    try {
-      let newMediaConfig;
-      const currentBlock = allServiceBlocksData.blocks[blockIndex];
-      let existingMediaConfig;
+    let newMediaConfig;
+    const currentBlock = allServiceBlocksData.blocks[blockIndex];
+    let existingMediaConfig;
 
-      let isNestedPath = typeof configKeyOrPathData === 'object' && configKeyOrPathData !== null;
-      let fieldToUpdate = isNestedPath ? configKeyOrPathData.field : configKeyOrPathData;
+    let isNestedPath = typeof configKeyOrPathData === 'object' && configKeyOrPathData !== null;
+    let fieldToUpdate = isNestedPath ? configKeyOrPathData.field : configKeyOrPathData;
 
-      if (isNestedPath) {
-        if (configKeyOrPathData.field === 'pictures' && currentBlock.config.items && currentBlock.config.items[configKeyOrPathData.blockItemIndex]) {
-          existingMediaConfig = currentBlock.config.items[configKeyOrPathData.blockItemIndex].pictures?.[configKeyOrPathData.pictureIndex];
-        } else if (currentBlock.config.items && currentBlock.config.items[configKeyOrPathData.blockItemIndex]) {
-          existingMediaConfig = currentBlock.config.items[configKeyOrPathData.blockItemIndex][fieldToUpdate];
-        } else {
-          existingMediaConfig = currentBlock.config[fieldToUpdate];
-        }
+    if (isNestedPath) {
+      if (configKeyOrPathData.field === 'pictures' && currentBlock.config.items && currentBlock.config.items[configKeyOrPathData.blockItemIndex]) {
+        existingMediaConfig = currentBlock.config.items[configKeyOrPathData.blockItemIndex].pictures?.[configKeyOrPathData.pictureIndex];
+      } else if (currentBlock.config.items && currentBlock.config.items[configKeyOrPathData.blockItemIndex]) {
+        existingMediaConfig = currentBlock.config.items[configKeyOrPathData.blockItemIndex][fieldToUpdate];
       } else {
-        existingMediaConfig = currentBlock?.config?.[fieldToUpdate];
+        existingMediaConfig = currentBlock.config[fieldToUpdate];
       }
+    } else {
+      existingMediaConfig = currentBlock?.config?.[fieldToUpdate];
+    }
 
-      // Get the original path if it exists
-      const originalPath = existingMediaConfig?.url || existingMediaConfig?.originalUrl;
-
-      // Handle the file change and get the new path
-      const newPath = await handleFileChange(fileOrFileObject, originalPath);
-
-      // Create the new media config
+    if (fileOrFileObject instanceof File) {
+      if (existingMediaConfig && typeof existingMediaConfig === 'object' && existingMediaConfig.url && existingMediaConfig.url.startsWith('blob:')) {
+        URL.revokeObjectURL(existingMediaConfig.url);
+      }
+      const fileURL = URL.createObjectURL(fileOrFileObject);
       newMediaConfig = {
-        url: newPath,
-        name: newPath.split('/').pop(),
-        originalUrl: newPath
+        file: fileOrFileObject,
+        url: fileURL,
+        name: fileOrFileObject.name,
+        originalUrl: (typeof existingMediaConfig === 'object' ? existingMediaConfig.originalUrl : typeof existingMediaConfig === 'string' ? existingMediaConfig : null) || `assets/showcase_uploads/generated/${fileOrFileObject.name}`
       };
+    } else if (typeof fileOrFileObject === 'object' && fileOrFileObject.url !== undefined) {
+      if (existingMediaConfig && typeof existingMediaConfig === 'object' && existingMediaConfig.file && existingMediaConfig.url && existingMediaConfig.url.startsWith('blob:')) {
+        if (existingMediaConfig.url !== fileOrFileObject.url) { 
+          URL.revokeObjectURL(existingMediaConfig.url);
+        }
+      }
+      newMediaConfig = fileOrFileObject;
+    } else if (typeof fileOrFileObject === 'string') { 
+      if (existingMediaConfig && typeof existingMediaConfig === 'object' && existingMediaConfig.file && existingMediaConfig.url && existingMediaConfig.url.startsWith('blob:')) {
+        URL.revokeObjectURL(existingMediaConfig.url);
+      }
+      newMediaConfig = {
+        file: null,
+        url: fileOrFileObject,
+        name: fileOrFileObject.split('/').pop(),
+        originalUrl: fileOrFileObject
+      };
+    } else {
+      console.warn("Unsupported file/URL type in handleShowcaseFileChangeForBlock", fileOrFileObject);
+      return;
+    }
 
-      // Update the state with the new media config
-      setAllServiceBlocksData(prevData => {
-        const updatedBlocks = prevData.blocks.map((block, index) => {
-          if (index === blockIndex) {
-            let newBlockConfig = { ...block.config };
-            if (isNestedPath) {
-              if (!newBlockConfig.items) newBlockConfig.items = [];
-              while (newBlockConfig.items.length <= configKeyOrPathData.blockItemIndex) {
+    setAllServiceBlocksData(prevData => {
+      const updatedBlocks = prevData.blocks.map((block, index) => {
+        if (index === blockIndex) {
+          let newBlockConfig = { ...block.config };
+          if (isNestedPath) {
+            if (!newBlockConfig.items) newBlockConfig.items = [];
+             while (newBlockConfig.items.length <= configKeyOrPathData.blockItemIndex) {
                 newBlockConfig.items.push({ pictures: [] }); 
               }
               if(configKeyOrPathData.field === 'pictures'){
@@ -696,20 +723,15 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
                   [fieldToUpdate]: newMediaConfig
                 };
               }
-            } else {
-              newBlockConfig[fieldToUpdate] = newMediaConfig;
-            }
-            return { ...block, config: newBlockConfig };
+          } else {
+            newBlockConfig[fieldToUpdate] = newMediaConfig;
           }
-          return block;
-        });
-        return { ...prevData, blocks: updatedBlocks };
+          return { ...block, config: newBlockConfig };
+        }
+        return block;
       });
-
-    } catch (error) {
-      console.error('Error handling showcase file change:', error);
-      // You might want to show an error message to the user here
-    }
+      return { ...prevData, blocks: updatedBlocks };
+    });
   };
 
   // Helper to get display URL, can be passed to blocks
@@ -729,8 +751,11 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   };
 
   const handleServicesChange = (newServicesData) => {
-    console.log("Services data changed:", newServicesData);
-    setServicesData(newServicesData);
+    // Only update if the data has actually changed
+    if (JSON.stringify(servicesData) !== JSON.stringify(newServicesData)) {
+      console.log("Services data changed, updating state");
+      setServicesData(newServicesData);
+    }
   };
 
   /**
@@ -918,7 +943,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
 
       // Ensure we're using the correct data structure for authenticated users
       const dataToProcess = formData.combined_data || formData;
-      
+
       const cleanedNewCombinedData = traverseAndModifyDataForZip(
         dataToProcess,
         newCollectedAssets,
@@ -931,18 +956,18 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
       if (!blockName) {
         const currentServicesData = getServicesData();
         if (currentServicesData) {
-          try {
+        try {
             const serviceAssetsForNew = []; 
             const cleanedServicesDataNew = traverseAndModifyDataForZip(
               currentServicesData,
-              serviceAssetsForNew,
-              newPathPrefix ? 'newServicesDataRoot' : 'servicesDataRoot',
-              newPathPrefix ? 'user_uploads/new_services_data' : 'user_uploads/services_data'
+                serviceAssetsForNew,
+                newPathPrefix ? 'newServicesDataRoot' : 'servicesDataRoot',
+                newPathPrefix ? 'user_uploads/new_services_data' : 'user_uploads/services_data'
             );
             zip.file(`${newPathPrefix}json/services.json`, JSON.stringify(cleanedServicesDataNew, null, 2));
             newCollectedAssets.push(...serviceAssetsForNew);
             console.log(`[OneForm] Added ${newPathPrefix}json/services.json to ZIP using live data from ServiceEditPage.`);
-          } catch (serviceError) {
+        } catch (serviceError) {
             console.error(`Error processing ${newPathPrefix}services.json from ServiceEditPage for ZIP:`, serviceError);
           }
         }
@@ -983,7 +1008,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
       }
 
       newCollectedAssets.forEach(asset => {
-        const assetPathInZip = asset.pathInZip;
+        const assetPathInZip = asset.pathInZip; 
         
         const existingAsset = finalNewAssetsMap.get(assetPathInZip);
         if (existingAsset) {
@@ -1166,16 +1191,16 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
       
       {/* Tab Navigation and Content */}
       <div className="flex-grow">
-        <div className="bg-gray-800 px-4 flex border-b border-gray-700 shadow-md">
-          {tabs.map(tabInfo => (
-            <TabButton 
-              key={tabInfo.id} 
-              id={tabInfo.id} 
-              label={tabInfo.label} 
-              isActive={activeTab === tabInfo.id} 
+          <div className="bg-gray-800 px-4 flex border-b border-gray-700 shadow-md">
+            {tabs.map(tabInfo => (
+              <TabButton 
+                key={tabInfo.id} 
+                id={tabInfo.id} 
+                label={tabInfo.label} 
+                isActive={activeTab === tabInfo.id} 
               onClick={() => handleTabChange(tabInfo.id)} 
-            />
-          ))}
+              />
+            ))}
           {!isCustomDomain && (
             <OneFormAuthButton 
               formData={formData}
@@ -1183,6 +1208,11 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
               servicesData={servicesData}
               aboutPageData={aboutPageJsonData}
               showcaseData={allServiceBlocksData}
+              initialFormDataForOldExport={initialFormDataForOldExport}
+              initialServicesData={initialServicesData}
+              initialAboutPageJsonData={initialAboutPageJsonData}
+              initialAllServiceBlocksData={initialAllServiceBlocksData}
+              initialThemeColors={initialThemeColors}
             />
           )}
         </div>
@@ -1190,7 +1220,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         <div className="tab-content">
           {activeTab === "mainPage" && (
             <MainPageForm 
-              formData={formData} 
+                formData={formData} 
               setFormData={handleMainPageFormChange}
               themeColors={themeColors}
             />
@@ -1201,7 +1231,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
               servicesData={servicesData}
               onServicesChange={handleServicesChange}
             />
-          }
+          } 
           {activeTab === "about" && (
             <div className="container mx-auto px-4 py-6 bg-gray-100">
               <div className="mb-4 bg-gray-800 text-white p-4 rounded">
@@ -1252,11 +1282,11 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
                             )}
                           </button>
                         </div>
-                        <BlockComponent
-                          config={block.config || {}}
-                          readOnly={!isEditingThisBlock}
+                        <BlockComponent 
+                          config={block.config || {}} 
+                          readOnly={!isEditingThisBlock} 
                           onConfigChange={(newFullConfig) => handleShowcaseBlockConfigUpdate(index, newFullConfig)}
-                          getDisplayUrl={getShowcaseDisplayUrl}
+                          getDisplayUrl={getShowcaseDisplayUrl} 
                           onFileChange={(fieldKeyOrPathData, file) => handleShowcaseFileChangeForBlock(index, fieldKeyOrPathData, file)}
                           blockContext="allServiceBlocks"
                           themeColors={themeColors}

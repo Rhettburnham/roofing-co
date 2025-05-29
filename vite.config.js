@@ -40,7 +40,7 @@ export default defineConfig({
   // Add performance prefetch for dynamic imports
   server: {
     host: '0.0.0.0',  // This allows external access
-    port: 5173,       // Default Vite port
+    port: 5173,       // Changed back to default Vite port
     hmr: {
       overlay: true,
     },
@@ -54,41 +54,47 @@ export default defineConfig({
     },
     proxy: {
       "/api/auth": {
-        target: "http://localhost:5001",
+        target: process.env.NODE_ENV === 'production'
+          ? 'https://roofing-co.pages.dev'
+          : 'http://localhost:8788',
         changeOrigin: true,
-        secure: false,
+        secure: process.env.NODE_ENV === 'production',
       },
       "/api/admin": {
         target: process.env.NODE_ENV === 'production'
           ? 'https://roofing-co.pages.dev'
           : 'http://localhost:8788',
         changeOrigin: true,
-        secure: true,
+        secure: process.env.NODE_ENV === 'production',
       },
       "/api/submit-booking": {
-        target: process.env.NODE_ENV === 'production' 
+        target: process.env.NODE_ENV === 'production'
           ? 'https://roofing-co.pages.dev'
           : 'http://localhost:8788',
         changeOrigin: true,
-        secure: true,
+        secure: process.env.NODE_ENV === 'production',
       },
       '/api/config': {
         target: process.env.NODE_ENV === 'production'
           ? 'https://auth-worker.roofing-co-with-workers.pages.dev'
-          : 'https://auth-worker.roofing-www.workers.dev',
+          : 'http://localhost:8788',
         changeOrigin: true,
-        secure: true,
+        secure: process.env.NODE_ENV === 'production',
         rewrite: (path) => path,
       },
       "/api/upload": {
-        target: "http://localhost:5001",
+        target: process.env.NODE_ENV === 'production'
+          ? 'https://roofing-co.pages.dev'
+          : 'http://localhost:8788',
         changeOrigin: true,
-        secure: false,
+        secure: process.env.NODE_ENV === 'production',
       },
       "/api/download": {
-        target: "http://localhost:5001",
+        target: process.env.NODE_ENV === 'production'
+          ? 'https://roofing-co.pages.dev'
+          : 'http://localhost:8788',
         changeOrigin: true,
-        secure: false,
+        secure: process.env.NODE_ENV === 'production',
       },
     },
   },
