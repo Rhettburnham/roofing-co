@@ -22,6 +22,7 @@ import ServiceEditPage, { getServicesData, blockMap as serviceBlockMap } from ".
 import MainPageForm from "./MainPageForm";
 import AboutBlock from "./MainPageBlocks/AboutBlock";
 import { useConfig } from "../context/ConfigContext";
+import { handleFileChange } from '../utils/assetUpload';
 
 import Navbar from "./Navbar"; // Import Navbar for preview
 import ColorEditor from "./ColorEditor"; // Import the new ColorEditor component
@@ -635,114 +636,43 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   };
 
   // Handler for file changes in showcase blocks
-  const handleShowcaseFileChangeForBlock = (blockIndex, configKeyOrPathData, fileOrFileObject) => {
+  const handleShowcaseFileChangeForBlock = async (blockIndex, configKeyOrPathData, fileOrFileObject) => {
     if (!fileOrFileObject) return;
 
-    let newMediaConfig;
-    const currentBlock = allServiceBlocksData.blocks[blockIndex];
-    let existingMediaConfig;
+    try {
+      let newMediaConfig;
+      const currentBlock = allServiceBlocksData.blocks[blockIndex];
+      let existingMediaConfig;
 
-    let isNestedPath = typeof configKeyOrPathData === 'object' && configKeyOrPathData !== null;
-    let fieldToUpdate = isNestedPath ? configKeyOrPathData.field : configKeyOrPathData;
+      let isNestedPath = typeof configKeyOrPathData === 'object' && configKeyOrPathData !== null;
+      let fieldToUpdate = isNestedPath ? configKeyOrPathData.field : configKeyOrPathData;
 
-    if (isNestedPath) {
-      if (configKeyOrPathData.field === 'pictures' && currentBlock.config.items && currentBlock.config.items[configKeyOrPathData.blockItemIndex]) {
-        existingMediaConfig = currentBlock.config.items[configKeyOrPathData.blockItemIndex].pictures?.[configKeyOrPathData.pictureIndex];
-      } else if (currentBlock.config.items && currentBlock.config.items[configKeyOrPathData.blockItemIndex]) {
-        existingMediaConfig = currentBlock.config.items[configKeyOrPathData.blockItemIndex][fieldToUpdate];
-      } else {
-        existingMediaConfig = currentBlock.config[fieldToUpdate];
-      }
-    } else {
-      existingMediaConfig = currentBlock?.config?.[fieldToUpdate];
-    }
-
-    const processFile = async (file) => {
-      // If it's a blob URL, fetch the actual file data
-      if (typeof file === 'string' && file.startsWith('blob:')) {
-        try {
-          const response = await fetch(file);
-          const blob = await response.blob();
-          return new File([blob], 'pasted_image.png', { type: blob.type });
-        } catch (error) {
-          console.error('Error converting blob URL to file:', error);
-          return null;
-        }
-      }
-      return file;
-    };
-
-    const updateBlockConfig = async () => {
-      if (fileOrFileObject instanceof File) {
-        if (existingMediaConfig && typeof existingMediaConfig === 'object' && existingMediaConfig.url && existingMediaConfig.url.startsWith('blob:')) {
-          URL.revokeObjectURL(existingMediaConfig.url);
-        }
-        const fileURL = URL.createObjectURL(fileOrFileObject);
-        newMediaConfig = {
-          file: fileOrFileObject,
-          url: fileURL,
-          name: fileOrFileObject.name,
-          originalUrl: (typeof existingMediaConfig === 'object' ? existingMediaConfig.originalUrl : typeof existingMediaConfig === 'string' ? existingMediaConfig : null) || `assets/showcase_uploads/generated/${fileOrFileObject.name}`
-        };
-      } else if (typeof fileOrFileObject === 'object' && fileOrFileObject.url !== undefined) {
-        if (existingMediaConfig && typeof existingMediaConfig === 'object' && existingMediaConfig.file && existingMediaConfig.url && existingMediaConfig.url.startsWith('blob:')) {
-          if (existingMediaConfig.url !== fileOrFileObject.url) { 
-            URL.revokeObjectURL(existingMediaConfig.url);
-          }
-        }
-        // If it's a blob URL, convert it to a File
-        if (fileOrFileObject.url.startsWith('blob:')) {
-          const file = await processFile(fileOrFileObject.url);
-          if (file) {
-            const fileURL = URL.createObjectURL(file);
-            newMediaConfig = {
-              file: file,
-              url: fileURL,
-              name: fileOrFileObject.name || file.name,
-              originalUrl: fileOrFileObject.originalUrl || `assets/showcase_uploads/generated/${file.name}`
-            };
-          } else {
-            newMediaConfig = fileOrFileObject;
-          }
+      if (isNestedPath) {
+        if (configKeyOrPathData.field === 'pictures' && currentBlock.config.items && currentBlock.config.items[configKeyOrPathData.blockItemIndex]) {
+          existingMediaConfig = currentBlock.config.items[configKeyOrPathData.blockItemIndex].pictures?.[configKeyOrPathData.pictureIndex];
+        } else if (currentBlock.config.items && currentBlock.config.items[configKeyOrPathData.blockItemIndex]) {
+          existingMediaConfig = currentBlock.config.items[configKeyOrPathData.blockItemIndex][fieldToUpdate];
         } else {
-          newMediaConfig = fileOrFileObject;
-        }
-      } else if (typeof fileOrFileObject === 'string') { 
-        if (existingMediaConfig && typeof existingMediaConfig === 'object' && existingMediaConfig.file && existingMediaConfig.url && existingMediaConfig.url.startsWith('blob:')) {
-          URL.revokeObjectURL(existingMediaConfig.url);
-        }
-        // If it's a blob URL, convert it to a File
-        if (fileOrFileObject.startsWith('blob:')) {
-          const file = await processFile(fileOrFileObject);
-          if (file) {
-            const fileURL = URL.createObjectURL(file);
-            newMediaConfig = {
-              file: file,
-              url: fileURL,
-              name: file.name,
-              originalUrl: fileOrFileObject
-            };
-          } else {
-            newMediaConfig = {
-              file: null,
-              url: fileOrFileObject,
-              name: fileOrFileObject.split('/').pop(),
-              originalUrl: fileOrFileObject
-            };
-          }
-        } else {
-          newMediaConfig = {
-            file: null,
-            url: fileOrFileObject,
-            name: fileOrFileObject.split('/').pop(),
-            originalUrl: fileOrFileObject
-          };
+          existingMediaConfig = currentBlock.config[fieldToUpdate];
         }
       } else {
-        console.warn("Unsupported file/URL type in handleShowcaseFileChangeForBlock", fileOrFileObject);
-        return;
+        existingMediaConfig = currentBlock?.config?.[fieldToUpdate];
       }
 
+      // Get the original path if it exists
+      const originalPath = existingMediaConfig?.url || existingMediaConfig?.originalUrl;
+
+      // Handle the file change and get the new path
+      const newPath = await handleFileChange(fileOrFileObject, originalPath);
+
+      // Create the new media config
+      newMediaConfig = {
+        url: newPath,
+        name: newPath.split('/').pop(),
+        originalUrl: newPath
+      };
+
+      // Update the state with the new media config
       setAllServiceBlocksData(prevData => {
         const updatedBlocks = prevData.blocks.map((block, index) => {
           if (index === blockIndex) {
@@ -775,9 +705,11 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         });
         return { ...prevData, blocks: updatedBlocks };
       });
-    };
 
-    updateBlockConfig();
+    } catch (error) {
+      console.error('Error handling showcase file change:', error);
+      // You might want to show an error message to the user here
+    }
   };
 
   // Helper to get display URL, can be passed to blocks
@@ -814,49 +746,6 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
       
       const zip = new JSZip();
       let collectedAssets = [];
-
-      // Process all_blocks_showcase.json first to ensure we have all assets
-      if (allServiceBlocksData && !blockName) {
-        console.log("Processing all_blocks_showcase.json for ZIP:", allServiceBlocksData);
-        let showcaseAssets = [];
-        const cleanedShowcaseData = traverseAndModifyDataForZip(
-          allServiceBlocksData,
-          showcaseAssets,
-          'showcaseDataRoot',
-          'user_uploads/showcase_data'
-        );
-
-        // Process showcase assets
-        for (const asset of showcaseAssets) {
-          if (asset.type === 'file' && asset.dataSource instanceof File) {
-            console.log(`Adding showcase file to ZIP: ${asset.pathInZip}`);
-            zip.file(asset.pathInZip, asset.dataSource);
-          } else if (asset.type === 'url' && typeof asset.dataSource === 'string') {
-            if (asset.dataSource.startsWith('blob:')) {
-              try {
-                const response = await fetch(asset.dataSource);
-                const blob = await response.blob();
-                console.log(`Adding blob URL content to ZIP: ${asset.pathInZip}`);
-                zip.file(asset.pathInZip, blob);
-              } catch (error) {
-                console.error(`Error processing blob URL for ZIP: ${asset.pathInZip}`, error);
-              }
-            } else if (!asset.dataSource.startsWith('http:') && !asset.dataSource.startsWith('https:') && !asset.dataSource.startsWith('data:')) {
-              try {
-                const response = await fetch(asset.dataSource);
-                const blob = await response.blob();
-                console.log(`Adding local URL content to ZIP: ${asset.pathInZip}`);
-                zip.file(asset.pathInZip, blob);
-              } catch (error) {
-                console.error(`Error processing local URL for ZIP: ${asset.pathInZip}`, error);
-              }
-            }
-          }
-        }
-
-        zip.file("json/all_blocks_showcase.json", JSON.stringify(cleanedShowcaseData, null, 2));
-        console.log("Added all_blocks_showcase.json to ZIP");
-      }
 
       // Fetch initial services.json once if needed for "old" processing
       let initialServicesJsonData = null; 
