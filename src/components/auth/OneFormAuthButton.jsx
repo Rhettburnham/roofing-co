@@ -352,10 +352,12 @@ export default function OneFormAuthButton({
             zip.file(asset.pathInZip, asset.dataSource);
           } else if (asset.type === 'url' && typeof asset.dataSource === 'string') {
             if (!asset.dataSource.startsWith('http') && !asset.dataSource.startsWith('data:') && !asset.dataSource.startsWith('blob:')) {
-              const response = await fetch(asset.dataSource);
-              if (!response.ok) throw new Error(`Failed to fetch ${asset.dataSource}`);
+              // Ensure the path starts with 'assets/'
+              const assetPath = asset.dataSource.startsWith('assets/') ? asset.dataSource : `assets/${asset.dataSource}`;
+              const response = await fetch(assetPath);
+              if (!response.ok) throw new Error(`Failed to fetch ${assetPath}`);
               const blob = await response.blob();
-              zip.file(asset.pathInZip, blob);
+              zip.file(assetPath, blob);
             }
           }
         } catch (error) {
@@ -377,6 +379,12 @@ export default function OneFormAuthButton({
       if (!isDevelopment) {
         setDebug('Uploading files to server...');
         
+        // Get the auth token from localStorage
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+          throw new Error('No authentication token found');
+        }
+        
         // Prepare assets for upload
         const assetsToUpload = {};
         for (const asset of collectedAssets) {
@@ -386,11 +394,13 @@ export default function OneFormAuthButton({
               assetsToUpload[asset.pathInZip] = arrayBuffer;
             } else if (asset.type === 'url' && typeof asset.dataSource === 'string') {
               if (!asset.dataSource.startsWith('http') && !asset.dataSource.startsWith('data:') && !asset.dataSource.startsWith('blob:')) {
-                const response = await fetch(asset.dataSource);
-                if (!response.ok) throw new Error(`Failed to fetch ${asset.dataSource}`);
+                // Ensure the path starts with 'assets/'
+                const assetPath = asset.dataSource.startsWith('assets/') ? asset.dataSource : `assets/${asset.dataSource}`;
+                const response = await fetch(assetPath);
+                if (!response.ok) throw new Error(`Failed to fetch ${assetPath}`);
                 const blob = await response.blob();
                 const arrayBuffer = await blob.arrayBuffer();
-                assetsToUpload[asset.pathInZip] = arrayBuffer;
+                assetsToUpload[assetPath] = arrayBuffer;
               }
             }
           } catch (error) {
@@ -403,6 +413,7 @@ export default function OneFormAuthButton({
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
           },
           credentials: 'include',
           body: JSON.stringify({
