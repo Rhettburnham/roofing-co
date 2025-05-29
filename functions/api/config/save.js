@@ -81,78 +81,84 @@ export async function onRequest(context) {
     const configId = session.config_id;
     console.log('Config ID from session:', configId);
 
-    // Get the config data from the request body
-    console.log('Reading request body...');
-    const data = await request.json();
-    console.log('Full request data:', JSON.stringify(data, null, 2));
-    
-    const { combined_data, colors, services, aboutPageData, all_blocks_showcase, assets } = data;
-    console.log('Config data received:', {
-      hasCombinedData: !!combined_data,
-      hasColors: !!colors,
-      hasServices: !!services,
-      hasAboutPage: !!aboutPageData,
-      hasAllBlocksShowcase: !!all_blocks_showcase,
-      hasAssets: !!assets
+    // Parse the request body
+    const requestData = await request.json();
+    console.log('Request data received:', {
+      hasCombinedData: !!requestData.combined_data,
+      hasColors: !!requestData.colors,
+      hasServices: !!requestData.services,
+      hasAboutPage: !!requestData.about_page,
+      hasAllBlocksShowcase: !!requestData.all_blocks_showcase,
+      hasAssets: !!requestData.assets
     });
 
-    // Save all configs to R2
+    // Save configs to R2
+    console.log('Saving configs to R2...');
     const configsToSave = [
-      { key: `configs/${configId}/combined_data.json`, data: combined_data },
-      { key: `configs/${configId}/colors_output.json`, data: colors },
-      { key: `configs/${configId}/services.json`, data: services },
-      { key: `configs/${configId}/about_page.json`, data: aboutPageData },
-      { key: `configs/${configId}/all_blocks_showcase.json`, data: all_blocks_showcase }
+      { key: `configs/${configId}/combined_data.json`, data: requestData.combined_data },
+      { key: `configs/${configId}/colors_output.json`, data: requestData.colors },
+      { key: `configs/${configId}/services.json`, data: requestData.services },
+      { key: `configs/${configId}/about_page.json`, data: requestData.about_page },
+      { key: `configs/${configId}/all_blocks_showcase.json`, data: requestData.all_blocks_showcase }
     ];
 
-    console.log('Saving configs to R2:', configsToSave.map(c => c.key));
-    
-    // Save all configs in parallel, skipping empty ones
     const savePromises = configsToSave.map(async ({ key, data }) => {
-      if (!data) {
-        console.log(`Skipping ${key} - no data provided`);
-        return;
-      }
-      try {
-        const jsonString = JSON.stringify(data, null, 2);
-        await env.ROOFING_CONFIGS.put(key, jsonString, {
-          httpMetadata: {
-            contentType: 'application/json'
-          }
-        });
-        console.log(`Saved ${key} successfully`);
-      } catch (error) {
-        console.error(`Error saving ${key}:`, error);
-        throw error;
+      if (data) {
+        try {
+          console.log(`Saving config to ${key}...`);
+          await env.ROOFING_CONFIGS.put(key, JSON.stringify(data, null, 2), {
+            httpMetadata: {
+              contentType: 'application/json'
+            }
+          });
+          console.log(`Successfully saved config to ${key}`);
+        } catch (error) {
+          console.error(`Error saving config to ${key}:`, error);
+          throw error;
+        }
       }
     });
 
-    // Save assets if provided
-    if (assets) {
+    await Promise.all(savePromises);
+
+    // Save assets to R2
+    if (requestData.assets) {
       console.log('Saving assets to R2...');
-      const assetPromises = Object.entries(assets).map(async ([path, data]) => {
-        if (!data) {
-          console.log(`Skipping asset ${path} - no data provided`);
-          return;
-        }
+      const assetPromises = Object.entries(requestData.assets).map(async ([path, assetData]) => {
         try {
-          const assetKey = `configs/${configId}/assets/${path}`;
-          await env.ROOFING_CONFIGS.put(assetKey, data, {
+          const key = `configs/${configId}/${path}`;
+          console.log(`Saving asset to ${key}...`);
+          
+          // Handle both old and new asset formats
+          let blob;
+          let contentType;
+          
+          if (assetData instanceof Blob) {
+            // Old format: direct blob
+            blob = assetData;
+            contentType = blob.type || 'image/jpeg';
+          } else if (assetData.data instanceof Blob) {
+            // New format: { data: Blob, contentType: string }
+            blob = assetData.data;
+            contentType = assetData.contentType || blob.type || 'image/jpeg';
+          } else {
+            console.error(`Invalid asset data format for ${path}`);
+            return;
+          }
+
+          await env.ROOFING_CONFIGS.put(key, blob, {
             httpMetadata: {
-              contentType: getContentType(path)
+              contentType: contentType
             }
           });
-          console.log(`Saved asset ${path} successfully`);
+          console.log(`Successfully saved asset to ${key}`);
         } catch (error) {
           console.error(`Error saving asset ${path}:`, error);
-          throw error;
         }
       });
-      savePromises.push(...assetPromises);
-    }
 
-    await Promise.all(savePromises);
-    console.log('All configs and assets saved successfully');
+      await Promise.all(assetPromises);
+    }
 
     return new Response(JSON.stringify({ success: true }), {
       headers: {

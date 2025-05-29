@@ -87,7 +87,7 @@ export async function onRequest(context) {
       { key: `configs/${configId}/combined_data.json`, name: 'combined_data' },
       { key: `configs/${configId}/colors_output.json`, name: 'colors' },
       { key: `configs/${configId}/services.json`, name: 'services' },
-      { key: `configs/${configId}/about_page.json`, name: 'aboutPageData' },
+      { key: `configs/${configId}/about_page.json`, name: 'about_page' },
       { key: `configs/${configId}/all_blocks_showcase.json`, name: 'all_blocks_showcase' }
     ];
 
@@ -124,7 +124,7 @@ export async function onRequest(context) {
       hasCombinedData: !!configData.combined_data,
       hasColors: !!configData.colors,
       hasServices: !!configData.services,
-      hasAboutPage: !!configData.aboutPageData,
+      hasAboutPage: !!configData.about_page,
       hasAllBlocksShowcase: !!configData.all_blocks_showcase
     });
 
@@ -143,7 +143,13 @@ export async function onRequest(context) {
             const blob = await object.blob();
             const path = asset.key.replace(`configs/${configId}/`, '');
             console.log(`Successfully loaded asset: ${path}`);
-            assets[path] = blob;
+            // Create a new blob with the correct content type
+            const contentType = object.httpMetadata?.contentType || 'image/jpeg';
+            const newBlob = new Blob([blob], { type: contentType });
+            assets[path] = {
+              data: newBlob,
+              contentType: contentType
+            };
           } else {
             console.log(`No data found for asset: ${asset.key}`);
           }
