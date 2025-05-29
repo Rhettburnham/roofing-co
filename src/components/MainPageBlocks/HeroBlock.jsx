@@ -125,8 +125,8 @@ function HeroPreview({ heroconfig }) {
   };
 
   const subServiceItemVariants = {
-    hidden: { opacity: 0, y: -10 }, // Items slide in from top slightly
-    visible: { opacity: 1, y: 0, transition: { duration: 0.2, ease: "easeOut" } }
+    hidden: { opacity: 0, x: -10 }, // Items slide in from left slightly
+    visible: { opacity: 1, x: 0, transition: { duration: 0.2, ease: "easeOut" } }
   };
 
   const renderServiceSection = (type, services, iconDetails) => {
@@ -190,9 +190,10 @@ function HeroPreview({ heroconfig }) {
           <AnimatePresence>
             {isActive && (
               <motion.div
-                className={`absolute left-[calc(100%_-_10px)] md:left-[calc(100%_-_5px)] top-1/2 transform -translate-y-1/2 flex items-center space-x-2 md:space-x-3
+                className={`absolute left-[calc(100%_-_10px)] md:left-[calc(100%_-_5px)] 
+                            flex flex-col items-start  md:space-y-1.5 
                             p-1 md:p-1.5 rounded-lg shadow-xl overflow-hidden 
-                            ${isPreviewReadOnly ? 'bg-transparent' : 'bg-second-accent/20'} 
+                            ${isPreviewReadOnly ? 'bg-transparent' : 'bg-second-accent/30'} 
                           `}
                 variants={subServiceContainerVariants}
                 initial="hidden"
@@ -205,7 +206,7 @@ function HeroPreview({ heroconfig }) {
                   <motion.div
                     key={service.id || idx}
                     variants={subServiceItemVariants}
-                    className={`whitespace-nowrap flex items-center justify-center group py-0.5 md:py-1 rounded-md 
+                    className={`whitespace-nowrap flex items-center justify-start group py-0.5 md:py-1 rounded-md w-full
                                 ${!isPreviewReadOnly ? 'hover:bg-white/10 px-1.5 md:px-2' : 'px-1 md:px-1.5'}
                               `}
                   >
@@ -214,14 +215,14 @@ function HeroPreview({ heroconfig }) {
                         type="text"
                         value={service.label} // Editable display title
                         onChange={(e) => onServiceNameChange(type, service.id, e.target.value)}
-                        className="py-0.5 px-1 bg-transparent text-white focus:bg-white/20 outline-none text-center w-auto max-w-[100px] md:max-w-[120px] text-xs md:text-sm rounded-sm"
+                        className="py-0.5 px-1 bg-transparent text-white focus:bg-white/20 outline-none w-auto max-w-[100px] md:max-w-[120px] text-xs md:text-sm rounded-sm text-left"
                         onClick={(e) => e.stopPropagation()}
                       />
                     ) : (
                       <Link 
                         to={service.route} // Uses new slug-based route
                         onClick={(e) => e.stopPropagation()}
-                        className="block py-0.5 text-white hover:underline text-xs md:text-sm"
+                        className="block py-0.5 text-white hover:underline text-xs md:text-sm text-left"
                       >
                         {service.label} {/* Displays editable title */}
                       </Link>
@@ -240,10 +241,23 @@ function HeroPreview({ heroconfig }) {
                 {services.length === 0 && isActive && (
                   <motion.p
                     variants={subServiceItemVariants}
-                    className="text-xs text-gray-400 italic py-1 px-2"
+                    className="text-xs text-gray-400 italic py-1 px-2 text-left"
                   >
                     No services.
                   </motion.p>
+                )}
+                 {!isPreviewReadOnly && (
+                  <motion.button
+                    variants={subServiceItemVariants}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Call a new handler to add a service, passed down via previewHandlers
+                      if (onAddService) onAddService(type);
+                    }}
+                    className="mt-1 text-xs bg-green-600 hover:bg-green-500 text-white px-2 py-1 rounded-md focus:outline-none focus:ring-1 focus:ring-green-400 self-start"
+                  >
+                    + Add
+                  </motion.button>
                 )}
               </motion.div>
             )}
@@ -256,14 +270,14 @@ function HeroPreview({ heroconfig }) {
   return (
     <section className="relative overflow-y-hidden" style={bannerStyles}>
       <div 
-        className={`absolute top-[0vh] left-0 right-0 from-0% to-transparent pointer-events-none ${activeSection === "neutral" ? "h-[18vh] md:h-[18vh]" : "h-[10vh] md:h-[10vh]"}`} 
+        className={`absolute top-[0vh] left-0 right-0 from-0% to-transparent pointer-events-none ${activeSection === "neutral" ? "h-[18vh] md:h-[13.5vh]" : "h-[10vh] md:h-[10vh]"}`} 
         style={{ 
-          backgroundImage: `linear-gradient(to bottom, var(--top-banner-color) 0%, rgba(255,255,255,0) 100%)`,
+          backgroundImage: `linear-gradient(to bottom, var(--top-banner-color) 10%, rgba(255,255,255,0) 100%)`,
           transition: "height 0.3s ease-out 0.4s", 
           zIndex: 1 
         }}
       />
-      <div className="relative w-full h-[50vw] md:h-[45vh] overflow-hidden">
+      <div className="relative w-full h-[50vw] md:h-[30vh] overflow-hidden">
         {heroImage && (
           <motion.div
             className="absolute inset-0 h-full"
@@ -314,61 +328,10 @@ function HeroPreview({ heroconfig }) {
 */
 function HeroControlsPanel({ currentData, onControlsChange, themeColors }) { 
   const {
-    residential = { subServices: [], icon: 'Home', iconPack: 'lucide' },
-    commercial = { subServices: [], icon: 'Building2', iconPack: 'lucide' },
     heroImage, 
     bannerColor,
     topBannerColor,
   } = currentData;
-
-  const [isIconModalOpen, setIsIconModalOpen] = useState(false);
-  const [editingIconContext, setEditingIconContext] = useState({ type: null, currentPack: 'lucide', currentName: null });
-
-  // These will store all available services from services.json
-  const [allAvailableResidentialServices, setAllAvailableResidentialServices] = useState([]);
-  const [allAvailableCommercialServices, setAllAvailableCommercialServices] = useState([]);
-  const [isServicesLoading, setIsServicesLoading] = useState(true);
-
-  useEffect(() => {
-    setIsServicesLoading(true);
-    fetch("/data/ignore/services.json") 
-      .then(res => {
-        if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
-        return res.json();
-      })
-      .then(data => {
-        // Extract main service page titles and map them for selection
-        const mapServiceData = (serviceArray, type) => {
-          return (serviceArray || []).map(servicePage => {
-            const heroBlock = servicePage.blocks?.find(b => b.blockName === "HeroBlock");
-            const title = heroBlock?.config?.title || servicePage.name || servicePage.title || `Service ${servicePage.id}`;
-            const slug = slugify(title); // Use the same slugification
-            // Ensure a more unique key for the panel's list items
-            const uniqueKeyForPanel = `available-service-${type}-${servicePage.id || slug}`;
-            return {
-              id: uniqueKeyForPanel, // Use this more unique key for the list rendering
-              slug: slug, // Keep the original slug for matching/logic if needed elsewhere
-              title: title, 
-              originalTitle: title, 
-            };
-          });
-        };
-
-        if (data.residential) {
-          setAllAvailableResidentialServices(mapServiceData(data.residential, 'residential'));
-        }
-        if (data.commercial) {
-          setAllAvailableCommercialServices(mapServiceData(data.commercial, 'commercial'));
-        }
-        setIsServicesLoading(false);
-      })
-      .catch(error => {
-        console.error("HeroControlsPanel: Error fetching services data from services.json:", error);
-        setIsServicesLoading(false);
-        setAllAvailableResidentialServices([]);
-        setAllAvailableCommercialServices([]);
-      });
-  }, []);
 
   const handleHeroImageUpload = (file) => {
     if (file) {
@@ -388,109 +351,32 @@ function HeroControlsPanel({ currentData, onControlsChange, themeColors }) {
     onControlsChange({ topBannerColor: color });
   };
 
-  // This toggles selection of services to be displayed in the HeroPreview
-  const handleServiceToggle = (serviceType, serviceItemFromPanel) => {
-    const currentBlockSubServices = currentData[serviceType]?.subServices || [];
-    // serviceItemFromPanel.id is the uniqueKeyForPanel. We need to match based on its original slug.
-    const serviceIndex = currentBlockSubServices.findIndex(s => slugify(s.originalTitle || s.title) === serviceItemFromPanel.slug);
-    let newSubServices;
-
-    if (serviceIndex > -1) { // Service is selected, so unselect it
-      newSubServices = currentBlockSubServices.filter(s => slugify(s.originalTitle || s.title) !== serviceItemFromPanel.slug);
-    } else { // Service is not selected, so select it
-      newSubServices = [
-        ...currentBlockSubServices, 
-        { 
-          id: serviceItemFromPanel.slug, // Store the slug as the ID for the subService item
-          title: serviceItemFromPanel.originalTitle, 
-          originalTitle: serviceItemFromPanel.originalTitle 
-        }
-      ];
-    }
-    onControlsChange({ 
-      [serviceType]: { 
-        ...(currentData[serviceType] || {}),
-        icon: currentData[serviceType]?.icon || (serviceType === 'residential' ? 'Home' : 'Building2'),
-        iconPack: currentData[serviceType]?.iconPack || 'lucide',
-        subServices: newSubServices 
-      } 
-    });
-  };
-
-  // This handles changes to the *display title* of an already selected service in the HeroPreview
-  // It is called from HeroPreview, and then needs to be reflected back to HeroControlsPanel if necessary,
-  // but primarily updates localData for HeroPreview.
-  const handleServiceTitleChange = (serviceType, serviceId, newTitle) => {
-    // serviceId here is the slug (or generated ID for new services) from HeroPreview's subService item.
-    const currentBlockSubServices = currentData[serviceType]?.subServices || [];
-    const newSubServices = currentBlockSubServices.map(s => 
-      s.id === serviceId ? { ...s, title: newTitle } : s // Update display title
-    );
-    onControlsChange({ 
-      [serviceType]: { 
-        ...(currentData[serviceType] || {}),
-        icon: currentData[serviceType]?.icon || (serviceType === 'residential' ? 'Home' : 'Building2'),
-        iconPack: currentData[serviceType]?.iconPack || 'lucide',
-        subServices: newSubServices 
-      } 
-    });
-  };
-  
-  // Gets a service from the *currently selected subServices* in HeroPreview's data
-  const getSelectedSubServiceForEditing = (serviceType, serviceIdFromPreview) => {
-    return currentData[serviceType]?.subServices?.find(s => s.id === serviceIdFromPreview);
-  };
-
-  // Checks if a service from the *available services list (from services.json)* is currently selected
-  const isServiceSelected = (serviceType, serviceItemFromPanel) => {
-    // serviceItemFromPanel.id is uniqueKeyForPanel. Match using serviceItemFromPanel.slug
-    return currentData[serviceType]?.subServices?.some(s => slugify(s.originalTitle || s.title) === serviceItemFromPanel.slug) || false;
-  }
-
   const fileInputStyle = "w-full bg-gray-700 text-sm rounded-md border border-gray-600 p-2 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer";
-
-  // This adds a *new custom service* to the HeroPreview, not one from services.json
-  const handleAddCustomService = (serviceType) => {
-    const newService = {
-      id: `custom-${serviceType}-${Date.now()}`, // Unique ID for custom service
-      title: "New Custom Service",
-      originalTitle: "New Custom Service" // Ensure originalTitle is set
-    };
-    const currentSubServices = currentData[serviceType]?.subServices || [];
-    onControlsChange({
-      [serviceType]: {
-        ...(currentData[serviceType] || {}),
-        icon: currentData[serviceType]?.icon || (serviceType === 'residential' ? 'Home' : 'Building2'),
-        iconPack: currentData[serviceType]?.iconPack || 'lucide',
-        subServices: [...currentSubServices, newService]
-      }
-    });
-  };
 
   return (
     <div className="bg-gray-800 text-white p-3 rounded-lg mt-4 shadow-lg">
-      <h3 className="text-lg font-semibold mb-3 text-center border-b border-gray-600 pb-2 text-gray-100">Edit Hero Background & Services</h3>
+      <h3 className="text-lg font-semibold mb-3 text-center border-b border-gray-600 pb-2 text-gray-100">Hero Settings</h3>
       
       <div className="mb-4">
-        <label className="block text-xs mb-1 font-medium text-gray-200">Hero Background Image:</label>
+        <label className="block text-xs mb-1 font-medium text-gray-200">Background Image:</label>
         <input type="file" accept="image/*" onChange={(e) => handleHeroImageUpload(e.target.files?.[0])} className={fileInputStyle} />
         {getDisplayPath(heroImage) && <img src={getDisplayPath(heroImage)} alt="Hero Background Preview" className="mt-2 h-20 w-full object-cover rounded bg-gray-700 p-1" />}
       </div>
 
       <div className="flex flex-col md:flex-row gap-3 mb-4">
         <div className="flex-1">
-          <label className="block text-xs mb-1 font-medium text-gray-200">Top Banner Gradient Color:</label>
+          <label className="block text-xs mb-1 font-medium text-gray-200">Top Banner Gradient:</label>
           <ThemeColorPicker
             label=""
             currentColorValue={topBannerColor || "#FFFFFF"}
             themeColors={themeColors}
             onColorChange={(fieldName, value) => handleTopBannerColorChange(value)}
             fieldName="topBannerColor"
-            className="mt-0" // Remove internal label margins if label prop is empty
+            className="mt-0"
           />
         </div>
         <div className="flex-1">
-          <label className="block text-xs mb-1 font-medium text-gray-200">Bottom Banner Gradient Color:</label>
+          <label className="block text-xs mb-1 font-medium text-gray-200">Bottom Banner Gradient:</label>
           <ThemeColorPicker
             label=""
             currentColorValue={bannerColor || "#1e293b"}
@@ -502,85 +388,8 @@ function HeroControlsPanel({ currentData, onControlsChange, themeColors }) {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <div className="flex justify-between items-center mb-1">
-            <h4 className="text-sm font-semibold text-amber-400">Available Residential Services (from services.json)</h4>
-            {/* Add custom service button for residential */}
-             <button onClick={() => handleAddCustomService('residential')} className="text-xs bg-green-600 hover:bg-green-500 text-white px-2 py-1 rounded_md_focus_outline_none_focus_ring_2_focus_ring_green_400 ml-2">
-              + Add Custom
-            </button>
-          </div>
-          {isServicesLoading ? <p className="text-gray-300 text-xs">Loading available services...</p> : (
-            <div className="space-y-1 max-h-32 overflow-y-auto pr-1 border border-gray-600 rounded-md p-2 bg-gray-700/50">
-              {allAvailableResidentialServices.map(serviceItem => {
-                // serviceItem.id is the slug, serviceItem.title is the display name from services.json
-                const isSelected = isServiceSelected("residential", serviceItem);
-                const subServiceForEditing = isSelected ? getSelectedSubServiceForEditing("residential", serviceItem.slug) : null;
-
-                return (
-                  <div key={serviceItem.id} className={`p-2 rounded-md flex items-center justify-between ${isSelected ? "bg-blue-700" : "bg-gray-700 hover:bg-gray-600"}`}>
-                    <div className="flex-grow flex items-center">
-                      <input 
-                        type="checkbox" 
-                        checked={isSelected} 
-                        onChange={() => handleServiceToggle("residential", serviceItem)} // serviceItem here has .id (slug) and .originalTitle
-                        className="form-checkbox h-4 w-4 text-blue-500 bg-gray-600 border-gray-500 rounded focus:ring-0 cursor-pointer mr-3" 
-                      />
-                      {isSelected && subServiceForEditing ? (
-                        <span className="text-sm text-white">{subServiceForEditing.title}</span>
-                      ) : (
-                        <span className="text-sm cursor-pointer text-gray-300" onClick={() => handleServiceToggle("residential", serviceItem)}>
-                          {serviceItem.title} {/* Display title from services.json */}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-              {allAvailableResidentialServices.length === 0 && !isServicesLoading && <p className="text-xs text-gray-400 italic">No services found in services.json.</p>}
-            </div>
-          )}
-        </div>
-        <div>
-          <div className="flex justify-between items-center mb-1">
-            <h4 className="text-sm font-semibold text-amber-400">Available Commercial Services (from services.json)</h4>
-            {/* Add custom service button for commercial */}
-            <button onClick={() => handleAddCustomService('commercial')} className="text-xs bg-green-600 hover:bg-green-500 text-white px-2 py-1 rounded_md_focus_outline_none_focus_ring_2_focus_ring_green_400 ml-2">
-              + Add Custom
-            </button>
-          </div>
-          {isServicesLoading ? <p className="text-gray-300 text-xs">Loading available services...</p> : (
-            <div className="space-y-1 max-h-32 overflow-y-auto pr-1 border border-gray-600 rounded-md p-2 bg-gray-700/50">
-              {allAvailableCommercialServices.map(serviceItem => {
-                const isSelected = isServiceSelected("commercial", serviceItem);
-                const subServiceForEditing = isSelected ? getSelectedSubServiceForEditing("commercial", serviceItem.slug) : null;
-
-                return (
-                  <div key={serviceItem.id} className={`p-2 rounded-md flex items-center justify-between ${isSelected ? "bg-blue-700" : "bg-gray-700 hover:bg-gray-600"}`}>
-                    <div className="flex-grow flex items-center">
-                      <input 
-                        type="checkbox" 
-                        checked={isSelected} 
-                        onChange={() => handleServiceToggle("commercial", serviceItem)}
-                        className="form-checkbox h-4 w-4 text-blue-500 bg-gray-600 border-gray-500 rounded focus:ring-0 cursor-pointer mr-3"
-                      />
-                      {isSelected && subServiceForEditing ? (
-                         <span className="text-sm text-white">{subServiceForEditing.title}</span>
-                      ) : (
-                        <span className="text-sm cursor-pointer text-gray-300" onClick={() => handleServiceToggle("commercial", serviceItem)}>
-                          {serviceItem.title}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-              {allAvailableCommercialServices.length === 0 && !isServicesLoading && <p className="text-xs text-gray-400 italic">No services found in services.json.</p>}
-            </div>
-          )}
-        </div>
-      </div>
+      {/* Removed the grid for service selection (Available Residential/Commercial Services) */}
+      {/* The IconSelectorModal previously here is also removed as icon editing for services will be part of HeroPreview interaction */}
     </div>
   );
 }
@@ -830,6 +639,19 @@ export default function HeroBlock({
         [serviceType]: {
           ...(localData[serviceType] || {}),
           subServices: (localData[serviceType]?.subServices || []).filter(s => s.id !== serviceId),
+        },
+      });
+    },
+    onAddService: (serviceType) => { // New handler for adding service from preview
+      const newService = {
+        id: `custom-${serviceType}-${Date.now()}`,
+        title: "New Service",
+        originalTitle: "New Service"
+      };
+      handleControlsChange({
+        [serviceType]: {
+          ...(localData[serviceType] || {}),
+          subServices: [...(localData[serviceType]?.subServices || []), newService],
         },
       });
     },

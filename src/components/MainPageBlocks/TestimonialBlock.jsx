@@ -12,6 +12,8 @@ const TestimonialItem = ({ testimonial }) => {
       ? testimonial.text.slice(0, 250) + "..."
       : testimonial.text;
 
+  const showViewMore = testimonial.text.length > 100 && !isExpanded;
+
   return (
     <div
       className="p-2 md:p-4 bg-white rounded-lg custom-circle-shadow relative cursor-pointer" // Increased padding md:p-4
@@ -39,7 +41,7 @@ const TestimonialItem = ({ testimonial }) => {
               {testimonial.name}
             </p>
             <div className="flex-shrink-0">
-              <StarRating rating={testimonial.stars} />
+              <StarRating rating={testimonial.stars} starSize="text-lg md:text-xl" />
             </div>
           </div>
           <p className="text-gray-700 text-[3vw] md:text-[1.4vh] md:-mt-2">
@@ -50,6 +52,7 @@ const TestimonialItem = ({ testimonial }) => {
       <p className="text-gray-800 indent-3">
         <span className="text-[3.2vw] md:text-[2.2vh] block md:hidden">
           {isExpanded ? testimonial.text : truncated}
+          {showViewMore && <span className="text-blue-600 opacity-60 ml-1">view more</span>}
         </span>
         <span className="text-xs hidden md:block font-serif">
           {testimonial.text}
@@ -318,7 +321,7 @@ export default function TestimonialBlock({ readOnly = false, config = {}, onConf
 
 
   const chunkSize = 3; // For large screens
-  const smallScreenChunkSize = 1; // For small screens
+  const smallScreenChunkSize = 3; // For small screens - Changed from 1 to 3
   const totalReviews = googleReviews.length;
 
   const getVisibleReviews = (isSmallScreen) => {
@@ -344,7 +347,7 @@ export default function TestimonialBlock({ readOnly = false, config = {}, onConf
     return <TestimonialEditorPanel localData={localData} onPanelChange={setLocalData} />;
   }
 
-  // READ-ONLY MODE
+  // READ-ONLY MODE\
   return (
     <div className="w-full bg-black pb-6 md:pt-5"> {/* Consolidated padding */}
       {/* TESTIMONIALS (SMALL SCREEN) */}
@@ -358,14 +361,14 @@ export default function TestimonialBlock({ readOnly = false, config = {}, onConf
           {totalReviews > smallScreenChunkSize && currentIndex > 0 && (
             <button
               onClick={() => handlePrev(true)}
-              className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-white text-gray-700 rounded-full w-6 h-6 flex items-center justify-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)] hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10 ml-2"
+              className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-white text-gray-700 rounded-full w-6 h-6 flex items-center justify-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)] hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10 ml-1" // Reduced ml
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-3 h-3">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
               </svg>
             </button>
           )}
-          <div className="grid grid-cols-1 gap-3 px-6">
+          <div className="grid grid-cols-1 gap-3 px-6"> {/* Kept grid-cols-1 for stacking, child items will be 3 */}
             {getVisibleReviews(true).map((t, idx) => (
               <TestimonialItem key={idx} testimonial={t} />
             ))}
@@ -373,7 +376,7 @@ export default function TestimonialBlock({ readOnly = false, config = {}, onConf
           {totalReviews > smallScreenChunkSize && currentIndex + smallScreenChunkSize < totalReviews && (
             <button
               onClick={() => handleNext(true)}
-              className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-white text-gray-700 rounded-full w-6 h-6 flex items-center justify-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)] hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10 mr-2"
+              className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-white text-gray-700 rounded-full w-6 h-6 flex items-center justify-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)] hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10 mr-1" // Reduced mr
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-3 h-3">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
@@ -397,7 +400,7 @@ export default function TestimonialBlock({ readOnly = false, config = {}, onConf
       </div>
 
       {/* TESTIMONIALS (LARGE SCREENS) */}
-      <div className="hidden md:block bg-black px-3"> {/* Ensure bg-black for this section */}
+      <div className="hidden md:block bg-black px-1"> {/* Reduced px from px-3 to px-1 */}
         <div className="flex items-center justify-center mb-3">
           <h2 className="text-5xl text-white mr-4 my-2 font-serif">
             {config.title || "Testimonials"}
@@ -408,7 +411,7 @@ export default function TestimonialBlock({ readOnly = false, config = {}, onConf
             {totalReviews > chunkSize && currentIndex > 0 && (
               <button
                 onClick={() => handlePrev(false)}
-                className="absolute -left-4 top-1/2 transform -translate-y-1/2 bg-white text-gray-700 rounded-full w-8 h-8 flex items-center justify-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)] hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10"
+                className="absolute -left-8 top-1/2 transform -translate-y-1/2 bg-white text-gray-700 rounded-full w-8 h-8 flex items-center justify-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)] hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10" // Changed -left-4 to -left-8
               >
                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4">
                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
@@ -421,7 +424,7 @@ export default function TestimonialBlock({ readOnly = false, config = {}, onConf
             {totalReviews > chunkSize && currentIndex + chunkSize < totalReviews && (
               <button
                 onClick={() => handleNext(false)}
-                className="absolute -right-4 top-1/2 transform -translate-y-1/2 bg-white text-gray-700 rounded-full w-8 h-8 flex items-center justify-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)] hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10"
+                className="absolute -right-8 top-1/2 transform -translate-y-1/2 bg-white text-gray-700 rounded-full w-8 h-8 flex items-center justify-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)] hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10" // Changed -right-4 to -right-8
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />

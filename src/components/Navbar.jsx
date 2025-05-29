@@ -227,10 +227,10 @@ const Navbar = ({
         className={`${navBaseClasses} ${navDynamicClasses}`}
         style={navStyle}
       >
-        <div className="w-full max-w-6xl flex items-center justify-center md:mt-4">
+        <div className="w-full max-w-6xl flex items-center justify-center">
           {/* Conditional rendering for whiteLogoIcon or whiteLogo image */}
           {logoToDisplay === 'icon' ? (
-             <div className="w-[12vw] md:w-[4vw] mr-2 cursor-pointer logo-fixed-size transform-gpu" onClick={handleLogoClick}>
+             <div className="w-[26vw] md:w-[4vw] h-[8vh] md:h-[3vh] mr-2 cursor-pointer transform-gpu" onClick={handleLogoClick}>
               {renderDynamicIcon(config.whiteLogoIcon.pack, config.whiteLogoIcon.name, null, { className: "w-full h-full text-white" })}
             </div>
           ) : logoToDisplay === 'whiteImage' ? (
@@ -263,13 +263,13 @@ const Navbar = ({
                 ref={titleRef}
                 value={mainTitle}
                 onChange={(e) => onTitleChange(e.target.value)}
-                className={`whitespace-nowrap text-white text-center drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:6px_black ] font-rye font-ultra-condensed origin-left bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-300 p-1 rounded-sm z-10 relative ${hasScrolled ? "text-3xl md:text-4xl" : "text-5xl md:text-7xl"}`}
+                className={`whitespace-nowrap text-white text-center drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:6px_black ] font-rye font-ultra-condensed origin-left bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-300 p-1 rounded-sm z-10 relative ${hasScrolled ? "text-[5vw] md:text-[5vh]" : "text-[10vw] lg:text-[5vh] md:text-[8vh]"}`}
                 onClick={(e) => e.stopPropagation()} 
               />
             ) : (
               <h1
                 ref={titleRef}
-                className={`whitespace-nowrap text-white text-center  drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:6px_black ] font-rye font-ultra-condensed origin-left ${hasScrolled ? "text-[1.5vh] md:text-[5vh]" : "text-[3vh] md:text-[12vh]"}`}
+                className={`whitespace-nowrap text-white text-center  drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:6px_black ] font-rye font-ultra-condensed origin-left ${hasScrolled ? "text-[3vw] md:text-[5vh]" : "text-[7w] lg:text-[5vh] md:text-[8vh]"}`}
               >
                 {mainTitle}
               </h1>
@@ -280,14 +280,14 @@ const Navbar = ({
                 ref={subTitleRef}
                 value={mainSubtitle}
                 onChange={(e) => onSubtitleChange(e.target.value)}
-                className={`text-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:1px_black ] text-gray-500 font-serif bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-300 p-1 rounded-sm z-10 relative text-2xl md:text-3xl`}
+                className={`text-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:1px_black ] text-gray-500 font-serif bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-300 p-1 rounded-sm z-10 relative text-[2vw] md:text-[6vh]`}
                 onClick={(e) => e.stopPropagation()} 
                 style={{ opacity: hasScrolled ? 0 : 1, marginTop: "-2vh" }}
               />
             ) : (
               <span
                 ref={subTitleRef}
-                className={`-mt-[2vh] text-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:1px_black ] text-gray-500 font-serif text-2xl md:text-3xl`}
+                className={`-mt-[1vh] text-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:1px_black ] text-gray-500 font-serif text-[3.8vw] md:text-3xl`}
                 style={{ opacity: hasScrolled ? 0 : 1 }}
               >
                 {mainSubtitle}
@@ -313,7 +313,7 @@ const Navbar = ({
         </div>
 
         {/* Mobile Hamburger Menu */}
-        <div className={`md:hidden absolute right-5 top-1/2 transform -translate-y-1/2 ${isPreview ? 'z-10' : ''}`}>
+        <div className={`md:hidden absolute right-0 top-8 transform -translate-y-1/2 ${isPreview ? 'z-10' : ''}`}>
           <button
             onClick={!isPreview ? toggleMobileMenu : (e) => e.preventDefault()}
             className="focus:outline-none"
@@ -321,9 +321,9 @@ const Navbar = ({
             disabled={isPreview}
           >
             <div className="relative w-8 h-8">
-              <span ref={topBarRef} className={`absolute top-0 left-0 w-full h-1 ${hasScrolled || config?.useWhiteHamburger ? "bg-white" : "bg-black"} transition-colors duration-300`} />
-              <span ref={middleBarRef} className={`absolute top-3 left-0 w-full h-1 ${hasScrolled || config?.useWhiteHamburger ? "bg-white" : "bg-black"} transition-colors duration-300`} />
-              <span ref={bottomBarRef} className={`absolute top-6 left-0 w-full h-1 ${hasScrolled || config?.useWhiteHamburger ? "bg-white" : "bg-black"} transition-colors duration-300`} />
+              <span ref={topBarRef} className={`absolute top-0 left-0 w-2/3 h-0.5 ${hasScrolled || config?.useWhiteHamburger ? "bg-white" : "bg-black"} transition-colors duration-300`} />
+              <span ref={middleBarRef} className={`absolute top-2 left-0 w-2/3 h-0.5 ${hasScrolled || config?.useWhiteHamburger ? "bg-white" : "bg-black"} transition-colors duration-300`} />
+              <span ref={bottomBarRef} className={`absolute top-4 left-0 w-2/3 h-0.5 ${hasScrolled || config?.useWhiteHamburger ? "bg-white" : "bg-black"} transition-colors duration-300`} />
             </div>
           </button>
         </div>
