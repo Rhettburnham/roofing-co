@@ -28,14 +28,14 @@ const NavbarLazy = lazy(() => import("./Navbar")); // For Navbar preview
 // Mapping block names to components for dynamic rendering
 const blockComponentMap = {
   HeroBlock,
-  RichTextBlock,
   ButtonBlock,
+  RichTextBlock,
+  EmployeesBlock,
   BasicMapBlock,
-  BookingBlock,
   ServiceSliderBlock,
   TestimonialBlock,
   BeforeAfterBlock,
-  EmployeesBlock,
+  BookingBlock,
   // Add other main page blocks here if any
 };
 
@@ -753,6 +753,10 @@ const MainPageForm = ({ formData: formDataProp, setFormData: setFormDataProp, si
             componentProps.onConfigChange = (newConf) => handleBlockConfigChange(blockKey, newConf);
         }
         
+        // For ButtonBlock, the editor panel is part of the component itself when readOnly is false.
+        // So, we don't need a separate EditorPanel in SlidingEditPanel for it.
+        const hasSeparateEditorPanel = block.blockName !== 'RichTextBlock' && block.blockName !== 'BookingBlock' && block.blockName !== 'ButtonBlock' && ComponentToRender.EditorPanel;
+
         return (
           <div key={blockKey} className="relative bg-white overflow-hidden border">
             <div className="absolute top-4 right-4 z-40">
@@ -763,7 +767,7 @@ const MainPageForm = ({ formData: formDataProp, setFormData: setFormDataProp, si
             <Suspense fallback={<div>Loading {block.blockName}...</div>}>
               <ComponentToRender {...componentProps} />
             </Suspense>
-            {isEditingThisBlock && block.blockName !== 'RichTextBlock' && block.blockName !== 'BookingBlock' && ComponentToRender.EditorPanel && (
+            {isEditingThisBlock && hasSeparateEditorPanel && (
               <SlidingEditPanel onClose={() => handleToggleEditState(blockKey)}> 
                 <ComponentToRender.EditorPanel 
                     localData={block.config || {}} // Ensure localData is an object

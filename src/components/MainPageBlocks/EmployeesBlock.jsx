@@ -66,6 +66,8 @@ function EmployeesPreview({
   const employeesListOriginal = employeesData?.employee || [];
   const sectionTitle = employeesData?.sectionTitle || "OUR TEAM";
   const showNailAnimation = employeesData?.showNailAnimation !== undefined ? employeesData.showNailAnimation : true;
+  const cardBackgroundColor = employeesData?.cardBackgroundColor || '#FFFFFF'; // Default to white
+  const cardTextColor = employeesData?.cardTextColor || '#000000'; // Default to black
   console.log(`[EmployeesPreview] Instance created/re-rendered. Initial showNailAnimation prop from employeesData: ${showNailAnimation}`);
 
   const formattedEmployees = employeesListOriginal.map((emp) => ({
@@ -153,21 +155,21 @@ function EmployeesPreview({
   }, [showNailAnimation]);
 
   const renderEmployeeCard = (employee, index, cardStyle = {}) => (
-    <div key={employee.id || index} className="flex-shrink-0 flex flex-col items-center justify-start px-2" style={cardStyle}>
-      <div className="relative mb-4">
-        <div className="bg-white w-[12.5vh] h-[12.5vh] md:w-32 md:h-32 rounded-full overflow-hidden flex items-center justify-center shadow-lg">
+    <div key={employee.id || index} className="flex-shrink-0 flex flex-col items-center justify-start px-2" style={{...cardStyle, backgroundColor: cardBackgroundColor }}>
+      <div className="relative mb-4 flex flex-col items-center"> {/* Ensured items-center here for the circle itself */}
+        <div className="w-[21.25vh] h-[21.25vh] md:w-[204px] md:h-[204px] rounded-full overflow-hidden flex items-center justify-center" style={{ backgroundColor: 'transparent' }}> {/* Circle itself transparent, parent has BG */}
           <img src={employee.image} alt={employee.name} className="w-full h-full object-cover" loading="lazy" onError={(e) => { e.target.src = "/assets/images/team/roofer.png"; }}/>
         </div>
-        <div className="flex flex-col items-center mt-1">
+        <div className="flex flex-col items-center mt-2"> {/* This already has items-center */}
           {readOnly ? (
             <>
-              <p className="whitespace-nowrap text-[1.4vw] md:text-[1.5vh] text-black font-semibold text-center">{employee.name}</p>
-              <p className="whitespace-nowrap text-[1.4vw] md:text-[1.5vh] font-semibold -mt-2 text-black text-center">{employee.role}</p>
+              <p className="whitespace-nowrap text-[1.5vw] md:text-[1.6vh] font-semibold text-center" style={{ color: cardTextColor }}>{employee.name}</p>
+              <p className="whitespace-nowrap text-[1.5vw] md:text-[1.6vh] font-semibold mt-1 md:mt-[0.5vh] text-center" style={{ color: cardTextColor }}>{employee.role}</p> {/* Added margin for role */}
             </>
           ) : (
             <>
-              <input type="text" value={employee.name || ""} onChange={(e) => onEmployeeDetailChange(index, 'name', e.target.value)} className="whitespace-nowrap text-[1.4vw] md:text-[1.5vh] text-black font-semibold text-center bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 w-full" placeholder="Name"/>
-              <input type="text" value={employee.role || ""} onChange={(e) => onEmployeeDetailChange(index, 'role', e.target.value)} className="whitespace-nowrap text-[1.4vw] md:text-[1.5vh] font-semibold -mt-0 text-black text-center bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 w-full" placeholder="Role"/>
+              <input type="text" value={employee.name || ""} onChange={(e) => onEmployeeDetailChange(index, 'name', e.target.value)} className="whitespace-nowrap text-[1.5vw] md:text-[1.6vh] font-semibold text-center bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 w-full" style={{ color: cardTextColor }} placeholder="Name"/>
+              <input type="text" value={employee.role || ""} onChange={(e) => onEmployeeDetailChange(index, 'role', e.target.value)} className="whitespace-nowrap text-[1.5vw] md:text-[1.6vh] font-semibold mt-1 md:mt-[0.5vh] text-center bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 w-full" style={{ color: cardTextColor }} placeholder="Role"/> {/* Added margin for role */}
             </>
           )}
         </div>
@@ -177,9 +179,17 @@ function EmployeesPreview({
 
   return (
     <div>
-      <div ref={headerRef} className="relative flex items-center w-full py-8 md:py-10">
+      <div ref={headerRef} className="relative flex items-center w-full py-4 md:py-6"> {/* Reduced padding */}
         <div ref={nailRef} className="absolute right-[17vw] md:right-[17%] w-[30%] h-[6vh] md:h-[4vh]">
-          <div className="w-full h-full dynamic-shadow" style={{ backgroundImage: "url('/assets/images/nail.png')", backgroundPosition: "right center", backgroundRepeat: "no-repeat", backgroundSize: "contain", transform: "scale(3) scaleX(-1)", transformOrigin: "right center" }}/>
+          <div className="w-full h-full dynamic-shadow" style={{ 
+              backgroundImage: "url('/assets/images/nail.png')", 
+              backgroundPosition: "right center", 
+              backgroundRepeat: "no-repeat", 
+              backgroundSize: "contain", 
+              transform: "scale(3.6) scaleX(-1)", // Increased scale by 20%
+              transformOrigin: "right center",
+              filter: "drop-shadow(5px 5px 5px rgba(0,0,0,0.7))" // Added darker and bigger shadow
+            }}/>
         </div>
         <div ref={textRef} className="absolute left-1/2 z-30 w-auto">
           {readOnly ? (
@@ -189,7 +199,7 @@ function EmployeesPreview({
           )}
         </div>
       </div>
-      <div className="relative employee-section flex flex-col items-center justify-center px-6 overflow-hidden">
+      <div className="relative employee-section flex flex-col items-center justify-center px-6 overflow-hidden"> {/* Added overflow-hidden */}
         <div className="w-full max-w-screen-lg">
           {numTotalEmployees > 0 && numTotalEmployees <= 4 ? (
             <div className="flex justify-around items-start py-4">
@@ -280,7 +290,7 @@ function EmployeesEditorPanel({ localData, onPanelChange }) {
     const currentShowState = localData.showNailAnimation !== undefined ? localData.showNailAnimation : true;
     const newShowState = !currentShowState;
     console.log(`[EmployeesEditorPanel] handleToggleNailAnimation: Current: ${currentShowState}, New: ${newShowState}`);
-    onPanelChange({ showNailAnimation: newShowState });
+    onPanelChange(prev => ({ ...prev, showNailAnimation: newShowState }));
   };
 
   return (
@@ -304,7 +314,7 @@ function EmployeesEditorPanel({ localData, onPanelChange }) {
       </div>
       <button type="button" onClick={handleAddItem} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm w-full mt-3 font-medium">+ Add Employee</button>
       <div className="mt-4 pt-3 border-t">
-        <label className="flex items-center space-x-2 cursor-pointer">
+        <label className="flex items-center space-x-2 cursor-pointer mb-3">
           <input
             type="checkbox"
             checked={localData.showNailAnimation !== undefined ? localData.showNailAnimation : true}
@@ -313,6 +323,28 @@ function EmployeesEditorPanel({ localData, onPanelChange }) {
           />
           <span className="text-sm font-medium text-gray-700">Show Nail Animation</span>
         </label>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="cardBgColor" className="block text-sm font-medium text-gray-700">Card Background Color:</label>
+            <input 
+              type="color" 
+              id="cardBgColor"
+              value={localData.cardBackgroundColor || '#FFFFFF'} 
+              onChange={(e) => onPanelChange(prev => ({ ...prev, cardBackgroundColor: e.target.value }))}
+              className="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            />
+          </div>
+          <div>
+            <label htmlFor="cardTextColor" className="block text-sm font-medium text-gray-700">Card Text Color:</label>
+            <input 
+              type="color" 
+              id="cardTextColor"
+              value={localData.cardTextColor || '#000000'} 
+              onChange={(e) => onPanelChange(prev => ({ ...prev, cardTextColor: e.target.value }))}
+              className="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -337,6 +369,8 @@ export default function EmployeesBlock({
     return {
       sectionTitle: initialConfig.sectionTitle || "OUR TEAM",
       showNailAnimation: initialShowNailAnimation,
+      cardBackgroundColor: initialConfig.cardBackgroundColor || '#FFFFFF',
+      cardTextColor: initialConfig.cardTextColor || '#000000',
       employee: (initialConfig.employee || []).map((emp, index) => ({
         ...emp,
         id: emp.id || `emp_init_${index}_${Date.now()}`,
@@ -397,6 +431,8 @@ export default function EmployeesBlock({
           sectionTitle: resolvedSectionTitle,
           employee: newEmployeeList,
           showNailAnimation: resolvedShowNailAnimation,
+          cardBackgroundColor: employeesData.cardBackgroundColor !== undefined ? employeesData.cardBackgroundColor : (prevLocalData.cardBackgroundColor !== undefined ? prevLocalData.cardBackgroundColor : '#FFFFFF'),
+          cardTextColor: employeesData.cardTextColor !== undefined ? employeesData.cardTextColor : (prevLocalData.cardTextColor !== undefined ? prevLocalData.cardTextColor : '#000000'),
         };
       });
     }
@@ -428,6 +464,8 @@ export default function EmployeesBlock({
                 };
             }),
             showNailAnimation: localData.showNailAnimation,
+            cardBackgroundColor: localData.cardBackgroundColor,
+            cardTextColor: localData.cardTextColor,
         };
         console.log("[EmployeesBlock onConfigChange Effect] dataToSave:", JSON.parse(JSON.stringify(dataToSave, (k,v) => v instanceof File ? ({name: v.name, type: v.type, size: v.size}) : v)));
         onConfigChange(dataToSave);

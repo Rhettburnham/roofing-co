@@ -161,7 +161,7 @@ const ServicePageCreator = () => {
   console.log("Rendering ServicePageCreator with content:", servicePageContent);
 
   return (
-    <div className="service-page-container">
+    <div className="service-page-container min-h-screen flex flex-col">
       <Suspense fallback={<LoadingScreen />}>
         {servicePageContent.blocks.map((block, index) => {
           // Ensure block has required properties
@@ -193,6 +193,15 @@ const ServicePageCreator = () => {
              return <BlockComponent key={uniqueKey} config={config} readOnly={true} />;
           }
           
+          // Special handling for ServiceSliderBlock on small screens
+          if (block.blockName === "ServiceSliderBlock") {
+            return (
+              <div key={uniqueKey} className="md:block w-full flex-grow flex flex-col justify-center">
+                <BlockComponent config={config} readOnly={true} />
+              </div>
+            );
+          }
+
           // Standard rendering for other blocks
           return <BlockComponent key={uniqueKey} config={config} readOnly={true} />;
           } catch (renderError) {

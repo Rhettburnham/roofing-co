@@ -322,12 +322,12 @@ export default function ServiceSliderBlock({ readOnly = false, config = {}, onCo
      ------------------------------------------------------------------*/
   // Rectangle buttons that jut out from the left and animate when active
   const commonButtonClass =
-    "flex items-center pl-3 pr-6 py-2 my-1 rounded-r-md shadow-lg transform origin-left transition-all duration-300 font-sans";
-  const activeButtonClass = "scale-110 translate-x-2 text-white";
+    "flex pr-3 py-2  pl-6 my-1 rounded-r-md shadow-lg transform origin-right transition-all duration-300 font-serif";
+  const activeButtonClass = "scale-110 translate-x-4 text-white";
   const inactiveButtonClass = "bg-gray-600 text-white opacity-80";
 
   // Default placeholder used when a service hover image is not provided
-  const DEFAULT_SERVICE_HOVER_IMG = "/assets/images/service-placeholder.jpg";
+  const DEFAULT_SERVICE_HOVER_IMG = "/assets/images/clipped.png";
 
   const renderPreview = () => (
     <div className={wrapperClassName}>
@@ -344,8 +344,9 @@ export default function ServiceSliderBlock({ readOnly = false, config = {}, onCo
             </motion.div>
           </div>
           <div className="absolute bottom-0 left-0 w-full h-[9.5vh] bg-black z-10 pointer-events-none" style={{ clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)" }}/>
-          {readOnly ? (
-            <h2 className="absolute top-[1vh] left-[2vw] text-left text-white text-[10vw] font- drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-20 select-none">
+          {/* Title hidden for small screens */}
+          {/* {readOnly ? (
+            <h2 className="absolute top-[1vh] left-[2vw] text-left text-black text-[10vw]  drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-20 select-none">
               {localData.title}
             </h2>
           ) : (
@@ -353,40 +354,42 @@ export default function ServiceSliderBlock({ readOnly = false, config = {}, onCo
                 type="text" 
                 value={localData.title} 
                 onChange={(e) => handleTitleChange(e.target.value)} 
-                className="absolute top-[1vh] left-[2vw] text-left text-white text-[10vw] font-rye drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-20 bg-transparent focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-2 min-w-[70vw]"
+                className="absolute top-[1vh] left-[2vw] text-left text-white text-[10vw] font-serif drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-20 bg-transparent focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-2 min-w-[70vw]"
                 placeholder="Section Title"
             />
-          )}
+          )} */}
           {/*  ------------------  TOGGLE BUTTONS (SMALL)  ------------------ */}
-          <div className="absolute top-[10vh] left-0 z-30 flex flex-col">
+          <div className="absolute top-[2vh] left-0 right-0 z-30 flex flex-row justify-center items-center space-x-4 px-4">
             <motion.button
                 onClick={() => readOnly ? handleLocalDataChange(prev => ({...prev, isCommercial: false})) : setCurrentEditDisplayType('residential')}
                 style={{
-                    backgroundColor: (displayType === 'residential' ? localData.activeButtonConfig.bgColor : undefined),
+                    backgroundColor: (displayType === 'residential' ? localData.activeButtonConfig.bgColor : localData.inactiveButtonConfig.bgColor),
+                    color: (displayType === 'residential' ? localData.activeButtonConfig.textColor : localData.inactiveButtonConfig.textColor),
                 }}
-                className={`${commonButtonClass} ${displayType === 'residential' ? activeButtonClass : inactiveButtonClass}`}
-                animate={{ x: displayType === 'residential' ? 10 : 0, scale: displayType === 'residential' ? 1.1 : 1 }}
+                className={`${commonButtonClass} ${displayType === 'residential' ? 'scale-105' : 'opacity-80'}`}
+                animate={{ scale: displayType === 'residential' ? 1.05 : 1 }}
             >
-                {React.createElement(resolveIcon(localData.residentialButtonIcon.name, localData.residentialButtonIcon.pack), { className: "mr-2", size: 16, style: { color: localData.activeButtonConfig.iconColor } })}
+                {React.createElement(resolveIcon(localData.residentialButtonIcon.name, localData.residentialButtonIcon.pack), { className: "mr-2", size: 16, style: { color: displayType === 'residential' ? localData.activeButtonConfig.iconColor : localData.inactiveButtonConfig.iconColor } })}
                 <p className="text-[4vw] font-sans">{localData.residentialButtonText}</p>
             </motion.button>
             <motion.button
                 onClick={() => readOnly ? handleLocalDataChange(prev => ({...prev, isCommercial: true})) : setCurrentEditDisplayType('commercial')}
                 style={{
-                    backgroundColor: (displayType === 'commercial' ? localData.activeButtonConfig.bgColor : undefined),
+                    backgroundColor: (displayType === 'commercial' ? localData.activeButtonConfig.bgColor : localData.inactiveButtonConfig.bgColor),
+                    color: (displayType === 'commercial' ? localData.activeButtonConfig.textColor : localData.inactiveButtonConfig.textColor),
                 }}
-                className={`${commonButtonClass} ${displayType === 'commercial' ? activeButtonClass : inactiveButtonClass}`}
-                animate={{ x: displayType === 'commercial' ? 10 : 0, scale: displayType === 'commercial' ? 1.1 : 1 }}
+                className={`${commonButtonClass} ${displayType === 'commercial' ? 'scale-105' : 'opacity-80'}`}
+                animate={{ scale: displayType === 'commercial' ? 1.05 : 1 }}
             >
-                {React.createElement(resolveIcon(localData.commercialButtonIcon.name, localData.commercialButtonIcon.pack), { className: "mr-2", size: 16, style: { color: localData.activeButtonConfig.iconColor } })}
+                {React.createElement(resolveIcon(localData.commercialButtonIcon.name, localData.commercialButtonIcon.pack), { className: "mr-2", size: 16, style: { color: displayType === 'commercial' ? localData.activeButtonConfig.iconColor : localData.inactiveButtonConfig.iconColor } })}
                 <p className="text-[4vw] font-sans">{localData.commercialButtonText}</p>
             </motion.button>
           </div>
-          <div className="absolute inset-0 flex flex-col items-center justify-start pt-[23vh] p-2 z-20">
+          <div className="absolute inset-0 flex flex-col items-center justify-start pt-[15vh] p-2 z-20"> {/* Adjusted pt for button row */} 
               <AnimatePresence mode="wait">
                   <motion.div
                     key={displayType === 'commercial' ? "commercial-services" : "residential-services"}
-                    className="flex flex-row gap-4"
+                    className="grid grid-cols-2 gap-x-4 gap-y-8 w-full px-4" // Changed to grid-cols-2 and added gap-y, w-full, px-4
                     variants={containerVariants} initial="initial" animate="enter" exit="exit"
                   >
                     {servicesForDisplay.slice().reverse().map((service, index_reversed) => {
@@ -402,7 +405,7 @@ export default function ServiceSliderBlock({ readOnly = false, config = {}, onCo
                         const serviceContent = (
                           <motion.div 
                             onClick={() => !readOnly && openIconModalForServiceItem(displayType, originalIndex)}
-                            className={`relative overflow-hidden dark_button flex-col w-28 h-28 flex items-center justify-center text-white text-[6vh] ${!readOnly ? 'cursor-pointer' : 'cursor-default'}`}
+                            className={`relative overflow-hidden dark_button flex-col w-full h-28 flex items-center justify-center text-white text-[6vh] ${!readOnly ? 'cursor-pointer' : 'cursor-default'}`}
                             style={{ backgroundColor: localData.serviceItemConfig.bgColor }}
                             variants={hoverVariants}
                             initial="rest"
@@ -421,7 +424,7 @@ export default function ServiceSliderBlock({ readOnly = false, config = {}, onCo
                                   type="text" 
                                   value={service.title} 
                                   onChange={(e) => handleServiceItemTitleChange(displayType, originalIndex, e.target.value)}
-                                  className="mt-1 text-white text-lg drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] bg-transparent text-center focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded w-full truncate"
+                                  className="mt-1 text-white text-lg drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] bg-transparent text-left "
                                   placeholder="Title"
                                   onClick={(e) => e.stopPropagation()}
                                   style={{ color: localData.serviceItemConfig.textColor }}
@@ -435,9 +438,9 @@ export default function ServiceSliderBlock({ readOnly = false, config = {}, onCo
                         );
 
                         return (
-                          <motion.div key={serviceId || originalIndex} variants={itemVariants} className="flex flex-col items-center -mt-[14vh]">
+                          <motion.div key={serviceId || originalIndex} variants={itemVariants} className="flex flex-col items-center">
                             {readOnly && serviceLink ? (
-                                <Link to={serviceLink} className="block">
+                                <Link to={serviceLink} className="block w-full">
                                     {serviceContent}
                                 </Link>
                             ) : (
@@ -453,7 +456,7 @@ export default function ServiceSliderBlock({ readOnly = false, config = {}, onCo
 
       {/* Large Screen */}
       <div className="hidden md:block overflow-hidden">
-          <div className="relative w-full h-[60vh]">
+          <div className="relative w-full h-[38vh]">
             <motion.div
                 animate={{ x: displayType === 'commercial' ? "-50%" : "0%" }}
                 transition={{ duration: 1 }}
@@ -462,9 +465,9 @@ export default function ServiceSliderBlock({ readOnly = false, config = {}, onCo
                 <img src={getDisplayUrl(localData.largeResidentialImg)} alt="Residential Services" className="w-1/2 h-full object-cover" />
                 <img src={getDisplayUrl(localData.largeCommercialImg)} alt="Commercial Services" className="w-1/2 h-full object-cover" />
             </motion.div>
-            <div className="absolute top-0 w-full flex justify-start pl-[3vw]">
+            <div className="absolute top-0 w-full flex justify-start pl-6">
               {readOnly ? (
-                  <h2 className="relative z-40 text-white text-[11.5vh] tracking-wider font-rye first:drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,1.8)] select-none">
+                  <h2 className="relative z-40 text-white text-[8vh] tracking-wider font-serif first:drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,1.8)] select-none">
                     {localData.title}
                   </h2>
                 ) : (
@@ -472,13 +475,13 @@ export default function ServiceSliderBlock({ readOnly = false, config = {}, onCo
                       type="text" 
                       value={localData.title} 
                       onChange={(e) => handleTitleChange(e.target.value)}
-                      className="relative z-40 text-white text-[11.5vh] tracking-wider font-rye first:drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,1.8)] bg-transparent text-center focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-2 min-w-[50vw]"
+                      className="relative z-40 text-white text-[8vh] tracking-wider font-serif bg-transparent text-left px-2 min-w-[50vw]"
                       placeholder="Section Title"
                   />
                 )}
             </div>
             {/*  ------------------  TOGGLE BUTTONS (LARGE)  ------------------ */}
-            <div className="absolute top-[15vh] left-0 z-30 flex flex-col">
+            <div className="absolute top-[10vh] left-0 z-30 flex flex-col">
                 <motion.button
                     onClick={() => readOnly ? handleLocalDataChange(prev => ({...prev, isCommercial: false})) : setCurrentEditDisplayType('residential')}
                     style={{
@@ -500,7 +503,7 @@ export default function ServiceSliderBlock({ readOnly = false, config = {}, onCo
                     {React.createElement(resolveIcon(localData.commercialButtonIcon.name, localData.commercialButtonIcon.pack), { className: "mr-2", size: 24, style: { color: localData.activeButtonConfig.iconColor } })} {localData.commercialButtonText}
                 </motion.button>
             </div>
-            <div className="absolute inset-0 flex items-end justify-center mb-[26vh]">
+            <div className="absolute inset-0 flex items-center justify-center ">
                 <AnimatePresence mode="wait">
                   <motion.div
                       key={displayType === 'commercial' ? "commercial-lg-services" : "residential-lg-services"}

@@ -135,8 +135,8 @@ const BookingPreview = memo(({ bookingData, readOnly, onHeaderTextChange, onPhon
                   .to(formContainerRef.current, { opacity: 1, scale: 1, duration: 0.6, ease: "back.out(1.4)" }, "-=0.2");
 
     if (showNailAnimation) {
-      masterTimeline.to(leftNails, { x: "-20%", duration: 0.4, ease: "power2.out", stagger: 0.12 }, "+=0.2")
-                    .to(rightNails, { x: "20%", duration: 0.4, ease: "power2.out", stagger: 0.12 }, "-=0.4");
+      masterTimeline.to(leftNails, { x: "-15%", duration: 0.4, ease: "power2.out", stagger: 0.12 }, "+=0.2")
+                    .to(rightNails, { x: "15%", duration: 0.4, ease: "power2.out", stagger: 0.12 }, "-=0.4");
       console.log("[BookingPreview GSAP Effect] Applied nail animation timeline.");
     } else {
       // Set nails to a static/hidden state if animation is off
@@ -157,9 +157,27 @@ const BookingPreview = memo(({ bookingData, readOnly, onHeaderTextChange, onPhon
     if (!isMobile || isAnimating || readOnly) return;
     setIsAnimating(true);
     if (!isFormVisible) {
-      gsap.to(bannerRef.current, { height: "auto", duration: 0.4, ease: "power2.inOut", onComplete: () => { gsap.to(formContainerRef.current, { opacity: 1, duration: 0.3, onComplete: () => setIsAnimating(false) }); } });
+      // Expand: Form becomes visible
+      gsap.set(formContainerRef.current, { display: 'block' }); // Ensure it's block before animating opacity
+      gsap.to(formContainerRef.current, { 
+        opacity: 1, 
+        scale: 1,
+        duration: 0.3, 
+        ease: "power2.out",
+        onComplete: () => setIsAnimating(false) 
+      });
     } else {
-      gsap.to(formContainerRef.current, { opacity: 0, duration: 0.3, onComplete: () => { gsap.to(bannerRef.current, { height: "140px", duration: 0.4, ease: "power2.inOut", onComplete: () => setIsAnimating(false) }); } });
+      // Collapse: Form becomes hidden
+      gsap.to(formContainerRef.current, { 
+        opacity: 0, 
+        scale: 0.95,
+        duration: 0.3, 
+        ease: "power2.in",
+        onComplete: () => {
+          gsap.set(formContainerRef.current, { display: 'none' }); // Set to none after animation
+          setIsAnimating(false);
+        }
+      });
     }
     setIsFormVisible(prev => !prev);
   }, [isFormVisible, isMobile, isAnimating, readOnly]);
@@ -210,9 +228,20 @@ const BookingPreview = memo(({ bookingData, readOnly, onHeaderTextChange, onPhon
     }
   }, [isMobile, readOnly]);
 
+  console.log("[BookingPreview Render] isMobile:", isMobile, "readOnly:", readOnly, "isFormVisible:", isFormVisible);
+
   return (
     <div className="flex flex-col items-center justify-center w-full px-6 overflow-hidden mt-4">
-      <div ref={bannerRef} className={`md:max-w-xl w-full rounded-lg shadow-lg relative z-30 md:h-auto ${isFormVisible && isMobile && !readOnly ? "h-auto" : "h-[140px]"}`} style={{ backgroundColor: currentMainBgColor }}>
+      <div 
+        ref={bannerRef} 
+        className={`
+          md:max-w-xl w-full rounded-lg shadow-lg relative z-30 
+          ${isMobile && !readOnly ? (isFormVisible ? 'h-auto' : 'min-h-[230px]') : 
+           isMobile && readOnly ? 'h-[140px]' : 
+           'md:h-auto'}
+        `} 
+        style={{ backgroundColor: currentMainBgColor }}
+      >
         <div className="absolute left-0 top-0 h-full hidden md:flex flex-col z-10 justify-between py-8 overflow-visible">
             {[1,2,3].map(i => <div key={`ln-${i}`} id={`left-nail-${i}`} className="w-[8vw] h-[2.5vh] relative"><div className="w-full h-full" style={{backgroundImage: "url('/assets/images/nail.png')", backgroundPosition: " center", backgroundRepeat: "no-repeat", backgroundSize: "contain", transform: "scale(1.8)", transformOrigin: " center", position: "absolute", left: `-${6 + (i*2)}%`, top:0, filter: "drop-shadow(2px 2px 2px rgba(0,0,0,0.5))"}}/></div>)}
         </div>
@@ -251,59 +280,89 @@ const BookingPreview = memo(({ bookingData, readOnly, onHeaderTextChange, onPhon
                 )}
               </div>
             </div>
-            {!readOnly && (
-              <button ref={toggleButtonRef} onClick={toggleFormVisibility} disabled={isAnimating} className={`md:hidden mt-2 px-6 py-2 rounded-md shadow-lg relative transition-all duration-300 ${isAnimating ? "opacity-50" : "opacity-100"} ${isFormVisible ? "bg-white/20" : "bg-white/10 hover:bg-white/20"}`}>
-                {isFormVisible ? <div className="relative z-40 flex space-x-1 justify-center"><div className="w-2 h-2 rounded-full bg-white"></div><div className="w-2 h-2 rounded-full bg-white"></div><div className="w-2 h-2 rounded-full bg-white"></div></div> : <span className="relative z-40 text-white text-md font-semibold">Book Now</span>}
-              </button>
-            )}
-          </div>
-          <div
-            ref={formContainerRef}
-            className={`
-              w-full pb-2 md:block
-              transition-opacity duration-300 ease-in-out
-              ${
-                readOnly
-                  ? 'opacity-100 scale-100' // Preview mode: always visible
-                  : isMobile
-                  ? isFormVisible
-                    ? 'opacity-100 scale-100' // Mobile interactive: visible
-                    : 'opacity-0 scale-95' // Mobile interactive: hidden/collapsed
-                  : 'opacity-100 scale-100' // Desktop interactive: always visible
-              }
-            `}
-            style={{
-              display:
-                readOnly
-                  ? 'block' // Preview mode: always display
-                  : isMobile
-                  ? isFormVisible
-                    ? 'block' // Mobile interactive: display
-                    : 'none' // Mobile interactive: hide (collapse)
-                  : 'block', // Desktop interactive: always display
-            }}
-          >
-            {(socialLinks && socialLinks.length > 0) && ( // Always show social links if they exist
-              <div className="flex justify-center space-x-12 py-4 md:py-3">
+            
+            {/* Social Links - Mobile, non-readOnly view */}
+            {socialLinks && socialLinks.length > 0 && isMobile && !readOnly && (
+              <div className="flex justify-center space-x-12 py-4">
                 {socialLinks.map((social, index) => {
                   const IconComponent = socialIconComponents[social.platform.toLowerCase()];
                   return (
                     <a key={index} href={social.url} target="_blank" rel="noopener noreferrer" className="block" onClick={(e) => { if(!readOnly && readOnly !== undefined) e.preventDefault();}}>
-                      <div className="bg-second-accent p-2 rounded-md transform transition-transform hover:scale-110"><IconComponent className="w-8 h-8 md:w-10 md:h-10 text-white" /></div>
+                      <div className="bg-second-accent p-2 rounded-md transform transition-transform hover:scale-110"><IconComponent className="w-8 h-8 text-white" /></div>
                     </a>
                   );
                 })}
               </div>
             )}
+
+            {!readOnly && isMobile && ( /* "Book Now" button only for mobile, non-readonly */
+              <button 
+                ref={toggleButtonRef} 
+                onClick={toggleFormVisibility} 
+                disabled={isAnimating} 
+                className={`mt-2 px-6 py-2 rounded-md shadow-lg relative transition-all duration-300 ${isAnimating ? "opacity-50" : "opacity-100"} border-2 border-black bg-red-500 text-black font-bold`} /* TEMPORARY DEBUG STYLES */
+              >
+                {isFormVisible ? <div className="relative z-40 flex space-x-1 justify-center"><div className="w-2 h-2 rounded-full bg-black"></div><div className="w-2 h-2 rounded-full bg-black"></div><div className="w-2 h-2 rounded-full bg-black"></div></div> : <span className="relative z-40 text-black text-md font-semibold">BOOK NOW (DEBUG)</span>}
+              </button>
+            )}
+          </div>
+
+          {/* Form Container - visibility toggled by GSAP and classes */}
+          <div
+            ref={formContainerRef}
+            className={`
+              w-full pb-2 
+              transition-opacity duration-300 ease-in-out
+              ${
+                readOnly
+                  ? 'opacity-100 scale-100 block' // Preview mode: always visible
+                  : isMobile
+                  ? isFormVisible
+                    ? 'opacity-100 scale-100 block' // Mobile interactive: visible
+                    : 'opacity-0 scale-95 hidden' // Mobile interactive: hidden/collapsed
+                  : 'opacity-100 scale-100 block' // Desktop interactive: always visible
+              }
+            `}
+          >
+            {/* Social Links for Desktop OR Mobile readOnly view */}
+            {socialLinks && socialLinks.length > 0 && (!isMobile || (isMobile && readOnly)) && (
+                 <div className="flex justify-center space-x-12 py-4 md:py-3">
+                 {socialLinks.map((social, index) => {
+                   const IconComponent = socialIconComponents[social.platform.toLowerCase()];
+                   return (
+                     <a key={index} href={social.url} target="_blank" rel="noopener noreferrer" className="block" onClick={(e) => { if(!readOnly && readOnly !== undefined) e.preventDefault();}}>
+                       <div className="bg-second-accent p-2 rounded-md transform transition-transform hover:scale-110"><IconComponent className="w-8 h-8 md:w-10 md:h-10 text-white" /></div>
+                     </a>
+                   );
+                 })}
+               </div>
+            )}
             <div className="rounded-lg p-3 shadow-inner mx-2 mt-2" style={{backgroundColor: currentFormBgColor}}>
               <form onSubmit={handleSubmit} className="w-full">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="md:col-span-1 p-2 rounded-md bg-gray-50 transition-transform hover:scale-105"><input type="text" name="firstName" value={formData.firstName} onChange={handleChange} placeholder="First Name" required className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600" style={{color: currentInputTextColor}} disabled={readOnly}/></div>
-                  <div className="md:col-span-1 p-2 rounded-md bg-gray-50 transition-transform hover:scale-105"><input type="text" name="lastName" value={formData.lastName} onChange={handleChange} placeholder="Last Name" required className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600" style={{color: currentInputTextColor}} disabled={readOnly}/></div>
-                  <div className="md:col-span-2 p-2 rounded-md bg-gray-50 transition-transform hover:scale-105"><input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Your Email" required className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600" style={{color: currentInputTextColor}} disabled={readOnly}/></div>
-                  <div className="md:col-span-1 p-2 rounded-md bg-gray-50 transition-transform hover:scale-105"><input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="Your Phone" required className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600" style={{color: currentInputTextColor}} disabled={readOnly}/></div>
-                  <div className="md:col-span-1 p-2 rounded-md bg-gray-50 transition-transform hover:scale-105"><div onClick={() => !readOnly && setIsModalOpen(true)} className={`w-full p-2 bg-transparent border-b border-gray-400 ${!readOnly ? 'cursor-pointer' : 'cursor-default'}`} style={{color: formData.service ? currentInputTextColor : '#4B5563' }}>{formData.service ? formData.service : "Select a Service"}</div></div>
-                  <div className="md:col-span-2 p-2 rounded-md bg-gray-50 transition-transform hover:scale-105"><textarea name="message" value={formData.message} onChange={handleChange} placeholder="Your Message" required rows="3" className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600" style={{color: currentInputTextColor}} disabled={readOnly}/></div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Nested grid for the first two columns on desktop */}
+                  <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-1 p-2 rounded-md bg-gray-50 transition-transform hover:scale-105"><input type="text" name="firstName" value={formData.firstName} onChange={handleChange} placeholder="First Name" required className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600" style={{color: currentInputTextColor}} disabled={readOnly}/></div>
+                    <div className="md:col-span-1 p-2 rounded-md bg-gray-50 transition-transform hover:scale-105"><input type="text" name="lastName" value={formData.lastName} onChange={handleChange} placeholder="Last Name" required className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600" style={{color: currentInputTextColor}} disabled={readOnly}/></div>
+                    <div className="md:col-span-2 p-2 rounded-md bg-gray-50 transition-transform hover:scale-105"><input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Your Email" required className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600" style={{color: currentInputTextColor}} disabled={readOnly}/></div>
+                    <div className="md:col-span-1 p-2 rounded-md bg-gray-50 transition-transform hover:scale-105"><input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="Your Phone" required className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600" style={{color: currentInputTextColor}} disabled={readOnly}/></div>
+                    <div className="md:col-span-1 p-2 rounded-md bg-gray-50 transition-transform hover:scale-105"><div onClick={() => !readOnly && setIsModalOpen(true)} className={`w-full p-2 bg-transparent border-b border-gray-400 ${!readOnly ? 'cursor-pointer' : 'cursor-default'}`} style={{color: formData.service ? currentInputTextColor : '#4B5563' }}>{formData.service ? formData.service : "Select a Service"}</div></div>
+                  </div>
+                  
+                  {/* Message textarea for the third column on desktop */}
+                  <div className="md:col-span-1 p-2 rounded-md bg-gray-50 transition-transform hover:scale-105 h-full flex flex-col">
+                    <textarea 
+                      name="message" 
+                      value={formData.message} 
+                      onChange={handleChange} 
+                      placeholder="Your Message" 
+                      required 
+                      rows="3" 
+                      className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600 flex-grow" 
+                      style={{color: currentInputTextColor, resize: 'none'}} 
+                      disabled={readOnly}
+                    />
+                  </div>
                 </div>
                 <div className="flex justify-center w-full mt-4 relative"><button type="submit" disabled={readOnly} className="relative px-8 py-2 text-lg font-semibold rounded-md md:w-auto shadow-md" style={{color: currentButtonTextColor, backgroundColor: currentButtonBgColor}}>Submit</button></div>
               </form>

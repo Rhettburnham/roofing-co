@@ -2,6 +2,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import ThemeColorPicker from "../common/ThemeColorPicker";
 
 // Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger);
@@ -44,7 +45,15 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
   const [viewStates, setViewStates] = useState({});
 
   // Safely destructure data and ensure paths are properly formatted
-  const { sectionTitle = "BEFORE & AFTER", items = [] } = beforeAfterData || {};
+  const { 
+    sectionTitle = "BEFORE & AFTER", 
+    items = [],
+    overlayTextColor = "#FFFFFF",
+    toggleButtonBgColor = "#1e293b",
+    toggleButtonTextColor = "#FFFFFF",
+    toggleButtonHoverBgColor = "#FFFFFF",
+    toggleButtonHoverTextColor = "#000000"
+  } = beforeAfterData || {};
   const showNailAnimation = beforeAfterData?.showNailAnimation !== undefined ? beforeAfterData.showNailAnimation : true; // Default to true
   console.log(`[BeforeAfterPreview] Instance created/re-rendered. Initial showNailAnimation prop from beforeAfterData: ${showNailAnimation}`);
 
@@ -296,7 +305,7 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
 
   return (
     <>
-      <section className="relative w-full overflow-hidden ">
+      <section className="relative w-full overflow-hidden min-h-[70vh] md:min-h-[50vh]">
         {/* Header / Title */}
         <div
           ref={headerRef}
@@ -313,8 +322,9 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
                 backgroundPosition: "left center",
                 backgroundRepeat: "no-repeat",
                 backgroundSize: "contain",
-                transform: "scale(3) scaleX(-1)",
+                transform: "scale(3.6) scaleX(-1)",
                 transformOrigin: "left center",
+                filter: "drop-shadow(5px 5px 5px rgba(0,0,0,0.7))"
               }}
             />
           </div>
@@ -339,8 +349,8 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
         </div>
 
         {/* Gallery Grid - Now always 3 columns */}
-        <div className="w-full flex justify-center">
-          <div className="grid grid-cols-3 gap-8 md:space-x-14 px-2 md:px-5 md:pb-5">
+        <div className="w-full flex items-center justify-center">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:space-x-4 px-2 md:px-5 md:pb-5">
             {formattedItems.map((item, index) => (
               <div
                 key={item.id}
@@ -352,7 +362,7 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
                   onClick={() => handleBoxClick(item)}
                 >
                   <div
-                    className="card w-[20vw] aspect-[2/1]"
+                    className="card w-[80vw] h-[50vw] md:w-[30vw] md:h-[22vw]"
                   >
                     <img
                       src={item.beforeDisplayUrl}
@@ -371,7 +381,20 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
                       e.stopPropagation();
                       toggleCardViewState(index);
                     }}
-                    className="absolute top-2 right-2 z-10 px-2 py-1 bg-banner text-white rounded-md text-xs md:text-sm transition-all transform hover:scale-105 hover:shadow-lg hover:bg-white hover:text-black"
+                    className="absolute top-2 right-2 z-10 px-2 py-1 rounded-md text-xs md:text-sm transition-all transform hover:scale-105 focus:outline-none shadow-md"
+                    style={{
+                      backgroundColor: toggleButtonBgColor,
+                      color: toggleButtonTextColor,
+                      boxShadow: "2px 2px 5px rgba(0,0,0,0.5)"
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = toggleButtonHoverBgColor;
+                      e.currentTarget.style.color = toggleButtonHoverTextColor;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = toggleButtonBgColor;
+                      e.currentTarget.style.color = toggleButtonTextColor;
+                    }}
                   >
                     {viewStates[index] === "before"
                       ? "After"
@@ -382,10 +405,16 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
                     <div className="flex flex-col items-start text-white text-left leading-tight">
                       {readOnly ? (
                         <>
-                          <span className="font-bold text-[2.5vw] md:text-xl whitespace-nowrap drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] mb-0">
+                          <span 
+                            className="font-bold text-[5vw] md:text-xl whitespace-nowrap drop-shadow-[0_2px_2px_rgba(0,0,0,0.9)] mb-0"
+                            style={{ color: overlayTextColor }}
+                          >
                             {item.shingle}
                           </span>
-                          <span className="font-semibold text-[2.5vw] md:text-lg text-white drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
+                          <span 
+                            className="font-semibold text-[5vw] md:text-lg drop-shadow-[0_2px_2px_rgba(0,0,0,0.9)]"
+                            style={{ color: overlayTextColor }}
+                          >
                             {item.sqft}
                           </span>
                         </>
@@ -395,17 +424,19 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
                             type="text"
                             value={item.shingle || ""}
                             onChange={(e) => onItemTextChange && onItemTextChange(index, "shingle", e.target.value)}
-                            className="font-bold text-[2.5vw] md:text-xl whitespace-nowrap bg-transparent focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 mb-0 w-full text-white placeholder-gray-300 drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"
+                            className="font-bold text-[5vw] md:text-xl whitespace-nowrap bg-transparent focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 mb-0 w-full placeholder-gray-300 drop-shadow-[0_2px_2px_rgba(0,0,0,0.9)]"
                             placeholder="Shingle Type"
                             onClick={(e) => e.stopPropagation()}
+                            style={{ color: overlayTextColor }}
                           />
                           <input
                             type="text"
                             value={item.sqft || ""}
                             onChange={(e) => onItemTextChange && onItemTextChange(index, "sqft", e.target.value)}
-                            className="font-semibold text-[2.5vw] md:text-lg bg-transparent focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 w-full text-white placeholder-gray-300 drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"
+                            className="font-semibold text-[5vw] md:text-lg bg-transparent focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 w-full placeholder-gray-300 drop-shadow-[0_2px_2px_rgba(0,0,0,0.9)]"
                             placeholder="Sqft"
                             onClick={(e) => e.stopPropagation()}
+                            style={{ color: overlayTextColor }}
                           />
                         </>
                       )}
@@ -425,7 +456,7 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
           onClick={closeModal}
         >
           <div
-            className="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-lg p-4 md:p-6 flex flex-col overflow-auto"
+            className="relative w-full max-w-4xl max-h-[70vh] bg-white rounded-lg p-4 md:p-6 flex flex-col overflow-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -483,7 +514,7 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
    ----------------------------------------------
    This panel now uses file inputs for the before and after images.
 =============================================== */
-function BeforeAfterEditorPanel({ localData, onPanelChange }) {
+function BeforeAfterEditorPanel({ localData, onPanelChange, themeColors }) {
   const { items = [] } = localData;
 
   const handleAddItem = () => {
@@ -491,8 +522,8 @@ function BeforeAfterEditorPanel({ localData, onPanelChange }) {
       id: `new_item_${Date.now()}`,
       before: initializeImageState(null, "/assets/images/beforeafter/default_before.jpg"),
       after: initializeImageState(null, "/assets/images/beforeafter/default_after.jpg"),
-      shingle: "New Shingle Type",
-      sqft: "0000 sqft",
+      shingle: "New Shingle", // Default shingle
+      sqft: "0 sqft", // Default sqft
     };
     onPanelChange((prev) => ({ ...prev, items: [...(prev.items || []), newItem] }));
   };
@@ -527,73 +558,90 @@ function BeforeAfterEditorPanel({ localData, onPanelChange }) {
     });
   };
   
-  const handleItemImageUrlChange = (index, field, urlValue) => {
-    const currentItem = items[index];
-    const currentImageFieldState = currentItem?.[field];
-
-    if (currentImageFieldState?.url?.startsWith('blob:')) {
-      URL.revokeObjectURL(currentImageFieldState.url);
-    }
-    // When pasting a URL, this becomes the new originalUrl as well, and file is null
-    const updatedImageState = { 
-        file: null, 
-        url: urlValue, 
-        name: urlValue.split('/').pop(),
-        originalUrl: urlValue // New URL is the new original reference
-    };
-    onPanelChange(prev => {
-      const updatedItems = [...prev.items];
-      updatedItems[index] = { ...updatedItems[index], [field]: updatedImageState };
-      return { ...prev, items: updatedItems };
-    });
-  };
-
   const handleToggleNailAnimation = () => {
     const currentShowState = localData.showNailAnimation !== undefined ? localData.showNailAnimation : true;
     const newShowState = !currentShowState;
-    console.log(`[BeforeAfterEditorPanel] handleToggleNailAnimation: Current: ${currentShowState}, New: ${newShowState}`);
     onPanelChange({ showNailAnimation: newShowState });
   };
 
   return (
-    <div className="bg-white text-gray-800 p-4 rounded">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold">Manage Gallery Items</h2>
+    <div className="bg-white text-gray-800 p-2 rounded"> 
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-sm font-semibold">Edit Gallery</h2>
       </div>
 
-      <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+      <div className="space-y-1.5 max-h-[50vh] overflow-y-auto pr-1">
         {items.map((item, index) => (
-          <div key={item.id || index} className="bg-gray-100 p-3 rounded mb-3 relative border border-gray-300">
-            <button onClick={() => handleRemoveItem(index)} className="bg-red-500 text-white text-xs px-2 py-1 rounded absolute top-2 right-2 hover:bg-red-600 z-10">Remove</button>
-            <p className="text-sm text-gray-600 mb-2">Item: {item.shingle || `Item ${index+1}`} ({item.sqft || 'N/A'})</p>
+          <div key={item.id || index} className="bg-gray-100 p-1.5 rounded mb-1.5 relative border border-gray-200">
+            <button onClick={() => handleRemoveItem(index)} className="bg-red-600 text-white text-[9px] px-1 py-0 rounded absolute top-1 right-1 hover:bg-red-700 z-10">X</button>
+            <p className="text-[10px] text-gray-500 mb-1 truncate pr-5">
+              {item.shingle || `Item ${index+1}`} ({item.sqft || 'N/A'})
+            </p>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                    <label className="block text-xs mb-1 text-gray-700">Before Image:</label>
-                    <input type="file" accept="image/*" className="w-full bg-gray-200 text-gray-800 px-2 py-1 rounded mt-1 text-xs file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600 cursor-pointer" onChange={(e) => handleItemImageChange(index, "before", e.target.files?.[0])} />
-                    <input type="text" className="w-full bg-gray-200 text-gray-800 px-2 py-1 rounded mt-1 text-xs placeholder-gray-500" placeholder="Or paste direct image URL" value={getDisplayUrl(item.before, '')} onChange={(e) => handleItemImageUrlChange(index, 'before', e.target.value)} />
-                    {getDisplayUrl(item.before) && <img src={getDisplayUrl(item.before)} alt="Before Preview" className="mt-2 h-20 w-20 object-cover rounded shadow bg-gray-200 p-1"/>}
+            <div className="flex space-x-2">
+                <div className="w-1/2">
+                    <label className="block text-[10px] mb-0.5 text-gray-600">Before:</label>
+                    <input type="file" accept="image/*" className="w-full bg-gray-200 text-gray-700 px-1 py-0.5 rounded text-[10px] file:mr-0.5 file:py-0 file:px-0.5 file:rounded-sm file:border-0 file:text-[9px] file:font-medium file:bg-blue-500 file:text-white hover:file:bg-blue-600 cursor-pointer" onChange={(e) => handleItemImageChange(index, "before", e.target.files?.[0])} />
+                    {getDisplayUrl(item.before) && <img src={getDisplayUrl(item.before)} alt="Before" className="mt-0.5 h-10 w-10 object-cover rounded shadow bg-gray-200 p-0.5"/>}
                 </div>
-                <div>
-                    <label className="block text-xs mb-1 text-gray-700">After Image:</label>
-                    <input type="file" accept="image/*" className="w-full bg-gray-200 text-gray-800 px-2 py-1 rounded mt-1 text-xs file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600 cursor-pointer" onChange={(e) => handleItemImageChange(index, "after", e.target.files?.[0])} />
-                    <input type="text" className="w-full bg-gray-200 text-gray-800 px-2 py-1 rounded mt-1 text-xs placeholder-gray-500" placeholder="Or paste direct image URL" value={getDisplayUrl(item.after, '')} onChange={(e) => handleItemImageUrlChange(index, 'after', e.target.value)} />
-                    {getDisplayUrl(item.after) && <img src={getDisplayUrl(item.after)} alt="After Preview" className="mt-2 h-20 w-20 object-cover rounded shadow bg-gray-200 p-1"/>}
+                <div className="w-1/2">
+                    <label className="block text-[10px] mb-0.5 text-gray-600">After:</label>
+                    <input type="file" accept="image/*" className="w-full bg-gray-200 text-gray-700 px-1 py-0.5 rounded text-[10px] file:mr-0.5 file:py-0 file:px-0.5 file:rounded-sm file:border-0 file:text-[9px] file:font-medium file:bg-blue-500 file:text-white hover:file:bg-blue-600 cursor-pointer" onChange={(e) => handleItemImageChange(index, "after", e.target.files?.[0])} />
+                    {getDisplayUrl(item.after) && <img src={getDisplayUrl(item.after)} alt="After" className="mt-0.5 h-10 w-10 object-cover rounded shadow bg-gray-200 p-0.5"/>}
                 </div>
             </div>
           </div>
         ))}
       </div>
-      <button type="button" onClick={handleAddItem} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded w-full mt-3 text-sm font-medium">+ Add Gallery Item</button>
-      <div className="mt-4 pt-3 border-t">
-        <label className="flex items-center space-x-2 cursor-pointer">
+      <button type="button" onClick={handleAddItem} className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-0.5 rounded w-full mt-1.5 text-[10px] font-medium">+ Add Item</button>
+      
+      <div className="mt-2 pt-2 border-t grid grid-cols-2 md:grid-cols-2 gap-x-2 gap-y-1.5">
+        <ThemeColorPicker
+          label="Overlay Text Color:"
+          currentColorValue={localData.overlayTextColor || '#FFFFFF'}
+          themeColors={themeColors}
+          onColorChange={(fieldName, value) => onPanelChange({ overlayTextColor: value })}
+          fieldName="overlayTextColor"
+        />
+        <ThemeColorPicker
+          label="Toggle Button Background:"
+          currentColorValue={localData.toggleButtonBgColor || '#1e293b'}
+          themeColors={themeColors}
+          onColorChange={(fieldName, value) => onPanelChange({ toggleButtonBgColor: value })}
+          fieldName="toggleButtonBgColor"
+        />
+        <ThemeColorPicker
+          label="Toggle Button Text Color:"
+          currentColorValue={localData.toggleButtonTextColor || '#FFFFFF'}
+          themeColors={themeColors}
+          onColorChange={(fieldName, value) => onPanelChange({ toggleButtonTextColor: value })}
+          fieldName="toggleButtonTextColor"
+        />
+        <ThemeColorPicker
+          label="Toggle Button Hover BG:"
+          currentColorValue={localData.toggleButtonHoverBgColor || '#FFFFFF'}
+          themeColors={themeColors}
+          onColorChange={(fieldName, value) => onPanelChange({ toggleButtonHoverBgColor: value })}
+          fieldName="toggleButtonHoverBgColor"
+        />
+        <ThemeColorPicker
+          label="Toggle Button Hover Text:"
+          currentColorValue={localData.toggleButtonHoverTextColor || '#000000'}
+          themeColors={themeColors}
+          onColorChange={(fieldName, value) => onPanelChange({ toggleButtonHoverTextColor: value })}
+          fieldName="toggleButtonHoverTextColor"
+        />
+      </div>
+
+      <div className="mt-2 pt-2 border-t">
+        <label className="flex items-center space-x-1.5 cursor-pointer">
           <input
             type="checkbox"
             checked={localData.showNailAnimation !== undefined ? localData.showNailAnimation : true}
             onChange={handleToggleNailAnimation}
-            className="form-checkbox h-5 w-5 text-blue-600 rounded"
+            className="form-checkbox h-3.5 w-3.5 text-blue-600 rounded focus:ring-blue-500"
           />
-          <span className="text-sm font-medium text-gray-700">Show Nail Animation</span>
+          <span className="text-xs font-medium text-gray-700">Show Nail Animation</span>
         </label>
       </div>
     </div>
@@ -638,6 +686,7 @@ export default function BeforeAfterBlock({
   readOnly = false,
   beforeAfterData,
   onConfigChange,
+  themeColors,
 }) {
   const [localData, setLocalData] = useState(() => {
     const initialConfig = beforeAfterData || {};
@@ -645,7 +694,12 @@ export default function BeforeAfterBlock({
     console.log(`[BeforeAfterBlock useState init] initialConfig.showNailAnimation: ${initialConfig.showNailAnimation}, Resolved to: ${initialShowNailAnimation}`);
     return {
       sectionTitle: initialConfig.sectionTitle || "GALLERY",
-      showNailAnimation: initialShowNailAnimation, // Initialize here
+      showNailAnimation: initialShowNailAnimation,
+      overlayTextColor: initialConfig.overlayTextColor || "#FFFFFF",
+      toggleButtonBgColor: initialConfig.toggleButtonBgColor || "#1e293b",
+      toggleButtonTextColor: initialConfig.toggleButtonTextColor || "#FFFFFF",
+      toggleButtonHoverBgColor: initialConfig.toggleButtonHoverBgColor || "#FFFFFF",
+      toggleButtonHoverTextColor: initialConfig.toggleButtonHoverTextColor || "#000000",
       items: (initialConfig.items || []).map((item, index) => ({
         ...item,
         id: item.id || `item_init_${index}_${Date.now()}`,
@@ -668,6 +722,12 @@ export default function BeforeAfterBlock({
           (prevLocalData.sectionTitle !== undefined && prevLocalData.sectionTitle !== (beforeAfterData.sectionTitle || defaultTitle) && prevLocalData.sectionTitle !== defaultTitle)
           ? prevLocalData.sectionTitle
           : (beforeAfterData.sectionTitle || defaultTitle);
+        
+        const resolvedOverlayTextColor = beforeAfterData.overlayTextColor || prevLocalData.overlayTextColor || "#FFFFFF";
+        const resolvedToggleButtonBgColor = beforeAfterData.toggleButtonBgColor || prevLocalData.toggleButtonBgColor || "#1e293b";
+        const resolvedToggleButtonTextColor = beforeAfterData.toggleButtonTextColor || prevLocalData.toggleButtonTextColor || "#FFFFFF";
+        const resolvedToggleButtonHoverBgColor = beforeAfterData.toggleButtonHoverBgColor || prevLocalData.toggleButtonHoverBgColor || "#FFFFFF";
+        const resolvedToggleButtonHoverTextColor = beforeAfterData.toggleButtonHoverTextColor || prevLocalData.toggleButtonHoverTextColor || "#000000";
 
         const newItems = (beforeAfterData.items || []).map((newItemFromProp, index) => {
           const oldItemFromLocal = prevLocalData.items?.find(pi => pi.id === newItemFromProp.id) || 
@@ -715,6 +775,11 @@ export default function BeforeAfterBlock({
           sectionTitle: resolvedSectionTitle,
           items: newItems,
           showNailAnimation: resolvedShowNailAnimation,
+          overlayTextColor: resolvedOverlayTextColor,
+          toggleButtonBgColor: resolvedToggleButtonBgColor,
+          toggleButtonTextColor: resolvedToggleButtonTextColor,
+          toggleButtonHoverBgColor: resolvedToggleButtonHoverBgColor,
+          toggleButtonHoverTextColor: resolvedToggleButtonHoverTextColor,
         };
       });
     }
@@ -753,6 +818,11 @@ export default function BeforeAfterBlock({
                 };
             }),
             showNailAnimation: localData.showNailAnimation,
+            overlayTextColor: localData.overlayTextColor,
+            toggleButtonBgColor: localData.toggleButtonBgColor,
+            toggleButtonTextColor: localData.toggleButtonTextColor,
+            toggleButtonHoverBgColor: localData.toggleButtonHoverBgColor,
+            toggleButtonHoverTextColor: localData.toggleButtonHoverTextColor,
         };
         console.log("[BeforeAfterBlock onConfigChange Effect] dataToSave:", JSON.parse(JSON.stringify(dataToSave, (k,v) => v instanceof File ? ({name: v.name, type: v.type, size: v.size}) : v)));
         onConfigChange(dataToSave);
@@ -794,6 +864,7 @@ export default function BeforeAfterBlock({
       <BeforeAfterEditorPanel
         localData={localData}
         onPanelChange={handleLocalDataChange} 
+        themeColors={themeColors}
       />
     </>
   );

@@ -385,7 +385,7 @@ function BasicMapPreview({
               key={item.id || idx}
               className={`${idx % 2 === 0 ? "bg-gray-50" : "bg-white"} border-b border-gray-300`}
             >
-              <td className="w-1/2 py-[0.8vh] md:py-[1.2vh] px-2 md:px-4 text-[2.8vw] md:text-sm font-medium text-left border-r border-gray-300">
+              <td className="w-1/2 py-[0.5vh] md:py-[.5vh] px-2 md:px-4 text-[2.8vw] md:text-sm font-medium text-left border-r border-gray-300">
                 {readOnly ? item.day : (
                   <input 
                     type="text" 
@@ -396,7 +396,7 @@ function BasicMapPreview({
                   />
                 )}
               </td>
-              <td className="w-1/2 py-[0.8vh] md:py-[1.2vh] px-2 md:px-4 text-[2.8vw] md:text-sm text-gray-800 text-left">
+              <td className="w-1/2 py-[0.5vh] md:py-[.5vh] px-2 md:px-4 text-[2.8vw] md:text-sm text-gray-800 text-left">
                 {readOnly ? item.time : (
                   <input 
                     type="text" 
@@ -421,17 +421,17 @@ function BasicMapPreview({
 
   return (
     <section className="overflow-hidden" ref={sectionRef}>
-      <div className="py-4 px-[10vw]">
-        <div className="relative flex flex-col md:flex-row gap-4 px-10 md:px-6 h-auto md:h-[40vh] md:justify-between w-full"> {/* Removed mt-4 */}
+      <div className="py-4 px-[4vw]">
+        <div className="relative flex flex-col md:flex-row gap-4 px-10 md:px-6 h-auto md:h-[30vh] md:justify-between w-full"> {/* Removed mt-4 */}
           {/* Left: Map */}
           <div className="flex flex-col w-full md:w-[55%]">
-            <div className="relative h-[22vh] md:h-full w-full z-10">
+            <div className="relative h-[30vh] md:h-full w-full z-10"> {/* Swapped with stats/hours height, was h-[22vh] */}
               <div className="w-full h-full rounded-xl overflow-hidden shadow-lg border border-gray-300 relative">
                 {/* Title with animation - conditionally editable - MOVED HERE */}
                 {readOnly ? (
                   <h1
                     ref={titleRef}
-                    className="absolute top-2 left-1 text-[2.5vh] md:text-[3vh] font-normal text-white font-serif title-animation z-20 p-2 bg-banner bg-opacity-30 pl-6 -ml-4 rounded"
+                    className="absolute top-2 left-1 text-[2.5vh] md:text-[2.5vh] font-normal text-white font-serif title-animation z-20 p-2 bg-banner bg-opacity-30 pl-6 -ml-4 rounded"
                   >
                     {title || "Are we in your area?"}
                   </h1>
@@ -473,23 +473,19 @@ function BasicMapPreview({
                 </MapContainer>
                 {!mapActive && (
                   <div
-                    className="absolute inset-0 bg-black bg-opacity-20 flex flex-row items-start justify-center cursor-pointer pt-4"
+                    className="absolute flex flex-col inset-0 bg-black bg-opacity-30 flex flex-row items-start justify-center cursor-pointer "
                     onClick={() => setMapActive(true)}
                   >
-                    <FaIcons.FaMapMarkerAlt
-                      className="text-white opacity-75"
-                      size={30}
-                    />
-                    <p className="mt-2 text-white text-sm font-serif">
+                    <p className="absolute left-1/2 -translate-x-1/2  mb-14  text-white text-base font-serif">
                       Click to interact with the map
                     </p>
                   </div>
                 )}
                 {/* Bottom overlay: address + phone - conditionally editable */}
-                <div className="absolute bottom-0 w-full bg-banner text-white font-semibold z-10 py-2 px-3 flex justify-between items-center" style={{backgroundColor: currentBannerBgColor, color: currentBannerTextColor}}>
+                <div className="absolute bottom-0 w-full bg-banner text-white  z-10 py-2 px-3 flex justify-between items-center" style={{backgroundColor: currentBannerBgColor, color: currentBannerTextColor}}>
                   {readOnly ? (
                     <>
-                      <div className="font-semibold text-[2.5vw] md:text-[2vh] leading-tight text-left">
+                      <div className=" text-[2.5vw] md:text-[2.3vh] leading-tight text-left">
                         {address}
                       </div>
                       <div className="text-[2.5vw] md:text-[2vh] text-white font-semibold leading-tight text-right">
@@ -533,7 +529,7 @@ function BasicMapPreview({
               </span>
             </button>
             <div 
-              className="relative h-[30vh] md:h-[calc(40vh-2.5rem)] rounded-b-xl overflow-hidden"
+              className="relative h-[22vh] md:h-[calc(40vh-2.5rem)] rounded-b-xl overflow-hidden" // Swapped with map height, was h-[30vh]
             >
               <WindowStrings
                 isVisible={isServiceHoursVisible}
@@ -655,77 +651,89 @@ function BasicMapEditorPanel({ localMapData, onPanelChange, themeColors }) {
   };
 
   return (
-    <div className="bg-black text-white p-4 rounded mt-0">
-      <h2 className="text-xl font-semibold mb-3 border-b border-gray-700 pb-2">Map Settings</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-        <div className="space-y-3 pr-3 md:border-r border-gray-700">
-          <h3 className="text-lg font-medium text-gray-200">Map Coordinates & View</h3>
-          <label className="block text-sm"><span className="font-medium text-gray-400">Center Latitude:</span>
-            <input type="number" step="any" className="bg-gray-700 px-3 py-1.5 rounded w-full text-white focus:ring-blue-500 focus:border-blue-500 text-xs" value={localMapData.center?.[0] || 0} onChange={(e) => handleMapFieldChange('center', e.target.value, true, 0)}/>
-          </label>
-          <label className="block text-sm"><span className="font-medium text-gray-400">Center Longitude:</span>
-            <input type="number" step="any" className="bg-gray-700 px-3 py-1.5 rounded w-full text-white focus:ring-blue-500 focus:border-blue-500 text-xs" value={localMapData.center?.[1] || 0} onChange={(e) => handleMapFieldChange('center', e.target.value, true, 1)}/>
-          </label>
-          <label className="block text-sm"><span className="font-medium text-gray-400">Zoom Level:</span>
-            <input type="number" className="bg-gray-700 px-3 py-1.5 rounded w-full text-white focus:ring-blue-500 focus:border-blue-500 text-xs" value={localMapData.zoomLevel || 5} onChange={(e) => handleMapFieldChange('zoomLevel', e.target.value)}/>
-          </label>
-          <label className="block text-sm"><span className="font-medium text-gray-400">Circle Radius (meters):</span>
-            <input type="number" className="bg-gray-700 px-3 py-1.5 rounded w-full text-white focus:ring-blue-500 focus:border-blue-500 text-xs" value={localMapData.circleRadius || 0} onChange={(e) => handleMapFieldChange('circleRadius', e.target.value)}/>
-          </label>
+    <div className="bg-black text-white p-3 rounded mt-0">
+      <h2 className="text-lg font-semibold mb-2.5 border-b border-gray-700 pb-1.5">Map Settings</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
+        
+        {/* Left Column */}
+        <div className="space-y-2.5 pr-2 md:border-r border-gray-600">
+          <h3 className="text-base font-medium text-gray-300">Map View</h3>
+          <div className="grid grid-cols-2 gap-x-2 gap-y-1.5">
+            <label className="block text-xs">
+              <span className="font-medium text-gray-400 block mb-0.5">Latitude:</span>
+              <input type="number" step="any" className="bg-gray-700 px-2 py-1 rounded w-full text-white focus:ring-blue-500 focus:border-blue-500 text-[11px]" value={localMapData.center?.[0] || 0} onChange={(e) => handleMapFieldChange('center', e.target.value, true, 0)}/>
+            </label>
+            <label className="block text-xs">
+              <span className="font-medium text-gray-400 block mb-0.5">Longitude:</span>
+              <input type="number" step="any" className="bg-gray-700 px-2 py-1 rounded w-full text-white focus:ring-blue-500 focus:border-blue-500 text-[11px]" value={localMapData.center?.[1] || 0} onChange={(e) => handleMapFieldChange('center', e.target.value, true, 1)}/>
+            </label>
+            <label className="block text-xs">
+              <span className="font-medium text-gray-400 block mb-0.5">Zoom:</span>
+              <input type="number" className="bg-gray-700 px-2 py-1 rounded w-full text-white focus:ring-blue-500 focus:border-blue-500 text-[11px]" value={localMapData.zoomLevel || 5} onChange={(e) => handleMapFieldChange('zoomLevel', e.target.value)}/>
+            </label>
+            <label className="block text-xs">
+              <span className="font-medium text-gray-400 block mb-0.5">Radius (m):</span>
+              <input type="number" className="bg-gray-700 px-2 py-1 rounded w-full text-white focus:ring-blue-500 focus:border-blue-500 text-[11px]" value={localMapData.circleRadius || 0} onChange={(e) => handleMapFieldChange('circleRadius', e.target.value)}/>
+            </label>
+          </div>
 
-          <div className="pt-2 border-t border-gray-600">
-            <h3 className="text-lg font-medium text-gray-200 mt-2 mb-1">Banner Styling</h3>
+          <div className="pt-2 border-t border-gray-600 space-y-1.5">
+            <h3 className="text-base font-medium text-gray-300 mt-1 mb-1">Banner Styling</h3>
             <ThemeColorPicker
-              label="Info Banner Text Color"
+              label="Banner Text Color:"
               currentColorValue={localMapData.bannerTextColor || '#FFFFFF'}
               themeColors={themeColors}
-              onColorChange={handleMapFieldChange} // handleMapFieldChange now directly takes (field, value)
+              onColorChange={handleMapFieldChange}
               fieldName="bannerTextColor"
+              className="text-xs"
             />
-            <div className="mt-2">
-              <ThemeColorPicker
-                label="Info Banner Background Color"
-                currentColorValue={localMapData.bannerBackgroundColor || '#1f2937'}
-                themeColors={themeColors}
-                onColorChange={handleMapFieldChange}
-                fieldName="bannerBackgroundColor"
-              />
-            </div>
+            <ThemeColorPicker
+              label="Banner Background:"
+              currentColorValue={localMapData.bannerBackgroundColor || '#1f2937'}
+              themeColors={themeColors}
+              onColorChange={handleMapFieldChange}
+              fieldName="bannerBackgroundColor"
+              className="text-xs"
+            />
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="space-y-3">
-            <h3 className="text-lg font-medium text-gray-200">Display Texts & Stats Styling</h3>
-            <label className="block text-sm"><span className="font-medium text-gray-400">'Show Hours' Button Text:</span>
-              <input type="text" className="bg-gray-700 mt-1 px-2 py-1 rounded w-full text-xs" placeholder="Show Hours" value={localMapData.showHoursButtonText || ''} onChange={(e) => handleMapFieldChange('showHoursButtonText', e.target.value)}/>
-            </label>
-            <label className="block text-sm"><span className="font-medium text-gray-400">'Hide Hours' Button Text:</span>
-              <input type="text" className="bg-gray-700 mt-1 px-2 py-1 rounded w-full text-xs" placeholder="Hide Hours" value={localMapData.hideHoursButtonText || ''} onChange={(e) => handleMapFieldChange('hideHoursButtonText', e.target.value)}/>
-            </label>
+        {/* Right Column */}
+        <div className="space-y-3">
+          <div className="space-y-2">
+            <h3 className="text-base font-medium text-gray-300">Display & Stats Styling</h3>
+            <div className="grid grid-cols-2 gap-x-2 gap-y-1.5">
+                <label className="block text-xs"><span className="font-medium text-gray-400 block mb-0.5">Show Hours Text:</span>
+                <input type="text" className="bg-gray-700 px-2 py-1 rounded w-full text-[11px]" placeholder="Show Hours" value={localMapData.showHoursButtonText || ''} onChange={(e) => handleMapFieldChange('showHoursButtonText', e.target.value)}/>
+                </label>
+                <label className="block text-xs"><span className="font-medium text-gray-400 block mb-0.5">Hide Hours Text:</span>
+                <input type="text" className="bg-gray-700 px-2 py-1 rounded w-full text-[11px]" placeholder="Hide Hours" value={localMapData.hideHoursButtonText || ''} onChange={(e) => handleMapFieldChange('hideHoursButtonText', e.target.value)}/>
+                </label>
+            </div>
             <ThemeColorPicker
-              label="Stats Panel Text Color"
+              label="Stats Panel Text Color:"
               currentColorValue={localMapData.statsTextColor || '#FFFFFF'}
               themeColors={themeColors}
               onColorChange={handleMapFieldChange}
               fieldName="statsTextColor"
+              className="text-xs"
             />
           </div>
           
-          <div className="pt-3 border-t border-gray-700 mt-4">
-            <h3 className="text-lg font-medium text-gray-200 mb-2">Stats Items (Preview for structure, edit inline)</h3>
-             <div className="max-h-[200px] overflow-y-auto pr-1 text-xs">
+          <div className="pt-2 border-t border-gray-600 mt-2.5">
+            <h3 className="text-base font-medium text-gray-300 mb-1.5">Stats Items <span className="text-gray-500 text-[10px]">(Max 4, edit in preview)</span></h3>
+             <div className="max-h-[150px] overflow-y-auto pr-1 text-[11px] space-y-1">
                 {(localMapData.stats || []).slice(0,4).map((stat, index) => (
-                    <div key={stat.id || index} className="bg-gray-700 p-2 rounded mb-1.5 relative text-xs">
-                        <button onClick={() => handleRemoveStat(index)} className="absolute top-1 right-1 bg-red-500 text-white p-0.5 rounded text-[10px] hover:bg-red-600">X</button>
-                        <p className="text-gray-300">Value: {stat.value || 'N/A'}</p>
-                        <p className="text-gray-300">Title: {stat.title || 'N/A'}</p>
+                    <div key={stat.id || index} className="bg-gray-700 p-1.5 rounded relative">
+                        <button onClick={() => handleRemoveStat(index)} className="absolute top-0.5 right-0.5 bg-red-600 text-white p-0.5 rounded-full text-[8px] leading-none hover:bg-red-700 w-3 h-3 flex items-center justify-center">X</button>
+                        <p className="text-gray-300 truncate pr-3">V: {stat.value || 'N/A'}</p>
+                        <p className="text-gray-300 truncate pr-3">T: {stat.title || 'N/A'}</p>
                         <p className="text-[10px] text-gray-400 mt-0.5">Icon: {stat.icon || 'FaAward'}</p>
                     </div>
                 ))}
             </div>
             { (localMapData.stats?.length || 0) < 4 &&
-                <button onClick={handleAddStat} className="bg-blue-600 text-white text-xs px-2 py-1 rounded mt-2 self-start hover:bg-blue-700">+ Add Stat</button>
+                <button onClick={handleAddStat} className="bg-blue-600 text-white text-[10px] px-1.5 py-0.5 rounded mt-1.5 self-start hover:bg-blue-700">+ Add Stat</button>
             }
           </div>
         </div>

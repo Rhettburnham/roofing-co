@@ -155,16 +155,34 @@
             "sqft": "2000 sqft"
           },
           {
-            "before": "/assets/images/beforeafter/b2.jpeg",
-            "after": "/assets/images/beforeafter/a2.jpeg",
+            "before": "/assets/images/beforeafter/a2.jpeg",
+            "after": "/assets/images/beforeafter/b2.jpeg",
             "shingle": "Metal Roofing",
             "sqft": "1800 sqft"
           },
           {
-            "before": "/assets/images/beforeafter/b3.jpeg",
-            "after": "/assets/images/beforeafter/a3.jpeg",
+            "before": "/assets/images/beforeafter/a3.jpeg",
+            "after": "/assets/images/beforeafter/b3.jpeg",
             "shingle": "Composite Shingle",
             "sqft": "2200 sqft"
+          },
+          {
+            "before": "/assets/images/beforeafter/a4.png",
+            "after": "/assets/images/beforeafter/b4.png",
+            "shingle": "Tile Roof",
+            "sqft": "2500 sqft"
+          },
+          {
+            "before": "/assets/images/beforeafter/a5.jpg",
+            "after": "/assets/images/beforeafter/b5.jpg",
+            "shingle": "Slate Shingles",
+            "sqft": "3000 sqft"
+          },
+          {
+            "before": "/assets/images/beforeafter/a6.png",
+            "after": "/assets/images/beforeafter/b6.png",
+            "shingle": "Wood Shake",
+            "sqft": "2700 sqft"
           }
         ]
       }
@@ -424,6 +442,8 @@
       "config": {
         "sectionTitle": "CREW",
         "showNailAnimation": true,
+        "cardBackgroundColor": "#FFFFFF",
+        "cardTextColor": "#000000",
         "employee": [
           {
             "name": "Mr. Luis Aguilar-Lopez",
