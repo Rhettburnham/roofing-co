@@ -434,7 +434,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
                     console.warn("OneForm: Failed to load about_page.json. About page editor might not work as expected.");
                     setAboutPageJsonData({});
                     setInitialAboutPageJsonData({});
-                  }
+            }
                 } catch (aboutJsonError) {
                   console.error("OneForm: Error loading about_page.json:", aboutJsonError);
                   setAboutPageJsonData({});

@@ -334,6 +334,13 @@ export default function OneFormAuthButton({
       const zip = new JSZip();
       let collectedAssets = [];
 
+      // Declare variables at the top
+      let cleanedNewCombinedData;
+      let colorsForNewJson;
+      let cleanedServicesDataNew;
+      let cleanedNewAboutData;
+      let cleanedNewShowcaseData;
+
       // Process "NEW" (current formData) data
       console.log("[OneFormAuthButton] Processing NEW data for ZIP:", formData);
       let newCollectedAssets = [];
@@ -343,7 +350,7 @@ export default function OneFormAuthButton({
 
       // Only process and add files that have changed
       if (JSON.stringify(dataToProcess) !== JSON.stringify(initialFormDataForOldExport)) {
-        const cleanedNewCombinedData = await traverseAndModifyDataForZip(
+        cleanedNewCombinedData = await traverseAndModifyDataForZip(
           dataToProcess,
           newCollectedAssets,
           'formDataRoot',
@@ -357,7 +364,7 @@ export default function OneFormAuthButton({
       if (servicesData && JSON.stringify(servicesData) !== JSON.stringify(initialServicesData)) {
         try {
           const serviceAssetsForNew = [];
-          const cleanedServicesDataNew = await traverseAndModifyDataForZip(
+          cleanedServicesDataNew = await traverseAndModifyDataForZip(
             servicesData,
             serviceAssetsForNew,
             'servicesDataRoot',
@@ -375,7 +382,7 @@ export default function OneFormAuthButton({
       if (aboutPageData && JSON.stringify(aboutPageData) !== JSON.stringify(initialAboutPageJsonData)) {
         console.log("[OneFormAuthButton] Processing about_page.json for ZIP:", aboutPageData);
         let newAboutAssets = [];
-        const cleanedNewAboutData = await traverseAndModifyDataForZip(
+        cleanedNewAboutData = await traverseAndModifyDataForZip(
           aboutPageData,
           newAboutAssets,
           'aboutPageDataRoot',
@@ -390,7 +397,7 @@ export default function OneFormAuthButton({
       if (showcaseData && JSON.stringify(showcaseData) !== JSON.stringify(initialAllServiceBlocksData)) {
         console.log("[OneFormAuthButton] Processing all_blocks_showcase.json for ZIP:", showcaseData);
         let newShowcaseAssets = [];
-        const cleanedNewShowcaseData = await traverseAndModifyDataForZip(
+        cleanedNewShowcaseData = await traverseAndModifyDataForZip(
           showcaseData,
           newShowcaseAssets,
           'showcaseDataRoot',
@@ -403,7 +410,7 @@ export default function OneFormAuthButton({
 
       // Add colors if changed
       if (themeColors && JSON.stringify(themeColors) !== JSON.stringify(initialThemeColors)) {
-        const colorsForNewJson = {};
+        colorsForNewJson = {};
         Object.keys(themeColors).forEach(key => {
           colorsForNewJson[key.replace(/-/g, '_')] = themeColors[key];
         });
@@ -455,56 +462,79 @@ export default function OneFormAuthButton({
       console.log("[OneFormAuthButton] ZIP file downloaded:", zipFileName);
       setDebug('ZIP file downloaded successfully');
 
-      // In production, also save to server
-      if (!isDevelopment) {
-        setDebug('Saving to server...');
-        
-        // Use the same data that was prepared for the ZIP, but only include what exists
-        const dataToSave = {};
-        
-        if (cleanedNewCombinedData) {
-          dataToSave.combined_data = cleanedNewCombinedData;
-        }
-        if (colorsForNewJson) {
-          dataToSave.colors = colorsForNewJson;
-        }
-        if (cleanedServicesDataNew) {
-          dataToSave.services = cleanedServicesDataNew;
-        }
-        if (cleanedNewAboutData) {
-          dataToSave.aboutPageData = cleanedNewAboutData;
-        }
-        if (cleanedNewShowcaseData) {
-          dataToSave.all_blocks_showcase = cleanedNewShowcaseData;
-        }
+      // Use the same data that was prepared for the ZIP, but only include what exists
+      const dataToSave = {};
+      
+      // Only add data if it was processed and exists
+      if (cleanedNewCombinedData) {
+        dataToSave.combined_data = cleanedNewCombinedData;
+      }
+      if (colorsForNewJson) {
+        dataToSave.colors = colorsForNewJson;
+      }
+      if (cleanedServicesDataNew) {
+        dataToSave.services = cleanedServicesDataNew;
+      }
+      if (cleanedNewAboutData) {
+        dataToSave.aboutPageData = cleanedNewAboutData;
+      }
+      if (cleanedNewShowcaseData) {
+        dataToSave.all_blocks_showcase = cleanedNewShowcaseData;
+      }
 
-        console.log("[OneFormAuthButton] Saving data to server:", {
-          hasCombinedData: !!dataToSave.combined_data,
-          hasColors: !!dataToSave.colors,
-          hasServices: !!dataToSave.services,
-          hasAboutPage: !!dataToSave.aboutPageData,
-          hasAllBlocksShowcase: !!dataToSave.all_blocks_showcase
-        });
+      console.log("[OneFormAuthButton] Full dataToSave object:", JSON.stringify(dataToSave, null, 2));
+      console.log("[OneFormAuthButton] Saving data to server:", {
+        hasCombinedData: !!dataToSave.combined_data,
+        hasColors: !!dataToSave.colors,
+        hasServices: !!dataToSave.services,
+        hasAboutPage: !!dataToSave.aboutPageData,
+        hasAllBlocksShowcase: !!dataToSave.all_blocks_showcase
+      });
 
-        const response = await fetch('/api/config/save', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          credentials: 'include',
-          body: JSON.stringify(dataToSave)
-        });
+      // Only proceed with save if we have some data to save
+      if (Object.keys(dataToSave).length > 0) {
+        if (isDevelopment) {
+          // In development, save logs to a file
+          const logContent = `=== Save Log ${new Date().toISOString()} ===\n\n` +
+            `Data being saved:\n${JSON.stringify(dataToSave, null, 2)}\n\n` +
+            `Data presence:\n` +
+            `- Combined Data: ${!!dataToSave.combined_data}\n` +
+            `- Colors: ${!!dataToSave.colors}\n` +
+            `- Services: ${!!dataToSave.services}\n` +
+            `- About Page: ${!!dataToSave.aboutPageData}\n` +
+            `- All Blocks Showcase: ${!!dataToSave.all_blocks_showcase}\n`;
 
-        if (!response.ok) {
-          throw new Error(`Failed to save: ${response.statusText}`);
+          // Create a blob and save it
+          const logBlob = new Blob([logContent], { type: 'text/plain' });
+          const logFileName = `save_log_${new Date().toISOString().replace(/[:.]/g, '-')}.txt`;
+          saveAs(logBlob, logFileName);
+          
+          setDebug('Development mode: Log file downloaded');
+        } else {
+          // In production, save to server
+          const response = await fetch('/api/config/save', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify(dataToSave)
+          });
+
+          if (!response.ok) {
+            throw new Error(`Failed to save: ${response.statusText}`);
+          }
+
+          const result = await response.json();
+          if (!result.success) {
+            throw new Error(result.error || 'Failed to save');
+          }
+
+          setDebug('Changes saved successfully!');
         }
-
-        const result = await response.json();
-        if (!result.success) {
-          throw new Error(result.error || 'Failed to save');
-        }
-
-        setDebug('Changes saved successfully!');
+      } else {
+        console.log("[OneFormAuthButton] No data to save");
+        setDebug('No changes to save');
       }
     } catch (error) {
       console.error('[OneFormAuthButton] Save error:', error);
