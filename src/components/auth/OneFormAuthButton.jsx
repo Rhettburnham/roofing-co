@@ -321,125 +321,175 @@ export default function OneFormAuthButton({
   };
 
   const handleSaveClick = async () => {
-    setSaveClicked(true);
-    setDebug('Starting save process...');
-    
     try {
-      // First, create and download the ZIP file
+      setSaveClicked(true);
+      setDebug('Processing data...');
+
+      if (!formData) {
+        setDebug('No form data found');
+        return;
+      }
+
+      console.log("[OneFormAuthButton] Starting ZIP generation...");
       const zip = new JSZip();
       let collectedAssets = [];
-      
-      // Process all data and collect assets
-      const processedData = {
-        combined_data: await traverseAndModifyDataForZip(formData, collectedAssets, 'formDataRoot', 'user_uploads/combined_data'),
-        colors: themeColors,
-        services: servicesData,
-        aboutPageData: aboutPageData,
-        all_blocks_showcase: showcaseData
-      };
 
-      // Add all JSON files to ZIP
-      zip.file('json/combined_data.json', JSON.stringify(processedData.combined_data, null, 2));
-      zip.file('json/colors_output.json', JSON.stringify(processedData.colors, null, 2));
-      zip.file('json/services.json', JSON.stringify(processedData.services, null, 2));
-      zip.file('json/about_page.json', JSON.stringify(processedData.aboutPageData, null, 2));
-      zip.file('json/all_blocks_showcase.json', JSON.stringify(processedData.all_blocks_showcase, null, 2));
+      // Process "NEW" (current formData) data
+      console.log("[OneFormAuthButton] Processing NEW data for ZIP:", formData);
+      let newCollectedAssets = [];
 
-      // Process and add assets to ZIP
-      const assetPromises = collectedAssets.map(async (asset) => {
+      // Ensure we're using the correct data structure for authenticated users
+      const dataToProcess = formData.combined_data || formData;
+
+      // Only process and add files that have changed
+      if (JSON.stringify(dataToProcess) !== JSON.stringify(initialFormDataForOldExport)) {
+        const cleanedNewCombinedData = await traverseAndModifyDataForZip(
+          dataToProcess,
+          newCollectedAssets,
+          'formDataRoot',
+          'user_uploads/combined_data'
+        );
+        zip.file("combined_data.json", JSON.stringify(cleanedNewCombinedData, null, 2));
+        console.log("[OneFormAuthButton] Added combined_data.json to ZIP");
+      }
+
+      // Process services data if changed
+      if (servicesData && JSON.stringify(servicesData) !== JSON.stringify(initialServicesData)) {
+        try {
+          const serviceAssetsForNew = [];
+          const cleanedServicesDataNew = await traverseAndModifyDataForZip(
+            servicesData,
+            serviceAssetsForNew,
+            'servicesDataRoot',
+            'user_uploads/services_data'
+          );
+          zip.file("services.json", JSON.stringify(cleanedServicesDataNew, null, 2));
+          newCollectedAssets.push(...serviceAssetsForNew);
+          console.log("[OneFormAuthButton] Added services.json to ZIP");
+        } catch (serviceError) {
+          console.error("[OneFormAuthButton] Error processing services.json:", serviceError);
+        }
+      }
+
+      // Process about page data if changed
+      if (aboutPageData && JSON.stringify(aboutPageData) !== JSON.stringify(initialAboutPageJsonData)) {
+        console.log("[OneFormAuthButton] Processing about_page.json for ZIP:", aboutPageData);
+        let newAboutAssets = [];
+        const cleanedNewAboutData = await traverseAndModifyDataForZip(
+          aboutPageData,
+          newAboutAssets,
+          'aboutPageDataRoot',
+          'user_uploads/about_page_data'
+        );
+        zip.file("about_page.json", JSON.stringify(cleanedNewAboutData, null, 2));
+        newCollectedAssets.push(...newAboutAssets);
+        console.log("[OneFormAuthButton] Added about_page.json to ZIP");
+      }
+
+      // Process showcase data if changed
+      if (showcaseData && JSON.stringify(showcaseData) !== JSON.stringify(initialAllServiceBlocksData)) {
+        console.log("[OneFormAuthButton] Processing all_blocks_showcase.json for ZIP:", showcaseData);
+        let newShowcaseAssets = [];
+        const cleanedNewShowcaseData = await traverseAndModifyDataForZip(
+          showcaseData,
+          newShowcaseAssets,
+          'showcaseDataRoot',
+          'user_uploads/showcase_data'
+        );
+        zip.file("all_blocks_showcase.json", JSON.stringify(cleanedNewShowcaseData, null, 2));
+        newCollectedAssets.push(...newShowcaseAssets);
+        console.log("[OneFormAuthButton] Added all_blocks_showcase.json to ZIP");
+      }
+
+      // Add colors if changed
+      if (themeColors && JSON.stringify(themeColors) !== JSON.stringify(initialThemeColors)) {
+        const colorsForNewJson = {};
+        Object.keys(themeColors).forEach(key => {
+          colorsForNewJson[key.replace(/-/g, '_')] = themeColors[key];
+        });
+        zip.file("colors_output.json", JSON.stringify(colorsForNewJson, null, 2));
+        console.log("[OneFormAuthButton] Added colors_output.json to ZIP");
+      }
+
+      // Process all collected assets
+      console.log("[OneFormAuthButton] Processing collected assets:", newCollectedAssets);
+      const assetPromises = newCollectedAssets.map(async (asset) => {
         try {
           if (asset.type === 'file' && asset.dataSource instanceof File) {
+            console.log(`[OneFormAuthButton] Adding file to ZIP: ${asset.pathInZip}`);
             zip.file(asset.pathInZip, asset.dataSource);
           } else if (asset.type === 'url' && typeof asset.dataSource === 'string') {
-            if (!asset.dataSource.startsWith('http') && !asset.dataSource.startsWith('data:') && !asset.dataSource.startsWith('blob:')) {
-              // Ensure the path starts with 'assets/'
-              const assetPath = asset.dataSource.startsWith('assets/') ? asset.dataSource : `assets/${asset.dataSource}`;
-              const response = await fetch(assetPath);
-              if (!response.ok) throw new Error(`Failed to fetch ${assetPath}`);
+            if (asset.dataSource.startsWith('blob:')) {
+              console.log(`[OneFormAuthButton] Fetching blob URL for ZIP: ${asset.pathInZip}`);
+              const response = await fetch(asset.dataSource);
+              if (!response.ok) throw new Error(`Failed to fetch blob ${asset.dataSource}`);
               const blob = await response.blob();
-              zip.file(assetPath, blob);
+              console.log(`[OneFormAuthButton] Adding blob to ZIP: ${asset.pathInZip}`);
+              zip.file(asset.pathInZip, blob);
+            } else if (!asset.dataSource.startsWith('http:') && !asset.dataSource.startsWith('https:') && !asset.dataSource.startsWith('data:')) {
+              console.log(`[OneFormAuthButton] Fetching local URL for ZIP: ${asset.pathInZip}`);
+              const fetchUrl = asset.dataSource.startsWith('/') ? asset.dataSource : `/${asset.dataSource}`;
+              const response = await fetch(fetchUrl);
+              if (!response.ok) throw new Error(`Failed to fetch ${fetchUrl}`);
+              const blob = await response.blob();
+              console.log(`[OneFormAuthButton] Adding local file to ZIP: ${asset.pathInZip}`);
+              zip.file(asset.pathInZip, blob);
             }
           }
         } catch (error) {
-          console.error(`Error processing asset ${asset.pathInZip}:`, error);
+          console.error(`[OneFormAuthButton] Error processing asset ${asset.pathInZip}:`, error);
         }
       });
 
       await Promise.all(assetPromises);
 
-      // Generate and download ZIP
+      // Generate and download the ZIP
+      console.log("[OneFormAuthButton] Generating ZIP file...");
       const content = await zip.generateAsync({ type: "blob" });
       const date = new Date();
       const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
       const timeStr = `${String(date.getHours()).padStart(2, "0")}-${String(date.getMinutes()).padStart(2, "0")}`;
       const zipFileName = `website_content_${dateStr}_${timeStr}.zip`;
+      
       saveAs(content, zipFileName);
+      console.log("[OneFormAuthButton] ZIP file downloaded:", zipFileName);
+      setDebug('ZIP file downloaded successfully');
 
-      // In production, also upload the files
+      // In production, also save to server
       if (!isDevelopment) {
-        setDebug('Uploading files to server...');
+        setDebug('Saving to server...');
         
-        // Get the auth token from localStorage
-        const token = localStorage.getItem('auth_token');
-        if (!token) {
-          throw new Error('No authentication token found');
-        }
-        
-        // Prepare assets for upload
-        const assetsToUpload = {};
-        for (const asset of collectedAssets) {
-          try {
-            if (asset.type === 'file' && asset.dataSource instanceof File) {
-              const arrayBuffer = await asset.dataSource.arrayBuffer();
-              assetsToUpload[asset.pathInZip] = arrayBuffer;
-            } else if (asset.type === 'url' && typeof asset.dataSource === 'string') {
-              if (!asset.dataSource.startsWith('http') && !asset.dataSource.startsWith('data:') && !asset.dataSource.startsWith('blob:')) {
-                // Ensure the path starts with 'assets/'
-                const assetPath = asset.dataSource.startsWith('assets/') ? asset.dataSource : `assets/${asset.dataSource}`;
-                const response = await fetch(assetPath);
-                if (!response.ok) throw new Error(`Failed to fetch ${assetPath}`);
-                const blob = await response.blob();
-                const arrayBuffer = await blob.arrayBuffer();
-                assetsToUpload[assetPath] = arrayBuffer;
-              }
-            }
-          } catch (error) {
-            console.error(`Error preparing asset ${asset.pathInZip} for upload:`, error);
-          }
-        }
-
-        // Upload to server
         const response = await fetch('/api/config/save', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            'Content-Type': 'application/json'
           },
           credentials: 'include',
           body: JSON.stringify({
-            ...processedData,
-            assets: assetsToUpload
+            combined_data: cleanedNewCombinedData,
+            colors: colorsForNewJson,
+            services: cleanedServicesDataNew,
+            aboutPageData: cleanedNewAboutData,
+            all_blocks_showcase: cleanedNewShowcaseData
           })
         });
 
         if (!response.ok) {
-          throw new Error(`Failed to upload files: ${response.statusText}`);
+          throw new Error(`Failed to save: ${response.statusText}`);
         }
 
         const result = await response.json();
         if (!result.success) {
-          throw new Error(result.error || 'Failed to upload files');
+          throw new Error(result.error || 'Failed to save');
         }
 
-        setDebug('Files uploaded successfully!');
-      } else {
-        setDebug('ZIP file downloaded successfully!');
+        setDebug('Changes saved successfully!');
       }
     } catch (error) {
-      console.error('Error in save process:', error);
-      setDebug(`Error: ${error.message}`);
+      console.error('[OneFormAuthButton] Save error:', error);
+      setDebug(`Save error: ${error.message}`);
     } finally {
-      setSaveClicked(false);
+      setTimeout(() => setSaveClicked(false), 1000);
     }
   };
 

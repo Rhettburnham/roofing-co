@@ -430,7 +430,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
                     setAboutPageJsonData(aboutJson);
                     setInitialAboutPageJsonData(JSON.parse(JSON.stringify(aboutJson)));
                     console.log("OneForm: Loaded about_page.json data:", aboutJson);
-                  } else {
+            } else {
                     console.warn("OneForm: Failed to load about_page.json. About page editor might not work as expected.");
                     setAboutPageJsonData({});
                     setInitialAboutPageJsonData({});
@@ -469,10 +469,10 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
             } else {
               console.error("Failed to load combined_data.json, status:", combinedResponse.status);
               const defaultData = {
-                navbar: { navLinks: [{name: "Home", href: "/"}], logo: { url: '/assets/images/logo.png', name: 'logo.png' }, whiteLogo: { url: '/assets/images/logo-white.png', name: 'logo-white.png'} },
-                mainPageBlocks: [], 
-                hero: { title: "Welcome" }, 
-              };
+              navbar: { navLinks: [{name: "Home", href: "/"}], logo: { url: '/assets/images/logo.png', name: 'logo.png' }, whiteLogo: { url: '/assets/images/logo-white.png', name: 'logo-white.png'} },
+              mainPageBlocks: [], 
+              hero: { title: "Welcome" }, 
+            };
               setFormData(defaultData);
               setInitialFormDataForOldExport(JSON.parse(JSON.stringify(defaultData)));
             }
