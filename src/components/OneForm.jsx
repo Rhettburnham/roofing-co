@@ -373,8 +373,8 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   const [initialServicesData, setInitialServicesData] = useState(null);
   const navigate = useNavigate();
 
-  // Development mode flag
-  const isDevelopment = process.env.NODE_ENV === 'development';
+  // Development mode flag - use import.meta.env instead of process.env
+  const isDevelopment = import.meta.env.DEV;
 
   // On mount, fetch combined_data.json to populate the form if no initialData is provided
   useEffect(() => {
