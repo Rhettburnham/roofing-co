@@ -459,29 +459,32 @@ export default function OneFormAuthButton({
       if (!isDevelopment) {
         setDebug('Saving to server...');
         
-        // Prepare data for save, using the same structure as ZIP
+        // Use the same data that was prepared for the ZIP, but only include what exists
         const dataToSave = {};
         
-        // Only include changed data
-        if (JSON.stringify(dataToProcess) !== JSON.stringify(initialFormDataForOldExport)) {
+        if (cleanedNewCombinedData) {
           dataToSave.combined_data = cleanedNewCombinedData;
         }
-        
-        if (servicesData && JSON.stringify(servicesData) !== JSON.stringify(initialServicesData)) {
-          dataToSave.services = cleanedServicesDataNew;
-        }
-        
-        if (aboutPageData && JSON.stringify(aboutPageData) !== JSON.stringify(initialAboutPageJsonData)) {
-          dataToSave.aboutPageData = cleanedNewAboutData;
-        }
-        
-        if (showcaseData && JSON.stringify(showcaseData) !== JSON.stringify(initialAllServiceBlocksData)) {
-          dataToSave.all_blocks_showcase = cleanedNewShowcaseData;
-        }
-        
-        if (themeColors && JSON.stringify(themeColors) !== JSON.stringify(initialThemeColors)) {
+        if (colorsForNewJson) {
           dataToSave.colors = colorsForNewJson;
         }
+        if (cleanedServicesDataNew) {
+          dataToSave.services = cleanedServicesDataNew;
+        }
+        if (cleanedNewAboutData) {
+          dataToSave.aboutPageData = cleanedNewAboutData;
+        }
+        if (cleanedNewShowcaseData) {
+          dataToSave.all_blocks_showcase = cleanedNewShowcaseData;
+        }
+
+        console.log("[OneFormAuthButton] Saving data to server:", {
+          hasCombinedData: !!dataToSave.combined_data,
+          hasColors: !!dataToSave.colors,
+          hasServices: !!dataToSave.services,
+          hasAboutPage: !!dataToSave.aboutPageData,
+          hasAllBlocksShowcase: !!dataToSave.all_blocks_showcase
+        });
 
         const response = await fetch('/api/config/save', {
           method: 'POST',

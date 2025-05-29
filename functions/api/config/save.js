@@ -83,7 +83,10 @@ export async function onRequest(context) {
 
     // Get the config data from the request body
     console.log('Reading request body...');
-    const { combined_data, colors, services, aboutPageData, all_blocks_showcase, assets } = await request.json();
+    const data = await request.json();
+    console.log('Full request data:', JSON.stringify(data, null, 2));
+    
+    const { combined_data, colors, services, aboutPageData, all_blocks_showcase, assets } = data;
     console.log('Config data received:', {
       hasCombinedData: !!combined_data,
       hasColors: !!colors,
@@ -104,7 +107,7 @@ export async function onRequest(context) {
 
     console.log('Saving configs to R2:', configsToSave.map(c => c.key));
     
-    // Save all configs in parallel
+    // Save all configs in parallel, skipping empty ones
     const savePromises = configsToSave.map(async ({ key, data }) => {
       if (!data) {
         console.log(`Skipping ${key} - no data provided`);
