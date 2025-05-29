@@ -129,20 +129,45 @@ export async function onRequest(context) {
           const key = `configs/${configId}/${path}`;
           console.log(`Saving asset to ${key}...`);
           
-          // Handle both old and new asset formats
           let blob;
           let contentType;
           
-          if (assetData instanceof Blob) {
-            // Old format: direct blob
+          if (typeof assetData === 'string') {
+            // Handle data URL
+            if (assetData.startsWith('data:')) {
+              const matches = assetData.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
+              if (matches) {
+                contentType = matches[1];
+                const base64Data = matches[2];
+                const binaryData = atob(base64Data);
+                const arrayBuffer = new ArrayBuffer(binaryData.length);
+                const uint8Array = new Uint8Array(arrayBuffer);
+                for (let i = 0; i < binaryData.length; i++) {
+                  uint8Array[i] = binaryData.charCodeAt(i);
+                }
+                blob = new Blob([arrayBuffer], { type: contentType });
+              }
+            } else {
+              // Handle regular URL
+              const response = await fetch(assetData);
+              blob = await response.blob();
+              contentType = response.headers.get('content-type') || getContentType(path);
+            }
+          } else if (assetData instanceof Blob) {
+            // Handle direct blob
             blob = assetData;
-            contentType = blob.type || 'image/jpeg';
+            contentType = blob.type || getContentType(path);
           } else if (assetData.data instanceof Blob) {
-            // New format: { data: Blob, contentType: string }
+            // Handle { data: Blob, contentType: string }
             blob = assetData.data;
-            contentType = assetData.contentType || blob.type || 'image/jpeg';
+            contentType = assetData.contentType || blob.type || getContentType(path);
           } else {
-            console.error(`Invalid asset data format for ${path}`);
+            console.error(`Invalid asset data format for ${path}:`, typeof assetData);
+            return;
+          }
+
+          if (!blob) {
+            console.error(`Failed to create blob for ${path}`);
             return;
           }
 

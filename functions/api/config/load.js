@@ -143,13 +143,13 @@ export async function onRequest(context) {
             const blob = await object.blob();
             const path = asset.key.replace(`configs/${configId}/`, '');
             console.log(`Successfully loaded asset: ${path}`);
-            // Create a new blob with the correct content type
-            const contentType = object.httpMetadata?.contentType || 'image/jpeg';
-            const newBlob = new Blob([blob], { type: contentType });
+            
+            // Store the blob and content type
             assets[path] = {
-              data: newBlob,
-              contentType: contentType
+              data: blob,
+              contentType: object.httpMetadata?.contentType || getContentType(path)
             };
+            console.log(`Stored asset with content type: ${assets[path].contentType}`);
           } else {
             console.log(`No data found for asset: ${asset.key}`);
           }
