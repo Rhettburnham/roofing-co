@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 import { FaUsers, FaHistory, FaAward, FaHandshake } from "react-icons/fa";
+import { useConfig } from "../../context/ConfigContext";
 
 /* ======================================================
    READ-ONLY VIEW & INLINE EDITOR: AboutContent
@@ -605,8 +606,33 @@ const initializeImageState = (itemConfig, defaultPath = null) => {
 
 // Helper to get display URL from string path or {url, file} object
 const getDisplayUrl = (imageValue, defaultPath = null) => {
+  const { virtualFS } = useConfig();
+  
   if (!imageValue) return defaultPath;
-  if (typeof imageValue === 'string') return imageValue;
-  if (typeof imageValue === 'object' && imageValue.url) return imageValue.url;
+  
+  // If it's a string path, check for override
+  if (typeof imageValue === 'string') {
+    const path = imageValue.startsWith('/') ? imageValue.substring(1) : imageValue;
+    if (virtualFS && virtualFS[path]) {
+      return virtualFS[path];
+    }
+    return imageValue;
+  }
+  
+  // If it's an object with a url property
+  if (typeof imageValue === 'object' && imageValue.url) {
+    // If it's a blob URL, return it directly
+    if (imageValue.url.startsWith('blob:')) {
+      return imageValue.url;
+    }
+    
+    // If it's a path, check for override
+    const path = imageValue.url.startsWith('/') ? imageValue.url.substring(1) : imageValue.url;
+    if (virtualFS && virtualFS[path]) {
+      return virtualFS[path];
+    }
+    return imageValue.url;
+  }
+  
   return defaultPath;
 };

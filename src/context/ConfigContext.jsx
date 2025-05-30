@@ -110,6 +110,7 @@ export const ConfigProvider = ({ children }) => {
   const [isCustomDomain, setIsCustomDomain] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [configId, setConfigId] = useState(null);
+  const [virtualFS, setVirtualFS] = useState(null);
 
   // Development mode flag
   const isDevelopment = process.env.NODE_ENV === 'development';
@@ -272,10 +273,9 @@ export const ConfigProvider = ({ children }) => {
             Object.entries(configData.assets).forEach(([path, url]) => {
               // In development, we'll use the local public directory
               if (isDevelopment) {
-                // Convert the path to a local public directory path
-                const localPath = path.startsWith('/') ? path : `/${path}`;
-                console.log(`Development mode: Mapping ${path} to local path ${localPath}`);
-                virtualFS[path] = localPath;
+                // For development, we'll use the original path since it's already relative to public
+                console.log(`Development mode: Using original path ${path}`);
+                virtualFS[path] = path;
               } else {
                 // Production mode: use the API URL
                 virtualFS[path] = url;
@@ -297,8 +297,9 @@ export const ConfigProvider = ({ children }) => {
                   // In development, we'll fetch from the local public directory
                   if (isDevelopment) {
                     // Use the path directly since it's already relative to public
-                    console.log(`Development mode: Fetching from ${virtualFS[relativePath]}`);
-                    return fetch(virtualFS[relativePath]);
+                    const localUrl = `/${virtualFS[relativePath]}`;
+                    console.log(`Development mode: Fetching from ${localUrl}`);
+                    return fetch(localUrl);
                   }
                   // Production mode: use the API URL
                   return fetch(virtualFS[relativePath]);
@@ -323,6 +324,10 @@ export const ConfigProvider = ({ children }) => {
                 if (virtualFS[path]) {
                   const overrideUrl = virtualFS[path];
                   console.log(`Using override for ${path}: ${overrideUrl}`);
+                  // In development, ensure path starts with /
+                  if (isDevelopment) {
+                    return `/${overrideUrl}`;
+                  }
                   return overrideUrl;
                 }
                 return imageValue;
@@ -342,6 +347,10 @@ export const ConfigProvider = ({ children }) => {
                 if (virtualFS[path]) {
                   const overrideUrl = virtualFS[path];
                   console.log(`Using override for ${path}: ${overrideUrl}`);
+                  // In development, ensure path starts with /
+                  if (isDevelopment) {
+                    return `/${overrideUrl}`;
+                  }
                   return overrideUrl;
                 }
                 return imageValue.url;
@@ -381,7 +390,8 @@ export const ConfigProvider = ({ children }) => {
       error,
       isCustomDomain,
       isAuthenticated,
-      configId
+      configId,
+      virtualFS
     }}>
       {children}
       {/* <DebugPanel /> */}
