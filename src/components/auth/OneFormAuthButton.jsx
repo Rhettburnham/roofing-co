@@ -200,23 +200,15 @@ const traverseAndModifyDataForZip = async (originalDataNode, assetsToCollect, pa
         
         const file = originalDataNode.file;
         
+        // Use the same path logic as the ZIP file
         if (originalDataNode.originalUrl && typeof originalDataNode.originalUrl === 'string') {
-          console.log(`[OneFormAuthButton] Using originalUrl for path:`, {
-            originalUrl: originalDataNode.originalUrl,
-            pathContext
-          });
           let tempPath = originalDataNode.originalUrl;
           if (tempPath.startsWith('/')) tempPath = tempPath.substring(1);
           pathInZip = tempPath.startsWith('assets/') ? tempPath : `assets/${tempPath}`;
           jsonUrl = pathInZip;
         } else {
-          console.log(`[OneFormAuthButton] Generating new path for file:`, {
-            fileName,
-            pathContext,
-            uploadBaseDir
-          });
-          const sanitizedPathContext = pathContext.replace(/[^a-zA-Z0-9_]/g, '_').slice(0, 50);
-          pathInZip = `assets/${uploadBaseDir}/${sanitizedPathContext}_${fileName}`;
+          // Use the same path structure as the ZIP file
+          pathInZip = `assets/images/team/${fileName}`;
           jsonUrl = pathInZip;
         }
 
@@ -254,22 +246,15 @@ const traverseAndModifyDataForZip = async (originalDataNode, assetsToCollect, pa
         
         const blob = originalDataNode.blob;
         
+        // Use the same path logic as the ZIP file
         if (originalDataNode.originalUrl && typeof originalDataNode.originalUrl === 'string') {
-          console.log(`[OneFormAuthButton] Using originalUrl for blob path:`, {
-            originalUrl: originalDataNode.originalUrl
-          });
           let tempPath = originalDataNode.originalUrl;
           if (tempPath.startsWith('/')) tempPath = tempPath.substring(1);
           pathInZip = tempPath.startsWith('assets/') ? tempPath : `assets/${tempPath}`;
           jsonUrl = pathInZip;
         } else {
-          console.log(`[OneFormAuthButton] Generating new path for blob:`, {
-            fileName,
-            pathContext,
-            uploadBaseDir
-          });
-          const sanitizedPathContext = pathContext.replace(/[^a-zA-Z0-9_]/g, '_').slice(0, 50);
-          pathInZip = `assets/${uploadBaseDir}/${sanitizedPathContext}_${fileName}`;
+          // Use the same path structure as the ZIP file
+          pathInZip = `assets/images/team/${fileName}`;
           jsonUrl = pathInZip;
         }
 
