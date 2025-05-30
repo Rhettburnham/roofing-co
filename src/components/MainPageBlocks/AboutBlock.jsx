@@ -44,21 +44,9 @@ function AboutContent({ aboutData, readOnly, onConfigChange }) {
     if (!file) return;
     const currentList = aboutData[listName] || [];
     const currentItem = currentList[index];
-    let originalUrl = currentItem?.originalUrl || (typeof currentItem?.[field] === 'string' ? currentItem[field] : null);
-
-    if (currentItem && currentItem[field]?.url && currentItem[field].url.startsWith('blob:')) {
-        URL.revokeObjectURL(currentItem[field].url);
-    }
-    
-    const fileURL = URL.createObjectURL(file);
     const updatedItem = {
       ...currentItem,
-      [field]: {
-        file: file,
-        url: fileURL,
-        name: file.name,
-        originalUrl: originalUrl 
-      }
+      [field]: handleFileChange(file, currentItem[field])
     };
     const newList = [...currentList];
     newList[index] = updatedItem;
@@ -68,19 +56,9 @@ function AboutContent({ aboutData, readOnly, onConfigChange }) {
   const handleNestedUrlChange = (listName, index, field, urlValue) => {
     const currentList = aboutData[listName] || [];
     const currentItem = currentList[index];
-
-    if (currentItem && currentItem[field]?.url && currentItem[field].url.startsWith('blob:')) {
-        URL.revokeObjectURL(currentItem[field].url);
-    }
-
     const updatedItem = {
       ...currentItem,
-      [field]: {
-        file: null,
-        url: urlValue,
-        name: urlValue.split('/').pop(),
-        originalUrl: urlValue
-      }
+      [field]: handleUrlChange(urlValue, currentItem[field])
     };
     const newList = [...currentList];
     newList[index] = updatedItem;
@@ -110,37 +88,18 @@ function AboutContent({ aboutData, readOnly, onConfigChange }) {
   
   const handleHeroImageFileChange = (file) => {
     if (!file) return;
-    const currentHeroImage = aboutData.heroImage;
-    let originalUrl = typeof currentHeroImage === 'string' ? currentHeroImage : currentHeroImage?.originalUrl;
-
-    if (currentHeroImage && typeof currentHeroImage === 'object' && currentHeroImage.url && currentHeroImage.url.startsWith('blob:')) {
-      URL.revokeObjectURL(currentHeroImage.url);
-    }
-    const fileURL = URL.createObjectURL(file);
+    const updatedHeroImage = handleFileChange(file, aboutData.heroImage);
     onConfigChange({ 
-        ...aboutData, 
-        heroImage: { 
-            file, 
-            url: fileURL, 
-            name: file.name,
-            originalUrl: originalUrl // Preserve or set original URL
-        } 
+      ...aboutData, 
+      heroImage: updatedHeroImage
     });
   };
 
   const handleHeroImageUrlChange = (urlValue) => {
-    const currentHeroImage = aboutData.heroImage;
-     if (currentHeroImage && typeof currentHeroImage === 'object' && currentHeroImage.url && currentHeroImage.url.startsWith('blob:')) {
-      URL.revokeObjectURL(currentHeroImage.url);
-    }
+    const updatedHeroImage = handleUrlChange(urlValue, aboutData.heroImage);
     onConfigChange({ 
-        ...aboutData, 
-        heroImage: { 
-            file: null, 
-            url: urlValue, 
-            name: urlValue.split('/').pop(),
-            originalUrl: urlValue // New URL is the original
-        } 
+      ...aboutData, 
+      heroImage: updatedHeroImage
     });
   };
 
@@ -569,7 +528,6 @@ AboutBlock.defaultProps = {
 };
 
 // Helper to initialize image/video state: handles string path or {file, url, name, originalUrl} object
-// Ensures originalUrl is preserved or set.
 const initializeImageState = (itemConfig, defaultPath = null) => {
   let originalUrlToStore = defaultPath;
   let nameToStore = defaultPath ? defaultPath.split('/').pop() : 'default_asset';
@@ -577,31 +535,31 @@ const initializeImageState = (itemConfig, defaultPath = null) => {
   let fileObject = null;
 
   if (itemConfig && typeof itemConfig === 'object') {
-    // If itemConfig has a file, it's from an upload, url should be a blob.
-    // If it doesn't have a file, url should be a string path.
+    // If itemConfig has a file, it's from an upload
     fileObject = itemConfig.file || null;
-    urlToDisplay = itemConfig.url || defaultPath; // Use existing URL or default
+    urlToDisplay = itemConfig.url || defaultPath;
     nameToStore = itemConfig.name || (urlToDisplay ? urlToDisplay.split('/').pop() : nameToStore);
     
-    // originalUrl logic:
-    // 1. If itemConfig.originalUrl exists, use it.
-    // 2. Else, if itemConfig.url is a string and not a blob, it's the original.
-    // 3. Else, use the defaultPath as original.
+    // Store the original URL or path
     originalUrlToStore = itemConfig.originalUrl || 
-                         (typeof itemConfig.url === 'string' && !itemConfig.url.startsWith('blob:') ? itemConfig.url : defaultPath);
+                        (typeof itemConfig.url === 'string' && !itemConfig.url.startsWith('blob:') ? itemConfig.url : defaultPath);
 
-  } else if (typeof itemConfig === 'string') { // It's a path string
+    // If we have a file but no blob URL, create one for preview
+    if (fileObject && !urlToDisplay.startsWith('blob:')) {
+      urlToDisplay = URL.createObjectURL(fileObject);
+    }
+  } else if (typeof itemConfig === 'string') {
     urlToDisplay = itemConfig;
     nameToStore = itemConfig.split('/').pop();
-    originalUrlToStore = itemConfig; // The path itself is the original URL
+    originalUrlToStore = itemConfig;
   }
   
   return { 
-    file: fileObject, 
-    url: urlToDisplay, 
+    file: fileObject,
+    url: urlToDisplay,
     name: nameToStore,
     originalUrl: originalUrlToStore
-  }; 
+  };
 };
 
 // Helper to get display URL from string path or {url, file} object
@@ -635,4 +593,39 @@ const getDisplayUrl = (imageValue, defaultPath = null) => {
   }
   
   return defaultPath;
+};
+
+// Helper function to handle file changes
+const handleFileChange = (file, currentValue) => {
+  if (!file) return currentValue;
+
+  // Revoke old blob URL if it exists
+  if (currentValue && typeof currentValue === 'object' && currentValue.url && currentValue.url.startsWith('blob:')) {
+    URL.revokeObjectURL(currentValue.url);
+  }
+
+  // Create new blob URL for preview
+  const fileURL = URL.createObjectURL(file);
+  
+  return {
+    file: file,
+    url: fileURL,
+    name: file.name,
+    originalUrl: currentValue?.originalUrl || null
+  };
+};
+
+// Helper function to handle URL changes
+const handleUrlChange = (urlValue, currentValue) => {
+  // Revoke old blob URL if it exists
+  if (currentValue && typeof currentValue === 'object' && currentValue.url && currentValue.url.startsWith('blob:')) {
+    URL.revokeObjectURL(currentValue.url);
+  }
+
+  return {
+    file: null,
+    url: urlValue,
+    name: urlValue.split('/').pop(),
+    originalUrl: urlValue
+  };
 };

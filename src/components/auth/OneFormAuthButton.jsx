@@ -98,11 +98,6 @@ const traverseAndModifyDataForZip = async (originalDataNode, assetsToCollect, pa
       delete cleanedConfig.originalUrl;
       delete cleanedConfig._heroImageOriginalPathFromProps;
       cleanedConfig.heroImage = jsonUrl;
-      if (originalDataNode.url && originalDataNode.url.startsWith('blob:')) {
-        const dataUrl = await getDataUrl(originalDataNode.url);
-        cleanedConfig.url = dataUrl;
-        globalDataUrlCache.set(originalDataNode.url, dataUrl);
-      }
       return cleanedConfig;
     }
 
@@ -373,11 +368,11 @@ const processAsset = async (asset) => {
     // Process based on asset type
     if (asset.type === 'file' && asset.dataSource instanceof File) {
       console.log(`[OneFormAuthButton] Processing file for save: ${asset.pathInZip} (${asset.dataSource.size} bytes)`);
-      blob = await ensureValidBlob(asset.dataSource);
+      blob = asset.dataSource; // Use the File directly
       base64Data = await blobToBase64(blob);
     } else if (asset.type === 'blob' && asset.dataSource instanceof Blob) {
       console.log(`[OneFormAuthButton] Processing blob for save: ${asset.pathInZip} (${asset.dataSource.size} bytes)`);
-      blob = await ensureValidBlob(asset.dataSource);
+      blob = asset.dataSource; // Use the Blob directly
       base64Data = await blobToBase64(blob);
     } else if (asset.type === 'url' && typeof asset.dataSource === 'string') {
       if (asset.dataSource.startsWith('blob:')) {
