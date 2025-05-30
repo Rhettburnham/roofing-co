@@ -548,16 +548,16 @@ export default function OneFormAuthButton({
         } else {
           // In production, save to server
           const response = await fetch('/api/config/save', {
-            method: 'POST',
-            headers: {
+        method: 'POST',
+        headers: {
               'Content-Type': 'application/json'
-            },
+        },
             credentials: 'include',
-            body: JSON.stringify({
+        body: JSON.stringify({
               ...dataToSave,
               assets: assetsToSave
-            })
-          });
+        })
+      });
 
           if (!response.ok) {
             throw new Error(`Failed to save: ${response.statusText}`);

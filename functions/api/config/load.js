@@ -147,7 +147,13 @@ export async function onRequest(context) {
             // Convert blob to base64 without using Buffer
             const arrayBuffer = await blob.arrayBuffer();
             const uint8Array = new Uint8Array(arrayBuffer);
-            const base64 = btoa(String.fromCharCode.apply(null, uint8Array));
+            // Convert in chunks to avoid stack overflow
+            const chunkSize = 1024 * 1024; // 1MB chunks
+            let base64 = '';
+            for (let i = 0; i < uint8Array.length; i += chunkSize) {
+              const chunk = uint8Array.slice(i, i + chunkSize);
+              base64 += btoa(String.fromCharCode.apply(null, chunk));
+            }
             const contentType = object.httpMetadata?.contentType || getContentType(path);
             const dataUrl = `data:${contentType};base64,${base64}`;
             
