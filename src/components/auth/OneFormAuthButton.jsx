@@ -325,6 +325,94 @@ const ensureValidBlob = async (dataSource) => {
   throw new Error('Invalid data source type');
 };
 
+// Helper function to convert blob to base64 with validation
+const blobToBase64 = async (blob) => {
+  if (!blob || !(blob instanceof Blob)) {
+    throw new Error('Invalid blob provided');
+  }
+
+  if (blob.size === 0) {
+    throw new Error('Empty blob provided');
+  }
+
+  if (!blob.type.startsWith('image/')) {
+    throw new Error('Invalid blob type: must be an image');
+  }
+
+  try {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result;
+        if (!result || typeof result !== 'string' || !result.startsWith('data:')) {
+          reject(new Error('Invalid base64 conversion result'));
+          return;
+        }
+        resolve(result);
+      };
+      reader.onerror = () => reject(new Error('Failed to read blob'));
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.error('Error converting blob to base64:', error);
+    throw new Error(`Failed to convert blob to base64: ${error.message}`);
+  }
+};
+
+// Helper function to safely process an asset
+const processAsset = async (asset) => {
+  try {
+    let blob;
+    let base64Data;
+
+    // Validate asset data
+    if (!asset || !asset.pathInZip) {
+      throw new Error('Invalid asset: missing pathInZip');
+    }
+
+    // Process based on asset type
+    if (asset.type === 'file' && asset.dataSource instanceof File) {
+      console.log(`[OneFormAuthButton] Processing file for save: ${asset.pathInZip} (${asset.dataSource.size} bytes)`);
+      blob = await ensureValidBlob(asset.dataSource);
+      base64Data = await blobToBase64(blob);
+    } else if (asset.type === 'blob' && asset.dataSource instanceof Blob) {
+      console.log(`[OneFormAuthButton] Processing blob for save: ${asset.pathInZip} (${asset.dataSource.size} bytes)`);
+      blob = await ensureValidBlob(asset.dataSource);
+      base64Data = await blobToBase64(blob);
+    } else if (asset.type === 'url' && typeof asset.dataSource === 'string') {
+      if (asset.dataSource.startsWith('blob:')) {
+        console.log(`[OneFormAuthButton] Processing blob URL for save: ${asset.pathInZip}`);
+        blob = await ensureValidBlob(asset.dataSource);
+        base64Data = await blobToBase64(blob);
+      } else if (!asset.dataSource.startsWith('http:') && !asset.dataSource.startsWith('https:') && !asset.dataSource.startsWith('data:')) {
+        console.log(`[OneFormAuthButton] Processing local URL for save: ${asset.pathInZip}`);
+        blob = await ensureValidBlob(asset.dataSource);
+        base64Data = await blobToBase64(blob);
+      } else {
+        throw new Error(`Invalid URL type for ${asset.pathInZip}`);
+      }
+    } else {
+      throw new Error(`Invalid asset type for ${asset.pathInZip}`);
+    }
+
+    // Validate the result
+    if (!base64Data || typeof base64Data !== 'string' || !base64Data.startsWith('data:')) {
+      throw new Error(`Invalid base64 data for ${asset.pathInZip}`);
+    }
+
+    return {
+      path: asset.pathInZip,
+      data: base64Data,
+      preview: blob ? URL.createObjectURL(blob) : null,
+      size: blob ? blob.size : 0,
+      type: blob ? blob.type : 'unknown'
+    };
+  } catch (error) {
+    console.error(`[OneFormAuthButton] Error processing asset ${asset.pathInZip}:`, error);
+    throw error;
+  }
+};
+
 export default function OneFormAuthButton({ 
   formData, 
   themeColors, 
@@ -620,57 +708,15 @@ export default function OneFormAuthButton({
 
       const assetPromisesSave = newCollectedAssets.map(async (asset) => {
         try {
-          let blob;
-          if (asset.type === 'file' && asset.dataSource instanceof File) {
-            console.log(`[OneFormAuthButton] Processing file for save: ${asset.pathInZip} (${asset.dataSource.size} bytes)`);
-            blob = await ensureValidBlob(asset.dataSource);
-            assetsToSave[asset.pathInZip] = blob;
-            setImagesBeingSent(prev => [...prev, { 
-              path: asset.pathInZip, 
-              data: URL.createObjectURL(blob),
-              size: blob.size,
-              type: blob.type
+          const processedAsset = await processAsset(asset);
+          assetsToSave[processedAsset.path] = processedAsset.data;
+          if (processedAsset.preview) {
+            setImagesBeingSent(prev => [...prev, {
+              path: processedAsset.path,
+              data: processedAsset.preview,
+              size: processedAsset.size,
+              type: processedAsset.type
             }]);
-          } else if (asset.type === 'blob' && asset.dataSource instanceof Blob) {
-            console.log(`[OneFormAuthButton] Processing blob for save: ${asset.pathInZip} (${asset.dataSource.size} bytes)`);
-            blob = await ensureValidBlob(asset.dataSource);
-            assetsToSave[asset.pathInZip] = blob;
-            setImagesBeingSent(prev => [...prev, { 
-              path: asset.pathInZip, 
-              data: URL.createObjectURL(blob),
-              size: blob.size,
-              type: blob.type
-            }]);
-          } else if (asset.type === 'url' && typeof asset.dataSource === 'string') {
-            if (asset.dataSource.startsWith('blob:')) {
-              console.log(`[OneFormAuthButton] Processing blob URL for save: ${asset.pathInZip}`);
-              blob = await ensureValidBlob(asset.dataSource);
-              assetsToSave[asset.pathInZip] = blob;
-              setImagesBeingSent(prev => [...prev, { 
-                path: asset.pathInZip, 
-                data: URL.createObjectURL(blob),
-                size: blob.size,
-                type: blob.type
-              }]);
-            } else if (!asset.dataSource.startsWith('http:') && !asset.dataSource.startsWith('https:') && !asset.dataSource.startsWith('data:')) {
-              console.log(`[OneFormAuthButton] Processing local URL for save: ${asset.pathInZip}`);
-              blob = await ensureValidBlob(asset.dataSource);
-              assetsToSave[asset.pathInZip] = blob;
-              setImagesBeingSent(prev => [...prev, { 
-                path: asset.pathInZip, 
-                data: URL.createObjectURL(blob),
-                size: blob.size,
-                type: blob.type
-              }]);
-            }
-          }
-
-          if (blob) {
-            console.log(`[OneFormAuthButton] Valid blob prepared for ${asset.pathInZip}:`, {
-              size: blob.size,
-              type: blob.type,
-              lastModified: blob instanceof File ? blob.lastModified : undefined
-            });
           }
         } catch (error) {
           console.error(`[OneFormAuthButton] Error processing asset ${asset.pathInZip}:`, error);
