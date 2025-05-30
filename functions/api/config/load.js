@@ -140,11 +140,12 @@ export async function onRequest(context) {
           console.log(`Loading asset: ${asset.key}`);
           const object = await env.ROOFING_CONFIGS.get(asset.key);
           if (object) {
+            // Extract just the asset path without the configs/configId prefix
             const path = asset.key.replace(`configs/${configId}/`, '');
             console.log(`Successfully loaded asset: ${path}`);
             
-            // Create a direct URL to the asset using query parameter
-            const url = `/api/assets/get?path=${encodeURIComponent(path)}`;
+            // Create URL without duplicating configs/ in the path
+            const url = `/api/assets/get?path=${path}`;
             assets[path] = url;
             console.log(`Created asset URL: ${url}`);
           } else {
