@@ -927,7 +927,7 @@ export default function OneFormAuthButton({
         dataToSave.services = cleanedServicesDataNew;
       }
       if (cleanedNewAboutData) {
-        dataToSave.aboutPageData = cleanedNewAboutData;
+        dataToSave.about_page = cleanedNewAboutData;
       }
       if (cleanedNewShowcaseData) {
         dataToSave.all_blocks_showcase = cleanedNewShowcaseData;
@@ -944,7 +944,7 @@ export default function OneFormAuthButton({
             `- Combined Data: ${!!dataToSave.combined_data}\n` +
             `- Colors: ${!!dataToSave.colors}\n` +
             `- Services: ${!!dataToSave.services}\n` +
-            `- About Page: ${!!dataToSave.aboutPageData}\n` +
+            `- About Page: ${!!dataToSave.about_page}\n` +
             `- All Blocks Showcase: ${!!dataToSave.all_blocks_showcase}\n` +
             `- Assets: ${Object.keys(assetsToSave).length}\n\n` +
             `Console Logs:\n${consoleLogs.map(([type, ...args]) => 
