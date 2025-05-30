@@ -161,10 +161,26 @@ export async function onRequest(context) {
             // Handle { data: Blob, contentType: string }
             blob = assetData.data;
             contentType = assetData.contentType || blob.type || getContentType(path);
+          } else if (typeof assetData.data === 'string' && assetData.contentType) {
+            // Handle { data: base64 string, contentType: string }
+            try {
+              const binaryData = atob(assetData.data);
+              const arrayBuffer = new ArrayBuffer(binaryData.length);
+              const uint8Array = new Uint8Array(arrayBuffer);
+              for (let i = 0; i < binaryData.length; i++) {
+                uint8Array[i] = binaryData.charCodeAt(i);
+              }
+              blob = new Blob([uint8Array], { type: assetData.contentType });
+              contentType = assetData.contentType;
+            } catch (err) {
+              console.error(`Failed to decode base64 asset for ${path}:`, err);
+              return;
+            }
           } else {
             console.error(`Invalid asset data format for ${path}:`, typeof assetData);
             return;
           }
+          
 
           if (!blob) {
             console.error(`Failed to create blob for ${path}`);

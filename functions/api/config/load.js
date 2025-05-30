@@ -144,12 +144,15 @@ export async function onRequest(context) {
             const path = asset.key.replace(`configs/${configId}/`, '');
             console.log(`Successfully loaded asset: ${path}`);
             
-            // Store the blob and content type
-            assets[path] = {
-              data: blob,
-              contentType: object.httpMetadata?.contentType || getContentType(path)
-            };
-            console.log(`Stored asset with content type: ${assets[path].contentType}`);
+            // Convert blob to base64
+            const arrayBuffer = await blob.arrayBuffer();
+            const base64 = Buffer.from(arrayBuffer).toString('base64');
+            const contentType = object.httpMetadata?.contentType || getContentType(path);
+            const dataUrl = `data:${contentType};base64,${base64}`;
+            
+            // Store as data URL
+            assets[path] = dataUrl;
+            console.log(`Converted asset to data URL: ${path}`);
           } else {
             console.log(`No data found for asset: ${asset.key}`);
           }
@@ -195,4 +198,20 @@ export async function onRequest(context) {
       },
     });
   }
+}
+
+function getContentType(path) {
+  const extension = path.split('.').pop().toLowerCase();
+  const contentTypes = {
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'png': 'image/png',
+    'gif': 'image/gif',
+    'webp': 'image/webp',
+    'svg': 'image/svg+xml',
+    'mp4': 'video/mp4',
+    'webm': 'video/webm',
+    'pdf': 'application/pdf'
+  };
+  return contentTypes[extension] || 'application/octet-stream';
 } 

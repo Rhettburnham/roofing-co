@@ -186,13 +186,9 @@ export const ConfigProvider = ({ children }) => {
             const virtualFS = {};
             
             // Process each asset
-            Object.entries(configData.assets).forEach(([path, asset]) => {
-              // Create a blob URL for the asset
-              const blob = new Blob([asset.data], { type: asset.contentType });
-              const url = URL.createObjectURL(blob);
-              
-              // Store in virtual FS
-              virtualFS[path] = url;
+            Object.entries(configData.assets).forEach(([path, dataUrl]) => {
+              // Store the data URL directly
+              virtualFS[path] = dataUrl;
             });
 
             // Replace public assets with virtual ones
@@ -204,10 +200,12 @@ export const ConfigProvider = ({ children }) => {
               if (url.startsWith('/assets/')) {
                 const relativePath = url.substring(1); // Remove leading slash
                 if (virtualFS[relativePath]) {
-                  // Return a Response with the virtual asset
-                  return new Response(await fetch(virtualFS[relativePath]).then(r => r.blob()), {
+                  // Return a Response with the data URL
+                  const response = await fetch(virtualFS[relativePath]);
+                  const blob = await response.blob();
+                  return new Response(blob, {
                     headers: {
-                      'Content-Type': configData.assets[relativePath].contentType
+                      'Content-Type': blob.type
                     }
                   });
                 }
@@ -221,9 +219,6 @@ export const ConfigProvider = ({ children }) => {
             return () => {
               // Restore original fetch
               window.fetch = originalFetch;
-              
-              // Revoke all blob URLs
-              Object.values(virtualFS).forEach(url => URL.revokeObjectURL(url));
             };
           }
         }
