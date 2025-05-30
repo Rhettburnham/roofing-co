@@ -2,9 +2,92 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 
 const ConfigContext = createContext();
 
+// Debug panel component
+const DebugPanel = () => {
+  const [logs, setLogs] = useState([]);
+  
+  useEffect(() => {
+    const originalConsoleLog = console.log;
+    console.log = function(...args) {
+      // Call original console.log
+      originalConsoleLog.apply(console, args);
+      
+      // Add to our logs
+      const timestamp = new Date().toISOString();
+      const message = args.map(arg => 
+        typeof arg === 'object' ? JSON.stringify(arg, null, 2) : arg
+      ).join(' ');
+      
+      setLogs(prev => [...prev, `[${timestamp}] ${message}`]);
+    };
+    
+    return () => {
+      console.log = originalConsoleLog;
+    };
+  }, []);
+  
+  if (process.env.NODE_ENV !== 'development') return null;
+  
+  return (
+    <div style={{
+      position: 'fixed',
+      bottom: 0,
+      right: 0,
+      width: '400px',
+      height: '300px',
+      backgroundColor: 'rgba(0,0,0,0.8)',
+      color: 'white',
+      padding: '10px',
+      overflow: 'auto',
+      fontSize: '12px',
+      fontFamily: 'monospace',
+      zIndex: 9999
+    }}>
+      <div style={{ marginBottom: '10px' }}>
+        <button 
+          onClick={() => setLogs([])}
+          style={{ marginRight: '10px' }}
+        >
+          Clear
+        </button>
+      </div>
+      <div style={{ overflow: 'auto', height: 'calc(100% - 40px)' }}>
+        {logs.map((log, i) => (
+          <div key={i} style={{ marginBottom: '5px' }}>{log}</div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export function useConfig() {
   return useContext(ConfigContext);
 }
+
+// Custom logger for ConfigContext
+const configLogger = {
+  logs: [],
+  log: function(message) {
+    const timestamp = new Date().toISOString();
+    const logEntry = `[${timestamp}] ${message}\n`;
+    this.logs.push(logEntry);
+    
+    // Create a blob and download it
+    const blob = new Blob([this.logs.join('')], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'config-context-logs.txt';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  },
+  clear: function() {
+    this.logs = [];
+  }
+};
 
 // Helper function to normalize color keys
 const normalizeColorKeys = (colors) => {
@@ -187,8 +270,17 @@ export const ConfigProvider = ({ children }) => {
             
             // Process each asset
             Object.entries(configData.assets).forEach(([path, url]) => {
-              // Store the URL directly
-              virtualFS[path] = url;
+              // In development, we'll use the local public directory
+              if (isDevelopment) {
+                // Convert the path to a local public directory path
+                const localPath = `/public/${path}`;
+                configLogger.log(`Development mode: Mapping ${path} to local path ${localPath}`);
+                virtualFS[path] = localPath;
+              } else {
+                // Production mode: use the API URL
+                virtualFS[path] = url;
+              }
+              configLogger.log(`Registered asset override: ${path} -> ${virtualFS[path]}`);
             });
 
             // Replace public assets with virtual ones
@@ -199,9 +291,20 @@ export const ConfigProvider = ({ children }) => {
               // Check if this is an asset request
               if (url.startsWith('/assets/')) {
                 const relativePath = url.substring(1); // Remove leading slash
+                configLogger.log(`Intercepted asset request: ${relativePath}`);
                 if (virtualFS[relativePath]) {
-                  // Return a Response with the asset URL
+                  configLogger.log(`Using override for ${relativePath}: ${virtualFS[relativePath]}`);
+                  // In development, we'll fetch from the local public directory
+                  if (isDevelopment) {
+                    // Remove /public prefix for the fetch
+                    const localUrl = virtualFS[relativePath].replace('/public', '');
+                    configLogger.log(`Development mode: Fetching from ${localUrl}`);
+                    return fetch(localUrl);
+                  }
+                  // Production mode: use the API URL
                   return fetch(virtualFS[relativePath]);
+                } else {
+                  configLogger.log(`No override found for ${relativePath}, using original`);
                 }
               }
               
@@ -209,10 +312,61 @@ export const ConfigProvider = ({ children }) => {
               return originalFetch(input, init);
             };
 
+            // Override getDisplayUrl to handle both custom and default images
+            const originalGetDisplayUrl = getDisplayUrl;
+            getDisplayUrl = (imageValue) => {
+              if (!imageValue) return null;
+              
+              // If it's a string path, check if we have an override
+              if (typeof imageValue === 'string') {
+                const path = imageValue.startsWith('/') ? imageValue.substring(1) : imageValue;
+                configLogger.log(`getDisplayUrl called with string path: ${path}`);
+                if (virtualFS[path]) {
+                  const overrideUrl = virtualFS[path];
+                  configLogger.log(`Using override for ${path}: ${overrideUrl}`);
+                  // In development, remove /public prefix
+                  if (isDevelopment) {
+                    return overrideUrl.replace('/public', '');
+                  }
+                  return overrideUrl;
+                }
+                return imageValue;
+              }
+              
+              // If it's an object with a url property
+              if (typeof imageValue === 'object' && imageValue.url) {
+                // If it's a blob URL, return it directly
+                if (imageValue.url.startsWith('blob:')) {
+                  configLogger.log(`Using blob URL directly: ${imageValue.url}`);
+                  return imageValue.url;
+                }
+                
+                // If it's a path, check for override
+                const path = imageValue.url.startsWith('/') ? imageValue.url.substring(1) : imageValue.url;
+                configLogger.log(`getDisplayUrl called with object URL: ${path}`);
+                if (virtualFS[path]) {
+                  const overrideUrl = virtualFS[path];
+                  configLogger.log(`Using override for ${path}: ${overrideUrl}`);
+                  // In development, remove /public prefix
+                  if (isDevelopment) {
+                    return overrideUrl.replace('/public', '');
+                  }
+                  return overrideUrl;
+                }
+                return imageValue.url;
+              }
+              
+              return null;
+            };
+
             // Clean up function
             return () => {
               // Restore original fetch
               window.fetch = originalFetch;
+              // Restore original getDisplayUrl
+              getDisplayUrl = originalGetDisplayUrl;
+              // Clear logs
+              configLogger.clear();
             };
           }
         }
@@ -239,6 +393,7 @@ export const ConfigProvider = ({ children }) => {
       configId
     }}>
       {children}
+      {/* <DebugPanel /> */}
     </ConfigContext.Provider>
   );
 }; 
