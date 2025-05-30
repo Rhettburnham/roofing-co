@@ -180,7 +180,6 @@ export async function onRequest(context) {
             console.error(`Invalid asset data format for ${path}:`, typeof assetData);
             return;
           }
-          
 
           if (!blob) {
             console.error(`Failed to create blob for ${path}`);

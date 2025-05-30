@@ -144,9 +144,10 @@ export async function onRequest(context) {
             const path = asset.key.replace(`configs/${configId}/`, '');
             console.log(`Successfully loaded asset: ${path}`);
             
-            // Convert blob to base64
+            // Convert blob to base64 without using Buffer
             const arrayBuffer = await blob.arrayBuffer();
-            const base64 = Buffer.from(arrayBuffer).toString('base64');
+            const uint8Array = new Uint8Array(arrayBuffer);
+            const base64 = btoa(String.fromCharCode.apply(null, uint8Array));
             const contentType = object.httpMetadata?.contentType || getContentType(path);
             const dataUrl = `data:${contentType};base64,${base64}`;
             
