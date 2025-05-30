@@ -107,10 +107,10 @@ export async function onRequest(context) {
         try {
           console.log(`Saving config to ${key}...`);
           await env.ROOFING_CONFIGS.put(key, JSON.stringify(data, null, 2), {
-            httpMetadata: {
-              contentType: 'application/json'
-            }
-          });
+        httpMetadata: {
+          contentType: 'application/json'
+        }
+      });
           console.log(`Successfully saved config to ${key}`);
         } catch (error) {
           console.error(`Error saving config to ${key}:`, error);
@@ -136,146 +136,57 @@ export async function onRequest(context) {
             // Handle data URL
             if (assetData.startsWith('data:')) {
               const matches = assetData.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
-              if (!matches) {
-                throw new Error(`Invalid data URL format for ${path}`);
-              }
-              contentType = matches[1];
-              const base64Data = matches[2];
-              try {
+              if (matches) {
+                contentType = matches[1];
+                const base64Data = matches[2];
                 const binaryData = atob(base64Data);
                 const arrayBuffer = new ArrayBuffer(binaryData.length);
                 const uint8Array = new Uint8Array(arrayBuffer);
                 for (let i = 0; i < binaryData.length; i++) {
                   uint8Array[i] = binaryData.charCodeAt(i);
                 }
-                blob = new Blob([uint8Array], { type: contentType });
-              } catch (err) {
-                throw new Error(`Failed to decode base64 data for ${path}: ${err.message}`);
+                blob = new Blob([arrayBuffer], { type: contentType });
               }
+            } else if (assetData.startsWith('/api/assets/')) {
+              // Skip if it's already a direct URL
+              console.log(`Skipping ${path} - already a direct URL`);
+              return;
             } else {
               // Handle regular URL
-              try {
-                const response = await fetch(assetData);
-                if (!response.ok) {
-                  throw new Error(`Failed to fetch URL ${assetData}: ${response.status} ${response.statusText}`);
-                }
-                blob = await response.blob();
-                contentType = response.headers.get('content-type') || getContentType(path);
-              } catch (err) {
-                throw new Error(`Failed to fetch URL ${assetData}: ${err.message}`);
-              }
+              const response = await fetch(assetData);
+              blob = await response.blob();
+              contentType = response.headers.get('content-type') || getContentType(path);
             }
           } else if (assetData instanceof Blob) {
             // Handle direct blob
             blob = assetData;
             contentType = blob.type || getContentType(path);
-          } else if (assetData && typeof assetData === 'object') {
-            // Handle object format { url: string, name: string, originalUrl?: string }
-            if (assetData.url) {
-              if (assetData.url.startsWith('data:')) {
-                // Handle data URL
-                const matches = assetData.url.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
-                if (!matches) {
-                  throw new Error(`Invalid data URL format in object for ${path}`);
-                }
-                contentType = matches[1];
-                const base64Data = matches[2];
-                try {
-                  const binaryData = atob(base64Data);
-                  const arrayBuffer = new ArrayBuffer(binaryData.length);
-                  const uint8Array = new Uint8Array(arrayBuffer);
-                  for (let i = 0; i < binaryData.length; i++) {
-                    uint8Array[i] = binaryData.charCodeAt(i);
-                  }
-                  blob = new Blob([uint8Array], { type: contentType });
-                } catch (err) {
-                  throw new Error(`Failed to decode base64 data in object for ${path}: ${err.message}`);
-                }
-              } else if (assetData.url.startsWith('blob:')) {
-                // Handle blob URL
-                try {
-                  const response = await fetch(assetData.url);
-                  if (!response.ok) {
-                    throw new Error(`Failed to fetch blob URL ${assetData.url}: ${response.status} ${response.statusText}`);
-                  }
-                  blob = await response.blob();
-                  contentType = response.headers.get('content-type') || getContentType(path);
-                } catch (err) {
-                  throw new Error(`Failed to fetch blob URL ${assetData.url}: ${err.message}`);
-                }
-              } else {
-                // Handle regular URL
-                try {
-                  const response = await fetch(assetData.url);
-                  if (!response.ok) {
-                    throw new Error(`Failed to fetch URL ${assetData.url}: ${response.status} ${response.statusText}`);
-                  }
-                  blob = await response.blob();
-                  contentType = response.headers.get('content-type') || getContentType(path);
-                } catch (err) {
-                  throw new Error(`Failed to fetch URL ${assetData.url}: ${err.message}`);
-                }
-              }
-            } else if (assetData.data instanceof Blob) {
-              // Handle { data: Blob, contentType: string }
-              blob = assetData.data;
-              contentType = assetData.contentType || blob.type || getContentType(path);
-            } else if (typeof assetData.data === 'string' && assetData.contentType) {
-              // Handle { data: base64 string, contentType: string }
-              try {
-                const binaryData = atob(assetData.data);
-                const arrayBuffer = new ArrayBuffer(binaryData.length);
-                const uint8Array = new Uint8Array(arrayBuffer);
-                for (let i = 0; i < binaryData.length; i++) {
-                  uint8Array[i] = binaryData.charCodeAt(i);
-                }
-                blob = new Blob([uint8Array], { type: assetData.contentType });
-                contentType = assetData.contentType;
-              } catch (err) {
-                throw new Error(`Failed to decode base64 data in object for ${path}: ${err.message}`);
-              }
-            } else {
-              throw new Error(`Invalid asset object format for ${path}: ${JSON.stringify(assetData)}`);
-            }
+          } else if (assetData.data instanceof Blob) {
+            // Handle { data: Blob, contentType: string }
+            blob = assetData.data;
+            contentType = assetData.contentType || blob.type || getContentType(path);
           } else {
-            throw new Error(`Invalid asset data format for ${path}: ${typeof assetData}`);
+            console.error(`Invalid asset data format for ${path}:`, typeof assetData);
+            return;
           }
 
           if (!blob) {
-            throw new Error(`Failed to create blob for ${path}`);
+            console.error(`Failed to create blob for ${path}`);
+            return;
           }
 
-          try {
-            await env.ROOFING_CONFIGS.put(key, blob, {
-              httpMetadata: {
-                contentType: contentType
-              }
-            });
-            console.log(`Successfully saved asset to ${key}`);
-          } catch (err) {
-            throw new Error(`Failed to save asset to R2 for ${path}: ${err.message}`);
-          }
+          await env.ROOFING_CONFIGS.put(key, blob, {
+            httpMetadata: {
+              contentType: contentType
+            }
+          });
+          console.log(`Successfully saved asset to ${key}`);
         } catch (error) {
           console.error(`Error saving asset ${path}:`, error);
-          throw error; // Re-throw to be caught by Promise.all
         }
       });
 
-      try {
-        await Promise.all(assetPromises);
-      } catch (error) {
-        console.error('Error saving assets:', error);
-        return new Response(JSON.stringify({ 
-          error: 'Failed to save assets',
-          details: error.message 
-        }), {
-          status: 500,
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-          },
-        });
-      }
+      await Promise.all(assetPromises);
     }
 
     return new Response(JSON.stringify({ success: true }), {

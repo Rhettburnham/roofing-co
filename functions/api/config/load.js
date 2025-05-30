@@ -140,26 +140,13 @@ export async function onRequest(context) {
           console.log(`Loading asset: ${asset.key}`);
           const object = await env.ROOFING_CONFIGS.get(asset.key);
           if (object) {
-            const blob = await object.blob();
             const path = asset.key.replace(`configs/${configId}/`, '');
             console.log(`Successfully loaded asset: ${path}`);
             
-            // Convert blob to base64 without using Buffer
-            const arrayBuffer = await blob.arrayBuffer();
-            const uint8Array = new Uint8Array(arrayBuffer);
-            // Convert in chunks to avoid stack overflow
-            const chunkSize = 1024 * 1024; // 1MB chunks
-            let base64 = '';
-            for (let i = 0; i < uint8Array.length; i += chunkSize) {
-              const chunk = uint8Array.slice(i, i + chunkSize);
-              base64 += btoa(String.fromCharCode.apply(null, chunk));
-            }
-            const contentType = object.httpMetadata?.contentType || getContentType(path);
-            const dataUrl = `data:${contentType};base64,${base64}`;
-            
-            // Store as data URL
-            assets[path] = dataUrl;
-            console.log(`Converted asset to data URL: ${path}`);
+            // Create a direct URL to the asset
+            const url = `/api/assets/${path}`;
+            assets[path] = url;
+            console.log(`Created asset URL: ${url}`);
           } else {
             console.log(`No data found for asset: ${asset.key}`);
           }

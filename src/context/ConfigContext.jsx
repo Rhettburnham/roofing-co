@@ -186,9 +186,9 @@ export const ConfigProvider = ({ children }) => {
             const virtualFS = {};
             
             // Process each asset
-            Object.entries(configData.assets).forEach(([path, dataUrl]) => {
-              // Store the data URL directly
-              virtualFS[path] = dataUrl;
+            Object.entries(configData.assets).forEach(([path, url]) => {
+              // Store the URL directly
+              virtualFS[path] = url;
             });
 
             // Replace public assets with virtual ones
@@ -200,14 +200,8 @@ export const ConfigProvider = ({ children }) => {
               if (url.startsWith('/assets/')) {
                 const relativePath = url.substring(1); // Remove leading slash
                 if (virtualFS[relativePath]) {
-                  // Return a Response with the data URL
-                  const response = await fetch(virtualFS[relativePath]);
-                  const blob = await response.blob();
-                  return new Response(blob, {
-                    headers: {
-                      'Content-Type': blob.type
-                    }
-                  });
+                  // Return a Response with the asset URL
+                  return fetch(virtualFS[relativePath]);
                 }
               }
               
