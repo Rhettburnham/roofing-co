@@ -271,17 +271,23 @@ export const ConfigProvider = ({ children }) => {
             
             // Process each asset
             Object.entries(configData.assets).forEach(([path, url]) => {
+              // Normalize the path by removing any leading slashes
+              const normalizedPath = path.replace(/^\/+/, '');
+              
               // In development, we'll use the local public directory
               if (isDevelopment) {
                 // For development, we'll use the original path since it's already relative to public
-                console.log(`Development mode: Using original path ${path}`);
-                virtualFS[path] = path;
+                console.log(`Development mode: Using original path ${normalizedPath}`);
+                virtualFS[normalizedPath] = normalizedPath;
               } else {
                 // Production mode: use the API URL
-                virtualFS[path] = url;
+                virtualFS[normalizedPath] = url;
               }
-              console.log(`Registered asset override: ${path} -> ${virtualFS[path]}`);
+              console.log(`Registered asset override: ${normalizedPath} -> ${virtualFS[normalizedPath]}`);
             });
+
+            // Set the virtual file system
+            setVirtualFS(virtualFS);
 
             // Replace public assets with virtual ones
             const originalFetch = window.fetch;
@@ -319,7 +325,7 @@ export const ConfigProvider = ({ children }) => {
               
               // If it's a string path, check if we have an override
               if (typeof imageValue === 'string') {
-                const path = imageValue.startsWith('/') ? imageValue.substring(1) : imageValue;
+                const path = imageValue.replace(/^\/+/, ''); // Remove all leading slashes
                 console.log(`getDisplayUrl called with string path: ${path}`);
                 if (virtualFS[path]) {
                   const overrideUrl = virtualFS[path];
@@ -342,7 +348,7 @@ export const ConfigProvider = ({ children }) => {
                 }
                 
                 // If it's a path, check for override
-                const path = imageValue.url.startsWith('/') ? imageValue.url.substring(1) : imageValue.url;
+                const path = imageValue.url.replace(/^\/+/, ''); // Remove all leading slashes
                 console.log(`getDisplayUrl called with object URL: ${path}`);
                 if (virtualFS[path]) {
                   const overrideUrl = virtualFS[path];

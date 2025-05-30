@@ -90,7 +90,7 @@ function AboutContent({ aboutData, readOnly, onConfigChange }) {
     if (!file) return;
     const updatedHeroImage = handleFileChange(file, aboutData.heroImage);
     onConfigChange({ 
-      ...aboutData, 
+        ...aboutData, 
       heroImage: updatedHeroImage
     });
   };
@@ -98,7 +98,7 @@ function AboutContent({ aboutData, readOnly, onConfigChange }) {
   const handleHeroImageUrlChange = (urlValue) => {
     const updatedHeroImage = handleUrlChange(urlValue, aboutData.heroImage);
     onConfigChange({ 
-      ...aboutData, 
+        ...aboutData, 
       heroImage: updatedHeroImage
     });
   };
@@ -542,7 +542,7 @@ const initializeImageState = (itemConfig, defaultPath = null) => {
     
     // Store the original URL or path
     originalUrlToStore = itemConfig.originalUrl || 
-                        (typeof itemConfig.url === 'string' && !itemConfig.url.startsWith('blob:') ? itemConfig.url : defaultPath);
+                         (typeof itemConfig.url === 'string' && !itemConfig.url.startsWith('blob:') ? itemConfig.url : defaultPath);
 
     // If we have a file but no blob URL, create one for preview
     if (fileObject && !urlToDisplay.startsWith('blob:')) {
@@ -555,11 +555,11 @@ const initializeImageState = (itemConfig, defaultPath = null) => {
   }
   
   return { 
-    file: fileObject,
-    url: urlToDisplay,
+    file: fileObject, 
+    url: urlToDisplay, 
     name: nameToStore,
     originalUrl: originalUrlToStore
-  };
+  }; 
 };
 
 // Helper to get display URL from string path or {url, file} object
