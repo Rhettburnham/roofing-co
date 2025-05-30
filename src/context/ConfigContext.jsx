@@ -273,14 +273,14 @@ export const ConfigProvider = ({ children }) => {
               // In development, we'll use the local public directory
               if (isDevelopment) {
                 // Convert the path to a local public directory path
-                const localPath = `/public/${path}`;
-                configLogger.log(`Development mode: Mapping ${path} to local path ${localPath}`);
+                const localPath = path.startsWith('/') ? path : `/${path}`;
+                console.log(`Development mode: Mapping ${path} to local path ${localPath}`);
                 virtualFS[path] = localPath;
               } else {
                 // Production mode: use the API URL
                 virtualFS[path] = url;
               }
-              configLogger.log(`Registered asset override: ${path} -> ${virtualFS[path]}`);
+              console.log(`Registered asset override: ${path} -> ${virtualFS[path]}`);
             });
 
             // Replace public assets with virtual ones
@@ -291,20 +291,19 @@ export const ConfigProvider = ({ children }) => {
               // Check if this is an asset request
               if (url.startsWith('/assets/')) {
                 const relativePath = url.substring(1); // Remove leading slash
-                configLogger.log(`Intercepted asset request: ${relativePath}`);
+                console.log(`Intercepted asset request: ${relativePath}`);
                 if (virtualFS[relativePath]) {
-                  configLogger.log(`Using override for ${relativePath}: ${virtualFS[relativePath]}`);
+                  console.log(`Using override for ${relativePath}: ${virtualFS[relativePath]}`);
                   // In development, we'll fetch from the local public directory
                   if (isDevelopment) {
-                    // Remove /public prefix for the fetch
-                    const localUrl = virtualFS[relativePath].replace('/public', '');
-                    configLogger.log(`Development mode: Fetching from ${localUrl}`);
-                    return fetch(localUrl);
+                    // Use the path directly since it's already relative to public
+                    console.log(`Development mode: Fetching from ${virtualFS[relativePath]}`);
+                    return fetch(virtualFS[relativePath]);
                   }
                   // Production mode: use the API URL
                   return fetch(virtualFS[relativePath]);
                 } else {
-                  configLogger.log(`No override found for ${relativePath}, using original`);
+                  console.log(`No override found for ${relativePath}, using original`);
                 }
               }
               
@@ -320,14 +319,10 @@ export const ConfigProvider = ({ children }) => {
               // If it's a string path, check if we have an override
               if (typeof imageValue === 'string') {
                 const path = imageValue.startsWith('/') ? imageValue.substring(1) : imageValue;
-                configLogger.log(`getDisplayUrl called with string path: ${path}`);
+                console.log(`getDisplayUrl called with string path: ${path}`);
                 if (virtualFS[path]) {
                   const overrideUrl = virtualFS[path];
-                  configLogger.log(`Using override for ${path}: ${overrideUrl}`);
-                  // In development, remove /public prefix
-                  if (isDevelopment) {
-                    return overrideUrl.replace('/public', '');
-                  }
+                  console.log(`Using override for ${path}: ${overrideUrl}`);
                   return overrideUrl;
                 }
                 return imageValue;
@@ -337,20 +332,16 @@ export const ConfigProvider = ({ children }) => {
               if (typeof imageValue === 'object' && imageValue.url) {
                 // If it's a blob URL, return it directly
                 if (imageValue.url.startsWith('blob:')) {
-                  configLogger.log(`Using blob URL directly: ${imageValue.url}`);
+                  console.log(`Using blob URL directly: ${imageValue.url}`);
                   return imageValue.url;
                 }
                 
                 // If it's a path, check for override
                 const path = imageValue.url.startsWith('/') ? imageValue.url.substring(1) : imageValue.url;
-                configLogger.log(`getDisplayUrl called with object URL: ${path}`);
+                console.log(`getDisplayUrl called with object URL: ${path}`);
                 if (virtualFS[path]) {
                   const overrideUrl = virtualFS[path];
-                  configLogger.log(`Using override for ${path}: ${overrideUrl}`);
-                  // In development, remove /public prefix
-                  if (isDevelopment) {
-                    return overrideUrl.replace('/public', '');
-                  }
+                  console.log(`Using override for ${path}: ${overrideUrl}`);
                   return overrideUrl;
                 }
                 return imageValue.url;
