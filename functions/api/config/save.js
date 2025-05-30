@@ -124,6 +124,7 @@ export async function onRequest(context) {
     // Save assets to R2
     if (requestData.assets) {
       console.log('Saving assets to R2...');
+      console.log('Request data assets:', requestData.assets);
       const assetPromises = Object.entries(requestData.assets).map(async ([path, assetData]) => {
         try {
           const key = `configs/${configId}/${path}`;
@@ -165,6 +166,10 @@ export async function onRequest(context) {
             // Handle { data: Blob, contentType: string }
             blob = assetData.data;
             contentType = assetData.contentType || blob.type || getContentType(path);
+          } else if (assetData.file instanceof Blob) {
+            // Handle our image object format { file: Blob, url: string, name: string, originalUrl: string }
+            blob = assetData.file;
+            contentType = blob.type || getContentType(path);
           } else {
             console.error(`Invalid asset data format for ${path}:`, typeof assetData);
             return;
