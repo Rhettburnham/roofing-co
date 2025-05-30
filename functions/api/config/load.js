@@ -143,8 +143,8 @@ export async function onRequest(context) {
             const path = asset.key.replace(`configs/${configId}/`, '');
             console.log(`Successfully loaded asset: ${path}`);
             
-            // Create a direct URL to the asset
-            const url = `/api/assets/${path}`;
+            // Create a direct URL to the asset using query parameter
+            const url = `/api/assets/get?path=${encodeURIComponent(path)}`;
             assets[path] = url;
             console.log(`Created asset URL: ${url}`);
           } else {

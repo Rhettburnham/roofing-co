@@ -1,7 +1,12 @@
 export async function onRequest(context) {
   try {
-    const { request, env, params } = context;
-    const path = params.path.join('/');
+    const { request, env } = context;
+    const url = new URL(request.url);
+    const path = url.searchParams.get('path');
+
+    if (!path) {
+      return new Response('Missing path parameter', { status: 400 });
+    }
 
     // CORS headers
     const corsHeaders = {
