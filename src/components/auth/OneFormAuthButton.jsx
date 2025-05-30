@@ -249,6 +249,82 @@ const traverseAndModifyDataForZip = async (originalDataNode, assetsToCollect, pa
   return originalDataNode;
 };
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB limit for base64 encoding
+const CHUNK_SIZE = 1024 * 1024; // 1MB chunks for large files
+
+// Helper function to check if a file is too large for base64 encoding
+const isFileTooLarge = (file) => {
+  return file.size > MAX_FILE_SIZE;
+};
+
+// Helper function to chunk a large file
+const chunkFile = async (file) => {
+  const chunks = [];
+  let start = 0;
+  
+  while (start < file.size) {
+    const chunk = file.slice(start, start + CHUNK_SIZE);
+    chunks.push(chunk);
+    start += CHUNK_SIZE;
+  }
+  
+  return chunks;
+};
+
+// Helper function to convert a chunk to base64
+const chunkToBase64 = (chunk) => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.readAsDataURL(chunk);
+  });
+};
+
+// Helper function to validate a blob
+const isValidBlob = (blob) => {
+  return blob instanceof Blob && blob.size > 0 && blob.type.startsWith('image/');
+};
+
+// Helper function to ensure we have a valid blob
+const ensureValidBlob = async (dataSource) => {
+  if (dataSource instanceof Blob) {
+    return dataSource;
+  }
+  
+  if (dataSource instanceof File) {
+    return dataSource;
+  }
+  
+  if (typeof dataSource === 'string') {
+    if (dataSource.startsWith('blob:')) {
+      try {
+        const response = await fetch(dataSource);
+        if (!response.ok) throw new Error('Failed to fetch blob URL');
+        const blob = await response.blob();
+        if (!isValidBlob(blob)) throw new Error('Invalid blob from URL');
+        return blob;
+      } catch (error) {
+        console.error('Error fetching blob URL:', error);
+        throw error;
+      }
+    } else if (!dataSource.startsWith('http:') && !dataSource.startsWith('https:') && !dataSource.startsWith('data:')) {
+      try {
+        const fetchUrl = dataSource.startsWith('/') ? dataSource : `/${dataSource}`;
+        const response = await fetch(fetchUrl);
+        if (!response.ok) throw new Error('Failed to fetch local URL');
+        const blob = await response.blob();
+        if (!isValidBlob(blob)) throw new Error('Invalid blob from local URL');
+        return blob;
+      } catch (error) {
+        console.error('Error fetching local URL:', error);
+        throw error;
+      }
+    }
+  }
+  
+  throw new Error('Invalid data source type');
+};
+
 export default function OneFormAuthButton({ 
   formData, 
   themeColors, 
@@ -267,6 +343,7 @@ export default function OneFormAuthButton({
   const [saveClicked, setSaveClicked] = useState(false);
   const [debug, setDebug] = useState('');
   const [isDevelopment] = useState(process.env.NODE_ENV === 'development');
+  const [imagesBeingSent, setImagesBeingSent] = useState([]);
 
   useEffect(() => {
     if (!isDevelopment) {
@@ -363,6 +440,7 @@ export default function OneFormAuthButton({
     try {
       setSaveClicked(true);
       setDebug('Processing data...');
+      setImagesBeingSent([]); // Reset images being sent
 
       if (!formData) {
         setDebug('No form data found');
@@ -371,7 +449,6 @@ export default function OneFormAuthButton({
 
       console.log("[OneFormAuthButton] Starting ZIP generation...");
       const zip = new JSZip();
-     
 
       // Declare variables at the top
       let cleanedNewCombinedData;
@@ -543,32 +620,61 @@ export default function OneFormAuthButton({
 
       const assetPromisesSave = newCollectedAssets.map(async (asset) => {
         try {
+          let blob;
           if (asset.type === 'file' && asset.dataSource instanceof File) {
             console.log(`[OneFormAuthButton] Processing file for save: ${asset.pathInZip} (${asset.dataSource.size} bytes)`);
-            assetsToSave[asset.pathInZip] = asset.dataSource;
+            blob = await ensureValidBlob(asset.dataSource);
+            assetsToSave[asset.pathInZip] = blob;
+            setImagesBeingSent(prev => [...prev, { 
+              path: asset.pathInZip, 
+              data: URL.createObjectURL(blob),
+              size: blob.size,
+              type: blob.type
+            }]);
           } else if (asset.type === 'blob' && asset.dataSource instanceof Blob) {
             console.log(`[OneFormAuthButton] Processing blob for save: ${asset.pathInZip} (${asset.dataSource.size} bytes)`);
-            assetsToSave[asset.pathInZip] = asset.dataSource;
+            blob = await ensureValidBlob(asset.dataSource);
+            assetsToSave[asset.pathInZip] = blob;
+            setImagesBeingSent(prev => [...prev, { 
+              path: asset.pathInZip, 
+              data: URL.createObjectURL(blob),
+              size: blob.size,
+              type: blob.type
+            }]);
           } else if (asset.type === 'url' && typeof asset.dataSource === 'string') {
             if (asset.dataSource.startsWith('blob:')) {
               console.log(`[OneFormAuthButton] Processing blob URL for save: ${asset.pathInZip}`);
-              const response = await fetch(asset.dataSource);
-              if (!response.ok) throw new Error(`Failed to fetch blob ${asset.dataSource}`);
-              const blob = await response.blob();
-              console.log(`[OneFormAuthButton] Processing blob for save: ${asset.pathInZip} (${blob.size} bytes)`);
+              blob = await ensureValidBlob(asset.dataSource);
               assetsToSave[asset.pathInZip] = blob;
+              setImagesBeingSent(prev => [...prev, { 
+                path: asset.pathInZip, 
+                data: URL.createObjectURL(blob),
+                size: blob.size,
+                type: blob.type
+              }]);
             } else if (!asset.dataSource.startsWith('http:') && !asset.dataSource.startsWith('https:') && !asset.dataSource.startsWith('data:')) {
               console.log(`[OneFormAuthButton] Processing local URL for save: ${asset.pathInZip}`);
-              const fetchUrl = asset.dataSource.startsWith('/') ? asset.dataSource : `/${asset.dataSource}`;
-              const response = await fetch(fetchUrl);
-              if (!response.ok) throw new Error(`Failed to fetch ${fetchUrl}`);
-              const blob = await response.blob();
-              console.log(`[OneFormAuthButton] Processing local file for save: ${asset.pathInZip} (${blob.size} bytes)`);
+              blob = await ensureValidBlob(asset.dataSource);
               assetsToSave[asset.pathInZip] = blob;
+              setImagesBeingSent(prev => [...prev, { 
+                path: asset.pathInZip, 
+                data: URL.createObjectURL(blob),
+                size: blob.size,
+                type: blob.type
+              }]);
             }
+          }
+
+          if (blob) {
+            console.log(`[OneFormAuthButton] Valid blob prepared for ${asset.pathInZip}:`, {
+              size: blob.size,
+              type: blob.type,
+              lastModified: blob instanceof File ? blob.lastModified : undefined
+            });
           }
         } catch (error) {
           console.error(`[OneFormAuthButton] Error processing asset ${asset.pathInZip}:`, error);
+          setDebug(`Error processing ${asset.pathInZip}: ${error.message}`);
         }
       });
 
@@ -583,7 +689,7 @@ export default function OneFormAuthButton({
         assetCount: Object.keys(assetsToSave).length,
         assetSizes: Object.entries(assetsToSave).map(([path, data]) => ({
           path,
-          size: data instanceof File || data instanceof Blob ? data.size : 'N/A'
+          size: data.length // For base64 strings, use length
         }))
       });
 
@@ -593,8 +699,8 @@ export default function OneFormAuthButton({
           // Check for empty objects in assets
           const emptyAssets = Object.entries(assetsToSave)
             .filter(([_, value]) => {
-              if (value instanceof File || value instanceof Blob) {
-                return value.size === 0;
+              if (typeof value === 'string' && value.startsWith('data:')) {
+                return value.length === 0;
               }
               return !value || Object.keys(value).length === 0;
             })
@@ -613,8 +719,8 @@ export default function OneFormAuthButton({
             `- Assets: ${Object.keys(assetsToSave).length}\n\n` +
             `Empty Asset Objects:\n${emptyAssets.length > 0 ? emptyAssets.join('\n') : 'None'}\n\n` +
             `Asset Object Details:\n${Object.entries(assetsToSave).map(([key, value]) => {
-              if (value instanceof File || value instanceof Blob) {
-                return `${key}: ${value.constructor.name} (size: ${value.size} bytes)`;
+              if (typeof value === 'string' && value.startsWith('data:')) {
+                return `${key}: base64 string (size: ${value.length} bytes)`;
               }
               return `${key}: ${typeof value}${typeof value === 'object' ? ` (keys: ${Object.keys(value).length})` : ''}`;
             }).join('\n')}\n\n` +
@@ -633,16 +739,16 @@ export default function OneFormAuthButton({
         } else {
           // In production, save to server
           const response = await fetch('/api/config/save', {
-        method: 'POST',
-        headers: {
+            method: 'POST',
+            headers: {
               'Content-Type': 'application/json'
-        },
+            },
             credentials: 'include',
-        body: JSON.stringify({
+            body: JSON.stringify({
               ...dataToSave,
               assets: assetsToSave
-        })
-      });
+            })
+          });
 
           if (!response.ok) {
             throw new Error(`Failed to save: ${response.statusText}`);
@@ -692,6 +798,22 @@ export default function OneFormAuthButton({
             <pre>{debug}</pre>
           </div>
         )}
+        {imagesBeingSent.length > 0 && (
+          <div className="bg-white border border-gray-400 p-4 rounded text-sm max-w-md">
+            <h3 className="font-bold mb-2">Images Being Sent:</h3>
+            <div className="grid grid-cols-2 gap-2">
+              {imagesBeingSent.map((img, index) => (
+                <div key={index} className="border border-gray-200 p-2">
+                  <img src={img.data} alt={img.path} className="w-full h-auto mb-1" />
+                  <p className="text-xs truncate">{img.path}</p>
+                  <p className="text-xs text-gray-500">
+                    {Math.round(img.size / 1024)}KB - {img.type}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         <button
           onClick={handleSaveClick}
           className="px-4 py-2 rounded-full bg-blue-600 text-white 
@@ -715,6 +837,23 @@ export default function OneFormAuthButton({
       {debug && (
         <div className="bg-gray-100 border border-gray-400 text-gray-700 px-4 py-3 rounded mb-4 text-sm max-w-md">
           <pre>{debug}</pre>
+        </div>
+      )}
+
+      {imagesBeingSent.length > 0 && (
+        <div className="bg-white border border-gray-400 p-4 rounded text-sm max-w-md">
+          <h3 className="font-bold mb-2">Images Being Sent:</h3>
+          <div className="grid grid-cols-2 gap-2">
+            {imagesBeingSent.map((img, index) => (
+              <div key={index} className="border border-gray-200 p-2">
+                <img src={img.data} alt={img.path} className="w-full h-auto mb-1" />
+                <p className="text-xs truncate">{img.path}</p>
+                <p className="text-xs text-gray-500">
+                  {Math.round(img.size / 1024)}KB - {img.type}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
