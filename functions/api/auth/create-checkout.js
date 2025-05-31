@@ -74,9 +74,34 @@ export async function onRequest(context) {
     // Log Stripe key (first few characters) for debugging
     console.log('Using Stripe key:', env.STRIPE_SECRET_KEY.substring(0, 7) + '...');
 
-    // First get the price details to verify it exists
-    console.log('Fetching price details for:', priceId);
-    const priceResponse = await fetch(`https://api.stripe.com/v1/prices/${priceId}`, {
+    // First get the product details
+    console.log('Fetching product details for:', priceId);
+    const productResponse = await fetch(`https://api.stripe.com/v1/products/${priceId}`, {
+      headers: {
+        'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    });
+
+    if (!productResponse.ok) {
+      const productError = await productResponse.text();
+      console.error('Failed to fetch product details:', {
+        status: productResponse.status,
+        error: productError
+      });
+      throw new Error(`Failed to fetch product details: ${productError}`);
+    }
+
+    const productDetails = await productResponse.json();
+    console.log('Product details:', {
+      id: productDetails.id,
+      name: productDetails.name,
+      default_price: productDetails.default_price
+    });
+
+    // Now get the price details using the product's default price
+    console.log('Fetching price details for:', productDetails.default_price);
+    const priceResponse = await fetch(`https://api.stripe.com/v1/prices/${productDetails.default_price}`, {
       headers: {
         'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
         'Content-Type': 'application/x-www-form-urlencoded'
@@ -102,7 +127,7 @@ export async function onRequest(context) {
 
     // Create checkout session using REST API
     console.log('Creating checkout session with:', {
-      priceId,
+      priceId: priceDetails.id,
       userId: userSession.user_id,
       configId: userSession.config_id,
       planType,
@@ -117,7 +142,7 @@ export async function onRequest(context) {
       },
       body: new URLSearchParams({
         'payment_method_types[]': 'card',
-        'line_items[][price]': priceId,
+        'line_items[][price]': priceDetails.id,
         'line_items[][quantity]': '1',
         mode: 'subscription',
         'success_url': `${request.headers.get('origin')}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
