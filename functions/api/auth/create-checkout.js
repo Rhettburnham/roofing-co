@@ -29,6 +29,7 @@ export async function onRequest(context) {
     // Get session ID from cookie
     const sessionId = request.headers.get('cookie')?.match(/session_id=([^;]+)/)?.[1];
     if (!sessionId) {
+      console.error('No session ID found in cookie');
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: {
@@ -44,6 +45,7 @@ export async function onRequest(context) {
     ).bind(sessionId).first();
 
     if (!userSession) {
+      console.error('Invalid or expired session:', { sessionId });
       return new Response(JSON.stringify({ error: 'Invalid session' }), {
         status: 401,
         headers: {
@@ -54,8 +56,12 @@ export async function onRequest(context) {
     }
 
     // Get request body
-    const { priceId, planType } = await request.json();
+    const requestBody = await request.json();
+    console.log('Checkout request body:', requestBody);
+
+    const { priceId, planType } = requestBody;
     if (!priceId) {
+      console.error('Missing priceId in request:', requestBody);
       return new Response(JSON.stringify({ error: 'Price ID is required' }), {
         status: 400,
         headers: {
@@ -65,7 +71,44 @@ export async function onRequest(context) {
       });
     }
 
+    // Log Stripe key (first few characters) for debugging
+    console.log('Using Stripe key:', env.STRIPE_SECRET_KEY.substring(0, 7) + '...');
+
+    // First get the price details to verify it exists
+    console.log('Fetching price details for:', priceId);
+    const priceResponse = await fetch(`https://api.stripe.com/v1/prices/${priceId}`, {
+      headers: {
+        'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    });
+
+    if (!priceResponse.ok) {
+      const priceError = await priceResponse.text();
+      console.error('Failed to fetch price details:', {
+        status: priceResponse.status,
+        error: priceError
+      });
+      throw new Error(`Failed to fetch price details: ${priceError}`);
+    }
+
+    const priceDetails = await priceResponse.json();
+    console.log('Price details:', {
+      id: priceDetails.id,
+      amount: priceDetails.unit_amount,
+      currency: priceDetails.currency,
+      type: priceDetails.type
+    });
+
     // Create checkout session using REST API
+    console.log('Creating checkout session with:', {
+      priceId,
+      userId: userSession.user_id,
+      configId: userSession.config_id,
+      planType,
+      email: userSession.email
+    });
+
     const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {
       method: 'POST',
       headers: {
@@ -87,10 +130,22 @@ export async function onRequest(context) {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to create checkout session');
+      const errorText = await response.text();
+      console.error('Stripe API error:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+      throw new Error(`Failed to create checkout session: ${errorText}`);
     }
 
     const checkoutSession = await response.json();
+    console.log('Checkout session created successfully:', {
+      id: checkoutSession.id,
+      url: checkoutSession.url,
+      status: checkoutSession.status
+    });
 
     return new Response(JSON.stringify({ sessionId: checkoutSession.id }), {
       headers: {
@@ -99,7 +154,11 @@ export async function onRequest(context) {
       },
     });
   } catch (error) {
-    console.error('Error creating checkout session:', error);
+    console.error('Error creating checkout session:', {
+      error: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     return new Response(JSON.stringify({ 
       error: 'Failed to create checkout session',
       details: error.message 

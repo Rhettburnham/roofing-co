@@ -29,6 +29,7 @@ export async function onRequest(context) {
     // Get session ID from cookie
     const sessionId = request.headers.get('cookie')?.match(/session_id=([^;]+)/)?.[1];
     if (!sessionId) {
+      console.error('No session ID found in cookie');
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: {
@@ -44,6 +45,7 @@ export async function onRequest(context) {
     ).bind(sessionId).first();
 
     if (!userSession) {
+      console.error('Invalid or expired session:', { sessionId });
       return new Response(JSON.stringify({ error: 'Invalid session' }), {
         status: 401,
         headers: {
@@ -54,8 +56,12 @@ export async function onRequest(context) {
     }
 
     // Get request body
-    const { priceId, planType } = await request.json();
+    const requestBody = await request.json();
+    console.log('Payment intent request body:', requestBody);
+
+    const { priceId, planType } = requestBody;
     if (!priceId) {
+      console.error('Missing priceId in request:', requestBody);
       return new Response(JSON.stringify({ error: 'Price ID is required' }), {
         status: 400,
         headers: {
@@ -65,7 +71,44 @@ export async function onRequest(context) {
       });
     }
 
+    // Log Stripe key (first few characters) for debugging
+    console.log('Using Stripe key:', env.STRIPE_SECRET_KEY.substring(0, 7) + '...');
+
+    // First get the price details to get the amount
+    console.log('Fetching price details for:', priceId);
+    const priceResponse = await fetch(`https://api.stripe.com/v1/prices/${priceId}`, {
+      headers: {
+        'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    });
+
+    if (!priceResponse.ok) {
+      const priceError = await priceResponse.text();
+      console.error('Failed to fetch price details:', {
+        status: priceResponse.status,
+        error: priceError
+      });
+      throw new Error(`Failed to fetch price details: ${priceError}`);
+    }
+
+    const priceDetails = await priceResponse.json();
+    console.log('Price details:', {
+      id: priceDetails.id,
+      amount: priceDetails.unit_amount,
+      currency: priceDetails.currency,
+      type: priceDetails.type
+    });
+
     // Create payment intent using REST API
+    console.log('Creating payment intent with:', {
+      amount: priceDetails.unit_amount,
+      currency: priceDetails.currency,
+      userId: userSession.user_id,
+      configId: userSession.config_id,
+      planType
+    });
+
     const response = await fetch('https://api.stripe.com/v1/payment_intents', {
       method: 'POST',
       headers: {
@@ -73,22 +116,36 @@ export async function onRequest(context) {
         'Content-Type': 'application/x-www-form-urlencoded'
       },
       body: new URLSearchParams({
-        amount: planType === 'monthly' ? '2499' : '24000',
-        currency: 'usd',
+        amount: priceDetails.unit_amount,
+        currency: priceDetails.currency,
         'automatic_payment_methods[enabled]': 'true',
         metadata: JSON.stringify({
           userId: userSession.user_id,
           configId: userSession.config_id,
           planType: planType || 'monthly',
+          priceId: priceId
         })
       })
     });
 
     if (!response.ok) {
-      throw new Error('Failed to create payment intent');
+      const errorText = await response.text();
+      console.error('Stripe API error:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+      throw new Error(`Failed to create payment intent: ${errorText}`);
     }
 
     const paymentIntent = await response.json();
+    console.log('Payment intent created successfully:', {
+      id: paymentIntent.id,
+      amount: paymentIntent.amount,
+      currency: paymentIntent.currency,
+      status: paymentIntent.status
+    });
 
     return new Response(JSON.stringify({ 
       clientSecret: paymentIntent.client_secret 
@@ -99,7 +156,11 @@ export async function onRequest(context) {
       },
     });
   } catch (error) {
-    console.error('Error creating payment intent:', error);
+    console.error('Error creating payment intent:', {
+      error: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     return new Response(JSON.stringify({ 
       error: 'Failed to create payment intent',
       details: error.message 
