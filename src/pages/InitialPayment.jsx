@@ -92,6 +92,31 @@ const InitialPayment = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  // Check authentication on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/status', {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Accept': 'application/json',
+          },
+        });
+        
+        const data = await response.json();
+        if (!data.isAuthenticated) {
+          navigate('/login');
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        navigate('/login');
+      }
+    };
+
+    checkAuth();
+  }, [navigate]);
+
   // Fetch prices and create payment intent
   useEffect(() => {
     const initializePayment = async () => {

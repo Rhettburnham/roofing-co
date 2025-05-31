@@ -1093,7 +1093,7 @@ export default function OneFormAuthButton({
               {saveClicked ? 'Saving...' : 'Save Changes'}
             </button>
             <button
-              onClick={() => window.location.href = '/booking'}
+              onClick={() => window.location.href = '/initial-payment'}
               className="px-4 py-2 rounded-full bg-green-600 text-white 
                        border border-green-700 hover:bg-green-700 
                        transition-all duration-300 shadow-lg"
