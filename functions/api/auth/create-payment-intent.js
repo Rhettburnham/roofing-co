@@ -144,12 +144,10 @@ export async function onRequest(context) {
         amount: priceDetails.unit_amount,
         currency: priceDetails.currency,
         'automatic_payment_methods[enabled]': 'true',
-        metadata: JSON.stringify({
-          userId: userSession.user_id,
-          configId: userSession.config_id,
-          planType: planType || 'monthly',
-          priceId: priceDetails.id
-        })
+        'metadata[userId]': userSession.user_id,
+        'metadata[configId]': userSession.config_id,
+        'metadata[planType]': planType || 'monthly',
+        'metadata[priceId]': priceDetails.id
       })
     });
 
