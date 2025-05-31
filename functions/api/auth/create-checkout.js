@@ -66,7 +66,8 @@ export async function onRequest(context) {
     }
 
     // Initialize Stripe
-    const stripe = require('stripe')(env.STRIPE_SECRET_KEY);
+    const Stripe = (await import('stripe')).default;
+    const stripe = new Stripe(env.STRIPE_SECRET_KEY);
 
     // Create Stripe checkout session
     const checkoutSession = await stripe.checkout.sessions.create({
