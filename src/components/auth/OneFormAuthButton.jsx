@@ -1082,15 +1082,25 @@ export default function OneFormAuthButton({
 
       {isLoggedIn ? (
         <>
-          <button
-            onClick={handleSaveClick}
-            className="px-4 py-2 rounded-full bg-blue-600 text-white 
-                     border border-blue-700 hover:bg-blue-700 
-                     transition-all duration-300 shadow-lg"
-            disabled={saveClicked}
-          >
-            {saveClicked ? 'Saving...' : 'Save Changes'}
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={handleSaveClick}
+              className="px-4 py-2 rounded-full bg-blue-600 text-white 
+                       border border-blue-700 hover:bg-blue-700 
+                       transition-all duration-300 shadow-lg"
+              disabled={saveClicked}
+            >
+              {saveClicked ? 'Saving...' : 'Save Changes'}
+            </button>
+            <button
+              onClick={() => window.location.href = '/booking'}
+              className="px-4 py-2 rounded-full bg-green-600 text-white 
+                       border border-green-700 hover:bg-green-700 
+                       transition-all duration-300 shadow-lg"
+            >
+              Buy Plan
+            </button>
+          </div>
           <button
             onClick={() => setShowSignOut(!showSignOut)}
             className="px-4 py-2 rounded-full bg-gray-600 text-white 
