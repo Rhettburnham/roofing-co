@@ -53,6 +53,9 @@ export async function onRequest(context) {
       });
     }
 
+    // Log Stripe key (first few characters) for debugging
+    console.log('Using Stripe key:', env.STRIPE_SECRET_KEY.substring(0, 7) + '...');
+
     // Fetch prices from Stripe using REST API
     const [monthlyResponse, yearlyResponse] = await Promise.all([
       fetch('https://api.stripe.com/v1/prices/prod_SPQCEDY9mS3vI3', {
@@ -69,14 +72,39 @@ export async function onRequest(context) {
       })
     ]);
 
+    // Log response details for debugging
+    console.log('Monthly price response:', {
+      status: monthlyResponse.status,
+      statusText: monthlyResponse.statusText,
+      headers: Object.fromEntries(monthlyResponse.headers.entries())
+    });
+
+    console.log('Yearly price response:', {
+      status: yearlyResponse.status,
+      statusText: yearlyResponse.statusText,
+      headers: Object.fromEntries(yearlyResponse.headers.entries())
+    });
+
     if (!monthlyResponse.ok || !yearlyResponse.ok) {
-      throw new Error('Failed to fetch prices from Stripe');
+      const monthlyError = await monthlyResponse.text();
+      const yearlyError = await yearlyResponse.text();
+      console.error('Stripe API errors:', {
+        monthly: monthlyError,
+        yearly: yearlyError
+      });
+      throw new Error(`Failed to fetch prices from Stripe: ${monthlyError || yearlyError}`);
     }
 
     const [monthlyPrice, yearlyPrice] = await Promise.all([
       monthlyResponse.json(),
       yearlyResponse.json()
     ]);
+
+    // Log successful price data
+    console.log('Retrieved prices:', {
+      monthly: monthlyPrice,
+      yearly: yearlyPrice
+    });
 
     return new Response(JSON.stringify({
       monthly: {
