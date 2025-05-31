@@ -10,6 +10,10 @@ pages_build_output_dir = "dist"
 # Directory containing your Functions:
 pages_functions_dir = "functions"
 
+# ── Dependencies ───────────────────────────────────────────────────────────────
+[dependencies]
+stripe = "^14.17.0"
+
 # ── Preview Environment ────────────────────────────────────────────────────────
 [env.preview]
 name = "roofing-co-preview"
