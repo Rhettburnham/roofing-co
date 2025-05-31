@@ -54,7 +54,8 @@ export async function onRequest(context) {
     }
 
     // Initialize Stripe
-    const stripe = require('stripe')(env.STRIPE_SECRET_KEY);
+    const Stripe = (await import('stripe')).default;
+    const stripe = new Stripe(env.STRIPE_SECRET_KEY);
 
     // Fetch prices from Stripe
     const [monthlyPrice, yearlyPrice] = await Promise.all([
@@ -79,7 +80,10 @@ export async function onRequest(context) {
     });
   } catch (error) {
     console.error('Error fetching prices:', error);
-    return new Response(JSON.stringify({ error: 'Failed to fetch prices' }), {
+    return new Response(JSON.stringify({ 
+      error: 'Failed to fetch prices',
+      details: error.message 
+    }), {
       status: 500,
       headers: {
         'Content-Type': 'application/json',
