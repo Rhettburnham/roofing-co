@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import { loadStripe } from '@stripe/stripe-js';
 import {
   Elements,
@@ -89,7 +88,7 @@ const InitialPayment = () => {
     yearly: { amount: 0, currency: 'usd' }
   });
   const [clientSecret, setClientSecret] = useState(null);
-  const { user } = useAuth();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
 
   // Check authentication on mount
@@ -107,6 +106,8 @@ const InitialPayment = () => {
         const data = await response.json();
         if (!data.isAuthenticated) {
           navigate('/login');
+        } else {
+          setIsAuthenticated(true);
         }
       } catch (error) {
         console.error('Auth check failed:', error);
@@ -162,8 +163,10 @@ const InitialPayment = () => {
       }
     };
 
-    initializePayment();
-  }, [selectedPlan]);
+    if (isAuthenticated) {
+      initializePayment();
+    }
+  }, [selectedPlan, isAuthenticated]);
 
   const formatPrice = (amount, currency = 'usd') => {
     return new Intl.NumberFormat('en-US', {
@@ -172,7 +175,7 @@ const InitialPayment = () => {
     }).format(amount / 100);
   };
 
-  if (!user) {
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-lg">
