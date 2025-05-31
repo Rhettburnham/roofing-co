@@ -56,15 +56,50 @@ export async function onRequest(context) {
     // Log Stripe key (first few characters) for debugging
     console.log('Using Stripe key:', env.STRIPE_SECRET_KEY.substring(0, 7) + '...');
 
-    // Fetch prices from Stripe using REST API
-    const [monthlyResponse, yearlyResponse] = await Promise.all([
-      fetch('https://api.stripe.com/v1/prices/prod_SPQCEDY9mS3vI3', {
+    // First fetch the products to get their price IDs
+    const [monthlyProductResponse, yearlyProductResponse] = await Promise.all([
+      fetch(`https://api.stripe.com/v1/products/prod_SPQCEDY9mS3vI3`, {
         headers: {
           'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
           'Content-Type': 'application/x-www-form-urlencoded'
         }
       }),
-      fetch('https://api.stripe.com/v1/prices/prod_SPQDERFJ8Ve82B', {
+      fetch(`https://api.stripe.com/v1/products/prod_SPQDERFJ8Ve82B`, {
+        headers: {
+          'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      })
+    ]);
+
+    if (!monthlyProductResponse.ok || !yearlyProductResponse.ok) {
+      const monthlyError = await monthlyProductResponse.text();
+      const yearlyError = await yearlyProductResponse.text();
+      console.error('Stripe API errors:', {
+        monthly: monthlyError,
+        yearly: yearlyError
+      });
+      throw new Error(`Failed to fetch products from Stripe: ${monthlyError || yearlyError}`);
+    }
+
+    const [monthlyProduct, yearlyProduct] = await Promise.all([
+      monthlyProductResponse.json(),
+      yearlyProductResponse.json()
+    ]);
+
+    // Get the default price IDs from the products
+    const monthlyPriceId = monthlyProduct.default_price;
+    const yearlyPriceId = yearlyProduct.default_price;
+
+    // Now fetch the actual prices
+    const [monthlyPriceResponse, yearlyPriceResponse] = await Promise.all([
+      fetch(`https://api.stripe.com/v1/prices/${monthlyPriceId}`, {
+        headers: {
+          'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      }),
+      fetch(`https://api.stripe.com/v1/prices/${yearlyPriceId}`, {
         headers: {
           'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
           'Content-Type': 'application/x-www-form-urlencoded'
@@ -74,20 +109,20 @@ export async function onRequest(context) {
 
     // Log response details for debugging
     console.log('Monthly price response:', {
-      status: monthlyResponse.status,
-      statusText: monthlyResponse.statusText,
-      headers: Object.fromEntries(monthlyResponse.headers.entries())
+      status: monthlyPriceResponse.status,
+      statusText: monthlyPriceResponse.statusText,
+      headers: Object.fromEntries(monthlyPriceResponse.headers.entries())
     });
 
     console.log('Yearly price response:', {
-      status: yearlyResponse.status,
-      statusText: yearlyResponse.statusText,
-      headers: Object.fromEntries(yearlyResponse.headers.entries())
+      status: yearlyPriceResponse.status,
+      statusText: yearlyPriceResponse.statusText,
+      headers: Object.fromEntries(yearlyPriceResponse.headers.entries())
     });
 
-    if (!monthlyResponse.ok || !yearlyResponse.ok) {
-      const monthlyError = await monthlyResponse.text();
-      const yearlyError = await yearlyResponse.text();
+    if (!monthlyPriceResponse.ok || !yearlyPriceResponse.ok) {
+      const monthlyError = await monthlyPriceResponse.text();
+      const yearlyError = await yearlyPriceResponse.text();
       console.error('Stripe API errors:', {
         monthly: monthlyError,
         yearly: yearlyError
@@ -96,8 +131,8 @@ export async function onRequest(context) {
     }
 
     const [monthlyPrice, yearlyPrice] = await Promise.all([
-      monthlyResponse.json(),
-      yearlyResponse.json()
+      monthlyPriceResponse.json(),
+      yearlyPriceResponse.json()
     ]);
 
     // Log successful price data
