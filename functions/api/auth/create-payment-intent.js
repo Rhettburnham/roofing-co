@@ -65,22 +65,30 @@ export async function onRequest(context) {
       });
     }
 
-    // Initialize Stripe
-    const stripe = new (await import('stripe')).default(env.STRIPE_SECRET_KEY);
-
-    // Create a payment intent
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: planType === 'monthly' ? 2499 : 24000, // Amount in cents
-      currency: 'usd',
-      automatic_payment_methods: {
-        enabled: true,
+    // Create payment intent using REST API
+    const response = await fetch('https://api.stripe.com/v1/payment_intents', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
       },
-      metadata: {
-        userId: userSession.user_id,
-        configId: userSession.config_id,
-        planType: planType || 'monthly',
-      },
+      body: new URLSearchParams({
+        amount: planType === 'monthly' ? '2499' : '24000',
+        currency: 'usd',
+        'automatic_payment_methods[enabled]': 'true',
+        metadata: JSON.stringify({
+          userId: userSession.user_id,
+          configId: userSession.config_id,
+          planType: planType || 'monthly',
+        })
+      })
     });
+
+    if (!response.ok) {
+      throw new Error('Failed to create payment intent');
+    }
+
+    const paymentIntent = await response.json();
 
     return new Response(JSON.stringify({ 
       clientSecret: paymentIntent.client_secret 

@@ -53,13 +53,29 @@ export async function onRequest(context) {
       });
     }
 
-    // Initialize Stripe
-    const stripe = new (await import('stripe')).default(env.STRIPE_SECRET_KEY);
+    // Fetch prices from Stripe using REST API
+    const [monthlyResponse, yearlyResponse] = await Promise.all([
+      fetch('https://api.stripe.com/v1/prices/prod_SPQCEDY9mS3vI3', {
+        headers: {
+          'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      }),
+      fetch('https://api.stripe.com/v1/prices/prod_SPQDERFJ8Ve82B', {
+        headers: {
+          'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      })
+    ]);
 
-    // Fetch prices from Stripe
+    if (!monthlyResponse.ok || !yearlyResponse.ok) {
+      throw new Error('Failed to fetch prices from Stripe');
+    }
+
     const [monthlyPrice, yearlyPrice] = await Promise.all([
-      stripe.prices.retrieve('prod_SPQCEDY9mS3vI3'),
-      stripe.prices.retrieve('prod_SPQDERFJ8Ve82B')
+      monthlyResponse.json(),
+      yearlyResponse.json()
     ]);
 
     return new Response(JSON.stringify({

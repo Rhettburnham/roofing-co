@@ -65,28 +65,32 @@ export async function onRequest(context) {
       });
     }
 
-    // Initialize Stripe
-    const stripe = new (await import('stripe')).default(env.STRIPE_SECRET_KEY);
-
-    // Create Stripe checkout session
-    const checkoutSession = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
-      mode: 'subscription',
-      success_url: `${request.headers.get('origin')}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${request.headers.get('origin')}/payment-cancelled`,
-      customer_email: userSession.email,
-      metadata: {
-        userId: userSession.user_id,
-        configId: userSession.config_id,
-        planType: planType || 'monthly', // Default to monthly if not specified
+    // Create checkout session using REST API
+    const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
       },
+      body: new URLSearchParams({
+        'payment_method_types[]': 'card',
+        'line_items[][price]': priceId,
+        'line_items[][quantity]': '1',
+        mode: 'subscription',
+        'success_url': `${request.headers.get('origin')}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+        'cancel_url': `${request.headers.get('origin')}/payment-cancelled`,
+        'customer_email': userSession.email,
+        'metadata[userId]': userSession.user_id,
+        'metadata[configId]': userSession.config_id,
+        'metadata[planType]': planType || 'monthly'
+      })
     });
+
+    if (!response.ok) {
+      throw new Error('Failed to create checkout session');
+    }
+
+    const checkoutSession = await response.json();
 
     return new Response(JSON.stringify({ sessionId: checkoutSession.id }), {
       headers: {
