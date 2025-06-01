@@ -125,9 +125,41 @@ export async function onRequest(context) {
       type: priceDetails.type
     });
 
+    // First, create or retrieve the customer
+    console.log('Creating/retrieving customer for:', userSession.email);
+    const customerResponse = await fetch('https://api.stripe.com/v1/customers', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({
+        email: userSession.email,
+        'metadata[userId]': userSession.user_id,
+        'metadata[configId]': userSession.config_id,
+        'metadata[planType]': planType || 'monthly'
+      })
+    });
+
+    if (!customerResponse.ok) {
+      const customerError = await customerResponse.text();
+      console.error('Failed to create customer:', {
+        status: customerResponse.status,
+        error: customerError
+      });
+      throw new Error(`Failed to create customer: ${customerError}`);
+    }
+
+    const customer = await customerResponse.json();
+    console.log('Customer created/retrieved:', {
+      id: customer.id,
+      email: customer.email
+    });
+
     // Create checkout session using REST API
     console.log('Creating checkout session with:', {
       priceId: priceDetails.id,
+      customerId: customer.id,
       userId: userSession.user_id,
       configId: userSession.config_id,
       planType,
@@ -147,10 +179,13 @@ export async function onRequest(context) {
         mode: 'subscription',
         'success_url': `${request.headers.get('origin')}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
         'cancel_url': `${request.headers.get('origin')}/payment-cancelled`,
-        'customer_email': userSession.email,
-        'metadata[userId]': userSession.user_id,
-        'metadata[configId]': userSession.config_id,
-        'metadata[planType]': planType || 'monthly'
+        customer: customer.id,
+        'subscription_data[metadata][userId]': userSession.user_id,
+        'subscription_data[metadata][configId]': userSession.config_id,
+        'subscription_data[metadata][planType]': planType || 'monthly',
+        'subscription_data[metadata][priceId]': priceDetails.id,
+        'subscription_data[metadata][productId]': productDetails.id,
+        'subscription_data[metadata][customerId]': customer.id
       })
     });
 
@@ -169,10 +204,14 @@ export async function onRequest(context) {
     console.log('Checkout session created successfully:', {
       id: checkoutSession.id,
       url: checkoutSession.url,
-      status: checkoutSession.status
+      status: checkoutSession.status,
+      subscription: checkoutSession.subscription
     });
 
-    return new Response(JSON.stringify({ sessionId: checkoutSession.id }), {
+    return new Response(JSON.stringify({ 
+      sessionId: checkoutSession.id,
+      url: checkoutSession.url
+    }), {
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/json',
