@@ -37,8 +37,8 @@ const CheckoutForm = ({ selectedPlan, prices }) => {
         },
         credentials: 'include',
         body: JSON.stringify({
-          priceId: selectedPlan,
-          planType: selectedPlan === 'price_1RUbM0ChVcyXd9OlzbPsT3sx' ? 'monthly' : 'yearly'
+          priceId: selectedPlan === 'monthly' ? MONTHLY_PRICE_ID : YEARLY_PRICE_ID,
+          planType: selectedPlan
         }),
       });
 
@@ -80,7 +80,7 @@ const CheckoutForm = ({ selectedPlan, prices }) => {
         disabled={!stripe || loading}
         className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
       >
-        {loading ? 'Processing...' : `Pay ${selectedPlan === 'monthly' ? prices.monthly.amount / 100 : prices.yearly.amount / 100}`}
+        {loading ? 'Processing...' : `Subscribe ${selectedPlan === 'monthly' ? 'Monthly' : 'Yearly'}`}
       </button>
     </form>
   );

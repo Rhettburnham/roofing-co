@@ -240,9 +240,6 @@ export async function onRequest(context) {
         'subscription_data[metadata][productId]': productDetails.id,
         'subscription_data[metadata][customerId]': customer.id,
         'billing_address_collection': 'required',
-        'customer_update[name]': 'auto',
-        'customer_update[email]': 'auto',
-        'customer_update[address]': 'auto',
         'payment_method_collection': 'always',
         'allow_promotion_codes': 'true'
       })
