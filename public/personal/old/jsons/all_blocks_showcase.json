@@ -1,0 +1,349 @@
+{
+  "id": "all-blocks-showcase",
+  "name": "All Service Blocks Showcase",
+  "title": "All Service Blocks (Development Preview)",
+  "blocks": [
+    {
+      "blockName": "HeroBlock",
+      "config": {
+        "title": "Commercial Roofing Solutions",
+        "backgroundImage": "public/personal/old/img/all_dev/assets/images/growth/hero_growth.jpg",
+        "backgroundColor": "#222222",
+        "textColor": "#FFFFFF",
+        "buttonText": "Learn More",
+        "buttonLink": "/commercial",
+        "buttonBgColor": "#007BFF",
+        "buttonTextColor": "#FFFFFF",
+        "shrinkAfterMs": 1000,
+        "initialHeight": "40vh",
+        "finalHeight": "20vh"
+      }
+    },
+    {
+      "blockName": "ActionButtonBlock",
+      "config": {
+        "buttonText": "Schedule an Inspection",
+        "buttonLink": "/#contact",
+        "buttonBgColor": "#28A745",
+        "buttonTextColor": "#FFFFFF",
+        "iconPack": "lucide",
+        "iconName": "CalendarCheck",
+        "iconColor": "#FFFFFF",
+        "containerBgColor": "transparent"
+      }
+    },
+    {
+      "blockName": "HeaderBannerBlock",
+      "config": {
+        "title": "Our Gutter Options",
+        "textAlign": "text-center",
+        "fontSize": "text-4xl",
+        "textColor": "#F0F0F0",
+        "bannerHeight": "h-48",
+        "paddingY": "py-12",
+        "backgroundImage": "public/personal/old/img/all_dev/assets/images/growth/hero_growth.jpg",
+        "backgroundColor": "#1F2937"
+      }
+    },
+    {
+      "blockName": "GeneralList",
+      "config": {
+        "title": "Choose Your Flat Roofing Option",
+        "backgroundColor": "#F0F8FF",
+        "textColor": "#2F4F4F",
+        "itemBackgroundColor": "#FFFFFF",
+        "itemTextColor": "#333333",
+        "imageBorderColor": "#ADD8E6",
+        "items": [
+          {
+            "id": "bur",
+            "name": "Built-Up Roofing (BUR)",
+            "description": "BUR is a traditional roofing system made of multiple layers of bitumen and reinforcing fabrics. The resulting membrane is known for excellent waterproofing and durability.",
+            "advantages": [
+              "Durability: Lifespans of 15–30+ years",
+              "Excellent Waterproofing",
+              "UV Resistance"
+            ],
+            "pictures": [
+              "public/personal/old/img/all_dev/assets/images/builtup/builtupdemo.avif",
+              "public/personal/old/img/all_dev/assets/images/builtup/builtuproofing2.jpg"
+            ]
+          },
+          {
+            "id": "modbit",
+            "name": "Modified Bitumen Roofing",
+            "description": "Modified Bitumen improves upon BUR by adding polymers, increasing elasticity and weather resistance. Often installed in rolled sheets.",
+            "advantages": [
+              "Enhanced Durability",
+              "Flexibility in temperature changes",
+              "Ease of Installation"
+            ],
+            "pictures": [
+              "public/personal/old/img/all_dev/assets/images/builtup/modified1.jpg",
+              "public/personal/old/img/all_dev/assets/images/builtup/modified2.avif"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "blockName": "VideoCTA",
+      "config": {
+        "videoSrc": "/assets/videos/roof_coating.mp4",
+        "videoType": "local",
+        "title": "Ready for a Roof Coating?",
+        "description": "Contact us today for a free roof inspection and personalized plan to protect your investment.",
+        "buttonText": "Schedule Inspection",
+        "buttonLink": "/#contact",
+        "textColor": "#FFFFFF",
+        "textAlignment": "center",
+        "overlayOpacity": 0.7,
+        "backgroundColor": "#111827",
+        "buttonBgColor": "#D97706",
+        "buttonTextColor": "#FFFFFF",
+        "buttonIconPack": "lucide",
+        "buttonIconName": "PlayCircle"
+      }
+    },
+    {
+      "blockName": "GeneralListVariant2",
+      "config": {
+        "title": "Types of Roof Coatings",
+        "backgroundColor": "#EFF6FF",
+        "textColor": "#1E3A8A",
+        "itemCardBackgroundColor": "#FFFFFF",
+        "itemTitleColor": "#1E40AF",
+        "itemTextColor": "#374151",
+        "imageBorderColor": "#93C5FD",
+        "items": [
+          {
+            "id": "acrylic",
+            "name": "Acrylic Coatings",
+            "description": "Water-based, cost-effective, known for reflectivity and UV resistance.",
+            "features": ["Cost-Effective", "Good Reflectivity", "Easy Application"],
+            "imageUrl": "public/personal/old/img/all_dev/assets/images/coating/acrylic.webp"
+          },
+          {
+            "id": "silicone",
+            "name": "Silicone Coatings",
+            "description": "Reflective, excel with ponding water, superior UV/weather resistance.",
+            "features": ["Exceptional Water Resistance", "High UV Stability", "Durable"],
+            "imageUrl": "public/personal/old/img/all_dev/assets/images/coating/silicone.jpg"
+          }
+        ]
+      }
+    },
+    {
+      "blockName": "OverviewAndAdvantagesBlock",
+      "config": {
+        "heading": "Single-Ply Membrane Advantages",
+        "description": "Single-ply membranes like TPO, PVC, and EPDM are popular for commercial and industrial roofs. Key benefits include:",
+        "bullets": [
+          { "title": "Durability", "desc": "Resistant to punctures, tears, and general wear." },
+          { "title": "Flexibility", "desc": "Handles building movements & temperature swings." },
+          { "title": "UV Resistance", "desc": "Helps prevent damage from intense sunlight." }
+        ],
+        "footnote": "Installation is typically quick and cost-effective.",
+        "backgroundColor": "#F9FAFB",
+        "headingColor": "#111827",
+        "descriptionColor": "#374151",
+        "bulletTitleColor": "#1F2937",
+        "bulletDescColor": "#4B5563",
+        "bulletIconColor": "#10B981"
+      }
+    },
+    {
+      "blockName": "PricingGrid",
+      "config": {
+        "title": "Gutter Options Showcase",
+        "showPrice": true,
+        "backgroundColor": "#F9FAFB",
+        "titleColor": "#111827",
+        "itemBackgroundColor": "#FFFFFF",
+        "itemTitleColor": "#1F2937",
+        "itemDescriptionColor": "#4B5563",
+        "itemRateColor": "#059669",
+        "itemFeatureTextColor": "#374151",
+        "buttonBgColor": "#065F46",
+        "buttonTextColor": "#FFFFFF",
+        "imageBorderColor": "#D1D5DB",
+        "items": [
+          {
+            "id": "gutter_aluminum",
+            "title": "Aluminum Gutters",
+            "image": "public/personal/old/img/all_dev/assets/images/gutter_image/Aluminum_gutter.webp",
+            "alt": "Aluminum Gutters",
+            "description": "Cost-effective, rust-resistant, and lightweight. Popular choice.",
+            "rate": "$5 - $8 / LFT",
+            "features": ["Rust-resistant", "Lightweight", "20-year lifespan"],
+            "buttonText": "Get Quote",
+            "buttonLink": "/#contact"
+          },
+          {
+            "id": "gutter_seamless",
+            "title": "Seamless Gutters",
+            "image": "public/personal/old/img/all_dev/assets/images/gutter_image/Seamless_gutter.webp",
+            "alt": "Seamless Gutters",
+            "description": "Custom-fitted, reducing leaks. Streamlined appearance.",
+            "rate": "$8 - $12 / LFT",
+            "features": ["Custom-fit", "Reduced leaks", "Durable"],
+            "buttonText": "Get Quote",
+            "buttonLink": "/#contact"
+          }
+        ]
+      }
+    },
+    {
+      "blockName": "ListDropdown",
+      "config": {
+        "title": "Common Gutter Issues",
+        "openMultiple": false,
+        "backgroundColor": "#FFFFFF",
+        "titleColor": "#111827",
+        "itemTitleColor": "#1F2937",
+        "itemContentColor": "#374151",
+        "iconColor": "#6B7280",
+        "borderColor": "#D1D5DB",
+        "items": [
+          {
+            "id": "clogged_gutters",
+            "title": "Clogged Gutters",
+            "content": "Leaves, debris, and dirt can clog gutters, causing water to overflow and potentially damage your roof, walls, and foundation. Regular cleaning is essential."
+          },
+          {
+            "id": "sagging_gutters",
+            "title": "Sagging Gutters",
+            "content": "The weight of debris or improper installation can cause gutters to sag, leading to improper drainage and potential water damage. Ensure fasteners are secure."
+          }
+        ]
+      }
+    },
+    {
+      "blockName": "GridImageTextBlock",
+      "config": {
+        "title": "Roof Ventilation Solutions",
+        "columns": 2,
+        "backgroundColor": "#FFFFFF",
+        "titleColor": "#1A202C",
+        "itemTitleColor": "#2D3748",
+        "itemDescriptionColor": "#4A5568",
+        "itemBackgroundColor": "#F9FAFB",
+        "imageBorderColor": "#E2E8F0",
+        "items": [
+          {
+            "id": "ridge_vents",
+            "title": "Ridge Vents",
+            "description": "Installed at the roof's peak to allow warm, humid air to escape, preventing moisture buildup.",
+            "image": "public/personal/old/img/all_dev/assets/images/ventilation/ridge_vent.jpeg",
+            "alt": "Ridge Vents"
+          },
+          {
+            "id": "soffit_vents",
+            "title": "Soffit Vents",
+            "description": "Installed under eaves to draw cool air into the attic for steady airflow.",
+            "image": "public/personal/old/img/all_dev/assets/images/ventilation/soffit_vent.avif",
+            "alt": "Soffit Vents"
+          }
+        ]
+      }
+    },
+    {
+      "blockName": "ListImageVerticalBlock",
+      "config": {
+        "title": "Our Shingle Installation Process",
+        "enableAnimation": true,
+        "backgroundColor": "#FFFFFF",
+        "titleColor": "#1A202C",
+        "itemNumberColor": "#3B82F6",
+        "itemTitleColor": "#2D3748",
+        "itemDescriptionColor": "#4A5568",
+        "lineColor": "#D1D5DB",
+        "imageBorderColor": "#E2E8F0",
+        "items": [
+          {
+            "id": "install_inspection",
+            "number": "1",
+            "title": "Roof Inspection & Preparation",
+            "description": "Thorough inspection to ensure a sound structure. We repair issues before shingle installation.",
+            "image": "assets/images/shingleinstallation/inspection.jpg"
+          },
+          {
+            "id": "install_underlayment",
+            "number": "2",
+            "title": "Underlayment Installation",
+            "description": "High-quality underlayment for protection against moisture and wind.",
+            "image": "assets/images/shingleinstallation/underlayment.jpg"
+          }
+        ]
+      }
+    },
+    {
+      "blockName": "ShingleSelectorBlock",
+      "config": {
+        "sectionTitle": "Explore Our Shingle Options",
+        "shingleOptions": [
+          {
+            "title": "Asphalt Shingles",
+            "description": "Popular and affordable, good durability and weather resistance. Variety of colors/styles.",
+            "benefit": "Cost-effective and easy to install, ideal for most homes.",
+            "image": "assets/images/shingleinstallation/placement.jpg"
+          },
+          {
+            "title": "Metal Shingles",
+            "description": "Superior durability, withstands harsh weather. Modern look, various finishes.",
+            "benefit": "Long-lasting (40-70 years) and energy-efficient.",
+            "image": "public/personal/old/img/all_dev/assets/images/placeholder_shingle_metal.png" 
+          }
+        ],
+        "detailBackgroundColor": "#F3F4F6",
+        "detailTitleColor": "#111827",
+        "detailDescriptionColor": "#374151",
+        "detailBenefitColor": "#057A55",
+        "selectorBackgroundColor": "#FFFFFF",
+        "selectorTitleColor": "#1F2937",
+        "selectorDescriptionColor": "#4B5563",
+        "activeSelectorBorderColor": "#2563EB"
+      }
+    },
+    {
+      "blockName": "ImageWrapBlock",
+      "config": {
+        "imageUrl": "public/personal/old/img/all_dev/assets/images/ventilation/roof_installation.webp",
+        "altText": "Energy Efficient Roofing",
+        "floatSide": "left",
+        "maxWidthPx": 280,
+        "paragraph": "Proper roof ventilation is key to reducing cooling costs. Effective ventilation can lower expenses by up to 10% by allowing hot air to escape, decreasing reliance on AC. It creates a comfortable environment, lowers bills, and extends roofing material lifespan.",
+        "textColor": "#333333",
+        "backgroundColor": "#FAFAFA"
+      }
+    },
+    {
+      "blockName": "ThreeGridWithRichTextBlock",
+      "config": {
+        "paragraphText": "We offer tailored ventilation for every roof type, ensuring seamless integration with your roof's aesthetic and structural integrity. Explore options for shingle, metal, and tile roofs.",
+        "items": [
+          {
+            "title": "Shingle Roofs",
+            "image": "public/personal/old/img/all_dev/assets/images/ventilation/vent_shingle.jpeg",
+            "alt": "Ventilation for Shingle Roof"
+          },
+          {
+            "title": "Metal Roofs",
+            "image": "public/personal/old/img/all_dev/assets/images/ventilation/vent_metal.jpg",
+            "alt": "Ventilation for Metal Roof"
+          },
+          {
+            "title": "Tile Roofs",
+            "image": "public/personal/old/img/all_dev/assets/images/ventilation/vent_tile.jpeg",
+            "alt": "Ventilation for Tile Roof"
+          }
+        ],
+        "paragraphColor": "#374151",
+        "itemTitleColor": "#1F2937",
+        "itemBackgroundColor": "#FFFFFF",
+        "gridBackgroundColor": "#F3F4F6",
+        "imageBorderColor": "#E2E8F0"
+      }
+    }
+  ]
+} 

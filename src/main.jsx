@@ -10,24 +10,31 @@ initPerformanceOptimizations();
 
 // Add preload hints for commonly used assets
 const preloadLinks = [
-  // Add important stylesheets
+  // Add important data files that are actually fetched by components
   {
     rel: "preload",
-    href: "/data/combined_data.json",
+    href: "/personal/old/jsons/combined_data.json",
     as: "fetch",
     type: "application/json",
     crossorigin: "anonymous"
   },
   {
     rel: "preload",
-    href: "/data/services.json",
+    href: "/personal/old/jsons/services.json",
     as: "fetch",
     type: "application/json",
     crossorigin: "anonymous"
   },
   {
     rel: "preload",
-    href: "/data/ignore/services.json",
+    href: "/personal/old/jsons/about_page.json",
+    as: "fetch",
+    type: "application/json",
+    crossorigin: "anonymous"
+  },
+  {
+    rel: "preload",
+    href: "/personal/old/jsons/all_blocks_showcase.json",
     as: "fetch",
     type: "application/json",
     crossorigin: "anonymous"

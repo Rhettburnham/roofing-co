@@ -1,524 +1,310 @@
 // src/components/blocks/OverviewAndAdvantagesBlock.jsx
-import React, { useState, useEffect, useRef } from 'react';
-import PropTypes from 'prop-types';
-import * as LucideIcons from "lucide-react"; // Import all for dynamic selection
-import { CheckCircle } from 'lucide-react'; // Example icon
+import React, { useState, useEffect, useRef } from "react";
+import { CheckCircle } from "lucide-react";
+import { FaPencilAlt, FaPlus, FaTrash } from "react-icons/fa";
+import IconSelectorModal from '../common/IconSelectorModal';
 
-/**
- * OverviewAndAdvantagesBlock
- *
- * config = {
- *   heading: "Overview & Advantages",
- *   description: "Single-ply membranes like TPO, PVC, and EPDM ...",
- *   bullets: [
- *     { title: "Durability", desc: "Resistant to punctures, tears ..." },
- *     { title: "Flexibility", desc: "Adapts to building movement ..." },
- *     ...
- *   ]
- *   footnote?: "Optional last line or paragraph"
- * }
- */
+// EditableText Component (Copied, consider moving to common/)
+const EditableText = ({ value, onChange, onBlur, tag: Tag = 'p', className = '', inputClassName = '', isTextarea = false, placeholder = "Edit", readOnly = false, style = {} }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentValue, setCurrentValue] = useState(value);
+  const inputRef = useRef(null);
 
-// Helper for inline editable fields
-const EditableField = ({ value, onChange, placeholder, type = 'text', className, style, rows }) => (
-  type === 'textarea' ?
-    <textarea value={value || ''} onChange={onChange} placeholder={placeholder} className={`bg-transparent border-b-2 border-dashed focus:border-gray-400 outline-none w-full ${className}`} style={style} rows={rows} /> :
-    <input type={type} value={value || ''} onChange={onChange} placeholder={placeholder} className={`bg-transparent border-b-2 border-dashed focus:border-gray-400 outline-none w-full ${className}`} style={style} />
-);
-
-// Preview Component
-function OverviewAndAdvantagesPreview({ localConfig, readOnly, onInlineChange, onIconClick }) {
-  const {
-    overviewTitle, overviewText, advantagesTitle, advantages,
-    overviewTitleColor, overviewTextColor, advantagesTitleColor, advantageTextColor, advantageIconColor, backgroundColor
-  } = localConfig;
-
-  const getIconComponent = (iconName) => {
-    const IconComponent = LucideIcons[iconName] || LucideIcons.HelpCircle; // Default to HelpCircle if not found
-    return <IconComponent />;
-  };
-
-  return (
-    <section className="py-8 md:py-12 px-4 md:px-8" style={{ backgroundColor: backgroundColor || '#F9FAFB' }}>
-      <div className="max-w-5xl mx-auto">
-        {/* Overview Section */}
-        <div className="mb-8 md:mb-12 text-center">
-          {readOnly ? (
-            <h2 className="text-3xl md:text-4xl font-bold mb-3" style={{ color: overviewTitleColor }}>{overviewTitle}</h2>
-          ) : (
-            <EditableField 
-              value={overviewTitle} 
-              onChange={(e) => onInlineChange('overviewTitle', e.target.value)} 
-              placeholder="Overview Title" 
-              className="text-3xl md:text-4xl font-bold mb-3 text-center" 
-              style={{ color: overviewTitleColor }}
-            />
-          )}
-          {readOnly ? (
-            <p className="text-base md:text-lg leading-relaxed" style={{ color: overviewTextColor }}>{overviewText}</p>
-          ) : (
-            <EditableField 
-              value={overviewText} 
-              onChange={(e) => onInlineChange('overviewText', e.target.value)} 
-              placeholder="Overview description..." 
-              className="text-base md:text-lg leading-relaxed text-center min-h-[60px]" 
-              style={{ color: overviewTextColor }}
-              type="textarea"
-              rows={3}
-            />
-          )}
-        </div>
-
-        {/* Advantages Section */}
-        {(advantages && advantages.length > 0) || !readOnly ? (
-          <div className="text-center">
-            {readOnly ? (
-              <h3 className="text-2xl md:text-3xl font-semibold mb-6" style={{ color: advantagesTitleColor }}>{advantagesTitle}</h3>
-            ) : (
-              <EditableField 
-                value={advantagesTitle} 
-                onChange={(e) => onInlineChange('advantagesTitle', e.target.value)} 
-                placeholder="Advantages Title" 
-                className="text-2xl md:text-3xl font-semibold mb-6 text-center" 
-                style={{ color: advantagesTitleColor }}
-              />
-            )}
-            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {(advantages || []).map((advantage, index) => (
-                <li key={advantage.id || index} className="flex items-start bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow">
-                  {!readOnly && onIconClick ? (
-                    <button 
-                      onClick={() => onIconClick(index)} 
-                      title="Change Icon"
-                      className="p-1 rounded hover:bg-gray-200 mr-3 flex-shrink-0"
-                    >
-                      {React.cloneElement(getIconComponent(advantage.icon), { size: 24, style: { color: advantageIconColor } })}
-                    </button>
-                  ) : (
-                    <div className="mr-3 flex-shrink-0">
-                       {React.cloneElement(getIconComponent(advantage.icon), { size: 24, style: { color: advantageIconColor } })}
-                    </div>
-                  )}
-                  {readOnly ? (
-                    <span className="text-base" style={{ color: advantageTextColor }}>{advantage.text}</span>
-                  ) : (
-                    <EditableField 
-                      value={advantage.text} 
-                      onChange={(e) => onInlineChange('advantages', e.target.value, index, 'text')} 
-                      placeholder="Advantage description" 
-                      className="text-base flex-grow" 
-                      style={{ color: advantageTextColor }}
-                    />
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-      </div>
-    </section>
-  );
-}
-
-OverviewAndAdvantagesPreview.propTypes = {
-  localConfig: PropTypes.object.isRequired,
-  readOnly: PropTypes.bool.isRequired,
-  onInlineChange: PropTypes.func.isRequired,
-  onIconClick: PropTypes.func, // For opening icon selector
-};
-
-// Panel Component
-function OverviewAndAdvantagesPanel({ localConfig, onPanelChange, onAddAdvantage, onRemoveAdvantage }) {
-  const {
-    advantages,
-    overviewTitleColor, overviewTextColor, advantagesTitleColor, advantageTextColor, advantageIconColor, backgroundColor
-  } = localConfig;
-
-  const handleColorChange = (field, value) => {
-    onPanelChange({ ...localConfig, [field]: value });
-  };
-
-  return (
-    <div className="p-4 bg-gray-800 text-white rounded-lg space-y-4">
-      <h3 className="text-lg font-semibold border-b border-gray-700 pb-2">Overview & Advantages Settings</h3>
-      
-      {/* Color Settings */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Overall BG Color:</label>
-          <input type="color" value={backgroundColor || '#F9FAFB'} onChange={(e) => handleColorChange('backgroundColor', e.target.value)} className="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-md" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Overview Title Color:</label>
-          <input type="color" value={overviewTitleColor || '#1A202C'} onChange={(e) => handleColorChange('overviewTitleColor', e.target.value)} className="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-md" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Overview Text Color:</label>
-          <input type="color" value={overviewTextColor || '#4A5568'} onChange={(e) => handleColorChange('overviewTextColor', e.target.value)} className="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-md" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Advantages Title Color:</label>
-          <input type="color" value={advantagesTitleColor || '#1A202C'} onChange={(e) => handleColorChange('advantagesTitleColor', e.target.value)} className="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-md" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Advantage Text Color:</label>
-          <input type="color" value={advantageTextColor || '#333333'} onChange={(e) => handleColorChange('advantageTextColor', e.target.value)} className="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-md" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Advantage Icon Color:</label>
-          <input type="color" value={advantageIconColor || '#2C5282'} onChange={(e) => handleColorChange('advantageIconColor', e.target.value)} className="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-md" />
-        </div>
-      </div>
-
-      {/* Advantages List Management */}
-      <div className="border-t border-gray-700 pt-4">
-        <div className="flex justify-between items-center mb-2">
-          <h4 className="text-md font-medium text-gray-200">Advantages List:</h4>
-          <button onClick={onAddAdvantage} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs">+ Add Advantage</button>
-        </div>
-        <div className="max-h-60 overflow-y-auto space-y-2 pr-2">
-          {(advantages || []).map((adv, index) => (
-            <div key={adv.id || index} className="flex items-center justify-between bg-gray-700 p-2 rounded">
-              <span className="text-sm text-gray-300 truncate w-3/4" title={adv.text}>{adv.text || '(New Advantage)'}</span>
-              <button onClick={() => onRemoveAdvantage(index)} className="text-red-400 hover:text-red-300 text-xs">Remove</button>
-            </div>
-          ))}
-          {(!advantages || advantages.length === 0) && <p className="text-xs text-gray-400 text-center py-2">No advantages listed.</p>}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-OverviewAndAdvantagesPanel.propTypes = {
-  localConfig: PropTypes.object.isRequired,
-  onPanelChange: PropTypes.func.isRequired,
-  onAddAdvantage: PropTypes.func.isRequired,
-  onRemoveAdvantage: PropTypes.func.isRequired,
-};
-
-// Main Block Component
-export default function OverviewAndAdvantagesBlock({
-  config = {},
-  readOnly = true,
-  onConfigChange,
-  // IconSelectorModal related props could be passed if integrated
-  // For now, assuming simple icon name string handling in localConfig
-}) {
-  const [localConfig, setLocalConfig] = useState(() => {
-    const defaultConfig = {
-      heading: 'Overview & Advantages',
-      description: 'Detailed description of the service or product, highlighting its key aspects and benefits to the customer.',
-      bullets: [
-        { title: 'Key Advantage 1', desc: 'Description for advantage 1.' },
-        { title: 'Key Advantage 2', desc: 'Description for advantage 2.' },
-      ],
-      footnote: 'Additional important information or a small disclaimer.',
-      backgroundColor: '#F3F4F6', // Light gray background
-      headingColor: '#111827',    // Darker gray for heading
-      descriptionColor: '#374151', // Medium gray for description/footnote
-      bulletTitleColor: '#1F2937', // Dark gray for bullet titles
-      bulletDescColor: '#4B5563',  // Slightly lighter for bullet descriptions
-      bulletIconColor: '#10B981',  // Green for bullet icons
-    };
-    const initialData = { ...defaultConfig, ...config };
-    return {
-      ...initialData,
-      advantages: (initialData.advantages || []).map((adv, idx) => ({
-        ...defaultConfig.advantages[0], // Base defaults for an advantage
-        ...adv,
-        id: adv.id || `adv_init_${idx}_${Date.now()}`,
-        icon: adv.icon || 'CheckCircle', // Ensure icon has a default
-      }))
-    };
-  });
-
-  const prevReadOnlyRef = useRef(readOnly);
-  const [editingAdvantageIconIndex, setEditingAdvantageIconIndex] = useState(null);
-  const [isIconModalOpen, setIsIconModalOpen] = useState(false);
-
-  const headingRef = useRef(null);
-  const descriptionRef = useRef(null);
-  const footnoteRef = useRef(null);
-  const bulletRefs = useRef({}); // Stores { title_idx: ref, desc_idx: ref }
+  useEffect(() => { setCurrentValue(value); }, [value]);
 
   useEffect(() => {
-    if (config) {
-      setLocalConfig(prevLocal => {
-        const newAdv = (config.advantages || []).map((propAdv, idx) => {
-          const localAdv = prevLocal.advantages.find(la => la.id === propAdv.id) || prevLocal.advantages[idx] || {};
-          return {
-            ...localAdv,
-            ...propAdv,
-            id: propAdv.id || localAdv.id || `adv_prop_${idx}_${Date.now()}`,
-            text: !readOnly && prevLocal.advantages[idx]?.text !== (propAdv.text || '') ? prevLocal.advantages[idx].text : (propAdv.text || localAdv.text || ''),
-            icon: !readOnly && prevLocal.advantages[idx]?.icon !== (propAdv.icon || '') ? prevLocal.advantages[idx].icon : (propAdv.icon || localAdv.icon || 'CheckCircle')
-          };
-        });
-        return {
-          ...prevLocal,
-          ...config,
-          overviewTitle: !readOnly && prevLocal.overviewTitle !== (config.overviewTitle || '') ? prevLocal.overviewTitle : (config.overviewTitle || prevLocal.overviewTitle || ''),
-          overviewText: !readOnly && prevLocal.overviewText !== (config.overviewText || '') ? prevLocal.overviewText : (config.overviewText || prevLocal.overviewText || ''),
-          advantagesTitle: !readOnly && prevLocal.advantagesTitle !== (config.advantagesTitle || '') ? prevLocal.advantagesTitle : (config.advantagesTitle || prevLocal.advantagesTitle || ''),
-          advantages: newAdv,
-        };
-      });
-    }
-  }, [config, readOnly]);
-
-  useEffect(() => {
-    if (prevReadOnlyRef.current === false && readOnly === true && onConfigChange) {
-      onConfigChange(localConfig);
-    }
-    prevReadOnlyRef.current = readOnly;
-  }, [readOnly, localConfig, onConfigChange]);
-
-  useEffect(() => {
-    if (!readOnly) {
-      const refsToResize = [headingRef, descriptionRef, footnoteRef];
-      refsToResize.forEach(ref => {
-        if (ref.current) {
-          ref.current.style.height = 'auto';
-          ref.current.style.height = `${ref.current.scrollHeight}px`;
-        }
-      });
-      Object.values(bulletRefs.current).forEach(bulletFieldRefs => {
-        if(bulletFieldRefs) {
-          Object.values(bulletFieldRefs).forEach(ref => {
-            if (ref && ref.current) {
-              ref.current.style.height = 'auto';
-              ref.current.style.height = `${ref.current.scrollHeight}px`;
-            }
-          });
-        }
-      });
-    }
-  }, [localConfig.heading, localConfig.description, localConfig.footnote, localConfig.bullets, readOnly]);
-
-  const handleInputChange = (field, value, bulletIndex = null, bulletField = null) => {
-    setLocalConfig(prev => {
-      let updatedConfig;
-      if (bulletIndex !== null && bulletField) {
-        const updatedBullets = prev.bullets.map((bullet, i) => 
-          i === bulletIndex ? { ...bullet, [bulletField]: value } : bullet
-        );
-        updatedConfig = { ...prev, bullets: updatedBullets };
-      } else {
-        updatedConfig = { ...prev, [field]: value };
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      if (isTextarea && inputRef.current.scrollHeight > inputRef.current.clientHeight) {
+        inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
       }
-      if (!readOnly) onConfigChange(updatedConfig);
-      return updatedConfig;
-    });
+    }
+  }, [isEditing, isTextarea]);
+  
+  const handleInputChange = (e) => {
+    setCurrentValue(e.target.value);
+    if (isTextarea && inputRef.current) {
+      inputRef.current.style.height = 'auto';
+      inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
+    }
   };
 
   const handleBlur = () => {
-    if (!readOnly) onConfigChange(localConfig);
+    setIsEditing(false);
+    if (currentValue !== value) { onChange(currentValue); }
+    if (onBlur) onBlur();
   };
 
-  const getBulletRef = (index, field) => (el) => {
-    if (!bulletRefs.current[index]) bulletRefs.current[index] = {};
-    bulletRefs.current[index][field] = { current: el };
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !isTextarea) { handleBlur(); }
+    else if (e.key === 'Escape') { setCurrentValue(value); setIsEditing(false); if (onBlur) onBlur(); }
   };
 
-  const handleInlineChange = (field, value, itemIndex = null, itemSubField = null) => {
-    if (!readOnly) {
-      setLocalConfig(prev => {
-        if (field === 'advantages' && itemIndex !== null && itemSubField) {
-          const newAdvantages = prev.advantages.map((adv, idx) => 
-            idx === itemIndex ? { ...adv, [itemSubField]: value } : adv
-          );
-          return { ...prev, advantages: newAdvantages };
-        } else {
-          return { ...prev, [field]: value };
-        }
-      });
-    }
-  };
+  const activateEditMode = () => { if (!readOnly && !isEditing) { setIsEditing(true); } };
 
-  const handlePanelChange = (panelData) => {
-    if (!readOnly) {
-      setLocalConfig(prev => ({ ...prev, ...panelData }));
-    }
-  };
-
-  const handleAddAdvantage = () => {
-    if (!readOnly) {
-      setLocalConfig(prev => ({
-        ...prev,
-        advantages: [...(prev.advantages || []), { id: `adv_new_${Date.now()}`, text: 'New Advantage', icon: 'CheckCircle' }]
-      }));
-    }
-  };
-
-  const handleRemoveAdvantage = (indexToRemove) => {
-    if (!readOnly) {
-      setLocalConfig(prev => ({
-        ...prev,
-        advantages: prev.advantages.filter((_, index) => index !== indexToRemove)
-      }));
-    }
-  };
-
-  const handleAdvantageIconClick = (index) => {
-    if (!readOnly) {
-      setEditingAdvantageIconIndex(index);
-      setIsIconModalOpen(true);
-    }
-  };
-
-  const handleIconSelectForAdvantage = (iconName) => {
-    if (editingAdvantageIconIndex !== null) {
-      handleInlineChange('advantages', iconName, editingAdvantageIconIndex, 'icon');
-    }
-    setIsIconModalOpen(false);
-    setEditingAdvantageIconIndex(null);
-  };
-
+  if (!readOnly && isEditing) {
+    const commonInputProps = {
+      ref: inputRef, value: currentValue, onChange: handleInputChange, onBlur: handleBlur, onKeyDown: handleKeyDown,
+      className: `${className} ${inputClassName} outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 rounded-sm bg-white/80 placeholder-gray-500/70 shadow-inner`,
+      style: { ...style, width: '100%' }
+    };
+    if (isTextarea) return <textarea {...commonInputProps} rows={Math.max(2, (currentValue || '').split('\\n').length)} placeholder={placeholder} />;
+    return <input {...commonInputProps} type="text" placeholder={placeholder} />;
+  }
+  const cursorClass = !readOnly && !isEditing ? 'cursor-pointer hover:bg-gray-400/10' : '';
   return (
-    <>
-      <OverviewAndAdvantagesPreview 
-        localConfig={localConfig} 
-        readOnly={readOnly} 
-        onInlineChange={handleInlineChange}
-        onIconClick={handleAdvantageIconClick}
-      />
-      {!readOnly && (
-        <div className="bg-gray-900 p-0 rounded-b-lg shadow-xl mt-0">
-          <OverviewAndAdvantagesPanel 
-            localConfig={localConfig} 
-            onPanelChange={handlePanelChange}
-            onAddAdvantage={handleAddAdvantage}
-            onRemoveAdvantage={handleRemoveAdvantage}
-          />
-        </div>
-      )}
-      {/* Basic IconSelectorModal - Consider enhancing or using a shared one */}
-      {isIconModalOpen && (
-        <div style={{position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', padding: '20px', zIndex: 100, border: '1px solid #ccc', boxShadow: '0 4px 8px rgba(0,0,0,0.1)'}}>
-          <h4>Select Icon</h4>
-          <div style={{display: 'flex', flexWrap: 'wrap', gap: '10px', maxHeight: '300px', overflowY: 'auto'}}>
-            {Object.keys(LucideIcons).map(iconKey => {
-              const IconComp = LucideIcons[iconKey];
-              return (
-                <button key={iconKey} onClick={() => handleIconSelectForAdvantage(iconKey)} title={iconKey} style={{padding: '8px', border: '1px solid #eee', borderRadius: '4px'}}>
-                  <IconComp size={24} />
-                </button>
-              );
-            })}
-          </div>
-          <button onClick={() => setIsIconModalOpen(false)} style={{marginTop: '15px', padding: '8px 12px', backgroundColor: '#eee', border: 'none', borderRadius: '4px'}}>Close</button>
-        </div>
-      )}
-    </>
+    <Tag className={`${className} ${cursorClass} transition-colors duration-150 ease-in-out p-0 m-0 min-h-[1em] w-full break-words`} onClick={activateEditMode} title={!readOnly ? "Click to edit" : ""} style={style}>
+      {value || <span className="text-gray-400/80 italic text-sm">({placeholder})</span>}
+    </Tag>
   );
-}
-
-OverviewAndAdvantagesBlock.propTypes = {
-  config: PropTypes.shape({
-    heading: PropTypes.string,
-    description: PropTypes.string,
-    bullets: PropTypes.arrayOf(PropTypes.shape({
-      title: PropTypes.string,
-      desc: PropTypes.string,
-      // icon field could be added here if icons per bullet are needed
-    })),
-    footnote: PropTypes.string,
-    backgroundColor: PropTypes.string,
-    headingColor: PropTypes.string,
-    descriptionColor: PropTypes.string,
-    bulletTitleColor: PropTypes.string,
-    bulletDescColor: PropTypes.string,
-    bulletIconColor: PropTypes.string,
-  }), // config is not .isRequired, defaults are provided in useState
-  readOnly: PropTypes.bool,
-  onConfigChange: PropTypes.func,
 };
 
-OverviewAndAdvantagesBlock.EditorPanel = function OverviewAndAdvantagesEditorPanel({ currentConfig, onPanelConfigChange }) {
-  const [formData, setFormData] = useState(currentConfig || {});
+// Helper to render dynamic icons (ensure this is available or adapt)
+const renderDynamicIcon = (pack, name, fallbackIcon = null, props = {}) => {
+  // This is a placeholder. You'll need a robust way to import and render icons dynamically.
+  // For example, using a map of icon libraries or a custom hook.
+  // For now, let's assume CheckCircle is the default if nothing matches.
+  if (pack === 'lucide' && name === 'CheckCircle') return <CheckCircle {...props} />;
+  return fallbackIcon ? React.cloneElement(fallbackIcon, props) : <CheckCircle {...props} />;
+};
 
-  useEffect(() => {
-    setFormData(currentConfig || {});
-  }, [currentConfig]);
+/**
+ * OverviewAndAdvantagesBlock Display Component
+ */
+const OverviewDisplay = ({ config = {}, readOnly = false, onConfigChange, onOpenIconModal }) => {
+  const {
+    heading = "Overview & Advantages",
+    description = "Default description text. Click to edit.",
+    bullets = [
+      { id: 1, title: "Durability", desc: "Resistant to punctures, tears...", icon: { pack: 'lucide', name: 'CheckCircle' } },
+      { id: 2, title: "Flexibility", desc: "Adapts to building movement...", icon: { pack: 'lucide', name: 'CheckCircle' } },
+    ],
+    footnote = "Optional last line or paragraph. Click to edit.",
+  } = config;
 
-  const handleChange = (field, value) => {
-    const newFormData = { ...formData, [field]: value };
-    setFormData(newFormData);
-    onPanelConfigChange(newFormData); 
+  const handleLocalChange = (field, value, itemIndex = null, subField = null) => {
+    if (onConfigChange) {
+      if (itemIndex !== null) {
+        const newBullets = bullets.map((bullet, idx) => {
+          if (idx === itemIndex) {
+            if (subField) return { ...bullet, [field]: { ...(bullet[field] || {}), [subField]: value } };
+            return { ...bullet, [field]: value };
+          }
+          return bullet;
+        });
+        onConfigChange({ ...config, bullets: newBullets });
+      } else {
+        onConfigChange({ ...config, [field]: value });
+      }
+    }
   };
 
-  const handleBulletChange = (index, field, value) => {
-    const updatedBullets = (formData.bullets || []).map((bullet, i) => 
-      i === index ? { ...bullet, [field]: value } : bullet
+    return (
+    <section className={`my-3 md:my-8 px-4 md:px-16 ${!readOnly ? 'p-1 bg-slate-50' : ''}`}>
+      <EditableText
+        value={heading}
+        onChange={(newVal) => handleLocalChange("heading", newVal)}
+        tag="h2"
+        className="text-[5vw] md:text-4xl font-bold text-center text-gray-800 mb-1 md:mb-4"
+        inputClassName="text-[5vw] md:text-4xl font-bold text-gray-800 text-center w-auto"
+        placeholder="Main Heading"
+        readOnly={readOnly}
+      />
+
+      { (description || !readOnly) && (
+        <EditableText
+          value={description}
+          onChange={(newVal) => handleLocalChange("description", newVal)}
+          tag="p"
+          className="text-gray-600 text-center mx-auto max-w-3xl text-[3vw] md:text-lg mb-4"
+          inputClassName="text-gray-600 text-center w-full md:text-lg"
+          isTextarea
+          placeholder="Detailed description..."
+          readOnly={readOnly}
+        />
+        )}
+
+      { (bullets.length > 0 || !readOnly) && (
+        <ul className="grid sm:grid-cols-1 md:grid-cols-2 gap-4 max-w-5xl mx-auto">
+          {(bullets || []).map((adv, i) => (
+              <li
+              key={adv.id || i}
+              className="flex bg-white shadow-md rounded-lg p-4 border-l-4 border-blue-500 items-start"
+              >
+              {!readOnly ? (
+                <button 
+                  onClick={() => onOpenIconModal && onOpenIconModal(`bullets[${i}].icon`, adv.icon)}
+                  title="Change Icon"
+                  className="p-1 mr-2 mt-0.5 hover:bg-gray-200 rounded-full transition-colors"
+                >
+                  {renderDynamicIcon(adv.icon?.pack, adv.icon?.name, <CheckCircle className="text-blue-500 w-6 h-6 md:w-7 md:h-7" />, {className: "text-blue-500 w-6 h-6 md:w-7 md:h-7"})}
+                </button>
+              ) : (
+                renderDynamicIcon(adv.icon?.pack, adv.icon?.name, <CheckCircle className="text-blue-500 w-6 h-6 md:w-7 md:h-7 mr-3 mt-0.5 flex-shrink-0" />, {className: "text-blue-500 w-6 h-6 md:w-7 md:h-7 mr-3 mt-0.5 flex-shrink-0"})
+              )}
+              <div className="flex-grow">
+                <EditableText
+                  value={adv.title}
+                  onChange={(newVal) => handleLocalChange("title", newVal, i)}
+                  tag="h4"
+                  className="font-semibold text-gray-800 text-[3.5vw] md:text-lg"
+                  inputClassName="font-semibold text-gray-800 md:text-lg w-full"
+                  placeholder="Advantage Title"
+                  readOnly={readOnly}
+                />
+                <EditableText
+                  value={adv.desc}
+                  onChange={(newVal) => handleLocalChange("desc", newVal, i)}
+                  tag="p"
+                  className="text-gray-600 text-[3vw] md:text-base mt-0.5"
+                  inputClassName="text-gray-600 md:text-base w-full"
+                  isTextarea
+                  placeholder="Advantage description..."
+                  readOnly={readOnly}
+                />
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      {bullets.length === 0 && !readOnly && <p className="text-center text-gray-500 py-4">No advantages listed. Add some using the editor panel.</p>}
+
+      { (footnote || !readOnly) && (
+        <EditableText
+          value={footnote}
+          onChange={(newVal) => handleLocalChange("footnote", newVal)}
+          tag="p"
+          className="text-center text-[3vw] md:text-base text-gray-600 mt-6 max-w-3xl mx-auto"
+          inputClassName="text-center md:text-base text-gray-600 w-full"
+          isTextarea
+          placeholder="Optional footnote..."
+          readOnly={readOnly}
+        />
+        )}
+      </section>
     );
-    handleChange('bullets', updatedBullets);
+};
+
+const OverviewAndAdvantagesBlock = ({
+  config = {},
+  readOnly = false,
+  onConfigChange,
+  onToggleEditor,
+}) => {
+  const [isIconModalOpen, setIsIconModalOpen] = useState(false);
+  const [iconTargetFieldPath, setIconTargetFieldPath] = useState(null);
+  const [currentIconForModal, setCurrentIconForModal] = useState(null);
+
+  const handleOpenIconModal = (fieldPath, currentIcon) => {
+    setIconTargetFieldPath(fieldPath);
+    setCurrentIconForModal(currentIcon || { pack: 'lucide', name: 'CheckCircle' });
+    setIsIconModalOpen(true);
   };
 
-  const handleAddBullet = () => {
-    const newBullet = { title: 'New Advantage', desc: 'Description for new advantage.' };
-    handleChange('bullets', [...(formData.bullets || []), newBullet]);
+  const handleIconSelected = (pack, name) => {
+    if (iconTargetFieldPath && onConfigChange) {
+      const parts = iconTargetFieldPath.match(/(\w+)\[(\d+)\]\.(\w+)/);
+      if (parts && parts.length === 4) {
+        const arrayName = parts[1];
+        const index = parseInt(parts[2]);
+
+        const newArray = (config[arrayName] || []).map((item, idx) => {
+          if (idx === index) {
+            return { ...item, icon: { pack, name } };
+          }
+          return item;
+        });
+        onConfigChange({ ...config, [arrayName]: newArray });
+      }
+    }
+    setIsIconModalOpen(false);
+    setIconTargetFieldPath(null);
+    setCurrentIconForModal(null);
   };
 
-  const handleRemoveBullet = (index) => {
-    const updatedBullets = (formData.bullets || []).filter((_, i) => i !== index);
-    handleChange('bullets', updatedBullets);
+  if (!readOnly) {
+    return (
+      <div className="relative group border-2 border-blue-400/50">
+        <OverviewDisplay 
+          config={config} 
+          readOnly={false} 
+          onConfigChange={onConfigChange}
+          onOpenIconModal={handleOpenIconModal} 
+        />
+        {onToggleEditor && (
+          <button
+            onClick={onToggleEditor}
+            className="absolute top-2 right-2 z-30 p-2 bg-gray-700 text-white rounded-full shadow-lg hover:bg-gray-800 transition-colors opacity-50 group-hover:opacity-100"
+            title="Open Editor Panel"
+          >
+            <FaPencilAlt size={16} />
+          </button>
+        )}
+        {isIconModalOpen && (
+          <IconSelectorModal 
+            isOpen={isIconModalOpen} 
+            onClose={() => setIsIconModalOpen(false)} 
+            onIconSelect={handleIconSelected} 
+            currentIconPack={currentIconForModal?.pack}
+            currentIconName={currentIconForModal?.name}
+          />
+        )}
+      </div>
+    );
+  }
+
+  return <OverviewDisplay config={config} readOnly={true} />;
+};
+
+OverviewAndAdvantagesBlock.EditorPanel = ({ currentConfig, onPanelConfigChange }) => {
+  const {
+    bullets = [],
+  } = currentConfig;
+
+  const addBullet = () => {
+    const newBullet = { 
+      id: Date.now(), 
+      title: "New Advantage", 
+      desc: "Describe this new advantage.", 
+      icon: { pack: 'lucide', name: 'CheckCircle' } 
+    };
+    const newBullets = [...(bullets || []), newBullet];
+    onPanelConfigChange({ bullets: newBullets });
+  };
+
+  const removeBullet = (idxToRemove) => {
+    const newBullets = (bullets || []).filter((_, idx) => idx !== idxToRemove);
+    onPanelConfigChange({ bullets: newBullets });
   };
 
   return (
-    <div className="space-y-4 p-2 bg-gray-50 rounded-md shadow">
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Heading (Panel Edit):</label>
-        <input type="text" value={formData.heading || ''} onChange={(e) => handleChange('heading', e.target.value)} className="input-class input-heading-oa-panel" />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Description (Panel Edit):</label>
-        <textarea value={formData.description || ''} onChange={(e) => handleChange('description', e.target.value)} rows={3} className="input-class resize-none input-description-oa-panel" />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Footnote (Panel Edit):</label>
-        <textarea value={formData.footnote || ''} onChange={(e) => handleChange('footnote', e.target.value)} rows={2} className="input-class resize-none input-description-oa-panel" />
-      </div>
+    <div className="p-3 space-y-3 bg-gray-800 text-gray-200 rounded-b-md max-h-[70vh] overflow-y-auto">
+      <h3 className="text-sm font-semibold mb-2 text-center border-b border-gray-700 pb-1.5">Manage Advantages</h3>
 
-      <h4 className="text-md font-semibold text-gray-700 pt-2 border-t mt-4">Color Scheme</h4>
-      <div className="grid grid-cols-2 gap-4">
-        <div><label className="text-sm font-medium">Background:</label><input type="color" value={formData.backgroundColor || '#F3F4F6'} onChange={(e) => handleChange('backgroundColor', e.target.value)} className="input-color-class" /></div>
-        <div><label className="text-sm font-medium">Heading Text:</label><input type="color" value={formData.headingColor || '#111827'} onChange={(e) => handleChange('headingColor', e.target.value)} className="input-color-class" /></div>
-        <div><label className="text-sm font-medium">Desc/Footnote Text:</label><input type="color" value={formData.descriptionColor || '#374151'} onChange={(e) => handleChange('descriptionColor', e.target.value)} className="input-color-class" /></div>
-        <div><label className="text-sm font-medium">Bullet Title Text:</label><input type="color" value={formData.bulletTitleColor || '#1F2937'} onChange={(e) => handleChange('bulletTitleColor', e.target.value)} className="input-color-class" /></div>
-        <div><label className="text-sm font-medium">Bullet Desc Text:</label><input type="color" value={formData.bulletDescColor || '#4B5563'} onChange={(e) => handleChange('bulletDescColor', e.target.value)} className="input-color-class" /></div>
-        <div><label className="text-sm font-medium">Bullet Icon:</label><input type="color" value={formData.bulletIconColor || '#10B981'} onChange={(e) => handleChange('bulletIconColor', e.target.value)} className="input-color-class" /></div>
-      </div>
-
-      <h4 className="text-md font-semibold text-gray-700 pt-2 border-t mt-4">Manage Bullets/Advantages</h4>
-      {(formData.bullets || []).map((bullet, index) => (
-        <div key={index} className="p-2 border border-gray-200 rounded bg-white">
-          <div className="flex justify-between items-center mb-1">
-            <h5 className="text-sm font-semibold">Bullet {index + 1}</h5>
-            <button onClick={() => handleRemoveBullet(index)} className="text-xs text-red-500 hover:text-red-600">Remove</button>
-          </div>
-          <div><label className="text-xs">Title:</label><input type="text" value={bullet.title || ''} onChange={(e) => handleBulletChange(index, 'title', e.target.value)} className="input-xs-class input-bullet-title-oa-panel" /></div>
-          <div><label className="text-xs">Description:</label><textarea value={bullet.desc || ''} onChange={(e) => handleBulletChange(index, 'desc', e.target.value)} rows={2} className="input-xs-class resize-none input-bullet-desc-oa-panel" /></div>
+      {(bullets || []).length > 0 && bullets.map((bullet, idx) => (
+        <div key={bullet.id || idx} className="flex items-center justify-between p-1.5 bg-gray-750 rounded-md shadow-sm">
+          <span className="text-xs text-gray-300 truncate pr-2">{idx + 1}. {bullet.title || 'Untitled'}</span>
+            <button
+              type="button"
+            onClick={() => removeBullet(idx)}
+            className="p-1 bg-red-600 text-white rounded-full shadow-md hover:bg-red-700 transition-colors flex-shrink-0"
+            title="Remove Advantage"
+            >
+            <FaTrash size={10} />
+            </button>
         </div>
       ))}
-      <button onClick={handleAddBullet} className="mt-2 btn-primary-sm">+ Add Bullet</button>
       
-      <style jsx>{`
-        .input-class { display: block; width: 100%; padding: 0.5rem 0.75rem; background-color: white; border: 1px solid #D1D5DB; border-radius: 0.375rem; color: #374151; }
-        .input-xs-class { display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; color: #374151; }
-        .input-heading-oa-panel { font-size: 1.875rem; line-height: 2.25rem; font-weight: 700; /* text-3xl font-bold */ }
-        .input-description-oa-panel { font-size: 1rem; line-height: 1.625; /* text-base leading-relaxed */ }
-        .input-bullet-title-oa-panel { font-size: 1rem; /* text-base */ line-height: 1.5rem; /* Ensure good line height for input */ }
-        .input-bullet-desc-oa-panel { /* .input-xs-class already sets font-size: 0.875rem (text-sm) */ line-height: 1.5; /* Adjust if needed for text-sm textarea */ }
-        .input-color-class { margin-top: 0.25rem; height: 2rem; width: 100%; padding: 0.125rem; border: 1px solid #D1D5DB; border-radius: 0.375rem; }
-        .btn-primary-sm { padding: 0.25rem 0.75rem; font-size: 0.875rem; background-color: #4F46E5; color: white; border-radius: 0.375rem; font-weight: 500; }
-      `}</style>
+      <button
+        type="button"
+        onClick={addBullet}
+        className="w-full mt-2 text-xs bg-green-600 hover:bg-green-500 text-white px-2 py-1 rounded-md shadow flex items-center justify-center"
+      >
+        <FaPlus size={10} className="mr-1" /> Add Advantage
+      </button>
+      {(!bullets || bullets.length === 0) && <p className="text-xs text-gray-400 text-center italic mt-2">No advantages defined. Click 'Add Advantage' to start.</p>}
     </div>
   );
 };
 
-OverviewAndAdvantagesBlock.EditorPanel.propTypes = {
-  currentConfig: PropTypes.object.isRequired,
-  onPanelConfigChange: PropTypes.func.isRequired,
-  // No onPanelFileChange needed for this block currently
-};
+export default OverviewAndAdvantagesBlock;

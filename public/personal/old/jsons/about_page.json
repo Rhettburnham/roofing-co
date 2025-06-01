@@ -1,0 +1,85 @@
+{
+  "title": "Craft Roofing Company, LLC: Atlanta's Trusted Roofing Experts",
+  "subtitle": "Building Strong Roofs, Stronger Relationships",
+  "history": "Founded in 2016, Craft Roofing Company, LLC has been serving the Atlanta community with top-tier roofing solutions for nearly a decade. What started as a small, family-owned business has grown into a trusted name in the industry, known for quality craftsmanship and exceptional customer service. Over the years, we've tackled everything from minor repairs to full roof replacements, earning a reputation for reliability and attention to detail. Our deep roots in Atlanta drive our commitment to protecting homes and businesses with durable, weather-resistant roofing systems tailored to the region's unique climate.",
+  "mission": "Our mission is to deliver superior roofing solutions with integrity, precision, and care. We strive to exceed expectations by combining expert craftsmanship with personalized service, ensuring every project—big or small—is built to last and backed by our unwavering commitment to quality.",
+  "values": [
+    {
+      "title": "Quality Craftsmanship",
+      "description": "We take pride in every detail, using premium materials and proven techniques to ensure roofs that stand the test of time."
+    },
+    {
+      "title": "Customer Trust",
+      "description": "Honesty and transparency guide every interaction, fostering long-term relationships built on reliability and respect."
+    },
+    {
+      "title": "Community Focus",
+      "description": "As Atlanta locals, we're invested in the safety and beauty of our neighborhoods, offering solutions that enhance homes and businesses alike."
+    },
+    {
+      "title": "Innovation",
+      "description": "We stay ahead of industry trends and technologies to provide efficient, sustainable, and cutting-edge roofing options."
+    }
+  ],
+  "team": [
+    {
+      "name": "Mr. Carl Craft, President",
+      "position": "Owner",
+      "photo": "public/personal/old/img/about_page/team/roofer.png"
+    },
+    {
+      "name": "Mr. Carl Craft, President/Owner",
+      "position": "Manager",
+      "photo": "public/personal/old/img/about_page/team/foreman.png"
+    }
+  ],
+  "stats": [
+    {
+      "title": "Years in Business",
+      "value": 9,
+      "icon": "FaHistory"
+    },
+    {
+      "title": "Completed Projects",
+      "value": 522,
+      "icon": "FaAward"
+    },
+    {
+      "title": "Happy Clients",
+      "value": 417,
+      "icon": "FaUsers"
+    },
+    {
+      "title": "Team Members",
+      "value": 8,
+      "icon": "FaHandshake"
+    }
+  ],
+  "heroImage": "public/personal/old/img/about_page/about-hero.jpg",
+  "steps": [
+    {
+      "title": "Book",
+      "videoSrc": "public/personal/old/img/main_page_images/RichTextBlock/booking.mp4",
+      "href": "/#booking",
+      "scale": 0.8
+    },
+    {
+      "title": "Inspection",
+      "videoSrc": "public/personal/old/img/main_page_images/RichTextBlock/magnify.mp4",
+      "href": "/inspection",
+      "scale": 1.25
+    },
+    {
+      "title": "Service",
+      "videoSrc": "public/personal/old/img/main_page_images/RichTextBlock/repair.mp4",
+      "href": "/#packages",
+      "scale": 1.1
+    },
+    {
+      "title": "Review",
+      "videoSrc": "public/personal/old/img/main_page_images/RichTextBlock/approval.mp4",
+      "href": "/#testimonials",
+      "scale": 0.9
+    }
+  ]
+} 

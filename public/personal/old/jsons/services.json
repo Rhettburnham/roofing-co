@@ -1,0 +1,678 @@
+{
+  "commercial": [
+    {
+      "id": 1,
+      "blocks": [
+        {
+          "blockName": "HeroBlock",
+          "config": {
+            "backgroundImage": "",
+            "title": "Built-Up",
+            "shrinkAfterMs": 1000,
+            "initialHeight": "40vh",
+            "finalHeight": "20vh"
+          }
+        },
+        {
+          "blockName": "GeneralList",
+          "config": {
+            "title": "Choose Your Flat Roofing Option",
+            "items": [
+              {
+                "id": 1,
+                "name": "Built-Up Roofing (BUR)",
+                "description": "BUR is a traditional roofing system made of multiple layers of bitumen and reinforcing fabrics. The resulting membrane is known for excellent waterproofing and durability, making it a popular choice for flat or low-slope roofs.",
+                "advantages": [
+                  "Durability: Lifespans of 15–30+ years with proper maintenance",
+                  "Waterproofing: Multi-layer design effectively prevents leaks",
+                  "UV Resistance: Top layer (gravel/mineral) protects against sun damage",
+                  "Low Maintenance: Requires minimal upkeep over time"
+                ],
+                "colorPossibilities": "Typically gravel or mineral-surfaced finish in neutral tones. Reflective coatings can be applied for enhanced energy efficiency",
+                "installationTime": "Can be labor-intensive, taking several days to weeks depending on roof size and complexity",
+                "pictures": [
+                  "public/personal/old/img/all_dev/assets/images/builtup/builtupdemo.avif",
+                  "public/personal/old/img/all_dev/assets/images/builtup/builtuproofing2.jpg"
+                ]
+              },
+              {
+                "id": 2,
+                "name": "Modified Bitumen Roofing",
+                "description": "Modified Bitumen improves upon the BUR concept by adding polymers to bitumen, increasing elasticity, weather resistance, and lifespan. Often installed in rolled sheets...",
+                "advantages": [
+                  "Enhanced Durability: Polymers protect against extreme weather and punctures",
+                  "Flexibility: Adapts to temperature changes without cracking",
+                  "Ease of Installation: Quicker than BUR, with various application methods",
+                  "Energy Efficiency: Some membranes feature reflective coatings"
+                ],
+                "colorPossibilities": "Available in multiple colors and finishes (including shingle-like options)",
+                "installationTime": "Usually installed in 1–3 days, depending on roof size and chosen application method",
+                "pictures": [
+                  "public/personal/old/img/all_dev/assets/images/builtup/modified1.jpg",
+                  "public/personal/old/img/all_dev/assets/images/builtup/modified2.avif"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "blockName": "VideoCTA",
+          "config": {
+            "videoSrc": "",
+            "title": "Ready to Upgrade Your Flat Roof?",
+            "description": "Get in touch for a free consultation. Let us help you choose the best flat roofing solution for your property.",
+            "buttonText": "Schedule a Consultation",
+            "buttonLink": "/#contact",
+            "textColor": "1",
+            "textAlignment": "center",
+            "overlayOpacity": 0.7
+          }
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "blocks": [
+        {
+          "blockName": "HeroBlock",
+          "config": {
+            "backgroundImage": "",
+            "title": "Built-Up",
+            "shrinkAfterMs": 1000,
+            "initialHeight": "40vh",
+            "finalHeight": "20vh"
+          }
+        },
+        {
+          "blockName": "GeneralList",
+          "config": {
+            "title": "Choose Your Flat Roofing Option",
+            "items": [
+              {
+                "id": 1,
+                "name": "Built-Up Roofing (BUR)",
+                "description": "BUR is a traditional roofing system made of multiple layers of bitumen and reinforcing fabrics. Known for excellent waterproofing and durability for flat/low-slope roofs.",
+                "advantages": [
+                  "Durability: 15–30+ years with proper maintenance",
+                  "Waterproofing: Multi-layer design effectively prevents leaks",
+                  "UV Resistance: Gravel/mineral top layer protects against sun",
+                  "Low Maintenance: Requires minimal upkeep"
+                ],
+                "colorPossibilities": "Typically gravel/mineral finish in neutral tones; reflective coatings optional",
+                "installationTime": "Labor-intensive, can take days to weeks depending on roof size",
+                "pictures": [
+                  "public/personal/old/img/all_dev/assets/images/builtup/builtupdemo.avif",
+                  "public/personal/old/img/all_dev/assets/images/builtup/builtuproofing2.jpg"
+                ]
+              },
+              {
+                "id": 2,
+                "name": "Modified Bitumen Roofing",
+                "description": "Modified Bitumen uses polymers to increase elasticity, weather resistance, and lifespan. Often installed in rolled sheets via torch, cold-adhesive, or self-adhering methods.",
+                "advantages": [
+                  "Enhanced Durability: Polymers protect against extreme weather",
+                  "Flexibility: Adapts to temperature changes without cracking",
+                  "Ease of Installation: Quicker than BUR",
+                  "Energy Efficiency: Reflective coatings available"
+                ],
+                "colorPossibilities": "Multiple colors/finishes (including shingle-like options). Reflective coatings reduce cooling costs",
+                "installationTime": "Typically 1–3 days, depending on roof size and method",
+                "pictures": [
+                  "public/personal/old/img/all_dev/assets/images/builtup/modified1.jpg",
+                  "public/personal/old/img/all_dev/assets/images/builtup/modified2.avif"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "blockName": "VideoCTA",
+          "config": {
+            "videoSrc": "",
+            "title": "Ready to Upgrade Your Flat Roof?",
+            "description": "Get in touch for a free consultation. Let us help you choose the best flat roofing solution for your property.",
+            "buttonText": "Schedule a Consultation",
+            "buttonLink": "/#contact",
+            "textColor": "1",
+            "textAlignment": "center",
+            "overlayOpacity": 0.7
+          }
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "blocks": [
+        {
+          "blockName": "HeroBlock",
+          "config": {
+            "backgroundImage": "",
+            "title": "Roof Coating",
+            "shrinkAfterMs": 1000,
+            "initialHeight": "40vh",
+            "finalHeight": "20vh"
+          }
+        },
+        {
+          "blockName": "GeneralListVariant2",
+          "config": {
+            "title": "Types of Roof Coatings",
+            "items": [
+              {
+                "id": 1,
+                "name": "Acrylic Coatings",
+                "description": "Acrylic coatings are water-based and cost-effective, known for their reflectivity and UV resistance. They suit a variety of climates but may be less ideal with ponding water.",
+                "features": [
+                  "Cost-Effective",
+                  "Good Reflectivity",
+                  "Easy, Quick Application",
+                  "Versatile on multiple roof types",
+                  "UV Resistant"
+                ],
+                "uses": "Works on metal, asphalt, single-ply membranes, etc.",
+                "limitations": "Not the best for continuous ponding water areas.",
+                "imageUrl": "public/personal/old/img/all_dev/assets/images/coating/acrylic.webp"
+              },
+              {
+                "id": 2,
+                "name": "Silicone Coatings",
+                "description": "Silicone coatings are reflective, excel with ponding water, and offer superior UV/weather resistance. Great for extreme temps and mold/mildew resistance.",
+                "features": [
+                  "Exceptional Water Resistance",
+                  "High UV Stability",
+                  "Durable in extreme temps"
+                ],
+                "uses": "Perfect for flat roofs in wet climates or heavy rainfall.",
+                "limitations": "Surface prep is key; silicone can be pricier than acrylic.",
+                "imageUrl": "public/personal/old/img/all_dev/assets/images/coating/silicone.jpg"
+              },
+              {
+                "id": 3,
+                "name": "Polyurethane Coatings",
+                "description": "Durable, impact-resistant coatings that handle foot traffic well. Aromatic vs. aliphatic formulations differ in UV stability.",
+                "features": [
+                  "High Impact Resistance",
+                  "Flexible for temperature changes",
+                  "Good chemical resistance"
+                ],
+                "uses": "Areas with mechanical stress or frequent foot traffic.",
+                "limitations": "Aromatic degrade under UV faster; aliphatic cost more but keep color better.",
+                "imageUrl": "public/personal/old/img/all_dev/assets/images/coating/polyurethane.jpg"
+              },
+              {
+                "id": 4,
+                "name": "Elastomeric Coatings",
+                "description": "Highly elastic coatings that stretch and move with roof expansion/contraction. Excellent for extreme temperature variations.",
+                "features": [
+                  "High Elasticity",
+                  "Temperature Resistant",
+                  "Good Adhesion"
+                ],
+                "uses": "Roofs with significant thermal movement or cracking issues.",
+                "limitations": "Can be more expensive; requires proper surface prep.",
+                "imageUrl": "public/personal/old/img/all_dev/assets/images/coating/elastomeric.jpg"
+              },
+              {
+                "id": 5,
+                "name": "SPF (Spray Polyurethane Foam)",
+                "description": "Unique system that provides insulation and waterproofing in one application. Creates seamless, monolithic surface.",
+                "features": [
+                  "Insulation & Waterproofing",
+                  "Seamless Application",
+                  "Lightweight yet Strong"
+                ],
+                "uses": "New construction or major roof renovations requiring insulation upgrade.",
+                "limitations": "Requires specialized equipment and training; weather-dependent installation.",
+                "imageUrl": "public/personal/old/img/all_dev/assets/images/coating/spf.jpg"
+              }
+            ]
+          }
+        },
+        {
+          "blockName": "VideoCTA",
+          "config": {
+            "videoSrc": "",
+            "title": "Ready for a Roof Coating?",
+            "description": "Contact us today for a free roof inspection and personalized plan to protect your investment.",
+            "buttonText": "Schedule Inspection",
+            "buttonLink": "/#contact",
+            "textColor": "1",
+            "textAlignment": "center",
+            "overlayOpacity": 0.7
+          }
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "blocks": [
+        {
+          "blockName": "HeroBlock",
+          "config": {
+            "backgroundImage": "",
+            "title": "Single-Ply Membrane",
+            "shrinkAfterMs": 1000,
+            "initialHeight": "40vh",
+            "finalHeight": "20vh"
+          }
+        },
+        {
+          "blockName": "GeneralListVariant2",
+          "config": {
+            "title": "Single-Ply Membrane Options",
+            "items": [
+              {
+                "id": 1,
+                "name": "TPO (Thermoplastic Olefin)",
+                "description": "TPO is energy-efficient, heat-weldable, and cost-effective. Popular for commercial applications with good UV resistance and flexibility.",
+                "features": [
+                  "Energy Efficient",
+                  "Heat-Weldable Seams",
+                  "Cost-Effective",
+                  "Good UV Resistance"
+                ],
+                "uses": "Commercial buildings, warehouses, retail spaces.",
+                "limitations": "Can be punctured by sharp objects; requires proper installation.",
+                "imageUrl": "public/personal/old/img/all_dev/assets/images/ply/Tpo.jpg"
+              },
+              {
+                "id": 2,
+                "name": "PVC (Polyvinyl Chloride)",
+                "description": "PVC offers excellent chemical resistance, fire retardancy, and long-term durability. Premium single-ply option.",
+                "features": [
+                  "Chemical Resistance",
+                  "Fire Retardant",
+                  "Long Lifespan",
+                  "Heat-Weldable"
+                ],
+                "uses": "Restaurants, hospitals, facilities with grease/chemical exposure.",
+                "limitations": "Higher cost than TPO; plasticizers can migrate over time.",
+                "imageUrl": "public/personal/old/img/all_dev/assets/images/ply/pvc.jpg"
+              },
+              {
+                "id": 3,
+                "name": "EPDM (Ethylene Propylene Diene Monomer)",
+                "description": "EPDM is a durable rubber membrane with excellent weather resistance. Black color absorbs heat but very reliable.",
+                "features": [
+                  "Excellent Weather Resistance",
+                  "Durable Rubber Construction",
+                  "Proven Track Record",
+                  "Cost-Effective"
+                ],
+                "uses": "Commercial and residential flat roofs.",
+                "limitations": "Black color can increase cooling costs; seams are vulnerable points.",
+                "imageUrl": "public/personal/old/img/all_dev/assets/images/ply/epdm.jpg"
+              }
+            ]
+          }
+        },
+        {
+          "blockName": "VideoCTA",
+          "config": {
+            "videoSrc": "",
+            "title": "Choose the Right Single-Ply Membrane",
+            "description": "Our experts can help you select the best membrane system for your specific needs and budget.",
+            "buttonText": "Get Expert Advice",
+            "buttonLink": "/#contact",
+            "textColor": "1",
+            "textAlignment": "center",
+            "overlayOpacity": 0.7
+          }
+        }
+      ]
+    }
+  ],
+  "residential": [
+    {
+      "id": 1,
+      "blocks": [
+        {
+          "blockName": "HeroBlock",
+          "config": {
+            "backgroundImage": "",
+            "title": "Roof Installation",
+            "shrinkAfterMs": 1000,
+            "initialHeight": "40vh",
+            "finalHeight": "20vh"
+          }
+        },
+        {
+          "blockName": "VideoCTA",
+          "config": {
+            "videoSrc": "",
+            "title": "Professional Roof Installation",
+            "description": "Transform your home with a brand new roof. Our expert team ensures quality installation from start to finish.",
+            "buttonText": "Schedule Installation Consultation",
+            "buttonLink": "/#contact",
+            "textColor": "1",
+            "textAlignment": "center",
+            "overlayOpacity": 0.7
+          }
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "blocks": [
+        {
+          "blockName": "HeroBlock",
+          "config": {
+            "backgroundImage": "",
+            "title": "Gutters",
+            "shrinkAfterMs": 1000,
+            "initialHeight": "40vh",
+            "finalHeight": "20vh"
+          }
+        },
+        {
+          "blockName": "PricingGrid",
+          "config": {
+            "title": "Gutter Options",
+            "showPrice": true,
+            "items": [
+              {
+                "id": "gutter_aluminum",
+                "title": "Aluminum Gutters",
+                "image": "public/personal/old/img/all_dev/assets/images/gutter_image/Aluminum_gutter.webp",
+                "alt": "Aluminum Gutters",
+                "description": "Cost-effective, rust-resistant, and lightweight. Popular choice.",
+                "rate": "$5 - $8 / LFT",
+                "features": ["Rust-resistant", "Lightweight", "20-year lifespan"],
+                "buttonText": "Get Quote",
+                "buttonLink": "/#contact"
+              },
+              {
+                "id": "gutter_seamless",
+                "title": "Seamless Gutters",
+                "image": "public/personal/old/img/all_dev/assets/images/gutter_image/Seamless_gutter.webp",
+                "alt": "Seamless Gutters",
+                "description": "Custom-fitted, reducing leaks. Streamlined appearance.",
+                "rate": "$8 - $12 / LFT",
+                "features": ["Custom-fit", "Reduced leaks", "Durable"],
+                "buttonText": "Get Quote",
+                "buttonLink": "/#contact"
+              },
+              {
+                "id": "gutter_steel",
+                "title": "Steel Gutters",
+                "image": "public/personal/old/img/all_dev/assets/images/gutter_image/steel_gutter.jpeg",
+                "alt": "Steel Gutters",
+                "description": "Heavy-duty option for harsh weather conditions.",
+                "rate": "$9 - $15 / LFT",
+                "features": ["Heavy-duty", "Weather resistant", "Long-lasting"],
+                "buttonText": "Get Quote",
+                "buttonLink": "/#contact"
+              },
+              {
+                "id": "gutter_half_round",
+                "title": "Half-Round Gutters",
+                "image": "public/personal/old/img/all_dev/assets/images/gutter_image/Half_round_gutters.png",
+                "alt": "Half-Round Gutters",
+                "description": "Traditional style with excellent water flow.",
+                "rate": "$12 - $18 / LFT",
+                "features": ["Traditional style", "Excellent flow", "Historic appeal"],
+                "buttonText": "Get Quote",
+                "buttonLink": "/#contact"
+              },
+              {
+                "id": "gutter_copper",
+                "title": "Copper Gutters",
+                "image": "public/personal/old/img/all_dev/assets/images/gutter_image/Copper_gutter.webp",
+                "alt": "Copper Gutters",
+                "description": "Premium option with natural patina development.",
+                "rate": "$15 - $25 / LFT",
+                "features": ["Premium material", "Natural patina", "50+ year lifespan"],
+                "buttonText": "Get Quote",
+                "buttonLink": "/#contact"
+              },
+              {
+                "id": "gutter_vinyl",
+                "title": "Vinyl Gutters",
+                "image": "public/personal/old/img/all_dev/assets/images/gutter_image/Vinyl_gutter.webp",
+                "alt": "Vinyl Gutters",
+                "description": "Budget-friendly option, easy to install.",
+                "rate": "$3 - $6 / LFT",
+                "features": ["Budget-friendly", "Easy maintenance", "Color variety"],
+                "buttonText": "Get Quote",
+                "buttonLink": "/#contact"
+              }
+            ]
+          }
+        },
+        {
+          "blockName": "VideoCTA",
+          "config": {
+            "videoSrc": "",
+            "title": "Protect Your Foundation",
+            "description": "Proper gutters are essential for protecting your home's foundation and landscaping from water damage.",
+            "buttonText": "Get Gutter Consultation",
+            "buttonLink": "/#contact",
+            "textColor": "1",
+            "textAlignment": "center",
+            "overlayOpacity": 0.7
+          }
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "blocks": [
+        {
+          "blockName": "HeroBlock",
+          "config": {
+            "backgroundImage": "",
+            "title": "Roof Repair",
+            "shrinkAfterMs": 1000,
+            "initialHeight": "40vh",
+            "finalHeight": "20vh"
+          }
+        },
+        {
+          "blockName": "VideoCTA",
+          "config": {
+            "videoSrc": "",
+            "title": "Fast & Reliable Roof Repairs",
+            "description": "Don't let small problems become big expenses. Our expert repair team can fix issues quickly and effectively.",
+            "buttonText": "Schedule Repair Service",
+            "buttonLink": "/#contact",
+            "textColor": "1",
+            "textAlignment": "center",
+            "overlayOpacity": 0.7
+          }
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "blocks": [
+        {
+          "blockName": "HeroBlock",
+          "config": {
+            "backgroundImage": "",
+            "title": "Ventilation",
+            "shrinkAfterMs": 1000,
+            "initialHeight": "40vh",
+            "finalHeight": "20vh"
+          }
+        },
+        {
+          "blockName": "PricingGrid",
+          "config": {
+            "title": "Ventilation Options",
+            "showPrice": false,
+            "items": [
+              {
+                "id": "vent_ridge",
+                "title": "Ridge Vents",
+                "image": "public/personal/old/img/all_dev/assets/images/ventilation/ridge_vent.jpeg",
+                "alt": "Ridge Vents",
+                "description": "Continuous ventilation along the roof peak.",
+                "features": ["Continuous airflow", "Weather resistant", "Low profile"],
+                "buttonText": "Learn More",
+                "buttonLink": "/#contact"
+              },
+              {
+                "id": "vent_soffit",
+                "title": "Soffit Vents",
+                "image": "public/personal/old/img/all_dev/assets/images/ventilation/soffit_vent.avif",
+                "alt": "Soffit Vents",
+                "description": "Intake vents installed under roof eaves.",
+                "features": ["Fresh air intake", "Pest resistant", "Multiple styles"],
+                "buttonText": "Learn More",
+                "buttonLink": "/#contact"
+              },
+              {
+                "id": "vent_gable",
+                "title": "Gable Vents",
+                "image": "public/personal/old/img/all_dev/assets/images/ventilation/gable_vent.jpg",
+                "alt": "Gable Vents",
+                "description": "Traditional vents mounted on gable ends.",
+                "features": ["Cross ventilation", "Decorative options", "Easy installation"],
+                "buttonText": "Learn More",
+                "buttonLink": "/#contact"
+              },
+              {
+                "id": "vent_roof",
+                "title": "Roof Vents",
+                "image": "public/personal/old/img/all_dev/assets/images/ventilation/roof_vent.jpg",
+                "alt": "Roof Vents",
+                "description": "Individual exhaust vents for targeted ventilation.",
+                "features": ["Targeted exhaust", "Multiple sizes", "Durable construction"],
+                "buttonText": "Learn More",
+                "buttonLink": "/#contact"
+              }
+            ]
+          }
+        },
+        {
+          "blockName": "VideoCTA",
+          "config": {
+            "videoSrc": "",
+            "title": "Proper Roof Ventilation is Essential",
+            "description": "Good ventilation extends roof life, reduces energy costs, and prevents moisture problems.",
+            "buttonText": "Get Ventilation Assessment",
+            "buttonLink": "/#contact",
+            "textColor": "1",
+            "textAlignment": "center",
+            "overlayOpacity": 0.7
+          }
+        },
+        {
+          "blockName": "PricingGrid",
+          "config": {
+            "title": "Ventilation by Roof Type",
+            "showPrice": false,
+            "items": [
+              {
+                "id": "vent_shingle",
+                "title": "Shingle Roof Ventilation",
+                "image": "public/personal/old/img/all_dev/assets/images/ventilation/vent_shingle.jpeg",
+                "alt": "Shingle Roof Ventilation",
+                "description": "Specialized ventilation solutions for asphalt shingle roofs.",
+                "features": ["Ridge vents", "Soffit vents", "Power vents"],
+                "buttonText": "Learn More",
+                "buttonLink": "/#contact"
+              },
+              {
+                "id": "vent_metal",
+                "title": "Metal Roof Ventilation",
+                "image": "public/personal/old/img/all_dev/assets/images/ventilation/vent_metal.jpg",
+                "alt": "Metal Roof Ventilation",
+                "description": "Ventilation systems designed for metal roofing.",
+                "features": ["Ridge caps", "Panel vents", "Turbine vents"],
+                "buttonText": "Learn More",
+                "buttonLink": "/#contact"
+              },
+              {
+                "id": "vent_tile",
+                "title": "Tile Roof Ventilation",
+                "image": "public/personal/old/img/all_dev/assets/images/ventilation/vent_tile.jpeg",
+                "alt": "Tile Roof Ventilation",
+                "description": "Ventilation options that complement tile roofing.",
+                "features": ["Tile vents", "Ridge vents", "Hip vents"],
+                "buttonText": "Learn More",
+                "buttonLink": "/#contact"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "blocks": [
+        {
+          "blockName": "HeroBlock",
+          "config": {
+            "backgroundImage": "",
+            "title": "Roof Installation & Materials",
+            "shrinkAfterMs": 1000,
+            "initialHeight": "40vh",
+            "finalHeight": "20vh"
+          }
+        },
+        {
+          "blockName": "GeneralListVariant2",
+          "config": {
+            "title": "Professional Installation Process",
+            "items": [
+              {
+                "id": 1,
+                "name": "Site Preparation & Safety",
+                "description": "We begin every installation with thorough site preparation and safety protocols to protect your property and our workers.",
+                "features": [
+                  "Property protection",
+                  "Safety equipment setup",
+                  "Material staging",
+                  "Access planning"
+                ],
+                "imageUrl": "public/personal/old/img/all_dev/assets/images/ventilation/roof_installation.webp"
+              }
+            ]
+          }
+        },
+        {
+          "blockName": "VideoCTA",
+          "config": {
+            "videoSrc": "",
+            "title": "Quality Installation Guaranteed",
+            "description": "Our certified installers ensure your new roof is installed to the highest standards with comprehensive warranties.",
+            "buttonText": "Schedule Installation",
+            "buttonLink": "/#contact",
+            "textColor": "1",
+            "textAlignment": "center",
+            "overlayOpacity": 0.7
+          }
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "blocks": [
+        {
+          "blockName": "HeroBlock",
+          "config": {
+            "backgroundImage": "",
+            "title": "Comprehensive Roofing Services",
+            "shrinkAfterMs": 1000,
+            "initialHeight": "40vh",
+            "finalHeight": "20vh"
+          }
+        },
+        {
+          "blockName": "VideoCTA",
+          "config": {
+            "videoSrc": "",
+            "title": "Complete Roofing Solutions",
+            "description": "From minor repairs to complete roof replacement, we handle all your roofing needs with professional expertise.",
+            "buttonText": "Get Started Today",
+            "buttonLink": "/#contact",
+            "textColor": "1",
+            "textAlignment": "center",
+            "overlayOpacity": 0.7
+          }
+        }
+      ]
+    }
+  ]
+}

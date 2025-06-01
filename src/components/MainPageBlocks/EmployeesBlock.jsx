@@ -6,29 +6,29 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 gsap.registerPlugin(ScrollTrigger);
 
 // Helper to initialize image state: handles string path or {file, url, name} object
-const initializeEmployeeImageState = (imageValue, defaultPath = "/assets/images/team/roofer.png") => {
-  let originalUrlToStore = defaultPath;
-  let nameToStore = defaultPath.split('/').pop();
-  let urlToDisplay = defaultPath;
-  let fileObject = null;
+const initializeEmployeeImageState = (imageValue, defaultStaticPath = "/assets/images/team/roofer.png") => {
+  let file = null;
+  let url = defaultStaticPath;
+  let name = defaultStaticPath.split('/').pop();
+  let originalUrl = defaultStaticPath;
 
-  if (imageValue && typeof imageValue === 'object') {
-    urlToDisplay = imageValue.url || defaultPath;
-    nameToStore = imageValue.name || urlToDisplay.split('/').pop();
-    fileObject = imageValue.file || null;
-    originalUrlToStore = imageValue.originalUrl || (typeof imageValue.url === 'string' && !imageValue.url.startsWith('blob:') ? imageValue.url : defaultPath);
-  } else if (typeof imageValue === 'string') {
-    urlToDisplay = imageValue;
-    nameToStore = imageValue.split('/').pop();
-    originalUrlToStore = imageValue;
+  if (typeof imageValue === 'string') {
+    url = imageValue;
+    name = imageValue.split('/').pop();
+    originalUrl = imageValue;
+  } else if (imageValue && typeof imageValue === 'object') {
+    url = imageValue.url || defaultStaticPath;
+    name = imageValue.name || url.split('/').pop();
+    file = imageValue.file || null;
+    if (imageValue.originalUrl) {
+      originalUrl = imageValue.originalUrl;
+    } else if (typeof imageValue.url === 'string' && !imageValue.url.startsWith('blob:')) {
+      originalUrl = imageValue.url;
+    } else {
+      originalUrl = defaultStaticPath;
+    }
   }
-  
-  return { 
-    file: fileObject, 
-    url: urlToDisplay, 
-    name: nameToStore,
-    originalUrl: originalUrlToStore
-  }; 
+  return { file, url, name, originalUrl }; 
 };
 
 // Helper to get display URL from string path or {url, file} object
@@ -455,12 +455,29 @@ export default function EmployeesBlock({
         const dataToSave = {
             ...localData,
             employee: localData.employee.map(emp => {
-                const imageState = emp.image?.file
-                    ? { ...emp.image }
-                    : { url: emp.image?.originalUrl || emp.image?.url };
+                const imageState = emp.image;
+                let imageForSave = {};
+                if (imageState?.file instanceof File) {
+                  // If a new file is uploaded, include the file and its originalUrl (which should be its intended final path)
+                  imageForSave = { 
+                    file: imageState.file, 
+                    url: imageState.url, // blob url for preview, not directly used in final JSON usually
+                    name: imageState.name,
+                    originalUrl: imageState.originalUrl // This should be the target path
+                  };
+                } else if (imageState?.originalUrl) {
+                  // If no new file, but originalUrl exists (meaning it was an existing image)
+                  imageForSave = { url: imageState.originalUrl, name: imageState.name, originalUrl: imageState.originalUrl };
+                } else if (imageState?.url && !imageState.url.startsWith('blob:')){
+                  // Fallback if originalUrl is missing but url is a valid path
+                  imageForSave = { url: imageState.url, name: imageState.name, originalUrl: imageState.url };
+                } else {
+                  // Fallback for placeholder or error
+                  imageForSave = { url: "/assets/images/team/roofer.png", name: "roofer.png", originalUrl: "/assets/images/team/roofer.png" }; 
+                }
                 return {
                     ...emp,
-                    image: imageState,
+                    image: imageForSave,
                 };
             }),
             showNailAnimation: localData.showNailAnimation,

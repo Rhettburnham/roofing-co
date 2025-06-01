@@ -333,7 +333,7 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
             className="absolute left-1/2 z-10 flex flex-row items-center"
           >
             {readOnly ? (
-              <h2 className="text-[6vw] md:text-[4vh] text-black font-normal font-condensed font-rye items-center py-3 z-30 text-center">
+              <h2 className="text-[6vw] md:text-[4vh] text-black font-normal font-condensed font-serif items-center py-3 z-30 text-center">
                 {sectionTitle}
               </h2>
             ) : (
@@ -341,7 +341,7 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
                 type="text"
                 value={sectionTitle}
                 onChange={(e) => onSectionTitleChange && onSectionTitleChange(e.target.value)}
-                className="text-[6vw] md:text-[4vh] text-black font-normal font-condensed font-rye items-center py-3 z-30 text-center bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-2 min-w-[300px] md:min-w-[400px]"
+                className="text-[6vw] md:text-[4vh] text-black font-normal font-condensed font-serif items-center py-3 z-30 text-center bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-2 min-w-[300px] md:min-w-[400px]"
                 placeholder="Section Title"
               />
             )}
@@ -362,7 +362,7 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
                   onClick={() => handleBoxClick(item)}
                 >
                   <div
-                    className="card w-[80vw] h-[50vw] md:w-[30vw] md:h-[22vw]"
+                    className="card w-[80vw] h-[50vw] md:w-[27vw] md:h-[15vw]"
                   >
                     <img
                       src={item.beforeDisplayUrl}
@@ -381,7 +381,7 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
                       e.stopPropagation();
                       toggleCardViewState(index);
                     }}
-                    className="absolute top-2 right-2 z-10 px-2 py-1 rounded-md text-xs md:text-sm transition-all transform hover:scale-105 focus:outline-none shadow-md"
+                    className="absolute top-2 right-2 z-10 px-2 py-1 rounded-md text-xs md:text-lg transition-all transform hover:scale-105 focus:outline-none shadow-md"
                     style={{
                       backgroundColor: toggleButtonBgColor,
                       color: toggleButtonTextColor,
@@ -400,9 +400,9 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
                       ? "After"
                       : "Before"}
                   </button>
-                  {/* Move info to the top left of image with padding */}
-                  <div className="overlay-text absolute top-0 left-0 pt-1 pl-2 md:pt-2 md:pl-3 w-full pr-12">
-                    <div className="flex flex-col items-start text-white text-left leading-tight">
+                  {/* Move info to the bottom left of image with padding */}
+                  <div className="overlay-text absolute bottom-0 left-0 pt-1 pl-2 md:pt-2 md:pl-3  ">
+                    <div className="flex flex-col bg-black bg-opacity-50 rounded -space-y-1 items-start text-white text-left leading-tight">
                       {readOnly ? (
                         <>
                           <span 
@@ -540,6 +540,13 @@ function BeforeAfterEditorPanel({ localData, onPanelChange, themeColors }) {
     const currentItem = items[index];
     const currentImageFieldState = currentItem?.[field];
 
+    console.log(`[handleItemImageChange ${index}-${field}] Before update:`, 
+      {
+        currentImageFieldState: typeof currentImageFieldState === 'object' && currentImageFieldState?.file instanceof File ? { ...currentImageFieldState, file: '[File Object]' } : currentImageFieldState,
+        newFile: file.name
+      }
+    );
+
     if (currentImageFieldState?.url?.startsWith('blob:')) {
       URL.revokeObjectURL(currentImageFieldState.url);
     }
@@ -550,6 +557,12 @@ function BeforeAfterEditorPanel({ localData, onPanelChange, themeColors }) {
         name: file.name, 
         originalUrl: currentImageFieldState?.originalUrl // Preserve originalUrl
     };
+    
+    console.log(`[handleItemImageChange ${index}-${field}] After update (updatedImageState):`, 
+      {
+        updatedImageState: typeof updatedImageState === 'object' && updatedImageState?.file instanceof File ? { ...updatedImageState, file: '[File Object]' } : updatedImageState,
+      }
+    );
     
     onPanelChange(prev => {
       const updatedItems = [...prev.items];
@@ -655,6 +668,13 @@ function BeforeAfterEditorPanel({ localData, onPanelChange, themeColors }) {
 =============================================== */
 // Helper to initialize image state: handles string path or {file, url, name} object
 const initializeImageState = (imageConfig, defaultPath) => {
+  console.log("[initializeImageState] Called with:", 
+    {
+      imageConfig: typeof imageConfig === 'object' && imageConfig?.file instanceof File ? { ...imageConfig, file: '[File Object]' } : imageConfig,
+      defaultPath
+    }
+  );
+
   let originalUrlToStore = defaultPath;
   let nameToStore = defaultPath.split('/').pop();
   let urlToDisplay = defaultPath;
@@ -688,6 +708,11 @@ export default function BeforeAfterBlock({
   onConfigChange,
   themeColors,
 }) {
+  // Log the received beforeAfterData prop
+  console.log("[BeforeAfterBlock Render/Prop Receive] beforeAfterData prop:", 
+    JSON.parse(JSON.stringify(beforeAfterData, (k,v) => v instanceof File ? ({name: v.name, type: v.type, size: v.size, inProp: true}) : v))
+  );
+
   const [localData, setLocalData] = useState(() => {
     const initialConfig = beforeAfterData || {};
     const initialShowNailAnimation = initialConfig.showNailAnimation !== undefined ? initialConfig.showNailAnimation : true;
@@ -734,17 +759,44 @@ export default function BeforeAfterBlock({
                                    prevLocalData.items?.[index] || 
                                    { shingle: "", sqft: "", before: initializeImageState(null), after: initializeImageState(null), id: `item_fallback_${index}_${Date.now()}` };
 
-          const newBeforeImg = initializeImageState(newItemFromProp.before, oldItemFromLocal.before?.originalUrl || oldItemFromLocal.before?.url);
-          const newAfterImg = initializeImageState(newItemFromProp.after, oldItemFromLocal.after?.originalUrl || oldItemFromLocal.after?.url);
+          // --- Refined image state merging ---
+          let newBeforeImg;
+          if (oldItemFromLocal.before?.file && oldItemFromLocal.before.url?.startsWith('blob:')) {
+            // If local state has a File/blob, and prop doesn't specify a *different* file or a non-blob URL, keep local.
+            if (newItemFromProp.before?.file || (typeof newItemFromProp.before?.url === 'string' && !newItemFromProp.before.url.startsWith('blob:'))) {
+              // Prop has a new file or a persistent URL, so use that. Revoke old local blob if different.
+              if (oldItemFromLocal.before.url !== newItemFromProp.before.url) {
+                 URL.revokeObjectURL(oldItemFromLocal.before.url);
+              }
+              newBeforeImg = initializeImageState(newItemFromProp.before, oldItemFromLocal.before?.originalUrl || oldItemFromLocal.before?.url);
+            } else {
+              newBeforeImg = oldItemFromLocal.before; // Keep existing local File/blob
+            }
+          } else {
+            // Local state is not a File/blob, or no local state, so initialize from prop.
+             if (oldItemFromLocal.before?.url?.startsWith('blob:')) { // Ensure any previous blob is cleaned if prop overrides
+                URL.revokeObjectURL(oldItemFromLocal.before.url);
+            }
+            newBeforeImg = initializeImageState(newItemFromProp.before, oldItemFromLocal.before?.originalUrl || oldItemFromLocal.before?.url);
+          }
 
-          if (oldItemFromLocal.before?.file && oldItemFromLocal.before.url?.startsWith('blob:') && 
-              (oldItemFromLocal.before.url !== newBeforeImg.url || (newBeforeImg.url && !newBeforeImg.url.startsWith('blob:')))) {
-            URL.revokeObjectURL(oldItemFromLocal.before.url);
+          let newAfterImg;
+          if (oldItemFromLocal.after?.file && oldItemFromLocal.after.url?.startsWith('blob:')) {
+            if (newItemFromProp.after?.file || (typeof newItemFromProp.after?.url === 'string' && !newItemFromProp.after.url.startsWith('blob:'))) {
+              if (oldItemFromLocal.after.url !== newItemFromProp.after.url) {
+                URL.revokeObjectURL(oldItemFromLocal.after.url);
+              }
+              newAfterImg = initializeImageState(newItemFromProp.after, oldItemFromLocal.after?.originalUrl || oldItemFromLocal.after?.url);
+            } else {
+              newAfterImg = oldItemFromLocal.after; // Keep existing local File/blob
+            }
+          } else {
+            if (oldItemFromLocal.after?.url?.startsWith('blob:')) { // Ensure any previous blob is cleaned if prop overrides
+                URL.revokeObjectURL(oldItemFromLocal.after.url);
+            }
+            newAfterImg = initializeImageState(newItemFromProp.after, oldItemFromLocal.after?.originalUrl || oldItemFromLocal.after?.url);
           }
-          if (oldItemFromLocal.after?.file && oldItemFromLocal.after.url?.startsWith('blob:') && 
-              (oldItemFromLocal.after.url !== newAfterImg.url || (newAfterImg.url && !newAfterImg.url.startsWith('blob:')))) {
-            URL.revokeObjectURL(oldItemFromLocal.after.url);
-          }
+          // --- End refined image state merging ---
           
           const resolvedShingle = 
             (oldItemFromLocal.shingle !== undefined && oldItemFromLocal.shingle !== (newItemFromProp.shingle || defaultShingle) && oldItemFromLocal.shingle !== defaultShingle)
@@ -766,6 +818,11 @@ export default function BeforeAfterBlock({
           };
         });
         
+        // Log newItems before setting localData
+        console.log("[BeforeAfterBlock useEffect beforeAfterData] Computed newItems before setLocalData:", 
+          JSON.parse(JSON.stringify(newItems, (k,v) => v instanceof File ? ({name: v.name, type: v.type, size: v.size, inNewItems: true}) : v))
+        );
+
         const resolvedShowNailAnimation = beforeAfterData.showNailAnimation !== undefined
                                      ? beforeAfterData.showNailAnimation
                                      : (prevLocalData.showNailAnimation !== undefined

@@ -1,0 +1,480 @@
+{
+  "navbar": {
+    "title": "COWBOYS-VAQUEROS",
+    "subtitle": "CONSTRUCTION",
+    "navLinks": [
+      {
+        "name": "About",
+        "href": "/about"
+      },
+      {
+        "name": "Booking",
+        "href": "/#book"
+      },
+      {
+        "name": "Services",
+        "href": "/#services"
+      },
+      {
+        "name": "Contact",
+        "href": "/#contact"
+      }
+    ],
+    "logo": "public/personal/old/img/main_page_images/HeroBlock/logo.png",
+    "whiteLogo": "public/personal/old/img/main_page_images/HeroBlock/logo.png",
+    "whiteLogoIcon": null
+  },
+  "mainPageBlocks": [
+    {
+      "blockName": "HeroBlock",
+      "config": {
+        "mainTitle": "COWBOY-VAQUEROS",
+        "subTitle": "CONSTRUTION",
+        "residential": {
+          "subServices": [
+            {
+              "title": "Shingling",
+              "slug": "residential-1-shingling"
+            },
+            {
+              "title": "Chimney",
+              "slug": "residential-2-chimney"
+            },
+            {
+              "title": "Siding",
+              "slug": "residential-3-siding"
+            },
+            {
+              "title": "Repairs",
+              "slug": "residential-4-repairs"
+            }
+          ]
+        },
+        "commercial": {
+          "subServices": [
+            {
+              "title": "Metal Roof",
+              "slug": "commercial-1-metal-roof"
+            },
+            {
+              "title": "Flat Roof",
+              "slug": "commercial-2-flat-roof"
+            },
+            {
+              "title": "Restoration",
+              "slug": "commercial-3-restoration"
+            },
+            {
+              "title": "Maintenance",
+              "slug": "commercial-4-maintenance"
+            }
+          ]
+        },
+        "logo": "public/personal/old/img/main_page_images/HeroBlock/logo.png",
+        "heroImage": "public/personal/old/img/main_page_images/HeroBlock/hero_bg.png",
+        "styling": {
+          "desktopHeightVH": 30,
+          "mobileHeightVW": 50
+        }
+      }
+    },
+    {
+      "blockName": "RichTextBlock",
+      "config": {
+        "heroText": "Protecting Your Home with Excellence",
+        "accredited": true,
+        "years_in_business": "11 Years of Roofing Experience",
+        "bus_description": "Cowboys-Vaqueros Construction has been a trusted name in the roofing industry for 11 years, delivering exceptional craftsmanship and reliability. Specializing in residential and commercial roofing, we combine time-tested techniques with modern materials to ensure durability, aesthetic appeal, and long-lasting protection for your property.",
+        "bus_description_second": "At Cowboys-Vaqueros Construction, we pride ourselves on personalized service and unwavering integrity. Our skilled team handles every project with meticulous attention to detail, from initial inspection to final installation. Customer satisfaction is our top priority, and we stand behind our work with industry-leading warranties and transparent communication.",
+        "cards": [
+          {
+            "title": "Expert Craftsmanship",
+            "desc": "Our seasoned professionals bring 11+ years of expertise, ensuring precision and quality in every roof we install or repair.",
+            "icon": "Tools"
+          },
+          {
+            "title": "Trusted Warranties",
+            "desc": "We offer robust warranties on materials and labor, giving you peace of mind for years to come.",
+            "icon": "Shield"
+          },
+          {
+            "title": "Personalized Service",
+            "desc": "From consultation to completion, we tailor solutions to fit your needs, budget, and timeline.",
+            "icon": "HeartHandshake"
+          },
+          {
+            "title": "BBB Accredited",
+            "desc": "Recognized for integrity, transparency and commitment to customer satisfaction by the Better Business Bureau.",
+            "icon": "Certificate"
+          }
+        ],
+        "images": [
+          "public/personal/old/img/main_page_images/RichTextBlock/richtext_1.jpg",
+          "public/personal/old/img/main_page_images/RichTextBlock/richtext_2.jpg",
+          "public/personal/old/img/main_page_images/RichTextBlock/richtext_3.webp"
+        ],
+        "description for the images": [
+          "a roofer working on a roof",
+          "a group of workers inspecting a roof",
+          "a roofer climbing a ladder to inspect a roof"
+        ],
+        "backgroundColor": "#1e293b",
+        "styling": {
+          "desktopHeightVH": 45,
+          "mobileHeightVW": 75
+        },
+        "steps": [
+          {
+            "title": "Book",
+            "videoSrc": "public/personal/old/img/main_page_images/RichTextBlock/booking.mp4",
+            "href": "/#booking",
+            "scale": 0.8
+          },
+          {
+            "title": "Inspection",
+            "videoSrc": "public/personal/old/img/main_page_images/RichTextBlock/magnify.mp4",
+            "href": "/inspection",
+            "scale": 1.25
+          },
+          {
+            "title": "Service",
+            "videoSrc": "public/personal/old/img/main_page_images/RichTextBlock/repair.mp4",
+            "href": "/#packages",
+            "scale": 1.1
+          },
+          {
+            "title": "Review",
+            "videoSrc": "public/personal/old/img/main_page_images/RichTextBlock/approval.mp4",
+            "href": "/#testimonials",
+            "scale": 0.9
+          }
+        ]
+      }
+    },    
+    {
+      "blockName": "ButtonBlock",
+      "config": {
+        "text": "Services",
+        "buttonLink": "/about",
+        "images": [
+          "public/personal/old/img/main_page_images/ButtonBlock/i4.jpeg",
+          "public/personal/old/img/main_page_images/ButtonBlock/i8.webp",
+          "public/personal/old/img/main_page_images/ButtonBlock/i5.jpeg",
+          "public/personal/old/img/main_page_images/ButtonBlock/i6.jpeg",
+          "public/personal/old/img/main_page_images/ButtonBlock/i2.jpeg",
+          "public/personal/old/img/main_page_images/ButtonBlock/i3.jpeg",
+          "public/personal/old/img/main_page_images/ButtonBlock/i9.jpeg",
+          "public/personal/old/img/main_page_images/ButtonBlock/i10.webp",
+          "public/personal/old/img/main_page_images/ButtonBlock/i7.webp",
+          "public/personal/old/img/main_page_images/ButtonBlock/i11.jpeg",
+          "public/personal/old/img/main_page_images/ButtonBlock/i12.webp",
+          "public/personal/old/img/main_page_images/ButtonBlock/i1.jpeg"
+        ],
+        "description for the images": [
+          "a house with a victorian chimney",
+          "a shingled roof close up",
+          "a roof being coated",
+          "a roof being repaired"
+        ]
+      }
+    },
+    {
+      "blockName": "BeforeAfterBlock",
+      "config": {
+        "sectionTitle": "PORTFOLIO",
+        "showNailAnimation": true,
+        "items": [
+          {
+            "before": "public/personal/old/img/main_page_images/BeforeAfterBlock/a1.jpeg",
+            "after": "public/personal/old/img/main_page_images/BeforeAfterBlock/b1.JPG",
+            "shingle": "Asphalt Shingle",
+            "sqft": "2000 sqft"
+          },
+          {
+            "before": "public/personal/old/img/main_page_images/BeforeAfterBlock/a2.jpeg",
+            "after": "public/personal/old/img/main_page_images/BeforeAfterBlock/b2.jpeg",
+            "shingle": "Metal Roofing",
+            "sqft": "1800 sqft"
+          },
+          {
+            "before": "public/personal/old/img/main_page_images/BeforeAfterBlock/a3.jpeg",
+            "after": "public/personal/old/img/main_page_images/BeforeAfterBlock/b3.jpeg",
+            "shingle": "Composite Shingle",
+            "sqft": "2200 sqft"
+          },
+          {
+            "before": "public/personal/old/img/main_page_images/BeforeAfterBlock/a4.png",
+            "after": "public/personal/old/img/main_page_images/BeforeAfterBlock/b4.png",
+            "shingle": "Tile Roof",
+            "sqft": "2500 sqft"
+          },
+          {
+            "before": "public/personal/old/img/main_page_images/BeforeAfterBlock/a5.jpg",
+            "after": "public/personal/old/img/main_page_images/BeforeAfterBlock/b5.jpg",
+            "shingle": "Slate Shingles",
+            "sqft": "3000 sqft"
+          },
+          {
+            "before": "public/personal/old/img/main_page_images/BeforeAfterBlock/a6.png",
+            "after": "public/personal/old/img/main_page_images/BeforeAfterBlock/b6.png",
+            "shingle": "Wood Shake",
+            "sqft": "2700 sqft"
+          }
+        ]
+      }
+    },
+    {
+      "blockName": "BasicMapBlock",
+      "config": {
+        "title": "Are we in your area?",
+        "center": {
+          "lat": 33.5407,
+          "lng": -84.6519
+        },
+        "zoomLevel": 11,
+        "circleRadius": 5047,
+        "address": "40 Tipperary TrlSharpsburg, GA 30277-3502",
+        "telephone": "(404) 227-5000",
+        "markerIcon": "public/personal/old/img/main_page_images/HeroBlock/logo.png",
+        "statsBackgroundImage": "public/personal/old/img/main_page_images/BasicMapBlock/stats_background.jpg",
+        "bannerTextColor": "#FFFFFF",
+        "bannerBackgroundColor": "#1F2937",
+        "statsTextColor": "#FFFFFF",
+        "showHoursButtonText": "View Hours",
+        "hideHoursButtonText": "Hide Hours",
+        "serviceHours": [
+          {
+            "id": "sh_mon",
+            "day": "Mon",
+            "time": "08:00 AM - 6:00 PM"
+          },
+          {
+            "id": "sh_tue",
+            "day": "Tue",
+            "time": "08:00 AM - 6:00 PM"
+          },
+          {
+            "id": "sh_wed",
+            "day": "Wed",
+            "time": "08:00 AM - 6:00 PM"
+          },
+          {
+            "id": "sh_thu",
+            "day": "Thu",
+            "time": "08:00 AM - 6:00 PM"
+          },
+          {
+            "id": "sh_fri",
+            "day": "Fri",
+            "time": "08:00 AM - 6:00 PM"
+          },
+          {
+            "id": "sh_sat",
+            "day": "Sat",
+            "time": "08:00 AM - 6:00 PM"
+          },
+          {
+            "id": "sh_sun",
+            "day": "Sun",
+            "time": "CLOSED"
+          }
+        ],
+        "stats": [
+          {
+            "id": "stat_0_exp",
+            "title": "Years of Service",
+            "value": "11",
+            "icon": "FaCalendarAlt"
+          },
+          {
+            "id": "stat_1_cust",
+            "title": "Customers Served",
+            "value": "550+",
+            "icon": "FaHandshake"
+          },
+          {
+            "id": "stat_2_roofs",
+            "title": "Roofs Repaired",
+            "value": "330+",
+            "icon": "FaHome"
+          },
+          {
+            "id": "stat_3_expyrs",
+            "title": "Years of Experience",
+            "value": "11",
+            "icon": "FaCalendarAlt"
+          }
+        ]
+      }
+    },
+    {
+      "blockName": "ServiceSliderBlock",
+      "config": {
+        "title": "Services",
+        "residentialButtonText": "Residential",
+        "commercialButtonText": "Commercial",
+        "residentialButtonIcon": { "pack": "lucide", "name": "Home" },
+        "commercialButtonIcon": { "pack": "lucide", "name": "Building2" },
+        "activeButtonConfig": {
+          "bgColor": "#D9534F",
+          "textColor": "#FFFFFF",
+          "iconColor": "#FFFFFF"
+        },
+        "inactiveButtonConfig": {
+          "bgColor": "#5A6268",
+          "textColor": "#FFFFFF",
+          "iconColor": "#FFFFFF"
+        },
+        "serviceItemConfig": {
+          "bgColor": "#343A40",
+          "textColor": "#FFFFFF",
+          "iconColor": "#FFFFFF"
+        },
+        "isCommercial": false,
+        "residentialServices": [
+          {
+            "icon": "FaHardHat",
+            "iconPack": "fa",
+            "title": "Shingling"
+          },
+          {
+            "icon": "FaHomeIcon",
+            "iconPack": "fa",
+            "title": "Chimney"
+          },
+          {
+            "icon": "FaTools",
+            "iconPack": "fa",
+            "title": "Siding"
+          },
+          {
+            "icon": "FaBroom",
+            "iconPack": "fa",
+            "title": "Repairs"
+          }
+        ],
+        "commercialServices": [
+          {
+            "icon": "FaPaintRoller",
+            "iconPack": "fa",
+            "title": "Metal Roof"
+          },
+          {
+            "icon": "FaBuilding",
+            "iconPack": "fa",
+            "title": "Flat Roof"
+          },
+          {
+            "icon": "FaWarehouse",
+            "iconPack": "fa",
+            "title": "Restoration"
+          },
+          {
+            "icon": "FaSmog",
+            "iconPack": "fa",
+            "title": "Maintenance"
+          }
+        ],
+        "largeResidentialImg": "public/personal/old/img/main_page_images/ServiceSliderBlock/main_image_expanded.jpg",
+        "largeCommercialImg": "public/personal/old/img/main_page_images/ServiceSliderBlock/commercialservices.jpg"
+      }
+    },
+    {
+      "blockName": "TestimonialBlock",
+      "config": {
+        "title": "Testimonials",
+        "googleReviews": [
+          {
+            "name": "Valjean Whitlow",
+            "stars": 5,
+            "date": "4 years ago",
+            "text": "Excellent workmanship and fair pricing! They handled everything with the insurance company, showed up when they said they would and cleaned up after they were done. They even replaced shingles on my porch and replaced one of my gutters, despite these things not being covered by insurance payment. I highly recommend them!",
+            "logo": "public/personal/old/img/main_page_images/TestimonialBlock/googleimage.png",
+            "link": "https://www.google.com/maps"
+          },
+          {
+            "name": "Gloria Mitchum",
+            "stars": 5,
+            "date": "2 years ago",
+            "text": "Mr Craft and his crew did a wonderful job replacing my roof. All of my questions were answered. Thank you so much & God bless",
+            "logo": "public/personal/old/img/main_page_images/TestimonialBlock/googleimage.png",
+            "link": "https://www.google.com/maps"
+          },
+          {
+            "name": "ral K",
+            "stars": 5,
+            "date": "4 years ago",
+            "text": "Carl Craft and his company provided excellent, reliable, and quick service..he worked with insurance company, so our part was minimal. I would recommend him to anyone who is need of any type of roofing issues.",
+            "logo": "public/personal/old/img/main_page_images/TestimonialBlock/googleimage.png",
+            "link": "https://www.google.com/maps"
+          },
+          {
+            "name": "MELODY WILLIAMS",
+            "stars": 5,
+            "date": "3 years ago",
+            "text": "Today I had a wonderful Roof inspection and minor repairs with Craft Roofing.  The Inspector was very knowledgeable about my roof and very informative.  I give the company a 5-star rating.",
+            "logo": "public/personal/old/img/main_page_images/TestimonialBlock/googleimage.png",
+            "link": "https://www.google.com/maps"
+          },
+          {
+            "name": "Dan Kile",
+            "stars": 5,
+            "date": "4 years ago",
+            "text": "Carl was excellent to work with. His crew was in and out quickly and cleaned up their mess.   I would highly recommend Craft Roofing.",
+            "logo": "public/personal/old/img/main_page_images/TestimonialBlock/googleimage.png",
+            "link": "https://www.google.com/maps"
+          },
+          {
+            "name": "David Snyder",
+            "stars": 5,
+            "date": "4 years ago",
+            "text": "I would like to share a review of my experience with Craft Roofing Company. I had my roof replaced by them, and the results were outstanding. The installers were on time and finished the job in a little more than one day. The roof looks …",
+            "logo": "public/personal/old/img/main_page_images/TestimonialBlock/googleimage.png",
+            "link": "https://www.google.com/maps"
+          }
+        ],
+        "reviewButtonText": "Review us on Google",
+        "reviewButtonLink": "https://www.google.com/maps"
+      }
+    },
+    {
+      "blockName": "BookingBlock",
+      "config": {
+        "logo": "public/personal/old/img/main_page_images/HeroBlock/logo.png",
+        "headerText": "Contact ",
+        "phone": "(404) 227-5000",
+        "showNailAnimation": true
+      }
+    },
+    {
+      "blockName": "EmployeesBlock",
+      "config": {
+        "sectionTitle": "CREW",
+        "showNailAnimation": true,
+        "cardBackgroundColor": "#FFFFFF",
+        "cardTextColor": "#000000",
+        "employee": [
+          {
+            "name": "Mr. Luis Aguilar-Lopez",
+            "role": "Owner",
+            "image": "public/personal/old/img/about_page/team/roofer.png"
+          },
+          {
+            "name": "Ms. Erika Salinas",
+            "role": "Manager",
+            "image": "public/personal/old/img/about_page/team/foreman.png"
+          }
+        ]
+      }
+    }
+  ],
+  "hero": null,
+  "booking": null,
+  "richText": null,
+  "button": null,
+  "map": null,
+  "serviceSlider": null,
+  "testimonials": null,
+  "before_after": null,
+  "employees": null
+}

@@ -23,18 +23,38 @@ const getDisplayUrl = (imageValue, defaultPath = null) => {
   if (!imageValue) return defaultPath;
   if (typeof imageValue === 'string') return imageValue;
   if (typeof imageValue === 'object' && imageValue.url) return imageValue.url;
+  // If it's a File object directly (less common for this helper, but defensive)
+  if (imageValue instanceof File) return URL.createObjectURL(imageValue);
   return defaultPath;
 };
 
-// Helper to initialize image state: handles string path or {file, url, name} object
-const initializeImageState = (imageConfig, defaultPath) => {
-  if (imageConfig && typeof imageConfig === 'object' && imageConfig.url) {
-    return { ...imageConfig, name: imageConfig.name || imageConfig.url.split('/').pop() }; 
-  }
+// Helper to initialize image state: handles string path or {file, url, name, originalUrl} object
+const initializeImageState = (imageConfig, defaultStaticPath) => {
+  let file = null;
+  let url = defaultStaticPath;
+  let name = defaultStaticPath.split('/').pop();
+  let originalUrl = defaultStaticPath; // Default originalUrl is the static default path
+
   if (typeof imageConfig === 'string') {
-    return { file: null, url: imageConfig, name: imageConfig.split('/').pop() }; 
+    url = imageConfig;
+    name = imageConfig.split('/').pop();
+    originalUrl = imageConfig; // String path is the original
+  } else if (imageConfig && typeof imageConfig === 'object') {
+    // Use provided url for display, which could be a blob or a path
+    url = imageConfig.url || defaultStaticPath;
+    name = imageConfig.name || url.split('/').pop();
+    file = imageConfig.file || null; // Preserve file if it exists (e.g. from active editing state)
+    
+    // Determine originalUrl: prioritize existing originalUrl, then a non-blob url, then defaultStaticPath
+    if (imageConfig.originalUrl) {
+      originalUrl = imageConfig.originalUrl;
+    } else if (typeof imageConfig.url === 'string' && !imageConfig.url.startsWith('blob:')) {
+      originalUrl = imageConfig.url;
+    } else {
+      originalUrl = defaultStaticPath; // Fallback to static default if url is blob or missing
+    }
   }
-  return { file: null, url: defaultPath, name: defaultPath.split('/').pop() }; 
+  return { file, url, name, originalUrl };
 };
 
 // to do this needs to be centered where the lat is currentl seem up and to the right
@@ -650,6 +670,43 @@ function BasicMapEditorPanel({ localMapData, onPanelChange, themeColors }) {
     }
   };
 
+  const handleImageFileChange = (field, file) => {
+    if (!file) return;
+    const currentImageState = localMapData[field]; // e.g., localMapData.markerIcon or localMapData.statsBackgroundImage
+
+    // Revoke old blob URL if one exists and is different from the new one or if current is a blob
+    if (currentImageState && currentImageState.url && currentImageState.url.startsWith('blob:')) {
+      URL.revokeObjectURL(currentImageState.url);
+    }
+
+    const fileURL = URL.createObjectURL(file);
+    onPanelChange(prev => ({ 
+      ...prev, 
+      [field]: { 
+        file: file, 
+        url: fileURL, 
+        name: file.name, 
+        originalUrl: currentImageState?.originalUrl // Preserve originalUrl if it existed
+      } 
+    }));
+  };
+
+  const handleImageUrlChange = (field, urlValue) => {
+    const currentImageState = localMapData[field];
+    if (currentImageState && currentImageState.url && currentImageState.url.startsWith('blob:')) {
+        URL.revokeObjectURL(currentImageState.url);
+    }
+    onPanelChange(prev => ({ 
+        ...prev, 
+        [field]: { 
+            file: null, 
+            url: urlValue, 
+            name: urlValue.split('/').pop(),
+            originalUrl: urlValue // When URL is pasted, it becomes the new original
+        }
+    }));
+  };
+
   return (
     <div className="bg-black text-white p-3 rounded mt-0">
       <h2 className="text-lg font-semibold mb-2.5 border-b border-gray-700 pb-1.5">Map Settings</h2>
@@ -696,6 +753,29 @@ function BasicMapEditorPanel({ localMapData, onPanelChange, themeColors }) {
               className="text-xs"
             />
           </div>
+
+          {/* Marker Icon Editor */}
+          <div className="pt-2 border-t border-gray-600 space-y-1">
+            <h3 className="text-base font-medium text-gray-300 mt-1 mb-1">Marker Icon</h3>
+            <label className="block text-xs">
+              <span className="font-medium text-gray-400 block mb-0.5">Icon Image:</span>
+              <input type="file" accept="image/*" className="w-full bg-gray-700 text-xs file:mr-1 file:py-0.5 file:px-1 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700" onChange={(e) => handleImageFileChange('markerIcon', e.target.files?.[0])} />
+            </label>
+            <input type="text" placeholder="Or paste image URL" value={getDisplayUrl(localMapData.markerIcon) || ''} onChange={(e) => handleImageUrlChange('markerIcon', e.target.value)} className="bg-gray-700 px-2 py-1 rounded w-full text-[11px] mt-0.5"/>
+            {getDisplayUrl(localMapData.markerIcon) && <img src={getDisplayUrl(localMapData.markerIcon)} alt="Marker Icon Preview" className="mt-1 h-10 w-10 object-contain rounded bg-gray-600 p-0.5"/>}
+          </div>
+
+           {/* Stats Background Image Editor */}
+           <div className="pt-2 border-t border-gray-600 space-y-1">
+            <h3 className="text-base font-medium text-gray-300 mt-1 mb-1">Stats Panel Background</h3>
+            <label className="block text-xs">
+              <span className="font-medium text-gray-400 block mb-0.5">Background Image:</span>
+              <input type="file" accept="image/*" className="w-full bg-gray-700 text-xs file:mr-1 file:py-0.5 file:px-1 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700" onChange={(e) => handleImageFileChange('statsBackgroundImage', e.target.files?.[0])} />
+            </label>
+            <input type="text" placeholder="Or paste image URL" value={getDisplayUrl(localMapData.statsBackgroundImage) || ''} onChange={(e) => handleImageUrlChange('statsBackgroundImage', e.target.value)} className="bg-gray-700 px-2 py-1 rounded w-full text-[11px] mt-0.5"/>
+            {getDisplayUrl(localMapData.statsBackgroundImage) && <img src={getDisplayUrl(localMapData.statsBackgroundImage)} alt="Stats BG Preview" className="mt-1 h-16 w-full object-cover rounded bg-gray-600 p-0.5"/>}
+          </div>
+
         </div>
 
         {/* Right Column */}
@@ -810,8 +890,14 @@ export default function BasicMapBlock({
         }
 
 
-        const newMarkerIcon = initializeImageState(incomingData.markerIcon, prevLocal.markerIcon?.url);
-        const newStatsBg = initializeImageState(incomingData.statsBackgroundImage, prevLocal.statsBackgroundImage?.url);
+        const newMarkerIcon = initializeImageState(
+            incomingData.markerIcon, 
+            prevLocal.markerIcon?.originalUrl || "/assets/images/hero/clipped.png" // Use existing originalUrl or static default
+        );
+        const newStatsBg = initializeImageState(
+            incomingData.statsBackgroundImage, 
+            prevLocal.statsBackgroundImage?.originalUrl || "/assets/images/stats_background.jpg" // Use existing originalUrl or static default
+        );
         
         if (prevLocal.markerIcon?.file && prevLocal.markerIcon.url?.startsWith('blob:') && prevLocal.markerIcon.url !== newMarkerIcon.url) {
             URL.revokeObjectURL(prevLocal.markerIcon.url);

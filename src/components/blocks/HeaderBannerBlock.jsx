@@ -1,50 +1,79 @@
 // src/components/blocks/HeaderBannerBlock.jsx
-import React, { useState, useEffect, useRef } from 'react';
-import PropTypes from 'prop-types';
+import React from "react";
 
-// Helper to initialize image state.
-// Adapts the pattern from BeforeAfterBlock for a single image.
-const initializeImageState = (imageValue, defaultPath = '') => {
-  let fileObject = null;
-  let urlToDisplay = defaultPath;
-  let nameToStore = defaultPath.split('/').pop();
-  let originalUrlToStore = defaultPath;
+// A simple EditableText component
+const EditableText = ({ value, onChange, tag: Tag = 'span', className = '', placeholder = 'Enter text', readOnly = false, inputType = 'text' }) => {
+  const [inputValue, setInputValue] = React.useState(value);
 
-  if (imageValue && typeof imageValue === 'object') {
-    urlToDisplay = imageValue.url || defaultPath;
-    nameToStore = imageValue.name || urlToDisplay.split('/').pop();
-    fileObject = imageValue.file || null;
-    originalUrlToStore = imageValue.originalUrl || (typeof imageValue.url === 'string' && !imageValue.url.startsWith('blob:') ? imageValue.url : defaultPath);
-  } else if (typeof imageValue === 'string') {
-    urlToDisplay = imageValue;
-    nameToStore = imageValue.split('/').pop();
-    originalUrlToStore = imageValue;
-  }
-  
-  return { 
-    file: fileObject, 
-    url: urlToDisplay,
-    name: nameToStore,
-    originalUrl: originalUrlToStore 
+  React.useEffect(() => {
+    setInputValue(value);
+  }, [value]);
+
+  const handleChange = (e) => {
+    setInputValue(e.target.value);
   };
-};
 
-// Helper to get display URL from string path or {url, file} object
-// Ensures compatibility with existing getDisplayUrl prop if provided, otherwise uses local logic.
-const getEffectiveDisplayUrl = (imageState, getDisplayUrlProp) => {
-  if (getDisplayUrlProp) {
-    return getDisplayUrlProp(imageState);
-  }
-  if (imageState && typeof imageState === 'object' && imageState.url) {
-    return imageState.url;
-  }
-  if (typeof imageState === 'string') {
-    if (imageState.startsWith('/') || imageState.startsWith('blob:') || imageState.startsWith('data:')) {
-      return imageState;
+  const handleBlur = () => {
+    if (value !== inputValue) {
+      onChange(inputValue);
     }
-    return `/${imageState.replace(/^\.\//, "")}`;
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && inputType === 'text') { // For single line input, Enter confirms.
+      if (value !== inputValue) {
+        onChange(inputValue);
+      }
+      e.target.blur();
+    } else if (e.key === 'Escape') {
+      setInputValue(value); // Revert
+      e.target.blur();
+    }
+  };
+
+  if (readOnly) {
+    // Render placeholder if value is empty in readOnly mode for visual consistency
+    return <Tag className={className}>{value || placeholder}</Tag>;
   }
-  return ''; // Default to empty string if no valid URL
+
+  const inputStyles = {
+    background: 'transparent',
+    border: '1px dashed rgba(255, 255, 255, 0.3)', // Subtle border for editing
+    outline: 'none',
+    width: '100%',
+    padding: '0', // Minimal padding, rely on parent's padding or className
+    margin: '0',
+    font: 'inherit',
+    color: 'inherit',
+  };
+
+  if (inputType === 'textarea') {
+    return (
+      <textarea
+        value={inputValue || ''}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyPress}
+        placeholder={placeholder}
+        className={className} // Apply main styling to textarea directly
+        style={inputStyles}
+        rows={inputValue?.split('\\n').length || 1}
+      />
+    );
+  } else {
+    return (
+      <input
+        type="text"
+        value={inputValue || ''}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyPress}
+        placeholder={placeholder}
+        className={className} // Apply main styling to input directly
+        style={inputStyles}
+      />
+    );
+  }
 };
 
 
@@ -56,334 +85,208 @@ const getEffectiveDisplayUrl = (imageState, getDisplayUrlProp) => {
  * config = {
  *   title: string,
  *   subtitle: string,
- *   backgroundImage: string | object
- *   overlayOpacity: number,
- *   textColor: string,
- *   height: string
+ *   backgroundImage: string | { url: string, file?: File },
+ *   textColor: string (color hex),
+ *   textAlign: string ('left', 'center', 'right'),
+ *   titleFontSize: string (Tailwind class e.g. 'text-5xl'),
+ *   subtitleFontSize: string (Tailwind class e.g. 'text-xl'),
+ *   bannerMinHeight: string (e.g. '300px', '50vh', 'auto'),
+ *   paddingClasses: string (Tailwind classes e.g. 'py-8 md:py-12')
  * }
  */
-const HeaderBannerBlock = ({ config, readOnly = true, onConfigChange, getDisplayUrl }) => {
-  const [localConfig, setLocalConfig] = useState(() => {
-    const defaultConfig = {
-      title: 'Default Banner Title',
-      subtext: 'Default banner subtext here.',
-      overlayOpacity: 0.5,
-      textColor: '#FFFFFF',
-      height: '40vh',
-      backgroundImage: initializeImageState(null, '/assets/images/placeholder_banner.jpg'), // Default placeholder
-    };
-    const initialData = config || {};
-    return {
-      ...defaultConfig,
-      ...initialData,
-      // Ensure backgroundImage is initialized correctly using the new helper
-      backgroundImage: initializeImageState(initialData.backgroundImage, defaultConfig.backgroundImage.originalUrl),
-    };
-  });
+const HeaderBannerBlock = ({ config = {}, readOnly = true, onConfigChange }) => {
+  const {
+    title = "Welcome",
+    subtitle = "Explore our services",
+    backgroundImage = "", // Can be a string URL or an object { url: string, file?: File }
+    textColor = "#FFFFFF",
+    textAlign = "center",
+    titleFontSize = "text-3xl sm:text-4xl md:text-5xl lg:text-6xl",
+    subtitleFontSize = "text-base sm:text-lg md:text-xl",
+    bannerMinHeight = "auto", // e.g., '300px', 'auto'
+    paddingClasses = "py-4 md:py-6 lg:py-8", // Default padding classes
+  } = config;
 
-  const prevReadOnlyRef = useRef(readOnly);
-  const titleInputRef = useRef(null);
-
-  useEffect(() => {
-    // Update localConfig when config prop changes
-    if (config) {
-      setLocalConfig(prevLocal => {
-        const newBgImage = initializeImageState(config.backgroundImage, prevLocal.backgroundImage.originalUrl);
-        // Clean up old blob URL if a new file is uploaded or URL is cleared/changed
-        if (prevLocal.backgroundImage?.file && prevLocal.backgroundImage.url?.startsWith('blob:') && prevLocal.backgroundImage.url !== newBgImage.url) {
-          URL.revokeObjectURL(prevLocal.backgroundImage.url);
-        }
-        return {
-          ...prevLocal,
-          ...config,
-          backgroundImage: newBgImage,
-          // Preserve local text changes if editing
-          title: readOnly ? (config.title || prevLocal.title) : prevLocal.title,
-          subtext: readOnly ? (config.subtext || prevLocal.subtext) : prevLocal.subtext,
-        };
-      });
-    }
-  }, [config]);
-
-  useEffect(() => {
-    // Effect for saving: when switching from edit to read-only
-    if (prevReadOnlyRef.current === false && readOnly === true) {
-      if (onConfigChange) {
-        console.log("HeaderBannerBlock: Editing finished. Calling onConfigChange.");
-        const dataToSave = {
-          ...localConfig,
-          // Prepare backgroundImage for saving: if it's a file, pass the state, else pass the URL.
-          backgroundImage: localConfig.backgroundImage?.file
-            ? { ...localConfig.backgroundImage } // Includes File object, name, url (blob), originalUrl
-            : { url: localConfig.backgroundImage?.originalUrl || localConfig.backgroundImage?.url }, // Only URL
-        };
-        onConfigChange(dataToSave);
-      }
-    }
-    prevReadOnlyRef.current = readOnly;
-  }, [readOnly, localConfig, onConfigChange]);
-
-  useEffect(() => {
-    if (!readOnly && titleInputRef.current) {
-      titleInputRef.current.style.height = "auto";
-      titleInputRef.current.style.height = `${titleInputRef.current.scrollHeight}px`;
-    }
-  }, [localConfig.title, readOnly]);
-
-  // Cleanup blob URL on unmount
-  useEffect(() => {
-    return () => {
-      if (localConfig.backgroundImage?.file && localConfig.backgroundImage.url?.startsWith('blob:')) {
-        URL.revokeObjectURL(localConfig.backgroundImage.url);
-      }
-    };
-  }, [localConfig.backgroundImage]);
-
-
-  const handleLocalChange = (field, value) => {
-    // This function is used by the inline text inputs
-    if (!readOnly) {
-      setLocalConfig(prev => ({ ...prev, [field]: value }));
-    }
+  // Helper function to get display URL
+  const getDisplayUrl = (value) => {
+    if (!value) return null;
+    if (typeof value === "string") return value;
+    if (typeof value === "object" && value.url) return value.url;
+    return null;
   };
 
-  const handlePanelDataChange = (newData) => {
-    // This function is used by the EditorPanel for style/media changes
-    if (!readOnly) {
-      // If backgroundImage is part of newData and is a file, create a blob URL
-      if (newData.backgroundImage && typeof newData.backgroundImage === 'object' && newData.backgroundImage.file instanceof File) {
-        // Revoke old blob URL if it exists
-        if (localConfig.backgroundImage?.file && localConfig.backgroundImage.url?.startsWith('blob:')) {
-          URL.revokeObjectURL(localConfig.backgroundImage.url);
-        }
-        const newFile = newData.backgroundImage.file;
-        const blobUrl = URL.createObjectURL(newFile);
-        setLocalConfig(prev => ({ 
-          ...prev, 
-          ...newData, 
-          backgroundImage: {
-            file: newFile,
-            url: blobUrl,
-            name: newFile.name,
-            originalUrl: prev.backgroundImage.originalUrl // Preserve original if one existed
-          }
-        }));
-      } else if (newData.backgroundImage && typeof newData.backgroundImage === 'string') { // Pasted URL
-         // Revoke old blob URL if it exists from a file
-        if (localConfig.backgroundImage?.file && localConfig.backgroundImage.url?.startsWith('blob:')) {
-          URL.revokeObjectURL(localConfig.backgroundImage.url);
-        }
-        setLocalConfig(prev => ({
-          ...prev,
-          ...newData,
-          backgroundImage: initializeImageState(newData.backgroundImage) // Treat as new original URL
-        }));
-      }
-      else {
-        setLocalConfig(prev => ({ ...prev, ...newData }));
-      }
-    }
-  };
-  
-  const currentDisplayImageUrl = getEffectiveDisplayUrl(localConfig.backgroundImage, getDisplayUrl);
+  const displayBackground = getDisplayUrl(backgroundImage) || "/assets/images/default-banner.jpg";
 
-  const bannerStyle = {
-    backgroundImage: currentDisplayImageUrl ? `url("${currentDisplayImageUrl}")` : 'none',
-    backgroundColor: !currentDisplayImageUrl ? '#cccccc' : '', 
-    height: localConfig.height || '40vh',
-    color: localConfig.textColor || '#FFFFFF',
-    position: 'relative',
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    textAlign: 'center',
+  const handleInlineChange = (field, newValue) => {
+    onConfigChange?.({ ...config, [field]: newValue });
   };
 
-  const overlayStyle = {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: `rgba(0, 0, 0, ${localConfig.overlayOpacity >= 0 && localConfig.overlayOpacity <= 1 ? localConfig.overlayOpacity : 0.5})`,
-    zIndex: 1,
+  const sectionStyle = {
+    backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7)), url('${displayBackground}')`,
+    minHeight: bannerMinHeight !== 'auto' ? bannerMinHeight : undefined,
   };
 
-  const contentStyle = {
-    position: 'relative',
-    zIndex: 2,
-    padding: '20px',
-  };
+  const textAlignClass = {
+    left: 'text-left',
+    center: 'text-center',
+    right: 'text-right',
+  }[textAlign] || 'text-center';
 
-  const handleTitleChange = (e) => {
-    const newTitle = e.target.value;
-    const updatedConfig = { ...localConfig, title: newTitle };
-    setLocalConfig(updatedConfig);
-    if(!readOnly) { // Live update if in edit mode
-      onConfigChange(updatedConfig);
-    }
-  };
-  
-  const handleBlur = () => {
-    // Propagate changes when focus is lost, ensuring parent gets the latest state
-    // This is important if live updates are not desired for every keystroke
-    onConfigChange(localConfig);
-  };
-
-  if (readOnly) {
     return (
-      <div style={bannerStyle} className="header-banner-block">
-        <div style={overlayStyle}></div>
-        <div style={contentStyle}>
-          <h1>{localConfig.title}</h1>
-          <p className="mt-2 text-lg md:text-xl">{localConfig.subtext}</p>
+      <section 
+      className={`relative w-full flex items-center justify-center bg-cover bg-center bg-no-repeat overflow-hidden ${paddingClasses}`}
+      style={sectionStyle}
+      >
+      <div className={`container mx-auto px-4 ${textAlignClass}`}>
+        <EditableText
+          tag="h1"
+          value={title}
+          onChange={(val) => handleInlineChange("title", val)}
+          readOnly={readOnly}
+          className={`font-bold mb-4 md:mb-6 ${titleFontSize}`}
+          placeholder="Enter Title"
+          style={{ color: textColor }} // Apply text color directly
+        />
+        { (subtitle || !readOnly) && (
+          <EditableText
+            tag="p"
+            value={subtitle}
+            onChange={(val) => handleInlineChange("subtitle", val)}
+            readOnly={readOnly}
+            className={`max-w-2xl mx-auto ${subtitleFontSize} ${textAlign === 'center' ? 'mx-auto' : textAlign === 'left' ? 'mr-auto' : 'ml-auto'}`}
+            placeholder="Enter Subtitle"
+            inputType="textarea" // Subtitle can be multi-line
+            style={{ color: textColor }} // Apply text color directly
+          />
+          )}
         </div>
-      </div>
+      </section>
     );
-  }
+};
 
-  // Editable version (readOnly === false)
+export const HeaderBannerBlockEditorPanel = ({ config = {}, onPanelConfigChange, onPanelFileChange }) => {
+  const {
+    backgroundImage, // Handled by file input
+    textColor = "#FFFFFF",
+    textAlign = "center",
+    titleFontSize = "text-3xl sm:text-4xl md:text-5xl lg:text-6xl",
+    subtitleFontSize = "text-base sm:text-lg md:text-xl",
+    bannerMinHeight = "auto",
+    paddingClasses = "py-4 md:py-6 lg:py-8",
+  } = config;
+
+  const handleFieldChange = (field, value) => {
+    onPanelConfigChange?.({ ...config, [field]: value });
+  };
+
+  const getDisplayUrl = (value) => {
+    if (!value) return null;
+    if (typeof value === "string") return value;
+    if (typeof value === "object" && value.url) return value.url;
+    return null;
+  };
+  const currentBgUrl = getDisplayUrl(backgroundImage);
+
   return (
-    <>
-      <div style={bannerStyle} className="header-banner-block">
-        <div style={overlayStyle}></div>
-        <div style={contentStyle}>
-            <textarea 
-              ref={titleInputRef}
-              value={localConfig.title}
-              onChange={handleTitleChange}
-              onBlur={handleBlur}
-              className="text-3xl md:text-5xl font-bold bg-transparent border-b-2 border-dashed border-gray-400 focus:border-white outline-none w-full text-center mb-2"
-              style={{ color: localConfig.textColor || '#FFFFFF' }}
-              placeholder="Banner Title"
-              rows={1}
-            />
-            <textarea 
-              value={localConfig.subtext}
-              onChange={(e) => handleLocalChange('subtext', e.target.value)}
-              className="mt-2 text-lg md:text-xl bg-transparent border-b-2 border-dashed border-gray-400 focus:border-white outline-none w-full text-center resize-none h-auto"
-              style={{ color: localConfig.textColor || '#FFFFFF' }}
-              rows={3}
-              placeholder="Banner Subtext"
-            />
+    <div className="p-4 space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Background Image</label>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => {
+            if (e.target.files && e.target.files[0]) {
+              onPanelFileChange?.("backgroundImage", e.target.files[0]);
+            }
+          }}
+          className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+        />
+        {currentBgUrl && (
+        <div className="mt-2">
+            <p className="text-xs text-gray-500 mb-1">Current Background Preview:</p>
+          <img
+              src={currentBgUrl}
+            alt="Banner background preview"
+              className="w-full h-32 object-cover rounded border"
+          />
         </div>
+      )}
       </div>
-      <HeaderBannerBlock.EditorPanel
-        currentConfig={localConfig}
-        onPanelConfigChange={handlePanelDataChange} // Editor panel changes are passed here
-        getDisplayUrl={(imgState) => getEffectiveDisplayUrl(imgState, getDisplayUrl)} // Pass down the effective URL getter
-      />
-    </>
-  );
-};
 
-HeaderBannerBlock.propTypes = {
-  config: PropTypes.shape({
-    backgroundImage: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
-    title: PropTypes.string,
-    subtext: PropTypes.string,
-    overlayOpacity: PropTypes.number,
-    textColor: PropTypes.string,
-    height: PropTypes.string,
-  }), // Made config optional as localConfig provides defaults
-  readOnly: PropTypes.bool,
-  onConfigChange: PropTypes.func,
-  getDisplayUrl: PropTypes.func, // Made optional, will use internal logic if not provided
-};
-
-HeaderBannerBlock.EditorPanel = ({ currentConfig, onPanelConfigChange, getDisplayUrl: getDisplayUrlForPanel }) => {
-  // EditorPanel receives the full currentConfig and a callback to update it.
-  // It should not maintain its own separate state for the entire config if changes are meant to be live in the preview.
-  // Instead, it calls onPanelConfigChange with the specific field that changed.
-
-  const handlePanelInputChange = (field, value) => {
-    onPanelConfigChange({ [field]: value });
-  };
-  
-  const handlePanelFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      // Pass an object with the file to the parent handler
-      onPanelConfigChange({ backgroundImage: { file: e.target.files[0] } });
-    }
-  };
-
-  const handleImageUrlPaste = (urlValue) => {
-     // Pass a string for a pasted URL
-    onPanelConfigChange({ backgroundImage: urlValue });
-  };
-
-  // Use the passed getDisplayUrlForPanel for consistency
-  const currentImageUrlDisplay = getDisplayUrlForPanel(currentConfig.backgroundImage);
-
-  return (
-    <div className="space-y-4 p-4 bg-gray-800 text-white rounded-b-md"> {/* Added some styling */}
-      <h3 className="text-lg font-semibold border-b border-gray-700 pb-2">Banner Settings</h3>
       <div>
-        <label className="block text-sm font-medium text-gray-300">Background Image:</label>
-        <input 
-          type="file" 
-          accept="image/*" 
-          onChange={handlePanelFileChange}
-          className="mt-1 block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-500 file:text-white hover:file:bg-indigo-600 cursor-pointer"
-        />
-        {currentImageUrlDisplay && (
-          <div className="mt-2">
-            <img src={currentImageUrlDisplay} alt="Banner background preview" className="max-h-32 rounded object-contain bg-gray-700 p-1" />
-          </div>
-        )}
-        <label className="block text-sm font-medium text-gray-300 mt-2">Or Image URL:</label>
-        <input 
-          type="text" 
-          value={typeof currentConfig.backgroundImage === 'string' ? currentConfig.backgroundImage : (currentConfig.backgroundImage?.originalUrl || currentConfig.backgroundImage?.url || '')} 
-          onChange={(e) => handleImageUrlPaste(e.target.value)}
-          className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400"
-          placeholder="e.g., /assets/images/banner.jpg"
+        <label htmlFor="textColor" className="block text-sm font-medium text-gray-700">Text Color</label>
+        <input
+          type="color"
+          id="textColor"
+          value={textColor}
+          onChange={(e) => handleFieldChange("textColor", e.target.value)}
+          className="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-300">Overlay Opacity (0 to 1):</label>
-        <input 
-          type="number" 
-          step="0.1" 
-          min="0" 
-          max="1" 
-          value={currentConfig.overlayOpacity || 0.5} 
-          onChange={(e) => handlePanelInputChange('overlayOpacity', parseFloat(e.target.value))} 
-          className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white"
+        <label htmlFor="textAlign" className="block text-sm font-medium text-gray-700">Text Alignment</label>
+        <select
+          id="textAlign"
+          value={textAlign}
+          onChange={(e) => handleFieldChange("textAlign", e.target.value)}
+          className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+        >
+          <option value="left">Left</option>
+          <option value="center">Center</option>
+          <option value="right">Right</option>
+        </select>
+      </div>
+
+      <div>
+        <label htmlFor="titleFontSize" className="block text-sm font-medium text-gray-700">Title Font Size (Tailwind)</label>
+        <input
+          type="text"
+          id="titleFontSize"
+          value={titleFontSize}
+          onChange={(e) => handleFieldChange("titleFontSize", e.target.value)}
+          placeholder="e.g., text-5xl"
+          className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2"
+        />
+      </div>
+      
+      <div>
+        <label htmlFor="subtitleFontSize" className="block text-sm font-medium text-gray-700">Subtitle Font Size (Tailwind)</label>
+        <input
+          type="text"
+          id="subtitleFontSize"
+          value={subtitleFontSize}
+          onChange={(e) => handleFieldChange("subtitleFontSize", e.target.value)}
+          placeholder="e.g., text-xl"
+          className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-300">Text Color:</label>
-        <input 
-          type="color" 
-          value={currentConfig.textColor || '#FFFFFF'} 
-          onChange={(e) => handlePanelInputChange('textColor', e.target.value)} 
-          className="mt-1 h-10 w-full border-gray-600 rounded-md bg-gray-700 cursor-pointer" // Added cursor-pointer
+        <label htmlFor="bannerMinHeight" className="block text-sm font-medium text-gray-700">Banner Min Height</label>
+        <input
+          type="text"
+          id="bannerMinHeight"
+          value={bannerMinHeight}
+          onChange={(e) => handleFieldChange("bannerMinHeight", e.target.value)}
+          placeholder="e.g., 300px, 50vh, auto"
+          className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-300">Banner Height (e.g., 300px, 50vh):</label>
-        <input 
-          type="text" 
-          value={currentConfig.height || '40vh'} 
-          onChange={(e) => handlePanelInputChange('height', e.target.value)} 
-          className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white"
+        <label htmlFor="paddingClasses" className="block text-sm font-medium text-gray-700">Padding Classes (Tailwind)</label>
+        <input
+          type="text"
+          id="paddingClasses"
+          value={paddingClasses}
+          onChange={(e) => handleFieldChange("paddingClasses", e.target.value)}
+          placeholder="e.g., py-8 md:py-16"
+          className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2"
         />
       </div>
     </div>
   );
-};
-
-HeaderBannerBlock.EditorPanel.propTypes = {
-  currentConfig: PropTypes.object.isRequired,
-  onPanelConfigChange: PropTypes.func.isRequired,
-  // onPanelFileChange is removed as its logic is merged into onPanelConfigChange
-  getDisplayUrl: PropTypes.func.isRequired, // Renamed to getDisplayUrlForPanel in usage for clarity
 };
 
 export default HeaderBannerBlock;

@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { PlusCircleIcon, TrashIcon } from '@heroicons/react/24/outline'; // Example icons
 
 // Define the original four default colors with their properties
-const defaultColorDefinitions = [
+export const defaultColorDefinitions = [
   { id: 'default-accent', name: 'accent', label: 'Accent Color', value: '#1d5a88', description: 'Used for buttons, links, and primary interactive elements.', isDefault: true, isRemovable: false },
   { id: 'default-banner', name: 'banner', label: 'Banner Color', value: '#143e5f', description: 'Used for headers, navigation bars, and prominent UI elements.', isDefault: true, isRemovable: false },
   { id: 'default-faint-color', name: 'faint-color', label: 'Faint Color', value: '#2574b0', description: 'Used for backgrounds, subtle highlights, and secondary elements.', isDefault: true, isRemovable: false },
@@ -30,9 +30,9 @@ const ColorEditor = ({ initialColors: initialColorsProp, onColorChange }) => {
     propColorNames.forEach(name => {
       if (!defaultColorDefinitions.some(def => def.name === name)) {
         transformed.push({
-          id: `custom-${name}-${Date.now()}`, // Ensure unique ID
-          name: name, // Retain original name
-          label: name.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '), // Generate label
+          id: `custom-${name}-${Date.now()}`,
+          name: name, 
+          label: name.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '), 
           value: colorsProp[name],
           description: 'User-defined custom color.',
           isDefault: false,
@@ -44,8 +44,6 @@ const ColorEditor = ({ initialColors: initialColorsProp, onColorChange }) => {
   }, []);
 
   useEffect(() => {
-    // Initialize editableColors based on initialColorsProp
-    // If initialColorsProp is null/undefined, start with defaults
     const startingColorsObject = initialColorsProp || defaultColorDefinitions.reduce((obj, item) => {
         obj[item.name] = item.value;
         return obj;
@@ -59,16 +57,15 @@ const ColorEditor = ({ initialColors: initialColorsProp, onColorChange }) => {
       return obj;
     }, {});
     
-    // Update CSS variables
     updatedColorsArray.forEach(color => {
-      if (color.name) { // Ensure name is not empty
+      if (color.name) {
           document.documentElement.style.setProperty(`--color-${color.name}`, color.value);
       }
     });
-    // If a color was removed, its CSS variable might need explicit removal (though overwriting is usually fine)
 
     if (onColorChange) {
-      onColorChange(colorsObjectForParent);
+      // Pass both the simple object AND the full array of editableColors
+      onColorChange(colorsObjectForParent, updatedColorsArray);
     }
   }, [onColorChange]);
 
@@ -76,15 +73,12 @@ const ColorEditor = ({ initialColors: initialColorsProp, onColorChange }) => {
     setEditableColors(prevColors => {
       const newColors = prevColors.map(color => {
         if (color.id === id) {
-          // Basic name validation: replace spaces with hyphens, convert to lowercase
-          // More robust validation might be needed (e.g., ensure it's a valid CSS custom property name part)
           let processedNewValue = newValue;
           if (property === 'name' && !color.isDefault) {
             processedNewValue = newValue.replace(/\s+/g, '-').toLowerCase();
-            // Check for uniqueness if it's a name change
             if (prevColors.some(c => c.id !== id && c.name === processedNewValue)) {
               alert(`Color name "${processedNewValue}" already exists. Please choose a unique name.`);
-              return color; // Return original color if name is not unique
+              return color; 
             }
           }
           return { ...color, [property]: processedNewValue };
@@ -100,7 +94,6 @@ const ColorEditor = ({ initialColors: initialColorsProp, onColorChange }) => {
     setEditableColors(prevColors => {
       let newColorName = `custom-color-${prevColors.filter(c => !c.isDefault).length + 1}`;
       let counter = 1;
-      // Ensure newColorName is unique
       while (prevColors.some(c => c.name === newColorName)) {
         newColorName = `custom-color-${prevColors.filter(c => !c.isDefault).length + 1 + counter}`;
         counter++;
@@ -125,7 +118,6 @@ const ColorEditor = ({ initialColors: initialColorsProp, onColorChange }) => {
     setEditableColors(prevColors => {
       const colorToRemove = prevColors.find(c => c.id === idToRemove);
       if (colorToRemove && colorToRemove.name) {
-         // Remove the CSS custom property
          document.documentElement.style.removeProperty(`--color-${colorToRemove.name}`);
       }
       const updatedColors = prevColors.filter(color => color.id !== idToRemove);
@@ -134,8 +126,6 @@ const ColorEditor = ({ initialColors: initialColorsProp, onColorChange }) => {
     });
   };
   
-  // The old colorFields array is no longer needed as we iterate over editableColors
-
   return (
     <div className="container mx-auto px-4 py-6 bg-gray-100 text-gray-800">
       <div className="mb-6 bg-gray-800 text-white p-4 rounded shadow-md flex justify-between items-center">
@@ -153,7 +143,6 @@ const ColorEditor = ({ initialColors: initialColorsProp, onColorChange }) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Color Input Fields Section */}
         <div className="space-y-5">
           {editableColors.map(color => (
             <div key={color.id} className="p-4 bg-white rounded-lg shadow relative">
@@ -178,7 +167,7 @@ const ColorEditor = ({ initialColors: initialColorsProp, onColorChange }) => {
               </div>
               <div className="mb-2">
                 <label htmlFor={`${color.id}-name`} className="block text-sm font-medium text-gray-700">
-                  Name (for CSS: --color-{color.name || '...'})
+                  Name (for CSS: --color-{color.name || '...'}) 
                 </label>
                 <input
                   type="text"
@@ -225,7 +214,6 @@ const ColorEditor = ({ initialColors: initialColorsProp, onColorChange }) => {
           ))}
         </div>
 
-        {/* Live Preview Section - Update to use dynamic colors */}
         <div className="p-4 bg-white rounded-lg shadow">
           <h2 className="text-lg font-semibold mb-3 text-gray-800 border-b pb-2">Live Preview</h2>
           <div className="space-y-4">
@@ -262,7 +250,7 @@ const ColorEditor = ({ initialColors: initialColorsProp, onColorChange }) => {
 };
 
 ColorEditor.propTypes = {
-  initialColors: PropTypes.object, // Remains an object { name: value }
+  initialColors: PropTypes.object, 
   onColorChange: PropTypes.func.isRequired,
 };
 

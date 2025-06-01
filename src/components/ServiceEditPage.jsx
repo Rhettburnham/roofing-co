@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import PropTypes from "prop-types";
-import JSZip from "jszip";
-import { useConfig } from "../context/ConfigContext";
+// import JSZip from "jszip"; // No longer needed for zipping here
+// import { useConfig } from "../context/ConfigContext"; // No longer needed for services
 
 // Import preview components for blocks
 import HeroBlock from "./blocks/HeroBlock";
@@ -58,7 +58,7 @@ const blockMap = {
 // };
 
 // Export a reference to the services data
-let servicesDataRef = null;
+// let servicesDataRef = null;
 
 // Helper to get display URL (can be enhanced for file objects later)
 const getDisplayUrlHelper = (value) => {
@@ -68,93 +68,16 @@ const getDisplayUrlHelper = (value) => {
   return null;
 };
 
-// Simplified traversal function for ServiceEditPage (adapt as needed for its specific data structure)
-// This version focuses on finding string URLs that might be local assets.
-// If service blocks start containing File objects, this needs to be expanded like OneForm's version.
-function traverseAndCleanServiceData(originalDataNode, assetsToCollect, pathContext, uploadBaseDir) {
-  if (originalDataNode === null || originalDataNode === undefined) {
-    return originalDataNode;
-  }
+// Helper to transform string URLs to file object format for compatibility
+// const transformImageUrlToFileObject = (url) => { ... };
 
-  if (Array.isArray(originalDataNode)) {
-    return originalDataNode.map((item, index) =>
-      traverseAndCleanServiceData(item, assetsToCollect, `${pathContext}[${index}]`, uploadBaseDir)
-    );
-  }
+// Helper to recursively transform image fields in service data
+// const transformServiceDataImages = (data) => { ... };
 
-  if (typeof originalDataNode === 'object' && !(originalDataNode instanceof File)) {
-    // Check for our specific image object structure: { file: File, url: blobUrl, name: string, originalUrl?: string }
-    if (originalDataNode.file && originalDataNode.file instanceof File && typeof originalDataNode.name === 'string') {
-      console.log(`[traverseAndCleanServiceData - ServiceEdit] Detected FileObject. PathContext: ${pathContext}, File: ${originalDataNode.name}`);
-      const file = originalDataNode.file;
-      const fileName = originalDataNode.name || file.name || 'untitled_service_asset';
-      let pathInZip;
-      let jsonUrl;
-
-      // Use originalUrl for path if it exists and seems valid, otherwise generate one.
-      if (originalDataNode.originalUrl && typeof originalDataNode.originalUrl === 'string' && !originalDataNode.originalUrl.startsWith('blob:')) {
-        let tempPath = originalDataNode.originalUrl;
-        if (tempPath.startsWith('/')) tempPath = tempPath.substring(1);
-        // Ensure it goes into an assets directory within the ZIP
-        pathInZip = tempPath.startsWith('assets/') ? tempPath : `assets/${tempPath}`;
-        jsonUrl = pathInZip;
-        console.log(`[traverseAndCleanServiceData - ServiceEdit] Using originalUrl for FileObject: ${pathInZip}`);
-      } else {
-        const sanitizedPathContext = pathContext.replace(/[\W_]+/g, '_').slice(0, 50);
-        pathInZip = `assets/${uploadBaseDir}/${sanitizedPathContext}_${fileName}`.replace(/\/{2,}/g, '/'); // Normalize slashes
-        jsonUrl = pathInZip;
-        console.log(`[traverseAndCleanServiceData - ServiceEdit] Generating new path for FileObject: ${pathInZip}`);
-      }
-      assetsToCollect.push({ pathInZip, dataSource: file, type: 'file' });
-      // Replace the file object with just the URL for the JSON
-      // Important: The key in JSON should point to jsonUrl. Often this is 'image' or 'imageUrl' or 'backgroundImage'.
-      // The structure that held the file object might be { image: { file, url, ...} } or image: 'path_string'.
-      // We return JUST the jsonUrl string, assuming the calling traversal will place it correctly.
-      // This simplification means the block config should expect a string URL after this processing.
-      // Example: if original was { config: { heroImage: {file: F, url: B} } }, it becomes { config: { heroImage: "assets/..." } }
-      return jsonUrl; // Return only the URL string for the field that held the file object.
-    }
-    // Handle objects that are not file objects but might contain URLs (e.g., { imageUrl: 'path/to/image.jpg' })
-    const newObj = {};
-    for (const key in originalDataNode) {
-      if (Object.prototype.hasOwnProperty.call(originalDataNode, key)) {
-        newObj[key] = traverseAndCleanServiceData(originalDataNode[key], assetsToCollect, `${pathContext}.${key}`, uploadBaseDir);
-      }
-    }
-    return newObj;
-  }
-
-  // Handle direct string URLs that might be existing assets
-  if (typeof originalDataNode === 'string') {
-    // Simplified check: if it doesn't start with http/https/data/blob and contains typical asset paths or extensions.
-    const isLikelyLocalAsset = (url) => 
-        !url.startsWith('http') && 
-        !url.startsWith('data:') && 
-        !url.startsWith('blob:') &&
-        (url.includes('assets/') || url.includes('Commercial/') || url.includes('uploads/') || url.match(/\.(jpeg|jpg|gif|png|svg|webp|avif|pdf|mp4|webm)$/i) !== null);
-
-    if (isLikelyLocalAsset(originalDataNode)) {
-      let pathInZip = originalDataNode.startsWith('/') ? originalDataNode.substring(1) : originalDataNode;
-      // Ensure it is placed under an 'assets/' directory in the ZIP if not already structured that way.
-      if (!pathInZip.startsWith('assets/')) {
-        pathInZip = `assets/${pathInZip}`.replace(/\/{2,}/g, '/'); // Normalize slashes
-      }
-      // Avoid duplicating asset collection for these existing URLs
-      if (!assetsToCollect.some(asset => asset.pathInZip === pathInZip && asset.type === 'url')) {
-        assetsToCollect.push({
-          pathInZip,
-          dataSource: originalDataNode, // The original URL to fetch from
-          type: 'url',
-        });
-        console.log(`[traverseAndCleanServiceData - ServiceEdit] Collected string asset URL: ${pathInZip} from ${originalDataNode}`);
-      }
-      return pathInZip; // Return the path that will be in the JSON
-    }
-  }
-
-  // Return primitives and other types (like already processed blob URLs which won't match isLikelyLocalAsset) as is
-  return originalDataNode;
-}
+// REMOVE traverseAndCleanServiceData function
+// function traverseAndCleanServiceData(originalDataNode, assetsToCollect, pathContext, uploadBaseDir) {
+//   // ... entire function body ...
+// }
 
 /* 
 =============================================
@@ -165,109 +88,50 @@ It loads data from services.json and allows editing of all
 service page content.
 =============================================
 */
-const ServiceEditPage = ({ themeColors }) => {
-  const [servicesData, setServicesData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const { services: configServices } = useConfig();
-  const [initialServicesDataForOldExport, setInitialServicesDataForOldExport] = useState(null); // For "old" export
+const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange, themeColors }) => {
+  // Removed local states: servicesData, loading, error, initialServicesDataForOldExport
+  // const { services: configServices } = useConfig(); // Removed
+
   const [selectedCategory, setSelectedCategory] = useState("commercial");
   const [selectedPageId, setSelectedPageId] = useState(1);
   const [currentPage, setCurrentPage] = useState(null);
-  const [selectedBlockType, setSelectedBlockType] = useState(
-    Object.keys(blockMap)[0]
-  );
-  // Track which block is being edited (stores blockIndex)
+  const [selectedBlockType, setSelectedBlockType] = useState(Object.keys(blockMap)[0]);
   const [activeEditBlockIndex, setActiveEditBlockIndex] = useState(null);
 
-  // Update the reference when servicesData changes
+  // Derive currentPage from props
   useEffect(() => {
-    if (servicesData) {
-      servicesDataRef = servicesData;
-    }
-  }, [servicesData]);
-
-  // DEBUG: Log activeEditBlockIndex changes
-  useEffect(() => {
-    console.log('[ServiceEditPage] activeEditBlockIndex changed to:', activeEditBlockIndex);
-  }, [activeEditBlockIndex]);
-
-  // Fetch services.json on mount
-  useEffect(() => {
-    if (configServices) {
-      setServicesData(configServices);
-      setLoading(false);
-      try {
-        setInitialServicesDataForOldExport(JSON.parse(JSON.stringify(configServices))); // Deep copy for "old" export
-      } catch (e) {
-        console.error("Could not deep clone initial services data for old export:", e);
-        setInitialServicesDataForOldExport(null);
-      }
-      const page = configServices[selectedCategory].find(
+    if (servicesDataFromProps && servicesDataFromProps[selectedCategory]) {
+      const page = servicesDataFromProps[selectedCategory].find(
         (p) => p.id === Number(selectedPageId)
       );
-      setCurrentPage(page);
+      setCurrentPage(page || null); // Set to null if page not found
+      if (!page) {
+        console.warn(`[ServiceEditPage] Page not found for category '${selectedCategory}', ID '${selectedPageId}'`);
+        // Optionally reset selectedPageId to the first available if current one is invalid
+        if (servicesDataFromProps[selectedCategory].length > 0) {
+          setSelectedPageId(servicesDataFromProps[selectedCategory][0].id);
+        }
+      }
     } else {
-      setError("No services data available");
-      setLoading(false);
+      setCurrentPage(null); // No data or category
     }
-  }, [configServices]); // Only depend on configServices
+  }, [servicesDataFromProps, selectedCategory, selectedPageId]);
 
-  // Update current page when category or page ID changes
-  useEffect(() => {
-    if (servicesData) {
-      const page = servicesData[selectedCategory]?.find(
-        (p) => p.id === Number(selectedPageId)
-      );
-      if (page && (!currentPage || page.id !== currentPage.id)) {
-        setCurrentPage(page);
-      }
-    }
-  }, [selectedCategory, selectedPageId, servicesData, currentPage]);
-
-  // Reset activeEditBlockIndex ONLY when category or page ID changes
   useEffect(() => {
     setActiveEditBlockIndex(null);
   }, [selectedCategory, selectedPageId]);
 
-  /* 
-  =============================================
-  handleDownloadJSON
-  ---------------------------------------------
-  Downloads the edited services data as a JSON file
-  =============================================
-  */
-  // const handleDownloadJSON = async () => { ... }; // Commented out for now
+  // Helper to get display URL (can be enhanced for file objects later)
+  // const getDisplayUrlHelper = (value) => { ... };
 
-  /* 
-  =============================================
-  handleConfigChange
-  ---------------------------------------------
-  Updates a specific configuration field in a block.
-  =============================================
-  */
-  const handleConfigChange = (blockIndex, key, value) => {
-    const updatedPage = { ...currentPage };
-    updatedPage.blocks = updatedPage.blocks.map((block, index) => {
-      if (index === blockIndex) {
-        return {
-          ...block,
-          config: {
-            ...block.config,
-            [key]: value,
-          },
-        };
-      }
-      return block;
-    });
-    setCurrentPage(updatedPage);
-
-    // Also update the master JSON in servicesData
-    const updatedData = { ...servicesData };
-    updatedData[selectedCategory] = updatedData[selectedCategory].map((page) =>
-      page.id === updatedPage.id ? updatedPage : page
-    );
-    setServicesData(updatedData);
+  // Update internal page state and then call onServicesChange prop with the full updated page data
+  const updatePageAndPropagate = (updatedPageData) => {
+    setCurrentPage(updatedPageData);
+    if (onServicesChange) {
+      onServicesChange(updatedPageData, selectedCategory, selectedPageId);
+    } else {
+      console.warn("[ServiceEditPage] onServicesChange prop is not defined.");
+    }
   };
 
   /* 
@@ -300,121 +164,102 @@ const ServiceEditPage = ({ themeColors }) => {
   const getDisplayUrl = (value) => {
     if (!value) return null;
     if (typeof value === "string") return value;
-    if (typeof value === "object" && value.url) return value.url;
+    if (typeof value === "object") {
+      // Handle file objects with blob URLs (priority for uploaded files)
+      if (value.file && value.url && value.url.startsWith('blob:')) return value.url;
+      // Handle file objects with regular URLs
+      if (value.url) return value.url;
+      // Handle objects that might have other URL properties
+      if (value.originalUrl) return value.originalUrl;
+    }
     return null;
   };
 
-  // New handler for when a block commits its entire config.
-  // This will be passed as onConfigChange to each block component.
+  // Modified handleBlockConfigUpdate to use updatePageAndPropagate
   const handleBlockConfigUpdate = (blockIndex, newConfig) => {
-    const updatedPage = { ...currentPage };
-    updatedPage.blocks = updatedPage.blocks.map((block, index) => {
+    if (!currentPage) return;
+    const updatedBlocks = currentPage.blocks.map((block, index) => {
       if (index === blockIndex) {
         return { ...block, config: newConfig };
       }
       return block;
     });
-    setCurrentPage(updatedPage);
-
-    const updatedData = { ...servicesData };
-    updatedData[selectedCategory] = updatedData[selectedCategory].map((page) =>
-      page.id === updatedPage.id ? updatedPage : page
-    );
-    setServicesData(updatedData);
+    updatePageAndPropagate({ ...currentPage, blocks: updatedBlocks });
   };
 
-  // New handler for file changes from within a block's EditorPanel or in-place edit.
-  // This is designed to store the file object correctly for ZIP export.
+  // Modified handleFileChangeForBlock to use updatePageAndPropagate
   const handleFileChangeForBlock = (blockIndex, configKeyOrPathData, fileOrFileObject) => {
-    if (!fileOrFileObject) return;
+    if (!currentPage || !fileOrFileObject) return;
 
-    let newImageConfig;
+    let newMediaConfig;
     const currentBlock = currentPage.blocks[blockIndex];
-    let existingImageConfig;
-
-    // Determine if we are updating a direct config key or a nested path
+    let existingMediaConfig;
     let isNestedPath = typeof configKeyOrPathData === 'object' && configKeyOrPathData !== null;
-    let configKeyToUpdate = isNestedPath ? configKeyOrPathData.field : configKeyOrPathData;
+    let fieldToUpdate = isNestedPath ? configKeyOrPathData.field : configKeyOrPathData;
 
+    // Simplified access for common structures, expand if needed
     if (isNestedPath) {
-        // Accessing nested existing config, e.g., items[itemIndex].pictures[picIndex]
-        // This is a simplified example; a robust solution would use a helper to get/set nested properties.
         if (configKeyOrPathData.field === 'pictures' && currentBlock.config.items && currentBlock.config.items[configKeyOrPathData.blockItemIndex]) {
-            existingImageConfig = currentBlock.config.items[configKeyOrPathData.blockItemIndex].pictures?.[configKeyOrPathData.pictureIndex];
+            existingMediaConfig = currentBlock.config.items[configKeyOrPathData.blockItemIndex].pictures?.[configKeyOrPathData.pictureIndex];
+        } else if (currentBlock.config.items && currentBlock.config.items[configKeyOrPathData.blockItemIndex]) {
+            existingMediaConfig = currentBlock.config.items[configKeyOrPathData.blockItemIndex][fieldToUpdate];
         }
     } else {
-        existingImageConfig = currentBlock?.config?.[configKeyToUpdate];
+        existingMediaConfig = currentBlock?.config?.[fieldToUpdate];
     }
 
-    if (fileOrFileObject instanceof File) { // A new file is uploaded
-        if (existingImageConfig && typeof existingImageConfig === 'object' && existingImageConfig.url && existingImageConfig.url.startsWith('blob:')) {
-            URL.revokeObjectURL(existingImageConfig.url);
+    if (fileOrFileObject instanceof File) {
+        if (existingMediaConfig && typeof existingMediaConfig === 'object' && existingMediaConfig.url && existingMediaConfig.url.startsWith('blob:')) {
+            URL.revokeObjectURL(existingMediaConfig.url);
         }
         const fileURL = URL.createObjectURL(fileOrFileObject);
-        newImageConfig = {
+        newMediaConfig = {
             file: fileOrFileObject,
             url: fileURL,
             name: fileOrFileObject.name,
-            originalUrl: (typeof existingImageConfig === 'object' ? existingImageConfig.originalUrl : typeof existingImageConfig === 'string' ? existingImageConfig : null) || `assets/service_uploads/generated/${fileOrFileObject.name}` // Preserve or generate
+            originalUrl: (existingMediaConfig?.originalUrl) || `assets/service_uploads/generated/${fileOrFileObject.name}`
         };
-    } else if (typeof fileOrFileObject === 'object' && fileOrFileObject.url !== undefined) { // It's already a file object structure (e.g., from pasting a URL)
-        // If the existing one was a blob from a file, revoke it
-        if (existingImageConfig && typeof existingImageConfig === 'object' && existingImageConfig.file && existingImageConfig.url && existingImageConfig.url.startsWith('blob:')) {
-           if (existingImageConfig.url !== fileOrFileObject.url) { // Only revoke if URL is different
-             URL.revokeObjectURL(existingImageConfig.url);
-           }
+    } else if (typeof fileOrFileObject === 'object' && fileOrFileObject.url !== undefined) {
+        if (existingMediaConfig?.file && existingMediaConfig?.url?.startsWith('blob:') && existingMediaConfig.url !== fileOrFileObject.url) {
+             URL.revokeObjectURL(existingMediaConfig.url);
         }
-        newImageConfig = fileOrFileObject; // Assume it's correctly formatted { file?, url, name?, originalUrl? }
-    } else if (typeof fileOrFileObject === 'string') { // Pasted URL string
-        if (existingImageConfig && typeof existingImageConfig === 'object' && existingImageConfig.file && existingImageConfig.url && existingImageConfig.url.startsWith('blob:')) {
-            URL.revokeObjectURL(existingImageConfig.url);
+        newMediaConfig = fileOrFileObject;
+    } else if (typeof fileOrFileObject === 'string') { 
+        if (existingMediaConfig?.file && existingMediaConfig?.url?.startsWith('blob:')) {
+            URL.revokeObjectURL(existingMediaConfig.url);
         }
-        newImageConfig = {
+        newMediaConfig = {
             file: null,
             url: fileOrFileObject,
             name: fileOrFileObject.split('/').pop(),
             originalUrl: fileOrFileObject
         };
     } else {
-        console.warn("Unsupported file/URL type in handleFileChangeForBlock", fileOrFileObject);
+        console.warn("[ServiceEditPage] Unsupported file/URL type in handleFileChangeForBlock", fileOrFileObject);
         return;
     }
 
-    // Update master servicesData
-    const updatedPage = { ...currentPage };
-    updatedPage.blocks = updatedPage.blocks.map((block, index) => {
+    const updatedBlocks = currentPage.blocks.map((block, index) => {
         if (index === blockIndex) {
             let newBlockConfig = { ...block.config };
-            if (isNestedPath && configKeyOrPathData.field === 'pictures') {
+            if (isNestedPath && fieldToUpdate === 'pictures') {
                 if (!newBlockConfig.items) newBlockConfig.items = [];
-                while (newBlockConfig.items.length <= configKeyOrPathData.blockItemIndex) {
-                    newBlockConfig.items.push({ pictures: [] }); // Ensure item and pictures array exist
-                }
-                if (!newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures) {
-                    newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures = [];
-                }
-                // Ensure picture slot exists
-                 while (newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures.length <= configKeyOrPathData.pictureIndex) {
-                    newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures.push(null);
-                }
-                newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures[configKeyOrPathData.pictureIndex] = newImageConfig;
+                 while (newBlockConfig.items.length <= configKeyOrPathData.blockItemIndex) newBlockConfig.items.push({ pictures: [] });
+                if (!newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures) newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures = [];
+                 while (newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures.length <= configKeyOrPathData.pictureIndex) newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures.push(null);
+                newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures[configKeyOrPathData.pictureIndex] = newMediaConfig;
+            } else if (isNestedPath) {
+                if (!newBlockConfig.items) newBlockConfig.items = [];
+                 while (newBlockConfig.items.length <= configKeyOrPathData.blockItemIndex) newBlockConfig.items.push({});
+                 newBlockConfig.items[configKeyOrPathData.blockItemIndex] = { ...newBlockConfig.items[configKeyOrPathData.blockItemIndex], [fieldToUpdate]: newMediaConfig };
             } else {
-                newBlockConfig[configKeyToUpdate] = newImageConfig;
+                newBlockConfig[fieldToUpdate] = newMediaConfig;
             }
-            return {
-                ...block,
-                config: newBlockConfig,
-            };
+            return { ...block, config: newBlockConfig };
         }
         return block;
     });
-    setCurrentPage(updatedPage);
-
-    const updatedData = { ...servicesData };
-    updatedData[selectedCategory] = updatedData[selectedCategory].map((page) =>
-        page.id === updatedPage.id ? updatedPage : page
-    );
-    setServicesData(updatedData);
+    updatePageAndPropagate({ ...currentPage, blocks: updatedBlocks });
   };
 
   /* 
@@ -593,18 +438,19 @@ const ServiceEditPage = ({ themeColors }) => {
   =============================================
   */
   const renderPageButtons = () => {
-    if (!servicesData) return null;
-
+    if (!servicesDataFromProps) return <p>No service data provided.</p>;
     return (
       <div className="mb-6 flex justify-between items-start">
         <div className="flex flex-col space-y-2 items-start">
-          {Object.keys(servicesData).map((category) => (
+          {Object.keys(servicesDataFromProps).map((category) => (
             <button
               key={category}
               onClick={() => {
                 setSelectedCategory(category);
-                if (servicesData[category] && servicesData[category].length > 0) {
-                  setSelectedPageId(servicesData[category][0].id);
+                if (servicesDataFromProps[category] && servicesDataFromProps[category].length > 0) {
+                  setSelectedPageId(servicesDataFromProps[category][0].id);
+                } else {
+                  setSelectedPageId(null); // No pages in this category
                 }
               }}
               className={`px-4 py-2 rounded text-sm font-medium w-full text-left ${selectedCategory === category ? 'bg-blue text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
@@ -615,7 +461,7 @@ const ServiceEditPage = ({ themeColors }) => {
         </div>
 
         <div className="flex flex-wrap gap-2 justify-start items-start w-3/4">
-          {servicesData[selectedCategory].map((page) => {
+          {servicesDataFromProps[selectedCategory] && servicesDataFromProps[selectedCategory].map((page) => {
             const heroBlock =
               page.blocks.find((b) => b.blockName === "HeroBlock") ||
               page.blocks[0];
@@ -672,72 +518,41 @@ const ServiceEditPage = ({ themeColors }) => {
   =============================================
   */
   const renderBlockEditor = (block, blockIndex) => {
+    if (!currentPage) return null;
     const Component = blockMap[block.blockName];
     const isEditingThisBlock = activeEditBlockIndex === blockIndex;
-
-    if (!Component) {
-      return (
-        <div key={`unknown-${blockIndex}`} className="bg-red-100 p-4 mb-0">
-          <p className="text-red-700">Unknown block type: {block.blockName}</p>
-        </div>
-      );
-    }
-
-    // Ensure block.config is an object
+    if (!Component) return <div key={`unknown-${blockIndex}`} className="bg-red-100 p-4 mb-0"><p className="text-red-700">Unknown block type: {block.blockName}</p></div>;
     const blockConfig = block.config || {};
-
     return (
-      <div
-        key={block.uniqueKey || blockIndex} // Use uniqueKey if available
-        className="relative border-t border-b border-gray-300 mb-0 bg-white overflow-hidden"
-      >
-        <div className="absolute top-2 right-2 z-40"> {/* Adjusted positioning for better visibility */}
-          <button
-            type="button"
-            onClick={() => {
-              // This is the ONLY place activeEditBlockIndex should be set.
-              // Clicking the button toggles the state for the current block.
-              if (isEditingThisBlock) {
-                setActiveEditBlockIndex(null); // Close if already editing this block
-              } else {
-                setActiveEditBlockIndex(blockIndex); // Open for this block if not already
-              }
-            }}
-            className={`${isEditingThisBlock ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-700 hover:bg-gray-600'} text-white rounded-full p-2 shadow-lg transition-colors`}
-            title={isEditingThisBlock ? "Done Editing" : "Edit Block"}
-          >
+      <div key={block.uniqueKey || blockIndex} className="relative border-t border-b border-gray-300 mb-0 bg-white overflow-hidden">
+        <div className="absolute top-2 right-2 z-40">
+          <button type="button" onClick={() => setActiveEditBlockIndex(isEditingThisBlock ? null : blockIndex)} className={`${isEditingThisBlock ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-700 hover:bg-gray-600'} text-white rounded-full p-2 shadow-lg transition-colors`} title={isEditingThisBlock ? "Done Editing" : "Edit Block"}>
             {isEditingThisBlock ? CheckIcon : PencilIcon}
           </button>
         </div>
-
-        {/* Block Preview */}
         <Component 
           config={blockConfig} 
           readOnly={!isEditingThisBlock} 
           onConfigChange={(newFullConfig) => handleBlockConfigUpdate(blockIndex, newFullConfig)}
-          getDisplayUrl={getDisplayUrlHelper} // Pass display helper
-          // Pass file handler for blocks that manage files directly in their preview (e.g., in-place image upload)
+          getDisplayUrl={getDisplayUrlHelper}
           onFileChange={(fieldKey, fileOrFileObject) => handleFileChangeForBlock(blockIndex, fieldKey, fileOrFileObject)}
+          themeColors={themeColors} // Pass themeColors here
         />
-
-        {/* Inline Editor Panel - Render if isEditingThisBlock and Component.EditorPanel exists */}
         {isEditingThisBlock && Component.EditorPanel && (
           <div className="border-t border-gray-200 bg-gray-100 p-4">
             <h3 className="text-md font-semibold text-gray-700 mb-3">{block.blockName} - Edit Panel</h3>
             <Component.EditorPanel
               currentConfig={blockConfig}
               onPanelConfigChange={(updatedFields) => {
-                // This merges specific field updates from the panel into the block's config
                 const currentBlockConfig = currentPage.blocks[blockIndex].config || {};
                 const newConfig = { ...currentBlockConfig, ...updatedFields };
                 handleBlockConfigUpdate(blockIndex, newConfig);
               }}
               onPanelFileChange={(fieldKey, fileOrFileObject) => {
-                // For file inputs within the EditorPanel
                 handleFileChangeForBlock(blockIndex, fieldKey, fileOrFileObject);
               }}
-              getDisplayUrl={getDisplayUrlHelper} // Pass display helper to panel too
-              themeColors={themeColors} // Pass themeColors to EditorPanel
+              getDisplayUrl={getDisplayUrlHelper}
+              themeColors={themeColors}
             />
           </div>
         )}
@@ -753,28 +568,14 @@ const ServiceEditPage = ({ themeColors }) => {
   =============================================
   */
   const handleMoveBlock = (blockIndex, direction) => {
-    const updatedPage = { ...currentPage };
+    if (!currentPage) return;
+    const updatedBlocks = [...currentPage.blocks];
     const newIndex = direction === "up" ? blockIndex - 1 : blockIndex + 1;
-
-    // Validate the new index
-    if (newIndex < 0 || newIndex >= updatedPage.blocks.length) {
-      return;
-    }
-
-    // Swap the blocks
-    const temp = updatedPage.blocks[blockIndex];
-    updatedPage.blocks[blockIndex] = updatedPage.blocks[newIndex];
-    updatedPage.blocks[newIndex] = temp;
-
-    // Update the current page
-    setCurrentPage(updatedPage);
-
-    // Update the master data
-    const updatedData = { ...servicesData };
-    updatedData[selectedCategory] = updatedData[selectedCategory].map((page) =>
-      page.id === updatedPage.id ? updatedPage : page
-    );
-    setServicesData(updatedData);
+    if (newIndex < 0 || newIndex >= updatedBlocks.length) return;
+    const temp = updatedBlocks[blockIndex];
+    updatedBlocks[blockIndex] = updatedBlocks[newIndex];
+    updatedBlocks[newIndex] = temp;
+    updatePageAndPropagate({ ...currentPage, blocks: updatedBlocks });
   };
 
   /* 
@@ -785,22 +586,9 @@ const ServiceEditPage = ({ themeColors }) => {
   =============================================
   */
   const handleRemoveBlock = (blockIndex) => {
-    if (!window.confirm("Are you sure you want to remove this block?")) {
-      return;
-    }
-
-    const updatedPage = { ...currentPage };
-    updatedPage.blocks.splice(blockIndex, 1);
-
-    // Update the current page
-    setCurrentPage(updatedPage);
-
-    // Update the master data
-    const updatedData = { ...servicesData };
-    updatedData[selectedCategory] = updatedData[selectedCategory].map((page) =>
-      page.id === updatedPage.id ? updatedPage : page
-    );
-    setServicesData(updatedData);
+    if (!currentPage || !window.confirm("Are you sure you want to remove this block?")) return;
+    const updatedBlocks = currentPage.blocks.filter((_, index) => index !== blockIndex);
+    updatePageAndPropagate({ ...currentPage, blocks: updatedBlocks });
   };
 
   /* 
@@ -910,35 +698,19 @@ const ServiceEditPage = ({ themeColors }) => {
     });
 
     const handleAddBlock = () => {
+      if (!currentPage) return;
       const blockDefaults = getDefaultConfigForBlock(selectedBlockType);
 
-      const updatedPage = { ...currentPage };
-      // Ensure blocks array exists
-      if (!updatedPage.blocks) updatedPage.blocks = [];
-
-      // Insert the new block at the beginning of the array (after any HeroBlock)
-      const heroBlockIndex = updatedPage.blocks.findIndex(
-        (block) => block.blockName === "HeroBlock"
-      );
-      const insertIndex = heroBlockIndex === -1 ? 0 : heroBlockIndex + 1;
-
-      updatedPage.blocks.splice(insertIndex, 0, {
+      const newBlock = {
         blockName: selectedBlockType,
         config: blockDefaults,
-        uniqueKey: `${selectedBlockType}_${Date.now()}` // Add unique key
-      });
-
-      // Update the current page
-      setCurrentPage(updatedPage);
-
-      // Update the master data
-      const updatedData = { ...servicesData };
-      updatedData[selectedCategory] = updatedData[selectedCategory].map(
-        (page) => (page.id === updatedPage.id ? updatedPage : page)
-      );
-      setServicesData(updatedData);
-
-      // Automatically open edit mode for the new block
+        uniqueKey: `${selectedBlockType}_${Date.now()}`
+      };
+      const heroBlockIndex = currentPage.blocks.findIndex(b => b.blockName === "HeroBlock");
+      const insertIndex = heroBlockIndex === -1 ? 0 : heroBlockIndex + 1;
+      const updatedBlocks = [...currentPage.blocks];
+      updatedBlocks.splice(insertIndex, 0, newBlock);
+      updatePageAndPropagate({ ...currentPage, blocks: updatedBlocks });
       setActiveEditBlockIndex(insertIndex);
     };
 
@@ -972,7 +744,7 @@ const ServiceEditPage = ({ themeColors }) => {
     // Default configurations for different block types
     const defaults = {
       HeroBlock: {
-        backgroundImage: "",
+        backgroundImage: { url: "", file: null, name: "", originalUrl: ""},
         title: "New Section",
         shrinkAfterMs: 1000,
         initialHeight: "40vh",
@@ -996,7 +768,7 @@ const ServiceEditPage = ({ themeColors }) => {
         items: [
           {
             title: "New Feature",
-            image: "",
+            image: { url: "", file: null, name: "", originalUrl: ""},
             alt: "Feature image",
             description: "Description of this feature",
           },
@@ -1008,34 +780,38 @@ const ServiceEditPage = ({ themeColors }) => {
     return defaults[blockType] || {};
   };
 
-  if (!servicesData || !currentPage) {
+  if (!currentPage && !servicesDataFromProps) { // Initial loading state check
+    return <div className="min-h-screen flex items-center justify-center"><p>Loading service editor...</p></div>;
+  }
+  if (!servicesDataFromProps || Object.keys(servicesDataFromProps).length === 0) {
+    return <div className="min-h-screen flex items-center justify-center"><p>No service data loaded. Check console.</p></div>;
+  }
+  if (!currentPage) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Loading service data...</p>
-      </div>
+        <div className="p-4">
+            {renderPageButtons()} {/* Still show page buttons to allow selection if possible */}
+            <p className="text-center mt-4">Please select a service page to edit, or page not found for current selection.</p>
+        </div>
     );
   }
 
   return (
-    <div className="">
+    <div className="p-4">
       {renderPageButtons()}
       {renderAddBlockSection()}
-
-      {/* Blocks */}
       <div className="border border-gray-300 rounded overflow-hidden">
-        {currentPage.blocks.map((block, blockIndex) =>
-          renderBlockEditor(block, blockIndex)
-        )}
+        {currentPage.blocks.map((block, blockIndex) => renderBlockEditor(block, blockIndex))}
       </div>
     </div>
   );
 };
 
-// Export the component and the services data getter
 ServiceEditPage.propTypes = {
-  themeColors: PropTypes.object, // Add prop type for themeColors
+  servicesData: PropTypes.object, // Expects the full services object
+  onServicesChange: PropTypes.func.isRequired,
+  themeColors: PropTypes.object,
 };
 
 export default ServiceEditPage;
-export const getServicesData = () => servicesDataRef;
-export { blockMap }; // Export blockMap
+// Removed getServicesData export
+export { blockMap }; // Keep exporting blockMap

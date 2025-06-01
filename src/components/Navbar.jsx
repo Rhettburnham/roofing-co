@@ -9,7 +9,7 @@ import { FaWarehouse } from 'react-icons/fa';
 const getDisplayUrl = (imageValue, defaultPath = null) => {
   if (!imageValue) return defaultPath;
   if (typeof imageValue === 'string') return imageValue;
-  if (imageValue.url) return imageValue.url; // Handles { url: '...', file: ..., name: ... }
+  if (imageValue.url) return imageValue.url;
   return defaultPath;
 };
 
@@ -137,7 +137,7 @@ const Navbar = ({
     if (hasScrolled) {
       tl.to(subTitleElement, { opacity: 0, duration: 0.3, onComplete: () => { if (subTitleElement) subTitleElement.style.display = 'none'; } });
       tl.to(titleContainerElement, { alignItems: "center", duration: 0.2 }, "<");
-      tl.to(logoElement, { scale: 1, duration: 0.4, ease: "power1.out" }, "<");
+      tl.to(logoElement, { scale: 3, duration: 0.4, ease: "power1.out" }, "<");
       const slideAndShrinkStartTime = 0.3 + 0.7;
       tl.to([logoElement, titleElement], { x: "-30vw", duration: 0.4, ease: "power1.out" }, slideAndShrinkStartTime);
       
@@ -230,14 +230,14 @@ const Navbar = ({
         <div className="w-full max-w-6xl flex items-center justify-center">
           {/* Conditional rendering for whiteLogoIcon or whiteLogo image */}
           {logoToDisplay === 'icon' ? (
-             <div className="w-[26vw] md:w-[4vw] h-[8vh] md:h-[3vh] mr-2 cursor-pointer transform-gpu" onClick={handleLogoClick}>
+             <div className="w-[26vw] md:w-[4vw] h-[8vh] md:h-[6vh] mr-2 cursor-pointer transform-gpu" onClick={handleLogoClick}>
               {renderDynamicIcon(config.whiteLogoIcon.pack, config.whiteLogoIcon.name, null, { className: "w-full h-full text-white" })}
             </div>
           ) : logoToDisplay === 'whiteImage' ? (
             <img
               src={getDisplayUrl(config.whiteLogo)} // Use the white logo URL
               alt="Logo White"
-              className="w-[12vw] md:w-[4vw] mr-2 cursor-pointer logo-fixed-size transform-gpu"
+              className={`mr-2 cursor-pointer logo-fixed-size transform-gpu ${hasScrolled ? 'h-[10vw] w-[10vw] md:h-[6vh] md:w-[6vh]' : 'h-[20vw] w-[20vw] md:h-[10vh] md:w-[10vh]'}`}
               onClick={handleLogoClick}
             />
           ) : ( // 'defaultImage'
@@ -245,7 +245,7 @@ const Navbar = ({
               ref={logoRef} // Default logo ref - only attach ref to the element that might be animated by GSAP
               src={getDisplayUrl(config?.logo, "/assets/images/hero/clipped.png")} 
               alt="Logo"
-              className="w-[12vw] md:w-[4vw] mr-2 cursor-pointer logo-fixed-size transform-gpu"
+              className={`mr-2 cursor-pointer logo-fixed-size transform-gpu ${hasScrolled ? 'h-[10vw] w-[10vw] md:h-[6vh] md:w-[6vh]' : 'h-[20vw] w-[20vw] md:h-[10vh] md:w-[10vh]'}`}
               onClick={handleLogoClick}
             />
           )}
@@ -348,7 +348,7 @@ const Navbar = ({
 
       {isDesktopMenuOpen && !isPreview && (
         <div
-          className={`hidden md:flex md:flex-col md:items-end w-48 fixed top-[10vh] right-10 z-[9998] shadow-lg rounded-b-lg transition-colors duration-300 ${dropdownStyling.className} ${dropdownTextSetting}`}
+        
           style={dropdownStyling.style}
         >
           {navLinksFromConfig.map((nav) => (

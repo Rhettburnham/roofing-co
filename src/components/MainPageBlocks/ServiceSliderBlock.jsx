@@ -226,13 +226,19 @@ export default function ServiceSliderBlock({ readOnly = false, config = {}, onCo
         if (localData.largeResidentialImg?.file) {
             dataToSave.largeResidentialImg = { ...localData.largeResidentialImg }; 
         } else {
-            dataToSave.largeResidentialImg = { url: localData.largeResidentialImg?.originalUrl || localData.largeResidentialImg?.url };
+            dataToSave.largeResidentialImg = { 
+                url: localData.largeResidentialImg?.originalUrl || localData.largeResidentialImg?.url,
+                name: localData.largeResidentialImg?.name || (localData.largeResidentialImg?.originalUrl || localData.largeResidentialImg?.url)?.split('/').pop()
+            };
         }
 
         if (localData.largeCommercialImg?.file) {
             dataToSave.largeCommercialImg = { ...localData.largeCommercialImg };
         } else {
-            dataToSave.largeCommercialImg = { url: localData.largeCommercialImg?.originalUrl || localData.largeCommercialImg?.url };
+            dataToSave.largeCommercialImg = { 
+                url: localData.largeCommercialImg?.originalUrl || localData.largeCommercialImg?.url,
+                name: localData.largeCommercialImg?.name || (localData.largeCommercialImg?.originalUrl || localData.largeCommercialImg?.url)?.split('/').pop()
+            };
         }
         onConfigChange(dataToSave);
       }
@@ -252,12 +258,18 @@ export default function ServiceSliderBlock({ readOnly = false, config = {}, onCo
         if (newState.largeResidentialImg?.file) {
             dataToSave.largeResidentialImg = { ...newState.largeResidentialImg };
         } else {
-            dataToSave.largeResidentialImg = { url: newState.largeResidentialImg?.originalUrl || newState.largeResidentialImg?.url };
+            dataToSave.largeResidentialImg = { 
+                url: newState.largeResidentialImg?.originalUrl || newState.largeResidentialImg?.url,
+                name: newState.largeResidentialImg?.name || (newState.largeResidentialImg?.originalUrl || newState.largeResidentialImg?.url)?.split('/').pop()
+            };
         }
         if (newState.largeCommercialImg?.file) {
             dataToSave.largeCommercialImg = { ...newState.largeCommercialImg };
         } else {
-            dataToSave.largeCommercialImg = { url: newState.largeCommercialImg?.originalUrl || newState.largeCommercialImg?.url };
+            dataToSave.largeCommercialImg = { 
+                url: newState.largeCommercialImg?.originalUrl || newState.largeCommercialImg?.url,
+                name: newState.largeCommercialImg?.name || (newState.largeCommercialImg?.originalUrl || newState.largeCommercialImg?.url)?.split('/').pop()
+            };
         }
         onConfigChange(dataToSave);
       }
@@ -770,38 +782,6 @@ function ServiceSliderEditorPanel({ localData, onPanelChange, onOpenIconButtonMo
             <label className="block text-sm font-medium text-gray-700">Icon Color:</label>
             <input type="color" className="mt-1 block w-full h-10" value={localData.serviceItemConfig?.iconColor || "#FFFFFF"} onChange={(e) => handleNestedFieldChange('serviceItemConfig', 'iconColor', e.target.value)} />
         </div>
-      </div>
-
-      {/* Residential Services List Editor - Titles are edited inline in preview */}
-      <div className="mb-4 pt-3 border-t mt-4">
-        <div className="flex justify-between items-center mb-2">
-            <h3 className="text-lg font-medium">Residential Services (Titles edited in preview)</h3>
-            <button onClick={() => handleAddService('residential')} className="bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded text-white text-xs">+ Add Service</button>
-        </div>
-        {(localData.residentialServices || []).map((service, index) => (
-            <div key={service.id || index} className="bg-gray-100 p-2 rounded mb-2 border border-gray-200 text-xs">
-                <div className="flex justify-between items-center mb-1">
-                    <span className="font-medium">{service.originalTitle || service.title || `Service ${index + 1}`} (Icon: {service.iconPack}/{service.icon})</span>
-                    <button onClick={() => handleRemoveService('residential', index)} className="bg-red-500 text-white px-2 py-0.5 rounded">Remove</button>
-                </div>
-            </div>
-        ))}
-      </div>
-      
-      {/* Commercial Services List Editor - Titles are edited inline in preview */}
-      <div className="mb-4 pt-3 border-t mt-4">
-        <div className="flex justify-between items-center mb-2">
-            <h3 className="text-lg font-medium">Commercial Services (Titles edited in preview)</h3>
-            <button onClick={() => handleAddService('commercial')} className="bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded text-white text-xs">+ Add Service</button>
-        </div>
-        {(localData.commercialServices || []).map((service, index) => (
-             <div key={service.id || index} className="bg-gray-100 p-2 rounded mb-2 border border-gray-200 text-xs">
-                <div className="flex justify-between items-center mb-1">
-                    <span className="font-medium">{service.originalTitle || service.title || `Service ${index + 1}`} (Icon: {service.iconPack}/{service.icon})</span>
-                    <button onClick={() => handleRemoveService('commercial', index)} className="bg-red-500 text-white px-2 py-0.5 rounded">Remove</button>
-                </div>
-            </div>
-        ))}
       </div>
 
       {/* Image Editors */}

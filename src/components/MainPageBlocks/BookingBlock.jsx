@@ -19,21 +19,36 @@ import {
 import { X } from "lucide-react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-
-// import * as FaIcons from "react-icons/fa";
+import ThemeColorPicker from "../common/ThemeColorPicker";
 
 // Register GSAP's ScrollTrigger plugin
 gsap.registerPlugin(ScrollTrigger);
 
 // Helper to initialize image state for logo
 const initializeLogoState = (logoValue, defaultPath = "/assets/images/logo.svg") => {
-  if (logoValue && typeof logoValue === 'object' && logoValue.url) {
-    return { ...logoValue, name: logoValue.name || logoValue.url.split('/').pop() };
+  let originalUrlToStore = defaultPath;
+  let nameToStore = defaultPath.split('/').pop();
+  let urlToDisplay = defaultPath;
+  let fileObject = null;
+
+  if (logoValue && typeof logoValue === 'object') { // Check if logoValue is an object
+    fileObject = logoValue.file || null;
+    urlToDisplay = logoValue.url || defaultPath;
+    nameToStore = logoValue.name || urlToDisplay.split('/').pop();
+    // Preserve originalUrl if it exists, otherwise use the determined urlToDisplay (if not blob) or defaultPath
+    originalUrlToStore = logoValue.originalUrl || (typeof logoValue.url === 'string' && !logoValue.url.startsWith('blob:') ? logoValue.url : defaultPath);
+  } else if (typeof logoValue === 'string') {
+    urlToDisplay = logoValue;
+    nameToStore = logoValue.split('/').pop();
+    originalUrlToStore = logoValue; // The string path is the original
   }
-  if (typeof logoValue === 'string') {
-    return { file: null, url: logoValue, name: logoValue.split('/').pop() };
-  }
-  return { file: null, url: defaultPath, name: defaultPath.split('/').pop() };
+  
+  return { 
+    file: fileObject, 
+    url: urlToDisplay, 
+    name: nameToStore,
+    originalUrl: originalUrlToStore
+  }; 
 };
 
 // Helper to get display URL for logo
@@ -235,7 +250,7 @@ const BookingPreview = memo(({ bookingData, readOnly, onHeaderTextChange, onPhon
       <div 
         ref={bannerRef} 
         className={`
-          md:max-w-xl w-full rounded-lg shadow-lg relative z-30 
+          md:max-w-[70%] w-full rounded-lg shadow-lg relative z-30 
           ${isMobile && !readOnly ? (isFormVisible ? 'h-auto' : 'min-h-[230px]') : 
            isMobile && readOnly ? 'h-[140px]' : 
            'md:h-auto'}
@@ -403,37 +418,57 @@ BookingPreview.propTypes = {
    Now allows editing of headerText, phone, 
    and the logo image on the left of the header.
 =============================================== */
-function BookingEditorPanel({ localData, onPanelChange }) { 
+function BookingEditorPanel({ localData, onPanelChange, themeColors }) { 
   const { logo, socialLinks = [], mainBackgroundColor, headerTextColor, formBackgroundColor, inputTextColor, buttonTextColor, buttonBackgroundColor, showNailAnimation } = localData;
 
   const handleFieldChange = (field, value) => {
-    onPanelChange(prev => ({ ...prev, [field]: value }));
+    onPanelChange({ [field]: value });
   };
 
   const handleSocialLinkChange = (index, field, value) => {
-    const updatedSocialLinks = [...(socialLinks || [])]; // Ensure socialLinks is an array
+    const updatedSocialLinks = [...(localData.socialLinks || [])];
     updatedSocialLinks[index] = { ...updatedSocialLinks[index], [field]: value };
-    onPanelChange(prev => ({ ...prev, socialLinks: updatedSocialLinks }));
+    onPanelChange({ socialLinks: updatedSocialLinks });
   };
 
   const addSocialLink = () => {
-    onPanelChange(prev => ({ ...prev, socialLinks: [...(prev.socialLinks || []), { platform: "twitter", url: "" }] }));
+    onPanelChange({ socialLinks: [...(localData.socialLinks || []), { platform: "twitter", url: "" }] });
   };
 
   const removeSocialLink = (index) => {
-    onPanelChange(prev => ({ ...prev, socialLinks: (prev.socialLinks || []).filter((_, i) => i !== index) }));
+    onPanelChange({ socialLinks: (localData.socialLinks || []).filter((_, i) => i !== index) });
   };
 
   const handleLogoFileChange = (file) => {
     if (!file) return;
-    if (localData.logo?.url?.startsWith('blob:')) URL.revokeObjectURL(localData.logo.url);
+    const currentLogoState = localData.logo;
+    if (currentLogoState?.url?.startsWith('blob:')) {
+      URL.revokeObjectURL(currentLogoState.url);
+    }
     const fileURL = URL.createObjectURL(file);
-    onPanelChange(prev => ({ ...prev, logo: { file, url: fileURL, name: file.name } }));
+    onPanelChange({ 
+      logo: { 
+        file, 
+        url: fileURL, 
+        name: file.name, 
+        originalUrl: currentLogoState?.originalUrl || "/assets/images/logo.svg"
+      } 
+    });
   };
 
   const handleLogoUrlChange = (urlValue) => {
-    if (localData.logo?.url?.startsWith('blob:')) URL.revokeObjectURL(localData.logo.url);
-    onPanelChange(prev => ({ ...prev, logo: { file: null, url: urlValue, name: urlValue.split('/').pop() } }));
+    const currentLogoState = localData.logo;
+    if (currentLogoState?.url?.startsWith('blob:')) {
+      URL.revokeObjectURL(currentLogoState.url);
+    }
+    onPanelChange({ 
+      logo: { 
+        file: null, 
+        url: urlValue, 
+        name: urlValue.split('/').pop(),
+        originalUrl: urlValue
+      } 
+    });
   };
 
   const handleToggleNailAnimation = () => {
@@ -466,12 +501,60 @@ function BookingEditorPanel({ localData, onPanelChange }) {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-3 border-t border-gray-700">
-        <div><label className="block text-sm font-medium">Main Background Color:</label><input type="color" className="mt-1 block w-full h-10 px-1 py-1 bg-gray-700 border border-gray-600 rounded-md shadow-sm" value={mainBackgroundColor || '#1f2937'} onChange={(e) => handleFieldChange('mainBackgroundColor', e.target.value)}/></div>
-        <div><label className="block text-sm font-medium">Header Text Color:</label><input type="color" className="mt-1 block w-full h-10 px-1 py-1 bg-gray-700 border border-gray-600 rounded-md shadow-sm" value={headerTextColor || '#FFFFFF'} onChange={(e) => handleFieldChange('headerTextColor', e.target.value)}/></div>
-        <div><label className="block text-sm font-medium">Form Background Color:</label><input type="color" className="mt-1 block w-full h-10 px-1 py-1 bg-gray-700 border border-gray-600 rounded-md shadow-sm" value={formBackgroundColor || '#FFFFFF'} onChange={(e) => handleFieldChange('formBackgroundColor', e.target.value)}/></div>
-        <div><label className="block text-sm font-medium">Form Input Text Color:</label><input type="color" className="mt-1 block w-full h-10 px-1 py-1 bg-gray-700 border border-gray-600 rounded-md shadow-sm" value={inputTextColor || '#374151'} onChange={(e) => handleFieldChange('inputTextColor', e.target.value)}/></div>
-        <div><label className="block text-sm font-medium">Submit Button Text Color:</label><input type="color" className="mt-1 block w-full h-10 px-1 py-1 bg-gray-700 border border-gray-600 rounded-md shadow-sm" value={buttonTextColor || '#FFFFFF'} onChange={(e) => handleFieldChange('buttonTextColor', e.target.value)}/></div>
-        <div><label className="block text-sm font-medium">Submit Button Background Color:</label><input type="color" className="mt-1 block w-full h-10 px-1 py-1 bg-gray-700 border border-gray-600 rounded-md shadow-sm" value={buttonBackgroundColor || '#F97316'} onChange={(e) => handleFieldChange('buttonBackgroundColor', e.target.value)}/></div>
+        <div>
+          <ThemeColorPicker 
+            label="Main Background Color:"
+            currentColorValue={mainBackgroundColor || '#1f2937'} 
+            themeColors={themeColors} 
+            onColorChange={handleFieldChange} 
+            fieldName="mainBackgroundColor"
+          />
+        </div>
+        <div>
+          <ThemeColorPicker 
+            label="Header Text Color:"
+            currentColorValue={headerTextColor || '#FFFFFF'} 
+            themeColors={themeColors} 
+            onColorChange={handleFieldChange} 
+            fieldName="headerTextColor"
+          />
+        </div>
+        <div>
+          <ThemeColorPicker 
+            label="Form Background Color:"
+            currentColorValue={formBackgroundColor || '#FFFFFF'} 
+            themeColors={themeColors} 
+            onColorChange={handleFieldChange} 
+            fieldName="formBackgroundColor"
+          />
+        </div>
+        <div>
+          <ThemeColorPicker 
+            label="Form Input Text Color:"
+            currentColorValue={inputTextColor || '#374151'} 
+            themeColors={themeColors} 
+            onColorChange={handleFieldChange} 
+            fieldName="inputTextColor"
+          />
+        </div>
+        <div>
+          <ThemeColorPicker 
+            label="Submit Button Text Color:"
+            currentColorValue={buttonTextColor || '#FFFFFF'} 
+            themeColors={themeColors} 
+            onColorChange={handleFieldChange} 
+            fieldName="buttonTextColor"
+          />
+        </div>
+        <div>
+          <ThemeColorPicker 
+            label="Submit Button BG Color:"
+            currentColorValue={buttonBackgroundColor || '#F97316'} 
+            themeColors={themeColors} 
+            onColorChange={handleFieldChange} 
+            fieldName="buttonBackgroundColor"
+          />
+        </div>
       </div>
       <div className="pt-3 border-t border-gray-700">
         <label className="flex items-center space-x-2 cursor-pointer">
@@ -487,7 +570,7 @@ function BookingEditorPanel({ localData, onPanelChange }) {
     </div>
   );
 }
-BookingEditorPanel.propTypes = { localData: PropTypes.object.isRequired, onPanelChange: PropTypes.func.isRequired };
+BookingEditorPanel.propTypes = { localData: PropTypes.object.isRequired, onPanelChange: PropTypes.func.isRequired, themeColors: PropTypes.object };
 
 /* ===============================================
    3) MAIN EXPORT: BOOKING BLOCK
@@ -500,6 +583,7 @@ export default function BookingBlock({
   readOnly = false,
   bookingData, 
   onConfigChange,
+  themeColors
 }) {
   const [localData, setLocalData] = useState(() => {
     const initialConfig = bookingData || {};
@@ -590,15 +674,19 @@ export default function BookingBlock({
         console.log("[BookingBlock onConfigChange Effect] Editing finished. Calling onConfigChange.");
         const dataToSave = { 
             ...localData, 
-            logo: localData.logo?.file ? (localData.logo.name || 'default_logo.svg') : localData.logo?.url,
-            showNailAnimation: localData.showNailAnimation, // Already simplified
+            // If a new file is present for the logo, pass the whole object.
+            // Otherwise, pass an object with just the originalUrl.
+            logo: localData.logo?.file 
+                  ? { ...localData.logo } // Pass the { file, url, name, originalUrl } object
+                  : { url: localData.logo?.originalUrl || localData.logo?.url }, // Pass object with original/current URL
+            showNailAnimation: localData.showNailAnimation,
         };
         console.log("[BookingBlock onConfigChange Effect] dataToSave:", JSON.parse(JSON.stringify(dataToSave, (k,v) => v instanceof File ? ({name: v.name, type: v.type, size: v.size}) : v)));
         onConfigChange(dataToSave);
       }
     }
     prevReadOnlyRef.current = readOnly;
-  }, [readOnly, onConfigChange]);
+  }, [readOnly, localData, onConfigChange]);
 
   const handleLocalDataChange = (updater) => {
     setLocalData(prevState => {
@@ -608,23 +696,16 @@ export default function BookingBlock({
     });
   };
 
-  if (readOnly) {
-    return <BookingPreview bookingData={localData} readOnly={true} />;
-  }
-  
+  // BookingBlock now always renders BookingPreview.
+  // The BookingEditorPanel will be rendered by MainPageForm.
+  // Inline editing props (onHeaderTextChange, onPhoneChange) are passed to BookingPreview.
   return (
-    <>
-      <BookingPreview 
-        bookingData={localData} 
-        readOnly={false}
-        onHeaderTextChange={(newText) => handleLocalDataChange(prev => ({ ...prev, headerText: newText }))}
-        onPhoneChange={(newPhone) => handleLocalDataChange(prev => ({ ...prev, phone: newPhone }))}
-      />
-      <BookingEditorPanel 
-        localData={localData}
-        onPanelChange={handleLocalDataChange}
-      />
-    </>
+    <BookingPreview
+      bookingData={localData}
+      readOnly={readOnly} // Pass the current readOnly state to BookingPreview
+      onHeaderTextChange={!readOnly ? (newText) => handleLocalDataChange(prev => ({ ...prev, headerText: newText })) : undefined}
+      onPhoneChange={!readOnly ? (newPhone) => handleLocalDataChange(prev => ({ ...prev, phone: newPhone })) : undefined}
+    />
   );
 }
 
@@ -632,6 +713,7 @@ BookingBlock.propTypes = {
   readOnly: PropTypes.bool,
   bookingData: PropTypes.object,
   onConfigChange: PropTypes.func,
+  themeColors: PropTypes.object
 };
 
 // Default props for BookingBlock
@@ -651,3 +733,5 @@ BookingBlock.defaultProps = {
   },
   onConfigChange: () => {},
 };
+
+BookingBlock.EditorPanel = BookingEditorPanel;

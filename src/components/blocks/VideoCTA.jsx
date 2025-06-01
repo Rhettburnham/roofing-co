@@ -1,491 +1,407 @@
 // src/components/blocks/VideoCTA.jsx
-import React, { useState, useEffect, useRef } from 'react';
-import PropTypes from 'prop-types';
-import { Link } from 'react-router-dom';
-import IconSelectorModal from '../common/IconSelectorModal';
-import * as LucideIcons from 'lucide-react';
+import React, { useRef, useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { HashLink } from "react-router-hash-link";
+import { FaPencilAlt, FaVideo, FaTimes } from "react-icons/fa";
+import ThemeColorPicker from "../common/ThemeColorPicker";
 
-// Helper to render dynamic icons
-const renderDynamicIcon = (pack, iconName, fallback = null, props = {}) => {
-    const IconsSet = pack === 'lucide' ? LucideIcons : {}; // Expand with other packs if needed
-    const IconComponent = IconsSet[iconName];
-    return IconComponent ? <IconComponent {...props} /> : fallback;
+// Helper function (can be moved to a utils file if used elsewhere)
+const getDisplayUrlHelper = (value) => {
+  if (!value) return null;
+  if (typeof value === "string") return value; // Handles direct URLs or blob URLs
+  if (value.url) return value.url; // Handles { url: '...', file: File }
+  return null;
 };
 
-// Helper to initialize image state
-const initializeImageState = (imageValue, defaultPath = '') => {
-  let fileObject = null;
-  let urlToDisplay = defaultPath;
-  let nameToStore = defaultPath.split('/').pop();
-  let originalUrlToStore = defaultPath;
-
-  if (imageValue && typeof imageValue === 'object') {
-    urlToDisplay = imageValue.url || defaultPath;
-    nameToStore = imageValue.name || urlToDisplay.split('/').pop();
-    fileObject = imageValue.file || null;
-    originalUrlToStore = imageValue.originalUrl || (typeof imageValue.url === 'string' && !imageValue.url.startsWith('blob:') ? imageValue.url : defaultPath);
-  } else if (typeof imageValue === 'string') {
-    urlToDisplay = imageValue;
-    nameToStore = imageValue.split('/').pop();
-    originalUrlToStore = imageValue;
-  }
-  
-  return { 
-    file: fileObject, 
-    url: urlToDisplay,
-    name: nameToStore,
-    originalUrl: originalUrlToStore 
-  };
-};
-
-// Helper to get effective display URL
-const getEffectiveDisplayUrl = (imageState, getDisplayUrlProp) => {
-  if (getDisplayUrlProp) {
-    return getDisplayUrlProp(imageState);
-  }
-  if (imageState && typeof imageState === 'object' && imageState.url) {
-    return imageState.url;
-  }
-  if (typeof imageState === 'string') {
-    if (imageState.startsWith('/') || imageState.startsWith('blob:') || imageState.startsWith('data:')) {
-      return imageState;
-    }
-    return imageState.startsWith('.') ? imageState : `/${imageState.replace(/^\/*/, "")}`;
-  }
-  return '';
-};
-
-// Preview Component (Handles inline editing)
-function VideoCTAPreview({ localConfig, readOnly, onInlineChange, getDisplayUrl }) {
-  const {
-    title, text, videoUrl, videoType, posterImage, buttonText, buttonLink,
-    backgroundColor, titleColor, textColor, buttonBackgroundColor, buttonTextColor, textAlignment
-  } = localConfig;
-
-  const currentPosterImageUrl = getEffectiveDisplayUrl(posterImage, getDisplayUrl);
-
-  const renderVideo = () => {
-    if (!videoUrl) return <div className="w-full h-full flex items-center justify-center bg-gray-700 rounded-lg text-gray-400"><p>(No video URL provided)</p></div>;
-    switch (videoType) {
-      case 'youtube':
-      case 'vimeo':
-        return (
-          <iframe
-            className="w-full aspect-video rounded-lg shadow-xl"
-            src={videoUrl}
-            title={title || "Video Content"}
-            frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          ></iframe>
-        );
-      case 'direct':
-        return (
-          <video className="w-full aspect-video rounded-lg shadow-xl bg-black" controls poster={currentPosterImageUrl || undefined}>
-            <source src={videoUrl} type={videoUrl.endsWith('.mp4') ? 'video/mp4' : (videoUrl.endsWith('.webm') ? 'video/webm' : undefined)} />
-            Your browser does not support the video tag.
-          </video>
-        );
-      default:
-        return <div className="w-full h-full flex items-center justify-center bg-red-700 rounded-lg text-red-300"><p>(Unsupported video type)</p></div>;
-    }
-  };
-
-  const textAlignClasses = {
-    left: 'text-left items-start',
-    center: 'text-center items-center',
-    right: 'text-right items-end',
-  };
-  const currentAlignmentClass = textAlignClasses[textAlignment] || textAlignClasses.center;
-  const CTAButtonTag = 'a';
-
-  return (
-    <div style={{ backgroundColor }} className={`py-8 md:py-12 px-4 md:px-6 ${currentAlignmentClass} flex flex-col`}>
-      <div className="max-w-4xl w-full mx-auto">
-        {readOnly ? (
-          <h2 style={{ color: titleColor }} className="text-3xl md:text-4xl font-bold mb-3 md:mb-4 break-words">
-            {title}
-          </h2>
-        ) : (
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => onInlineChange('title', e.target.value)}
-            className="text-3xl md:text-4xl font-bold mb-3 md:mb-4 bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 rounded p-1 w-full"
-            style={{ color: titleColor }}
-            placeholder="Enter Title"
-          />
-        )}
-        {readOnly ? (
-          <p style={{ color: textColor }} className="text-base md:text-lg mb-6 md:mb-8 break-words">
-            {text}
-          </p>
-        ) : (
-          <textarea
-            value={text}
-            onChange={(e) => onInlineChange('text', e.target.value)}
-            className="text-base md:text-lg mb-6 md:mb-8 bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 rounded p-1 w-full min-h-[80px] resize-y"
-            style={{ color: textColor }}
-            placeholder="Enter Text"
-            rows={3}
-          />
-        )}
-        <div className="mb-6 md:mb-8 w-full max-w-2xl mx-auto relative aspect-video bg-black rounded-lg shadow-xl overflow-hidden">
-          {renderVideo()}
-        </div>
-        {readOnly ? (
-          <CTAButtonTag
-            href={buttonLink}
-            target={buttonLink && buttonLink.startsWith('http') ? '_blank' : '_self'}
-            rel={buttonLink && buttonLink.startsWith('http') ? 'noopener noreferrer' : undefined}
-            style={{ backgroundColor: buttonBackgroundColor, color: buttonTextColor }}
-            className="inline-block px-6 py-3 text-lg font-semibold rounded-md shadow-md hover:opacity-90 transition-opacity duration-200"
-          >
-            {buttonText}
-          </CTAButtonTag>
-        ) : (
-          <input
-            type="text"
-            value={buttonText}
-            onChange={(e) => onInlineChange('buttonText', e.target.value)}
-            className="text-lg font-semibold bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 rounded p-1 inline-block"
-            style={{ 
-              color: buttonTextColor, 
-              backgroundColor: buttonBackgroundColor, 
-              padding: '0.75rem 1.5rem', 
-              border: '1px solid transparent' 
-            }}
-            placeholder="Enter Button Text"
-          />
-        )}
-      </div>
-    </div>
-  );
-}
-
-VideoCTAPreview.propTypes = {
-  localConfig: PropTypes.object.isRequired,
-  readOnly: PropTypes.bool.isRequired,
-  onInlineChange: PropTypes.func.isRequired,
-  getDisplayUrl: PropTypes.func,
-};
-
-// Panel Component
-function VideoCTAPanel({ localConfigData, onPanelDataChange, getDisplayUrl }) {
-  const [videoUrlInput, setVideoUrlInput] = useState(localConfigData.videoUrl || '');
-  const [videoTypeInput, setVideoTypeInput] = useState(localConfigData.videoType || 'youtube');
-  const [posterImageDisplay, setPosterImageDisplay] = useState(
-    localConfigData.posterImage ? getEffectiveDisplayUrl(localConfigData.posterImage, getDisplayUrl) : ''
-  );
-  const [buttonLinkInput, setButtonLinkInput] = useState(localConfigData.buttonLink || '');
+// EditableText Component (Copied from GeneralList.jsx for now, consider moving to common/ if used by many)
+const EditableText = ({ value, onChange, onBlur, tag: Tag = 'p', className = '', inputClassName = '', isTextarea = false, placeholder = "Edit", readOnly = false }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentValue, setCurrentValue] = useState(value);
+  const inputRef = useRef(null);
 
   useEffect(() => {
-    setVideoUrlInput(localConfigData.videoUrl || '');
-    setVideoTypeInput(localConfigData.videoType || 'youtube');
-    setPosterImageDisplay(localConfigData.posterImage ? getEffectiveDisplayUrl(localConfigData.posterImage, getDisplayUrl) : '');
-    setButtonLinkInput(localConfigData.buttonLink || '');
-  }, [localConfigData, getDisplayUrl]);
+    setCurrentValue(value);
+  }, [value]);
 
-  const handlePanelFieldChange = (field, value) => {
-    onPanelDataChange({ ...localConfigData, [field]: value });
-  };
-
-  const handlePosterImageUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      // Pass the file object up; main component handles blob URL creation/revocation
-      onPanelDataChange({ 
-        ...localConfigData, 
-        posterImage: { file: file, url: '', name: file.name, originalUrl: localConfigData.posterImage?.originalUrl || '' } 
-      });
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      if (isTextarea && inputRef.current.scrollHeight > inputRef.current.clientHeight) {
+        inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
+      }
+    }
+  }, [isEditing, isTextarea]);
+  
+  const handleInputChange = (e) => {
+    setCurrentValue(e.target.value);
+    if (isTextarea && inputRef.current) {
+      inputRef.current.style.height = 'auto'; // Reset height
+      inputRef.current.style.height = `${inputRef.current.scrollHeight}px`; // Adjust to content
     }
   };
 
-  const handlePosterImageUrlChange = (newUrl) => {
-    // Pass a new image state object for URL change
-    onPanelDataChange({ 
-        ...localConfigData, 
-        posterImage: { file: null, url: newUrl, name: newUrl.split('/').pop(), originalUrl: newUrl }
-    });
+  const handleBlur = () => {
+    setIsEditing(false);
+    if (currentValue !== value) {
+      onChange(currentValue);
+    }
+    if (onBlur) onBlur();
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !isTextarea) {
+      handleBlur();
+    } else if (e.key === 'Escape') {
+      setCurrentValue(value); // Revert
+      setIsEditing(false);
+      if (onBlur) onBlur();
+    }
+  };
+
+  const activateEditMode = () => {
+    if (!readOnly && !isEditing) {
+      setIsEditing(true);
+    }
+  };
+
+  if (!readOnly && isEditing) {
+    const commonInputProps = {
+      ref: inputRef,
+      value: currentValue,
+      onChange: handleInputChange,
+      onBlur: handleBlur,
+      onKeyDown: handleKeyDown,
+      className: `${className} ${inputClassName} outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 rounded-sm bg-white/70 placeholder-gray-500/70 shadow-inner`, // Slightly transparent bg for editing
+      style: { width: '100%' } // Ensure input takes full width of its container
+    };
+    if (isTextarea) {
+      return <textarea {...commonInputProps} rows={Math.max(2, (currentValue || '').split('\n').length)} placeholder={placeholder} />;
+    }
+    return <input {...commonInputProps} type="text" placeholder={placeholder} />;
+  }
+
+  // Apply cursor-pointer only when not readOnly and not editing (to avoid double cue if Tag is button-like)
+  const cursorClass = !readOnly && !isEditing ? 'cursor-pointer hover:bg-gray-400/10' : '';
+
   return (
-    <div className="p-4 bg-gray-800 text-white rounded-lg space-y-4">
-      <h3 className="text-lg font-semibold border-b border-gray-700 pb-2">Video & CTA Settings</h3>
+    <Tag
+      className={`${className} ${cursorClass} transition-colors duration-150 ease-in-out p-0 m-0 min-h-[1em] w-full break-words`} // Added w-full and break-words
+      onClick={activateEditMode}
+      title={!readOnly ? "Click to edit" : ""}
+    >
+      {value || <span className="text-gray-400/80 italic text-sm">({placeholder})</span>}
+    </Tag>
+  );
+};
+
+const VideoCTADisplay = ({ config = {}, isPreview = false, readOnly = false, onConfigChange }) => {
+  const {
+    videoSrc: rawVideoSrc,
+    title = "Ready to Upgrade Your Siding?",
+    description = "Contact us today for a free consultation on the best siding option for your home.",
+    buttonText = "Schedule a Consultation",
+    buttonLink = "/#contact",
+    textColor = "1", // "1", "2", or "3"
+    textAlignment = "center", // left, center, right
+    overlayOpacity = 0.5,
+  } = config;
+
+  const displayVideoSrc = getDisplayUrlHelper(rawVideoSrc);
+
+  // Map "1,2,3" -> tailwind colors
+  const colorMap = {
+    1: "text-white",
+    2: "text-black",
+    3: "text-gray-800", // This was text-gray-800, ensure themeColors could override this
+  };
+  // If textColor is a hex code (e.g. from ThemeColorPicker), use it directly. Otherwise, use map.
+  const chosenTextClass = textColor.startsWith("#") ? "" : (colorMap[textColor] || "text-white");
+  const dynamicTextColorStyle = textColor.startsWith("#") ? { color: textColor } : {};
+
+  // Map alignment
+  const alignMap = {
+    left: "text-left items-start",
+    center: "text-center items-center",
+    right: "text-right items-end",
+  };
+  const chosenAlign = alignMap[textAlignment] || alignMap.center;
+
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    if (!isPreview && videoRef.current && displayVideoSrc) {
+      videoRef.current.play().catch(() => {
+         console.warn("Video autoplay was prevented by the browser.");
+      });
+    }
+  }, [isPreview, displayVideoSrc]);
+  
+  const handleLocalChange = (field, value) => {
+    if (onConfigChange) {
+      onConfigChange({ ...config, [field]: value });
+    }
+  };
+
+  const sectionClasses = `relative overflow-hidden rounded-[40px] px-4 md:px-[10vw] my-3 ${!readOnly ? 'shadow-lg border-2 border-blue-300/50' : ''}`;
+  const videoContainerClasses = "relative w-full h-[30vh] md:h-[40vh] lg:h-[50vh]";
+
+  return (
+    <section className={sectionClasses}>
+      <div className={videoContainerClasses}>
+        {displayVideoSrc ? (
+          <video
+            ref={videoRef}
+            autoPlay={!isPreview && !readOnly} // Autoplay if not in editor preview AND not in readonly page view
+            loop
+            muted
+            playsInline
+            tabIndex={-1}
+            src={displayVideoSrc}
+            key={displayVideoSrc} // Re-render if src changes
+            className="absolute top-0 left-0 w-full h-full object-cover rounded-[40px]"
+            style={{ pointerEvents: "none" }}
+          />
+        ) : (
+          <div className="absolute top-0 left-0 w-full h-full object-cover rounded-[40px] bg-gray-700 flex items-center justify-center text-white">
+            {readOnly ? "Video Not Available" : "No Video Source - Add in Editor Panel"}
+          </div>
+        )}
+        <div
+          className="absolute inset-0 bg-black rounded-[40px]"
+          style={{ opacity: overlayOpacity }}
+        ></div>
+
+        <div
+          className={`absolute inset-0 flex flex-col justify-center px-4 ${chosenAlign} z-10`}
+        >
+           <EditableText
+            value={title}
+            onChange={(newVal) => handleLocalChange("title", newVal)}
+            tag="h2"
+            className={`text-[5vw] md:text-4xl font-bold mb-2 md:mb-6 ${chosenTextClass}`}
+            inputClassName={`text-[5vw] md:text-4xl font-bold ${chosenTextClass}`}
+            placeholder="Section Title"
+            readOnly={readOnly}
+            style={dynamicTextColorStyle} // Apply dynamic style here for EditableText's wrapper
+          />
+          <EditableText
+            value={description}
+            onChange={(newVal) => handleLocalChange("description", newVal)}
+            tag="p"
+            className={`text-[3.5vw] md:text-xl font-semibold mb-5 md:mb-4 px-12 md:px-12 ${chosenTextClass}`}
+            inputClassName={`text-[3.5vw] md:text-xl font-semibold ${chosenTextClass}`}
+            isTextarea={true}
+            placeholder="Section Description"
+            readOnly={readOnly}
+            style={dynamicTextColorStyle}
+          />
+          <div className="absolute bottom-5 left-1/2 -translate-x-1/2" style={{ minWidth: '200px' }}> {/* Container for button text editing */}
+          <HashLink
+              to={!readOnly ? "javascript:void(0)" : buttonLink} // Prevent navigation in edit mode
+              className={`block px-3 py-2 md:px-8 md:py-4 bg-accent hover:bg-banner hover:text-white font-semibold rounded-full text-black transition duration-300 whitespace-nowrap text-center ${readOnly ? '' : 'pointer-events-none'}`}
+              onClick={(e) => { if (!readOnly) e.preventDefault(); }} // Further prevent navigation
+            >
+              <EditableText
+                value={buttonText}
+                onChange={(newVal) => handleLocalChange("buttonText", newVal)}
+                tag="span"
+                className="font-semibold text-black" // Ensure this matches button's base text color
+                inputClassName="font-semibold text-black bg-accent/80" // Style for input
+                placeholder="Button Text"
+                readOnly={readOnly}
+              />
+          </HashLink>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const VideoCTA = ({
+  config = {},
+  readOnly = false,
+  onConfigChange, // This is the callback to update the whole config object
+  onToggleEditor, // Callback to open/close the EditorPanel (from ServiceEditPage)
+  themeColors, // Passed from ServiceEditPage/OneForm
+  onFileChange, // Passed from ServiceEditPage/OneForm for file uploads
+}) => {
+
+  // When not in readOnly mode (i.e., editor is active for this block)
+  if (!readOnly) {
+  return (
+      <div className="relative group border-2 border-blue-400/50 p-1 bg-slate-50"> {/* Visual cue for active edit state */}
+        <VideoCTADisplay
+          config={config}
+          isPreview={false} // in-place editing, not a separate preview
+          readOnly={false}  // activate editable fields
+          onConfigChange={onConfigChange} // Pass down to allow EditableText to update config
+        />
+        {/* The onToggleEditor button is managed by ServiceEditPage to open the external panel */}
+      {onToggleEditor && (
+        <button
+          onClick={onToggleEditor}
+            className="absolute top-2 right-2 z-30 p-2 bg-gray-700 text-white rounded-full shadow-lg hover:bg-gray-800 transition-colors opacity-50 group-hover:opacity-100"
+            title="Open Editor Panel for Styles & Video Source"
+        >
+          <FaPencilAlt size={16} />
+        </button>
+      )}
+    </div>
+  );
+  }
+
+  // READ-ONLY (Live Page View)
+  return <VideoCTADisplay config={config} isPreview={false} readOnly={true} />;
+};
+
+VideoCTA.EditorPanel = ({ currentConfig, onPanelConfigChange, onPanelFileChange, themeColors, getDisplayUrl }) => {
+  const {
+    videoSrc: rawVideoSrc,
+    // title, description, buttonText are edited inline
+    buttonLink = "/#contact",
+    textColor = "#FFFFFF", // Default to white, expecting hex from ThemeColorPicker
+    textAlignment = "center",
+    overlayOpacity = 0.5,
+  } = currentConfig;
+
+  const currentGetDisplayUrl = typeof getDisplayUrl === 'function' ? getDisplayUrl : getDisplayUrlHelper;
+  const displayVideoUrlForPreview = currentGetDisplayUrl(rawVideoSrc);
+
+  const handleFieldChange = (field, value) => {
+    let processedValue = value;
+    if (field === "overlayOpacity") {
+      processedValue = parseFloat(value);
+      if (isNaN(processedValue)) processedValue = 0.5;
+      processedValue = Math.max(0, Math.min(1, processedValue));
+    }
+    // onPanelConfigChange updates specific fields in the block's config
+    onPanelConfigChange({ [field]: processedValue });
+  };
+
+  const handleVideoFileEvent = (e) => {
+    const file = e.target.files?.[0];
+    if (file && onPanelFileChange) {
+      // onPanelFileChange expects (configKey, fileObject)
+      // The ServiceEditPage will handle creating the { file, url, name, originalUrl } structure
+      onPanelFileChange('videoSrc', file);
+    }
+  };
+  
+  const handleVideoUrlChange = (url) => {
+    if (onPanelFileChange) {
+        // For pasted URLs, send the URL string. ServiceEditPage will format it.
+        onPanelFileChange('videoSrc', url);
+    } else {
+        // Fallback if onPanelFileChange is not provided (e.g. older setup)
+        onPanelConfigChange({ videoSrc: url });
+    }
+  };
+  
+  const inputBaseClass = "mt-1 w-full px-2 py-1.5 bg-gray-700 text-white rounded-md border border-gray-600 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm";
+  const labelBaseClass = "block text-xs font-medium text-gray-300 mb-0.5";
+
+  return (
+    <div className="p-3 space-y-3 bg-gray-800 text-gray-200 rounded-b-md max-h-[70vh] overflow-y-auto">
+      <h3 className="text-base font-semibold mb-3 text-center border-b border-gray-700 pb-2">Video & Style Settings</h3>
       
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">Video URL:</label>
-        <input 
-          type="text" 
-          value={videoUrlInput}
-          onChange={(e) => { setVideoUrlInput(e.target.value); handlePanelFieldChange('videoUrl', e.target.value); }}
-          className="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:ring-blue-500 focus:border-blue-500 text-sm"
-          placeholder="e.g., https://www.youtube.com/embed/VIDEO_ID"
-        />
+        <label className={labelBaseClass}>Video Source:</label>
+        <div className="flex items-center space-x-1 mb-1 p-1 bg-gray-700 rounded">
+            {displayVideoUrlForPreview && (
+                 <video key={displayVideoUrlForPreview} className="h-10 w-14 object-cover rounded" controls={false} muted loop playsInline>
+                     <source src={displayVideoUrlForPreview} type={rawVideoSrc?.file?.type || 'video/mp4'} />
+                 </video>
+            )}
+            <input 
+                type="text" 
+                placeholder="Paste video URL" 
+                value={(typeof rawVideoSrc === 'string' && !rawVideoSrc.startsWith('blob:')) ? rawVideoSrc : (rawVideoSrc?.originalUrl || '')}
+                onChange={(e) => handleVideoUrlChange(e.target.value)} 
+                className="flex-grow p-1 bg-gray-600 border-gray-500 rounded text-xs" 
+            />
+            <label className="text-xs bg-teal-600 hover:bg-teal-500 text-white px-1.5 py-1 rounded cursor-pointer">
+                <FaVideo size={10} className="inline"/>
+                <input type="file" accept="video/*" className="hidden" onChange={handleVideoFileEvent} />
+            </label>
+            {rawVideoSrc && (rawVideoSrc.url || typeof rawVideoSrc === 'string') && (
+                 <button onClick={() => handleVideoUrlChange('')} className="text-red-500 hover:text-red-400 p-0.5" title="Remove Video">
+                     <FaTimes size={10}/>
+                 </button>
+            )}
+      </div>
+        {displayVideoUrlForPreview && !displayVideoUrlForPreview.startsWith('blob:') && (typeof rawVideoSrc === 'object' && rawVideoSrc.name) && (
+             <p className="text-xs text-gray-400 italic mt-0.5">Using video: {rawVideoSrc.name}</p>
+        )}
+        {displayVideoUrlForPreview && displayVideoUrlForPreview.startsWith('blob:') && (typeof rawVideoSrc === 'object' && rawVideoSrc.name) && (
+             <p className="text-xs text-gray-400 italic mt-0.5">Uploaded: {rawVideoSrc.name}</p>
+        )}
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">Video Type:</label>
-        <select 
-          value={videoTypeInput}
-          onChange={(e) => { setVideoTypeInput(e.target.value); handlePanelFieldChange('videoType', e.target.value); }}
-          className="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:ring-blue-500 focus:border-blue-500 text-sm"
-        >
-          <option value="youtube">YouTube</option>
-          <option value="vimeo">Vimeo</option>
-          <option value="direct">Direct Link (MP4, WebM)</option>
-        </select>
+        <label className={labelBaseClass}>Button Link (e.g., /#contact or /services):</label>
+        <input type="text" value={buttonLink} onChange={(e) => handleFieldChange("buttonLink", e.target.value)} className={inputBaseClass} />
       </div>
-
-      {videoTypeInput === 'direct' && (
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-300">Poster Image (for Direct Video):</label>
-          <input 
-            type="file" 
-            accept="image/*" 
-            onChange={handlePosterImageUpload} 
-            className="w-full text-sm text-gray-300 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
-          />
-          <input
-            type="text"
-            placeholder="Or enter direct image URL for poster"
-            value={posterImageDisplay && !posterImageDisplay.startsWith('blob:') ? posterImageDisplay : ''}
-            onBlur={(e) => handlePosterImageUrlChange(e.target.value)} // Use onBlur to commit, or onChange if preferred
-            onChange={(e) => setPosterImageDisplay(e.target.value)} // Allow typing
-            className="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:ring-blue-500 focus:border-blue-500 text-sm mt-1"
-          />
-          {posterImageDisplay && <img src={posterImageDisplay} alt="Poster preview" className="mt-2 max-h-32 rounded object-contain border border-gray-600" onError={(e) => e.target.style.display='none'} />}
-        </div>
-      )}
-
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">Button Link URL:</label>
-        <input 
-          type="text" 
-          value={buttonLinkInput}
-          onChange={(e) => { setButtonLinkInput(e.target.value); handlePanelFieldChange('buttonLink', e.target.value); }}
-          className="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:ring-blue-500 focus:border-blue-500 text-sm"
-          placeholder="/contact-us or https://example.com"
-        />
-      </div>
-
-      <h4 className="text-md font-semibold border-t border-gray-700 pt-3 mt-3">Styling</h4>
-      <div className="grid grid-cols-2 gap-4">
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-gray-700 mt-3">
         <div>
-          <label className="block text-sm font-medium text-gray-300">Background Color:</label>
-          <input type="color" value={localConfigData.backgroundColor || '#1A202C'} onChange={(e) => handlePanelFieldChange('backgroundColor', e.target.value)} className="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-md cursor-pointer" />
+            <label className={labelBaseClass}>Text Color:</label>
+            <ThemeColorPicker
+                label="" // No main label needed here
+                fieldName="textColor"
+                currentColorValue={textColor}
+                onColorChange={(fieldName, value) => handleFieldChange(fieldName, value)} // handleFieldChange directly takes (field, value)
+                themeColors={themeColors || { accent: '#007bff', text: '#ffffff', background: '#333333' }}
+                className="mt-0" // Remove top margin from picker itself
+            />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-300">Title Color:</label>
-          <input type="color" value={localConfigData.titleColor || '#FFFFFF'} onChange={(e) => handlePanelFieldChange('titleColor', e.target.value)} className="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-md cursor-pointer" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300">Text Color:</label>
-          <input type="color" value={localConfigData.textColor || '#E2E8F0'} onChange={(e) => handlePanelFieldChange('textColor', e.target.value)} className="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-md cursor-pointer" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300">Button Background:</label>
-          <input type="color" value={localConfigData.buttonBackgroundColor || '#3182CE'} onChange={(e) => handlePanelFieldChange('buttonBackgroundColor', e.target.value)} className="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-md cursor-pointer" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300">Button Text Color:</label>
-          <input type="color" value={localConfigData.buttonTextColor || '#FFFFFF'} onChange={(e) => handlePanelFieldChange('buttonTextColor', e.target.value)} className="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-md cursor-pointer" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Text Alignment:</label>
-          <select 
-            value={localConfigData.textAlignment || 'center'}
-            onChange={(e) => handlePanelFieldChange('textAlignment', e.target.value)}
-            className="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:ring-blue-500 focus:border-blue-500 text-sm"
-          >
+            <label className={labelBaseClass}>Text Alignment:</label>
+            <select value={textAlignment} onChange={(e) => handleFieldChange("textAlignment", e.target.value)} className={inputBaseClass}>
             <option value="left">Left</option>
             <option value="center">Center</option>
             <option value="right">Right</option>
-          </select>
+            </select>
         </div>
+        </div>
+        <div>
+            <label className={labelBaseClass}>Overlay Opacity (0-1): Current: {overlayOpacity}</label>
+            <input 
+                type="range" // Changed to range slider
+                value={overlayOpacity} 
+                step="0.01"  // Finer control for opacity
+                min="0" 
+                max="1" 
+                onChange={(e) => handleFieldChange("overlayOpacity", e.target.value)} 
+                className={`${inputBaseClass} p-0 h-2 appearance-none bg-gray-600 rounded-full cursor-pointer focus:ring-0 focus:outline-none slider-thumb`} 
+            />
       </div>
     </div>
   );
-}
-
-VideoCTAPanel.propTypes = {
-  localConfigData: PropTypes.object.isRequired,
-  onPanelDataChange: PropTypes.func.isRequired,
-  getDisplayUrl: PropTypes.func,
 };
 
-// Main export: VideoCTABlock
-export default function VideoCTABlock({ 
-  config, 
-  readOnly = true, 
-  onConfigChange, 
-  getDisplayUrl 
-}) {
-  const [localConfig, setLocalConfig] = useState(() => {
-    const defaultConfig = {
-      title: 'Watch Our Process',
-      text: 'See how we deliver top-quality roofing solutions from start to finish. Our transparent process ensures you know what to expect every step of the way.',
-      videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ', // Default placeholder
-      videoType: 'youtube',
-      posterImage: initializeImageState(null, '/assets/images/placeholder_video_poster.jpg'),
-      buttonText: 'Request a Free Quote',
-      buttonLink: '/contact',
-      backgroundColor: '#1A202C',
-      titleColor: '#FFFFFF',
-      textColor: '#E2E8F0',
-      buttonBackgroundColor: '#3182CE',
-      buttonTextColor: '#FFFFFF',
-      textAlignment: 'center',
-    };
-    const initialData = { ...defaultConfig, ...config };
-    return {
-      ...initialData,
-      posterImage: initializeImageState(initialData.posterImage, defaultConfig.posterImage.originalUrl),
-    };
-  });
+export default VideoCTA;
 
-  const prevReadOnlyRef = useRef(readOnly);
+<style>
+{`
+  .slider-thumb::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #3b82f6; /* Tailwind blue-500 */
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid white;
+  }
 
-  // Effect to synchronize localConfig with config prop
-  useEffect(() => {
-    if (config) {
-      setLocalConfig(prevLocal => {
-        const newBaseFromProps = { ...prevLocal, ...config };
-        const newPosterImage = initializeImageState(
-          config.posterImage, 
-          prevLocal.posterImage?.originalUrl || '/assets/images/placeholder_video_poster.jpg'
-        );
-
-        // Revoke old blob URL if it was a file and is now being replaced by a new file or different URL
-        if (prevLocal.posterImage?.file && prevLocal.posterImage.url?.startsWith('blob:')) {
-            if (!newPosterImage.file || newPosterImage.url !== prevLocal.posterImage.url) {
-                 URL.revokeObjectURL(prevLocal.posterImage.url);
-            }
-        }
-        
-        return {
-          ...newBaseFromProps,
-          posterImage: newPosterImage,
-          // Preserve inline edits if not readOnly
-          title: !readOnly && prevLocal.title !== (config.title || '') ? prevLocal.title : (config.title || prevLocal.title || 'Watch Our Process'),
-          text: !readOnly && prevLocal.text !== (config.text || '') ? prevLocal.text : (config.text || prevLocal.text || 'Default text...'),
-          buttonText: !readOnly && prevLocal.buttonText !== (config.buttonText || '') ? prevLocal.buttonText : (config.buttonText || prevLocal.buttonText || 'Request Quote'),
-          // Panel controlled fields take precedence from config if available
-          buttonLink: config.buttonLink ?? prevLocal.buttonLink,
-          backgroundColor: config.backgroundColor ?? prevLocal.backgroundColor,
-          titleColor: config.titleColor ?? prevLocal.titleColor,
-          textColor: config.textColor ?? prevLocal.textColor,
-          buttonBackgroundColor: config.buttonBackgroundColor ?? prevLocal.buttonBackgroundColor,
-          buttonTextColor: config.buttonTextColor ?? prevLocal.buttonTextColor,
-          textAlignment: config.textAlignment ?? prevLocal.textAlignment,
-          videoUrl: config.videoUrl ?? prevLocal.videoUrl,
-          videoType: config.videoType ?? prevLocal.videoType,
-        };
-      });
-    }
-  }, [config, readOnly]);
-
-  // Effect to call onConfigChange when exiting edit mode (readOnly becomes true)
-  useEffect(() => {
-    if (prevReadOnlyRef.current === false && readOnly === true) {
-      if (onConfigChange) {
-        // Prepare posterImage for saving: use originalUrl if it's a file, otherwise the current URL
-        const posterToSave = localConfig.posterImage?.file 
-          ? { ...localConfig.posterImage, url: localConfig.posterImage.originalUrl, file: null } // Save original URL, nullify file
-          : { ...localConfig.posterImage }; // Save as is (likely already a URL)
-        
-        if (posterToSave.file) delete posterToSave.file; // Ensure file object isn't in saved config
-
-        onConfigChange({ ...localConfig, posterImage: posterToSave });
-      }
-    }
-    prevReadOnlyRef.current = readOnly;
-  }, [readOnly, localConfig, onConfigChange]);
-
-  // Cleanup blob URL on unmount or when posterImage (that is a file) changes
-  useEffect(() => {
-    const currentPoster = localConfig.posterImage;
-    return () => {
-      if (currentPoster?.file && currentPoster.url?.startsWith('blob:')) {
-        URL.revokeObjectURL(currentPoster.url);
-      }
-    };
-  }, [localConfig.posterImage]);
-
-  // For VideoCTAPreview (inline text edits): updates localConfig only.
-  const handleInlineChange = (field, value) => {
-    if (!readOnly) {
-      setLocalConfig(prev => ({ ...prev, [field]: value }));
-    }
-  };
-
-  // For VideoCTAPanel: updates localConfig.
-  const handlePanelDataChange = (newDataFromPanel) => {
-    if (!readOnly) {
-      setLocalConfig(prevLocalConfig => {
-        let newPosterState = prevLocalConfig.posterImage;
-
-        if (newDataFromPanel.posterImage) {
-          const panelPoster = newDataFromPanel.posterImage;
-
-          // If there was an old blob URL from a file, revoke it before updating
-          if (prevLocalConfig.posterImage?.file && prevLocalConfig.posterImage.url?.startsWith('blob:')) {
-            if (!panelPoster.file || prevLocalConfig.posterImage.url !== panelPoster.url) { // Revoke if new is not a file or is a different blob
-                URL.revokeObjectURL(prevLocalConfig.posterImage.url);
-            }
-          }
-
-          if (panelPoster.file instanceof File) { // New file uploaded from panel
-            const blobUrl = URL.createObjectURL(panelPoster.file);
-            newPosterState = { 
-              file: panelPoster.file, 
-              url: blobUrl, 
-              name: panelPoster.file.name, 
-              originalUrl: prevLocalConfig.posterImage?.originalUrl // Preserve old original URL if any
-            };
-          } else if (typeof panelPoster.url === 'string') { // URL string provided from panel
-            newPosterState = { 
-              file: null, 
-              url: panelPoster.url, 
-              name: panelPoster.name || panelPoster.url.split('/').pop(),
-              originalUrl: panelPoster.url // This string URL is the new original
-            };
-          }
-        }
-        
-        return {
-          ...prevLocalConfig,
-          ...newDataFromPanel, // Apply other changes from panel
-          posterImage: newPosterState, // Apply the updated poster image state
-        };
-      });
-    }
-  };
-
-  return (
-    <>
-      <VideoCTAPreview 
-        localConfig={localConfig} 
-        readOnly={readOnly} 
-        onInlineChange={handleInlineChange} 
-        getDisplayUrl={getDisplayUrl} 
-      />
-      {!readOnly && (
-        <div className="bg-gray-900 p-4 rounded-b-lg shadow-xl mt-0">
-          <VideoCTAPanel 
-            localConfigData={localConfig} 
-            onPanelDataChange={handlePanelDataChange} 
-            getDisplayUrl={getDisplayUrl} 
-          />
-        </div>
-      )}
-    </>
-  );
-}
-
-VideoCTABlock.propTypes = {
-  config: PropTypes.object,
-  readOnly: PropTypes.bool,
-  onConfigChange: PropTypes.func,
-  getDisplayUrl: PropTypes.func, 
-};
+  .slider-thumb::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: #3b82f6;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid white;
+  }
+`}
+</style>
