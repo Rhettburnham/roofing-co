@@ -23,30 +23,37 @@ const CheckoutForm = ({ selectedPlan, prices }) => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    
-    if (!stripe || !elements) {
-      return;
-    }
-
-    setLoading(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     setError(null);
+    setLoading(true);
 
     try {
-      const { error: submitError } = await stripe.confirmPayment({
-        elements,
-        confirmParams: {
-          return_url: `${window.location.origin}/payment-success`,
+      // Create checkout session
+      const response = await fetch('/api/auth/create-checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
+        credentials: 'include',
+        body: JSON.stringify({
+          priceId: selectedPlan,
+          planType: selectedPlan === 'price_1RUbM0ChVcyXd9OlzbPsT3sx' ? 'monthly' : 'yearly'
+        }),
       });
 
-      if (submitError) {
-        setError(submitError.message);
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create checkout session');
       }
+
+      // Redirect to Stripe Checkout
+      window.location.href = data.url;
+
     } catch (err) {
-      setError('An unexpected error occurred.');
       console.error('Payment error:', err);
+      setError(err.message);
     } finally {
       setLoading(false);
     }

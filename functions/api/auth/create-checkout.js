@@ -125,36 +125,89 @@ export async function onRequest(context) {
       type: priceDetails.type
     });
 
-    // First, create or retrieve the customer
-    console.log('Creating/retrieving customer for:', userSession.email);
-    const customerResponse = await fetch('https://api.stripe.com/v1/customers', {
-      method: 'POST',
+    // First, search for existing customer by email
+    console.log('Searching for existing customer with email:', userSession.email);
+    const searchResponse = await fetch(`https://api.stripe.com/v1/customers?email=${encodeURIComponent(userSession.email)}`, {
       headers: {
         'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
         'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: new URLSearchParams({
-        email: userSession.email,
-        'metadata[userId]': userSession.user_id,
-        'metadata[configId]': userSession.config_id,
-        'metadata[planType]': planType || 'monthly'
-      })
+      }
     });
 
-    if (!customerResponse.ok) {
-      const customerError = await customerResponse.text();
-      console.error('Failed to create customer:', {
-        status: customerResponse.status,
-        error: customerError
+    if (!searchResponse.ok) {
+      const searchError = await searchResponse.text();
+      console.error('Failed to search for customer:', {
+        status: searchResponse.status,
+        error: searchError
       });
-      throw new Error(`Failed to create customer: ${customerError}`);
+      throw new Error(`Failed to search for customer: ${searchError}`);
     }
 
-    const customer = await customerResponse.json();
-    console.log('Customer created/retrieved:', {
-      id: customer.id,
-      email: customer.email
-    });
+    const searchData = await searchResponse.json();
+    let customer;
+
+    if (searchData.data && searchData.data.length > 0) {
+      // Customer exists, use the first one found
+      customer = searchData.data[0];
+      console.log('Found existing customer:', {
+        id: customer.id,
+        email: customer.email
+      });
+
+      // Update customer metadata if needed
+      const updateResponse = await fetch(`https://api.stripe.com/v1/customers/${customer.id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: new URLSearchParams({
+          'metadata[userId]': userSession.user_id,
+          'metadata[configId]': userSession.config_id,
+          'metadata[planType]': planType || 'monthly'
+        })
+      });
+
+      if (!updateResponse.ok) {
+        const updateError = await updateResponse.text();
+        console.error('Failed to update customer metadata:', {
+          status: updateResponse.status,
+          error: updateError
+        });
+        // Don't throw here, continue with existing customer
+      }
+    } else {
+      // Create new customer
+      console.log('Creating new customer for:', userSession.email);
+      const customerResponse = await fetch('https://api.stripe.com/v1/customers', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: new URLSearchParams({
+          email: userSession.email,
+          'metadata[userId]': userSession.user_id,
+          'metadata[configId]': userSession.config_id,
+          'metadata[planType]': planType || 'monthly'
+        })
+      });
+
+      if (!customerResponse.ok) {
+        const customerError = await customerResponse.text();
+        console.error('Failed to create customer:', {
+          status: customerResponse.status,
+          error: customerError
+        });
+        throw new Error(`Failed to create customer: ${customerError}`);
+      }
+
+      customer = await customerResponse.json();
+      console.log('Customer created:', {
+        id: customer.id,
+        email: customer.email
+      });
+    }
 
     // Create checkout session using REST API
     console.log('Creating checkout session with:', {
@@ -185,7 +238,13 @@ export async function onRequest(context) {
         'subscription_data[metadata][planType]': planType || 'monthly',
         'subscription_data[metadata][priceId]': priceDetails.id,
         'subscription_data[metadata][productId]': productDetails.id,
-        'subscription_data[metadata][customerId]': customer.id
+        'subscription_data[metadata][customerId]': customer.id,
+        'billing_address_collection': 'required',
+        'customer_update[name]': 'auto',
+        'customer_update[email]': 'auto',
+        'customer_update[address]': 'auto',
+        'payment_method_collection': 'always',
+        'allow_promotion_codes': 'true'
       })
     });
 
