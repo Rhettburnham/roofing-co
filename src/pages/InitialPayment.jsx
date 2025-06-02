@@ -63,7 +63,7 @@ const CheckoutForm = ({ selectedPlan, prices }) => {
         throw new Error(paymentMethodError.message);
       }
 
-      // Create checkout session
+      // Create subscription
       const response = await fetch('/api/auth/create-checkout', {
         method: 'POST',
         headers: {
@@ -81,10 +81,10 @@ const CheckoutForm = ({ selectedPlan, prices }) => {
       const data = await response.json();
       
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create checkout session');
+        throw new Error(data.error || 'Failed to create subscription');
       }
 
-      // Confirm the subscription
+      // Confirm the payment
       const { error: confirmError } = await stripe.confirmCardPayment(data.clientSecret, {
         payment_method: paymentMethod.id,
       });

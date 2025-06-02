@@ -209,8 +209,8 @@ export async function onRequest(context) {
       });
     }
 
-    // Create checkout session using REST API
-    console.log('Creating checkout session with:', {
+    // Create subscription directly
+    console.log('Creating subscription with:', {
       priceId: priceDetails.id,
       customerId: customer.id,
       userId: userSession.user_id,
@@ -219,30 +219,26 @@ export async function onRequest(context) {
       email: userSession.email
     });
 
-    const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+    const response = await fetch('https://api.stripe.com/v1/subscriptions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
         'Content-Type': 'application/x-www-form-urlencoded'
       },
       body: new URLSearchParams({
-        'payment_method_types[]': 'card',
-        'line_items[][price]': priceDetails.id,
-        'line_items[][quantity]': '1',
-        mode: 'subscription',
-        'success_url': `${request.headers.get('origin')}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-        'cancel_url': `${request.headers.get('origin')}/payment-cancelled`,
         customer: customer.id,
-        'subscription_data[metadata][userId]': userSession.user_id,
-        'subscription_data[metadata][configId]': userSession.config_id,
-        'subscription_data[metadata][planType]': planType || 'monthly',
-        'subscription_data[metadata][priceId]': priceDetails.id,
-        'subscription_data[metadata][productId]': productDetails.id,
-        'subscription_data[metadata][customerId]': customer.id,
-        'billing_address_collection': 'required',
-        'payment_method_collection': 'always',
-        'allow_promotion_codes': 'true',
-        'payment_method_options[card][request_three_d_secure]': 'automatic'
+        'items[][price]': priceDetails.id,
+        'items[][quantity]': '1',
+        'metadata[userId]': userSession.user_id,
+        'metadata[configId]': userSession.config_id,
+        'metadata[planType]': planType || 'monthly',
+        'metadata[priceId]': priceDetails.id,
+        'metadata[productId]': productDetails.id,
+        'metadata[customerId]': customer.id,
+        'payment_behavior': 'default_incomplete',
+        'payment_settings[payment_method_types][]': 'card',
+        'payment_settings[save_default_payment_method]': 'on_subscription',
+        'expand[]': 'latest_invoice.payment_intent'
       })
     });
 
@@ -254,20 +250,22 @@ export async function onRequest(context) {
         error: errorText,
         headers: Object.fromEntries(response.headers.entries())
       });
-      throw new Error(`Failed to create checkout session: ${errorText}`);
+      throw new Error(`Failed to create subscription: ${errorText}`);
     }
 
-    const checkoutSession = await response.json();
-    console.log('Checkout session created successfully:', {
-      id: checkoutSession.id,
-      url: checkoutSession.url,
-      status: checkoutSession.status,
-      subscription: checkoutSession.subscription
+    const subscription = await response.json();
+    console.log('Subscription created successfully:', {
+      id: subscription.id,
+      status: subscription.status,
+      latest_invoice: subscription.latest_invoice
     });
 
+    // Get the client secret from the payment intent
+    const clientSecret = subscription.latest_invoice.payment_intent.client_secret;
+
     return new Response(JSON.stringify({ 
-      sessionId: checkoutSession.id,
-      url: checkoutSession.url
+      subscriptionId: subscription.id,
+      clientSecret
     }), {
       headers: {
         ...corsHeaders,
@@ -275,13 +273,13 @@ export async function onRequest(context) {
       },
     });
   } catch (error) {
-    console.error('Error creating checkout session:', {
+    console.error('Error creating subscription:', {
       error: error.message,
       stack: error.stack,
       name: error.name
     });
     return new Response(JSON.stringify({ 
-      error: 'Failed to create checkout session',
+      error: 'Failed to create subscription',
       details: error.message 
     }), {
       status: 500,
