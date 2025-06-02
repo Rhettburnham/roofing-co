@@ -242,8 +242,6 @@ export async function onRequest(context) {
         'billing_address_collection': 'required',
         'payment_method_collection': 'always',
         'allow_promotion_codes': 'true',
-        'payment_method_options[card][setup_future_usage]': 'off_session',
-        'payment_method_types[]': 'card',
         'payment_method_options[card][request_three_d_secure]': 'automatic'
       })
     });
