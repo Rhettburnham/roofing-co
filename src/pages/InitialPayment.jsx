@@ -8,12 +8,16 @@ import {
   useElements,
 } from '@stripe/react-stripe-js';
 
-// Remove hardcoded key
+// Hardcoded values
+const STRIPE_PUBLIC_KEY = 'sk_test_51RUbGWChVcyXd9OluNojZTbLrzLmbTU72nNCeED8c7dpiz9gTu39XznRSCiJMwfT3LBVIxT1mt7qEPRcoUW2rKqi00oaUUwn6g'; // Corrected typo in key if any
+
 const MONTHLY_PRICE_ID = 'prod_SPQCEDY9mS3vI3';
 const YEARLY_PRICE_ID = 'prod_SPQDERFJ8Ve82B';
 
+const stripePromise = loadStripe(STRIPE_PUBLIC_KEY);
+
 // Checkout Form Component
-const CheckoutForm = ({ selectedPlan, prices, stripePromise }) => {
+const CheckoutForm = ({ selectedPlan, prices }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [error, setError] = useState(null);
@@ -270,11 +274,13 @@ const CheckoutForm = ({ selectedPlan, prices, stripePromise }) => {
 };
 
 const InitialPayment = () => {
-  const [stripePromise, setStripePromise] = useState(null);
-  const [prices, setPrices] = useState(null);
-  const [selectedPlan, setSelectedPlan] = useState('monthly');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedPlan, setSelectedPlan] = useState('monthly');
+  const [prices, setPrices] = useState({
+    monthly: { amount: 0, currency: 'usd' },
+    yearly: { amount: 0, currency: 'usd' }
+  });
   const [clientSecret, setClientSecret] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
@@ -305,33 +311,6 @@ const InitialPayment = () => {
 
     checkAuth();
   }, [navigate]);
-
-  useEffect(() => {
-    const initializeStripe = async () => {
-      try {
-        // Fetch the public key from Cloudflare
-        const response = await fetch('/api/auth/get-stripe-key', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch Stripe public key');
-        }
-
-        const { publicKey } = await response.json();
-        setStripePromise(loadStripe(publicKey));
-      } catch (err) {
-        console.error('Error initializing Stripe:', err);
-        setError('Failed to initialize payment system');
-      }
-    };
-
-    initializeStripe();
-  }, []);
 
   // Fetch prices and create payment intent
   useEffect(() => {
@@ -389,69 +368,88 @@ const InitialPayment = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
-      {error ? (
-        <div className="max-w-md mx-auto bg-white p-6 rounded-lg shadow">
-          <div className="text-red-600">{error}</div>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Choose Your Plan
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Select a subscription plan that works for you
+          </p>
         </div>
-      ) : !stripePromise ? (
-        <div className="max-w-md mx-auto bg-white p-6 rounded-lg shadow">
-          <div className="text-gray-600">Loading payment system...</div>
-        </div>
-      ) : (
-        <div className="max-w-md mx-auto">
-          <div className="bg-white p-6 rounded-lg shadow mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Choose Your Plan</h2>
-            <div className="space-y-4">
-              <button
-                onClick={() => setSelectedPlan('monthly')}
-                className={`w-full p-4 rounded-lg border ${
-                  selectedPlan === 'monthly'
-                    ? 'border-indigo-500 bg-indigo-50'
-                    : 'border-gray-300'
-                }`}
-              >
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900">Monthly</h3>
-                    <p className="text-sm text-gray-500">Billed monthly</p>
-                  </div>
-                  <div className="text-lg font-medium text-gray-900">
-                    {prices?.monthly ? formatPrice(prices.monthly.unit_amount) : '...'}
-                  </div>
-                </div>
-              </button>
 
-              <button
-                onClick={() => setSelectedPlan('yearly')}
-                className={`w-full p-4 rounded-lg border ${
-                  selectedPlan === 'yearly'
-                    ? 'border-indigo-500 bg-indigo-50'
-                    : 'border-gray-300'
-                }`}
-              >
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900">Yearly</h3>
-                    <p className="text-sm text-gray-500">Billed annually</p>
-                  </div>
-                  <div className="text-lg font-medium text-gray-900">
-                    {prices?.yearly ? formatPrice(prices.yearly.unit_amount) : '...'}
-                  </div>
-                </div>
-              </button>
+        {error && (
+          <div className="rounded-md bg-red-50 p-4">
+            <div className="flex">
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">
+                  {error}
+                </h3>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-8 space-y-4">
+          {/* Monthly Plan */}
+          <div 
+            className={`relative rounded-lg border p-4 cursor-pointer ${
+              selectedPlan === 'monthly' 
+                ? 'border-indigo-500 bg-indigo-50' 
+                : 'border-gray-300'
+            }`}
+            onClick={() => setSelectedPlan('monthly')}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">Monthly Plan</h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  Billed monthly, cancel anytime
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-bold text-gray-900">
+                  {formatPrice(prices.monthly.amount)}/mo
+                </p>
+              </div>
             </div>
           </div>
 
-          <Elements stripe={stripePromise}>
-            <CheckoutForm 
-              selectedPlan={selectedPlan} 
-              prices={prices}
-              stripePromise={stripePromise}
-            />
-          </Elements>
+          {/* Yearly Plan */}
+          <div 
+            className={`relative rounded-lg border p-4 cursor-pointer ${
+              selectedPlan === 'yearly' 
+                ? 'border-indigo-500 bg-indigo-50' 
+                : 'border-gray-300'
+            }`}
+            onClick={() => setSelectedPlan('yearly')}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">Yearly Plan</h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  Save 20% with annual billing
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-bold text-gray-900">
+                  {formatPrice(prices.yearly.amount)}/yr
+                </p>
+                <p className="text-sm text-gray-500">
+                  {formatPrice(prices.yearly.amount / 12)}/mo
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {prices.monthly.amount > 0 && (
+            <Elements stripe={stripePromise}>
+              <CheckoutForm selectedPlan={selectedPlan} prices={prices} />
+            </Elements>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };
