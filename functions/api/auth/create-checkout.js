@@ -21,21 +21,22 @@ export async function onRequest(context) {
         });
       }
   
-      // Extract session ID
+      // Extract session ID from cookie
       const sessionId = request.headers.get('cookie')?.match(/session_id=([^;]+)/)?.[1];
       if (!sessionId) {
-        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        return new Response(JSON.stringify({ error: 'Unauthorized: Session ID missing' }), {
           status: 401,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
   
+      // Fetch user session from database
       const userSession = await env.DB.prepare(
         'SELECT s.*, u.id as user_id, u.email, u.config_id FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.session_id = ? AND s.expires_at > datetime("now")'
       ).bind(sessionId).first();
   
       if (!userSession) {
-        return new Response(JSON.stringify({ error: 'Invalid session' }), {
+        return new Response(JSON.stringify({ error: 'Invalid session or session expired' }), {
           status: 401,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
@@ -50,42 +51,38 @@ export async function onRequest(context) {
         });
       }
   
-      // Get product details
+      // Define common Stripe headers, including API version
+      const stripeHeaders = {
+        Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Stripe-Version': '2024-06-20', // Specify a recent Stripe API version for consistent behavior
+      };
+  
+      // Get product details from Stripe
       const productRes = await fetch(`https://api.stripe.com/v1/products/${priceId}`, {
-        headers: {
-          Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
+        headers: stripeHeaders,
       });
   
       if (!productRes.ok) {
         const error = await productRes.text();
         throw new Error(`Failed to fetch product details: ${error}`);
       }
-  
       const product = await productRes.json();
   
-      // Get price details
+      // Get price details from Stripe
       const priceRes = await fetch(`https://api.stripe.com/v1/prices/${product.default_price}`, {
-        headers: {
-          Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
+        headers: stripeHeaders,
       });
   
       if (!priceRes.ok) {
         const error = await priceRes.text();
         throw new Error(`Failed to fetch price details: ${error}`);
       }
-  
       const price = await priceRes.json();
   
-      // Search for existing Stripe customer
+      // Search for existing Stripe customer by email
       const searchRes = await fetch(`https://api.stripe.com/v1/customers?email=${encodeURIComponent(userSession.email)}&limit=1`, {
-        headers: {
-          Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
+        headers: stripeHeaders,
       });
   
       let customer;
@@ -94,18 +91,15 @@ export async function onRequest(context) {
         const error = await searchRes.text();
         throw new Error(`Failed to search for customer: ${error}`);
       }
-  
       const searchData = await searchRes.json();
   
+      // If customer exists, update metadata; otherwise, create new customer
       if (searchData.data && searchData.data.length > 0) {
         customer = searchData.data[0];
-  
+        // Update customer metadata
         await fetch(`https://api.stripe.com/v1/customers/${customer.id}`, {
           method: 'POST',
-          headers: {
-            Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
+          headers: stripeHeaders,
           body: new URLSearchParams({
             'metadata[userId]': userSession.user_id,
             'metadata[configId]': userSession.config_id,
@@ -113,12 +107,10 @@ export async function onRequest(context) {
           }),
         });
       } else {
+        // Create new customer
         const createRes = await fetch('https://api.stripe.com/v1/customers', {
           method: 'POST',
-          headers: {
-            Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
+          headers: stripeHeaders,
           body: new URLSearchParams({
             email: userSession.email,
             'metadata[userId]': userSession.user_id,
@@ -131,17 +123,13 @@ export async function onRequest(context) {
           const error = await createRes.text();
           throw new Error(`Failed to create customer: ${error}`);
         }
-  
         customer = await createRes.json();
       }
   
-      // Create subscription (only)
+      // Create a new Stripe subscription
       const subRes = await fetch('https://api.stripe.com/v1/subscriptions', {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
+        headers: stripeHeaders,
         body: new URLSearchParams({
           customer: customer.id,
           'items[0][price]': price.id,
@@ -152,60 +140,90 @@ export async function onRequest(context) {
           'metadata[priceId]': price.id,
           'metadata[productId]': product.id,
           'metadata[customerId]': customer.id,
-          'payment_behavior': 'default_incomplete',
+          'payment_behavior': 'default_incomplete', // Recommended for client-side payment confirmation
           'payment_settings[payment_method_types][]': 'card',
           'payment_settings[save_default_payment_method]': 'on_subscription',
-          'expand[]': 'latest_invoice'
+          'expand[]': 'latest_invoice.payment_intent', // Attempt to expand latest_invoice and its nested payment_intent
         }),
       });
   
       if (!subRes.ok) {
         const error = await subRes.text();
+        console.error('Stripe subscription creation error response:', error);
         throw new Error(`Failed to create subscription: ${error}`);
       }
   
       const subscription = await subRes.json();
-      console.log('Subscription created:', {
-        id: subscription.id,
-        status: subscription.status,
-        invoice: subscription.latest_invoice
-      });
   
-      // Get the payment intent from the latest invoice
-      const invoiceRes = await fetch(`https://api.stripe.com/v1/invoices/${subscription.latest_invoice.id}?expand[]=payment_intent`, {
-        headers: {
-          Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      });
+      // Log the full subscription response for debugging purposes
+      console.log('Stripe Subscription created (raw response):', JSON.stringify(subscription, null, 2));
+      console.log('Subscription Status:', subscription.status);
+      console.log('Latest Invoice ID:', subscription.latest_invoice?.id);
+      console.log('Payment Intent ID on Latest Invoice (from subscription response):', subscription.latest_invoice?.payment_intent?.id);
   
-      if (!invoiceRes.ok) {
-        const error = await invoiceRes.text();
-        throw new Error(`Failed to fetch invoice: ${error}`);
+      let clientSecret = null;
+      let finalStatus = subscription.status;
+  
+      // Check if payment_intent and client_secret are directly available from the subscription response
+      if (subscription.latest_invoice?.payment_intent?.client_secret) {
+        clientSecret = subscription.latest_invoice.payment_intent.client_secret;
+        console.log('Client Secret obtained directly from subscription response.');
+      } else if (subscription.latest_invoice?.id && (subscription.status === 'incomplete' || subscription.status === 'past_due')) {
+        // If not directly available, but subscription is incomplete/past_due, try fetching the invoice separately
+        console.log('Payment Intent not directly expanded. Attempting to fetch invoice separately to get client secret...');
+        const invoiceFetchRes = await fetch(`https://api.stripe.com/v1/invoices/${subscription.latest_invoice.id}?expand[]=payment_intent`, {
+          headers: stripeHeaders,
+        });
+  
+        if (!invoiceFetchRes.ok) {
+          const error = await invoiceFetchRes.text();
+          console.error('Failed to fetch invoice separately:', error);
+          throw new Error(`Failed to retrieve invoice for payment intent: ${error}`);
+        }
+        const invoice = await invoiceFetchRes.json();
+        console.log('Invoice fetched separately (raw response):', JSON.stringify(invoice, null, 2));
+  
+        if (invoice.payment_intent?.client_secret) {
+          clientSecret = invoice.payment_intent.client_secret;
+          console.log('Client Secret obtained from separate invoice fetch.');
+        } else {
+          console.warn('Invoice fetched, but no payment_intent or client_secret found on it.');
+        }
       }
   
-      const invoice = await invoiceRes.json();
-      console.log('Invoice fetched:', {
-        id: invoice.id,
-        payment_intent: invoice.payment_intent
-      });
-  
-      if (!invoice.payment_intent?.client_secret) {
-        throw new Error('No payment intent found in invoice');
+      // Determine the response based on clientSecret availability and subscription status
+      if (clientSecret) {
+        return new Response(JSON.stringify({
+          subscriptionId: subscription.id,
+          clientSecret: clientSecret,
+          status: finalStatus,
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } else {
+        // If no client secret, it means either:
+        // 1. The subscription is active/trialing and no immediate payment is needed.
+        // 2. There's an issue and a client secret should have been present but wasn't found.
+        if (finalStatus === 'active' || finalStatus === 'trialing') {
+          console.log('Subscription is active or trialing, no immediate payment intent/client secret needed.');
+          return new Response(JSON.stringify({
+            subscriptionId: subscription.id,
+            status: finalStatus,
+            message: 'Subscription created successfully, no immediate payment required.'
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        } else {
+          // This case should ideally not be reached if the logic is correct,
+          // but acts as a fallback for unexpected scenarios.
+          throw new Error('Subscription status is incomplete/past_due but no client secret could be retrieved.');
+        }
       }
-  
-      return new Response(JSON.stringify({
-        subscriptionId: subscription.id,
-        clientSecret: invoice.payment_intent.client_secret,
-        status: subscription.status,
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
   
     } catch (error) {
-      console.error('Error creating subscription:', error);
+      console.error('Error in onRequest function:', error);
       return new Response(JSON.stringify({
-        error: 'Failed to create subscription',
+        error: 'Failed to process subscription request',
         details: error.message,
       }), {
         status: 500,
@@ -216,4 +234,3 @@ export async function onRequest(context) {
       });
     }
   }
-  

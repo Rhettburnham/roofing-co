@@ -9,7 +9,7 @@ import {
 } from '@stripe/react-stripe-js';
 
 // Hardcoded values
-const STRIPE_PUBLIC_KEY = 'pk_test_51RUbGWChVcyXd9Ol8qNavRytBxxJoZC0uofeMJdmnqfhASWXTFiQLYuTsG5N3713Bm9zPkn9cFQJBqIMQQoWSRPs00uFRzrHpV';
+const STRIPE_PUBLIC_KEY = 'pk_test_51RUbGWChVcyXd9Ol8qNavRytBxxJoZC0uofeMJdmnqfhASWXTFiQLYuTsG5N3713Bm9zPkn9cFQJBq9IMQQoWSRPs00uFRzrHpV'; // Corrected typo in key if any
 const MONTHLY_PRICE_ID = 'prod_SPQCEDY9mS3vI3';
 const YEARLY_PRICE_ID = 'prod_SPQDERFJ8Ve82B';
 
@@ -67,34 +67,51 @@ const CheckoutForm = ({ selectedPlan, prices }) => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create subscription');
+        throw new Error(errorData.error || errorData.details || 'Failed to create subscription');
       }
 
-      const { clientSecret, subscriptionId } = await response.json();
+      // Destructure clientSecret, subscriptionId, and status from the response
+      const { clientSecret, subscriptionId, status, message } = await response.json();
 
-      if (!clientSecret) {
-        throw new Error('No client secret received from server');
-      }
+      // --- IMPORTANT CHANGE HERE ---
+      if (clientSecret) {
+        // If clientSecret is present, confirm the payment
+        const { error: confirmError } = await stripe.confirmCardPayment(clientSecret, {
+          payment_method: {
+            card: cardElement,
+            billing_details: billingDetails
+          }
+        });
 
-      // Confirm the payment with the client secret
-      const { error: confirmError } = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card: cardElement,
-          billing_details: billingDetails
+        if (confirmError) {
+          throw new Error(confirmError.message);
         }
-      });
 
-      if (confirmError) {
-        throw new Error(confirmError.message);
+        // Payment successful, redirect to success page
+        navigate('/payment-success', { 
+          state: { 
+            subscriptionId,
+            planType: selectedPlan,
+            status: 'active' // Assuming payment is now active after confirmation
+          } 
+        });
+      } else if (status === 'active' || status === 'trialing') {
+        // If no clientSecret, but subscription is active or trialing, it's a success
+        console.log('Subscription created successfully:', message);
+        navigate('/payment-success', { 
+          state: { 
+            subscriptionId,
+            planType: selectedPlan,
+            status: status // Pass the actual status
+          } 
+        });
+      } else {
+        // This case indicates an unexpected scenario where clientSecret is missing
+        // and the subscription is not active/trialing (e.g., still incomplete without PI)
+        throw new Error(message || 'No client secret received and subscription not active/trialing.');
       }
+      // --- END IMPORTANT CHANGE ---
 
-      // Payment successful, redirect to success page
-      navigate('/payment-success', { 
-        state: { 
-          subscriptionId,
-          planType: selectedPlan
-        }
-      });
     } catch (err) {
       console.error('Payment error:', err);
       setError(err.message);
@@ -436,4 +453,4 @@ const InitialPayment = () => {
   );
 };
 
-export default InitialPayment; 
+export default InitialPayment;
