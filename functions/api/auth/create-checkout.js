@@ -209,16 +209,6 @@ export async function onRequest(context) {
       });
     }
 
-    // Create subscription directly
-    console.log('Creating subscription with:', {
-      priceId: priceDetails.id,
-      customerId: customer.id,
-      userId: userSession.user_id,
-      configId: userSession.config_id,
-      planType,
-      email: userSession.email
-    });
-
     // First create a payment intent using the existing worker
     const paymentIntentResponse = await fetch(`${request.headers.get('origin')}/api/auth/create-payment-intent`, {
       method: 'POST',
@@ -239,16 +229,11 @@ export async function onRequest(context) {
       throw new Error(`Failed to create payment intent: ${errorText}`);
     }
 
-    const { clientSecret, paymentIntentId, paymentMethodId } = await paymentIntentResponse.json();
+    const { clientSecret, paymentIntentId } = await paymentIntentResponse.json();
     console.log('Payment intent created:', {
       id: paymentIntentId,
-      client_secret: clientSecret,
-      payment_method_id: paymentMethodId
+      client_secret: clientSecret
     });
-
-    if (!paymentMethodId) {
-      throw new Error('No payment method ID returned from payment intent creation');
-    }
 
     // Now create the subscription
     const response = await fetch('https://api.stripe.com/v1/subscriptions', {
@@ -270,7 +255,6 @@ export async function onRequest(context) {
         'payment_behavior': 'default_incomplete',
         'payment_settings[payment_method_types][]': 'card',
         'payment_settings[save_default_payment_method]': 'on_subscription',
-        'default_payment_method': paymentMethodId,
         'payment_method_types[]': 'card'
       })
     });
@@ -294,7 +278,8 @@ export async function onRequest(context) {
 
     return new Response(JSON.stringify({ 
       subscriptionId: subscription.id,
-      clientSecret
+      clientSecret,
+      paymentIntentId
     }), {
       headers: {
         ...corsHeaders,
