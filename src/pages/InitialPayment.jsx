@@ -9,7 +9,7 @@ import {
 } from '@stripe/react-stripe-js';
 
 // Hardcoded values
-const STRIPE_PUBLIC_KEY = 'pk_test_51RUbGWChVcyXd9Ol8qNavRytBxxJoZC0uofeMJdmnqfhASWXTFiQLYuTsG5N3713Bm9zPkn9cFQJBqIMQQoWSRPs00uFRzrHpV'; // Corrected typo in key if any
+const STRIPE_PUBLIC_KEY = 'pk_test_51RUbGWChVcyXd9OlHMQw5AZIY8QUV6rUx6t2T3pMhazravhv3hkeNKa3N6uz7LzP87C408BatNrJ8xu7Agf0R88P00R1yARUQY'; // Corrected typo in key if any
 
 const MONTHLY_PRICE_ID = 'prod_SPQCEDY9mS3vI3';
 const YEARLY_PRICE_ID = 'prod_SPQDERFJ8Ve82B';
