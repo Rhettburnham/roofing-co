@@ -9,7 +9,8 @@ import {
 } from '@stripe/react-stripe-js';
 
 // Hardcoded values
-const STRIPE_PUBLIC_KEY = 'pk_test_51RUbGWChVcyXd9Ol8qNavRytBxxJoZC0uofeMJdmnqfhASWXTFiQLYuTsG5N3713Bm9zPkn9cFQJBq9IMQQoWSRPs00uFRzrHpV'; // Corrected typo in key if any
+const STRIPE_PUBLIC_KEY = 'sk_test_51RUbGWChVcyXd9OluNojZTbLrzLmbTU72nNCeED8c7dpiz9gTu39XznRSCiJMwfT3LBVIxT1mt7qEPRcoUW2rKqi00oaUUwn6g'; // Corrected typo in key if any
+
 const MONTHLY_PRICE_ID = 'prod_SPQCEDY9mS3vI3';
 const YEARLY_PRICE_ID = 'prod_SPQDERFJ8Ve82B';
 
