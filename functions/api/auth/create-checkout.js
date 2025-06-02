@@ -254,8 +254,7 @@ export async function onRequest(context) {
         'metadata[customerId]': customer.id,
         'payment_behavior': 'default_incomplete',
         'payment_settings[payment_method_types][]': 'card',
-        'payment_settings[save_default_payment_method]': 'on_subscription',
-        'payment_method_types[]': 'card'
+        'payment_settings[save_default_payment_method]': 'on_subscription'
       })
     });
 
