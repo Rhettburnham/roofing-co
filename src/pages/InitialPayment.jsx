@@ -46,10 +46,16 @@ const CheckoutForm = ({ selectedPlan, prices }) => {
         },
       };
 
+      // Get the card element
+      const cardElement = elements.getElement(PaymentElement);
+      if (!cardElement) {
+        throw new Error('Card element not found');
+      }
+
       // Create payment method
       const { error: paymentMethodError, paymentMethod } = await stripe.createPaymentMethod({
         type: 'card',
-        card: elements.getElement('card'),
+        card: cardElement,
         billing_details: billingDetails,
       });
 
