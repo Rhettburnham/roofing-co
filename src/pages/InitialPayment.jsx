@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
 import {
   Elements,
-  PaymentElement,
+  CardElement,
   useStripe,
   useElements,
 } from '@stripe/react-stripe-js';
@@ -47,7 +47,7 @@ const CheckoutForm = ({ selectedPlan, prices }) => {
       };
 
       // Get the card element
-      const cardElement = elements.getElement(PaymentElement);
+      const cardElement = elements.getElement(CardElement);
       if (!cardElement) {
         throw new Error('Card element not found');
       }
@@ -213,21 +213,22 @@ const CheckoutForm = ({ selectedPlan, prices }) => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Card Details
             </label>
-            <PaymentElement options={{
-              layout: {
-                type: 'tabs',
-                defaultCollapsed: false,
-              },
-              paymentMethodOrder: ['card'],
-              fields: {
-                billingDetails: {
-                  name: 'never',
-                  email: 'never',
-                  phone: 'never',
-                  address: 'never'
-                }
-              }
-            }} />
+            <CardElement
+              options={{
+                style: {
+                  base: {
+                    fontSize: '16px',
+                    color: '#424770',
+                    '::placeholder': {
+                      color: '#aab7c4',
+                    },
+                  },
+                  invalid: {
+                    color: '#9e2146',
+                  },
+                },
+              }}
+            />
           </div>
         </div>
       </div>
