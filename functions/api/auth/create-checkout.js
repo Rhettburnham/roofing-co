@@ -136,7 +136,7 @@ export async function onRequest(context) {
       }
   
       // Create subscription (only)
-      const subRes = await fetch('https://api.stripe.com/v1/subscriptions?expand[]=latest_invoice.payment_intent', {
+      const subRes = await fetch('https://api.stripe.com/v1/subscriptions', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
@@ -155,6 +155,7 @@ export async function onRequest(context) {
           'payment_behavior': 'default_incomplete',
           'payment_settings[payment_method_types][]': 'card',
           'payment_settings[save_default_payment_method]': 'on_subscription',
+          'expand[]': 'latest_invoice.payment_intent',
         }),
       });
   
