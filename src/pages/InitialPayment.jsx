@@ -52,18 +52,7 @@ const CheckoutForm = ({ selectedPlan, prices }) => {
         throw new Error('Card element not found');
       }
 
-      // Create payment method
-      const { error: paymentMethodError, paymentMethod } = await stripe.createPaymentMethod({
-        type: 'card',
-        card: cardElement,
-        billing_details: billingDetails,
-      });
-
-      if (paymentMethodError) {
-        throw new Error(paymentMethodError.message);
-      }
-
-      // Create subscription
+      // Create subscription with default_incomplete
       const response = await fetch('/api/auth/create-checkout', {
         method: 'POST',
         headers: {
@@ -73,29 +62,35 @@ const CheckoutForm = ({ selectedPlan, prices }) => {
         body: JSON.stringify({
           priceId: selectedPlan === 'monthly' ? MONTHLY_PRICE_ID : YEARLY_PRICE_ID,
           planType: selectedPlan,
-          paymentMethodId: paymentMethod.id,
-          billingDetails
-        }),
+        })
       });
 
-      const data = await response.json();
-      
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create subscription');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create subscription');
       }
 
-      // Confirm the payment
-      const { error: confirmError } = await stripe.confirmCardPayment(data.clientSecret, {
-        payment_method: paymentMethod.id,
+      const { clientSecret, subscriptionId } = await response.json();
+
+      // Confirm the payment with the client secret
+      const { error: confirmError } = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: cardElement,
+          billing_details: billingDetails
+        }
       });
 
       if (confirmError) {
         throw new Error(confirmError.message);
       }
 
-      // Redirect to success page
-      navigate('/payment-success');
-
+      // Payment successful, redirect to success page
+      navigate('/payment-success', { 
+        state: { 
+          subscriptionId,
+          planType: selectedPlan
+        }
+      });
     } catch (err) {
       console.error('Payment error:', err);
       setError(err.message);
@@ -314,26 +309,6 @@ const InitialPayment = () => {
 
         const pricesData = await pricesResponse.json();
         setPrices(pricesData);
-
-        // Create payment intent
-        const intentResponse = await fetch('/api/auth/create-payment-intent', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            priceId: selectedPlan === 'monthly' ? MONTHLY_PRICE_ID : YEARLY_PRICE_ID,
-            planType: selectedPlan,
-          }),
-          credentials: 'include',
-        });
-
-        if (!intentResponse.ok) {
-          throw new Error('Failed to create payment intent');
-        }
-
-        const { clientSecret } = await intentResponse.json();
-        setClientSecret(clientSecret);
       } catch (err) {
         console.error('Error initializing payment:', err);
         setError('Failed to initialize payment');
@@ -446,8 +421,8 @@ const InitialPayment = () => {
             </div>
           </div>
 
-          {clientSecret && (
-            <Elements stripe={stripePromise} options={{ clientSecret }}>
+          {prices.monthly.amount > 0 && (
+            <Elements stripe={stripePromise}>
               <CheckoutForm selectedPlan={selectedPlan} prices={prices} />
             </Elements>
           )}
