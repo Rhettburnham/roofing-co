@@ -136,7 +136,7 @@ export async function onRequest(context) {
       }
   
       // Create subscription (only)
-      const subRes = await fetch('https://api.stripe.com/v1/subscriptions', {
+      const subRes = await fetch('https://api.stripe.com/v1/subscriptions?expand[]=latest_invoice.payment_intent', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
@@ -164,10 +164,19 @@ export async function onRequest(context) {
       }
   
       const subscription = await subRes.json();
+      console.log('Subscription created:', {
+        id: subscription.id,
+        status: subscription.status,
+        clientSecret: subscription.latest_invoice?.payment_intent?.client_secret
+      });
+  
+      if (!subscription.latest_invoice?.payment_intent?.client_secret) {
+        throw new Error('No client secret found in subscription response');
+      }
   
       return new Response(JSON.stringify({
         subscriptionId: subscription.id,
-        clientSecret: subscription.latest_invoice?.payment_intent?.client_secret,
+        clientSecret: subscription.latest_invoice.payment_intent.client_secret,
         status: subscription.status,
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

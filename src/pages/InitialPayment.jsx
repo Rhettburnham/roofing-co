@@ -72,6 +72,10 @@ const CheckoutForm = ({ selectedPlan, prices }) => {
 
       const { clientSecret, subscriptionId } = await response.json();
 
+      if (!clientSecret) {
+        throw new Error('No client secret received from server');
+      }
+
       // Confirm the payment with the client secret
       const { error: confirmError } = await stripe.confirmCardPayment(clientSecret, {
         payment_method: {
