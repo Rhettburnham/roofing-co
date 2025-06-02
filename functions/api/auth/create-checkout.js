@@ -155,7 +155,7 @@ export async function onRequest(context) {
           'payment_behavior': 'default_incomplete',
           'payment_settings[payment_method_types][]': 'card',
           'payment_settings[save_default_payment_method]': 'on_subscription',
-          'expand[]': 'latest_invoice.payment_intent',
+          'expand[]': 'latest_invoice'
         }),
       });
   
@@ -168,16 +168,35 @@ export async function onRequest(context) {
       console.log('Subscription created:', {
         id: subscription.id,
         status: subscription.status,
-        clientSecret: subscription.latest_invoice?.payment_intent?.client_secret
+        invoice: subscription.latest_invoice
       });
   
-      if (!subscription.latest_invoice?.payment_intent?.client_secret) {
-        throw new Error('No client secret found in subscription response');
+      // Get the payment intent from the latest invoice
+      const invoiceRes = await fetch(`https://api.stripe.com/v1/invoices/${subscription.latest_invoice.id}?expand[]=payment_intent`, {
+        headers: {
+          Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      });
+  
+      if (!invoiceRes.ok) {
+        const error = await invoiceRes.text();
+        throw new Error(`Failed to fetch invoice: ${error}`);
+      }
+  
+      const invoice = await invoiceRes.json();
+      console.log('Invoice fetched:', {
+        id: invoice.id,
+        payment_intent: invoice.payment_intent
+      });
+  
+      if (!invoice.payment_intent?.client_secret) {
+        throw new Error('No payment intent found in invoice');
       }
   
       return new Response(JSON.stringify({
         subscriptionId: subscription.id,
-        clientSecret: subscription.latest_invoice.payment_intent.client_secret,
+        clientSecret: invoice.payment_intent.client_secret,
         status: subscription.status,
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
