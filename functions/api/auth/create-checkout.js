@@ -219,6 +219,33 @@ export async function onRequest(context) {
       email: userSession.email
     });
 
+    // First create a payment intent using the existing worker
+    const paymentIntentResponse = await fetch(`${request.headers.get('origin')}/api/auth/create-payment-intent`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': request.headers.get('cookie')
+      },
+      body: JSON.stringify({
+        priceId: priceDetails.id,
+        planType: planType || 'monthly',
+        customerId: customer.id
+      })
+    });
+
+    if (!paymentIntentResponse.ok) {
+      const errorText = await paymentIntentResponse.text();
+      console.error('Failed to create payment intent:', errorText);
+      throw new Error(`Failed to create payment intent: ${errorText}`);
+    }
+
+    const { clientSecret, paymentIntentId } = await paymentIntentResponse.json();
+    console.log('Payment intent created:', {
+      id: paymentIntentId,
+      client_secret: clientSecret
+    });
+
+    // Now create the subscription
     const response = await fetch('https://api.stripe.com/v1/subscriptions', {
       method: 'POST',
       headers: {
@@ -238,7 +265,7 @@ export async function onRequest(context) {
         'payment_behavior': 'default_incomplete',
         'payment_settings[payment_method_types][]': 'card',
         'payment_settings[save_default_payment_method]': 'on_subscription',
-        'expand[]': 'latest_invoice.payment_intent'
+        'default_payment_method': paymentIntentId
       })
     });
 
@@ -256,12 +283,8 @@ export async function onRequest(context) {
     const subscription = await response.json();
     console.log('Subscription created successfully:', {
       id: subscription.id,
-      status: subscription.status,
-      latest_invoice: subscription.latest_invoice
+      status: subscription.status
     });
-
-    // Get the client secret from the payment intent
-    const clientSecret = subscription.latest_invoice.payment_intent.client_secret;
 
     return new Response(JSON.stringify({ 
       subscriptionId: subscription.id,
