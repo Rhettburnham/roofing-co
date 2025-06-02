@@ -127,7 +127,7 @@ export async function onRequest(context) {
 
     // First, search for existing customer by email
     console.log('Searching for existing customer with email:', userSession.email);
-    const searchResponse = await fetch(`https://api.stripe.com/v1/customers?email=${encodeURIComponent(userSession.email)}`, {
+    const searchResponse = await fetch(`https://api.stripe.com/v1/customers?email=${encodeURIComponent(userSession.email)}&limit=1`, {
       headers: {
         'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
         'Content-Type': 'application/x-www-form-urlencoded'
@@ -241,7 +241,10 @@ export async function onRequest(context) {
         'subscription_data[metadata][customerId]': customer.id,
         'billing_address_collection': 'required',
         'payment_method_collection': 'always',
-        'allow_promotion_codes': 'true'
+        'allow_promotion_codes': 'true',
+        'payment_method_options[card][setup_future_usage]': 'off_session',
+        'payment_method_types[]': 'card',
+        'payment_method_options[card][request_three_d_secure]': 'automatic'
       })
     });
 

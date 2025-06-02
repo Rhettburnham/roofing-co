@@ -29,6 +29,34 @@ const CheckoutForm = ({ selectedPlan, prices }) => {
     setLoading(true);
 
     try {
+      if (!stripe || !elements) {
+        throw new Error('Stripe not initialized');
+      }
+
+      // Get form data
+      const formData = new FormData(e.target);
+      const billingDetails = {
+        name: `${formData.get('firstName')} ${formData.get('lastName')}`,
+        address: {
+          line1: formData.get('address'),
+          city: formData.get('city'),
+          state: formData.get('state'),
+          postal_code: formData.get('postalCode'),
+          country: formData.get('country'),
+        },
+      };
+
+      // Create payment method
+      const { error: paymentMethodError, paymentMethod } = await stripe.createPaymentMethod({
+        type: 'card',
+        card: elements.getElement('card'),
+        billing_details: billingDetails,
+      });
+
+      if (paymentMethodError) {
+        throw new Error(paymentMethodError.message);
+      }
+
       // Create checkout session
       const response = await fetch('/api/auth/create-checkout', {
         method: 'POST',
@@ -38,7 +66,9 @@ const CheckoutForm = ({ selectedPlan, prices }) => {
         credentials: 'include',
         body: JSON.stringify({
           priceId: selectedPlan === 'monthly' ? MONTHLY_PRICE_ID : YEARLY_PRICE_ID,
-          planType: selectedPlan
+          planType: selectedPlan,
+          paymentMethodId: paymentMethod.id,
+          billingDetails
         }),
       });
 
@@ -48,8 +78,17 @@ const CheckoutForm = ({ selectedPlan, prices }) => {
         throw new Error(data.error || 'Failed to create checkout session');
       }
 
-      // Redirect to Stripe Checkout
-      window.location.href = data.url;
+      // Confirm the subscription
+      const { error: confirmError } = await stripe.confirmCardPayment(data.clientSecret, {
+        payment_method: paymentMethod.id,
+      });
+
+      if (confirmError) {
+        throw new Error(confirmError.message);
+      }
+
+      // Redirect to success page
+      navigate('/payment-success');
 
     } catch (err) {
       console.error('Payment error:', err);
@@ -61,7 +100,131 @@ const CheckoutForm = ({ selectedPlan, prices }) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <PaymentElement />
+      <div className="space-y-4">
+        <div className="bg-white p-4 rounded-lg shadow">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Payment Details</h3>
+          
+          {/* Name Fields */}
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
+                First Name
+              </label>
+              <input
+                type="text"
+                id="firstName"
+                name="firstName"
+                required
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              />
+            </div>
+            <div>
+              <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
+                Last Name
+              </label>
+              <input
+                type="text"
+                id="lastName"
+                name="lastName"
+                required
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              />
+            </div>
+          </div>
+
+          {/* Address Fields */}
+          <div className="space-y-4 mb-4">
+            <div>
+              <label htmlFor="address" className="block text-sm font-medium text-gray-700">
+                Address
+              </label>
+              <input
+                type="text"
+                id="address"
+                name="address"
+                required
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="city" className="block text-sm font-medium text-gray-700">
+                  City
+                </label>
+                <input
+                  type="text"
+                  id="city"
+                  name="city"
+                  required
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                />
+              </div>
+              <div>
+                <label htmlFor="state" className="block text-sm font-medium text-gray-700">
+                  State
+                </label>
+                <input
+                  type="text"
+                  id="state"
+                  name="state"
+                  required
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700">
+                  Postal Code
+                </label>
+                <input
+                  type="text"
+                  id="postalCode"
+                  name="postalCode"
+                  required
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                />
+              </div>
+              <div>
+                <label htmlFor="country" className="block text-sm font-medium text-gray-700">
+                  Country
+                </label>
+                <select
+                  id="country"
+                  name="country"
+                  required
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                >
+                  <option value="US">United States</option>
+                  <option value="CA">Canada</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Card Element */}
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Card Details
+            </label>
+            <PaymentElement options={{
+              layout: {
+                type: 'tabs',
+                defaultCollapsed: false,
+              },
+              paymentMethodOrder: ['card'],
+              fields: {
+                billingDetails: {
+                  name: 'never',
+                  email: 'never',
+                  phone: 'never',
+                  address: 'never'
+                }
+              }
+            }} />
+          </div>
+        </div>
+      </div>
       
       {error && (
         <div className="rounded-md bg-red-50 p-4">
