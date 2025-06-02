@@ -227,7 +227,7 @@ export async function onRequest(context) {
         'Cookie': request.headers.get('cookie')
       },
       body: JSON.stringify({
-        priceId: priceDetails.id,
+        priceId: productDetails.id,
         planType: planType || 'monthly',
         customerId: customer.id
       })
