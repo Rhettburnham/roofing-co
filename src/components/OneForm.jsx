@@ -281,13 +281,45 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
               console.log("[OneForm] Successfully fetched /personal/new/jsons/about_page.json.");
             } else {
               console.error("[OneForm] Failed to fetch /personal/new/jsons/about_page.json. Status:", aboutResponse.status);
-              setAboutPageJsonData({}); 
-              setInitialAboutPageJsonData({});
+              // Fallback to the alternative data source
+              try {
+                const aboutJsonResponse = await fetch("/data/raw_data/step_3/about_page.json");
+                if (aboutJsonResponse.ok) {
+                  const aboutJson = await aboutJsonResponse.json();
+                  setAboutPageJsonData(aboutJson);
+                  setInitialAboutPageJsonData(JSON.parse(JSON.stringify(aboutJson)));
+                  console.log("OneForm: Loaded about_page.json data from fallback source:", aboutJson);
+                } else {
+                  console.warn("OneForm: Failed to load about_page.json from fallback. About page editor might not work as expected.");
+                  setAboutPageJsonData({});
+                  setInitialAboutPageJsonData({});
+                }
+              } catch (aboutJsonError) {
+                console.error("OneForm: Error loading about_page.json from fallback:", aboutJsonError);
+                setAboutPageJsonData({});
+                setInitialAboutPageJsonData({});
+              }
             }
           } catch (fetchError) {
             console.error("[OneForm] Error fetching /personal/new/jsons/about_page.json:", fetchError);
-            setAboutPageJsonData({}); 
-            setInitialAboutPageJsonData({});
+            // Fallback to the alternative data source
+            try {
+              const aboutJsonResponse = await fetch("/data/raw_data/step_3/about_page.json");
+              if (aboutJsonResponse.ok) {
+                const aboutJson = await aboutJsonResponse.json();
+                setAboutPageJsonData(aboutJson);
+                setInitialAboutPageJsonData(JSON.parse(JSON.stringify(aboutJson)));
+                console.log("OneForm: Loaded about_page.json data from fallback source after error:", aboutJson);
+              } else {
+                console.warn("OneForm: Failed to load about_page.json from fallback after error.");
+                setAboutPageJsonData({});
+                setInitialAboutPageJsonData({});
+              }
+            } catch (aboutJsonErrorFallback) {
+              console.error("OneForm: Error loading about_page.json from fallback after error:", aboutJsonErrorFallback);
+              setAboutPageJsonData({});
+              setInitialAboutPageJsonData({});
+            }
           }
         }
 
