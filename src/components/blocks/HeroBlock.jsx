@@ -1,323 +1,352 @@
 // src/components/blocks/HeroBlock.jsx
-import React, { useState, useEffect, useRef } from 'react';
-import PropTypes from 'prop-types';
-import { Link } from 'react-router-dom';
-import IconSelectorModal from '../common/IconSelectorModal';
-import * as LucideIcons from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import ThemeColorPicker from "../common/ThemeColorPicker"; // Assuming a common color picker
+
+// Helper function (can be moved to a utils file if used elsewhere)
+const getDisplayUrlHelper = (value) => {
+  if (!value) return null;
+  if (typeof value === "string") return value; // Handles direct URLs or blob URLs
+  if (value.url) return value.url; // Handles { url: '...', file: File }
+  return null;
+};
 
 /**
  * HeroBlock
  *
  * Props:
  *  - config: {
- *      backgroundImage: string (default '/assets/images/growth/hero_growth.jpg'),
- *      title: string (default 'Siding Options'),
- *      shrinkAfterMs?: number (default 1000) -> how soon to shrink
- *      initialHeight?: string (default '40vh')
- *      finalHeight?: string (default '20vh')
+ *      backgroundImage?: string | { url: string, file?: File, name?: string, originalUrl?: string },
+ *      title?: string (default 'Siding Options'),
+ *      icon?: string (Font Awesome class or emoji),
+ *      subList?: string[] (array of sub items),
+ *      shrinkAfterMs?: number (default 1000),
+ *      initialHeight?: string (default '40vh'),
+ *      finalHeight?: string (default '20vh'),
+ *      titleTextColor?: string (default '#FFFFFF'),
+ *      subListTextColor?: string (default '#FFFFFF'),
+ *      fallbackBackgroundColor?: string (default '#333333')
  *    }
  *  - readOnly: boolean => if true, render "live" version with the shrinking effect
  *  - onConfigChange: function => called in edit mode to update config
+ *  - themeColors: object => for ThemeColorPicker
  */
-
-// Helper to render dynamic icons (can be moved to a shared util if used more widely)
-const renderDynamicIcon = (pack, iconName, fallback = null, props = {}) => {
-    const IconsSet = pack === 'lucide' ? LucideIcons : {}; // Add other packs if needed
-    const IconComponent = IconsSet[iconName];
-    return IconComponent ? <IconComponent {...props} /> : fallback;
-};
-
-const HeroBlock = ({ config = {}, readOnly = false, onConfigChange }) => {
-  // Update destructuring to handle empty strings
+const HeroBlock = ({ config = {}, readOnly = false, onConfigChange, themeColors }) => {
   const {
-    backgroundImage:
-      rawBackgroundImage = "/assets/images/growth/hero_growth.jpg",
+    backgroundImage: rawBackgroundImage,
     title = "Siding Options",
+    icon = "🏠",
+    subList = ["Professional Installation", "Quality Materials", "Expert Service"],
     shrinkAfterMs = 1000,
     initialHeight = "40vh",
     finalHeight = "20vh",
+    titleTextColor = "#FFFFFF",
+    subListTextColor = "#FFFFFF",
+    fallbackBackgroundColor = "#333333", // A dark fallback
   } = config;
 
-  // Only use default if backgroundImage is empty string, null, or undefined
-  const backgroundImage =
-    rawBackgroundImage && rawBackgroundImage.trim() !== ""
-      ? rawBackgroundImage
-      : "/assets/images/growth/hero_growth.jpg";
-
-  // For the "shrinking" effect
   const [isShrunk, setIsShrunk] = useState(false);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editableTitle, setEditableTitle] = useState(title);
+
+  useEffect(() => {
+    setEditableTitle(title);
+  }, [title]);
 
   useEffect(() => {
     if (readOnly) {
-      // Start the timer to shrink the hero if in readOnly "live" mode
       const timer = setTimeout(() => {
         setIsShrunk(true);
       }, shrinkAfterMs);
       return () => clearTimeout(timer);
+    } else {
+      setIsShrunk(false); // Ensure it's not shrunk when in edit mode preview
     }
   }, [readOnly, shrinkAfterMs]);
 
-  // Helper function to get display URL
-  const getDisplayUrl = (value) => {
-    if (!value) return null;
-    if (typeof value === "string") return value;
-    if (typeof value === "object" && value.url) return value.url;
-    return null;
+  const handleTitleChange = (e) => {
+    setEditableTitle(e.target.value);
   };
 
-  // Get the actual background image URL to display
-  const displayBackgroundImage = getDisplayUrl(backgroundImage);
+  const saveTitle = () => {
+    setIsEditingTitle(false);
+    if (onConfigChange && title !== editableTitle) {
+      onConfigChange({ ...config, title: editableTitle });
+    }
+  };
+  
+  const displayBackgroundImage = getDisplayUrlHelper(rawBackgroundImage);
 
-  // RENDER: READONLY => replicate the snippet
-  if (readOnly) {
-    return (
-      <div 
-        className="relative w-full flex items-center justify-center text-center bg-cover bg-center p-8"
-        style={{
-          backgroundImage: `url('${displayBackgroundImage}')`,
-          backgroundSize: "120%", // Expanded image size
-          backgroundPosition: isShrunk ? "center right" : "center left",
-          minHeight: isShrunk ? finalHeight : initialHeight,
-        }}
-      >
-        {displayBackgroundImage && (
-          <div 
-            className="absolute inset-0 z-0"
-            style={{ backgroundColor: `rgba(0,0,0,0.3)` }}
-          ></div>
-        )}
-        <div className="relative z-10 max-w-3xl mx-auto">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 break-words" style={{color: 'inherit'}}>{title}</h1>
-        </div>
-      </div>
-    );
-  }
+  const currentHeight = readOnly && isShrunk ? finalHeight : initialHeight;
 
-  // RENDER: EDIT MODE => simple form
-  const handleFieldChange = (field, value) => {
-    onConfigChange?.({
-      ...config,
-      [field]: value,
-    });
+  const sectionStyle = {
+    zIndex: 20,
+    height: currentHeight,
+    backgroundColor: !displayBackgroundImage ? fallbackBackgroundColor : 'transparent',
+    position: 'relative', // Ensure relative positioning for absolute children
   };
 
-  const handleImageUpload = (field, file) => {
-    if (!file) return;
-
-    // Create a URL for display
-    const fileURL = URL.createObjectURL(file);
-
-    // Store just the URL for display
-    handleFieldChange(field, fileURL);
+  const bgDivStyle = {
+    backgroundImage: displayBackgroundImage ? `url('${displayBackgroundImage}')` : 'none',
+    backgroundSize: displayBackgroundImage ? (readOnly && isShrunk ? "110%" : "120%") : 'cover', // Slightly different zoom for shrunk state
+    backgroundPosition: displayBackgroundImage ? (readOnly && isShrunk ? "center center" : "center left") : 'center center',
   };
 
   return (
-    <div className="p-2 bg-gray-700 rounded text-white">
-      <h3 className="font-bold mb-2">Hero Block Editor</h3>
+    <motion.section
+      className="relative bg-banner" // bg-banner might be overridden by fallbackBackgroundColor or image
+      style={sectionStyle}
+      initial={{ height: initialHeight }}
+      animate={{ height: currentHeight }}
+      transition={{ duration: readOnly ? 1 : 0.3 }} // Faster transition if not in live readOnly mode
+    >
+      <div
+        className="absolute inset-0 bg-cover bg-center w-full h-full transition-all duration-1000"
+        style={bgDivStyle}
+      ></div>
+      
+      {/* Main content container - perfectly centered vertically and horizontally */}
+      <div className="relative z-10 h-full flex items-center justify-center p-4">
+        <div className="text-center flex flex-col items-center justify-center space-y-4">
+          {/* Icon */}
+          {icon && (
+            <motion.div
+              initial={{ scale: readOnly ? 0 : 1, opacity: readOnly ? 0 : 1 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: readOnly ? 0.8 : 0.3, delay: readOnly ? 0.2 : 0 }}
+              className="text-4xl sm:text-5xl md:text-6xl mb-2"
+              style={{ color: titleTextColor }}
+            >
+              {icon.startsWith('fa-') ? (
+                <i className={`fas ${icon}`}></i>
+              ) : (
+                icon
+              )}
+            </motion.div>
+          )}
 
-      {/* Title */}
-      <label className="block text-sm mb-2">
-        Title:
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => handleFieldChange("title", e.target.value)}
-          className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
-        />
-      </label>
+          {/* Title */}
+          {isEditingTitle && !readOnly ? (
+            <input
+              type="text"
+              value={editableTitle}
+              onChange={handleTitleChange}
+              onBlur={saveTitle}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") saveTitle();
+                if (e.key === "Escape") {
+                  setEditableTitle(title); // Revert
+                  setIsEditingTitle(false);
+                }
+              }}
+              className="text-center text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-wider bg-transparent outline-none border-b-2 border-gray-400 focus:border-white"
+              style={{ color: titleTextColor, width: 'auto', minWidth: '50%' }}
+              autoFocus
+            />
+          ) : (
+            <motion.h1
+              initial={{ y: readOnly ? -30 : 0, opacity: readOnly ? 0 : 1 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: readOnly ? 0.8 : 0.3, delay: readOnly ? 0.4 : 0 }}
+              className="text-center text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-wider"
+              style={{ color: titleTextColor, cursor: !readOnly ? "pointer" : "default" }}
+              onClick={() => {
+                if (!readOnly) setIsEditingTitle(true);
+              }}
+            >
+              {editableTitle}
+            </motion.h1>
+          )}
 
-      {/* Background Image */}
-      <label className="block text-sm mb-2">
-        Background Image:
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) {
-              handleImageUpload("backgroundImage", file);
-            }
-          }}
-          className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
-        />
-      </label>
-      {displayBackgroundImage && (
-        <img
-          src={displayBackgroundImage}
-          alt="Background Preview"
-          className="mt-1 h-24 object-cover rounded w-full"
-        />
-      )}
-
-      {/* Animation Settings */}
-      <div className="mt-4 border-t border-gray-600 pt-2">
-        <h4 className="font-semibold mb-2">Animation Settings</h4>
-
-        <label className="block text-sm mb-2">
-          Initial Height:
-          <input
-            type="text"
-            value={initialHeight}
-            onChange={(e) => handleFieldChange("initialHeight", e.target.value)}
-            className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
-          />
-        </label>
-
-        <label className="block text-sm mb-2">
-          Final Height:
-          <input
-            type="text"
-            value={finalHeight}
-            onChange={(e) => handleFieldChange("finalHeight", e.target.value)}
-            className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
-          />
-        </label>
-
-        <label className="block text-sm mb-2">
-          Shrink After (ms):
-          <input
-            type="number"
-            value={shrinkAfterMs}
-            onChange={(e) =>
-              handleFieldChange("shrinkAfterMs", parseInt(e.target.value))
-            }
-            className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
-          />
-        </label>
+          {/* Sub List */}
+          {subList && subList.length > 0 && (
+            <motion.div
+              initial={{ y: readOnly ? 30 : 0, opacity: readOnly ? 0 : 1 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: readOnly ? 0.8 : 0.3, delay: readOnly ? 0.6 : 0 }}
+              className="mt-4 space-y-2"
+            >
+              {subList.map((item, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ x: readOnly ? (index % 2 === 0 ? -20 : 20) : 0, opacity: readOnly ? 0 : 1 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ duration: readOnly ? 0.6 : 0.3, delay: readOnly ? 0.8 + (index * 0.1) : 0 }}
+                  className="text-center text-sm sm:text-base md:text-lg font-medium"
+                  style={{ color: subListTextColor }}
+                >
+                  • {item}
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+        </div>
       </div>
-    </div>
+    </motion.section>
   );
 };
 
-HeroBlock.propTypes = {
-  config: PropTypes.shape({
-    title: PropTypes.string,
-    subtitle: PropTypes.string,
-    backgroundImage: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
-    backgroundColor: PropTypes.string,
-    textColor: PropTypes.string,
-    buttonText: PropTypes.string,
-    buttonLink: PropTypes.string,
-    buttonBgColor: PropTypes.string,
-    buttonTextColor: PropTypes.string,
-    buttonIconPack: PropTypes.string,
-    buttonIconName: PropTypes.string,
-    buttonIconColor: PropTypes.string,
-    overlayOpacity: PropTypes.number,
-    minHeight: PropTypes.string,
-  }),
-  readOnly: PropTypes.bool,
-  onConfigChange: PropTypes.func.isRequired,
-  getDisplayUrl: PropTypes.func,
-  onFileChange: PropTypes.func,
-};
+HeroBlock.EditorPanel = ({ currentConfig, onPanelConfigChange, onPanelFileChange, getDisplayUrl, themeColors }) => {
+  const {
+    backgroundImage: rawBackgroundImage,
+    icon = "🏠",
+    subList = ["Professional Installation", "Quality Materials", "Expert Service"],
+    shrinkAfterMs = 1000,
+    initialHeight = "40vh",
+    finalHeight = "20vh",
+    titleTextColor = "#FFFFFF",
+    subListTextColor = "#FFFFFF",
+    fallbackBackgroundColor = "#333333",
+  } = currentConfig;
 
-HeroBlock.EditorPanel = function HeroBlockEditorPanel({ currentConfig, onPanelConfigChange, onPanelFileChange, getDisplayUrl: getDisplayUrlFromProp }) {
-  const [formData, setFormData] = useState(currentConfig || {});
-  const [isIconModalOpen, setIsIconModalOpen] = useState(false);
-
-  useEffect(() => { setFormData(currentConfig || {}); }, [currentConfig]);
-
-  const handleChange = (field, value) => {
-    let parsedValue = value;
-    if (field === 'overlayOpacity') parsedValue = parseFloat(value) || 0;
-    const newFormData = { ...formData, [field]: parsedValue };
-    setFormData(newFormData);
-    onPanelConfigChange(newFormData);
+  const handleFieldChange = (field, value) => {
+    onPanelConfigChange({ ...currentConfig, [field]: value });
   };
 
-  const handleImageFileChange = (file) => {
-    if (file && onPanelFileChange) {
-      onPanelFileChange('backgroundImage', file);
+  const handleFileEvent = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const fileURL = URL.createObjectURL(file);
+      const newFileObject = {
+        file: file,
+        url: fileURL,
+        name: file.name,
+        originalUrl: typeof rawBackgroundImage === 'object' ? rawBackgroundImage.originalUrl : (typeof rawBackgroundImage === 'string' ? rawBackgroundImage : '')
+      };
+      // Use onPanelFileChange for the background image specifically
+      onPanelFileChange('backgroundImage', newFileObject);
     }
   };
 
-  const handleIconSelect = (pack, iconName) => {
-    handleChange('buttonIconPack', pack);
-    handleChange('buttonIconName', iconName);
-    setIsIconModalOpen(false);
+  const handleSubListChange = (index, value) => {
+    const newSubList = [...subList];
+    newSubList[index] = value;
+    handleFieldChange('subList', newSubList);
   };
 
-  const bgImageUrl = getDisplayUrlFromProp ? getDisplayUrlFromProp(formData.backgroundImage) : '';
+  const addSubListItem = () => {
+    handleFieldChange('subList', [...subList, 'New Item']);
+  };
+
+  const removeSubListItem = (index) => {
+    const newSubList = subList.filter((_, i) => i !== index);
+    handleFieldChange('subList', newSubList);
+  };
+  
+  const displayImageUrl = getDisplayUrl(rawBackgroundImage);
 
   return (
-    <div className="space-y-4 p-2 bg-gray-50 rounded-md shadow">
-      <h4 className="h4-style">Content (Panel Edit)</h4>
-      <div><label className="input-label">Title:</label><input type="text" value={formData.title || ''} onChange={(e) => handleChange('title', e.target.value)} className="input-text-class input-title-hero" /></div>
-      <div><label className="input-label">Subtitle:</label><textarea value={formData.subtitle || ''} onChange={(e) => handleChange('subtitle', e.target.value)} rows={2} className="input-textarea-class" /></div>
-      
-      <h4 className="h4-style">Call to Action Button</h4>
-      <div><label className="input-label">Button Text:</label><input type="text" value={formData.buttonText || ''} onChange={(e) => handleChange('buttonText', e.target.value)} className="input-text-class" /></div>
-      <div><label className="input-label">Button Link URL:</label><input type="text" value={formData.buttonLink || ''} onChange={(e) => handleChange('buttonLink', e.target.value)} className="input-text-class" placeholder="e.g., /contact" /></div>
-      <div className="flex items-center space-x-2">
-        <label className="input-label">Button Icon:</label>
-        <button type="button" onClick={() => setIsIconModalOpen(true)} className="btn-secondary-sm">
-          {formData.buttonIconName ? `Change (${formData.buttonIconPack} - ${formData.buttonIconName})` : 'Select Icon'}
-        </button>
-        {formData.buttonIconName && (
-          <button type="button" onClick={() => { handleChange('buttonIconName', null); handleChange('buttonIconPack', null);}} className="btn-danger-xs">Remove</button>
-        )}
-      </div>
-
-      <h4 className="h4-style">Appearance & Background</h4>
+    <div className="p-3 space-y-3 bg-gray-800 text-gray-200 rounded-b-md">
       <div>
-        <label className="input-label">Background Image:</label>
-        <input type="file" accept="image/*" onChange={(e) => handleImageFileChange(e.target.files[0])} className="input-file-class" />
-        {bgImageUrl && <img src={bgImageUrl} alt="BG Preview" className="img-preview-sm mt-2" />}
-        <input type="text" placeholder="Or paste BG Image URL" value={typeof formData.backgroundImage === 'string' ? formData.backgroundImage : (formData.backgroundImage?.originalUrl || formData.backgroundImage?.url || '')} onChange={(e) => handleChange('backgroundImage', e.target.value)} className="input-text-class mt-1" />
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <div><label className="input-label-sm">Overlay Opacity (0-1):</label><input type="number" min="0" max="1" step="0.05" value={formData.overlayOpacity || 0} onChange={(e) => handleChange('overlayOpacity', e.target.value)} className="input-text-xs" /></div>
-        <div><label className="input-label-sm">Min Height (e.g., 60vh):</label><input type="text" value={formData.minHeight || '60vh'} onChange={(e) => handleChange('minHeight', e.target.value)} className="input-text-xs" /></div>
-      </div>
-
-      <h4 className="h4-style">Color Scheme</h4>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
-        <div><label>BG (No Image):</label><input type="color" value={formData.backgroundColor || ''} onChange={(e) => handleChange('backgroundColor', e.target.value)} className="input-color-xs" /></div>
-        <div><label>Text Color:</label><input type="color" value={formData.textColor || ''} onChange={(e) => handleChange('textColor', e.target.value)} className="input-color-xs" /></div>
-        <div><label>Button BG:</label><input type="color" value={formData.buttonBgColor || ''} onChange={(e) => handleChange('buttonBgColor', e.target.value)} className="input-color-xs" /></div>
-        <div><label>Button Text:</label><input type="color" value={formData.buttonTextColor || ''} onChange={(e) => handleChange('buttonTextColor', e.target.value)} className="input-color-xs" /></div>
-        <div><label>Button Icon:</label><input type="color" value={formData.buttonIconColor || ''} onChange={(e) => handleChange('buttonIconColor', e.target.value)} className="input-color-xs" /></div>
-      </div>
-
-      {isIconModalOpen && (
-        <IconSelectorModal 
-          isOpen={isIconModalOpen} 
-          onClose={() => setIsIconModalOpen(false)} 
-          onIconSelect={handleIconSelect} 
-          currentIconPack={formData.buttonIconPack || 'lucide'} 
-          currentIconName={formData.buttonIconName}
+        <label className="block text-xs font-medium mb-1">Background Image:</label>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleFileEvent}
+          className="w-full text-sm p-1.5 bg-gray-700 border border-gray-600 rounded-md file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700"
         />
-      )}
-      <style jsx>{`
-        .input-label { display: block; font-size: 0.875rem; font-weight: 500; color: #4A5568; margin-bottom: 0.25rem; }
-        .input-label-sm { font-size: 0.75rem; font-weight: 500; color: #4A5568; }
-        .input-text-class, .input-textarea-class { display: block; width: 100%; padding: 0.5rem 0.75rem; background-color: white; border: 1px solid #D1D5DB; border-radius: 0.375rem; margin-top: 0.25rem; }
-        .input-title-hero { /* Specific styles for HeroBlock title input */
-          font-size: 2.25rem; /* Tailwind text-4xl is 2.25rem, md:text-5xl is 3rem. Let's start with 2.25rem for edit mode */
-          line-height: 2.5rem; /* Corresponding line height */
-          font-weight: 700; /* Tailwind font-bold */
-          color: #374151; /* Dark gray, similar to h4-style for readability in editor */
-          /* Retain other input-text-class properties like padding, border, background for editable look */
-        }
-        .input-text-xs {display: block; width: 100%; padding: 0.25rem 0.5rem; font-size: 0.875rem; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.25rem; margin-top: 0.25rem;}
-        .input-textarea-class { resize: vertical; min-height: 60px; }
-        .input-file-class { display: block; width: 100%; font-size: 0.875rem; margin-top: 0.25rem; }
-        .img-preview-sm { max-height: 4rem; border-radius: 0.25rem; border: 1px solid #E5E7EB; margin-top: 0.25rem; }
-        .input-color-xs { margin-top: 0.1rem; height: 1.5rem; width: 100%; padding: 0.1rem; border: 1px solid #D1D5DB; border-radius: 0.25rem; }
-        .h4-style { font-size: 1.1rem; font-weight: 600; color: #374151; padding-top: 0.75rem; border-top: 1px solid #E5E7EB; margin-top: 1.25rem; margin-bottom: 0.5rem; }
-        .btn-secondary-sm { padding: 0.375rem 0.75rem; font-size: 0.875rem; background-color: #6B7280; color: white; border-radius: 0.375rem; font-weight: 500; }
-        .btn-danger-xs { font-size: 0.75rem; color: #EF4444; padding: 0.25rem 0.5rem; border: 1px solid #FCA5A5; border-radius: 0.25rem; }
-      `}</style>
+        {displayImageUrl && (
+          <img
+            src={displayImageUrl}
+            alt="Background Preview"
+            className="mt-2 h-20 w-full object-cover rounded bg-gray-700 border border-gray-600"
+          />
+        )}
+         <input
+          type="text"
+          placeholder="Or paste image URL"
+          value={(typeof rawBackgroundImage === 'string' && !rawBackgroundImage.startsWith('blob:')) ? rawBackgroundImage : (displayImageUrl && displayImageUrl.startsWith('blob:')) ? '' : (rawBackgroundImage?.url || '')}
+          onChange={(e) => {
+             const newFileObject = {
+                file: null, // Pasted URL means no local file initially
+                url: e.target.value,
+                name: e.target.value.split('/').pop() || 'pasted_image',
+                originalUrl: e.target.value
+             };
+             // For pasted URLs, it's simpler to just update the config directly via onPanelConfigChange
+             // as onPanelFileChange is more for actual File objects.
+             // However, to keep consistency with how file objects are structured:
+             onPanelConfigChange({ ...currentConfig, backgroundImage: newFileObject });
+          }}
+          className="mt-1 w-full p-1.5 bg-gray-700 border border-gray-600 rounded-md text-sm"
+        />
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium mb-1">Icon (emoji or Font Awesome class):</label>
+        <input
+          type="text"
+          value={icon}
+          onChange={(e) => handleFieldChange('icon', e.target.value)}
+          placeholder="🏠 or fa-home"
+          className="w-full p-1.5 bg-gray-700 border border-gray-600 rounded-md text-sm"
+        />
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium mb-1">Sub List Items:</label>
+        {subList.map((item, index) => (
+          <div key={index} className="flex items-center gap-2 mb-2">
+            <input
+              type="text"
+              value={item}
+              onChange={(e) => handleSubListChange(index, e.target.value)}
+              className="flex-1 p-1.5 bg-gray-700 border border-gray-600 rounded-md text-sm"
+            />
+            <button
+              onClick={() => removeSubListItem(index)}
+              className="px-2 py-1 bg-red-600 hover:bg-red-700 rounded text-xs"
+            >
+              Remove
+            </button>
+          </div>
+        ))}
+        <button
+          onClick={addSubListItem}
+          className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs"
+        >
+          Add Item
+        </button>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-medium mb-1">Title Text Color:</label>
+          <ThemeColorPicker
+            label=""
+            fieldName="titleTextColor"
+            currentColorValue={titleTextColor}
+            onColorChange={(fieldName, value) => handleFieldChange(fieldName, value)}
+            themeColors={themeColors || { accent: '#007bff', text: '#ffffff', background: '#333333' }} // Provide some defaults
+            className="mt-0"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium mb-1">Sub List Text Color:</label>
+          <ThemeColorPicker
+            label=""
+            fieldName="subListTextColor"
+            currentColorValue={subListTextColor}
+            onColorChange={(fieldName, value) => handleFieldChange(fieldName, value)}
+            themeColors={themeColors || { accent: '#007bff', text: '#ffffff', background: '#333333' }}
+            className="mt-0"
+          />
+        </div>
+      </div>
+      
+      <div>
+        <label className="block text-xs font-medium mb-1">Fallback Background Color (if no image):</label>
+         <ThemeColorPicker
+          label=""
+          fieldName="fallbackBackgroundColor"
+          currentColorValue={fallbackBackgroundColor}
+          onColorChange={(fieldName, value) => handleFieldChange(fieldName, value)}
+          themeColors={themeColors || { accent: '#007bff', text: '#ffffff', background: '#333333' }}
+          className="mt-0"
+        />
+      </div>
     </div>
   );
-};
-
-HeroBlock.EditorPanel.propTypes = {
-  currentConfig: PropTypes.object.isRequired,
-  onPanelConfigChange: PropTypes.func.isRequired,
-  onPanelFileChange: PropTypes.func.isRequired,
-  getDisplayUrl: PropTypes.func.isRequired,
 };
 
 export default HeroBlock;

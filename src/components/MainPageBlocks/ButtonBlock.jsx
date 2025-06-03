@@ -1,98 +1,320 @@
 // src/components/MainPageBlocks/ButtonBlock.jsx
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import PropTypes from "prop-types";
 import gsap from "gsap";
 import { useNavigate } from "react-router-dom";
+import ThemeColorPicker from "../common/ThemeColorPicker";
+import PanelImagesController from "../common/PanelImagesController";
+import PanelStylingController from "../common/PanelStylingController";
 
 // Add ticker registration to keep animations running during scrolling
 gsap.registerPlugin();
 // Force GSAP to use requestAnimationFrame which is more reliable during scrolling
 gsap.ticker.lagSmoothing(0);
 
+// Helper function to derive local state from props
+const deriveInitialLocalData = (buttonDataInput) => {
+  const initial = buttonDataInput || {};
+  
+  // Initialize images with proper structure, following HeroBlock pattern
+  let initialImages = [];
+  const defaultImages = [
+    "/assets/images/roof_slideshow/i4.jpeg",
+    "/assets/images/roof_slideshow/i8.webp",
+    "/assets/images/roof_slideshow/i5.jpeg",
+  ];
+
+  // Check if images array already exists and is valid
+  if (initial.images && Array.isArray(initial.images) && initial.images.length > 0) {
+    console.log("[ButtonBlock] Using existing images array from prop");
+    initialImages = initial.images.map((img, index) => {
+      if (typeof img === 'string') {
+        return { 
+          file: null, 
+          url: img, 
+          name: img.split('/').pop() || `Image ${index + 1}`, 
+          originalUrl: img,
+          id: `img_existing_${Date.now()}_${index}`
+        };
+      }
+      if (img && typeof img === 'object') {
+        return { 
+          file: img.file instanceof File ? img.file : null, 
+          url: typeof img.url === 'string' ? img.url : '', 
+          name: typeof img.name === 'string' ? img.name : (typeof img.url === 'string' ? img.url.split('/').pop() : `Image ${index + 1}`),
+          originalUrl: typeof img.originalUrl === 'string' ? img.originalUrl : (typeof img.url === 'string' ? img.url : ''),
+          id: img.id || `img_existing_${Date.now()}_${index}`
+        };
+      }
+      return { file: null, url: '', name: `Image ${index + 1}`, originalUrl: '', id: `img_existing_${Date.now()}_${index}` };
+    });
+  } else {
+    // Initialize from default images - create proper image objects for all defaults
+    console.log("[ButtonBlock] Initializing with default images");
+    initialImages = defaultImages.map((imgPath, index) => ({
+      file: null,
+      url: imgPath,
+      name: imgPath.split('/').pop() || `Carousel Image ${index + 1}`,
+      originalUrl: imgPath,
+      id: `img_default_${Date.now()}_${index}`
+    }));
+  }
+  
+  return {
+    text: initial.text || "About Us",
+    buttonLink: initial.buttonLink || "/about",
+    slideDuration: initial.slideDuration || 40,
+    images: initialImages,
+    styling: {
+      desktopHeightVH: initial.styling?.desktopHeightVH || 20,
+      mobileHeightVW: initial.styling?.mobileHeightVW || 35,
+      slideDuration: initial.slideDuration || initial.styling?.slideDuration || 40,
+      buttonSize: initial.buttonSize || initial.styling?.buttonSize || 'large',
+      animationSpeed: initial.animationSpeed || initial.styling?.animationSpeed || 'normal',
+      animationType: initial.animationType || initial.styling?.animationType || 'slide'
+    }
+  };
+};
+
 /* ======================================================
-   READ-ONLY VIEW: ButtonPreview
+   BUTTON PREVIEW (Read-Only or Editable)
    ------------------------------------------------------
-   This component shows the button as a preview.
-   It uses GSAP for the sliding carousel and uses the
-   passed-in button configuration values.
+   This component shows the button as a preview with
+   inline editing capabilities for text and link.
 ========================================================= */
-function ButtonPreview({ buttonconfig }) {
+function ButtonPreview({ buttonData, readOnly, onButtonDataChange }) {
   const navigate = useNavigate();
   const sliderRef = useRef(null);
   const [images, setImages] = useState([]);
-  const slideDuration = buttonconfig?.slideDuration || 120; 
+  const slideDuration = buttonData?.slideDuration || 40; 
+  const animationType = buttonData?.animationType || buttonData?.styling?.animationType || 'slide';
   const animRef = useRef(null);
 
+  const handleFieldChange = (field, value) => {
+    onButtonDataChange({ ...buttonData, [field]: value });
+  };
+
   useEffect(() => {
-    if (!buttonconfig) return;
-    const { images = [] } = buttonconfig;
+    if (!buttonData) return;
+    const { images = [] } = buttonData;
     const formattedImages = images.map((img) => {
         if (typeof img === 'string') {
             return img.startsWith("/") ? img : `/${img.replace(/^\.\//, "")}`;
-        } else if (img && img.url) { // Handle {file, url, name} objects
-            return img.url; // Use the URL for display
+        } else if (img && img.url) {
+            return img.url;
         }
-        return ''; // Fallback for invalid entries
+        return '';
     }).filter(Boolean);
     setImages(formattedImages);
-  }, [buttonconfig]);
+  }, [buttonData]);
 
-  useEffect(() => {
+  // Animation function to handle different animation types
+  const createAnimation = useCallback(() => {
     if (!images.length || !sliderRef.current) return;
+    
     const ctx = gsap.context(() => {
-      const totalWidth = sliderRef.current.scrollWidth;
-      const singleSetWidth = totalWidth / 2;
+      const actualDuration = slideDuration > 0 ? slideDuration : 5;
+      
       if (animRef.current) animRef.current.kill();
-      animRef.current = gsap.to(sliderRef.current, {
-        x: `-=${singleSetWidth}`,
-        ease: "none",
-        duration: slideDuration,
-        repeat: -1,
-        force3D: true,
-        overwrite: true,
-        modifiers: { x: (x) => (parseFloat(x) % singleSetWidth) + "px" },
-        onUpdate: () => { gsap.ticker.tick(); },
-      });
-      animRef.current.eventCallback("onUpdate", () => { if (animRef.current.paused()) animRef.current.play(); });
+      
+      // Reset initial state
+      gsap.set(sliderRef.current, { x: 0, opacity: 1, scale: 1, y: 0 });
+      
+      switch (animationType) {
+        case 'fade':
+          // Fade animation - cycles through images with opacity
+          animRef.current = gsap.timeline({ repeat: -1 })
+            .to(sliderRef.current, { opacity: 0, duration: actualDuration / 4 })
+            .set(sliderRef.current, { x: "-=300px" })
+            .to(sliderRef.current, { opacity: 1, duration: actualDuration / 4 })
+            .to({}, { duration: actualDuration / 2 }); // pause
+          break;
+          
+        case 'zoom':
+          // Zoom animation - scales while sliding
+          const zoomMovementDistance = 300;
+          animRef.current = gsap.timeline({ repeat: -1 })
+            .to(sliderRef.current, {
+              x: `-=${zoomMovementDistance}`,
+              scale: 1.1,
+              ease: "none",
+              duration: actualDuration / 2,
+              modifiers: {
+                x: (x_value) => {
+                  const x = parseFloat(x_value);
+                  if (!sliderRef.current) return "0px";
+                  const totalWidth = sliderRef.current.scrollWidth / 2;
+                  let modX = x % totalWidth;
+                  if (modX > 0) modX -= totalWidth;
+                  return modX + "px";
+                }
+              }
+            })
+            .to(sliderRef.current, {
+              scale: 1,
+              duration: actualDuration / 2,
+              ease: "power2.out"
+            });
+          break;
+          
+        case 'slideUp':
+          // Slide up animation
+          animRef.current = gsap.timeline({ repeat: -1 })
+            .to(sliderRef.current, { y: "-=100px", duration: actualDuration / 3, ease: "power2.inOut" })
+            .to(sliderRef.current, { y: "+=100px", duration: actualDuration / 3, ease: "power2.inOut" })
+            .to({}, { duration: actualDuration / 3 }); // pause
+          break;
+          
+        case 'slideDown':
+          // Slide down animation
+          animRef.current = gsap.timeline({ repeat: -1 })
+            .to(sliderRef.current, { y: "+=100px", duration: actualDuration / 3, ease: "power2.inOut" })
+            .to(sliderRef.current, { y: "-=100px", duration: actualDuration / 3, ease: "power2.inOut" })
+            .to({}, { duration: actualDuration / 3 }); // pause
+          break;
+          
+        case 'slide':
+        default:
+          // Default slide animation (existing behavior)
+          const slideMovementDistance = 300;
+          animRef.current = gsap.to(sliderRef.current, {
+            x: `-=${slideMovementDistance}`,
+            ease: "none",
+            duration: actualDuration,
+            repeat: -1,
+            force3D: true,
+            overwrite: true,
+            modifiers: {
+              x: (x_value) => {
+                const x = parseFloat(x_value);
+                if (!sliderRef.current) {
+                  return "0px";
+                }
+                const totalWidth = sliderRef.current.scrollWidth / 2;
+                let modX = x % totalWidth;
+                if (modX > 0) {
+                    modX -= totalWidth;
+                }
+                return modX + "px";
+              }
+            },
+            onUpdate: () => { gsap.ticker.tick(); },
+          });
+          break;
+      }
+      
+      if (animRef.current && animRef.current.eventCallback) {
+        animRef.current.eventCallback("onUpdate", () => { 
+          if (animRef.current && animRef.current.paused()) animRef.current.play(); 
+        });
+      }
     });
+    
     return () => {
       if (animRef.current) animRef.current.kill();
       ctx.revert();
     };
-  }, [images, slideDuration]);
+  }, [images, slideDuration, animationType]);
 
   useEffect(() => {
-    const handleResize = () => { if (animRef.current) animRef.current.restart(true); };
+    return createAnimation();
+  }, [createAnimation]);
+
+  useEffect(() => {
+    const handleResize = () => { 
+      if (animRef.current && animRef.current.restart) animRef.current.restart(true); 
+    };
     window.addEventListener("resize", handleResize);
     return () => { window.removeEventListener("resize", handleResize); };
   }, []);
 
   const handleClick = () => {
-    if (buttonconfig && buttonconfig.buttonLink) {
-      navigate(buttonconfig.buttonLink);
+    if (buttonData && buttonData.buttonLink) {
+      navigate(buttonData.buttonLink);
     }
   };
 
-  if (!buttonconfig) {
+  // Get button size classes based on the styling config
+  const getButtonSizeClasses = (buttonSize) => {
+    const sizeVariants = {
+      'small': {
+        text: 'text-lg md:text-xl',
+        padding: 'px-3 py-1.5 md:px-4 md:py-2',
+        roundedness: 'rounded-md'
+      },
+      'medium': {
+        text: 'text-xl md:text-2xl',
+        padding: 'px-4 py-2 md:px-5 md:py-2',
+        roundedness: 'rounded-lg'
+      },
+      'large': {
+        text: 'text-2xl md:text-3xl',
+        padding: 'px-6 py-3 md:px-8 md:py-4',
+        roundedness: 'rounded-xl'
+      },
+      'extra-large': {
+        text: 'text-3xl md:text-4xl',
+        padding: 'px-8 py-4 md:px-12 md:py-6',
+        roundedness: 'rounded-2xl'
+      }
+    };
+    
+    return sizeVariants[buttonSize] || sizeVariants['medium'];
+  };
+
+  if (!buttonData) {
     return <p className="text-center p-4">No button configuration found.</p>;
   }
-  const { text = "About Us" } = buttonconfig;
+  
+  const { text = "About Us", buttonLink = "/about", styling = {} } = buttonData;
+  const buttonSize = styling.buttonSize || 'medium';
+  const buttonSizeClasses = getButtonSizeClasses(buttonSize);
+
+  // Calculate dynamic height based on styling
+  const dynamicHeight = window.innerWidth < 768 
+    ? `${styling.mobileHeightVW || 35}vw` 
+    : `${styling.desktopHeightVH || 20}vh`;
 
   return (
-    <div className="flex flex-col relative w-full mt-0 pt-0 ">
+    <div className="flex flex-col relative w-full mt-0 pt-0">
       <div className="z-40">
         <div className="relative overflow-hidden z-30">
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-auto z-10">
-            <button
-              className="text-white hover:text-black hover:bg-white font-sans text-xl font-bold md:text-2xl px-4 py-2 md:px-5 md:py-2 rounded-lg shadow-lg dark_button bg-accent"
-              onClick={handleClick}
-              onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "inset 0 0 15px 1px rgba(0,0,0,0.8)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)"; }}
-            >
-              <div>{text}</div>
-            </button>
+            {!readOnly ? (
+              <div className="space-y-2 text-center">
+                <input
+                  type="text"
+                  value={text}
+                  onChange={(e) => handleFieldChange('text', e.target.value)}
+                  className={`text-white hover:text-black hover:bg-white font-sans font-bold ${buttonSizeClasses.text} ${buttonSizeClasses.padding} ${buttonSizeClasses.roundedness} shadow-lg bg-accent border-2 border-white/30 focus:border-white focus:outline-none text-center`}
+                  placeholder="Button Text"
+                />
+                <input
+                  type="text"
+                  value={buttonLink}
+                  onChange={(e) => handleFieldChange('buttonLink', e.target.value)}
+                  className="text-xs text-white bg-black/50 px-2 py-1 rounded focus:outline-none focus:bg-black/70 text-center"
+                  placeholder="Button Link"
+                />
+                <div className="text-xs text-white/60 mt-1">
+                  Size: {buttonSize.charAt(0).toUpperCase() + buttonSize.slice(1)}
+                </div>
+              </div>
+            ) : (
+              <button
+                className={`text-white hover:text-black hover:bg-white font-sans font-bold ${buttonSizeClasses.text} ${buttonSizeClasses.padding} ${buttonSizeClasses.roundedness} shadow-lg dark_button bg-accent transition-all duration-200`}
+                onClick={handleClick}
+                onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "inset 0 0 15px 1px rgba(0,0,0,0.8)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)"; }}
+              >
+                <div>{text}</div>
+              </button>
+            )}
           </div>
-          <div className="relative h-[10vh] overflow-hidden">
+          <div 
+            className="relative overflow-hidden"
+            style={{ height: dynamicHeight }}
+          >
             <div className="absolute top-0 left-0 w-full h-[1vh] z-20"><div className="absolute inset-0 bg-gradient-to-b from-black to-transparent" /></div>
             <div className="flex" ref={sliderRef}>
               {images.concat(images).map((src, index) => (
@@ -115,252 +337,423 @@ function ButtonPreview({ buttonconfig }) {
 }
 
 ButtonPreview.propTypes = {
-  buttonconfig: PropTypes.shape({
-    text: PropTypes.string,
-    buttonLink: PropTypes.string,
-    slideDuration: PropTypes.number,
-    images: PropTypes.arrayOf(PropTypes.oneOfType([PropTypes.string, PropTypes.object])),
-  }),
+  buttonData: PropTypes.object.isRequired,
+  readOnly: PropTypes.bool,
+  onButtonDataChange: PropTypes.func.isRequired,
 };
 
-/* ======================================================
-   EDITOR VIEW: ButtonEditorPanel
-   ------------------------------------------------------
-   This component lets the admin change the button text,
-   the link, and the images used in the carousel. Changes
-   are kept in local state until the user clicks "Save."
-========================================================= */
-function ButtonEditorPanel({ localButton, onPanelChange }) {
-  const [validationError, setValidationError] = useState("");
-  const [activeTab, setActiveTab] = useState("general");
+// =============================================
+// Tab Control Components
+// =============================================
 
-  // Validate before attempting to call a save (though actual save is now external)
-  const validateData = () => {
-    if (!localButton.text) { setValidationError("Button text is required"); return false; }
-    if (!localButton.buttonLink) { setValidationError("Button link is required"); return false; }
-    if (!localButton.images || localButton.images.length === 0) { setValidationError("At least one image is required"); return false; }
-    setValidationError("");
-    return true;
-  };
-
-  const handleFieldChange = (field, value) => {
-    onPanelChange(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleImageUpload = (index, file) => {
-    if (!file) return;
-    const currentImage = localButton.images[index];
-    if (currentImage && typeof currentImage === 'object' && currentImage.url && currentImage.url.startsWith('blob:')) {
-        URL.revokeObjectURL(currentImage.url);
-    }
-    const fileURL = URL.createObjectURL(file);
-    const updatedImages = [...localButton.images];
-    updatedImages[index] = { file, url: fileURL, name: file.name };
-    onPanelChange(prev => ({ ...prev, images: updatedImages }));
-  };
-
-  const handleImageUrlChange = (index, urlValue) => {
-    const currentImage = localButton.images[index];
-    if (currentImage && typeof currentImage === 'object' && currentImage.url && currentImage.url.startsWith('blob:')) {
-        URL.revokeObjectURL(currentImage.url);
-    }
-    const updatedImages = [...localButton.images];
-    updatedImages[index] = { file: null, url: urlValue, name: urlValue.split('/').pop() };
-    onPanelChange(prev => ({ ...prev, images: updatedImages }));
-  };
-
-  const handleAddImage = () => {
-    const placeholderImage = { file: null, url: "/assets/images/placeholder.png", name: "placeholder.png" };
-    onPanelChange(prev => ({ ...prev, images: [...(prev.images || []), placeholderImage] }));
-  };
-
-  const handleRemoveImage = (index) => {
-    const imageToRemove = localButton.images[index];
-    if (imageToRemove && typeof imageToRemove === 'object' && imageToRemove.url && imageToRemove.url.startsWith('blob:')){
-        URL.revokeObjectURL(imageToRemove.url);
-    }
-    onPanelChange(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== index) }));
-  };
-
-  const getDisplayUrl = (value) => {
-    if (!value) return null;
-    if (typeof value === 'string') return value;
-    if (typeof value === 'object' && value.url) return value.url;
-    return null;
-  };
-
+const ButtonImagesControls = ({ currentData, onControlsChange, themeColors }) => {
+  console.log("[ButtonImagesControls] currentData.images for PanelImagesController:", currentData.images); // DEBUG LOG
   return (
-    <div className="bg-gray-800 text-white p-4 rounded-lg max-h-[75vh] overflow-auto">
-      <div className="flex items-center justify-between mb-4 sticky top-0 bg-gray-800 py-2 z-10">
-        <h1 className="text-lg md:text-xl font-medium">Button Settings</h1>
-        {/* Save button removed - saving handled by MainPageForm */}
+    <div className="p-4">
+      <PanelImagesController 
+        currentData={currentData} 
+        onControlsChange={onControlsChange} 
+        imageArrayFieldName="images" 
+        getItemName={(item, idx) => item.name || `Carousel Image ${idx + 1}`}
+      />
+      <div className="mt-6 p-4 bg-gray-50 rounded-lg border">
+        <h4 className="text-sm font-medium text-gray-600 mb-2">Image Guidelines:</h4>
+        <ul className="text-xs text-gray-500 space-y-1">
+          <li>• Images will be used as a background carousel behind the button</li>
+          <li>• Recommended size: 1200x600px or similar aspect ratio</li>
+          <li>• Images will have a dark overlay applied automatically</li>
+          <li>• At least 3 images recommended for smooth animation</li>
+        </ul>
       </div>
-
-      {validationError && (
-        <div className="bg-red-500 text-white p-2 mb-4 rounded">{validationError}</div>
-      )}
-
-      <div className="flex border-b border-gray-700 mb-4">
-        <button className={`px-4 py-2 ${activeTab === 'general' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'} rounded-t`} onClick={() => setActiveTab('general')}>General</button>
-        <button className={`px-4 py-2 ${activeTab === 'images' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'} rounded-t`} onClick={() => setActiveTab('images')}>Images</button>
-      </div>
-
-      {activeTab === 'general' && (
-        <>
-          <div className="mb-6">
-            <label className="block text-sm mb-1 font-medium">Button Text:</label>
-            <input type="text" className="w-full bg-gray-700 px-2 py-2 rounded text-white" value={localButton.text || ""} onChange={(e) => handleFieldChange('text', e.target.value)}/>
-          </div>
-          <div className="mb-6">
-            <label className="block text-sm mb-1 font-medium">Button Link:</label>
-            <input type="text" className="w-full bg-gray-700 px-2 py-2 rounded text-white" value={localButton.buttonLink || ""} onChange={(e) => handleFieldChange('buttonLink', e.target.value)}/>
-            <div className="text-xs text-gray-400 mt-1">Example: /about or https://example.com</div>
-          </div>
-          <div className="mb-6">
-            <label className="block text-sm mb-1 font-medium">Slide Duration (seconds):</label>
-            <input type="number" min="1" max="200" step="1" className="w-full bg-gray-700 px-2 py-2 rounded text-white" value={localButton.slideDuration || 40} onChange={(e) => handleFieldChange('slideDuration', parseFloat(e.target.value))}/>
-            <div className="text-xs text-gray-400 mt-1">Lower = faster, Higher = slower. Recommended: 40-120.</div>
-          </div>
-        </>
-      )}
-
-      {activeTab === 'images' && (
-        <div>
-          <h2 className="text-lg font-medium mb-2">Background Images</h2>
-          <p className="text-sm text-gray-400 mb-3">Images for the carousel behind the button.</p>
-          {(localButton.images || []).map((imgData, index) => (
-            <div key={index} className="bg-gray-700 p-3 rounded mb-3 relative">
-              <button onClick={() => handleRemoveImage(index)} className="bg-red-600 text-white text-xs px-2 py-1 rounded absolute top-2 right-2 hover:bg-red-500">Remove</button>
-              <div className="mb-3">
-                <label className="block text-sm mb-1 font-medium">Image Slot {index + 1}:</label>
-                <input type="file" accept="image/*" onChange={(e) => handleImageUpload(index, e.target.files?.[0])} className="mb-2 w-full text-xs file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700"/>
-                <input type="text" className="w-full bg-gray-600 px-2 py-2 rounded mt-1 text-white text-xs" placeholder="Or enter image URL" value={getDisplayUrl(imgData, '')} onChange={(e) => handleImageUrlChange(index, e.target.value)}/>
-              </div>
-              {getDisplayUrl(imgData) && <img src={getDisplayUrl(imgData)} alt={`Background ${index + 1}`} className="w-full h-24 object-cover rounded border border-gray-600" onError={(e) => { e.target.src = "/assets/images/placeholder.png"; e.target.alt = "Image not found"; }}/>}
-            </div>
-          ))}
-          <button onClick={handleAddImage} className="bg-blue-600 hover:bg-blue-500 text-white text-sm px-3 py-2 rounded font-medium">+ Add Image</button>
-        </div>
-      )}
     </div>
   );
-}
+};
 
-ButtonEditorPanel.propTypes = {
-  localButton: PropTypes.shape({
-    text: PropTypes.string,
-    buttonLink: PropTypes.string,
-    slideDuration: PropTypes.number,
-    images: PropTypes.arrayOf(PropTypes.oneOfType([PropTypes.string, PropTypes.object])),
-  }).isRequired,
-  onPanelChange: PropTypes.func.isRequired,
+ButtonImagesControls.propTypes = {
+  currentData: PropTypes.object.isRequired,
+  onControlsChange: PropTypes.func.isRequired,
+  themeColors: PropTypes.object,
+};
+
+const ButtonStylingControls = ({ currentData, onControlsChange, animationDurationOptions, buttonSizeOptions }) => {
+  const handleSlideDurationChange = (value) => {
+    onControlsChange({ 
+      ...currentData, 
+      slideDuration: value,
+      styling: {
+        ...currentData.styling,
+        slideDuration: value
+      }
+    });
+  };
+
+  const handleButtonSizeChange = (value) => {
+    onControlsChange({ 
+      ...currentData, 
+      buttonSize: value,
+      styling: {
+        ...currentData.styling,
+        buttonSize: value
+      }
+    });
+  };
+
+  const handleAnimationSpeedChange = (value) => {
+    onControlsChange({ 
+      ...currentData, 
+      animationSpeed: value,
+      styling: {
+        ...currentData.styling,
+        animationSpeed: value
+      }
+    });
+  };
+
+  const handleAnimationTypeChange = (value) => {
+    onControlsChange({ 
+      ...currentData, 
+      animationType: value,
+      styling: {
+        ...currentData.styling,
+        animationType: value
+      }
+    });
+  };
+
+  // Use provided options or defaults
+  const finalAnimationDurationOptions = animationDurationOptions || {
+    min: 10,
+    max: 200,
+    default: 40
+  };
+
+  const finalButtonSizeOptions = buttonSizeOptions || [
+    { value: 'small', label: 'Small', description: 'Compact button for subtle call-to-action' },
+    { value: 'medium', label: 'Medium', description: 'Standard button size for most use cases' },
+    { value: 'large', label: 'Large', description: 'Prominent button for primary actions' },
+    { value: 'extra-large', label: 'Extra Large', description: 'Maximum impact button for hero sections' }
+  ];
+
+  return (
+    <div className="p-4 space-y-6">
+      {/* Height Controls using PanelStylingController */}
+      <div>
+        <h4 className="text-sm font-medium text-gray-700 mb-3">Block Height</h4>
+        <PanelStylingController 
+          currentData={currentData} 
+          onControlsChange={onControlsChange} 
+          blockType="ButtonBlock"
+          controlType="height"
+        />
+      </div>
+
+      {/* Animation Duration Controls using PanelStylingController */}
+      <div>
+        <h4 className="text-sm font-medium text-gray-700 mb-3">Animation Duration</h4>
+        <PanelStylingController 
+          currentData={currentData} 
+          onControlsChange={onControlsChange} 
+          blockType="ButtonBlock"
+          controlType="animationDuration"
+          animationDurationOptions={finalAnimationDurationOptions}
+        />
+      </div>
+
+      {/* Button Size Controls using PanelStylingController */}
+      <div>
+        <h4 className="text-sm font-medium text-gray-700 mb-3">Button Size</h4>
+        <PanelStylingController 
+          currentData={currentData} 
+          onControlsChange={onControlsChange} 
+          blockType="ButtonBlock"
+          controlType="buttonSize"
+          buttonSizeOptions={finalButtonSizeOptions}
+        />
+      </div>
+
+      {/* Divider */}
+      <div className="border-t border-gray-200 pt-4">
+        <h4 className="text-sm font-medium text-gray-700 mb-3">Animation Settings</h4>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Animation Speed
+        </label>
+        <select
+          value={currentData.animationSpeed || currentData.styling?.animationSpeed || 'normal'}
+          onChange={(e) => handleAnimationSpeedChange(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="slow">Slow</option>
+          <option value="normal">Normal</option>
+          <option value="fast">Fast</option>
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Animation Type
+        </label>
+        <select
+          value={currentData.animationType || currentData.styling?.animationType || 'slide'}
+          onChange={(e) => handleAnimationTypeChange(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="fade">Fade</option>
+          <option value="zoom">Zoom</option>
+          <option value="slideUp">Slide Up</option>
+          <option value="slideDown">Slide Down</option>
+          <option value="slide">Slide</option>
+        </select>
+      </div>
+
+      <div className="mt-4 p-3 bg-gray-50 rounded-md border">
+        <h4 className="text-sm font-medium text-gray-600 mb-1">Color Note:</h4>
+        <p className="text-xs text-gray-500 mb-2">
+          Button colors are controlled by the global theme. The button uses the "accent" color from your site's color palette.
+        </p>
+        <h4 className="text-sm font-medium text-gray-600 mb-1">Tips:</h4>
+        <ul className="text-xs text-gray-500 space-y-1">
+          <li>• Adjust height to match your design needs (10-25vh for desktop)</li>
+          <li>• Slower slide duration creates a more relaxed viewing experience</li>
+          <li>• Try different animation types: Slide (classic), Fade (smooth), Zoom (dynamic), Slide Up/Down (vertical movement)</li>
+          <li>• Faster animation speed creates more dynamic movement</li>
+          <li>• Large button size works well for call-to-action sections</li>
+        </ul>
+      </div>
+    </div>
+  );
+};
+
+ButtonStylingControls.propTypes = {
+  currentData: PropTypes.object.isRequired,
+  onControlsChange: PropTypes.func.isRequired,
+  animationDurationOptions: PropTypes.object,
+  buttonSizeOptions: PropTypes.array,
 };
 
 /* ======================================================
    MAIN COMPONENT: ButtonBlock
    ------------------------------------------------------
-   Initializes its local state from the provided button
-   configuration. When in read-only mode it shows the preview;
-   when in edit mode it shows both a live preview (using local state)
-   and the editor panel so changes are immediately visible.
+   Manages local state and renders preview with inline editing
 ========================================================= */
 export default function ButtonBlock({
   readOnly = false,
-  buttonconfig = null, // Prop from MainPageForm
+  buttonconfig = {
+    text: "About Us",
+    buttonLink: "/about",
+    slideDuration: 40,
+    images: []
+  },
   onConfigChange = () => {},
+  themeColors
 }) {
-  const [localButton, setLocalButton] = useState(() => {
-    const initial = buttonconfig || {};
-    return {
-      text: initial.text || "About Us",
-      buttonLink: initial.buttonLink || "/about",
-      slideDuration: initial.slideDuration || 40,
-      images: (initial.images || []).map(img => 
-        typeof img === 'string' ? { file: null, url: img, name: img.split('/').pop() } : img
-      ),
-    };
-  });
-
+  const [localData, setLocalData] = useState(() => deriveInitialLocalData(buttonconfig));
   const prevReadOnlyRef = useRef(readOnly);
 
   useEffect(() => {
     if (buttonconfig) {
-      setLocalButton(prevLocal => {
-        const newImages = (buttonconfig.images || []).map(img => {
-            const existingImg = prevLocal.images.find(li => (typeof li === 'string' ? li : li.name) === (typeof img === 'string' ? img.split('/').pop() : img.name));
-            if (existingImg && typeof existingImg === 'object' && existingImg.url?.startsWith('blob:') && (typeof img === 'string' || img.url !== existingImg.url)) {
-                URL.revokeObjectURL(existingImg.url); // Revoke if new img path/obj is different
+      console.log("[ButtonBlock] useEffect for buttonconfig sync. Incoming buttonconfig.images:", buttonconfig.images);
+      setLocalData(prevLocal => {
+        console.log("[ButtonBlock] Inside setLocalData for prop sync. Prev prevLocal.images:", prevLocal.images);
+        
+        // Image update logic from prop - robust handling like HeroBlock
+        let newImagesState = [...(prevLocal.images || [])];
+        const defaultImagesLocal = [
+          "/assets/images/roof_slideshow/i4.jpeg",
+          "/assets/images/roof_slideshow/i8.webp",
+          "/assets/images/roof_slideshow/i5.jpeg",
+        ];
+
+        // Check if incoming prop has images array
+        if (buttonconfig.images && Array.isArray(buttonconfig.images) && buttonconfig.images.length > 0) {
+          console.log("[ButtonBlock] Syncing from prop images array");
+          // Clean up existing blob URLs if they're different
+          const currentLocalImages = prevLocal.images || [];
+          currentLocalImages.forEach(localImg => {
+            if (localImg.url && localImg.url.startsWith('blob:')) {
+              const foundIncoming = buttonconfig.images.find(propImg => propImg.url === localImg.url);
+              if (!foundIncoming) {
+                URL.revokeObjectURL(localImg.url);
+              }
             }
-            return typeof img === 'string' ? { file: null, url: img, name: img.split('/').pop() } : img;
-        });
-        return {
+          });
+
+          newImagesState = buttonconfig.images.map((propImg, index) => {
+            if (typeof propImg === 'string') {
+              return {
+                id: `img_sync_string_${index}_${Date.now()}`,
+                url: propImg,
+                file: null,
+                name: propImg.split('/').pop() || `Image ${index + 1}`,
+                originalUrl: propImg
+              };
+            }
+            return {
+              id: propImg.id || `img_sync_${index}_${Date.now()}`,
+              url: propImg.url || defaultImagesLocal[index] || defaultImagesLocal[0],
+              file: propImg.file instanceof File ? propImg.file : null,
+              name: propImg.name || propImg.url?.split('/').pop() || `Image ${index + 1}`,
+              originalUrl: propImg.originalUrl || (typeof propImg.url === 'string' && !propImg.url.startsWith('blob:') ? propImg.url : defaultImagesLocal[index] || defaultImagesLocal[0])
+            };
+          });
+        } else if (!buttonconfig.hasOwnProperty('images')) {
+          // No images property provided, keep existing state
+          newImagesState = prevLocal.images || [];
+        } else {
+          // Empty images array provided, or images is null - initialize with defaults
+          console.log("[ButtonBlock] Empty images provided, initializing with defaults");
+          newImagesState = defaultImagesLocal.map((imgPath, index) => ({
+            id: `img_default_sync_${Date.now()}_${index}`,
+            url: imgPath,
+            file: null,
+            name: imgPath.split('/').pop() || `Carousel Image ${index + 1}`,
+            originalUrl: imgPath,
+          }));
+        }
+
+        const newMergedData = {
             ...prevLocal,
-            ...buttonconfig,
-            slideDuration: buttonconfig.slideDuration || prevLocal.slideDuration || 40,
-            images: newImages,
+            text: buttonconfig.text !== undefined ? buttonconfig.text : prevLocal.text,
+            buttonLink: buttonconfig.buttonLink !== undefined ? buttonconfig.buttonLink : prevLocal.buttonLink,
+            slideDuration: buttonconfig.slideDuration !== undefined ? buttonconfig.slideDuration : prevLocal.slideDuration,
+            images: newImagesState,
+            styling: {
+              ...prevLocal.styling,
+              desktopHeightVH: buttonconfig.styling?.desktopHeightVH !== undefined ? buttonconfig.styling.desktopHeightVH : prevLocal.styling?.desktopHeightVH,
+              mobileHeightVW: buttonconfig.styling?.mobileHeightVW !== undefined ? buttonconfig.styling.mobileHeightVW : prevLocal.styling?.mobileHeightVW,
+              slideDuration: buttonconfig.slideDuration !== undefined ? buttonconfig.slideDuration : (buttonconfig.styling?.slideDuration !== undefined ? buttonconfig.styling.slideDuration : prevLocal.styling?.slideDuration),
+              buttonSize: buttonconfig.buttonSize !== undefined ? buttonconfig.buttonSize : (buttonconfig.styling?.buttonSize !== undefined ? buttonconfig.styling.buttonSize : prevLocal.styling?.buttonSize),
+              animationSpeed: buttonconfig.animationSpeed !== undefined ? buttonconfig.animationSpeed : (buttonconfig.styling?.animationSpeed !== undefined ? buttonconfig.styling.animationSpeed : prevLocal.styling?.animationSpeed),
+              animationType: buttonconfig.animationType !== undefined ? buttonconfig.animationType : (buttonconfig.styling?.animationType !== undefined ? buttonconfig.styling.animationType : prevLocal.styling?.animationType),
+            }
         };
+        console.log("[ButtonBlock] Updated localData from prop sync. New merged images:", newMergedData.images);
+        return newMergedData;
       });
     }
   }, [buttonconfig]);
 
   useEffect(() => {
     return () => {
-      localButton.images.forEach(img => {
+      localData.images.forEach(img => {
         if (img && typeof img === 'object' && img.url && img.url.startsWith('blob:')) {
           URL.revokeObjectURL(img.url);
         }
       });
     };
-  }, [localButton.images]);
+  }, [localData.images]);
 
   useEffect(() => {
     if (prevReadOnlyRef.current === false && readOnly === true) {
       if (onConfigChange) {
-        console.log("ButtonBlock: Editing finished. Calling onConfigChange.");
-        // Prepare data for saving: convert image objects with files back to simple name/path for JSON
         const dataToSave = {
-          ...localButton,
-          images: localButton.images.map(img => {
-            if (img && typeof img === 'object') {
-              return img.file ? img.name : img.url; // Save filename if file exists, else URL
+          ...localData,
+          images: localData.images.map(imgData => {
+            if (imgData && typeof imgData === 'object') {
+              if (imgData.file instanceof File) { 
+                return { 
+                    file: imgData.file, 
+                    url: imgData.url,
+                    name: imgData.name, 
+                    originalUrl: imgData.originalUrl
+                }; 
+              } else if (imgData.originalUrl) {
+                return { url: imgData.originalUrl, name: imgData.name, originalUrl: imgData.originalUrl };
+              } else if (imgData.url && !imgData.url.startsWith('blob:')) {
+                return { url: imgData.url, name: imgData.name, originalUrl: imgData.url };
+              }
             }
-            return img; // Should be a string path already if not an object
-          })
+            return null;
+          }).filter(img => img !== null)
         };
         onConfigChange(dataToSave);
       }
     }
     prevReadOnlyRef.current = readOnly;
-  }, [readOnly, localButton, onConfigChange]);
+  }, [readOnly, localData, onConfigChange]);
 
-  const handlePanelChange = (updater) => {
-    setLocalButton(prevState => {
-      const newState = typeof updater === 'function' ? updater(prevState) : { ...prevState, ...updater };
+  const handleLocalDataChange = useCallback((updatedFieldsOrFunction) => {
+    setLocalData(prevState => {
+      const newState = typeof updatedFieldsOrFunction === 'function' 
+        ? updatedFieldsOrFunction(prevState) 
+        : { ...prevState, ...updatedFieldsOrFunction };
+      
+      if (!readOnly && onConfigChange) {
+        const liveDataToPropagate = {
+          ...newState,
+          images: newState.images.map(imgData => ({ 
+            file: imgData.file,
+            url: imgData.url, 
+            name: imgData.name, 
+            originalUrl: imgData.originalUrl,
+            id: imgData.id
+          }))
+        };
+        onConfigChange(liveDataToPropagate);
+      }
+      
       return newState;
     });
-  };
+  }, [readOnly, onConfigChange]);
 
-  if (readOnly) {
-    return <ButtonPreview buttonconfig={localButton} />; // Read-only preview uses localButton for consistency
-  }
-
-  // In edit mode, MainPageForm handles the SlidingEditPanel.
-  // ButtonBlock just renders its editor panel content directly when !readOnly.
   return (
-    <ButtonEditorPanel
-      localButton={localButton}
-      onPanelChange={handlePanelChange}
+    <ButtonPreview
+      buttonData={localData}
+      readOnly={readOnly}
+      onButtonDataChange={handleLocalDataChange}
     />
   );
 }
 
 ButtonBlock.propTypes = {
   readOnly: PropTypes.bool,
-  buttonconfig: PropTypes.shape({
-    text: PropTypes.string,
-    buttonLink: PropTypes.string,
-    slideDuration: PropTypes.number,
-    images: PropTypes.arrayOf(PropTypes.oneOfType([PropTypes.string, PropTypes.object])),
-  }),
+  buttonconfig: PropTypes.object,
   onConfigChange: PropTypes.func,
+  themeColors: PropTypes.object
 };
+
+// Tab configuration for TopStickyEditPanel
+ButtonBlock.tabsConfig = (localData, onControlsChange, themeColors) => {
+  const tabs = {};
+
+  // Define animation duration options for ButtonBlock
+  const animationDurationOptions = {
+    min: 10,
+    max: 200,
+    default: 40
+  };
+
+  // Define button size options for ButtonBlock
+  const buttonSizeOptions = [
+    { value: 'small', label: 'Small', description: 'Compact button for subtle call-to-action' },
+    { value: 'medium', label: 'Medium', description: 'Standard button size for most use cases' },
+    { value: 'large', label: 'Large', description: 'Prominent button for primary actions' },
+    { value: 'extra-large', label: 'Extra Large', description: 'Maximum impact button for hero sections' }
+  ];
+
+  // Images Tab (using PanelImagesController)
+  tabs.images = (props) => (
+    <ButtonImagesControls 
+      {...props} 
+      currentData={localData} 
+      onControlsChange={onControlsChange} 
+      themeColors={themeColors} 
+    />
+  );
+
+  // Styling Tab
+  tabs.styling = (props) => (
+    <ButtonStylingControls 
+      {...props} 
+      currentData={localData} 
+      onControlsChange={onControlsChange}
+      animationDurationOptions={animationDurationOptions}
+      buttonSizeOptions={buttonSizeOptions}
+    />
+  );
+
+  return tabs;
+};
+

@@ -141,6 +141,33 @@
           }
         ]
       }
+    },    
+    {
+      "blockName": "ButtonBlock",
+      "config": {
+        "text": "Services",
+        "buttonLink": "/about",
+        "images": [
+          "/assets/images/roof_slideshow/i4.jpeg",
+          "/assets/images/roof_slideshow/i8.webp",
+          "/assets/images/roof_slideshow/i5.jpeg",
+          "/assets/images/roof_slideshow/i6.jpeg",
+          "/assets/images/roof_slideshow/i2.jpeg",
+          "/assets/images/roof_slideshow/i3.jpeg",
+          "/assets/images/roof_slideshow/i9.jpeg",
+          "/assets/images/roof_slideshow/i10.webp",
+          "/assets/images/roof_slideshow/i7.webp",
+          "/assets/images/roof_slideshow/i11.jpeg",
+          "/assets/images/roof_slideshow/i12.webp",
+          "/assets/images/roof_slideshow/i1.jpeg"
+        ],
+        "description for the images": [
+          "a house with a victorian chimney",
+          "a shingled roof close up",
+          "a roof being coated",
+          "a roof being repaired"
+        ]
+      }
     },
     {
       "blockName": "BeforeAfterBlock",
@@ -184,33 +211,6 @@
             "shingle": "Wood Shake",
             "sqft": "2700 sqft"
           }
-        ]
-      }
-    },
-    {
-      "blockName": "ButtonBlock",
-      "config": {
-        "text": "Services",
-        "buttonLink": "/about",
-        "images": [
-          "/assets/images/roof_slideshow/i4.jpeg",
-          "/assets/images/roof_slideshow/i8.webp",
-          "/assets/images/roof_slideshow/i5.jpeg",
-          "/assets/images/roof_slideshow/i6.jpeg",
-          "/assets/images/roof_slideshow/i2.jpeg",
-          "/assets/images/roof_slideshow/i3.jpeg",
-          "/assets/images/roof_slideshow/i9.jpeg",
-          "/assets/images/roof_slideshow/i10.webp",
-          "/assets/images/roof_slideshow/i7.webp",
-          "/assets/images/roof_slideshow/i11.jpeg",
-          "/assets/images/roof_slideshow/i12.webp",
-          "/assets/images/roof_slideshow/i1.jpeg"
-        ],
-        "description for the images": [
-          "a house with a victorian chimney",
-          "a shingled roof close up",
-          "a roof being coated",
-          "a roof being repaired"
         ]
       }
     },

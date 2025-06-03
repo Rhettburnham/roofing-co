@@ -1,0 +1,891 @@
+{
+  "commercial": [
+    {
+      "id": 1,
+      "blocks": [
+        {
+          "blockName": "HeroBlock",
+          "config": {
+            "backgroundImage": "",
+            "title": "Built-Up",
+            "shrinkAfterMs": 1000,
+            "initialHeight": "40vh",
+            "finalHeight": "20vh"
+          }
+        },
+        {
+          "blockName": "GeneralList",
+          "config": {
+            "title": "Choose Your Flat Roofing Option",
+            "items": [
+              {
+                "id": 1,
+                "name": "Built-Up Roofing (BUR)",
+                "description": "BUR is a traditional roofing system made of multiple layers of bitumen and reinforcing fabrics. The resulting membrane is known for excellent waterproofing and durability, making it a popular choice for flat or low-slope roofs.",
+                "advantages": [
+                  "Durability: Lifespans of 15–30+ years with proper maintenance",
+                  "Waterproofing: Multi-layer design effectively prevents leaks",
+                  "UV Resistance: Top layer (gravel/mineral) protects against sun damage",
+                  "Low Maintenance: Requires minimal upkeep over time"
+                ],
+                "colorPossibilities": "Typically gravel or mineral-surfaced finish in neutral tones. Reflective coatings can be applied for enhanced energy efficiency",
+                "installationTime": "Can be labor-intensive, taking several days to weeks depending on roof size and complexity",
+                "pictures": [
+                  "/assets/images/builtup/builtupdemo.avif",
+                  "/assets/images/builtup/builtuproofing2.jpg"
+                ]
+              },
+              {
+                "id": 2,
+                "name": "Modified Bitumen Roofing",
+                "description": "Modified Bitumen improves upon the BUR concept by adding polymers to bitumen, increasing elasticity, weather resistance, and lifespan. Often installed in rolled sheets...",
+                "advantages": [
+                  "Enhanced Durability: Polymers protect against extreme weather and punctures",
+                  "Flexibility: Adapts to temperature changes without cracking",
+                  "Ease of Installation: Quicker than BUR, with various application methods",
+                  "Energy Efficiency: Some membranes feature reflective coatings"
+                ],
+                "colorPossibilities": "Available in multiple colors and finishes (including shingle-like options)",
+                "installationTime": "Usually installed in 1–3 days, depending on roof size and chosen application method",
+                "pictures": [
+                  "/assets/images/builtup/modified1.jpg",
+                  "/assets/images/builtup/modified2.avif"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "blockName": "VideoCTA",
+          "config": {
+            "videoSrc": "",
+            "title": "Ready to Upgrade Your Flat Roof?",
+            "description": "Get in touch for a free consultation. Let us help you choose the best flat roofing solution for your property.",
+            "buttonText": "Schedule a Consultation",
+            "buttonLink": "/#contact",
+            "textColor": "1",
+            "textAlignment": "center",
+            "overlayOpacity": 0.7
+          }
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "blocks": [
+        {
+          "blockName": "HeroBlock",
+          "config": {
+            "backgroundImage": "",
+            "title": "Built-Up",
+            "shrinkAfterMs": 1000,
+            "initialHeight": "40vh",
+            "finalHeight": "20vh"
+          }
+        },
+        {
+          "blockName": "GeneralList",
+          "config": {
+            "title": "Choose Your Flat Roofing Option",
+            "items": [
+              {
+                "id": 1,
+                "name": "Built-Up Roofing (BUR)",
+                "description": "BUR is a traditional roofing system made of multiple layers of bitumen and reinforcing fabrics. Known for excellent waterproofing and durability for flat/low-slope roofs.",
+                "advantages": [
+                  "Durability: 15–30+ years with proper maintenance",
+                  "Waterproofing: Multi-layer design effectively prevents leaks",
+                  "UV Resistance: Gravel/mineral top layer protects against sun",
+                  "Low Maintenance: Requires minimal upkeep"
+                ],
+                "colorPossibilities": "Typically gravel/mineral finish in neutral tones; reflective coatings optional",
+                "installationTime": "Labor-intensive, can take days to weeks depending on roof size",
+                "pictures": [
+                  "/assets/images/builtup/builtupdemo.avif",
+                  "/assets/images/builtup/builtuproofing2.jpg"
+                ]
+              },
+              {
+                "id": 2,
+                "name": "Modified Bitumen Roofing",
+                "description": "Modified Bitumen uses polymers to increase elasticity, weather resistance, and lifespan. Often installed in rolled sheets via torch, cold-adhesive, or self-adhering methods.",
+                "advantages": [
+                  "Enhanced Durability: Polymers protect against extreme weather",
+                  "Flexibility: Adapts to temperature changes without cracking",
+                  "Ease of Installation: Quicker than BUR",
+                  "Energy Efficiency: Reflective coatings available"
+                ],
+                "colorPossibilities": "Multiple colors/finishes (including shingle-like options). Reflective coatings reduce cooling costs",
+                "installationTime": "Typically 1–3 days, depending on roof size and method",
+                "pictures": [
+                  "/assets/images/builtup/modified1.jpg",
+                  "/assets/images/builtup/modified2.avif"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "blockName": "VideoCTA",
+          "config": {
+            "videoSrc": "",
+            "title": "Ready to Upgrade Your Flat Roof?",
+            "description": "Get in touch for a free consultation. Let us help you choose the best flat roofing solution for your property.",
+            "buttonText": "Schedule a Consultation",
+            "buttonLink": "/#contact",
+            "textColor": "1",
+            "textAlignment": "center",
+            "overlayOpacity": 0.7
+          }
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "blocks": [
+        {
+          "blockName": "HeroBlock",
+          "config": {
+            "backgroundImage": "",
+            "title": "Roof Coating",
+            "shrinkAfterMs": 1000,
+            "initialHeight": "40vh",
+            "finalHeight": "20vh"
+          }
+        },
+        {
+          "blockName": "GeneralListVariant2",
+          "config": {
+            "title": "Types of Roof Coatings",
+            "items": [
+              {
+                "id": 1,
+                "name": "Acrylic Coatings",
+                "description": "Acrylic coatings are water-based and cost-effective, known for their reflectivity and UV resistance. They suit a variety of climates but may be less ideal with ponding water.",
+                "features": [
+                  "Cost-Effective",
+                  "Good Reflectivity",
+                  "Easy, Quick Application",
+                  "Versatile on multiple roof types",
+                  "UV Resistant"
+                ],
+                "uses": "Works on metal, asphalt, single-ply membranes, etc.",
+                "limitations": "Not the best for continuous ponding water areas.",
+                "imageUrl": "/assets/images/coating/acrylic.webp"
+              },
+              {
+                "id": 2,
+                "name": "Silicone Coatings",
+                "description": "Silicone coatings are reflective, excel with ponding water, and offer superior UV/weather resistance. Great for extreme temps and mold/mildew resistance.",
+                "features": [
+                  "Exceptional Water Resistance",
+                  "High UV Stability",
+                  "Durable in extreme temps"
+                ],
+                "uses": "Perfect for flat roofs in wet climates or heavy rainfall.",
+                "limitations": "Surface prep is key; silicone can be pricier than acrylic.",
+                "imageUrl": "/assets/images/coating/silicone.jpg"
+              },
+              {
+                "id": 3,
+                "name": "Polyurethane Coatings",
+                "description": "Durable, impact-resistant coatings that handle foot traffic well. Aromatic vs. aliphatic formulations differ in UV stability.",
+                "features": [
+                  "High Impact Resistance",
+                  "Flexible for temperature changes",
+                  "Good chemical resistance"
+                ],
+                "uses": "Areas with mechanical stress or frequent foot traffic.",
+                "limitations": "Aromatic degrade under UV faster; aliphatic cost more but keep color better.",
+                "imageUrl": "/assets/images/coating/polyurethane.jpg"
+              },
+              {
+                "id": 4,
+                "name": "Elastomeric Coatings",
+                "description": "Flexible, weather-resistant seal that extends roof life. Adapts to temperature swings without cracking.",
+                "features": [
+                  "Flexibility for structural movement",
+                  "Excellent weather resistance",
+                  "Longer roof lifespan"
+                ],
+                "uses": "Refurbishing older roofs in variable climates.",
+                "limitations": "Needs proper drying time; not all elastomerics are equal.",
+                "imageUrl": "/assets/images/coating/elastomeric.jpg"
+              },
+              {
+                "id": 5,
+                "name": "Commercial Foam (SPF)",
+                "description": "Spray Polyurethane Foam offers seamless insulation & waterproofing in one. Great R-value, lightweight application.",
+                "features": [
+                  "Seamless, minimal leak points",
+                  "Excellent insulation (high R-value)",
+                  "Lightweight on existing structure"
+                ],
+                "uses": "Commercial roofs needing both insulation & waterproofing.",
+                "limitations": "Foam requires protective coating & proper curing.",
+                "imageUrl": "/assets/images/coating/spf.jpg"
+              }
+            ]
+          }
+        },
+        {
+          "blockName": "VideoCTA",
+          "config": {
+            "videoSrc": "/assets/videos/roof_coating.mp4",
+            "title": "Ready to Get Started?",
+            "description": "Contact us today for a free roof inspection and personalized plan.",
+            "buttonText": "Schedule an Inspection",
+            "buttonLink": "/#contact",
+            "textColor": "1",
+            "textAlignment": "center",
+            "overlayOpacity": 0.7
+          }
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "blocks": [
+        {
+          "blockName": "HeroBlock",
+          "config": {
+            "backgroundImage": "/assets/images/growth/hero_growth.jpg",
+            "title": "Single Ply",
+            "shrinkAfterMs": 1000,
+            "initialHeight": "40vh",
+            "finalHeight": "20vh"
+          }
+        },
+        {
+          "blockName": "GeneralListVariant2",
+          "config": {
+            "title": "Explore Our Single-Ply Membranes",
+            "items": [
+              {
+                "id": 1,
+                "name": "Thermoplastic TPO",
+                "description": "A reflective roofing membrane known for energy efficiency, UV/heat resistance, and durability—helping reduce cooling costs in hot climates.",
+                "features": [
+                  "Energy Efficiency (White surface)",
+                  "UV & Heat Resistance",
+                  "Durable vs. punctures/tears"
+                ],
+                "uses": "Commercial buildings needing a reflective, cost-effective roof",
+                "limitations": "Requires clean installation; dirt accumulation can reduce reflectivity",
+                "imageUrl": "/assets/images/ply/Tpo.jpg"
+              },
+              {
+                "id": 2,
+                "name": "Thermoplastic PVC",
+                "description": "A single-ply membrane offering strong chemical/fire resistance—commonly used where roofs face grease or industrial chemicals.",
+                "features": [
+                  "Chemical Resistance (great for industrial)",
+                  "Fire Resistance",
+                  "Long-lasting, high tensile strength"
+                ],
+                "uses": "Roofs with potential chemical exposure or high-heat zones",
+                "limitations": "Often pricier than EPDM; might need specialized install methods",
+                "imageUrl": "/assets/images/ply/pvc.jpg"
+              },
+              {
+                "id": 3,
+                "name": "EPDM",
+                "description": "A synthetic rubber membrane prized for durability and flexibility in extreme weather. Typically black, but white EPDM variants exist.",
+                "features": [
+                  "All-weather performance (heat & cold)",
+                  "Flexibility for building movement",
+                  "Long lifespan (30+ years with care)"
+                ],
+                "uses": "Commercial/industrial roofs needing proven, long-term performance",
+                "limitations": "Black version absorbs heat; white variant is more reflective but may cost more",
+                "imageUrl": "/assets/images/ply/epdm.jpg"
+              }
+            ]
+          }
+        },
+        {
+          "blockName": "OverviewAndAdvantagesBlock",
+          "config": {
+            "heading": "Overview & Advantages",
+            "description": "Single-ply membranes like TPO, PVC, and EPDM are popular for commercial and industrial roofs. Below are key benefits to consider:",
+            "bullets": [
+              {
+                "title": "Durability",
+                "desc": "Resistant to punctures, tears, and general wear."
+              },
+              {
+                "title": "Flexibility",
+                "desc": "Handles building movements & temperature swings."
+              },
+              {
+                "title": "UV Resistance",
+                "desc": "Helps prevent damage from intense sunlight."
+              },
+              {
+                "title": "Energy Efficiency",
+                "desc": "Reflective options help reduce cooling costs."
+              },
+              {
+                "title": "Ease of Installation",
+                "desc": "Often faster & simpler than multi-layer systems."
+              }
+            ],
+            "footnote": "Installation is typically quick, making these membranes cost-effective and less disruptive."
+          }
+        },
+        {
+          "blockName": "VideoCTA",
+          "config": {
+            "videoSrc": "/assets/videos/single_ply.mp4",
+            "title": "Ready to Get Started?",
+            "description": "Contact us today for a free roof inspection and a personalized plan for your commercial property.",
+            "buttonText": "Schedule an Inspection",
+            "buttonLink": "/#book",
+            "textColor": "1",
+            "textAlignment": "center",
+            "overlayOpacity": 0.8
+          }
+        }
+      ]
+    }
+  ],
+  "residential": [
+    {
+      "id": 1,
+      "blocks": [
+        {
+          "blockName": "HeroBlock",
+          "config": {
+            "backgroundImage": "/assets/images/growth/hero_growth.jpg",
+            "title": "Siding",
+            "shrinkAfterMs": 1000,
+            "initialHeight": "40vh",
+            "finalHeight": "20vh"
+          }
+        },
+        {
+          "blockName": "GeneralList",
+          "config": {
+            "sectionTitle": "Select a Siding Type",
+            "items": [
+              {
+                "id": 1,
+                "name": "Vinyl",
+                "description": "Vinyl siding is one of the most cost-effective options, typically ranging between $2–$4 per square foot. It requires minimal maintenance and is available in numerous colors and styles—some even mimic wood grain.",
+                "advantages": [
+                  "Affordability: One of the most budget-friendly choices",
+                  "Low Maintenance: Occasional cleaning suffices",
+                  "Versatility: Many colors and styles, including wood-like textures",
+                  "Durability: Resistant to rot, insects, and moisture"
+                ],
+                "colorPossibilities": "Wide range of both light and dark hues to match diverse exteriors",
+                "installationTime": "Lightweight and easy to install, reducing labor costs and time",
+                "pictures": [
+                  "assets/images/siding/viynl1.jpg",
+                  "assets/images/siding/viynl2.webp"
+                ]
+              },
+              {
+                "id": 2,
+                "name": "Wood",
+                "description": "Wood siding offers a timeless, natural look that enhances curb appeal. It also provides good insulation. However, it may require regular maintenance...",
+                "advantages": [
+                  "Aesthetic Appeal: Classic, natural look",
+                  "Insulation Properties: Contributes to energy efficiency"
+                ],
+                "colorPossibilities": "Can be painted or stained in various colors (but requires periodic maintenance)",
+                "installationTime": "More labor-intensive than vinyl, potentially increasing overall installation time",
+                "pictures": [
+                  "assets/images/siding/wood1.webp",
+                  "assets/images/siding/wood2.jpg"
+                ]
+              },
+              {
+                "id": 3,
+                "name": "Aluminum & Steel",
+                "description": "Metal siding is extremely durable, resisting fire, rot, and insect damage. It provides a sleek, modern aesthetic...",
+                "advantages": [
+                  "Durability: Performs well under various weather conditions",
+                  "Low Maintenance: Generally requires only occasional cleaning",
+                  "Modern Aesthetic: Ideal for contemporary or industrial designs"
+                ],
+                "colorPossibilities": "Various finishes and colors available, though some may fade over time",
+                "installationTime": "Can be time-consuming, adding to labor costs, especially for complex designs",
+                "pictures": [
+                  "assets/images/siding/alluminimum1.jpeg",
+                  "assets/images/siding/steel.jpg"
+                ]
+              },
+              {
+                "id": 4,
+                "name": "Stucco",
+                "description": "Stucco is a durable option that can last 50 to 80 years with proper maintenance...",
+                "advantages": [
+                  "Durability: Long lifespan with appropriate care",
+                  "Breathability: Helps moisture evaporate rapidly"
+                ],
+                "colorPossibilities": "Available in a wide range of textures and colors to suit various architectural styles",
+                "installationTime": "Labor-intensive process involving multiple layers; requires skilled professionals",
+                "pictures": [
+                  "assets/images/siding/stucco.jpg",
+                  "assets/images/siding/stucco2.jpg"
+                ]
+              },
+              {
+                "id": 5,
+                "name": "Engineered Wood",
+                "description": "Engineered wood siding is a cost-effective alternative to natural wood, offering similar visual appeal with increased durability...",
+                "advantages": [
+                  "Cost-Effective: Generally more affordable than natural wood",
+                  "Durability: Resistant to insect damage and more stable than real wood",
+                  "Ease of Installation: Straightforward process favored by many contractors",
+                  "Enhanced Strength: Incorporates fiber cement for added durability",
+                  "Fire Resistant: Offers better fire protection compared to traditional wood"
+                ],
+                "colorPossibilities": "Available in diverse colors and textures to match your desired style",
+                "installationTime": "Installation is relatively quick, potentially reducing labor costs",
+                "pictures": [
+                  "assets/images/siding/engineered1.jpeg",
+                  "assets/images/siding/engineered2.jpg",
+                  "assets/images/siding/engineered3.webp"
+                ]
+              },
+              {
+                "id": 6,
+                "name": "Brick Siding",
+                "description": "Brick siding is known for its longevity—often exceeding a century with minimal maintenance. It offers a timeless look and is fire-resistant...",
+                "advantages": [
+                  "Longevity: Can last over 100 years with minimal upkeep",
+                  "Fire Resistance: Non-combustible material",
+                  "Aesthetic Appeal: Timeless and classic"
+                ],
+                "colorPossibilities": "Limited to natural brick tones unless painted to achieve a different aesthetic",
+                "installationTime": "Labor-intensive due to masonry work, resulting in a longer installation period",
+                "pictures": [
+                  "assets/images/siding/brick1.jpeg",
+                  "assets/images/siding/brick2.jpeg"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "blockName": "VideoCTA",
+          "config": {
+            "videoSrc": "/assets/videos/sidingvideo.mp4",
+            "title": "Ready to Upgrade Your Siding?",
+            "description": "Contact us today for a free consultation on the best siding option for your home.",
+            "buttonText": "Schedule a Consultation",
+            "buttonLink": "/#contact",
+            "textColor": "1",
+            "textAlignment": "center",
+            "overlayOpacity": 0.5
+          }
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "blocks": [
+        {
+          "blockName": "HeroBlock",
+          "config": {
+            "backgroundImage": "/assets/images/growth/hero_growth.jpg",
+            "title": "Guttering",
+            "shrinkAfterMs": 1500,
+            "initialHeight": "40vh",
+            "finalHeight": "20vh"
+          }
+        },
+        {
+          "blockName": "ActionButtonBlock",
+          "config": {
+            "buttonText": "Schedule an Inspection",
+            "buttonLink": "/#book",
+            "buttonColor": "1"
+          }
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "Gutter Options",
+            "textAlign": "center",
+            "fontSize": "text-2xl",
+            "textColor": "#ffffff",
+            "bannerHeight": "h-16",
+            "paddingY": "",
+            "backgroundImage": "/assets/images/growth/hero_growth.jpg"
+          }
+        },
+        {
+          "blockName": "PricingGrid",
+          "config": {
+            "showPrice": false,
+            "items": [
+              {
+                "title": "Aluminum Gutters",
+                "image": "/assets/images/gutter_image/Aluminum_gutter.webp",
+                "alt": "Aluminum Gutters",
+                "description": "Aluminum gutters are cost-effective, rust-resistant, and lightweight, making them a popular choice for most homes. They can last up to 20 years with proper maintenance.",
+                "rate": "$5 - $8 per linear foot"
+              },
+              {
+                "title": "Seamless Gutters",
+                "image": "/assets/images/gutter_image/Seamless_gutter.webp",
+                "alt": "Seamless Gutters",
+                "description": "Seamless gutters are custom-fitted, reducing leaks by eliminating joints. They offer a streamlined appearance and are durable over time.",
+                "rate": "$8 - $12 per linear foot"
+              },
+              {
+                "title": "Steel Gutters",
+                "image": "/assets/images/gutter_image/steel_gutter.jpeg",
+                "alt": "Steel Gutters",
+                "description": "Strong and withstand heavy rainfall and snow. Prone to rust without maintenance, but offer good durability in harsh weather.",
+                "rate": "$9 - $12 per linear foot"
+              },
+              {
+                "title": "Half Round Gutters",
+                "image": "/assets/images/gutter_image/Half_round_gutters.png",
+                "alt": "Half Round Gutters",
+                "description": "Semi-circular shape for efficient water drainage. Often used in historic homes to maintain architectural style.",
+                "rate": "$12 - $25 per linear foot"
+              },
+              {
+                "title": "Copper Gutters",
+                "image": "/assets/images/gutter_image/Copper_gutter.webp",
+                "alt": "Copper Gutters",
+                "description": "Durable and corrosion-resistant. Develop a patina over time and can last up to 50 years.",
+                "rate": "$25 - $40 per linear foot"
+              },
+              {
+                "title": "Vinyl Gutters",
+                "image": "/assets/images/gutter_image/Vinyl_gutter.webp",
+                "alt": "Vinyl Gutters",
+                "description": "Lightweight, inexpensive, and easy to install, but can crack or warp in extreme temperatures.",
+                "rate": "$3 - $5 per linear foot"
+              }
+            ]
+          }
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "Issues and Diagnosis",
+            "textAlign": "center",
+            "fontSize": "text-2xl",
+            "textColor": "#ffffff",
+            "bannerHeight": "h-16",
+            "paddingY": "",
+            "backgroundImage": "/assets/images/growth/hero_growth.jpg"
+          }
+        },
+        {
+          "blockName": "ListDropdown",
+          "config": {
+            "textColor": "#000000",
+            "items": [
+              {
+                "title": "Clogged Gutters",
+                "causes": "Over time, gutters can become clogged with leaves, debris, and dirt.",
+                "impact": "Water that doesn\\'t drain properly can seep into the roof, walls, and foundation, causing water damage, mold, and erosion.",
+                "diagnosis": [
+                  "Inspect gutters after heavy rains for overflowing water.",
+                  "Look for debris buildup in gutters or downspouts.",
+                  "Examine the foundation for pooling water or erosion."
+                ]
+              },
+              {
+                "title": "Sagging Gutters",
+                "causes": "Accumulation of water/debris or poor installation adds weight, pulling them away from the roofline.",
+                "impact": "Sagging gutters cause improper drainage, possibly roof leaks or foundation issues.",
+                "diagnosis": [
+                  "Visually inspect gutters for uneven sections or sagging.",
+                  "Check for loose or missing fasteners.",
+                  "Look for water stains on the siding from overflow."
+                ]
+              },
+              {
+                "title": "Leaky Gutters",
+                "causes": "Corrosion, cracked seams, or improper sealing, typically at the joints.",
+                "impact": "Leaky gutters cause water to drip down the side of the house, damaging siding, windows, and foundation.",
+                "diagnosis": [
+                  "Inspect gutters during rainfall for leaks.",
+                  "Check for rust or cracks at joints.",
+                  "Look for water stains on siding/windows."
+                ]
+              },
+              {
+                "title": "Improper Gutter Slope",
+                "causes": "Gutters must have a slight slope to allow water flow. If it\\'s wrong, water pools inside.",
+                "impact": "Standing water leads to corrosion, leaks, and gutter damage, plus mosquito breeding.",
+                "diagnosis": [
+                  "Check for standing water post-rainstorm.",
+                  "Pour water in gutters to see flow to downspouts.",
+                  "Look for slow draining or pooling water."
+                ]
+              },
+              {
+                "title": "Damaged Downspouts",
+                "causes": "Clogs, poor installation, or physical impact can damage or disconnect downspouts.",
+                "impact": "Water pools near the foundation, risking basement flooding or erosion.",
+                "diagnosis": [
+                  "Check for water pooling near foundation.",
+                  "Inspect downspouts for cracks or disconnections.",
+                  "Ensure they extend far from house to direct water away."
+                ]
+              },
+              {
+                "title": "Rust and Corrosion",
+                "causes": "Metal gutters can rust over time due to moisture and the elements.",
+                "impact": "Corroded gutters may leak, damaging roof, walls, or foundation.",
+                "diagnosis": [
+                  "Look for rust spots or orange discoloration.",
+                  "Check for holes in the gutter system.",
+                  "Run water through to spot leaks in corroded areas."
+                ]
+              },
+              {
+                "title": "Ice Dams",
+                "causes": "In cold climates, snow/ice accumulate in gutters, blocking drainage.",
+                "impact": "Water backs under shingles, causing leaks, roof damage, and warped gutters.",
+                "diagnosis": [
+                  "Check gutters for ice buildup in winter.",
+                  "Inspect roof eaves for icicles or water stains after freeze.",
+                  "Look for sagging gutters from ice weight."
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "blocks": [
+        {
+          "blockName": "HeroBlock",
+          "config": {
+            "backgroundImage": "/assets/images/growth/hero_growth.jpg",
+            "title": "Ventilation",
+            "shrinkAfterMs": 1500,
+            "initialHeight": "40vh",
+            "finalHeight": "20vh"
+          }
+        },
+        {
+          "blockName": "ActionButtonBlock",
+          "config": {
+            "buttonText": "Schedule an Inspection",
+            "buttonLink": "/#book",
+            "buttonColor": "1"
+          }
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "Our Roof Ventilation Solutions",
+            "textAlign": "center",
+            "fontSize": "text-3xl",
+            "textColor": "#ffffff",
+            "bannerHeight": "h-12 md:h-16",
+            "paddingY": "",
+            "backgroundImage": "/assets/images/growth/hero_growth.jpg"
+          }
+        },
+        {
+          "blockName": "GridImageTextBlock",
+          "config": {
+            "columns": 4,
+            "items": [
+              {
+                "title": "Ridge Vents",
+                "image": "/assets/images/ventilation/ridge_vent.jpeg",
+                "alt": "Ridge Vents",
+                "description": "Installed at the peak of the roof to allow warm, humid air to escape naturally, preventing moisture buildup."
+              },
+              {
+                "title": "Soffit Vents",
+                "image": "/assets/images/ventilation/soffit_vent.avif",
+                "alt": "Soffit Vents",
+                "description": "Installed under the eaves to draw cool air into the attic, maintaining a steady and efficient airflow."
+              },
+              {
+                "title": "Gable Vents",
+                "image": "/assets/images/ventilation/gable_vent.jpg",
+                "alt": "Gable Vents",
+                "description": "Positioned on the gable ends to ensure effective cross-ventilation throughout the attic space."
+              },
+              {
+                "title": "Roof Vents",
+                "image": "/assets/images/ventilation/roof_vent.jpg",
+                "alt": "Roof Vents",
+                "description": "Designed to remove excess heat and moisture, improving ventilation and roof longevity."
+              }
+            ]
+          }
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "Tailored Ventilation for Every Roof Type",
+            "textAlign": "center",
+            "fontSize": "text-3xl",
+            "textColor": "#ffffff",
+            "bannerHeight": "h-16",
+            "paddingY": "",
+            "backgroundImage": "/assets/images/growth/hero_growth.jpg"
+          }
+        },
+        {
+          "blockName": "ThreeGridWithRichTextBlock",
+          "config": {
+            "paragraphText": "Whether your roof is made of shingles, metal, or tiles, our expert team provides customized ventilation solutions that seamlessly integrate with your roof\\'s aesthetic and structural integrity.",
+            "items": [
+              {
+                "title": "Shingle Roofs",
+                "image": "/assets/images/ventilation/vent_shingle.jpeg",
+                "alt": "Shingle Roof"
+              },
+              {
+                "title": "Metal Roofs",
+                "image": "/assets/images/ventilation/vent_metal.jpg",
+                "alt": "Metal Roof"
+              },
+              {
+                "title": "Tile Roofs",
+                "image": "/assets/images/ventilation/vent_tile.jpeg",
+                "alt": "Tile Roof"
+              }
+            ]
+          }
+        },
+        {
+          "blockName": "ActionButtonBlock",
+          "config": {
+            "buttonText": "View Shingle Selection",
+            "buttonLink": "/shingleinstallation",
+            "buttonColor": "1"
+          }
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "Boost Your Home\\'s Energy Efficiency",
+            "textAlign": "center",
+            "fontSize": "text-3xl",
+            "textColor": "#ffffff",
+            "bannerHeight": "h-16",
+            "paddingY": "",
+            "backgroundImage": "/assets/images/growth/hero_growth.jpg"
+          }
+        },
+        {
+          "blockName": "ImageWrapBlock",
+          "config": {
+            "imageUrl": "/assets/images/ventilation/roof_installation.webp",
+            "altText": "Energy Efficiency",
+            "floatSide": "left",
+            "maxWidthPx": 280,
+            "paragraph": "Proper roof ventilation is essential for reducing your home\\'s cooling costs. According to the U.S. Department of Energy, effective ventilation can lower cooling expenses by up to 10% by allowing trapped hot air to escape, thereby decreasing the reliance on air conditioning systems (Energy.gov). Implementing adequate roof ventilation creates a more comfortable living environment, lowers energy bills, and extends the lifespan of your roofing materials. The National Roofing Contractors Association highlights that proper ventilation helps prevent heat-related damage, which can extend roof longevity by several years (NRCA)."
+          }
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "blocks": [
+        {
+          "blockName": "HeroBlock",
+          "config": {
+            "backgroundImage": "/assets/images/growth/hero_growth.jpg",
+            "title": "Shingling",
+            "shrinkAfterMs": 1500,
+            "initialHeight": "100vh",
+            "finalHeight": "20vh"
+          }
+        },
+        {
+          "blockName": "ShingleSelectorBlock",
+          "config": {
+            "sectionTitle": "Explore Our Shingle Options",
+            "shingleOptions": [
+              {
+                "title": "Asphalt Shingles",
+                "description": "Asphalt shingles are the most popular and affordable roofing material. They come in a variety of colors and styles and provide good durability and weather resistance.",
+                "benefit": "Cost-effective and easy to install, ideal for most residential properties."
+              },
+              {
+                "title": "Metal Shingles",
+                "description": "Metal shingles offer superior durability and can withstand harsh weather conditions. Available in various finishes, they provide a modern look.",
+                "benefit": "Long-lasting and energy-efficient, with a lifespan of 40-70 years."
+              },
+              {
+                "title": "Slate Shingles",
+                "description": "Slate shingles are a premium option known for their natural beauty and exceptional durability. They can last over a century with proper care.",
+                "benefit": "Highly durable and adds significant curb appeal, perfect for high-end homes."
+              },
+              {
+                "title": "Tile Shingles",
+                "description": "Tile shingles (clay or concrete) suit Mediterranean or Spanish-style roofs. They provide excellent durability and insulation.",
+                "benefit": "Resistant to fire, rot, and insects, and offers great thermal performance."
+              }
+            ]
+          }
+        },
+        {
+          "blockName": "ActionButtonBlock",
+          "config": {
+            "buttonText": "Schedule an Inspection",
+            "buttonLink": "/#book",
+            "buttonColor": "1"
+          }
+        },
+        {
+          "blockName": "HeaderBannerBlock",
+          "config": {
+            "title": "Our Installation Process",
+            "textAlign": "center",
+            "fontSize": "text-2xl",
+            "textColor": "#ffffff",
+            "bannerHeight": "h-16",
+            "paddingY": "",
+            "backgroundImage": "/assets/images/growth/hero_growth.jpg"
+          }
+        },
+        {
+          "blockName": "ListImageVerticalBlock",
+          "config": {
+            "title": "Our Installation Process",
+            "enableAnimation": true,
+            "items": [
+              {
+                "number": "1",
+                "title": "Roof Inspection & Preparation",
+                "description": "We perform a thorough roof inspection to ensure the structure is sound and free from damage. We\\'ll repair or replace any issues before installing new shingles.",
+                "image": "assets/images/shingleinstallation/inspection.jpg"
+              },
+              {
+                "number": "2",
+                "title": "Underlayment Installation",
+                "description": "We add a high-quality underlayment as the first layer of protection against moisture, wind, and other environmental factors.",
+                "image": "assets/images/shingleinstallation/underlayment.jpg"
+              },
+              {
+                "number": "3",
+                "title": "Shingle Placement",
+                "description": "Our expert team carefully aligns and fastens each shingle according to manufacturer guidelines for maximum performance.",
+                "image": "assets/images/shingleinstallation/placement.jpg"
+              },
+              {
+                "number": "4",
+                "title": "Final Inspection & Cleanup",
+                "description": "We conduct a final inspection to ensure everything is perfect, then leave your property spotless.",
+                "image": "assets/images/shingleinstallation/finalinspection.jpg"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

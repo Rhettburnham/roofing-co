@@ -2,33 +2,37 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import ThemeColorPicker from "../common/ThemeColorPicker";
+import PanelImagesController from "../common/PanelImagesController";
+import PanelStylingController from "../common/PanelStylingController";
+
 // Register GSAP's ScrollTrigger plugin
 gsap.registerPlugin(ScrollTrigger);
 
 // Helper to initialize image state: handles string path or {file, url, name} object
-const initializeEmployeeImageState = (imageValue, defaultPath = "/assets/images/team/roofer.png") => {
-  let originalUrlToStore = defaultPath;
-  let nameToStore = defaultPath.split('/').pop();
-  let urlToDisplay = defaultPath;
-  let fileObject = null;
+const initializeEmployeeImageState = (imageValue, defaultStaticPath = "/assets/images/team/roofer.png") => {
+  let file = null;
+  let url = defaultStaticPath;
+  let name = defaultStaticPath.split('/').pop();
+  let originalUrl = defaultStaticPath;
 
-  if (imageValue && typeof imageValue === 'object') {
-    urlToDisplay = imageValue.url || defaultPath;
-    nameToStore = imageValue.name || urlToDisplay.split('/').pop();
-    fileObject = imageValue.file || null;
-    originalUrlToStore = imageValue.originalUrl || (typeof imageValue.url === 'string' && !imageValue.url.startsWith('blob:') ? imageValue.url : defaultPath);
-  } else if (typeof imageValue === 'string') {
-    urlToDisplay = imageValue;
-    nameToStore = imageValue.split('/').pop();
-    originalUrlToStore = imageValue;
+  if (typeof imageValue === 'string') {
+    url = imageValue;
+    name = imageValue.split('/').pop();
+    originalUrl = imageValue;
+  } else if (imageValue && typeof imageValue === 'object') {
+    url = imageValue.url || defaultStaticPath;
+    name = imageValue.name || url.split('/').pop();
+    file = imageValue.file || null;
+    if (imageValue.originalUrl) {
+      originalUrl = imageValue.originalUrl;
+    } else if (typeof imageValue.url === 'string' && !imageValue.url.startsWith('blob:')) {
+      originalUrl = imageValue.url;
+    } else {
+      originalUrl = defaultStaticPath;
+    }
   }
-  
-  return { 
-    file: fileObject, 
-    url: urlToDisplay, 
-    name: nameToStore,
-    originalUrl: originalUrlToStore
-  }; 
+  return { file, url, name, originalUrl }; 
 };
 
 // Helper to get display URL from string path or {url, file} object
@@ -179,8 +183,8 @@ function EmployeesPreview({
 
   return (
     <div>
-      <div ref={headerRef} className="relative flex items-center w-full py-4 md:py-6"> {/* Reduced padding */}
-        <div ref={nailRef} className="absolute right-[17vw] md:right-[17%] w-[30%] h-[6vh] md:h-[4vh]">
+      <div ref={headerRef} className="relative flex items-center w-full py-4 md:py-6 overflow-visible"> {/* Changed to overflow-visible for nail shadows */}
+        <div ref={nailRef} className="absolute right-[17vw] md:right-[17%] w-[30%] h-[6vh] md:h-[4vh] overflow-visible z-50">
           <div className="w-full h-full dynamic-shadow" style={{ 
               backgroundImage: "url('/assets/images/nail.png')", 
               backgroundPosition: "right center", 
@@ -219,138 +223,6 @@ function EmployeesPreview({
 }
 
 /* ======================================================
-   EDITOR VIEW: EmployeesEditorPanel
-   ------------------------------------------------------
-   Renders an editor interface to update the section title
-   and the list of employees. Changes here are stored in
-   local state until the admin clicks "Save."
-========================================================= */
-function EmployeesEditorPanel({ localData, onPanelChange }) {
-  const handleAddItem = () => {
-    const newItem = {
-      id: `new_emp_${Date.now()}`,
-      name: "New Employee",
-      role: "Role",
-      image: initializeEmployeeImageState("/assets/images/team/roofer.png"),
-    };
-    onPanelChange(prev => ({ ...prev, employee: [...(prev.employee || []), newItem] }));
-  };
-
-  const handleRemoveItem = (index) => {
-    const itemToRemove = localData.employee[index];
-    if (itemToRemove?.image?.url?.startsWith('blob:')) {
-      URL.revokeObjectURL(itemToRemove.image.url);
-    }
-    onPanelChange(prev => ({ ...prev, employee: prev.employee.filter((_, i) => i !== index) }));
-  };
-
-  const handleImageUpload = (index, file) => {
-    if (!file) return;
-    const currentItem = localData.employee[index];
-    const currentImageState = currentItem?.image;
-
-    if (currentImageState?.url?.startsWith('blob:')) {
-      URL.revokeObjectURL(currentImageState.url);
-    }
-    const fileURL = URL.createObjectURL(file);
-    const updatedImageState = { 
-        file: file, 
-        url: fileURL, 
-        name: file.name, 
-        originalUrl: currentImageState?.originalUrl
-    };
-    onPanelChange(prev => {
-      const updatedEmployees = [...prev.employee];
-      updatedEmployees[index] = { ...updatedEmployees[index], image: updatedImageState };
-      return { ...prev, employee: updatedEmployees };
-    });
-  };
-
-  const handleImageUrlChange = (index, urlValue) => {
-    const currentItem = localData.employee[index];
-    const currentImageState = currentItem?.image;
-
-    if (currentImageState?.url?.startsWith('blob:')) {
-      URL.revokeObjectURL(currentImageState.url);
-    }
-    const updatedImageState = { 
-        file: null, 
-        url: urlValue, 
-        name: urlValue.split('/').pop(),
-        originalUrl: urlValue
-    };
-    onPanelChange(prev => {
-      const updatedEmployees = [...prev.employee];
-      updatedEmployees[index] = { ...updatedEmployees[index], image: updatedImageState };
-      return { ...prev, employee: updatedEmployees };
-    });
-  };
-
-  const handleToggleNailAnimation = () => {
-    const currentShowState = localData.showNailAnimation !== undefined ? localData.showNailAnimation : true;
-    const newShowState = !currentShowState;
-    console.log(`[EmployeesEditorPanel] handleToggleNailAnimation: Current: ${currentShowState}, New: ${newShowState}`);
-    onPanelChange(prev => ({ ...prev, showNailAnimation: newShowState }));
-  };
-
-  return (
-    <div className="bg-white text-gray-800 p-4 rounded mt-0">
-      <h2 className="text-lg font-semibold mb-2 border-b pb-2">Manage Employees & Images</h2>
-      <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
-      {(localData.employee || []).map((emp, index) => (
-        <div key={emp.id || index} className="bg-gray-100 p-3 rounded mb-3 relative border border-gray-300">
-          <button onClick={() => handleRemoveItem(index)} className="bg-red-600 text-white text-xs px-2 py-1 rounded absolute top-2 right-2 hover:bg-red-700 z-10">Remove</button>
-          <p className="text-sm mb-1 text-gray-600">Editing: {emp.name || "New Employee"} ({emp.role || "Role"})</p>
-          <div className="grid grid-cols-1 gap-3">
-            <div>
-                <label className="block text-xs mb-1 text-gray-700">Employee Image:</label>
-                <input type="file" accept="image/*" onChange={(e) => handleImageUpload(index, e.target.files?.[0])} className="w-full bg-gray-200 text-gray-800 px-2 py-1 rounded mt-1 text-xs file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600 cursor-pointer" />
-                <input type="text" value={getEmployeeImageUrl(emp.image, '')} onChange={(e) => handleImageUrlChange(index, e.target.value)} className="w-full bg-gray-200 text-gray-800 px-2 py-1 rounded mt-1 text-xs placeholder-gray-500" placeholder="Or paste direct image URL" />
-                {getEmployeeImageUrl(emp.image) && <img src={getEmployeeImageUrl(emp.image)} alt={`Preview of ${emp.name}`} className="mt-2 h-20 w-20 object-cover rounded shadow bg-gray-200 p-1"/>}
-            </div>
-          </div>
-        </div>
-      ))}
-      </div>
-      <button type="button" onClick={handleAddItem} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm w-full mt-3 font-medium">+ Add Employee</button>
-      <div className="mt-4 pt-3 border-t">
-        <label className="flex items-center space-x-2 cursor-pointer mb-3">
-          <input
-            type="checkbox"
-            checked={localData.showNailAnimation !== undefined ? localData.showNailAnimation : true}
-            onChange={handleToggleNailAnimation}
-            className="form-checkbox h-5 w-5 text-blue-600 rounded"
-          />
-          <span className="text-sm font-medium text-gray-700">Show Nail Animation</span>
-        </label>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="cardBgColor" className="block text-sm font-medium text-gray-700">Card Background Color:</label>
-            <input 
-              type="color" 
-              id="cardBgColor"
-              value={localData.cardBackgroundColor || '#FFFFFF'} 
-              onChange={(e) => onPanelChange(prev => ({ ...prev, cardBackgroundColor: e.target.value }))}
-              className="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-            />
-          </div>
-          <div>
-            <label htmlFor="cardTextColor" className="block text-sm font-medium text-gray-700">Card Text Color:</label>
-            <input 
-              type="color" 
-              id="cardTextColor"
-              value={localData.cardTextColor || '#000000'} 
-              onChange={(e) => onPanelChange(prev => ({ ...prev, cardTextColor: e.target.value }))}
-              className="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ======================================================
    Main Exported Component: EmployeesBlock
    ------------------------------------------------------
    This component initializes its local editor state from
@@ -361,6 +233,7 @@ export default function EmployeesBlock({
   readOnly = false,
   employeesData,
   onConfigChange,
+  themeColors,
 }) {
   const [localData, setLocalData] = useState(() => {
     const initialConfig = employeesData || {};
@@ -455,12 +328,29 @@ export default function EmployeesBlock({
         const dataToSave = {
             ...localData,
             employee: localData.employee.map(emp => {
-                const imageState = emp.image?.file
-                    ? { ...emp.image }
-                    : { url: emp.image?.originalUrl || emp.image?.url };
+                const imageState = emp.image;
+                let imageForSave = {};
+                if (imageState?.file instanceof File) {
+                  // If a new file is uploaded, include the file and its originalUrl (which should be its intended final path)
+                  imageForSave = { 
+                    file: imageState.file, 
+                    url: imageState.url, // blob url for preview, not directly used in final JSON usually
+                    name: imageState.name,
+                    originalUrl: imageState.originalUrl // This should be the target path
+                  };
+                } else if (imageState?.originalUrl) {
+                  // If no new file, but originalUrl exists (meaning it was an existing image)
+                  imageForSave = { url: imageState.originalUrl, name: imageState.name, originalUrl: imageState.originalUrl };
+                } else if (imageState?.url && !imageState.url.startsWith('blob:')){
+                  // Fallback if originalUrl is missing but url is a valid path
+                  imageForSave = { url: imageState.url, name: imageState.name, originalUrl: imageState.url };
+                } else {
+                  // Fallback for placeholder or error
+                  imageForSave = { url: "/assets/images/team/roofer.png", name: "roofer.png", originalUrl: "/assets/images/team/roofer.png" }; 
+                }
                 return {
                     ...emp,
-                    image: imageState,
+                    image: imageForSave,
                 };
             }),
             showNailAnimation: localData.showNailAnimation,
@@ -478,6 +368,37 @@ export default function EmployeesBlock({
     setLocalData(prevState => {
       const newState = typeof updater === 'function' ? updater(prevState) : { ...prevState, ...updater };
       console.log('[EmployeesBlock handleLocalDataChange] prevState.showNailAnimation:', prevState.showNailAnimation, 'newState.showNailAnimation:', newState.showNailAnimation);
+      
+      // Live update for non-readOnly mode
+      if (!readOnly && typeof onConfigChange === 'function') {
+        const dataToSave = {
+          ...newState,
+          employee: newState.employee.map(emp => {
+            const imageState = emp.image;
+            let imageForSave = {};
+            if (imageState?.file instanceof File) {
+              imageForSave = { 
+                file: imageState.file, 
+                url: imageState.url,
+                name: imageState.name,
+                originalUrl: imageState.originalUrl
+              };
+            } else if (imageState?.originalUrl) {
+              imageForSave = { url: imageState.originalUrl, name: imageState.name, originalUrl: imageState.originalUrl };
+            } else if (imageState?.url && !imageState.url.startsWith('blob:')){
+              imageForSave = { url: imageState.url, name: imageState.name, originalUrl: imageState.url };
+            } else {
+              imageForSave = { url: "/assets/images/team/roofer.png", name: "roofer.png", originalUrl: "/assets/images/team/roofer.png" }; 
+            }
+            return {
+              ...emp,
+              image: imageForSave,
+            };
+          }),
+        };
+        onConfigChange(dataToSave);
+      }
+      
       return newState;
     });
   };
@@ -501,41 +422,187 @@ export default function EmployeesBlock({
   }
   
   return (
-    <>
-      <EmployeesPreview 
-        employeesData={localData} 
-        readOnly={false}
-        onSectionTitleChange={handleSectionTitleChange}
-        onEmployeeDetailChange={handleEmployeeDetailChange}
-      />
-      <EmployeesEditorPanel
-        localData={localData}
-        onPanelChange={handleLocalDataChange} 
-      />
-    </>
+    <EmployeesPreview 
+      employeesData={localData} 
+      readOnly={false}
+      onSectionTitleChange={handleSectionTitleChange}
+      onEmployeeDetailChange={handleEmployeeDetailChange}
+    />
   );
 }
 
-/* ======================================================
-   Helper Hook: useItemsToShow - NO LONGER USED
-========================================================= */
-// This hook is no longer used by EmployeesPreview and can be removed.
-// function useItemsToShow() {
-//   const [itemsToShow, setItemsToShow] = useState(4);
+// Expose tabsConfig for TopStickyEditPanel
+EmployeesBlock.tabsConfig = (blockCurrentData, onControlsChange, themeColors) => {
+  return {
+    images: (props) => (
+      <EmployeesImagesControls 
+        {...props} 
+        currentData={blockCurrentData}
+        onControlsChange={onControlsChange}
+        themeColors={themeColors}
+      />
+    ),
+    colors: (props) => (
+      <EmployeesColorControls 
+        {...props} 
+        currentData={blockCurrentData}
+        onControlsChange={onControlsChange}
+        themeColors={themeColors} 
+      />
+    ),
+    styling: (props) => (
+      <EmployeesStylingControls
+        {...props}
+        currentData={blockCurrentData}
+        onControlsChange={onControlsChange}
+      />
+    ),
+  };
+};
 
-//   useEffect(() => {
-//     const updateItemsToShow = () => {
-//       if (window.innerWidth >= 700) {
-//         setItemsToShow(7);
-//       } else {
-//         setItemsToShow(5);
-//       }
-//     };
+/* ==============================================
+   EMPLOYEES IMAGES CONTROLS
+   ----------------------------------------------
+   Handles employee management and image uploads
+=============================================== */
+const EmployeesImagesControls = ({ currentData, onControlsChange, themeColors }) => {
+  const { employee = [] } = currentData;
 
-//     updateItemsToShow();
-//     window.addEventListener("resize", updateItemsToShow);
-//     return () => window.removeEventListener("resize", updateItemsToShow);
-//   }, []);
+  // Convert employees to images array format for PanelImagesController
+  const imagesArray = employee.map((emp, index) => ({
+    id: `employee_${emp.id || index}`,
+    url: getEmployeeImageUrl(emp.image, "/assets/images/team/roofer.png"),
+    file: emp.image?.file || null,
+    name: emp.name || `Employee ${index + 1}`,
+    originalUrl: emp.image?.originalUrl || "/assets/images/team/roofer.png",
+    employeeIndex: index,
+    employeeName: emp.name || "",
+    employeeRole: emp.role || ""
+  }));
 
-//   return itemsToShow;
-// }
+  const handleImagesChange = (newImagesArray) => {
+    // Create new employees array from images
+    const newEmployees = newImagesArray.map((img, index) => {
+      const existingEmp = employee[img.employeeIndex] || employee[index] || {};
+      
+      return {
+        id: existingEmp.id || `emp_${index}_${Date.now()}`,
+        name: img.employeeName || existingEmp.name || "",
+        role: img.employeeRole || existingEmp.role || "",
+        image: {
+          file: img.file,
+          url: img.url,
+          name: img.name,
+          originalUrl: img.originalUrl
+        }
+      };
+    });
+
+    onControlsChange({ employee: newEmployees });
+  };
+
+  const handleAddEmployee = () => {
+    const newEmployee = {
+      id: `new_emp_${Date.now()}`,
+      name: "New Employee",
+      role: "Role",
+      image: initializeEmployeeImageState("/assets/images/team/roofer.png"),
+    };
+    onControlsChange({ employee: [...employee, newEmployee] });
+  };
+
+  const handleRemoveEmployee = (index) => {
+    const empToRemove = employee[index];
+    if (empToRemove?.image?.url?.startsWith('blob:')) {
+      URL.revokeObjectURL(empToRemove.image.url);
+    }
+    onControlsChange({ employee: employee.filter((_, i) => i !== index) });
+  };
+
+  return (
+    <div className="bg-white text-gray-800 p-3 rounded">
+      <div className="mb-4">
+        <h3 className="text-sm font-semibold mb-2">Employee Images</h3>
+        <PanelImagesController
+          currentData={{ images: imagesArray }}
+          onControlsChange={(data) => handleImagesChange(data.images || [])}
+          imageArrayFieldName="images"
+          maxImages={20}
+          allowMultiple={true}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex justify-between items-center">
+          <h4 className="text-xs font-medium text-gray-700">Team Members ({employee.length})</h4>
+          <button
+            onClick={handleAddEmployee}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs"
+          >
+            + Add Employee
+          </button>
+        </div>
+        
+        {employee.length === 0 && (
+          <div className="text-center py-4 text-gray-500 text-sm">
+            No employees yet. Add a team member to get started.
+          </div>
+        )}
+        
+        <div className="text-xs text-gray-500 mt-2">
+          <p>• Click on employee names and roles in the preview to edit them directly</p>
+          <p>• Use the image controls above to manage employee photos</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ==============================================
+   EMPLOYEES COLOR CONTROLS
+   ----------------------------------------------
+   Handles card background and text color customization
+=============================================== */
+const EmployeesColorControls = ({ currentData, onControlsChange, themeColors }) => {
+  const handleColorChange = (fieldName, value) => {
+    onControlsChange({ [fieldName]: value });
+  };
+
+  return (
+    <div className="bg-white text-gray-800 p-3 rounded">
+      <h3 className="text-sm font-semibold mb-3">Employee Card Colors</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <ThemeColorPicker
+          label="Card Background Color:"
+          currentColorValue={currentData.cardBackgroundColor || '#FFFFFF'}
+          themeColors={themeColors}
+          onColorChange={handleColorChange}
+          fieldName="cardBackgroundColor"
+        />
+        <ThemeColorPicker
+          label="Card Text Color:"
+          currentColorValue={currentData.cardTextColor || '#000000'}
+          themeColors={themeColors}
+          onColorChange={handleColorChange}
+          fieldName="cardTextColor"
+        />
+      </div>
+    </div>
+  );
+};
+
+/* ==============================================
+   EMPLOYEES STYLING CONTROLS
+   ----------------------------------------------
+   Handles styling options like nail animation
+=============================================== */
+const EmployeesStylingControls = ({ currentData, onControlsChange }) => {
+  return (
+    <PanelStylingController
+      currentData={currentData}
+      onControlsChange={onControlsChange}
+      blockType="EmployeesBlock"
+      controlType="animations"
+    />
+  );
+};

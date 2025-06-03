@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { PlusCircleIcon, TrashIcon } from '@heroicons/react/24/outline'; // Example icons
+import { PlusCircleIcon, TrashIcon } from '@heroicons/react/24/outline';
+import PanelColorPicker from './common/PanelColorPicker';
 
 // Define the original four default colors with their properties
-const defaultColorDefinitions = [
+export const defaultColorDefinitions = [
   { id: 'default-accent', name: 'accent', label: 'Accent Color', value: '#1d5a88', description: 'Used for buttons, links, and primary interactive elements.', isDefault: true, isRemovable: false },
   { id: 'default-banner', name: 'banner', label: 'Banner Color', value: '#143e5f', description: 'Used for headers, navigation bars, and prominent UI elements.', isDefault: true, isRemovable: false },
   { id: 'default-faint-color', name: 'faint-color', label: 'Faint Color', value: '#2574b0', description: 'Used for backgrounds, subtle highlights, and secondary elements.', isDefault: true, isRemovable: false },
@@ -30,9 +31,9 @@ const ColorEditor = ({ initialColors: initialColorsProp, onColorChange }) => {
     propColorNames.forEach(name => {
       if (!defaultColorDefinitions.some(def => def.name === name)) {
         transformed.push({
-          id: `custom-${name}-${Date.now()}`, // Ensure unique ID
-          name: name, // Retain original name
-          label: name.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '), // Generate label
+          id: `custom-${name}-${Date.now()}`,
+          name: name, 
+          label: name.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '), 
           value: colorsProp[name],
           description: 'User-defined custom color.',
           isDefault: false,
@@ -44,8 +45,6 @@ const ColorEditor = ({ initialColors: initialColorsProp, onColorChange }) => {
   }, []);
 
   useEffect(() => {
-    // Initialize editableColors based on initialColorsProp
-    // If initialColorsProp is null/undefined, start with defaults
     const startingColorsObject = initialColorsProp || defaultColorDefinitions.reduce((obj, item) => {
         obj[item.name] = item.value;
         return obj;
@@ -59,16 +58,15 @@ const ColorEditor = ({ initialColors: initialColorsProp, onColorChange }) => {
       return obj;
     }, {});
     
-    // Update CSS variables
     updatedColorsArray.forEach(color => {
-      if (color.name) { // Ensure name is not empty
+      if (color.name) {
           document.documentElement.style.setProperty(`--color-${color.name}`, color.value);
       }
     });
-    // If a color was removed, its CSS variable might need explicit removal (though overwriting is usually fine)
 
     if (onColorChange) {
-      onColorChange(colorsObjectForParent);
+      // Pass both the simple object AND the full array of editableColors
+      onColorChange(colorsObjectForParent, updatedColorsArray);
     }
   }, [onColorChange]);
 
@@ -76,15 +74,12 @@ const ColorEditor = ({ initialColors: initialColorsProp, onColorChange }) => {
     setEditableColors(prevColors => {
       const newColors = prevColors.map(color => {
         if (color.id === id) {
-          // Basic name validation: replace spaces with hyphens, convert to lowercase
-          // More robust validation might be needed (e.g., ensure it's a valid CSS custom property name part)
           let processedNewValue = newValue;
           if (property === 'name' && !color.isDefault) {
             processedNewValue = newValue.replace(/\s+/g, '-').toLowerCase();
-            // Check for uniqueness if it's a name change
             if (prevColors.some(c => c.id !== id && c.name === processedNewValue)) {
               alert(`Color name "${processedNewValue}" already exists. Please choose a unique name.`);
-              return color; // Return original color if name is not unique
+              return color; 
             }
           }
           return { ...color, [property]: processedNewValue };
@@ -96,11 +91,16 @@ const ColorEditor = ({ initialColors: initialColorsProp, onColorChange }) => {
     });
   };
 
+  // Create a theme colors object from all current colors (for the dropdown in PanelColorPicker)
+  const themeColorsForDropdown = editableColors.reduce((obj, color) => {
+    obj[color.name] = color.value;
+    return obj;
+  }, {});
+
   const addNewColor = () => {
     setEditableColors(prevColors => {
       let newColorName = `custom-color-${prevColors.filter(c => !c.isDefault).length + 1}`;
       let counter = 1;
-      // Ensure newColorName is unique
       while (prevColors.some(c => c.name === newColorName)) {
         newColorName = `custom-color-${prevColors.filter(c => !c.isDefault).length + 1 + counter}`;
         counter++;
@@ -125,7 +125,6 @@ const ColorEditor = ({ initialColors: initialColorsProp, onColorChange }) => {
     setEditableColors(prevColors => {
       const colorToRemove = prevColors.find(c => c.id === idToRemove);
       if (colorToRemove && colorToRemove.name) {
-         // Remove the CSS custom property
          document.documentElement.style.removeProperty(`--color-${colorToRemove.name}`);
       }
       const updatedColors = prevColors.filter(color => color.id !== idToRemove);
@@ -134,8 +133,6 @@ const ColorEditor = ({ initialColors: initialColorsProp, onColorChange }) => {
     });
   };
   
-  // The old colorFields array is no longer needed as we iterate over editableColors
-
   return (
     <div className="container mx-auto px-4 py-6 bg-gray-100 text-gray-800">
       <div className="mb-6 bg-gray-800 text-white p-4 rounded shadow-md flex justify-between items-center">
@@ -152,108 +149,106 @@ const ColorEditor = ({ initialColors: initialColorsProp, onColorChange }) => {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Color Input Fields Section */}
-        <div className="space-y-5">
+      {/* Compact Grid Layout - 4 colors per row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {editableColors.map(color => (
+          <div key={color.id} className="p-3 bg-white rounded-lg shadow relative border">
+            {/* Remove button for custom colors */}
+            {color.isRemovable && (
+              <button
+                onClick={() => removeColor(color.id)}
+                className="absolute top-1 right-1 text-red-500 hover:text-red-700 p-1 bg-red-100 rounded-full"
+                title="Remove Color"
+              >
+                <TrashIcon className="h-3 w-3" />
+              </button>
+            )}
+            
+            {/* Label input */}
+            <div className="mb-2">
+              <input
+                type="text"
+                value={color.label}
+                onChange={(e) => handleColorPropertyChange(color.id, 'label', e.target.value)}
+                className="w-full px-2 py-1 text-sm font-medium bg-gray-50 border border-gray-200 rounded focus:outline-none focus:border-blue-500"
+                placeholder="Color Label"
+              />
+            </div>
+
+            {/* Color picker using PanelColorPicker component */}
+            <PanelColorPicker
+              currentColorValue={color.value}
+              themeColors={themeColorsForDropdown}
+              onColorChange={(fieldName, newValue) => handleColorPropertyChange(color.id, 'value', newValue)}
+              fieldName={`color-${color.id}`}
+              className="mb-2"
+            />
+
+            {/* CSS Variable name (read-only for defaults, editable for custom) */}
+            <div className="text-xs text-gray-500 mb-1">
+              CSS: --color-{color.name}
+            </div>
+            {!color.isDefault && (
+              <input
+                type="text"
+                value={color.name}
+                onChange={(e) => handleColorPropertyChange(color.id, 'name', e.target.value)}
+                className="w-full px-2 py-1 text-xs bg-gray-50 border border-gray-200 rounded focus:outline-none focus:border-blue-500"
+                placeholder="css-name"
+              />
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Live Preview Section */}
+      <div className="p-4 bg-white rounded-lg shadow">
+        <h2 className="text-lg font-semibold mb-3 text-gray-800 border-b pb-2">Live Preview</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
           {editableColors.map(color => (
-            <div key={color.id} className="p-4 bg-white rounded-lg shadow relative">
-              {color.isRemovable && (
-                <button
-                  onClick={() => removeColor(color.id)}
-                  className="absolute top-2 right-2 text-red-500 hover:text-red-700 p-1 bg-red-100 rounded-full"
-                  title="Remove Color"
-                >
-                  <TrashIcon className="h-5 w-5" />
-                </button>
-              )}
-              <div className="mb-2">
-                <label htmlFor={`${color.id}-label`} className="block text-sm font-medium text-gray-700">Label</label>
-                <input
-                  type="text"
-                  id={`${color.id}-label`}
-                  value={color.label}
-                  onChange={(e) => handleColorPropertyChange(color.id, 'label', e.target.value)}
-                  className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-              </div>
-              <div className="mb-2">
-                <label htmlFor={`${color.id}-name`} className="block text-sm font-medium text-gray-700">
-                  Name (for CSS: --color-{color.name || '...'})
-                </label>
-                <input
-                  type="text"
-                  id={`${color.id}-name`}
-                  value={color.name}
-                  onChange={(e) => handleColorPropertyChange(color.id, 'name', e.target.value)}
-                  className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  disabled={color.isDefault}
-                  readOnly={color.isDefault}
-                />
-                 {color.isDefault && <p className="text-xs text-gray-500 mt-1">Default color names cannot be changed.</p>}
-              </div>
-              <div className="mb-2">
-                <label htmlFor={`${color.id}-value`} className="block text-sm font-medium text-gray-700">Value</label>
-                <div className="flex items-center space-x-3">
-                  <input
-                    type="color"
-                    id={`${color.id}-value-picker`}
-                    value={color.value}
-                    onChange={(e) => handleColorPropertyChange(color.id, 'value', e.target.value)}
-                    className="h-10 w-12 p-0.5 border border-gray-300 rounded-md cursor-pointer shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                  <input
-                    type="text"
-                    id={`${color.id}-value-text`}
-                    value={color.value}
-                    onChange={(e) => handleColorPropertyChange(color.id, 'value', e.target.value)}
-                    className="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    placeholder="#RRGGBB"
-                  />
-                </div>
-              </div>
-              <div>
-                <label htmlFor={`${color.id}-description`} className="block text-sm font-medium text-gray-700">Description</label>
-                <input
-                  type="text"
-                  id={`${color.id}-description`}
-                  value={color.description}
-                  onChange={(e) => handleColorPropertyChange(color.id, 'description', e.target.value)}
-                  className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
+            <div key={`preview-${color.id}`} className="flex items-center p-2 bg-gray-50 rounded border">
+              <div 
+                className="w-6 h-6 rounded-full mr-3 border"
+                style={{ backgroundColor: color.value }}
+              />
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm truncate" style={{ color: color.value }}>
+                  {color.label}
+                </p>
+                <p className="text-xs text-gray-500 truncate">
+                  {color.value} • --color-{color.name}
+                </p>
               </div>
             </div>
           ))}
         </div>
-
-        {/* Live Preview Section - Update to use dynamic colors */}
-        <div className="p-4 bg-white rounded-lg shadow">
-          <h2 className="text-lg font-semibold mb-3 text-gray-800 border-b pb-2">Live Preview</h2>
-          <div className="space-y-4">
-            {editableColors.map(color => (
-              <div key={`preview-${color.id}`} style={{ padding: '0.75rem', borderRadius: '0.25rem', border: '1px solid #eee' }}>
-                <div className="flex items-center">
-                    <div style={{ width: '24px', height: '24px', backgroundColor: color.value, marginRight: '10px', borderRadius: '4px', border: '1px solid #ccc' }}></div>
-                    <div>
-                        <p className="font-medium" style={{ color: color.value }}>{color.label} (--color-{color.name})</p>
-                        <p className="text-xs text-gray-600">{color.value} - {color.description}</p>
-                    </div>
-                </div>
-              </div>
-            ))}
-            <div className="mt-6 p-3 border rounded-md" style={{borderColor: editableColors.find(c=>c.name==='accent')?.value || '#000000'}}>
-                <h4 className="font-medium" style={{color: editableColors.find(c=>c.name==='accent')?.value || '#000000'}}>Sample Card Header (Accent)</h4>
-                <p className="text-sm" style={{backgroundColor: editableColors.find(c=>c.name==='faint-color')?.value || '#f0f0f0', color: editableColors.find(c=>c.name==='banner')?.value || '#000000'}}>
-                    This card uses faint background, banner text, and an accent border.
-                </p>
-                <button className="mt-2 text-white px-3 py-1 rounded text-xs" style={{backgroundColor: editableColors.find(c=>c.name==='second-accent')?.value || '#cccccc'}}>
-                    CTA (Second Accent)
-                </button>
-                 {editableColors.find(c => c.name === 'custom-color-1') && (
-                     <button className="mt-2 ml-2 text-white px-3 py-1 rounded text-xs" style={{backgroundColor: editableColors.find(c=>c.name==='custom-color-1')?.value || '#000000'}}>
-                        CTA (Custom Color 1)
-                    </button>
-                 )}
-            </div>
+        
+        {/* Sample Usage */}
+        <div className="mt-6 p-3 border rounded-md" style={{borderColor: editableColors.find(c=>c.name==='accent')?.value || '#000000'}}>
+          <h4 className="font-medium" style={{color: editableColors.find(c=>c.name==='accent')?.value || '#000000'}}>
+            Sample Card Header (Accent)
+          </h4>
+          <p className="text-sm p-2 rounded mt-2" style={{
+            backgroundColor: editableColors.find(c=>c.name==='faint-color')?.value || '#f0f0f0', 
+            color: editableColors.find(c=>c.name==='banner')?.value || '#000000'
+          }}>
+            This card uses faint background, banner text, and an accent border.
+          </p>
+          <div className="flex gap-2 mt-3">
+            <button 
+              className="text-white px-3 py-1 rounded text-xs" 
+              style={{backgroundColor: editableColors.find(c=>c.name==='second-accent')?.value || '#cccccc'}}
+            >
+              CTA (Second Accent)
+            </button>
+            {editableColors.find(c => c.name === 'custom-color-1') && (
+              <button 
+                className="text-white px-3 py-1 rounded text-xs" 
+                style={{backgroundColor: editableColors.find(c=>c.name==='custom-color-1')?.value || '#000000'}}
+              >
+                CTA (Custom Color 1)
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -262,7 +257,7 @@ const ColorEditor = ({ initialColors: initialColorsProp, onColorChange }) => {
 };
 
 ColorEditor.propTypes = {
-  initialColors: PropTypes.object, // Remains an object { name: value }
+  initialColors: PropTypes.object, 
   onColorChange: PropTypes.func.isRequired,
 };
 

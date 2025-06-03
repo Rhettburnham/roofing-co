@@ -12,19 +12,21 @@
  * for local editing of content without direct database access. The downloaded
  * ZIP file can be sent to the developer for permanent integration into the site.
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import PropTypes from "prop-types";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { useNavigate } from 'react-router-dom';
 import OneFormAuthButton from "./auth/OneFormAuthButton";
-import ServiceEditPage, { getServicesData, blockMap as serviceBlockMap } from "./ServiceEditPage";
+import ServiceEditPage, { blockMap as importedServiceBlockMap } from "./ServiceEditPage";
 import MainPageForm from "./MainPageForm";
 import AboutBlock from "./MainPageBlocks/AboutBlock";
 import { useConfig } from "../context/ConfigContext";
+import AllServiceBlocksTab from './AllServiceBlocksTab'; // Import the new component
 
 import Navbar from "./Navbar"; // Import Navbar for preview
 import ColorEditor from "./ColorEditor"; // Import the new ColorEditor component
+import { defaultColorDefinitions } from "./ColorEditor"; // Import defaultColorDefinitions
 import ServicePage from "./ServicePage"; // For rendering all blocks
 
 // Helper function to check if a URL is a local asset to be processed
@@ -71,276 +73,85 @@ function isProcessableAssetUrl(url) {
   return validPathCheck(cleanPath);
 }
 
-// Recursive function to traverse data, collect assets, and return cleaned data for ZIP
-function traverseAndModifyDataForZip(originalDataNode, assetsToCollect, pathContext, uploadBaseDir) {
-  if (originalDataNode === null || originalDataNode === undefined) {
-    return originalDataNode;
+function transformUrlToMediaObject(url) {
+  if (!url || typeof url !== 'string' || url.trim() === '') {
+    return url && url.trim() !== '' ? { file: null, url: url, name: url.split('/').pop() || 'image', originalUrl: url } : null;
+  }
+  return {
+    file: null, 
+    url: url,
+    name: url.split('/').pop() || 'image',
+    originalUrl: url 
+  };
+}
+
+function initializeMediaFieldsRecursive(data) {
+  if (!data || typeof data !== 'object') {
+    return data;
   }
 
-  if (Array.isArray(originalDataNode)) {
-    return originalDataNode.map((item, index) =>
-      traverseAndModifyDataForZip(item, assetsToCollect, `${pathContext}[${index}]`, uploadBaseDir)
+  if (Array.isArray(data)) {
+    return data.map(item => initializeMediaFieldsRecursive(item));
+  }
+
+  const transformedNode = { ...data };
+
+  const directMediaFields = [
+    'backgroundImage', 'heroImage', 'imageUrl', 'image', 'videoSrc', 'videoUrl',
+    'largeResidentialImg', 'largeCommercialImg', 'posterImage', 'icon', 'logo'
+  ];
+
+  directMediaFields.forEach(field => {
+    if (transformedNode[field] && typeof transformedNode[field] === 'string') {
+      transformedNode[field] = transformUrlToMediaObject(transformedNode[field]);
+    }
+  });
+
+  if (transformedNode.pictures && Array.isArray(transformedNode.pictures)) {
+    transformedNode.pictures = transformedNode.pictures.map(pic =>
+      typeof pic === 'string' ? transformUrlToMediaObject(pic) : initializeMediaFieldsRecursive(pic) 
     );
   }
 
-  if (typeof originalDataNode === 'object' && !(originalDataNode instanceof File)) {
-    // Specific check for block config objects that might contain a direct File object
-    // E.g., HeroBlock stores its file in `heroImageFile` and replacement target in `originalUrl` or `_heroImageOriginalPathFromProps`
-    // This check needs to be robust and potentially identify other similar patterns.
-    const isHeroBlockConfig = pathContext.endsWith('.config'); // Simple check, might need refinement
-
-    if (isHeroBlockConfig && originalDataNode.heroImageFile instanceof File) {
-      console.log(`[traverseAndModifyDataForZip] Detected HeroBlock-like config with File. PathContext: ${pathContext}, File Name: ${originalDataNode.heroImageFile.name}`);
-      const file = originalDataNode.heroImageFile;
-      const fileName = file.name || 'untitled_hero_image';
-      let pathInZip;
-      let jsonUrl;
-      // The `originalUrl` for replacement should be at this level or `_heroImageOriginalPathFromProps`
-      const replacementUrl = originalDataNode.originalUrl || originalDataNode._heroImageOriginalPathFromProps;
-
-      if (replacementUrl && typeof replacementUrl === 'string') {
-        console.log(`[traverseAndModifyDataForZip] HeroBlock File: Found replacementUrl: ${replacementUrl}`);
-        let tempPath = replacementUrl;
-        if (tempPath.startsWith('/')) tempPath = tempPath.substring(1);
-        pathInZip = tempPath.startsWith('assets/') ? tempPath : `assets/${tempPath}`;
-        jsonUrl = pathInZip;
-      } else {
-        console.log(`[traverseAndModifyDataForZip] HeroBlock File: No replacementUrl. Creating new path.`);
-        const sanitizedPathContext = pathContext.replace(/[\W_]+/g, '_').slice(0, 50);
-        pathInZip = `assets/${uploadBaseDir}/${sanitizedPathContext}_${fileName}`;
-        jsonUrl = pathInZip;
-      }
-      assetsToCollect.push({ pathInZip, dataSource: file, type: 'file' });
-      console.log(`[traverseAndModifyDataForZip] HeroBlock File: Collected asset: type=file, pathInZip=${pathInZip}, dataSource name=${fileName}`);
-      
-      // Return a modified config object: heroImage points to jsonUrl, file object removed
-      const cleanedConfig = { ...originalDataNode };
-      delete cleanedConfig.heroImageFile;
-      delete cleanedConfig.originalUrl; // originalUrl (if it was the source) is now represented by jsonUrl
-      delete cleanedConfig._heroImageOriginalPathFromProps; // also clean this if it existed
-      cleanedConfig.heroImage = jsonUrl; // The main image field should now point to the new path
-      // Recursively process other properties within this config object, *excluding* the ones we just handled.
-      const furtherProcessedConfig = {};
-      for (const key in cleanedConfig) {
-        if (key !== 'heroImage' && Object.prototype.hasOwnProperty.call(cleanedConfig, key)) {
-            furtherProcessedConfig[key] = traverseAndModifyDataForZip(cleanedConfig[key], assetsToCollect, `${pathContext}.${key}`, uploadBaseDir);
-        } else if (key === 'heroImage') {
-            furtherProcessedConfig[key] = cleanedConfig.heroImage; // Already processed
-        }
-      }
-      return furtherProcessedConfig;
-    }
-
-    // Generic file object structure check (as before)
-    if (originalDataNode.file && originalDataNode.file instanceof File && typeof originalDataNode.name === 'string') {
-      console.log(`[traverseAndModifyDataForZip] Detected Generic FileObject structure. PathContext: ${pathContext}, File Name: ${originalDataNode.name}, OriginalURL prop: ${originalDataNode.originalUrl}`);
-      const file = originalDataNode.file;
-      const fileName = originalDataNode.name || file.name || 'untitled_asset';
-      let pathInZip;
-      let jsonUrl;
-
-      if (originalDataNode.originalUrl && typeof originalDataNode.originalUrl === 'string') {
-        console.log(`traverseAndModifyDataForZip: Found originalUrl: ${originalDataNode.originalUrl} for file ${fileName}`);
-        // Directly use originalUrl, ensuring it starts with 'assets/' and has no leading '/' for internal consistency.
-        let tempPath = originalDataNode.originalUrl;
-        if (tempPath.startsWith('/')) {
-          tempPath = tempPath.substring(1);
-        }
-        // Ensure the path is treated as relative to the root of asset storage for ZIP pathing.
-        // If originalUrl is like "/assets/images/foo.png", tempPath becomes "assets/images/foo.png".
-        // If originalUrl is like "images/foo.png", tempPath becomes "images/foo.png". 
-        // We need to ensure it becomes "assets/images/foo.png" for the ZIP structure.
-        if (!tempPath.startsWith('assets/')) {
-            console.warn(`traverseAndModifyDataForZip: originalUrl "${originalDataNode.originalUrl}" did not start with assets/. Prepending "assets/". This might indicate an issue with how originalUrl is formed or passed.`);
-            // This prepending logic might be too broad. Consider if originalUrl *should* sometimes not start with assets/.
-            // For heroImage, it *should* be like "/assets/images/hero/hero.png"
-            pathInZip = `assets/${tempPath.split('/').pop()}`; // Fallback: take filename under assets if originalUrl is malformed.
-                                                        // More robust: ensure originalUrl is always correctly formed upstream.
-            // A safer approach if originalUrl is expected to be well-formed (e.g. /assets/images/...):
-            pathInZip = tempPath; // Use the cleaned tempPath directly if it's already correct.
-        } else {
-            pathInZip = tempPath; // Use the cleaned tempPath directly.
-        }
-        jsonUrl = pathInZip; // The URL in JSON should match this structured path.
-        console.log(`traverseAndModifyDataForZip: Determined pathInZip: ${pathInZip} and jsonUrl: ${jsonUrl} from originalUrl.`);
-
-      } else {
-        const sanitizedPathContext = pathContext.replace(/[\W_]+/g, '_').slice(0, 50); 
-        // uploadBaseDir is like 'user_uploads/new_combined_data', so pathInZip is assets/user_uploads/new_combined_data/...
-        pathInZip = `assets/${uploadBaseDir}/${sanitizedPathContext}_${fileName}`;
-        jsonUrl = pathInZip;
-        console.log(`traverseAndModifyDataForZip: No originalUrl. Determined pathInZip: ${pathInZip} for file ${fileName}`);
-      }
-      
-      assetsToCollect.push({
-        pathInZip, 
-        dataSource: file,
-        type: 'file', // Explicitly set type as file
-      });
-      console.log(`[traverseAndModifyDataForZip] Collected asset: type=file, pathInZip=${pathInZip}, dataSource name=${file.name}`);
-      
-      const cleanedFileObject = { ...originalDataNode };
-      delete cleanedFileObject.file; 
-      delete cleanedFileObject.originalUrl; 
-      cleanedFileObject.url = jsonUrl; 
-      return cleanedFileObject;
-    }
-    
-    // NEW Check for pasted/blob URL objects
-    // Handles objects like { url: "blob:...", name: "pasted.png", originalUrl: "optional_original_path_or_blob_url" }
-    else if (originalDataNode.url && typeof originalDataNode.url === 'string' && originalDataNode.url.startsWith('blob:') && originalDataNode.name) {
-      console.log(`[traverseAndModifyDataForZip] Detected Blob URL object. PathContext: ${pathContext}, URL: ${originalDataNode.url}, Name: ${originalDataNode.name}`);
-      const blobUrl = originalDataNode.url;
-      const fileName = originalDataNode.name || 'pasted_image.png'; // Fallback name
-      let pathInZip;
-      let jsonUrl;
-
-      // Use originalUrl for path if it's provided and isn't another blob URL (i.e., it's a replacement target)
-      if (originalDataNode.originalUrl && typeof originalDataNode.originalUrl === 'string' && !originalDataNode.originalUrl.startsWith('blob:')) {
-        console.log(`[traverseAndModifyDataForZip] Blob URL object: Using originalUrl as replacement target: ${originalDataNode.originalUrl}`);
-        let tempPath = originalDataNode.originalUrl;
-        if (tempPath.startsWith('/')) tempPath = tempPath.substring(1);
-        // Ensure 'assets/' prefix for consistency if originalUrl is a relative path like 'images/foo.png'
-        pathInZip = tempPath.startsWith('assets/') ? tempPath : `assets/${tempPath}`;
-        jsonUrl = pathInZip;
-      } else {
-        // Generate a new path for this pasted image
-        console.log(`[traverseAndModifyDataForZip] Blob URL object: Generating new path. uploadBaseDir: ${uploadBaseDir}`);
-        const sanitizedPathContext = pathContext.replace(/[^a-zA-Z0-9_]/g, '_').slice(0, 50); // Ensure sanitize replaces non-word chars
-        pathInZip = `assets/${uploadBaseDir}/${sanitizedPathContext}_${fileName}`;
-        jsonUrl = pathInZip;
-      }
-      
-      assetsToCollect.push({
-        pathInZip,
-        dataSource: blobUrl, // The blob URL itself is the source to be fetched
-        type: 'url', // Treated as 'url' type, later logic fetches blob: sources
-      });
-      console.log(`[traverseAndModifyDataForZip] Collected asset for Blob URL: type=url, pathInZip=${pathInZip}, dataSource=${blobUrl}`);
-
-      // Return a cleaned object, replacing blob URL with the new persistent path
-      const cleanedBlobObject = { ...originalDataNode };
-      delete cleanedBlobObject.file; // Remove 'file' property if it existed (e.g., was null)
-      cleanedBlobObject.url = jsonUrl; // Update URL to the new path for JSON
-      // Remove originalUrl as its information is now embodied in the jsonUrl (if it was a target path)
-      // or it was a blob url itself / not useful for the final JSON structure.
-      delete cleanedBlobObject.originalUrl; 
-      
-      // Recursively process other properties within this object, if any, excluding 'url' which is now set.
-      const furtherProcessedBlobObject = {};
-      for (const key in cleanedBlobObject) {
-        if (key !== 'url' && Object.prototype.hasOwnProperty.call(cleanedBlobObject, key)) {
-            furtherProcessedBlobObject[key] = traverseAndModifyDataForZip(cleanedBlobObject[key], assetsToCollect, `${pathContext}.${key}`, uploadBaseDir);
-        } else if (key === 'url') {
-            furtherProcessedBlobObject[key] = cleanedBlobObject.url; // Already processed
-        }
-      }
-      return furtherProcessedBlobObject;
-    }
-    
-    // Handle objects with url property (from pasted URLs or existing data)
-    else if (originalDataNode.url && typeof originalDataNode.url === 'string' && isProcessableAssetUrl(originalDataNode.url)) {
-      let url = originalDataNode.url;
-      let pathInZip = url;
-      let jsonUrl = url;
-      console.log(`[traverseAndModifyDataForZip] Detected URL structure. PathContext: ${pathContext}, URL: ${url}`);
-
-      if (pathInZip.startsWith('/')) {
-        pathInZip = pathInZip.substring(1);
-        jsonUrl = jsonUrl.substring(1);
-      }
-      
-      // Ensure existing assets are also under 'assets/' in the ZIP and JSON
-      if (!pathInZip.startsWith('assets/') && !pathInZip.startsWith('http') && !pathInZip.startsWith('data:') && !pathInZip.startsWith('blob:')) {
-         // This assumes URLs like 'images/pic.jpg' or 'Commercial/thing.png' should be 'assets/images/pic.jpg'
-         pathInZip = `assets/${pathInZip}`;
-         jsonUrl = pathInZip;
-      } else if (pathInZip.startsWith('assets/')) {
-        // It's already good
-      } else {
-        // External URL, data URL, blob URL - do not add to assetsToCollect, return as is.
-        return originalDataNode;
-      }
-      
-      // Avoid duplicating asset collection for these existing URLs
-      if (!assetsToCollect.some(asset => asset.pathInZip === pathInZip && asset.type === 'url')) {
-        assetsToCollect.push({
-          pathInZip,
-          dataSource: url, 
-          type: 'url', // Explicitly set type as url
-        });
-        console.log(`[traverseAndModifyDataForZip] Collected asset: type=url, pathInZip=${pathInZip}, dataSource=${url}`);
-      }
-      
-      // Return a cloned object with updated url
-      return { ...originalDataNode, url: jsonUrl };
-    }
-
-    // Otherwise, it's a generic object; traverse its properties and build a new object
-    const newObj = {};
-    for (const key in originalDataNode) {
-      if (Object.prototype.hasOwnProperty.call(originalDataNode, key)) {
-        newObj[key] = traverseAndModifyDataForZip(
-          originalDataNode[key],
-          assetsToCollect,
-          `${pathContext}.${key}`,
-          uploadBaseDir
-        );
-      }
-    }
-    return newObj;
+  if (transformedNode.items && Array.isArray(transformedNode.items)) {
+    transformedNode.items = transformedNode.items.map(item => initializeMediaFieldsRecursive(item));
   }
 
-  // Handle string URLs that might be existing assets (these are direct string values, not in objects like {url: '...'})
-  if (typeof originalDataNode === 'string' && isProcessableAssetUrl(originalDataNode)) {
-    let pathInZip = originalDataNode;
-    let jsonUrl = originalDataNode;
-    console.log(`[traverseAndModifyDataForZip] Detected string URL. PathContext: ${pathContext}, URL: ${originalDataNode}`);
-
-    if (pathInZip.startsWith('/')) {
-      pathInZip = pathInZip.substring(1);
-      jsonUrl = jsonUrl.substring(1);
-    }
-    
-    // Add 'assets/' prefix if not an absolute URL and not already prefixed
-     if (!pathInZip.startsWith('assets/') && !pathInZip.startsWith('http') && !pathInZip.startsWith('data:') && !pathInZip.startsWith('blob:')) {
-        pathInZip = `assets/${pathInZip}`;
-        jsonUrl = pathInZip;
-    } else if (pathInZip.startsWith('assets/')) {
-        // It's already good
-    } else {
-        // External URL, data URL, blob URL - return as is.
-        return originalDataNode;
-    }
-
-
-    // Avoid duplicating asset collection
-    if (!assetsToCollect.some(asset => asset.pathInZip === pathInZip && asset.type === 'url')) {
-        assetsToCollect.push({
-          pathInZip,
-          dataSource: originalDataNode, 
-          type: 'url', // Explicitly set type as url
-        });
-        console.log(`[traverseAndModifyDataForZip] Collected asset: type=url, pathInZip=${pathInZip}, dataSource=${originalDataNode}`);
-    }
-    return jsonUrl; // Return the potentially modified URL for the JSON
+  if (transformedNode.blocks && Array.isArray(transformedNode.blocks)) {
+    transformedNode.blocks = transformedNode.blocks.map(block => initializeMediaFieldsRecursive(block));
   }
 
-  // Return primitives and other types as is
-  return originalDataNode;
+  if (transformedNode.config && typeof transformedNode.config === 'object') {
+    transformedNode.config = initializeMediaFieldsRecursive(transformedNode.config);
+  }
+  
+  Object.keys(transformedNode).forEach(key => {
+    if (
+      !directMediaFields.includes(key) &&
+      key !== 'pictures' &&
+      key !== 'items' &&
+      key !== 'blocks' &&
+      key !== 'config' &&
+      transformedNode[key] &&
+      typeof transformedNode[key] === 'object'
+    ) {
+      if (!(transformedNode[key].hasOwnProperty('file') && transformedNode[key].hasOwnProperty('url'))) {
+         transformedNode[key] = initializeMediaFieldsRecursive(transformedNode[key]);
+      }
+    }
+  });
+
+  return transformedNode;
 }
 
-
-
-// Tab style button component
 const TabButton = ({ id, label, isActive, onClick }) => (
   <button
     onClick={onClick}
-    className={`px-6 py-3 font-medium transition-all duration-300 ${
+    className={`px-6 py-3 font-medium transition-all duration-300 rounded-t-lg ${
       isActive
-        ? "bg-blue text-white drop-shadow-[0_1.2px_1.2px_rgba(255,30,0,0.8)] border-t-2 border-blue"
-        : "bg-gray-700 text-gray-200 hover:bg-gray-600"
-    } rounded-t-lg`}
+        ? "bg-blue-600 text-white border-t-2 border-blue-600" 
+        : "bg-white text-gray-700 hover:bg-gray-200 border border-gray-300" 
+    }`}
     data-tab-id={id}
   >
     {label}
@@ -355,257 +166,656 @@ TabButton.propTypes = {
 };
 
 const OneForm = ({ initialData = null, blockName = null, title = null }) => {
-  const [formData, setFormData] = useState(null);
+  const { config, loading: configLoading, error: configError, services: configServices, themeColors: configThemeColors, combinedGlobalData, aboutPageData } = useConfig();
+  const [mainPageFormData, setMainPageFormData] = useState(null);
+  const [servicesDataForOldExport, setServicesDataForOldExport] = useState(null); 
+  const [managedServicesData, setManagedServicesData] = useState(null); 
+  const [themeColors, setThemeColors] = useState(null); 
+  const [sitePalette, setSitePalette] = useState([]); // New state for the rich array of color objects
+  const [isLoading, setIsLoading] = useState(true); 
+  const [error, setError] = useState(null); 
   const [initialFormDataForOldExport, setInitialFormDataForOldExport] = useState(null);
   const [aboutPageJsonData, setAboutPageJsonData] = useState(null);
   const [initialAboutPageJsonData, setInitialAboutPageJsonData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("mainPage");
-  const [themeColors, setThemeColors] = useState(null);
-  const [initialThemeColors, setInitialThemeColors] = useState(null);
-  const { colors: configColors } = useConfig();
   const [allServiceBlocksData, setAllServiceBlocksData] = useState(null);
   const [initialAllServiceBlocksData, setInitialAllServiceBlocksData] = useState(null);
   const [loadingAllServiceBlocks, setLoadingAllServiceBlocks] = useState(false);
   const [activeEditShowcaseBlockIndex, setActiveEditShowcaseBlockIndex] = useState(null);
   const [isCustomDomain, setIsCustomDomain] = useState(false);
-  const [servicesData, setServicesData] = useState(null);
-  const [initialServicesData, setInitialServicesData] = useState(null);
+  const [initialServicesData, setInitialServicesData] = useState(null); 
+  const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
   const navigate = useNavigate();
 
-  // Development mode flag - use import.meta.env instead of process.env
+  const [autoDownloadEnabled, setAutoDownloadEnabled] = useState(true);
+  const [pendingChanges, setPendingChanges] = useState(false);
+  const [downloadInProgress, setDownloadInProgress] = useState(false);
+  const autoDownloadTimerRef = useRef(null);
+  const lastDownloadRef = useRef(0);
+  const DOWNLOAD_DEBOUNCE_MS = 3000; 
+  const MIN_DOWNLOAD_INTERVAL_MS = 30000; 
+
   const isDevelopment = import.meta.env.DEV;
 
-  // On mount, fetch combined_data.json to populate the form if no initialData is provided
+  const [serviceBlockMap, setServiceBlockMap] = useState({}); 
+  const [activeTab, setActiveTab] = useState("mainPage"); 
+
+  useEffect(() => {
+    setServiceBlockMap(importedServiceBlockMap); 
+  }, [importedServiceBlockMap]); 
+
   useEffect(() => {
     const fetchAllData = async () => {
-      setLoading(true);
+      console.log("[OneForm] fetchAllData initiated. InitialData provided:", !!initialData, "BlockName:", blockName);
+      setIsLoading(true);
+      setError(null);
+
+      let currentMainPageData = null;
+      let rawServicesSource = null; 
+      let currentAboutData = null;
+      let currentThemeColorsValue = null;
+      let currentAllServiceBlocks = null;
+      let currentSitePaletteValue = []; // Initialize for sitePalette
+
       try {
-        // Use colors from ConfigContext if available
-        if (configColors) {
-          setThemeColors(configColors);
-          setInitialThemeColors(JSON.parse(JSON.stringify(configColors)));
-          console.log("OneForm: Using theme colors from ConfigContext:", configColors);
-        } else {
-          console.warn("OneForm: No colors available from ConfigContext. Using defaults.");
-          const defaultColors = { accent: '#2B4C7E', banner: '#1A2F4D', "second-accent": '#FFF8E1', "faint-color": '#E0F7FA' };
-          setThemeColors(defaultColors);
-          setInitialThemeColors(JSON.parse(JSON.stringify(defaultColors)));
+        if (initialData) {
+          console.log("[OneForm] Using initialData prop as primary source.");
+          currentMainPageData = initialData.mainPageBlocks ? { mainPageBlocks: initialData.mainPageBlocks, navbar: initialData.navbar } : null;
+          rawServicesSource = initialData.services || null;
+          currentAboutData = initialData.aboutPageData || null;
+          currentThemeColorsValue = initialData.themeColors || null;
+          currentSitePaletteValue = initialData.sitePalette || []; // Get sitePalette from initialData if available
+          currentAllServiceBlocks = initialData.allServiceBlocksData || null;
+          if (blockName && !currentMainPageData && !rawServicesSource && !currentAboutData) {
+             console.log(`[OneForm] initialData likely for a single block ('${blockName}'), not full structure.`);
+          }
         }
 
-        console.log("Starting fetchCombinedData...");
-        
-        // Check if we're on a custom domain
-        const customDomain = window.location.hostname !== 'roofing-co.pages.dev' && 
-                           window.location.hostname !== 'roofing-www.pages.dev' &&
-                           window.location.hostname !== 'localhost';
-        setIsCustomDomain(customDomain);
-        
-        // If initialData is provided, use it directly within the appropriate block structure
-        if (initialData) {
-          console.log("Using provided initialData:", initialData);
-          if (blockName) {
-            // For editing a specific block, structure the data properly
-            setFormData({ [blockName]: initialData });
-          } else {
-            setFormData(initialData);
-            setInitialFormDataForOldExport(JSON.parse(JSON.stringify(initialData)));
-          }
-        } else {
-          // Default: fetch the full combined_data.json for the main OneForm editor
-          try {
-            const combinedResponse = await fetch("/data/raw_data/step_4/combined_data.json");
-            if (combinedResponse.ok) {
-              const dataToSet = await combinedResponse.json();
-              console.log("Loaded combined data:", dataToSet);
-              setFormData(dataToSet);
-              setInitialFormDataForOldExport(JSON.parse(JSON.stringify(dataToSet)));
-
-              // Also fetch about_page.json if in full editor mode
-              if (!blockName) {
-                try {
-                  const aboutJsonResponse = await fetch("/data/raw_data/step_3/about_page.json");
-                  if (aboutJsonResponse.ok) {
-                    const aboutJson = await aboutJsonResponse.json();
-                    setAboutPageJsonData(aboutJson);
-                    setInitialAboutPageJsonData(JSON.parse(JSON.stringify(aboutJson)));
-                    console.log("OneForm: Loaded about_page.json data:", aboutJson);
-            } else {
-                    console.warn("OneForm: Failed to load about_page.json. About page editor might not work as expected.");
-                    setAboutPageJsonData({});
-                    setInitialAboutPageJsonData({});
+        if (!currentThemeColorsValue) currentThemeColorsValue = configThemeColors;
+        if (currentThemeColorsValue) {
+            setThemeColors(currentThemeColorsValue);
+            // Initialize sitePalette from themeColors if sitePalette wasn't directly in initialData
+            if (currentSitePaletteValue.length === 0) {
+                const initialPalette = Object.entries(currentThemeColorsValue).map(([name, value], index) => ({
+                    id: `initial-theme-${name}-${index}`,
+                    name: name,
+                    label: name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                    value: typeof value === 'string' ? value : '#000000',
+                    description: `Theme color: ${name}`,
+                    isDefault: defaultColorDefinitions.some(def => def.name === name),
+                    isRemovable: !defaultColorDefinitions.some(def => def.name === name),
+                }));
+                currentSitePaletteValue = initialPalette;
             }
-                } catch (aboutJsonError) {
-                  console.error("OneForm: Error loading about_page.json:", aboutJsonError);
+        } else {
+           console.warn("[OneForm] Theme colors not found. Using defaults.");
+           const defaultTheme = defaultColorDefinitions.reduce((obj, item) => { obj[item.name] = item.value; return obj; }, {});
+           setThemeColors(defaultTheme);
+           currentSitePaletteValue = [...defaultColorDefinitions]; // Use full default definitions for sitePalette
+        }
+        setSitePalette(currentSitePaletteValue); // Set sitePalette state
+
+        if (!currentMainPageData) currentMainPageData = combinedGlobalData ? { mainPageBlocks: combinedGlobalData.mainPageBlocks || [], navbar: combinedGlobalData.navbar || {} } : null;
+        if (!currentAboutData) currentAboutData = aboutPageData;
+        if (!rawServicesSource) rawServicesSource = configServices;
+
+        if (currentMainPageData) {
+          console.log("[OneForm] Main page data sourced.", currentMainPageData);
+          setMainPageFormData(currentMainPageData);
+          setInitialFormDataForOldExport(JSON.parse(JSON.stringify(currentMainPageData)));
+        } else if (!blockName) { 
+          console.log("[OneForm] Fetching main page data (combined_data.json)...");
+        }
+
+        if (currentAboutData) {
+          console.log("[OneForm] About page data sourced.", currentAboutData);
+          setAboutPageJsonData(currentAboutData); 
+          setInitialAboutPageJsonData(JSON.parse(JSON.stringify(currentAboutData))); 
+        } else if (!blockName) { 
+          console.log("[OneForm] Fetching about page data (/personal/new/jsons/about_page.json)...");
+          try {
+            const aboutResponse = await fetch("/personal/new/jsons/about_page.json"); 
+            if (aboutResponse.ok) {
+              const aboutDataFetched = await aboutResponse.json();
+              setAboutPageJsonData(aboutDataFetched);
+              setInitialAboutPageJsonData(JSON.parse(JSON.stringify(aboutDataFetched)));
+              console.log("[OneForm] Successfully fetched /personal/new/jsons/about_page.json.");
+            } else {
+              console.error("[OneForm] Failed to fetch /personal/new/jsons/about_page.json. Status:", aboutResponse.status);
+              // Fallback to the alternative data source
+              try {
+                const aboutJsonResponse = await fetch("/data/raw_data/step_3/about_page.json");
+                if (aboutJsonResponse.ok) {
+                  const aboutJson = await aboutJsonResponse.json();
+                  setAboutPageJsonData(aboutJson);
+                  setInitialAboutPageJsonData(JSON.parse(JSON.stringify(aboutJson)));
+                  console.log("OneForm: Loaded about_page.json data from fallback source:", aboutJson);
+                } else {
+                  console.warn("OneForm: Failed to load about_page.json from fallback. About page editor might not work as expected.");
                   setAboutPageJsonData({});
                   setInitialAboutPageJsonData({});
                 }
+              } catch (aboutJsonError) {
+                console.error("OneForm: Error loading about_page.json from fallback:", aboutJsonError);
+                setAboutPageJsonData({});
+                setInitialAboutPageJsonData({});
               }
-
-              // Fetch initial all_blocks_showcase.json for both 'initial' state and current working state
-              if (!blockName) {
-                try {
-                  const showcaseResponse = await fetch("/data/all_blocks_showcase.json");
-                  if (showcaseResponse.ok) {
-                    const showcaseJson = await showcaseResponse.json();
-                    setInitialAllServiceBlocksData(JSON.parse(JSON.stringify(showcaseJson)));
-                    if (!allServiceBlocksData) {
-                      setAllServiceBlocksData(showcaseJson);
-                    }
-                    console.log("OneForm: Loaded initial all_blocks_showcase.json data:", showcaseJson);
-                  } else {
-                    console.warn("OneForm: Failed to load all_blocks_showcase.json. Showcase tab might be empty or use fallback.");
-                    const emptyShowcase = { blocks: [] };
-                    setInitialAllServiceBlocksData(emptyShowcase);
-                    if (!allServiceBlocksData) setAllServiceBlocksData(emptyShowcase);
-                  }
-                } catch (showcaseJsonError) {
-                  console.error("OneForm: Error loading all_blocks_showcase.json:", showcaseJsonError);
-                  const emptyShowcaseOnError = { blocks: [] };
-                  setInitialAllServiceBlocksData(emptyShowcaseOnError);
-                  if (!allServiceBlocksData) setAllServiceBlocksData(emptyShowcaseOnError);
-                }
-              }
-            } else {
-              console.error("Failed to load combined_data.json, status:", combinedResponse.status);
-              const defaultData = {
-              navbar: { navLinks: [{name: "Home", href: "/"}], logo: { url: '/assets/images/logo.png', name: 'logo.png' }, whiteLogo: { url: '/assets/images/logo-white.png', name: 'logo-white.png'} },
-              mainPageBlocks: [], 
-              hero: { title: "Welcome" }, 
-            };
-              setFormData(defaultData);
-              setInitialFormDataForOldExport(JSON.parse(JSON.stringify(defaultData)));
             }
-          } catch (error) {
-            console.error("Error loading data:", error);
-            // Set default data for all states
-            const defaultData = {
-              navbar: { navLinks: [{name: "Home", href: "/"}], logo: { url: '/assets/images/logo.png', name: 'logo.png' }, whiteLogo: { url: '/assets/images/logo-white.png', name: 'logo-white.png'} },
-              mainPageBlocks: [], 
-              hero: { title: "Welcome" }, 
-            };
-            setFormData(defaultData);
-            setInitialFormDataForOldExport(JSON.parse(JSON.stringify(defaultData)));
+          } catch (fetchError) {
+            console.error("[OneForm] Error fetching /personal/new/jsons/about_page.json:", fetchError);
+            // Fallback to the alternative data source
+            try {
+              const aboutJsonResponse = await fetch("/data/raw_data/step_3/about_page.json");
+              if (aboutJsonResponse.ok) {
+                const aboutJson = await aboutJsonResponse.json();
+                setAboutPageJsonData(aboutJson);
+                setInitialAboutPageJsonData(JSON.parse(JSON.stringify(aboutJson)));
+                console.log("OneForm: Loaded about_page.json data from fallback source after error:", aboutJson);
+              } else {
+                console.warn("OneForm: Failed to load about_page.json from fallback after error.");
+                setAboutPageJsonData({});
+                setInitialAboutPageJsonData({});
+              }
+            } catch (aboutJsonErrorFallback) {
+              console.error("OneForm: Error loading about_page.json from fallback after error:", aboutJsonErrorFallback);
+              setAboutPageJsonData({});
+              setInitialAboutPageJsonData({});
+            }
           }
         }
 
-        // Skip auth check in development mode
-        if (isDevelopment) {
-          console.log("Development mode: Skipping auth check");
-          setLoading(false);
-          return;
-        }
-
-        if (customDomain) {
-          console.log("On custom domain:", window.location.hostname);
+        if (!rawServicesSource && !blockName) { 
+          console.log("[OneForm] Fetching services.json...");
           try {
-            // Fetch the domain-specific config
-            const domainConfigResponse = await fetch('/api/public/config');
-            console.log("Domain config response status:", domainConfigResponse.status);
-            
-            if (domainConfigResponse.ok) {
-              const domainData = await domainConfigResponse.json();
-              console.log("Successfully loaded domain config data");
-              setFormData(domainData);
-              setInitialFormDataForOldExport(JSON.parse(JSON.stringify(domainData)));
-              setLoading(false);
-              return;
+            const servicesResponse = await fetch("/personal/new/jsons/services.json");
+            if (servicesResponse.ok) {
+              rawServicesSource = await servicesResponse.json();
+              console.log("[OneForm] Successfully fetched /personal/new/jsons/services.json.");
             } else {
-              console.error("Failed to load domain config. Status:", domainConfigResponse.status);
-              const errorText = await domainConfigResponse.text();
-              console.error("Error response:", errorText);
+              console.error("[OneForm] Failed to fetch /personal/new/jsons/services.json. Status:", servicesResponse.status);
+              rawServicesSource = { commercial: [], residential: [] }; 
             }
-          } catch (domainConfigError) {
-            console.error("Error loading domain config:", domainConfigError);
+          } catch (fetchError) {
+            console.error("[OneForm] Error fetching /personal/new/jsons/services.json:", fetchError);
+            rawServicesSource = { commercial: [], residential: [] }; 
           }
         }
-
-        // If not on custom domain or domain config failed, check authentication
-        console.log("Checking authentication status...");
-        const authResponse = await fetch('/api/auth/status', {
-          credentials: 'include'
-        });
-        console.log("Auth response status:", authResponse.status);
         
-        const authData = await authResponse.json();
-        console.log("Auth data received:", authData);
-
-        if (authData.isAuthenticated) {
-          console.log("User is authenticated. Config ID:", authData.configId);
-          try {
-            // Fetch the user's custom config
-            console.log("Fetching custom config from:", `/api/config/load`);
-            const customConfigResponse = await fetch(`/api/config/load`, {
-              credentials: 'include'
-            });
-            console.log("Custom config response status:", customConfigResponse.status);
-            
-            if (customConfigResponse.ok) {
-              const configData = await customConfigResponse.json();
-              console.log("Successfully loaded custom config data");
-              if (configData.combined_data) {
-                setFormData(configData.combined_data);
-                setInitialFormDataForOldExport(JSON.parse(JSON.stringify(configData.combined_data)));
-              }
-              if (configData.about_page) {
-                setAboutPageJsonData(configData.about_page);
-                setInitialAboutPageJsonData(JSON.parse(JSON.stringify(configData.about_page)));
-              }
-              if (configData.all_blocks_showcase) {
-                setAllServiceBlocksData(configData.all_blocks_showcase);
-                setInitialAllServiceBlocksData(JSON.parse(JSON.stringify(configData.all_blocks_showcase)));
-              }
-              setLoading(false);
-              return;
-            } else {
-              console.error("Failed to load custom config. Status:", customConfigResponse.status);
-              const errorText = await customConfigResponse.text();
-              console.error("Error response:", errorText);
-            }
-          } catch (customConfigError) {
-            console.error("Error loading custom config:", customConfigError);
-          }
+        if (rawServicesSource) {
+          setServicesDataForOldExport(JSON.parse(JSON.stringify(rawServicesSource)));
+          const initializedServices = initializeMediaFieldsRecursive(rawServicesSource);
+          setManagedServicesData(initializedServices);
+          console.log("[OneForm] Managed services data initialized and set.");
         } else {
-          console.log("User is not authenticated");
+          console.warn("[OneForm] No raw service data available. ManagedServicesData will be null or default.");
+          setServicesDataForOldExport({ commercial: [], residential: [] }); 
+          setManagedServicesData({ commercial: [], residential: [] }); 
+        }
+
+        if (currentAllServiceBlocks) {
+            console.log("[OneForm] AllServiceBlocks data sourced from initialData.");
+            setAllServiceBlocksData(currentAllServiceBlocks);
+            setInitialAllServiceBlocksData(JSON.parse(JSON.stringify(currentAllServiceBlocks))); 
+        } else if (!blockName) { 
+            console.log("[OneForm] Fetching all_blocks_showcase.json...");
+            try {
+              const showcaseResponse = await fetch("/personal/new/jsons/all_blocks_showcase.json");
+              if (showcaseResponse.ok) {
+                const showcaseData = await showcaseResponse.json();
+                setAllServiceBlocksData(showcaseData);
+                setInitialAllServiceBlocksData(JSON.parse(JSON.stringify(showcaseData))); 
+                console.log("[OneForm] Successfully fetched /personal/new/jsons/all_blocks_showcase.json.");
+              } else {
+                console.error("[OneForm] Failed to fetch /personal/new/jsons/all_blocks_showcase.json. Status:", showcaseResponse.status);
+                setAllServiceBlocksData({ blocks: [] }); 
+                setInitialAllServiceBlocksData({ blocks: [] });
+              }
+            } catch (fetchError) {
+              console.error("[OneForm] Error fetching /personal/new/jsons/all_blocks_showcase.json:", fetchError);
+              setAllServiceBlocksData({ blocks: [] }); 
+              setInitialAllServiceBlocksData({ blocks: [] });
+            }
         }
         
-        setLoading(false);
+        if (!currentMainPageData && !blockName) {
+            console.log("[OneForm] Fetching combined_data.json as a fallback...");
+            try {
+                const combinedResponse = await fetch("/personal/new/jsons/combined_data.json");
+                if (combinedResponse.ok) {
+                    const fetchedMainData = await combinedResponse.json();
+                    setMainPageFormData(fetchedMainData);
+                    console.log("[OneForm] Fallback: loaded combined_data.json");
+                } else {
+                    console.error("[OneForm] Fallback: Failed to load combined_data.json");
+                    setMainPageFormData({ mainPageBlocks: [], navbar: {} }); 
+                }
+            } catch (e) {
+                console.error("[OneForm] Fallback: Error loading combined_data.json", e);
+                setMainPageFormData({ mainPageBlocks: [], navbar: {} });
+            }
+        }
 
       } catch (error) {
-        console.error("Error in fetchAllData:", error);
-        setLoading(false);
+        console.error("[OneForm] Error in fetchAllData:", error);
+        setError(error.message || "Failed to load data.");
+        setMainPageFormData({ mainPageBlocks: [], navbar: {} });
+        setAboutPageJsonData({}); 
+        const defaultThemeOnErr = defaultColorDefinitions.reduce((obj, item) => { obj[item.name] = item.value; return obj; }, {});
+        setThemeColors(configThemeColors || defaultThemeOnErr);
+        setSitePalette([...defaultColorDefinitions]); // Fallback for sitePalette
+        setManagedServicesData({ commercial: [], residential: [] });
+        setServicesDataForOldExport({ commercial: [], residential: [] });
+        setAllServiceBlocksData({ blocks: [] });
+
+      } finally {
+        setIsLoading(false);
+        setIsInitialLoadComplete(true); 
+        console.log("[OneForm] fetchAllData finished.");
       }
     };
 
     fetchAllData();
-  }, [initialData, blockName, configColors, isDevelopment]);
+  }, [initialData, blockName, configServices, configThemeColors, combinedGlobalData, aboutPageData, isDevelopment]);
+
+  const preserveImageUrls = useCallback((data) => {
+    if (!data || typeof data !== 'object') return data;
+    
+    const preserveInObject = (obj) => {
+      if (!obj || typeof obj !== 'object') return obj;
+      
+      if (Array.isArray(obj)) {
+        return obj.map(item => preserveInObject(item));
+      }
+      
+      const preserved = { ...obj };
+      
+      if (preserved.file instanceof File && preserved.url) {
+        return preserved;
+      }
+      
+      if (preserved.url && typeof preserved.url === 'string' && preserved.url.startsWith('blob:')) {
+        return preserved;
+      }
+      
+      Object.keys(preserved).forEach(key => {
+        preserved[key] = preserveInObject(preserved[key]);
+      });
+      
+      return preserved;
+    };
+    
+    return preserveInObject(data);
+  }, []);
+
+  // Helper function to deep clone objects while preserving File objects and other non-serializable types
+  function deepCloneWithFiles(obj) {
+    if (obj === null || typeof obj !== 'object') {
+      return obj;
+    }
+    
+    if (obj instanceof File) {
+      return obj; // Return File objects as-is
+    }
+    
+    if (obj instanceof Date) {
+      return new Date(obj.getTime());
+    }
+    
+    if (Array.isArray(obj)) {
+      return obj.map(item => deepCloneWithFiles(item));
+    }
+    
+    const cloned = {};
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        cloned[key] = deepCloneWithFiles(obj[key]);
+      }
+    }
+    return cloned;
+  }
+
+  // Helper function to process and clean data for JSON output, replacing file objects with proper paths
+  function processDataForJson(originalDataNode, assetsToCollect, parentBlockName = null, isProcessingMainPageBlocks = false) {
+    if (originalDataNode === null || originalDataNode === undefined) {
+      return originalDataNode;
+    }
+
+    if (Array.isArray(originalDataNode)) {
+      // Special handling for mainPageBlocks array
+      if (isProcessingMainPageBlocks) {
+        return originalDataNode.map(block => {
+          if (block && block.blockName && block.config) {
+            return {
+              ...block,
+              config: processDataForJson(block.config, assetsToCollect, block.blockName)
+            };
+          }
+          return processDataForJson(block, assetsToCollect, parentBlockName);
+        });
+      }
+      
+      return originalDataNode.map(item => processDataForJson(item, assetsToCollect, parentBlockName));
+    }
+
+    if (typeof originalDataNode === 'object' && !(originalDataNode instanceof File)) {
+      // Handle images array (new structure used by HeroBlock and other blocks)
+      if (Array.isArray(originalDataNode) && parentBlockName) {
+        return originalDataNode.map((imageItem, imageIndex) => {
+          if (imageItem && typeof imageItem === 'object') {
+            const fileName = imageItem.name || imageItem.originalUrl?.split('/').pop() || `image_${imageIndex}`;
+            
+            // Use specific path for HeroBlock
+            const imagePath = parentBlockName === 'HeroBlock' 
+              ? `new/img/heroblock/${fileName}`
+              : `img/main_page_images/${parentBlockName}/${fileName}`;
+            
+            // If there's a file, collect it for the ZIP
+            if (imageItem.file instanceof File) {
+              assetsToCollect.push({
+                path: imagePath,
+                file: imageItem.file,
+                type: 'file'
+              });
+            } else if (imageItem.url && typeof imageItem.url === 'string' && imageItem.url.startsWith('blob:')) {
+              assetsToCollect.push({
+                path: imagePath,
+                url: imageItem.url,
+                type: 'blob'
+              });
+            } else if (imageItem.url && typeof imageItem.url === 'string' && !imageItem.url.startsWith('http')) {
+              // Local asset that needs to be copied
+              assetsToCollect.push({
+                path: imagePath,
+                url: imageItem.url,
+                type: 'local'
+              });
+            }
+
+            // Return cleaned image object for JSON (without mutating original)
+            return {
+              id: imageItem.id,
+              url: imagePath,
+              name: fileName,
+              originalUrl: imageItem.originalUrl || imagePath
+              // Note: We deliberately exclude 'file' from the JSON output
+            };
+          }
+          return imageItem;
+        });
+      }
+
+      // Handle individual image objects
+      if (originalDataNode.file instanceof File || (originalDataNode.url && originalDataNode.url.startsWith('blob:'))) {
+        const fileName = originalDataNode.name || originalDataNode.file?.name || 'image';
+        
+        // Use specific path for HeroBlock
+        const imagePath = parentBlockName === 'HeroBlock'
+          ? `new/img/heroblock/${fileName}`
+          : parentBlockName 
+            ? `img/main_page_images/${parentBlockName}/${fileName}`
+            : `img/global_assets/${fileName}`;
+
+        if (originalDataNode.file instanceof File) {
+          assetsToCollect.push({
+            path: imagePath,
+            file: originalDataNode.file,
+            type: 'file'
+          });
+        } else if (originalDataNode.url && originalDataNode.url.startsWith('blob:')) {
+          assetsToCollect.push({
+            path: imagePath,
+            url: originalDataNode.url,
+            type: 'blob'
+          });
+        }
+
+        // Return cleaned object for JSON (without mutating original)
+        return {
+          id: originalDataNode.id,
+          url: imagePath,
+          name: fileName,
+          originalUrl: originalDataNode.originalUrl || imagePath
+          // Note: We deliberately exclude 'file' from the JSON output
+        };
+      }
+
+      // Handle legacy heroImageFile
+      if (parentBlockName === 'HeroBlock' && originalDataNode.heroImageFile instanceof File) {
+        const fileName = originalDataNode.heroImageFile.name;
+        const imagePath = `new/img/heroblock/${fileName}`;
+        
+        assetsToCollect.push({
+          path: imagePath,
+          file: originalDataNode.heroImageFile,
+          type: 'file'
+        });
+
+        // Return cleaned object for JSON (create new object without mutating original)
+        const cleaned = { ...originalDataNode };
+        delete cleaned.heroImageFile;
+        delete cleaned.originalUrl;
+        delete cleaned._heroImageOriginalPathFromProps;
+        cleaned.heroImage = imagePath;
+        
+        return cleaned;
+      }
+
+      // Process object recursively
+      const newObj = {};
+      for (const key in originalDataNode) {
+        if (Object.prototype.hasOwnProperty.call(originalDataNode, key)) {
+          if (key === 'mainPageBlocks' && Array.isArray(originalDataNode[key])) {
+            newObj[key] = processDataForJson(originalDataNode[key], assetsToCollect, parentBlockName, true);
+          } else if (key === 'images' && Array.isArray(originalDataNode[key]) && parentBlockName) {
+            newObj[key] = processDataForJson(originalDataNode[key], assetsToCollect, parentBlockName);
+          } else {
+            newObj[key] = processDataForJson(originalDataNode[key], assetsToCollect, parentBlockName);
+          }
+        }
+      }
+      return newObj;
+    }
+
+    return originalDataNode;
+  }
+
+  const handleSubmit = useCallback(async (isAutoDownload = false) => {
+    try {
+      if (!mainPageFormData) {
+        console.error("No form data to submit.");
+        alert("No data available to download.");
+        return;
+      }
+
+      const zip = new JSZip();
+      let assetsToCollect = [];
+
+      // Create deep copies of data to avoid mutating the original state
+      const combinedDataCopy = deepCloneWithFiles(mainPageFormData.combined_data || mainPageFormData);
+      const managedServicesDataCopy = managedServicesData ? deepCloneWithFiles(managedServicesData) : null;
+      const aboutPageJsonDataCopy = aboutPageJsonData ? deepCloneWithFiles(aboutPageJsonData) : null;
+      const allServiceBlocksDataCopy = allServiceBlocksData ? deepCloneWithFiles(allServiceBlocksData) : null;
+
+      // Process combined_data.json
+      const cleanedCombinedData = processDataForJson(combinedDataCopy, assetsToCollect);
+      zip.file("jsons/combined_data.json", JSON.stringify(cleanedCombinedData, null, 2));
+
+      // Process services.json if available
+      if (managedServicesDataCopy && !blockName) {
+        const cleanedServicesData = processDataForJson(managedServicesDataCopy, assetsToCollect);
+        zip.file("jsons/services.json", JSON.stringify(cleanedServicesData, null, 2));
+      }
+
+      // Process about_page.json if available
+      if (aboutPageJsonDataCopy && !blockName) {
+        const cleanedAboutData = processDataForJson(aboutPageJsonDataCopy, assetsToCollect, 'AboutBlock');
+        zip.file("jsons/about_page.json", JSON.stringify(cleanedAboutData, null, 2));
+      }
+
+      // Process all_blocks_showcase.json if available
+      if (allServiceBlocksDataCopy && !blockName) {
+        const cleanedShowcaseData = processDataForJson(allServiceBlocksDataCopy, assetsToCollect);
+        zip.file("jsons/all_blocks_showcase.json", JSON.stringify(cleanedShowcaseData, null, 2));
+      }
+
+      // Process colors_output.json
+      if (themeColors) {
+        const colorsForJson = {};
+        Object.keys(themeColors).forEach(key => {
+          colorsForJson[key.replace(/-/g, '_')] = themeColors[key];
+        });
+        zip.file("jsons/colors_output.json", JSON.stringify(colorsForJson, null, 2));
+      }
+
+      // Add all collected assets to the ZIP
+      const assetPromises = assetsToCollect.map(async (asset) => {
+        try {
+          if (asset.type === 'file') {
+            zip.file(asset.path, asset.file);
+            console.log(`Added file to ZIP: ${asset.path}`);
+          } else if (asset.type === 'blob') {
+            const response = await fetch(asset.url);
+            const blob = await response.blob();
+            zip.file(asset.path, blob);
+            console.log(`Added blob to ZIP: ${asset.path}`);
+          } else if (asset.type === 'local') {
+            const response = await fetch(asset.url);
+            const blob = await response.blob();
+            zip.file(asset.path, blob);
+            console.log(`Added local asset to ZIP: ${asset.path}`);
+          }
+        } catch (error) {
+          console.error(`Error processing asset ${asset.path}:`, error);
+        }
+      });
+
+      await Promise.all(assetPromises);
+
+      // Generate and download the ZIP
+      const content = await zip.generateAsync({ type: "blob" });
+      const date = new Date();
+      const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      const timeStr = `${String(date.getHours()).padStart(2, "0")}-${String(date.getMinutes()).padStart(2, "0")}`;
+      const zipFileName = blockName
+        ? `${blockName}_edit_${dateStr}_${timeStr}.zip`
+        : `website_content_${isAutoDownload ? 'auto_' : ''}${dateStr}_${timeStr}.zip`;
+      
+      if (isAutoDownload) {
+        console.log(`[AutoDownload] Auto-saved ZIP: ${zipFileName}`);
+        saveAs(content, zipFileName);
+      } else {
+        saveAs(content, zipFileName);
+        console.log("ZIP file generation complete:", zipFileName);
+      }
+
+    } catch (error) {
+      console.error("Error creating ZIP file:", error);
+      if (!isAutoDownload) {
+        alert("Error creating ZIP file. See console for details.");
+      }
+    }
+  }, [mainPageFormData, managedServicesData, aboutPageJsonData, allServiceBlocksData, themeColors, blockName]);
+
+  // Update auto-download to save changes immediately
+  const triggerAutoDownload = useCallback(() => {
+    if (!autoDownloadEnabled || downloadInProgress) return;
+    
+    if (autoDownloadTimerRef.current) {
+      clearTimeout(autoDownloadTimerRef.current);
+    }
+    
+    setPendingChanges(true);
+    
+    autoDownloadTimerRef.current = setTimeout(async () => {
+      const now = Date.now();
+      
+      if (now - lastDownloadRef.current < MIN_DOWNLOAD_INTERVAL_MS) {
+        console.log('[AutoDownload] Skipping download - too soon since last download');
+        return;
+      }
+      
+      console.log('[AutoDownload] Triggering automatic save and download');
+      setDownloadInProgress(true);
+      setPendingChanges(false);
+      
+      try {
+        await handleSubmit(true); // Generate and download ZIP
+        lastDownloadRef.current = now;
+        console.log('[AutoDownload] Automatic save and download completed');
+      } catch (error) {
+        console.error('[AutoDownload] Auto-download failed:', error);
+      } finally {
+        setDownloadInProgress(false);
+      }
+    }, DOWNLOAD_DEBOUNCE_MS);
+  }, [autoDownloadEnabled, downloadInProgress, handleSubmit]);
+
+  useEffect(() => {
+    return () => {
+      if (autoDownloadTimerRef.current) {
+        clearTimeout(autoDownloadTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleMainPageFormChange = (newMainPageFormData) => {
-    setFormData(prev => {
-      // Ensure we maintain the correct structure
+    setMainPageFormData(prev => {
       const updatedData = {
         ...prev, 
         mainPageBlocks: newMainPageFormData.mainPageBlocks || prev.mainPageBlocks,
         navbar: newMainPageFormData.navbar || prev.navbar,
-        hero: newMainPageFormData.hero || prev.hero
+        hero: newMainPageFormData.hero || prev.hero 
       };
       console.log("Updated main page form data:", updatedData);
+      
+      if (!blockName) { 
+        triggerAutoDownload();
+      }
+      
       return updatedData;
     });
 };
 
   const handleAboutConfigChange = (newAboutConfig) => {
-    console.log("About page JSON data changed:", newAboutConfig);
-    setAboutPageJsonData(newAboutConfig);
+    console.log("[OneForm] About page config changed:", newAboutConfig);
+    setAboutPageJsonData(preserveImageUrls(newAboutConfig));
+    triggerAutoDownload();
   };
 
-  const handleThemeColorChange = (newColors) => {
-    setThemeColors(newColors);
-    // Live update CSS variables from OneForm as well, in case ColorEditor's direct update has issues or for redundancy
-    Object.keys(newColors).forEach(key => {
-      const cssVarName = `--color-${key}`;
-        document.documentElement.style.setProperty(cssVarName, newColors[key]);
+  const handleManagedServicesChange = (updatedServicePageData, serviceCategory, servicePageId) => {
+    console.log(`[OneForm] handleManagedServicesChange called for category '${serviceCategory}', page ID '${servicePageId}':`, updatedServicePageData);
+    setManagedServicesData(prevServicesData => {
+      if (!prevServicesData || !prevServicesData[serviceCategory]) {
+        console.error(`[OneForm] Invalid service category '${serviceCategory}' in handleManagedServicesChange.`);
+        return prevServicesData; 
+      }
+      const updatedCategoryPages = prevServicesData[serviceCategory].map(page => {
+        if (page.id === servicePageId) {
+          return updatedServicePageData; 
+        }
+        return page;
+      });
+      const newData = {
+        ...prevServicesData,
+        [serviceCategory]: updatedCategoryPages,
+      };
+      triggerAutoDownload(); 
+      return newData;
     });
+  };
+
+  const handleThemeColorChange = (newColorsObject, newSitePaletteArray) => {
+    setThemeColors(newColorsObject); 
+    if (newSitePaletteArray) {
+        setSitePalette(newSitePaletteArray);
+    }
+    Object.keys(newColorsObject).forEach(key => {
+      const cssVarName = `--color-${key}`;
+        document.documentElement.style.setProperty(cssVarName, newColorsObject[key]);
+    });
+    
+    if (!blockName) {
+      triggerAutoDownload();
+    }
   };
 
   const fetchShowcaseData = async () => {
@@ -617,7 +827,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
 
     setLoadingAllServiceBlocks(true);
     try {
-      const response = await fetch("/data/all_blocks_showcase.json");
+      const response = await fetch("/personal/new/jsons/all_blocks_showcase.json");
       if (!response.ok) {
         throw new Error('Failed to fetch all_blocks_showcase.json');
       }
@@ -630,21 +840,23 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
     }
   };
 
-  // Handler to update showcase block config
   const handleShowcaseBlockConfigUpdate = (blockIndex, newConfig) => {
     setAllServiceBlocksData(prevData => {
       if (!prevData || !prevData.blocks) return prevData;
       const updatedBlocks = prevData.blocks.map((block, index) => {
         if (index === blockIndex) {
-          return { ...block, config: newConfig };
+          return { ...block, config: preserveImageUrls(newConfig) };
         }
         return block;
       });
-      return { ...prevData, blocks: updatedBlocks };
+      const updatedData = { ...prevData, blocks: updatedBlocks };
+      
+      triggerAutoDownload();
+      
+      return updatedData;
     });
   };
 
-  // Handler for file changes in showcase blocks
   const handleShowcaseFileChangeForBlock = (blockIndex, configKeyOrPathData, fileOrFileObject) => {
     if (!fileOrFileObject) return;
 
@@ -730,11 +942,15 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         }
         return block;
       });
-      return { ...prevData, blocks: updatedBlocks };
+      
+      const updatedData = { ...prevData, blocks: updatedBlocks };
+      
+      triggerAutoDownload();
+      
+      return updatedData;
     });
   };
 
-  // Helper to get display URL, can be passed to blocks
   const getShowcaseDisplayUrl = (value) => {
     if (!value) return null;
     if (typeof value === "string") return value;
@@ -742,388 +958,24 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
     return null;
   };
 
-  // Handle tab change
   const handleTabChange = (tabId) => {
+    console.log(`[TabSwitch] Switching from ${activeTab} to ${tabId}`);
+    
+    if (activeTab !== tabId) {
+      setMainPageFormData(prev => preserveImageUrls(prev));
+      setAboutPageJsonData(prev => preserveImageUrls(prev));
+      setAllServiceBlocksData(prev => preserveImageUrls(prev));
+      
+      console.log('[TabSwitch] Preserved image URLs during tab switch');
+    }
+    
     setActiveTab(tabId);
     if (tabId === 'allServiceBlocks' && !allServiceBlocksData && !loadingAllServiceBlocks) {
       fetchShowcaseData();
     }
   };
 
-  const handleServicesChange = (newServicesData) => {
-    // Only update if the data has actually changed
-    if (JSON.stringify(servicesData) !== JSON.stringify(newServicesData)) {
-      console.log("Services data changed, updating state");
-      setServicesData(newServicesData);
-    }
-  };
-
-  /**
-   * handleSubmit - Generates and downloads a ZIP file with all edited content
-   */
-  const handleSubmit = async () => {
-    try {
-      if (!formData) {
-        console.error("No form data to submit.");
-        alert("No data available to download.");
-        return;
-      }
-      
-      const zip = new JSZip();
-      let collectedAssets = [];
-
-      // Fetch initial services.json once if needed for "old" processing
-      let initialServicesJsonData = null; 
-      if (!blockName) { 
-        try {
-          const servicesResponse = await fetch("/data/ignore/services.json");
-          if (servicesResponse.ok) {
-            initialServicesJsonData = await servicesResponse.json();
-            console.log("[OneForm] Fetched initial services.json for OLD ZIP processing.");
-          } else {
-            console.warn("[OneForm] Failed to fetch initial services.json for OLD ZIP processing.");
-          }
-        } catch (err) {
-          console.error("[OneForm] Error fetching initial services.json for OLD ZIP:", err);
-        }
-      }
-
-      // --- Process "OLD" data if available (for full OneForm, not single block mode) ---
-      const oldAssetPaths = new Set();
-      if (initialFormDataForOldExport) {
-        console.log("Processing OLD data for ZIP:", initialFormDataForOldExport);
-        let oldCollectedAssets = []; 
-        const cleanedOldCombinedData = traverseAndModifyDataForZip(
-          initialFormDataForOldExport,
-          oldCollectedAssets,
-          'oldFormDataRoot', 
-          'user_uploads/old_combined_data' 
-        );
-        zip.file("old/json/combined_data.json", JSON.stringify(cleanedOldCombinedData, null, 2));
-        
-        oldCollectedAssets.forEach(asset => oldAssetPaths.add(asset.pathInZip));
-
-        const oldAssetProcessingPromises = oldCollectedAssets.map(async (asset) => {
-          const assetPathInZip = `old/${asset.pathInZip}`;
-          try {
-            if (asset.type === 'url' && typeof asset.dataSource === 'string') {
-              if (!asset.dataSource.startsWith('http:') && !asset.dataSource.startsWith('https:') && !asset.dataSource.startsWith('data:') && !asset.dataSource.startsWith('blob:')) {
-                const fetchUrl = asset.dataSource.startsWith('/') ? asset.dataSource : `/${asset.dataSource}`;
-                const response = await fetch(fetchUrl);
-                if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText} for ${fetchUrl}`);
-                const blob = await response.blob();
-                zip.file(assetPathInZip, blob);
-              }
-            } else if (asset.type === 'file' && asset.dataSource instanceof File) {
-              // This case implies initialFormDataForOldExport itself contained File objects (less common)
-              zip.file(assetPathInZip, asset.dataSource);
-            }
-          } catch (assetError) {
-            console.error(`Error processing OLD asset ${assetPathInZip}:`, assetError);
-          }
-        });
-        await Promise.all(oldAssetProcessingPromises);
-
-        // Process OLD about_page.json
-        if (initialAboutPageJsonData && !blockName) {
-          console.log("Processing OLD about_page.json for ZIP:", initialAboutPageJsonData);
-          let oldAboutAssets = [];
-          const cleanedOldAboutData = traverseAndModifyDataForZip(
-            initialAboutPageJsonData,
-            oldAboutAssets,
-            'oldAboutPageDataRoot',
-            'user_uploads/old_about_page_data'
-          );
-          zip.file("old/json/about_page.json", JSON.stringify(cleanedOldAboutData, null, 2));
-          oldAboutAssets.forEach(asset => oldAssetPaths.add(asset.pathInZip)); // Add relative path to set
-          const oldAboutAssetPromises = oldAboutAssets.map(async (asset) => {
-            const assetPathInZip = `old/${asset.pathInZip}`;
-             try {
-                if (asset.type === 'url' && typeof asset.dataSource === 'string') {
-                  if (!asset.dataSource.startsWith('http:') && !asset.dataSource.startsWith('https:') && !asset.dataSource.startsWith('data:') && !asset.dataSource.startsWith('blob:')) {
-                    const fetchUrl = asset.dataSource.startsWith('/') ? asset.dataSource : `/${asset.dataSource}`;
-                    const response = await fetch(fetchUrl);
-                    if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText} for ${fetchUrl}`);
-                    const blob = await response.blob();
-                    zip.file(assetPathInZip, blob);
-                  }
-                } else if (asset.type === 'file' && asset.dataSource instanceof File) {
-                  zip.file(assetPathInZip, asset.dataSource);
-                }
-              } catch (assetError) {
-                console.error(`Error processing OLD about_page.json asset ${assetPathInZip}:`, assetError);
-              }
-          });
-          await Promise.all(oldAboutAssetPromises);
-          console.log("[OneForm] Added old/json/about_page.json to ZIP.");
-        }
-
-        if (!blockName && initialServicesJsonData) { // Check if initialServicesJsonData was successfully fetched for OLD
-            try {
-                    let oldServiceAssets = []; 
-                    const cleanedServicesDataOld = traverseAndModifyDataForZip(
-                        initialServicesJsonData, // Use pre-fetched initial data
-                        oldServiceAssets,
-                        'oldServicesDataRoot',
-                        'user_uploads/old_services_data'
-                    );
-                    zip.file("old/json/services.json", JSON.stringify(cleanedServicesDataOld, null, 2));
-                    oldServiceAssets.forEach(asset => oldAssetPaths.add(asset.pathInZip));
-                    const oldServiceAssetPromises = oldServiceAssets.map(async (asset) => {
-                        const assetPathInZip = `old/${asset.pathInZip}`;
-                        if (asset.type === 'url' && typeof asset.dataSource === 'string' && !asset.dataSource.startsWith('http:') && !asset.dataSource.startsWith('https:') && !asset.dataSource.startsWith('data:') && !asset.dataSource.startsWith('blob:')) {
-                            const fetchUrl = asset.dataSource.startsWith('/') ? asset.dataSource : `/${asset.dataSource}`;
-                            const response = await fetch(fetchUrl);
-                            if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText} for ${fetchUrl}`);
-                            const blob = await response.blob();
-                            zip.file(assetPathInZip, blob);
-                        } else if (asset.type === 'file' && asset.dataSource instanceof File) { // Handle direct files if they somehow end up in initial data
-                           zip.file(assetPathInZip, asset.dataSource);
-                        }
-                        // Blob URLs in OLD data (if any) would also be handled by the 'url' type check if fetched like other URLs
-                    });
-                    await Promise.all(oldServiceAssetPromises);
-                    console.log("[OneForm] Added old/json/services.json to ZIP using initial static data.");
-            } catch (serviceError) {
-                console.error("Error processing OLD services.json for ZIP:", serviceError);
-            }
-        }
-
-        // Process OLD all_blocks_showcase.json
-        if (!blockName && initialAllServiceBlocksData) {
-          console.log("Processing OLD all_blocks_showcase.json for ZIP:", initialAllServiceBlocksData);
-          let oldShowcaseAssets = [];
-          const cleanedOldShowcaseData = traverseAndModifyDataForZip(
-            initialAllServiceBlocksData,
-            oldShowcaseAssets,
-            'oldShowcaseDataRoot',
-            'user_uploads/old_showcase_data'
-          );
-          zip.file("old/json/all_blocks_showcase.json", JSON.stringify(cleanedOldShowcaseData, null, 2));
-          oldShowcaseAssets.forEach(asset => oldAssetPaths.add(asset.pathInZip)); // Add relative path to set
-          const oldShowcaseAssetPromises = oldShowcaseAssets.map(async (asset) => {
-            const assetPathInZip = `old/${asset.pathInZip}`;
-            try {
-                if (asset.type === 'url' && typeof asset.dataSource === 'string') {
-                  if (!asset.dataSource.startsWith('http:') && !asset.dataSource.startsWith('https:') && !asset.dataSource.startsWith('data:') && !asset.dataSource.startsWith('blob:')) {
-                    const fetchUrl = asset.dataSource.startsWith('/') ? asset.dataSource : `/${asset.dataSource}`;
-                    const response = await fetch(fetchUrl);
-                    if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText} for ${fetchUrl}`);
-                    const blob = await response.blob();
-                    zip.file(assetPathInZip, blob);
-                  }
-                } else if (asset.type === 'file' && asset.dataSource instanceof File) {
-                  zip.file(assetPathInZip, asset.dataSource);
-                }
-              } catch (assetError) {
-                console.error(`Error processing OLD all_blocks_showcase.json asset ${assetPathInZip}:`, assetError);
-              }
-          });
-          await Promise.all(oldShowcaseAssetPromises);
-          console.log("[OneForm] Added old/json/all_blocks_showcase.json to ZIP.");
-        }
-
-        console.log("[OneForm] Paths of assets included in OLD export:", Array.from(oldAssetPaths));
-
-        // Add old colors_output.json
-        if (initialThemeColors) {
-            const colorsForOldJson = {};
-            Object.keys(initialThemeColors).forEach(key => {
-              colorsForOldJson[key.replace(/-/g, '_')] = initialThemeColors[key];
-            });
-            zip.file("old/json/colors_output.json", JSON.stringify(colorsForOldJson, null, 2));
-            console.log("[OneForm] Added old/json/colors_output.json to ZIP with snake_case keys.");
-        }
-      }
-
-      // --- Process "NEW" (current formData) data ---
-      const newPathPrefix = initialFormDataForOldExport ? "new/" : ""; 
-      console.log("Processing NEW data for ZIP:", formData);
-      let newCollectedAssets = [];
-
-      // Ensure we're using the correct data structure for authenticated users
-      const dataToProcess = formData.combined_data || formData;
-
-      const cleanedNewCombinedData = traverseAndModifyDataForZip(
-        dataToProcess,
-        newCollectedAssets,
-        newPathPrefix ? 'newFormDataRoot' : 'formDataRoot',
-        newPathPrefix ? 'user_uploads/new_combined_data' : 'user_uploads/combined_data'
-      );
-      zip.file(`${newPathPrefix}json/combined_data.json`, JSON.stringify(cleanedNewCombinedData, null, 2));
-      console.log("Cleaned NEW combined_data for ZIP:", cleanedNewCombinedData);
-
-      if (!blockName) {
-        const currentServicesData = getServicesData();
-        if (currentServicesData) {
-        try {
-            const serviceAssetsForNew = []; 
-            const cleanedServicesDataNew = traverseAndModifyDataForZip(
-              currentServicesData,
-                serviceAssetsForNew,
-                newPathPrefix ? 'newServicesDataRoot' : 'servicesDataRoot',
-                newPathPrefix ? 'user_uploads/new_services_data' : 'user_uploads/services_data'
-            );
-            zip.file(`${newPathPrefix}json/services.json`, JSON.stringify(cleanedServicesDataNew, null, 2));
-            newCollectedAssets.push(...serviceAssetsForNew);
-            console.log(`[OneForm] Added ${newPathPrefix}json/services.json to ZIP using live data from ServiceEditPage.`);
-        } catch (serviceError) {
-            console.error(`Error processing ${newPathPrefix}services.json from ServiceEditPage for ZIP:`, serviceError);
-          }
-        }
-      }
-      
-      // De-duplicate and prioritize File objects for NEW assets
-      const finalNewAssetsMap = new Map();
-      console.log("[OneForm] Initial newCollectedAssets count:", newCollectedAssets.length);
-      
-      // Process NEW about_page.json (if available)
-      if (aboutPageJsonData && !blockName) {
-        console.log("Processing NEW about_page.json for ZIP:", aboutPageJsonData);
-        let newAboutAssets = [];
-        const cleanedNewAboutData = traverseAndModifyDataForZip(
-          aboutPageJsonData,
-          newAboutAssets,
-          newPathPrefix ? 'newAboutPageDataRoot' : 'aboutPageDataRoot',
-          newPathPrefix ? 'user_uploads/new_about_page_data' : 'user_uploads/about_page_data'
-        );
-        zip.file(`${newPathPrefix}json/about_page.json`, JSON.stringify(cleanedNewAboutData, null, 2));
-        newCollectedAssets.push(...newAboutAssets); // Add about page assets to the main new list
-        console.log(`[OneForm] Added ${newPathPrefix}json/about_page.json to ZIP.`);
-      }
-
-      // Process "NEW" all_blocks_showcase.json (if allServiceBlocksData exists)
-      if (allServiceBlocksData && !blockName) {
-        console.log("Processing NEW all_blocks_showcase.json for ZIP:", allServiceBlocksData);
-        let newShowcaseAssets = [];
-        const cleanedNewShowcaseData = traverseAndModifyDataForZip(
-          allServiceBlocksData,
-          newShowcaseAssets,
-          newPathPrefix ? 'newShowcaseDataRoot' : 'showcaseDataRoot',
-          newPathPrefix ? 'user_uploads/new_showcase_data' : 'user_uploads/showcase_data'
-        );
-        zip.file(`${newPathPrefix}json/all_blocks_showcase.json`, JSON.stringify(cleanedNewShowcaseData, null, 2));
-        newCollectedAssets.push(...newShowcaseAssets); // Add showcase assets to the main new list
-        console.log(`[OneForm] Added ${newPathPrefix}json/all_blocks_showcase.json to ZIP.`);
-      }
-
-      newCollectedAssets.forEach(asset => {
-        const assetPathInZip = asset.pathInZip; 
-        
-        const existingAsset = finalNewAssetsMap.get(assetPathInZip);
-        if (existingAsset) {
-          if (existingAsset.type === 'url' && asset.type === 'file') {
-            // console.log(`[OneForm] Prioritizing FILE over URL for path: ${assetPathInZip}`);
-            finalNewAssetsMap.set(assetPathInZip, asset);
-          } else if (existingAsset.type === 'file' && asset.type === 'url') {
-            // console.log(`[OneForm] Keeping existing FILE, ignoring URL for path: ${assetPathInZip}`);
-          } else {
-            finalNewAssetsMap.set(assetPathInZip, asset);
-          }
-        } else {
-          finalNewAssetsMap.set(assetPathInZip, asset);
-        }
-      });
-
-      const prioritizedNewAssets = Array.from(finalNewAssetsMap.values());
-      console.log("[OneForm] Prioritized new assets count:", prioritizedNewAssets.length);
-      // prioritizedNewAssets.forEach(a => console.log(`  Prioritized asset: path=${a.pathInZip}, type=${a.type}, src=${typeof a.dataSource === 'object' ? a.dataSource.name : a.dataSource}`));
-
-      // Filter for truly new or changed assets to include in the new/assets folder
-      const assetsForNewFolder = prioritizedNewAssets.filter(asset => {
-        console.log(`[OneForm] FILTERING for new/assets: path="${asset.pathInZip}", type="${asset.type}", dataSourceType="${typeof asset.dataSource}", isFileObj=${asset.dataSource instanceof File}`);
-        if (asset.type === 'file') {
-          console.log(`[OneForm] Including FILE in new/assets: ${asset.pathInZip} (name: ${asset.dataSource.name})`);
-          return true; // Always include new file uploads
-        }
-        // For type 'url', only include if it was NOT in the old assets OR if it's a blob (newly pasted image).
-        if (asset.type === 'url') {
-            if (!oldAssetPaths.has(asset.pathInZip) || asset.dataSource.startsWith('blob:')){
-                console.log(`[OneForm] Including URL in new/assets (not in old OR is blob): ${asset.pathInZip}`);
-                return true;
-            }
-            console.log(`[OneForm] SKIPPING URL in new/assets (already in old and not a blob): ${asset.pathInZip}`);
-            return false;
-        }
-        return false; // Should not happen if types are only 'file' or 'url'
-      });
-      console.log("[OneForm] Assets to be physically included in new/assets/ folder:", assetsForNewFolder.map(a => a.pathInZip));
-
-      // Filter out any assets that might have slipped through but should be excluded (for "NEW" assets) - this filtering is now part of assetsForNewFolder logic
-      // const filteredFinalNewAssets = finalNewAssets.filter(asset => { ... });
-      
-      // console.log(`Filtered out ${prioritizedNewAssets.length - assetsForNewFolder.length} assets for NEW physical inclusion`);
-      console.log("Final NEW assets for ZIP (physical files in new/assets):");
-      assetsForNewFolder.forEach(a => console.log(`  Path: ${newPathPrefix}${a.pathInZip}, Type: ${a.type}`));
-
-      // Add only the truly new/changed assets to the new/assets folder in the ZIP
-      const newAssetProcessingPromises = assetsForNewFolder.map(async (asset) => {
-        const assetPathInZip = `${newPathPrefix}${asset.pathInZip}`;
-        try {
-          if (asset.type === 'file' && asset.dataSource instanceof File) {
-            console.log(`[OneForm] ADDING File to NEW ZIP: path="${assetPathInZip}",fileName="${asset.dataSource.name}", fileSize=${asset.dataSource.size}`);
-            zip.file(assetPathInZip, asset.dataSource);
-          } else if (asset.type === 'url' && typeof asset.dataSource === 'string') {
-            if (!asset.dataSource.startsWith('http:') && !asset.dataSource.startsWith('https:') && !asset.dataSource.startsWith('data:') && !asset.dataSource.startsWith('blob:')) {
-              const fetchUrl = asset.dataSource.startsWith('/') ? asset.dataSource : `/${asset.dataSource}`;
-              console.log(`[OneForm] FETCHING local URL for NEW ZIP: path="${assetPathInZip}", from="${fetchUrl}"`);
-              const response = await fetch(fetchUrl);
-              if (!response.ok) {
-                console.error(`[OneForm] FAILED to fetch local URL "${fetchUrl}" for NEW ZIP. Status: ${response.status}`);
-                throw new Error(`HTTP ${response.status}: ${response.statusText} for ${fetchUrl}`);
-              }
-              const blob = await response.blob();
-              console.log(`[OneForm] ADDING fetched local URL content to NEW ZIP: path="${assetPathInZip}", size=${blob.size}`);
-              zip.file(assetPathInZip, blob);
-            } else if (asset.dataSource.startsWith('blob:')) {
-                console.log(`[OneForm] FETCHING blob URL for NEW ZIP: path="${assetPathInZip}", from="${asset.dataSource}"`);
-                const response = await fetch(asset.dataSource);
-                if (!response.ok) {
-                    console.error(`[OneForm] FAILED to fetch blob URL "${asset.dataSource}" for NEW ZIP. Status: ${response.status}`);
-                    throw new Error(`HTTP ${response.status}: Failed to fetch blob ${asset.dataSource}`);
-                }
-                const blobContent = await response.blob();
-                console.log(`[OneForm] ADDING fetched blob URL content to NEW ZIP: path="${assetPathInZip}", size=${blobContent.size}`);
-                zip.file(assetPathInZip, blobContent);
-            } else {
-              // External http/https URLs are not added to the ZIP here by default
-              console.log(`[OneForm] SKIPPING external URL for NEW ZIP: path="${assetPathInZip}", url="${asset.dataSource}"`);
-            }
-          }
-        } catch (assetError) {
-          console.error(`Error processing NEW asset ${assetPathInZip} for ZIP:`, assetError);
-        }
-      });
-      await Promise.all(newAssetProcessingPromises);
-
-      // Add new colors_output.json
-      if (themeColors) {
-        const colorsForNewJson = {};
-        Object.keys(themeColors).forEach(key => {
-          colorsForNewJson[key.replace(/-/g, '_')] = themeColors[key];
-        });
-        zip.file(`${newPathPrefix}json/colors_output.json`, JSON.stringify(colorsForNewJson, null, 2));
-        console.log(`[OneForm] Added ${newPathPrefix}json/colors_output.json to ZIP with snake_case keys.`);
-      }
-
-      const content = await zip.generateAsync({ type: "blob" });
-      const date = new Date();
-      const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-      const timeStr = `${String(date.getHours()).padStart(2, "0")}-${String(date.getMinutes()).padStart(2, "0")}`;
-      const zipFileName = blockName
-        ? `${blockName}_edit_${dateStr}_${timeStr}.zip`
-        : `website_content_${dateStr}_${timeStr}.zip`;
-      saveAs(content, zipFileName);
-      console.log("ZIP file generation complete:", zipFileName);
-
-    } catch (error) {
-      console.error("Error creating ZIP file:", error);
-      alert("Error creating ZIP file. See console for details.");
-    }
-  };
-
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-100 text-black flex items-center justify-center">
         <p>Loading data...</p>
@@ -1131,192 +983,187 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
     );
   }
   
-  if (!formData) { // Check if formData is null after loading attempt
+  if (!mainPageFormData) { 
     return (
-      <div className="min-h-screen bg-gray-100 text-black flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center">
         <p>Failed to load form data. Please check console for errors or try refreshing.</p>
       </div>
     );
   }
 
-  // If editing a specific block (e.g., /edit/hero), render MainPageForm in singleBlockMode
   if (blockName && title) {
-    console.log(`OneForm: Editing specific block: ${blockName}`, formData);
-    // Pass only the relevant part of formData for the specific block and the navbar config
-    const singleBlockData = formData[blockName] || {};
-    const navbarDataForSingleBlock = formData.navbar || { navLinks: [], logo: '', whiteLogo: '' };
+    console.log(`OneForm: Editing specific block: ${blockName}`, mainPageFormData);
+    const singleBlockData = mainPageFormData[blockName] || {};
+    const navbarDataForSingleBlock = mainPageFormData.navbar || { navLinks: [], logo: '', whiteLogo: '' };
 
     return (
       <div className="min-h-screen bg-gray-100 text-black">
         <div className="bg-gray-900 text-white p-3 shadow-md sticky top-0 z-50 flex justify-between items-center">
           <h1 className="text-xl font-medium">{title}</h1>
-          <button onClick={handleSubmit} type="button" className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-white text-sm">
+          <button onClick={() => handleSubmit(false)} type="button" className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-white text-sm">
             Download JSON for {blockName}
           </button>
         </div>
         <div className="p-4">
           <MainPageForm
             formData={{ [blockName]: singleBlockData, navbar: navbarDataForSingleBlock }}
-            setFormData={setFormData}
+            setFormData={setMainPageFormData}
             singleBlockMode={blockName}
-            themeColors={themeColors} // Pass themeColors
+            themeColors={themeColors}
+            sitePalette={sitePalette}
           />
         </div>
       </div>
     );
   }
 
-  // Render the full OneForm editor interface
-  console.log("Rendering OneForm full editor with data:", formData);
-  const oneFormNavbarConfig = formData.navbar || { navLinks: [], logo: '', whiteLogo: '' };
+  console.log("Rendering OneForm full editor with data:", mainPageFormData);
+  const oneFormNavbarConfig = mainPageFormData.navbar || { navLinks: [], logo: '', whiteLogo: '' };
 
-  // Tab Button data
   const tabs = [
-    { id: "mainPage", label: "Main Page Blocks" },
-    { id: "services", label: "Service Pages" },
-    { id: "about", label: "About Page Block" },
-    { id: "colors", label: "Theme Colors" },
-    { id: "allServiceBlocks", label: "All Service Blocks" }
+    { id: "mainPage", label: "Home" },
+    { id: "services", label: "Services" },
+    { id: "about", label: "About" },
+    { id: "colors", label: "Color Palette" },
+    { id: "allServiceBlocks", label: "dev" }
   ];
 
   return (
-    <div className="min-h-screen bg-gray-100 text-black flex flex-col">
-      {/* Top OneForm Navigation Bar - Always Sticky */}
-      <div className="bg-gray-900 text-white p-3 shadow-md sticky top-0 z-[60] flex justify-between items-center">
-        <h1 className="text-[5vh] font-serif">WebEdit</h1>
-        <button onClick={handleSubmit} type="button" className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-white text-sm">
-          Download ZIP
-        </button>
-      </div>
+    <div className="min-h-screen bg-sky-100 text-black flex flex-col"> 
       
-      {/* Tab Navigation and Content */}
-      <div className="flex-grow">
-          <div className="bg-gray-800 px-4 flex border-b border-gray-700 shadow-md">
-            {tabs.map(tabInfo => (
-              <TabButton 
-                key={tabInfo.id} 
-                id={tabInfo.id} 
-                label={tabInfo.label} 
-                isActive={activeTab === tabInfo.id} 
-              onClick={() => handleTabChange(tabInfo.id)} 
-              />
-            ))}
-          {!isCustomDomain && (
-            <OneFormAuthButton 
-              formData={formData}
-              themeColors={themeColors}
-              servicesData={servicesData}
-              aboutPageData={aboutPageJsonData}
-              showcaseData={allServiceBlocksData}
-              initialFormDataForOldExport={initialFormDataForOldExport}
-              initialServicesData={initialServicesData}
-              initialAboutPageJsonData={initialAboutPageJsonData}
-              initialAllServiceBlocksData={initialAllServiceBlocksData}
-              initialThemeColors={initialThemeColors}
-            />
-          )}
-        </div>
-
-        <div className="tab-content">
-          {activeTab === "mainPage" && (
-            <MainPageForm 
-                formData={formData} 
-              setFormData={handleMainPageFormChange}
-              themeColors={themeColors}
-            />
-          )}
-          {activeTab === "services" && 
-            <ServiceEditPage 
-              themeColors={themeColors}
-              servicesData={servicesData}
-              onServicesChange={handleServicesChange}
-            />
-          } 
-          {activeTab === "about" && (
-            <div className="container mx-auto px-4 py-6 bg-gray-100">
-              <div className="mb-4 bg-gray-800 text-white p-4 rounded">
-                <h1 className="text-2xl font-bold">About Page Content</h1>
-                <p className="text-gray-300 mt-1">Edit the about page block content</p>
+      <div className="flex flex-col"> 
+        <div className="flex-grow">
+            <div className="bg-slate-100 px-4 py-2 flex justify-between items-center shadow-md">
+              <div className="flex">
+                {tabs.map(tabInfo => (
+                  <TabButton 
+                    key={tabInfo.id} 
+                    id={tabInfo.id} 
+                    label={tabInfo.label} 
+                    isActive={activeTab === tabInfo.id} 
+                    onClick={() => handleTabChange(tabInfo.id)} 
+                  />
+                ))}
               </div>
-              <div className="relative border border-gray-300 bg-white overflow-hidden">
-                <AboutBlock
-                  readOnly={false}
-                  aboutData={aboutPageJsonData || {}}
-                  onConfigChange={handleAboutConfigChange}
-                />
-              </div>
-            </div>
-          )}
-          {activeTab === "colors" && (
-            <ColorEditor
-              initialColors={themeColors}
-              onColorChange={handleThemeColorChange}
-            />
-          )}
-          {activeTab === "allServiceBlocks" && (
-            <div className="p-4">
-              <h2 className="text-2xl font-semibold mb-4 text-gray-800">All Service Blocks Showcase</h2>
-              {loadingAllServiceBlocks && <p>Loading showcase blocks...</p>}
-              {(!loadingAllServiceBlocks && !allServiceBlocksData) && <p>Could not load showcase data. Check console.</p>}
-              {allServiceBlocksData && allServiceBlocksData.blocks && (
-                <div className="space-y-0">
-                  {allServiceBlocksData.blocks.map((block, index) => {
-                    const BlockComponent = serviceBlockMap[block.blockName];
-                    const isEditingThisBlock = activeEditShowcaseBlockIndex === index;
-                    if (!BlockComponent) {
-                      return <div key={index} className="p-2 my-1 bg-red-100 text-red-700 rounded">Unknown block: {block.blockName}</div>;
-                    }
-                    return (
-                      <div key={block.uniqueKey || `showcase-${index}`} className="relative border-t border-b border-gray-300 mb-0 bg-white overflow-hidden">
-                        <div className="absolute top-2 right-2 z-40">
-                          <button
-                            type="button"
-                            onClick={() => setActiveEditShowcaseBlockIndex(isEditingThisBlock ? null : index)}
-                            className={`${isEditingThisBlock ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-700 hover:bg-gray-600'} text-white rounded-full p-1.5 shadow-lg transition-colors`}
-                            title={isEditingThisBlock ? "Done Editing" : "Edit Block"}
-                          >
-                            {isEditingThisBlock ? (
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
-                            ) : (
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487a2.032 2.032 0 112.872 2.872L7.5 21.613H4v-3.5L16.862 4.487z"/></svg>
-                            )}
-                          </button>
-                        </div>
-                        <BlockComponent 
-                          config={block.config || {}} 
-                          readOnly={!isEditingThisBlock} 
-                          onConfigChange={(newFullConfig) => handleShowcaseBlockConfigUpdate(index, newFullConfig)}
-                          getDisplayUrl={getShowcaseDisplayUrl} 
-                          onFileChange={(fieldKeyOrPathData, file) => handleShowcaseFileChangeForBlock(index, fieldKeyOrPathData, file)}
-                          blockContext="allServiceBlocks"
-                          themeColors={themeColors}
-                        />
-                        {isEditingThisBlock && BlockComponent.EditorPanel && (
-                          <div className="border-t border-gray-200 bg-gray-100 p-4">
-                            <h3 className="text-md font-semibold text-gray-700 mb-3">{block.blockName} - Edit Panel</h3>
-                            <BlockComponent.EditorPanel
-                              currentConfig={block.config || {}}
-                              onPanelConfigChange={(updatedFields) => {
-                                const currentBlockConfig = allServiceBlocksData.blocks[index].config || {};
-                                const newConfig = { ...currentBlockConfig, ...updatedFields };
-                                handleShowcaseBlockConfigUpdate(index, newConfig);
-                              }}
-                              onPanelFileChange={(fieldKeyOrPathData, file) => {
-                                handleShowcaseFileChangeForBlock(index, fieldKeyOrPathData, file);
-                              }}
-                              getDisplayUrl={getShowcaseDisplayUrl}
-                              blockContext="allServiceBlocks"
-                              themeColors={themeColors}
-                            />
+              <div className="flex items-center gap-4">
+                 {!isCustomDomain && (
+                    <OneFormAuthButton 
+                        formData={mainPageFormData}
+                        themeColors={themeColors}
+                        servicesData={servicesDataForOldExport}
+                        aboutPageData={aboutPageJsonData}
+                        showcaseData={allServiceBlocksData}
+                        initialFormDataForOldExport={initialFormDataForOldExport}
+                        initialServicesData={initialServicesData}
+                        initialAboutPageJsonData={initialAboutPageJsonData}
+                        initialAllServiceBlocksData={initialAllServiceBlocksData}
+                        initialThemeColors={themeColors} 
+                    />
+                 )}
+                {!blockName && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <button
+                      onClick={() => setAutoDownloadEnabled(!autoDownloadEnabled)}
+                      className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                        autoDownloadEnabled 
+                          ? 'bg-green-600 hover:bg-green-700 text-white' 
+                          : 'bg-gray-600 hover:bg-gray-500 text-gray-200'
+                      }`}
+                    >
+                      Auto-Save: {autoDownloadEnabled ? 'ON' : 'OFF'}
+                    </button>
+                    
+                    {autoDownloadEnabled && (
+                      <div className="flex items-center gap-1">
+                        {downloadInProgress && (
+                          <div className="flex items-center gap-1 text-blue-400">
+                            <div className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                            <span className="text-xs">Saving...</span>
+                          </div>
+                        )}
+                        {pendingChanges && !downloadInProgress && (
+                          <div className="flex items-center gap-1 text-yellow-400">
+                            <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+                            <span className="text-xs">Changes pending</span>
+                          </div>
+                        )}
+                        {!pendingChanges && !downloadInProgress && (
+                          <div className="flex items-center gap-1 text-green-400">
+                            <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                            <span className="text-xs">Saved</span>
                           </div>
                         )}
                       </div>
-                    );
-                  })}
+                    )}
+                  </div>
+                )}
+                
+                <button 
+                  onClick={() => handleSubmit(false)} 
+                  type="button" 
+                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-white text-sm"
+                  disabled={downloadInProgress}
+                >
+                  {downloadInProgress ? 'Creating ZIP...' : 'Download ZIP'}
+                </button>
+              </div>
+            </div>
+
+            <div className="tab-content">
+              {activeTab === "mainPage" && (
+                <MainPageForm 
+                  formData={mainPageFormData} 
+                  setFormData={handleMainPageFormChange}
+                  themeColors={themeColors}
+                  sitePalette={sitePalette}
+                />
+              )}
+              {activeTab === "services" && (
+                <ServiceEditPage 
+                  themeColors={themeColors}
+                  sitePalette={sitePalette}
+                  servicesData={managedServicesData}
+                  onServicesChange={handleManagedServicesChange}
+                />
+              )} 
+              {activeTab === "about" && aboutPageJsonData && (
+                <div className="container mx-auto px-4 py-6 bg-gray-100">
+                  <div className="mb-4 bg-gray-800 text-white p-4 rounded">
+                    <h1 className="text-2xl font-bold">About Page Content</h1>
+                    <p className="text-gray-300 mt-1">Edit the about page block content</p>
+                  </div>
+                  <div className="relative border border-gray-300 bg-white overflow-hidden">
+                    <AboutBlock
+                      readOnly={false}
+                      aboutData={aboutPageJsonData}
+                      onConfigChange={handleAboutConfigChange}
+                      themeColors={themeColors}
+                      sitePalette={sitePalette}
+                    />
+                  </div>
                 </div>
               )}
+              {activeTab === "colors" && (
+                <ColorEditor
+                  initialColors={themeColors}
+                  onColorChange={handleThemeColorChange}
+                />
+              )}
+              {activeTab === "allServiceBlocks" && (
+                <AllServiceBlocksTab
+                  allServiceBlocksData={allServiceBlocksData}
+                  loadingAllServiceBlocks={loadingAllServiceBlocks}
+                  activeEditShowcaseBlockIndex={activeEditShowcaseBlockIndex}
+                  setActiveEditShowcaseBlockIndex={setActiveEditShowcaseBlockIndex}
+                  serviceBlockMap={serviceBlockMap}
+                  handleShowcaseBlockConfigUpdate={handleShowcaseBlockConfigUpdate}
+                  getShowcaseDisplayUrl={getShowcaseDisplayUrl}
+                  handleShowcaseFileChangeForBlock={handleShowcaseFileChangeForBlock}
+                  themeColors={themeColors}
+                  sitePalette={sitePalette}
+                />
+              )}
             </div>
-          )}
         </div>
       </div>
     </div>

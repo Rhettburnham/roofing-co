@@ -147,7 +147,22 @@ const NavbarWrapper = ({ navbarConfig }) => {
   // Don't render navbar on edit routes
   if (isEditRoute) return null;
   
-  return <Navbar config={navbarConfig} />;
+  // Extract the new configuration options from navbarConfig
+  const navbarProps = {
+    config: navbarConfig,
+    // Animation settings
+    naturalOffsetVh: navbarConfig?.animation?.naturalOffsetVh,
+    slideUpDistanceVh: navbarConfig?.animation?.slideUpDistanceVh,
+    logoSizeUnscrolled: navbarConfig?.animation?.logoSizeUnscrolled,
+    logoSizeScrolled: navbarConfig?.animation?.logoSizeScrolled,
+    // Text and layout settings
+    textSizes: navbarConfig?.textSizes,
+    logoTextDistance: navbarConfig?.logoTextDistance,
+    navbarHeight: navbarConfig?.navbarHeight,
+    invertLogoColor: navbarConfig?.invertLogoColor,
+  };
+  
+  return <Navbar {...navbarProps} />;
 };
 
 NavbarWrapper.propTypes = {

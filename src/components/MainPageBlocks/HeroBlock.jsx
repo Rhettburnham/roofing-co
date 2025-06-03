@@ -8,6 +8,9 @@ import * as FaIcons from "react-icons/fa";
 import IconSelectorModal from "../common/IconSelectorModal";
 import { slugify } from "../../utils/slugify"; // Import slugify
 import ThemeColorPicker from "../common/ThemeColorPicker"; // Import common ThemeColorPicker
+import PropTypes from "prop-types";
+import PanelStylingController from "../common/PanelStylingController";
+import PanelImagesController from "../common/PanelImagesController";
 
 const iconPacks = {
   lucide: LucideIcons,
@@ -30,8 +33,23 @@ const renderDynamicIcon = (packName, iconName, defaultIconComponent, props = { c
 // Helper to get display path for image previews
 const getDisplayPath = (pathOrFile) => {
   if (!pathOrFile) return '';
-  if (typeof pathOrFile === 'string') return pathOrFile; // URL or path
-  if (pathOrFile instanceof File) return URL.createObjectURL(pathOrFile); // File object
+  
+  // Handle object structure: { url: '...', file: File, name: '...', originalUrl: '...' }
+  if (typeof pathOrFile === 'object') {
+    if (pathOrFile.url) {
+      return pathOrFile.url; // This could be a blob URL or regular URL
+    }
+    if (pathOrFile instanceof File) {
+      return URL.createObjectURL(pathOrFile); // Convert File to blob URL
+    }
+    return '';
+  }
+  
+  // Handle string structure (direct URL path)
+  if (typeof pathOrFile === 'string') {
+    return pathOrFile; // URL or path string
+  }
+  
   return '';
 };
 
@@ -51,13 +69,49 @@ function HeroPreview({ heroconfig }) {
     return <p>No data found for HeroPreview.</p>;
   }
 
+  console.log("[HeroPreview] Received heroconfig:", {
+    hasImages: heroconfig.images?.length > 0,
+    imagesArray: heroconfig.images,
+    heroImage: heroconfig.heroImage,
+    readOnly: heroconfig.readOnly
+  });
+
   const bannerStyles = {
     "--banner-color": heroconfig.bannerColor || "#1e293b",
     "--top-banner-color": heroconfig.topBannerColor || "#FFFFFF",
   };
 
+  // Destructure styling from heroconfig, providing defaults
+  const { 
+    styling: { desktopHeightVH = 30, mobileHeightVW = 75 } = {},
+    readOnly: isPreviewReadOnly,
+  } = heroconfig;
+
   const [residentialServices, setResidentialServices] = useState([]);
   const [commercialServices, setCommercialServices] = useState([]);
+
+  // Get heroImage from the new images array structure if present, otherwise use direct heroImage
+  const heroImageToDisplay = (() => {
+    // First priority: images array (new structure for PanelImagesController)
+    if (heroconfig.images && heroconfig.images.length > 0) {
+      const imageObj = heroconfig.images[0];
+      // Use blob URL if file was uploaded, otherwise use the original URL
+      return imageObj.url || null;
+    }
+    
+    // Second priority: direct heroImage property (legacy or direct assignment)
+    if (heroconfig.heroImage) {
+      if (typeof heroconfig.heroImage === 'object' && heroconfig.heroImage.url) {
+        return heroconfig.heroImage.url;
+      }
+      if (typeof heroconfig.heroImage === 'string') {
+        return heroconfig.heroImage;
+      }
+    }
+    
+    // Fallback to default
+    return "/assets/images/hero/hero_split_background.jpg";
+  })();
 
   const {
     residential = { subServices: [], icon: 'Home', iconPack: 'lucide' },
@@ -90,7 +144,7 @@ function HeroPreview({ heroconfig }) {
   const [activeSection, setActiveSection] = useState("neutral");
 
   // Props for inline editing, only relevant if HeroBlock's readOnly is false
-  const { onServiceNameChange, onRemoveService, readOnly: isPreviewReadOnly, onEditServiceIcon } = heroconfig;
+  const { onServiceNameChange, onRemoveService, onEditServiceIcon, onAddService } = heroconfig;
 
   const iconWrapperBaseClass = "text-gray-50 w-[6.5vw] h-[6.5vw] md:w-[60px] md:h-[60px] flex items-center justify-center drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,0.7)]";
   const serviceSectionTextBaseClass = "text-lg md:text-xl font-semibold text-gray-50 drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)] ml-2 md:ml-3";
@@ -152,7 +206,7 @@ function HeroPreview({ heroconfig }) {
 
     return (
       <div
-        className="w-1/2 h-full flex flex-col items-center justify-start pt-2 md:pt-4 cursor-pointer"
+        className="w-1/2 h-full flex flex-col items-center justify-center cursor-pointer"
         onClick={handleSectionAreaClick}
       >
         {/* Icon and Main Label (Horizontal when neutral, Icon slides left and sub-services appear right when active) */}
@@ -277,17 +331,23 @@ function HeroPreview({ heroconfig }) {
           zIndex: 1 
         }}
       />
-      <div className="relative w-full h-[50vw] md:h-[30vh] overflow-hidden">
-        {heroImage && (
+      <div 
+        className="relative w-full overflow-hidden" 
+        style={{ 
+          height: window.innerWidth < 768 ? `${mobileHeightVW}vw` : `${desktopHeightVH}vh`
+        }}
+      >
+        {heroImageToDisplay && (
           <motion.div
             className="absolute inset-0 h-full"
             style={{
               width: "130vw",
               left: "-15vw",
-              backgroundImage: `url('${getDisplayPath(heroImage)}')`,
+              backgroundImage: `url('${heroImageToDisplay}')`,
               backgroundRepeat: "no-repeat",
               backgroundPosition: "center center",
               backgroundSize: "cover",
+              filter: "brightness(0.85) contrast(1.1)", // Enhanced visual appeal
             }}
             initial={{ x: "0%", scale: 1, transformOrigin: "center center" }}
             animate={{
@@ -298,7 +358,12 @@ function HeroPreview({ heroconfig }) {
             transition={{ duration: 0.6, ease: "easeInOut" }}
           />
         )}
-        <div className="relative w-full h-full flex pt-[6vh] md:pt-[8vh] z-10"> {/* Adjusted top padding slightly */}
+        {/* Add overlay for better text readability */}
+        <div 
+          className="absolute inset-0 bg-black bg-opacity-20"
+          style={{ zIndex: 2 }}
+        />
+        <div className="relative w-full h-full flex z-10"> {/* Removed fixed padding, now using justify-center in service sections */}
           {/* Residential Section */}
           {renderServiceSection('residential', residentialServices, residential)}
           {/* Commercial Section */}
@@ -316,6 +381,45 @@ function HeroPreview({ heroconfig }) {
     </section>
   );
 }
+
+HeroPreview.propTypes = {
+  heroconfig: PropTypes.object.isRequired,
+  onHeightChange: PropTypes.func,
+};
+
+const HeroColorControls = ({ currentData, onControlsChange, themeColors }) => {
+  const handleBannerColorChange = (color) => {
+    onControlsChange({ bannerColor: color });
+  };
+  const handleTopBannerColorChange = (color) => {
+    onControlsChange({ topBannerColor: color });
+  };
+  return (
+    <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <ThemeColorPicker
+          label="Top Banner Gradient:"
+          currentColorValue={currentData.topBannerColor || "#FFFFFF"}
+          themeColors={themeColors}
+          onColorChange={(fieldName, value) => handleTopBannerColorChange(value)}
+          fieldName="topBannerColor" className="mt-0" />
+      </div>
+      <div>
+        <ThemeColorPicker
+          label="Bottom Banner Gradient:"
+          currentColorValue={currentData.bannerColor || "#1e293b"}
+          themeColors={themeColors}
+          onColorChange={(fieldName, value) => handleBannerColorChange(value)}
+          fieldName="bannerColor" className="mt-0" />
+      </div>
+    </div>
+  );
+};
+HeroColorControls.propTypes = {
+    currentData: PropTypes.object.isRequired,
+    onControlsChange: PropTypes.func.isRequired,
+    themeColors: PropTypes.array.isRequired,
+};
 
 /* 
 ====================================================
@@ -406,34 +510,179 @@ function HeroControlsPanel({ currentData, onControlsChange, themeColors }) {
 ====================================================
 */
 export default function HeroBlock({
-  heroconfig, 
+  heroconfig: heroconfigProp = { 
+    residential: { subServices: [], icon: 'Home', iconPack: 'lucide' },
+    commercial: { subServices: [], icon: 'Building2', iconPack: 'lucide' },
+    heroImage: "/assets/images/hero/hero_split_background.jpg", 
+    bannerColor: "#1e293b",
+    topBannerColor: "#FFFFFF",
+    styling: { desktopHeightVH: 30, mobileHeightVW: 75 },
+  },
   readOnly = false,
-  onConfigChange,
-  themeColors, // Accept themeColors
+  onConfigChange = () => {},
+  themeColors = [],
 }) {
-  const [localData, setLocalData] = useState(() => {
-    const initialConfig = heroconfig || {}; 
-    let initialHeroImagePath = initialConfig.heroImage || "/assets/images/hero/hero_split_background.jpg";
-    let initialHeroImageFile = initialConfig.heroImageFile || null;
-
-    if (initialConfig.heroImage instanceof File) {
-        initialHeroImageFile = initialConfig.heroImage;
-        initialHeroImagePath = URL.createObjectURL(initialConfig.heroImage); 
-    }
+  // Define prepareDataForOnConfigChange within HeroBlock
+  const prepareDataForOnConfigChange = (currentData) => {
+    const dataToSave = { ...currentData };
     
-    const originalPathFromProps = (typeof initialConfig.heroImage === 'string' && !initialConfig.heroImage.startsWith('blob:'))
-        ? initialConfig.heroImage
-        : (initialConfig._heroImageOriginalPathFromProps || null); 
+    // Handle images array (new structure) - preserve original names for ZIP processing
+    if (dataToSave.images && dataToSave.images.length > 0) {
+      const heroImageFromArray = dataToSave.images[0];
+      
+      // Ensure we use original file names when available, with proper heroblock naming
+      let fileName = heroImageFromArray.name;
+      if (heroImageFromArray.file instanceof File) {
+        fileName = heroImageFromArray.file.name;
+      } else if (heroImageFromArray.originalUrl && !heroImageFromArray.originalUrl.startsWith('blob:')) {
+        fileName = heroImageFromArray.originalUrl.split('/').pop();
+      }
+      
+      // Default to hero_split_background.jpg if no name is available
+      if (!fileName || fileName === 'Hero Image') {
+        fileName = 'hero_split_background.jpg';
+      }
+      
+      // Keep the full image object structure for proper asset handling
+      dataToSave.heroImage = {
+        url: heroImageFromArray.url,
+        file: heroImageFromArray.file,
+        originalUrl: heroImageFromArray.originalUrl,
+        name: fileName,
+        id: heroImageFromArray.id
+      };
+      
+      // Update the images array with correct name
+      dataToSave.images = dataToSave.images.map(img => ({
+        id: img.id,
+        url: img.url,
+        file: img.file,
+        name: img.file instanceof File ? img.file.name : (img.originalUrl && !img.originalUrl.startsWith('blob:') ? img.originalUrl.split('/').pop() : img.name || 'hero_split_background.jpg'),
+        originalUrl: img.originalUrl
+      }));
+    } else {
+      // Fallback to default if no images
+      dataToSave.heroImage = { url: '', file: null, originalUrl: '', name: 'hero_split_background.jpg', id: null };
+      dataToSave.images = [];
+    }
+
+    // Handle legacy heroImageFile for backwards compatibility
+    if (dataToSave.heroImageFile instanceof File) {
+      if (!dataToSave.images || dataToSave.images.length === 0) {
+        dataToSave.images = [{
+          id: `heroimg_legacy_${Date.now()}`,
+          url: dataToSave.heroImage || URL.createObjectURL(dataToSave.heroImageFile),
+          file: dataToSave.heroImageFile,
+          name: dataToSave.heroImageFile.name, // Use actual file name
+          originalUrl: dataToSave.originalUrl || dataToSave._heroImageOriginalPathFromProps || null
+        }];
+      }
+      dataToSave.heroImage = {
+        url: dataToSave.heroImage || URL.createObjectURL(dataToSave.heroImageFile),
+        file: dataToSave.heroImageFile,
+        originalUrl: dataToSave.originalUrl || dataToSave._heroImageOriginalPathFromProps || null,
+        name: dataToSave.heroImageFile.name, // Use actual file name
+        id: dataToSave.images[0]?.id || `heroimg_legacy_${Date.now()}`
+      };
+    }
+
+    const transformSubServices = (subServicesArray) => (subServicesArray || []).map(s => ({
+        title: s.label || s.title, // Prefer label if it exists (from editable input)
+        originalTitle: s.originalTitle || s.label || s.title, 
+        id: s.id,
+    }));
+    dataToSave.residential = { ...(currentData.residential || {}), subServices: transformSubServices(currentData.residential?.subServices) };
+    dataToSave.commercial = { ...(currentData.commercial || {}), subServices: transformSubServices(currentData.commercial?.subServices) };
+    
+    return dataToSave;
+  };
+
+  const [localData, setLocalData] = useState(() => {
+    const initialConfig = { ...heroconfigProp }; // Clone to avoid mutating prop
+    const initialStyling = initialConfig.styling || {};
+    console.log("[HeroBlock] Initializing localData. heroconfigProp.styling:", heroconfigProp.styling, "InitialStyling:", initialStyling);
+
+    // Image initialization logic - prioritize existing images array, then heroImage prop
+    let initialImages = [];
+    const defaultHeroImagePath = "/assets/images/hero/hero_split_background.jpg";
+
+    // Check if images array already exists and is valid
+    if (initialConfig.images && Array.isArray(initialConfig.images) && initialConfig.images.length > 0) {
+      console.log("[HeroBlock] Using existing images array from prop");
+      initialImages = initialConfig.images.map((img, index) => ({
+        id: img.id || `heroimg_existing_${index}_${Date.now()}`,
+        url: img.url || defaultHeroImagePath,
+        file: img.file instanceof File ? img.file : null,
+        name: img.name || img.url?.split('/').pop() || 'hero_split_background.jpg',
+        originalUrl: img.originalUrl || (typeof img.url === 'string' && !img.url.startsWith('blob:') ? img.url : defaultHeroImagePath)
+      }));
+    } else {
+      // Initialize from heroImage prop or create default - this handles combined_data.json structure
+      let urlToUse = null;
+      let fileToUse = null;
+      let originalUrlToUse = null;
+      let nameToUse = 'hero_split_background.jpg';
+      let idToUse = `heroimg_init_${Date.now()}`;
+
+      const propImage = initialConfig.heroImage;
+      if (propImage) {
+        if (typeof propImage === 'object' && propImage.url !== undefined) {
+          // Object structure: { url: '...', file: File, name: '...', originalUrl: '...' }
+          urlToUse = propImage.url || defaultHeroImagePath;
+          fileToUse = (propImage.file instanceof File) ? propImage.file : null;
+          originalUrlToUse = propImage.originalUrl || (typeof propImage.url === 'string' && !propImage.url.startsWith('blob:') ? propImage.url : defaultHeroImagePath);
+          nameToUse = propImage.name || (fileToUse?.name) || (typeof urlToUse === 'string' ? urlToUse.split('/').pop() : 'hero_split_background.jpg') || 'hero_split_background.jpg';
+          idToUse = propImage.id || idToUse;
+        } else if (typeof propImage === 'string' && propImage.trim() !== '') {
+          // String structure from combined_data.json: "heroImage": "/assets/images/hero/hero_bg.png"
+          urlToUse = propImage;
+          originalUrlToUse = propImage;
+          nameToUse = propImage.split('/').pop() || 'hero_split_background.jpg';
+          console.log("[HeroBlock] Initialized from JSON string heroImage:", propImage);
+        } else if (propImage instanceof File) {
+          // Direct File object
+          fileToUse = propImage;
+          urlToUse = URL.createObjectURL(propImage);
+          originalUrlToUse = initialConfig._heroImageOriginalPathFromProps || null; 
+          nameToUse = fileToUse.name;
+        }
+      }
+      
+      // Only create images array if we have valid image data
+      if (urlToUse || fileToUse) {
+        initialImages = [{
+          id: idToUse,
+          url: urlToUse,
+          file: fileToUse,
+          name: nameToUse,
+          originalUrl: originalUrlToUse,
+        }];
+        console.log("[HeroBlock] Initialized images array from heroImage prop:", initialImages);
+      } else {
+        // Create default image object for preview
+        initialImages = [{
+          id: `heroimg_default_${Date.now()}`,
+          url: defaultHeroImagePath,
+          file: null,
+          name: 'hero_split_background.jpg',
+          originalUrl: defaultHeroImagePath,
+        }];
+        console.log("[HeroBlock] No image data found, initializing with default image object");
+      }
+    }
 
     // Ensure subServices always have originalTitle for consistent slug generation
     const ensureOriginalTitle = (subServices) => {
       return (subServices || []).map(s => ({
         ...s,
-        originalTitle: s.originalTitle || s.title // Fallback if originalTitle is missing
+        id: s.id || slugify(s.originalTitle || s.title),
+        originalTitle: s.originalTitle || s.title
       }));
     };
 
     return {
+      ...initialConfig,
+      images: initialImages, 
       residential: {
         ...(initialConfig.residential || {}),
         subServices: ensureOriginalTitle(initialConfig.residential?.subServices),
@@ -446,239 +695,351 @@ export default function HeroBlock({
         icon: initialConfig.commercial?.icon || 'Building2',
         iconPack: initialConfig.commercial?.iconPack || 'lucide',
       },
-      heroImage: initialHeroImagePath, 
-      heroImageFile: initialHeroImageFile, 
-      _heroImageOriginalPathFromProps: originalPathFromProps,
       bannerColor: initialConfig.bannerColor || "#1e293b",
       topBannerColor: initialConfig.topBannerColor || "#FFFFFF",
+      styling: {
+        desktopHeightVH: initialStyling.desktopHeightVH !== undefined ? Number(initialStyling.desktopHeightVH) : 30,
+        mobileHeightVW: initialStyling.mobileHeightVW !== undefined ? Number(initialStyling.mobileHeightVW) : 75,
+      },
     };
   });
 
-  // State for IconSelectorModal, now managed by HeroBlock
   const [isIconModalOpen, setIsIconModalOpen] = useState(false);
-  const [editingIconServiceType, setEditingIconServiceType] = useState(null); // 'residential' or 'commercial'
+  const [editingIconServiceType, setEditingIconServiceType] = useState(null);
 
   useEffect(() => {
-    if (heroconfig) {
+    if (heroconfigProp) {
+      console.log("[HeroBlock] useEffect for heroconfigProp sync. Incoming heroconfigProp.styling:", heroconfigProp.styling);
       setLocalData(prevLocalData => {
-        let newHeroImagePathForState = prevLocalData.heroImage;
-        let newHeroImageFileForState = prevLocalData.heroImageFile;
-        let newOriginalPathFromProps = prevLocalData._heroImageOriginalPathFromProps;
+        console.log("[HeroBlock] Inside setLocalData for prop sync. Prev prevLocalData.styling:", prevLocalData.styling);
+        
+        // Image update logic from prop - prioritize images array, then heroImage
+        let newImagesState = [...(prevLocalData.images || [])];
+        const defaultHeroImagePathLocal = "/assets/images/hero/hero_split_background.jpg";
 
-        if (heroconfig.heroImageFile instanceof File) { 
-            if (typeof prevLocalData.heroImage === 'string' && prevLocalData.heroImage.startsWith('blob:')) {
-                URL.revokeObjectURL(prevLocalData.heroImage); 
+        // Check if incoming prop has images array
+        if (heroconfigProp.images && Array.isArray(heroconfigProp.images) && heroconfigProp.images.length > 0) {
+          console.log("[HeroBlock] Syncing from prop images array");
+          // Clean up existing blob URLs if they're different
+          const currentLocalImages = prevLocalData.images || [];
+          currentLocalImages.forEach(localImg => {
+            if (localImg.url && localImg.url.startsWith('blob:')) {
+              const foundIncoming = heroconfigProp.images.find(propImg => propImg.url === localImg.url);
+              if (!foundIncoming) {
+                URL.revokeObjectURL(localImg.url);
+              }
             }
-            newHeroImagePathForState = URL.createObjectURL(heroconfig.heroImageFile);
-            newHeroImageFileForState = heroconfig.heroImageFile;
-            newOriginalPathFromProps = heroconfig.originalUrl || prevLocalData._heroImageOriginalPathFromProps; 
-        } else if (typeof heroconfig.heroImage === 'string') { 
-            if (heroconfig.heroImage.startsWith('blob:')) {
-                if (typeof prevLocalData.heroImage === 'string' && prevLocalData.heroImage.startsWith('blob:') && prevLocalData.heroImage !== heroconfig.heroImage) {
-                    URL.revokeObjectURL(prevLocalData.heroImage);
-                }
-                newHeroImagePathForState = heroconfig.heroImage;
-                newHeroImageFileForState = prevLocalData.heroImageFile; 
-                 if (heroconfig.heroImageFile) newHeroImageFileForState = heroconfig.heroImageFile;
+          });
 
-            } else { 
-                if (typeof prevLocalData.heroImage === 'string' && prevLocalData.heroImage.startsWith('blob:')) {
-                    URL.revokeObjectURL(prevLocalData.heroImage); 
-                }
-                newHeroImagePathForState = heroconfig.heroImage;
-                newHeroImageFileForState = null; 
-                newOriginalPathFromProps = heroconfig.heroImage; 
+          newImagesState = heroconfigProp.images.map((propImg, index) => ({
+            id: propImg.id || `heroimg_sync_${index}_${Date.now()}`,
+            url: propImg.url || defaultHeroImagePathLocal,
+            file: propImg.file instanceof File ? propImg.file : null,
+            name: propImg.name || propImg.url?.split('/').pop() || 'hero_split_background.jpg',
+            originalUrl: propImg.originalUrl || (typeof propImg.url === 'string' && !propImg.url.startsWith('blob:') ? propImg.url : defaultHeroImagePathLocal)
+          }));
+        } else {
+          // Fallback to heroImage prop handling
+          let newUrlSync = null;
+          let newFileSync = null;
+          let newOriginalUrlSync = null;
+          let newNameSync = 'hero_split_background.jpg';
+
+          const incomingImageProp = heroconfigProp.heroImage;
+          if (incomingImageProp) {
+            if (typeof incomingImageProp === 'object' && incomingImageProp.url !== undefined) {
+              newUrlSync = incomingImageProp.url || null;
+              newFileSync = (incomingImageProp.file instanceof File) ? incomingImageProp.file : null;
+              newOriginalUrlSync = incomingImageProp.originalUrl || (typeof incomingImageProp.url === 'string' && !incomingImageProp.url.startsWith('blob:') ? incomingImageProp.url : null);
+              newNameSync = incomingImageProp.name || (newFileSync?.name) || (typeof newUrlSync === 'string' ? newUrlSync.split('/').pop() : 'hero_split_background.jpg');
+            } else if (typeof incomingImageProp === 'string' && incomingImageProp.trim() !== '') {
+              newUrlSync = incomingImageProp;
+              newOriginalUrlSync = incomingImageProp;
+              newNameSync = newUrlSync.split('/').pop() || 'hero_split_background.jpg';
+            } else if (incomingImageProp instanceof File) {
+              newFileSync = incomingImageProp;
+              newUrlSync = URL.createObjectURL(incomingImageProp);
+              newOriginalUrlSync = heroconfigProp._heroImageOriginalPathFromProps || (prevLocalData.images && prevLocalData.images[0]?.originalUrl) || null;
+              newNameSync = newFileSync.name;
             }
+          }
+          
+          // Clean up old blob URL if it's different
+          const currentLocalImage = prevLocalData.images && prevLocalData.images[0];
+          if (currentLocalImage && currentLocalImage.url && currentLocalImage.url.startsWith('blob:') && currentLocalImage.url !== newUrlSync) {
+            URL.revokeObjectURL(currentLocalImage.url);
+          }
+
+          // Only create images array if we have valid image data
+          if (newUrlSync || newFileSync) {
+              newImagesState = [{
+                  id: (currentLocalImage?.id) || `heroimg_sync_${Date.now()}`,
+                  url: newUrlSync,
+                  file: newFileSync,
+                  name: newNameSync,
+                  originalUrl: newOriginalUrlSync,
+              }];
+          } else if (!heroconfigProp.hasOwnProperty('heroImage') && !heroconfigProp.hasOwnProperty('images')) {
+              // No image props provided, keep existing state
+              newImagesState = prevLocalData.images || [];
+          } else {
+              // Empty image props provided, create default image object for preview
+              newImagesState = [{
+                id: `heroimg_default_sync_${Date.now()}`,
+                url: defaultHeroImagePathLocal,
+                file: null,
+                name: 'hero_split_background.jpg',
+                originalUrl: defaultHeroImagePathLocal,
+              }];
+          }
         }
+
+        const incomingStyling = heroconfigProp.styling || {};
+        const prevStyling = prevLocalData.styling || {};
+
+        const newDesktopHeight = incomingStyling.desktopHeightVH !== undefined 
+                                  ? Number(incomingStyling.desktopHeightVH) 
+                                  : (prevStyling.desktopHeightVH !== undefined ? Number(prevStyling.desktopHeightVH) : 30);
+        const newMobileHeight = incomingStyling.mobileHeightVW !== undefined 
+                                  ? Number(incomingStyling.mobileHeightVW) 
+                                  : (prevStyling.mobileHeightVW !== undefined ? Number(prevStyling.mobileHeightVW) : 75);
 
         const ensureOriginalTitleInEffect = (subServices) => {
             return (subServices || []).map(s => ({
                 ...s,
-                id: s.id || slugify(s.originalTitle || s.title), // Ensure ID exists, can be slug
-                originalTitle: s.originalTitle || s.title, // Fallback
+                id: s.id || slugify(s.originalTitle || s.title),
+                originalTitle: s.originalTitle || s.title,
             }));
         };
-        
-        const nextResSubServicesSource = heroconfig.residential?.subServices || prevLocalData.residential?.subServices;
-        const nextResSubServices = ensureOriginalTitleInEffect(nextResSubServicesSource);
-        const nextResIcon = heroconfig.residential?.icon || prevLocalData.residential?.icon || 'Home';
-        const nextResIconPack = heroconfig.residential?.iconPack || prevLocalData.residential?.iconPack || 'lucide';
-        
-        const nextComSubServicesSource = heroconfig.commercial?.subServices || prevLocalData.commercial?.subServices;
-        const nextComSubServices = ensureOriginalTitleInEffect(nextComSubServicesSource);
-        const nextComIcon = heroconfig.commercial?.icon || prevLocalData.commercial?.icon || 'Building2';
-        const nextComIconPack = heroconfig.commercial?.iconPack || prevLocalData.commercial?.iconPack || 'lucide';
 
-        return {
+        const newMergedData = {
           ...prevLocalData, 
-          ...heroconfig, 
-          residential: { subServices: nextResSubServices, icon: nextResIcon, iconPack: nextResIconPack },
-          commercial: { subServices: nextComSubServices, icon: nextComIcon, iconPack: nextComIconPack },
-          heroImage: newHeroImagePathForState,
-          heroImageFile: newHeroImageFileForState,
-          _heroImageOriginalPathFromProps: newOriginalPathFromProps,
-          bannerColor: heroconfig.bannerColor !== undefined ? heroconfig.bannerColor : (prevLocalData.bannerColor || "#1e293b"),
-          topBannerColor: heroconfig.topBannerColor !== undefined ? heroconfig.topBannerColor : (prevLocalData.topBannerColor || "#FFFFFF"),
+          ...heroconfigProp, 
+          images: newImagesState, 
+          residential: { 
+            ...(prevLocalData.residential || {}),
+            ...(heroconfigProp.residential || {}),
+            subServices: ensureOriginalTitleInEffect(
+              heroconfigProp.residential?.subServices !== undefined 
+                ? heroconfigProp.residential.subServices 
+                : prevLocalData.residential?.subServices
+            ),
+            icon: heroconfigProp.residential?.icon || prevLocalData.residential?.icon || 'Home',
+            iconPack: heroconfigProp.residential?.iconPack || prevLocalData.residential?.iconPack || 'lucide',
+          },
+          commercial: { 
+            ...(prevLocalData.commercial || {}),
+            ...(heroconfigProp.commercial || {}),
+            subServices: ensureOriginalTitleInEffect(
+              heroconfigProp.commercial?.subServices !== undefined 
+                ? heroconfigProp.commercial.subServices 
+                : prevLocalData.commercial?.subServices
+            ),
+            icon: heroconfigProp.commercial?.icon || prevLocalData.commercial?.icon || 'Building2',
+            iconPack: heroconfigProp.commercial?.iconPack || prevLocalData.commercial?.iconPack || 'lucide',
+          },
+          styling: {
+            desktopHeightVH: newDesktopHeight, 
+            mobileHeightVW: newMobileHeight,
+          },
         };
+        console.log("[HeroBlock] Updated localData from prop sync. New merged styling:", newMergedData.styling);
+        return newMergedData;
       });
     }
-  }, [heroconfig]);
+  }, [heroconfigProp]);
+
+  const prevReadOnlyRef = useRef(readOnly);
+
+  useEffect(() => {
+    if (prevReadOnlyRef.current === false && readOnly === true) {
+      if (typeof onConfigChange === 'function') {
+        const dataForParent = prepareDataForOnConfigChange(localData);
+        console.log("[HeroBlock] readOnly changed to true. Calling onConfigChange with prepared data:", dataForParent);
+        onConfigChange(dataForParent);
+      }
+    }
+    prevReadOnlyRef.current = readOnly;
+  }, [readOnly, localData, onConfigChange]);
 
   const handleControlsChange = (changedFields) => {
-    setLocalData(prevLocalData => {
-      let newHeroImage = prevLocalData.heroImage;
-      let newHeroImageFile = prevLocalData.heroImageFile;
+    console.log("[HeroBlock] handleControlsChange (from panel). Incoming changedFields:", changedFields);
+    setLocalData(prevData => {
+      console.log("[HeroBlock handleControlsChange->setLocalData] prevData.styling:", prevData.styling);
+      let newStyling = prevData.styling || { desktopHeightVH: 30, mobileHeightVW: 75 };
 
-      if (changedFields.heroImageFile && changedFields.heroImage) { 
-        if (typeof prevLocalData.heroImage === 'string' && prevLocalData.heroImage.startsWith('blob:')) {
-          URL.revokeObjectURL(prevLocalData.heroImage);
-        }
-        newHeroImage = changedFields.heroImage; 
-        newHeroImageFile = changedFields.heroImageFile; 
-      } else if (changedFields.hasOwnProperty('heroImage') && !changedFields.heroImageFile) {
-        if (typeof prevLocalData.heroImage === 'string' && prevLocalData.heroImage.startsWith('blob:')) {
-          URL.revokeObjectURL(prevLocalData.heroImage);
-        }
-        newHeroImage = changedFields.heroImage;
-        newHeroImageFile = null; 
+      if (changedFields.styling) {
+        console.log("[HeroBlock handleControlsChange->setLocalData] Applying changedFields.styling:", changedFields.styling);
+        newStyling = { ...newStyling, ...changedFields.styling };
       }
-
-      const updatedData = {
-        ...prevLocalData,
-        ...changedFields, 
-        heroImage: newHeroImage,
-        heroImageFile: newHeroImageFile,
-      };
       
-      const ensureOriginalTitleAndId = (subServices) => {
-        return (subServices || []).map(s => ({
-          ...s,
-          id: s.id || slugify(s.originalTitle || s.title), // Crucial for linking selection to preview item
-          originalTitle: s.originalTitle || s.title
-        }));
-      };
+      const otherChanges = { ...changedFields };
+      delete otherChanges.styling;
 
-      if (changedFields.residential?.subServices) {
-        updatedData.residential = {
-          ...(prevLocalData.residential || {}),
-          ...(changedFields.residential || {}),
-          subServices: ensureOriginalTitleAndId(changedFields.residential.subServices)
-        };
-      }
-      if (changedFields.commercial?.subServices) {
-        updatedData.commercial = {
-          ...(prevLocalData.commercial || {}),
-          ...(changedFields.commercial || {}),
-          subServices: ensureOriginalTitleAndId(changedFields.commercial.subServices)
-        };
-      }
-
-      if (onConfigChange) {
-        const dataForConfigChange = { ...updatedData };
-        if (updatedData.heroImageFile) { 
-          dataForConfigChange.originalUrl = localData._heroImageOriginalPathFromProps;
-          console.log(
-            'HeroBlock: Preparing onConfigChange with File:',
-            '\n  Uploaded File Name:', updatedData.heroImageFile.name,
-            '\n  Uploaded File Size:', updatedData.heroImageFile.size,
-            '\n  Intended Original URL to replace:', dataForConfigChange.originalUrl,
-            '\n  Display heroImage (blob URL):', updatedData.heroImage 
-          );
-        } else {
-          console.log(
-            'HeroBlock: Preparing onConfigChange (no new file uploaded):',
-            '\n  Display heroImage (path):', updatedData.heroImage,
-            '\n  Original Path from Props cache:', localData._heroImageOriginalPathFromProps
-          );
+      // Handle images array updates from PanelImagesController
+      let newImages = prevData.images || [];
+      if (changedFields.images && Array.isArray(changedFields.images)) {
+        newImages = changedFields.images;
+        console.log("[HeroBlock] Updated images array from PanelImagesController:", newImages);
+        
+        // Also update heroImage for backward compatibility
+        if (newImages.length > 0) {
+          const primaryImage = newImages[0];
+          otherChanges.heroImage = {
+            url: primaryImage.url,
+            file: primaryImage.file,
+            name: primaryImage.name,
+            originalUrl: primaryImage.originalUrl,
+            id: primaryImage.id
+          };
         }
-        onConfigChange(dataForConfigChange);
       }
-      return updatedData;
+
+      const newData = {
+        ...prevData,
+        ...otherChanges,
+        images: newImages,
+        styling: newStyling,
+      };
+      console.log("[HeroBlock handleControlsChange->setLocalData] Merged data. newStyling:", newStyling, "newData.styling:", newData.styling);
+      
+      // Add immediate live update for non-readOnly mode (like VideoCTA)
+      if (!readOnly && typeof onConfigChange === 'function') {
+        const dataForParent = prepareDataForOnConfigChange(newData);
+        console.log("[HeroBlock] Live panel update: Calling onConfigChange immediately with:", dataForParent);
+        onConfigChange(dataForParent);
+      }
+      
+      return newData;
     });
   };
 
+  const handleServiceNameChange = (serviceType, serviceId, newName) => {
+    setLocalData(prevData => {
+      const services = prevData[serviceType]?.subServices || [];
+      const updatedServices = services.map(service => service.id === serviceId ? { ...service, label: newName } : service);
+      return { ...prevData, [serviceType]: { ...prevData[serviceType], subServices: updatedServices } };
+    });
+  };
+
+  const handleAddService = (serviceType) => {
+    setLocalData(prevData => {
+      const services = prevData[serviceType]?.subServices || [];
+      const newServiceId = `service-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+      const newService = { title: "New Service", label: "New Service", id: newServiceId, originalTitle: "New Service" };
+      return { ...prevData, [serviceType]: { ...prevData[serviceType], subServices: [...services, newService] } };
+    });
+  };
+
+  const handleRemoveService = (serviceType, serviceIdToRemove) => {
+    setLocalData(prevData => {
+      const services = prevData[serviceType]?.subServices || [];
+      const updatedServices = services.filter(service => service.id !== serviceIdToRemove);
+      return { ...prevData, [serviceType]: { ...prevData[serviceType], subServices: updatedServices } };
+    });
+  };
+  
   const handleOpenIconModalForService = (serviceType) => { 
-    const currentServiceSettings = localData[serviceType] || {};
     setEditingIconServiceType(serviceType); 
     setIsIconModalOpen(true);
   };
 
   const handleIconSelectionConfirm = (selectedPack, selectedIconName) => {
     if (editingIconServiceType) {
-      handleControlsChange({
-        [editingIconServiceType]: {
-          ...(localData[editingIconServiceType] || {}), 
-          icon: selectedIconName,
-          iconPack: selectedPack,
+      setLocalData(prevData => ({
+        ...prevData, 
+        [editingIconServiceType]: { 
+          ...prevData[editingIconServiceType], 
+          icon: selectedIconName, 
+          iconPack: selectedPack 
         },
-      });
+      }));
     }
-    setIsIconModalOpen(false);
-    setEditingIconServiceType(null); 
+    setIsIconModalOpen(false); 
+    setEditingIconServiceType(null);
   };
+  
+  const previewHandlers = !readOnly ? {
+    onServiceNameChange: handleServiceNameChange,
+    onAddService: handleAddService,
+    onRemoveService: handleRemoveService,
+    onEditServiceIcon: handleOpenIconModalForService,
+    readOnly: false,
+  } : { readOnly: true };
 
-  if (readOnly) {
-    return <HeroPreview heroconfig={{ ...(heroconfig || {}), readOnly: true }} />;
-  }
+  useEffect(() => {
+    const currentImageObj = localData.images && localData.images[0];
+    const currentImageUrl = currentImageObj?.url;
 
-  // These handlers are passed to HeroPreview for its inline editing capabilities.
-  const previewHandlers = {
-    onServiceNameChange: (serviceType, serviceId, newTitle) => {
-      // serviceId here is the unique ID (slug or custom generated) of the subService item in HeroPreview
-      handleControlsChange({
-        [serviceType]: {
-          ...(localData[serviceType] || {}),
-          subServices: (localData[serviceType]?.subServices || []).map(s =>
-            s.id === serviceId ? { ...s, title: newTitle } : s // Update display title
-          ),
-        },
-      });
-    },
-    onRemoveService: (serviceType, serviceId) => {
-      handleControlsChange({
-        [serviceType]: {
-          ...(localData[serviceType] || {}),
-          subServices: (localData[serviceType]?.subServices || []).filter(s => s.id !== serviceId),
-        },
-      });
-    },
-    onAddService: (serviceType) => { // New handler for adding service from preview
-      const newService = {
-        id: `custom-${serviceType}-${Date.now()}`,
-        title: "New Service",
-        originalTitle: "New Service"
-      };
-      handleControlsChange({
-        [serviceType]: {
-          ...(localData[serviceType] || {}),
-          subServices: [...(localData[serviceType]?.subServices || []), newService],
-        },
-      });
-    },
-    readOnly: false, 
-    onEditServiceIcon: handleOpenIconModalForService, 
+    return () => {
+      if (currentImageUrl && typeof currentImageUrl === 'string' && currentImageUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(currentImageUrl);
+      }
+    };
+  }, [localData.images]);
+
+  const previewConfig = {
+    ...localData,
+    ...previewHandlers,
+    styling: {
+        ...(localData.styling || {}),
+        desktopHeightVH: Number(localData.styling?.desktopHeightVH) || 30,
+        mobileHeightVW: Number(localData.styling?.mobileHeightVW) || 75,
+    }
   };
-
+  console.log("[HeroBlock] Preparing previewConfig. localData.styling:", localData.styling, "previewConfig.styling:", previewConfig.styling, "Actual desktopHeightVH for preview:", previewConfig.styling.desktopHeightVH);
+  
   return (
     <>
-      <HeroPreview heroconfig={{ ...localData, ...previewHandlers }} />
-      <HeroControlsPanel 
-        currentData={localData} 
-        onControlsChange={handleControlsChange} 
-        themeColors={themeColors} // Pass themeColors to HeroControlsPanel
-      />
-      {isIconModalOpen && editingIconServiceType && (
+      <HeroPreview heroconfig={previewConfig} />
+      {!readOnly && isIconModalOpen && (
         <IconSelectorModal
-          isOpen={isIconModalOpen}
-          onClose={() => {
-            setIsIconModalOpen(false);
-            setEditingIconServiceType(null);
-          }}
-          onIconSelect={handleIconSelectionConfirm}
-          currentIconPack={localData[editingIconServiceType]?.iconPack || 'lucide'}
-          currentIconName={localData[editingIconServiceType]?.icon}
+          isOpen={isIconModalOpen} 
+          onClose={() => setIsIconModalOpen(false)}
+          onSelectIcon={handleIconSelectionConfirm}
+          currentSelection={{ pack: localData[editingIconServiceType]?.iconPack, icon: localData[editingIconServiceType]?.icon }}
         />
       )}
     </>
   );
 }
+
+HeroBlock.propTypes = {
+  heroconfig: PropTypes.object,
+  readOnly: PropTypes.bool,
+  onConfigChange: PropTypes.func,
+  themeColors: PropTypes.oneOfType([PropTypes.array, PropTypes.object]),
+};
+
+// Expose tabsConfig for TopStickyEditPanel, using PanelImagesController for images
+HeroBlock.tabsConfig = (blockCurrentData, onControlsChange, themeColors) => {
+  const currentStyling = blockCurrentData.styling || { desktopHeightVH: 30, mobileHeightVW: 75 };
+  
+  let processedData = { ...blockCurrentData };
+
+  return {
+    images: (props) => (
+      <PanelImagesController 
+        {...props} 
+        currentData={processedData}
+        onControlsChange={onControlsChange}
+        imageArrayFieldName="images" 
+        maxImages={1} 
+      />
+    ),
+    colors: (props) => <HeroColorControls 
+      {...props} 
+      currentData={processedData}
+      onControlsChange={onControlsChange}
+      themeColors={themeColors} 
+    />,
+    styling: (props) => (
+      <PanelStylingController
+        {...props}
+        currentData={processedData}
+        onControlsChange={onControlsChange}
+        blockType="HeroBlock"
+      />
+    ),
+  };
+};

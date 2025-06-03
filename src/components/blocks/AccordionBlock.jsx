@@ -218,7 +218,7 @@ AccordionBlock.EditorPanel = ({ currentConfig, onPanelConfigChange }) => {
           value={panelData.sectionTitle || ''} 
           onChange={(e) => handlePanelChange('sectionTitle', e.target.value)} 
           onBlur={commitChanges}
-          className="mt-1 block w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md text-white input-section-title-accordion"
+          className="mt-1 block w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md text-white"
         />
       </div>
       <div className="grid grid-cols-2 gap-4">
@@ -263,19 +263,6 @@ AccordionBlock.EditorPanel = ({ currentConfig, onPanelConfigChange }) => {
       >
         + Add FAQ Item (in Panel)
       </button>
-      {/* Style block for EditorPanel specific styles */}
-      <style jsx>{`
-        .input-section-title-accordion {
-            font-size: 1.5rem; /* text-2xl, a bit smaller than preview's md:text-3xl for panel context */
-            line-height: 2rem;
-            font-weight: 600; /* font-semibold */
-            /* other styles like bg-gray-600, text-white, border are inherited or set directly on element */
-        }
-        /* Add any other panel-specific input base styles here if needed */
-        input[type="color"] { /* Ensure color pickers are consistently sized if not already */
-            height: 2.5rem; /* Or match h-10 equivalent */
-        }
-      `}</style>
     </div>
   );
 };

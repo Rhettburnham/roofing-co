@@ -1,488 +1,675 @@
-import React, { useState, useEffect, useRef } from 'react';
-import PropTypes from 'prop-types';
 
-const GeneralList = ({ config, readOnly, onConfigChange, getDisplayUrl, onFileChange }) => {
-    // Initialize localConfig with defaults and merge with incoming config
-    const [localConfig, setLocalConfig] = useState(() => {
-        const defaultConfig = {
-            title: 'Default Section Title',
-            items: [],
-            backgroundColor: '#FFFFFF', // Default white background
-            textColor: '#333333',       // Default dark text
-            itemBackgroundColor: '#F9FAFB',
-            itemTextColor: '#111827',
-            imageBorderColor: '#E5E7EB'
-        };
-        return { ...defaultConfig, ...(config || {}) };
-    });
+// src/components/blocks/GeneralList.jsx
+import React, { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
+import { FaCheckCircle, FaPlus, FaTrash, FaImage, FaTimes, FaPencilAlt } from "react-icons/fa";
+import ReactMarkdown from "react-markdown";
 
-    const titleInputRef = useRef(null);
-    const itemTextareaRefs = useRef({}); // Use an object to store refs for item fields
+/**
+ * GeneralList
+ *
+ * config: {
+ *   title: string, // alternative to sectionTitle
+ *   sectionTitle: string,
+ *   items: [
+ *     // Can be structured items
+ *     {
+ *       id: number,
+ *       name: string,
+ *       description: string,
+ *       advantages: string[],
+ *       colorPossibilities?: string,
+ *       installationTime?: string,
+ *       pictures: string[]
+ *     },
+ *     // Or can be simple strings
+ *     "Item 1",
+ *     "Item 2",
+ *     ...
+ *   ],
+ *   listStyle?: "bullet" | "numbered" | "none"
+ * }
+ */
 
-    // Effect to sync localConfig with prop changes if not in edit mode (readOnly = true)
-    // or if the incoming config is substantially different (e.g. new page loaded)
-    useEffect(() => {
-        const defaultConfig = {
-            title: 'Default Section Title',
-            items: [],
-            backgroundColor: '#FFFFFF',
-            textColor: '#333333',
-            itemBackgroundColor: '#F9FAFB',
-            itemTextColor: '#111827',
-            imageBorderColor: '#E5E7EB'
-        };
-        // Smart merging: prioritize incoming config but preserve local structure if items exist
-        const currentItems = localConfig.items && localConfig.items.length > 0 ? localConfig.items : (config?.items || defaultConfig.items);
-        const newConfig = { ...defaultConfig, ...(config || {}), items: currentItems };
+// Helper function (can be moved to a utils file if used elsewhere)
+const getDisplayUrlHelper = (value) => {
+  if (!value) return null;
+  if (typeof value === "string") return value;
+  if (value.url) return value.url;
+  return null;
+};
 
-        if (readOnly || JSON.stringify(config) !== JSON.stringify(localConfig)) {
-            setLocalConfig(newConfig);
-        }
-    }, [config, readOnly]);
+const EditableText = ({ value, onChange, onBlur, tag: Tag = 'p', className = '', inputClassName = '', isTextarea = false, placeholder = "Edit", readOnly = false }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentValue, setCurrentValue] = useState(value);
+  const inputRef = useRef(null);
 
-    // Auto-resize textareas
-    useEffect(() => {
-        if (!readOnly) {
-            if (titleInputRef.current) {
-                titleInputRef.current.style.height = 'auto';
-                titleInputRef.current.style.height = `${titleInputRef.current.scrollHeight}px`;
-            }
-            Object.values(itemTextareaRefs.current).forEach(fieldRefs => {
-                if (fieldRefs) {
-                    Object.values(fieldRefs).forEach(ref => {
-                        if (ref && ref.current) {
-                            ref.current.style.height = 'auto';
-                            ref.current.style.height = `${ref.current.scrollHeight}px`;
-                        }
-                    });
-                }
-            });
-        }
-    }, [localConfig.title, localConfig.items, readOnly]);
+  useEffect(() => {
+    setCurrentValue(value);
+  }, [value]);
 
-    const handleMainTitleChange = (e) => {
-        const newTitle = e.target.value;
-        setLocalConfig(prev => ({ ...prev, title: newTitle }));
-        if (!readOnly) onConfigChange({ ...localConfig, title: newTitle });
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isEditing]);
+
+  const handleBlur = () => {
+    setIsEditing(false);
+    if (currentValue !== value) {
+      onChange(currentValue);
+    }
+    if (onBlur) onBlur();
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !isTextarea) {
+      handleBlur();
+    } else if (e.key === 'Escape') {
+      setCurrentValue(value);
+      setIsEditing(false);
+      if (onBlur) onBlur();
+    }
+  };
+
+  const activateEditMode = () => {
+    if (!readOnly && !isEditing) {
+      setIsEditing(true);
+    }
+  };
+
+  if (!readOnly && isEditing) {
+    const commonInputProps = {
+      ref: inputRef,
+      value: currentValue,
+      onChange: (e) => setCurrentValue(e.target.value),
+      onBlur: handleBlur,
+      onKeyDown: handleKeyDown,
+      className: `${className} ${inputClassName} outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 rounded-sm bg-white/50 placeholder-gray-500/70 shadow-inner`,
     };
+    if (isTextarea) {
+      return <textarea {...commonInputProps} rows={Math.max(3, (currentValue || '').split('\n').length)} placeholder={placeholder} />;
+    }
+    return <input {...commonInputProps} type="text" placeholder={placeholder} />;
+  }
 
-    const handleItemFieldChange = (itemIndex, field, value) => {
-        setLocalConfig(prev => {
-            const updatedItems = prev.items.map((item, i) => 
-                i === itemIndex ? { ...item, [field]: value } : item
-            );
-            const newFullConfig = { ...prev, items: updatedItems };
-            if(!readOnly) onConfigChange(newFullConfig);
-            return newFullConfig;
-        });
-    };
-
-    const handleItemAdvantageChange = (itemIndex, advIndex, value) => {
-        setLocalConfig(prev => {
-            const updatedItems = prev.items.map((item, i) => {
-                if (i === itemIndex) {
-                    const updatedAdvantages = (item.advantages || []).map((adv, j) => 
-                        j === advIndex ? value : adv
-                    );
-                    return { ...item, advantages: updatedAdvantages };
-                }
-                return item;
-            });
-            const newFullConfig = { ...prev, items: updatedItems };
-            if(!readOnly) onConfigChange(newFullConfig);
-            return newFullConfig;
-        });
-    };
-
-    const handleBlur = () => {
-        if (!readOnly) {
-            onConfigChange(localConfig);
-        }
-    };
-    
-    // Destructure with defaults from localConfig for rendering
-  const {
-        title,
-        items,
-        backgroundColor,
-        textColor,
-        itemBackgroundColor,
-        itemTextColor,
-        imageBorderColor 
-  } = localConfig;
-
-    const getSafeDisplayUrl = (imgSrc) => {
-        if (!imgSrc) return '';
-        if (typeof imgSrc === 'string') return imgSrc;
-        if (imgSrc.url) return getDisplayUrl ? getDisplayUrl(imgSrc) : imgSrc.url;
-        return '';
-    };
-
-    // Helper to manage refs for item textareas
-    const getItemRef = (itemIndex, field) => (el) => {
-        if (!itemTextareaRefs.current[itemIndex]) {
-            itemTextareaRefs.current[itemIndex] = {};
-        }
-        itemTextareaRefs.current[itemIndex][field] = { current: el }; // Store as {current: el} to mimic ref object
-    };
-
-    return (
-        <div className="py-8 px-4 md:px-8" style={{ backgroundColor: backgroundColor, color: textColor }}>
-        {readOnly ? (
-                <h2 className="text-3xl font-bold text-center mb-10" style={{ color: 'inherit' }}>{title}</h2>
-            ) : (
-                <textarea
-                    ref={titleInputRef}
-                    value={title}
-                    onChange={handleMainTitleChange}
-                    onBlur={handleBlur}
-                    className="text-3xl font-bold text-center mb-10 bg-transparent focus:outline-none focus:ring-1 focus:ring-gray-400 rounded p-1 resize-none w-full"
-                    style={{ color: 'inherit' }}
-                    rows={1}
-                    placeholder="Section Title"
-                />
-            )}
-            <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-8">
-              {(items || []).map((item, index) => (
-                    <div 
-                        key={item.id || index} 
-                        className="rounded-lg shadow-lg overflow-hidden flex flex-col md:flex-row"
-                        style={{ backgroundColor: itemBackgroundColor, color: itemTextColor }}
-                    >
-                        {item.pictures && item.pictures[0] && (
-                            <div className="md:w-1/3 flex-shrink-0">
-                                <img 
-                                    src={getSafeDisplayUrl(item.pictures[0])} 
-                                    alt={item.name || 'Service image'} 
-                                    className="w-full h-48 md:h-full object-cover"
-                                    style={{ borderRight: !readOnly ? `2px dashed ${imageBorderColor}` : ''}}
-                                />
-            </div>
-          )}
-                        <div className={`p-6 flex-grow ${item.pictures && item.pictures[0] ? 'md:w-2/3' : 'w-full'}`}>
-      {readOnly ? (
-                                <h3 className="text-2xl font-semibold mb-3" style={{ color: 'inherit' }}>{item.name}</h3>
-                            ) : (
-                                <input
-                                    type="text"
-                                    value={item.name || ''}
-                                    onChange={(e) => handleItemFieldChange(index, 'name', e.target.value)}
-                                    onBlur={handleBlur}
-                                    className="text-2xl font-semibold mb-3 bg-transparent focus:outline-none focus:ring-1 focus:ring-gray-400 rounded p-1 w-full"
-                                    style={{ color: 'inherit' }}
-                                    placeholder="Item Name"
-                                />
-                            )}
-                            {readOnly ? (
-                                <p className="mb-4 text-sm leading-relaxed" style={{ color: 'inherit' }}>{item.description}</p>
-                            ) : (
-                                <textarea
-                                    ref={getItemRef(index, 'description')}
-                                    value={item.description || ''}
-                                    onChange={(e) => handleItemFieldChange(index, 'description', e.target.value)}
-                                    onBlur={handleBlur}
-                                    className="mb-4 text-sm leading-relaxed bg-transparent focus:outline-none focus:ring-1 focus:ring-gray-400 rounded p-1 w-full resize-none"
-                                    style={{ color: 'inherit' }}
-                                    rows={3}
-                                    placeholder="Item Description"
-                                />
-                            )}
-                            {item.advantages && item.advantages.length > 0 && (
-                                <div className="mb-4">
-                                    <h4 className="font-semibold mb-2 text-md" style={{ color: 'inherit' }}>Advantages:</h4>
-                                    <ul className="list-disc list-inside space-y-1 text-sm">
-                                        {item.advantages.map((advantage, advIndex) => (
-                                            <li key={advIndex}>
-                                                {readOnly ? (
-                                                    <span style={{ color: 'inherit' }}>{advantage}</span>
-                                                ) : (
-                                                    <input
-                                                        type="text"
-                                                        value={advantage}
-                                                        onChange={(e) => handleItemAdvantageChange(index, advIndex, e.target.value)}
-                                                        onBlur={handleBlur}
-                                                        className="flex-grow px-2 py-1 text-sm bg-transparent focus:outline-none focus:ring-1 focus:ring-gray-400 rounded-md"
-                                                        style={{ color: 'inherit' }}
-                                                        placeholder={`Advantage ${advIndex + 1}`}
-                                                    />
-                                                )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-                        </div>
-          </div>
-        ))}
-      </div>
-    </div>
+  return (
+    <Tag
+      className={`${className} cursor-pointer hover:bg-gray-400/10 transition-colors duration-150 ease-in-out p-0 m-0 min-h-[1em]`}
+      onClick={activateEditMode}
+      title="Click to edit"
+    >
+      {value || <span className="text-gray-400/80 italic text-sm">({placeholder})</span>}
+    </Tag>
   );
 };
 
-GeneralList.propTypes = {
-    config: PropTypes.shape({
-        title: PropTypes.string,
-        items: PropTypes.arrayOf(PropTypes.shape({
-            id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-            name: PropTypes.string,
-            description: PropTypes.string,
-            advantages: PropTypes.arrayOf(PropTypes.string),
-            colorPossibilities: PropTypes.string,
-            installationTime: PropTypes.string,
-            pictures: PropTypes.arrayOf(PropTypes.oneOfType([PropTypes.string, PropTypes.object])),
-        })),
-        backgroundColor: PropTypes.string,
-        textColor: PropTypes.string,
-        itemBackgroundColor: PropTypes.string,
-        itemTextColor: PropTypes.string,
-        imageBorderColor: PropTypes.string,
-    }),
-    readOnly: PropTypes.bool,
-    onConfigChange: PropTypes.func.isRequired,
-    getDisplayUrl: PropTypes.func,
-    onFileChange: PropTypes.func, 
-};
+const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplayUrl, onFileChange, themeColors, onToggleEditor }) => {
+  const {
+    sectionTitle: rawSectionTitle,
+    title: rawTitle,
+    items = [],
+    listStyle = "none",
+  } = config;
 
-GeneralList.EditorPanel = function GeneralListEditorPanel({ currentConfig, onPanelConfigChange, onPanelFileChange, getDisplayUrl }) {
-    const [formData, setFormData] = useState(currentConfig || {});
+  const displayTitle = rawSectionTitle || rawTitle || "Service List";
+  const [selectedIndex, setSelectedIndex] = useState(0);
 
-    useEffect(() => {
-        setFormData(currentConfig || {});
-    }, [currentConfig]);
+  const currentGetDisplayUrl = typeof getDisplayUrl === 'function' ? getDisplayUrl : getDisplayUrlHelper;
+  const hasStructuredItems = items.length > 0 && typeof items[0] === "object" && items[0] !== null && !Array.isArray(items[0]);
 
-    const handleOverallChange = (field, value) => {
-        const newFormData = { ...formData, [field]: value };
-        setFormData(newFormData);
-        onPanelConfigChange(newFormData); // Propagate all changes live
-    };
+  const handleConfigUpdate = (newConfig) => {
+    if (onConfigChange) onConfigChange(newConfig);
+  };
 
-    const handleItemDetailChange = (itemIndex, field, value) => {
-        const updatedItems = (formData.items || []).map((item, i) => 
-            i === itemIndex ? { ...item, [field]: value } : item
-        );
-        handleOverallChange('items', updatedItems);
-    };
+  // Helper function to add an item
+  const addItem = () => {
+    let newItem;
+    if (hasStructuredItems || items.length === 0) {
+      newItem = {
+        id: Date.now(), name: "New Item", description: "Description", advantages: ["Advantage 1"],
+        colorPossibilities: "Various", installationTime: "1-2 days", pictures: []
+      };
+    } else { 
+      newItem = "New List Item";
+    }
+    const newItems = [...items, newItem];
+    // If adding the first structured item, select it
+    if (newItems.length === 1 && typeof newItem === 'object') setSelectedIndex(0);
+    // If adding to existing structured items, select the new one
+    else if (hasStructuredItems && typeof newItem === 'object') setSelectedIndex(newItems.length - 1);
+    handleConfigUpdate({ ...config, items: newItems });
+  };
 
-    const handleItemAdvantageChange = (itemIndex, advIndex, value) => {
-        const updatedItems = (formData.items || []).map((item, i) => {
-            if (i === itemIndex) {
-                const updatedAdvantages = (item.advantages || []).map((adv, j) => 
-                    j === advIndex ? value : adv
-                );
-                return { ...item, advantages: updatedAdvantages };
-        }
-        return item;
-        });
-        handleOverallChange('items', updatedItems);
-    };
+  // Helper function to remove an item
+  const removeItem = (indexToRemove) => {
+    const newItems = items.filter((_, index) => index !== indexToRemove);
+    // Adjust selectedIndex if the removed item was selected or before the selected one
+    if (selectedIndex >= indexToRemove) {
+      setSelectedIndex(Math.max(0, selectedIndex - 1));
+    }
+    if (newItems.length === 0) setSelectedIndex(0); // Reset if list becomes empty
+    handleConfigUpdate({ ...config, items: newItems });
+  };
 
-    const handleAddItemAdvantage = (itemIndex) => {
-        const updatedItems = (formData.items || []).map((item, i) => {
-            if (i === itemIndex) {
-                return { ...item, advantages: [...(item.advantages || []), 'New Advantage'] };
-        }
-        return item;
-        });
-        handleOverallChange('items', updatedItems);
-    };
+  // Helper function to add an advantage to a structured item
+  const addAdvantage = (itemIndex) => {
+    const newItems = items.map((item, idx) => {
+      if (idx === itemIndex && typeof item === 'object') {
+        return { ...item, advantages: [...(item.advantages || []), "New Advantage"] };
+      }
+      return item;
+    });
+    handleConfigUpdate({ ...config, items: newItems });
+  };
 
-    const handleRemoveItemAdvantage = (itemIndex, advIndex) => {
-        const updatedItems = (formData.items || []).map((item, i) => {
-            if (i === itemIndex) {
-                const updatedAdvantages = (item.advantages || []).filter((_, j) => j !== advIndex);
-                return { ...item, advantages: updatedAdvantages };
-            }
-            return item;
-          });
-        handleOverallChange('items', updatedItems);
-    };
+  // Helper function to remove an advantage from a structured item
+  const removeAdvantage = (itemIndex, advIndex) => {
+    const newItems = items.map((item, idx) => {
+      if (idx === itemIndex && typeof item === 'object') {
+        return { ...item, advantages: (item.advantages || []).filter((_, aIdx) => aIdx !== advIndex) };
+      }
+      return item;
+    });
+    handleConfigUpdate({ ...config, items: newItems });
+  };
 
-    const handleAddItem = () => {
-        const newItem = {
-            id: `item_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-            name: 'New Item',
-            description: 'New item description.',
-            advantages: ['Advantage 1'],
-            colorPossibilities: '',
-            installationTime: '',
-            pictures: [] // Start with an empty pictures array
-        };
-        handleOverallChange('items', [...(formData.items || []), newItem]);
-    };
+  // Helper function to change list style for simple lists
+  const handleListStyleChange = (newListStyle) => {
+    handleConfigUpdate({ ...config, listStyle: newListStyle });
+  };
 
-    const handleRemoveItem = (itemIndex) => {
-        const itemToRemove = formData.items?.[itemIndex];
-        if (itemToRemove && itemToRemove.pictures) {
-            itemToRemove.pictures.forEach(pic => {
-                if (typeof pic === 'object' && pic.url && pic.url.startsWith('blob:')) {
-                    URL.revokeObjectURL(pic.url);
-                }
-            });
-        }
-        const updatedItems = (formData.items || []).filter((_, i) => i !== itemIndex);
-        handleOverallChange('items', updatedItems);
-    };
+  const handleItemFieldChange = (itemIndex, field, newValue) => {
+    const newItems = items.map((item, idx) => idx === itemIndex ? { ...item, [field]: newValue } : item);
+    handleConfigUpdate({ ...config, items: newItems });
+  };
 
-    const handleItemPictureChange = (itemIndex, picIndex, file) => {
-        if (file && onPanelFileChange) {
-            // This tells ServiceEditPage to handle the file and update the config path
-            onPanelFileChange({ blockItemIndex: itemIndex, pictureIndex: picIndex, file: file, field: 'pictures'});
-        }
-    };
-    
-    const handleAddPictureToItem = (itemIndex) => {
-        const updatedItems = (formData.items || []).map((item, i) => {
-            if (i === itemIndex) {
-                // Add a null placeholder. The actual file object will be added by ServiceEditPage
-                return { ...item, pictures: [...(item.pictures || []), null] }; 
-        }
-        return item;
-        });
-        handleOverallChange('items', updatedItems);
-    };
+  const handleAdvantageChange = (itemIndex, advIndex, newValue) => {
+    const newItems = items.map((item, idx) => {
+      if (idx === itemIndex) {
+        const newAdvantages = (item.advantages || []).map((adv, aIdx) => aIdx === advIndex ? newValue : adv);
+        return { ...item, advantages: newAdvantages };
+      }
+      return item;
+    });
+    handleConfigUpdate({ ...config, items: newItems });
+  };
 
-    const handleRemoveItemPicture = (itemIndex, picIndex) => {
-        const updatedItems = (formData.items || []).map((item, i) => {
-            if (i === itemIndex) {
-                const picToRemove = item.pictures?.[picIndex];
-                if (typeof picToRemove === 'object' && picToRemove.url && picToRemove.url.startsWith('blob:')) {
-                    URL.revokeObjectURL(picToRemove.url);
-                }
-                const updatedPictures = (item.pictures || []).filter((_, j) => j !== picIndex);
-                return { ...item, pictures: updatedPictures };
-        }
-        return item;
-        });
-        handleOverallChange('items', updatedItems);
-    };
+  const commonSectionWrapperClasses = "my-6 container mx-auto px-4 md:px-16 relative group";
+  const commonCardClasses = "bg-white rounded-lg shadow-lg p-6 mx-auto max-w-4xl"; // Centered card with max-width
+  const editModeBorderClass = "border-2 border-blue-400/50";
 
+  // --- READ-ONLY RENDERING --- 
+  if (readOnly) {
+    const TitleComp = () => <h2 className="text-2xl md:text-3xl font-semibold mb-4 text-center text-gray-800">{displayTitle}</h2>;
+
+    if (!hasStructuredItems) {
+      return (
+        <section className={commonSectionWrapperClasses}>
+          <TitleComp />
+          <div className={commonCardClasses}>
+            {listStyle === "numbered" ? (
+              <ol className="list-decimal pl-5 space-y-2">
+                {items.map((item, index) => (
+                  <li key={index} className="text-gray-700 text-lg"><div className="markdown-content"><ReactMarkdown>{String(item)}</ReactMarkdown></div></li>
+                ))}
+              </ol>
+            ) : listStyle === "bullet" ? (
+              <ul className="list-disc pl-5 space-y-2">
+                {items.map((item, index) => (
+                  <li key={index} className="text-gray-700 text-lg"><div className="markdown-content"><ReactMarkdown>{String(item)}</ReactMarkdown></div></li>
+                ))}
+              </ul>
+            ) : (
+              <div className="space-y-4">
+                {items.map((item, index) => (
+                  <div key={index} className="text-gray-700 text-lg"><div className="markdown-content"><ReactMarkdown>{String(item)}</ReactMarkdown></div></div>
+                ))}
+              </div>
+            )}
+            {items.length === 0 && <p className="text-gray-500 text-center py-2">No items to display.</p>}
+          </div>
+        </section>
+      );
+    }
+
+    // Read-only for Structured Items
+    const activeItem = items[selectedIndex] || {};
+    return (
+      <section className={commonSectionWrapperClasses.replace('my-6', 'my-2 md:my-4')}>
+        <TitleComp />
+        {items.length > 0 && (
+            <div className="flex flex-wrap justify-center mt-2 gap-2 mb-4">
+          {items.map((item, index) => (
+            <button
+              key={item.id || index}
+              onClick={() => setSelectedIndex(index)}
+                className={`px-3 py-1 sm:px-4 sm:py-2 text-sm sm:text-base rounded-full font-semibold shadow-md transition-all duration-300 ${selectedIndex === index ? "bg-second-accent text-white scale-105" : "bg-accent text-black hover:bg-accent/80"}`}
+            >
+              {item.name || `Option ${index + 1}`}
+            </button>
+          ))}
+        </div>
+        )}
+        <motion.div
+          key={activeItem.id || selectedIndex}
+          className={`${commonCardClasses} transition-all duration-500 @container`}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          {items.length === 0 ? (
+             <p className="text-gray-500 text-center py-4">No items to display.</p>
+          ) : (
+          <div className="w-full">
+                <h3 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 text-gray-800 text-center md:text-left">{activeItem.name}</h3>
+                {activeItem.description && <div className="text-gray-700 text-sm sm:text-base md:text-lg whitespace-pre-wrap mb-4"><ReactMarkdown>{activeItem.description}</ReactMarkdown></div>}
+            {activeItem.advantages && activeItem.advantages.length > 0 && (
+                <div className="mb-4">
+                    <h4 className="text-lg sm:text-xl font-semibold mb-2 text-gray-700">Advantages</h4>
+                    <ul className="grid grid-cols-1 @[600px]:grid-cols-2 gap-x-4 gap-y-1 text-gray-600">
+                    {(activeItem.advantages || []).map((adv, i) => (
+                        <li key={i} className="flex items-start text-sm md:text-base"><FaCheckCircle className="text-green-500 mr-2 mt-1 flex-shrink-0" /><span>{adv}</span></li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {activeItem.pictures && activeItem.pictures.length > 0 && (
+                <div className="mb-4">
+                    <h4 className="text-lg sm:text-xl font-semibold mb-2 text-gray-700">Gallery</h4>
+                    <div className="mt-2 grid grid-cols-2 @[400px]:grid-cols-3 @[600px]:grid-cols-4 gap-3">
+                    {(activeItem.pictures || []).map((pic, picIdx) => (
+                        <div key={picIdx} className="aspect-square overflow-hidden rounded-lg shadow-md"><img src={currentGetDisplayUrl(pic)} alt={`${activeItem.name || 'Item'} - Image ${picIdx + 1}`} className="w-full h-full object-cover"/></div>
+                ))}
+              </div>
+                </div>
+                )}
+                {(activeItem.colorPossibilities || activeItem.installationTime) && (
+                <div className="text-sm text-gray-600 space-y-1">
+                    {activeItem.colorPossibilities && <p><strong className="text-gray-700">Color Options: </strong>{activeItem.colorPossibilities}</p>}
+                    {activeItem.installationTime && <p><strong className="text-gray-700">Installation Time: </strong>{activeItem.installationTime}</p>}
+                </div>
+                )}
+              </div>
+            )}
+        </motion.div>
+      </section>
+    );
+  }
+
+  // --- EDIT MODE RENDERING --- 
+  const activeItemForEdit = items[selectedIndex] || {};
 
     return (
-        <div className="space-y-6 p-3 bg-gray-50 rounded-md shadow">
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Main Title (Panel Edit):</label>
-                <input 
-                    type="text" 
-                    value={formData.title || ''} 
-                    onChange={(e) => handleOverallChange('title', e.target.value)} 
-                    className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 input-title-general-list-panel"
+    <section className={`${commonSectionWrapperClasses} ${!readOnly && onToggleEditor ? 'py-8' : ''} ${!readOnly ? 'pb-12' : ''}`}>
+      {!readOnly && onToggleEditor && (
+        <button
+          onClick={onToggleEditor}
+          className="absolute top-2 right-2 z-20 p-2 bg-gray-700 text-white rounded-full shadow-lg hover:bg-gray-800 transition-colors opacity-50 group-hover:opacity-100"
+          title="Open Editor Panel"
+        >
+          <FaPencilAlt size={16} />
+        </button>
+      )}
+      <div className="text-center mb-4">
+        <EditableText
+            value={displayTitle}
+          onChange={(newVal) => handleConfigUpdate({ ...config, sectionTitle: newVal, title: undefined })}
+          tag="h2"
+          className="text-2xl md:text-3xl font-semibold text-gray-800 inline-block"
+          inputClassName="text-2xl md:text-3xl font-semibold text-gray-800 text-center w-auto"
+          placeholder="Section Title"
+          readOnly={readOnly}
+        />
+      </div>
+
+      {/* Item Selector Buttons for Structured List in Edit Mode */} 
+      {hasStructuredItems && items.length > 0 && (
+        <div className="flex flex-wrap justify-center items-center mt-2 gap-2 mb-4">
+          {items.map((item, index) => (
+            <div key={item.id || index} className="relative group/itembtn">
+              <button
+                onClick={() => setSelectedIndex(index)} // Single click to select
+                className={`px-3 py-1 sm:px-4 sm:py-2 text-sm sm:text-base rounded-full font-semibold shadow-md transition-all duration-300 
+                           ${selectedIndex === index ? "bg-second-accent text-white scale-105 ring-2 ring-offset-1 ring-second-accent/70" : "bg-accent text-black hover:bg-accent/80"}`}
+              >
+                <EditableText
+                  value={item.name || `Option ${index + 1}`}
+                  onChange={(newName) => handleItemFieldChange(index, "name", newName)}
+                  tag="span" // Render as span inside button
+                  className={`font-semibold ${selectedIndex === index ? "text-white" : "text-black"}`} // Match button text color
+                  inputClassName={`font-semibold w-auto ${selectedIndex === index ? "text-white bg-second-accent/80" : "text-black bg-accent/80"}`}
+                  placeholder="Item Name"
+                  readOnly={readOnly}
                 />
+              </button>
+              {!readOnly && (
+                <button 
+                  onClick={() => removeItem(index)} 
+                  className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full shadow-md opacity-0 group-hover/itembtn:opacity-100 hover:bg-red-600 transition-opacity duration-150 z-10"
+                  title="Remove Item"
+                >
+                  <FaTrash size={10} />
+                </button>
+              )}
             </div>
-
-            <h4 className="text-lg font-semibold text-gray-700 pt-3 border-t mt-5">Color Scheme</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Overall Background Color:</label>
-                    <input type="color" value={formData.backgroundColor || '#FFFFFF'} onChange={(e) => handleOverallChange('backgroundColor', e.target.value)} className="mt-1 h-8 w-full p-0.5 border border-gray-300 rounded-md" />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Overall Text Color:</label>
-                    <input type="color" value={formData.textColor || '#333333'} onChange={(e) => handleOverallChange('textColor', e.target.value)} className="mt-1 h-8 w-full p-0.5 border border-gray-300 rounded-md" />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Item Background Color:</label>
-                    <input type="color" value={formData.itemBackgroundColor || '#F9FAFB'} onChange={(e) => handleOverallChange('itemBackgroundColor', e.target.value)} className="mt-1 h-8 w-full p-0.5 border border-gray-300 rounded-md" />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Item Text Color:</label>
-                    <input type="color" value={formData.itemTextColor || '#111827'} onChange={(e) => handleOverallChange('itemTextColor', e.target.value)} className="mt-1 h-8 w-full p-0.5 border border-gray-300 rounded-md" />
-                </div>
-                 <div>
-                    <label className="block text-sm font-medium text-gray-700">Image Border Color (Edit Mode):</label>
-                    <input type="color" value={formData.imageBorderColor || '#E5E7EB'} onChange={(e) => handleOverallChange('imageBorderColor', e.target.value)} className="mt-1 h-8 w-full p-0.5 border border-gray-300 rounded-md" />
-                </div>
-            </div>
-
-            <h4 className="text-lg font-semibold text-gray-700 pt-3 border-t mt-5">Manage Items</h4>
-            {(formData.items || []).map((item, itemIndex) => (
-                <div key={item.id || itemIndex} className="space-y-3 p-3 border border-gray-200 rounded-md bg-white">
-                    <div className="flex justify-between items-center">
-                        <h5 className="text-md font-semibold text-gray-600">Item {itemIndex + 1}: {item.name || 'Unnamed Item'}</h5>
-                        <button onClick={() => handleRemoveItem(itemIndex)} className="text-xs text-red-500 hover:text-red-700 font-semibold">Remove Item</button>
-                    </div>
-                    <div>
-                        <label className="block text-xs font-medium text-gray-600">Name (Panel Edit):</label>
-                        <input type="text" value={item.name || ''} onChange={(e) => handleItemDetailChange(itemIndex, 'name', e.target.value)} className="mt-0.5 block w-full px-2 py-1 bg-gray-50 border border-gray-300 rounded-md input-item-name-general-list-panel" />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-medium text-gray-600">Description (Panel Edit):</label>
-                        <textarea value={item.description || ''} onChange={(e) => handleItemDetailChange(itemIndex, 'description', e.target.value)} rows={3} className="mt-0.5 block w-full px-2 py-1 text-sm bg-gray-50 border border-gray-300 rounded-md resize-none input-item-description-general-list-panel" />
-                    </div>
-                    
-                    <div>
-                        <label className="block text-xs font-medium text-gray-600">Advantages (Panel Edit):</label>
-                        {(item.advantages || []).map((adv, advIndex) => (
-                            <div key={advIndex} className="flex items-center space-x-2 mt-1">
-                                <input type="text" value={adv} onChange={(e) => handleItemAdvantageChange(itemIndex, advIndex, e.target.value)} className="flex-grow px-2 py-1 text-sm bg-gray-50 border border-gray-300 rounded-md" />
-                                <button onClick={() => handleRemoveItemAdvantage(itemIndex, advIndex)} className="text-xs text-red-500 hover:text-red-700 font-semibold">&times; Remove</button>
-                            </div>
-                        ))}
-                        <button onClick={() => handleAddItemAdvantage(itemIndex)} className="mt-1 text-xs text-blue-500 hover:text-blue-700 font-semibold">+ Add Advantage</button>
-                    </div>
-
-                    <div>
-                        <label className="block text-xs font-medium text-gray-600">Pictures:</label>
-                        {(item.pictures || []).map((pic, picIndex) => {
-                            const picUrl = getDisplayUrl ? getDisplayUrl(pic) : (typeof pic === 'object' && pic?.url ? pic.url : typeof pic === 'string' ? pic : '');
-  return (
-                                <div key={picIndex} className="flex items-center space-x-2 mt-1 p-1 border border-dashed border-gray-300 rounded">
-                                    {picUrl && <img src={picUrl} alt={`Pic ${picIndex + 1}`} className="h-12 w-12 object-cover rounded" />}
-                                    <input 
-                                        type="file" 
-                                        accept="image/*" 
-                                        onChange={(e) => handleItemPictureChange(itemIndex, picIndex, e.target.files[0])} 
-                                        className="flex-grow text-xs file:text-xs file:mr-1 file:py-0.5 file:px-1 file:rounded file:border-0 file:font-semibold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100"
-                                    />
-                                    <button onClick={() => handleRemoveItemPicture(itemIndex, picIndex)} className="text-xs text-red-500 hover:text-red-700 font-semibold">&times; Remove</button>
-                                </div>
-                            );
-                        })}
-                        <button onClick={() => handleAddPictureToItem(itemIndex)} className="mt-1 text-xs text-blue-500 hover:text-blue-700 font-semibold">+ Add Picture Slot</button>
-                    </div>
-                    
-                    <div>
-                        <label className="block text-xs font-medium text-gray-600">Color Possibilities:</label>
-                        <input type="text" value={item.colorPossibilities || ''} onChange={(e) => handleItemDetailChange(itemIndex, 'colorPossibilities', e.target.value)} className="mt-0.5 block w-full px-2 py-1 text-sm bg-gray-50 border border-gray-300 rounded-md" />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-medium text-gray-600">Installation Time:</label>
-                        <input type="text" value={item.installationTime || ''} onChange={(e) => handleItemDetailChange(itemIndex, 'installationTime', e.target.value)} className="mt-0.5 block w-full px-2 py-1 text-sm bg-gray-50 border border-gray-300 rounded-md" />
-                    </div>
-                </div>
-            ))}
-            <button onClick={handleAddItem} className="mt-4 px-3 py-1.5 text-sm bg-green-500 hover:bg-green-600 text-white rounded-md shadow-sm font-semibold">+ Add New Item</button>
-        
-            {/* Style block for EditorPanel specific styles */}
-            <style jsx>{`
-                .input-title-general-list-panel {
-                    font-size: 1.875rem; /* Tailwind text-3xl */
-                    line-height: 2.25rem;
-                    font-weight: 700; /* bold */
-                    color: #374151; /* Keep panel's text color for inputs */
-                }
-                .input-item-name-general-list-panel {
-                    font-size: 1.25rem; /* Tailwind text-xl */
-                    line-height: 1.75rem;
-                    font-weight: 600; /* semibold */
-                    color: #374151;
-                    /* bg-gray-50 is fine here as it's panel-specific */
-                }
-                .input-item-description-general-list-panel {
-                    /* text-sm is already applied by Tailwind, ensure line-height is comfortable */
-                    line-height: 1.625; /* similar to leading-relaxed (1.625) vs default (1.5 for text-sm) */
-                    /* bg-gray-50 is fine */
-                }
-                /* Other panel inputs maintain their existing sm or xs text sizes */
-            `}</style>
+          ))}
         </div>
-    );
+      )}
+
+      <div className={`${commonCardClasses} ${!readOnly ? editModeBorderClass : ''} relative`}> 
+        {!readOnly && (
+          <div className="absolute top-2 right-2 flex space-x-1 z-10">
+            <button 
+              onClick={addItem} 
+              className="p-1.5 bg-blue-500 text-white rounded-md shadow-md hover:bg-blue-600 transition-colors"
+              title={hasStructuredItems || items.length === 0 ? "Add New Structured Item" : "Add New List Item"}
+            >
+              <FaPlus size={12} />
+            </button>
+          </div>
+        )}
+        
+        {!hasStructuredItems && !readOnly && (
+          <div className="absolute top-2 left-2 flex space-x-1 z-10 items-center">
+            <span className="text-xs text-gray-500 mr-1">Style:</span>
+            <select 
+              value={listStyle}
+              onChange={(e) => handleListStyleChange(e.target.value)}
+              className="p-1 bg-gray-100 border border-gray-300 rounded-md text-xs shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="none">None</option>
+              <option value="bullet">Bullet</option>
+              <option value="numbered">Numbered</option>
+            </select>
+          </div>
+        )}
+
+        {!hasStructuredItems && ( // Simple List Editing
+          <>
+            {items.map((item, index) => (
+              <div key={index} className={`py-1 flex items-center group/simpleitem ${listStyle === "bullet" || listStyle === "numbered" ? "ml-5" : ""}`}>
+                {listStyle === "numbered" && <span className="mr-2 text-gray-700 text-lg pt-[3px]">{index + 1}.</span>}
+                {listStyle === "bullet" && <FaCheckCircle className="text-green-500 mr-2 mt-[5px] flex-shrink-0" />}
+                <EditableText
+                  value={String(item)}
+                  onChange={(newVal) => {
+                    const newItems = items.map((s, i) => i === index ? newVal : s);
+                    handleConfigUpdate({ ...config, items: newItems });
+                  }}
+                  tag="div"
+                  className="text-gray-700 text-lg flex-grow"
+                  inputClassName="text-gray-700 text-lg w-full"
+                  isTextarea={String(item).length > 70 || String(item).includes('\n')}
+                  placeholder="List item content"
+                  readOnly={readOnly}
+                />
+                {!readOnly && (
+                  <button 
+                    onClick={() => removeItem(index)} 
+                    className="ml-2 p-1 text-red-500 hover:text-red-600 opacity-0 group-hover/simpleitem:opacity-100 transition-opacity duration-150"
+                    title="Remove Item"
+                  >
+                    <FaTrash size={14} />
+                  </button>
+                )}
+              </div>
+            ))}
+            {items.length === 0 && 
+              <div className="text-gray-500 text-center py-10">
+                <p className="mb-2">No items yet.</p>
+                {!readOnly && (
+                  <button 
+                    onClick={addItem} 
+                    className="px-3 py-1.5 bg-blue-500 text-white rounded-md shadow-md hover:bg-blue-600 transition-colors text-sm"
+                  >
+                    <FaPlus size={10} className="inline mr-1" /> Add {hasStructuredItems || items.length === 0 ? "Structured Item" : "List Item"}
+                  </button>
+                )}
+              </div>
+            }
+          </>
+        )}
+
+        {hasStructuredItems && ( // Structured List Editing (content part)
+          items.length === 0 ? (
+             <div className="text-gray-500 text-center py-10">
+                <p className="mb-2">No items yet. Add a structured item to begin.</p>
+                {!readOnly && (
+                  <button 
+                    onClick={addItem} 
+                    className="px-3 py-1.5 bg-blue-500 text-white rounded-md shadow-md hover:bg-blue-600 transition-colors text-sm"
+                  >
+                    <FaPlus size={10} className="inline mr-1" /> Add Structured Item
+                  </button>
+                )}
+              </div>
+          ) : (
+            <motion.div // Use motion.div for consistency if animations are ever added here
+                key={activeItemForEdit.id || selectedIndex} // Keyed for re-render on selection change
+                className="w-full"
+            >
+                {/* Name is edited via the buttons above, so display it statically here or omit if redundant */} 
+                {/* <h3 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 text-gray-800 text-center md:text-left">{activeItemForEdit.name}</h3> */} 
+                
+                <div className="mb-3">
+                  <EditableText
+                    value={activeItemForEdit.description || ""}
+                    onChange={(newVal) => handleItemFieldChange(selectedIndex, "description", newVal)}
+                    tag="div"
+                    className="text-gray-700 text-sm sm:text-base md:text-lg whitespace-pre-wrap"
+                    inputClassName="text-gray-700 text-sm sm:text-base md:text-lg w-full"
+                    isTextarea
+                    placeholder="Item description..."
+                    readOnly={readOnly}
+                  />
+                </div>
+
+                { (activeItemForEdit.advantages && activeItemForEdit.advantages.length > 0) || !readOnly ? (
+                    <div className="mb-3">
+                        <h4 className="text-lg sm:text-xl font-semibold mb-1 text-gray-700">Advantages</h4>
+                        <ul className="grid grid-cols-1 @[600px]:grid-cols-2 gap-x-4 gap-y-0.5 text-gray-600 pl-1">
+                        {(activeItemForEdit.advantages || []).map((adv, advIndex) => (
+                        <li key={advIndex} className="flex items-center text-sm md:text-base py-0.5 group/advantage">
+                            <FaCheckCircle className="text-green-500 mr-2 mt-1 flex-shrink-0" />
+                            <EditableText
+                            value={adv}
+                            onChange={(newVal) => handleAdvantageChange(selectedIndex, advIndex, newVal)}
+                            tag="span"
+                            className="text-gray-600 text-sm md:text-base flex-grow"
+                            inputClassName="text-gray-600 text-sm md:text-base w-full"
+                            placeholder="Advantage"
+                            readOnly={readOnly}
+                            />
+                            {!readOnly && (
+                              <button 
+                                onClick={() => removeAdvantage(selectedIndex, advIndex)}
+                                className="ml-1 p-0.5 text-red-500 hover:text-red-600 opacity-0 group-hover/advantage:opacity-100 transition-opacity duration-150"
+                                title="Remove Advantage"
+                              >
+                                <FaTimes size={12} />
+                              </button>
+                            )}
+                        </li>
+                        ))}
+                        </ul>
+                        {/* Add Advantage Button */}
+                        {!readOnly && (
+                            <button 
+                                onClick={() => addAdvantage(selectedIndex)} 
+                                className="mt-1.5 text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded-md shadow"
+                            >
+                                <FaPlus size={10} className="inline mr-1" /> Add Advantage
+                            </button>
+                        )
+                        }
+                        {(activeItemForEdit.advantages || []).length === 0 && !readOnly && <p className="text-xs text-gray-400 ml-2 italic mt-1">No advantages listed. Click 'Add Advantage' to add one.</p>}
+                    </div>
+                ) : null}
+                
+                {(activeItemForEdit.pictures && activeItemForEdit.pictures.length > 0) || !readOnly ? (
+                    <div className="mb-4">
+                        <h4 className="text-lg sm:text-xl font-semibold mb-2 text-gray-700">Gallery</h4>
+                        {(activeItemForEdit.pictures && activeItemForEdit.pictures.length > 0) ? (
+                            <div className="mt-2 grid grid-cols-2 @[400px]:grid-cols-3 @[600px]:grid-cols-4 gap-3">
+                                {(activeItemForEdit.pictures || []).map((pic, picIdx) => (
+                                <div key={picIdx} className="aspect-square overflow-hidden rounded-lg shadow-md"><img src={currentGetDisplayUrl(pic)} alt={`Preview ${picIdx}`} className="w-full h-full object-cover"/></div>
+                                ))}
+                            </div>
+                        ) : <p className="text-xs text-gray-400 italic mt-1">No pictures. Add pictures using the editor panel.</p>}
+                    </div>
+                ) : null}
+
+                { (activeItemForEdit.colorPossibilities || activeItemForEdit.installationTime || !readOnly) ? (
+                    <div className="text-sm text-gray-600 space-y-1">
+                        <div>
+                        <strong className="text-gray-700">Color Options: </strong>
+                        <EditableText
+                            value={activeItemForEdit.colorPossibilities || ""}
+                            onChange={(newVal) => handleItemFieldChange(selectedIndex, "colorPossibilities", newVal)}
+                            tag="span"
+                            className="text-gray-600 text-sm"
+                            inputClassName="text-gray-600 text-sm w-auto inline-block"
+                            placeholder="e.g., Various colors"
+                            readOnly={readOnly}
+                        />
+                        </div>
+                        <div>
+                        <strong className="text-gray-700">Installation Time: </strong>
+                        <EditableText
+                            value={activeItemForEdit.installationTime || ""}
+                            onChange={(newVal) => handleItemFieldChange(selectedIndex, "installationTime", newVal)}
+                            tag="span"
+                            className="text-gray-600 text-sm"
+                            inputClassName="text-gray-600 text-sm w-auto inline-block"
+                            placeholder="e.g., 1-2 days"
+                            readOnly={readOnly}
+                        />
+          </div>
+        </div>
+                ) : null}
+            </motion.div>
+          )
+        )}
+      </div>
+    </section>
+  );
 };
 
-GeneralList.EditorPanel.propTypes = {
-    currentConfig: PropTypes.object.isRequired,
-    onPanelConfigChange: PropTypes.func.isRequired,
-    onPanelFileChange: PropTypes.func.isRequired, 
-    getDisplayUrl: PropTypes.func.isRequired, 
+GeneralList.EditorPanel = ({ currentConfig, onPanelConfigChange, onPanelFileChange, getDisplayUrl, themeColors }) => {
+  const {
+    sectionTitle: rawSectionTitle,
+    title: rawTitle,
+    items = [],
+    listStyle = "none",
+  } = currentConfig;
+
+  const hasStructuredItems = items.length > 0 && typeof items[0] === "object" && items[0] !== null && !Array.isArray(items[0]);
+  const currentGetDisplayUrl = typeof getDisplayUrl === 'function' ? getDisplayUrl : getDisplayUrlHelper;
+
+  const addPictureSlot = (itemIndex) => {
+    const newItems = items.map((item, i) => {
+      if (i === itemIndex && typeof item === 'object' && item !== null) {
+        return { ...item, pictures: [...(item.pictures || []), { url: '', name: 'New Picture', file: null, originalUrl: '' }] };
+      }
+      return item;
+    });
+    onPanelConfigChange({ ...currentConfig, items: newItems });
+  };
+
+  const removePicture = (itemIndex, picIndex) => {
+    const newItems = items.map((item, i) => {
+      if (i === itemIndex && typeof item === 'object' && item !== null) {
+        const picToRemove = (item.pictures || [])[picIndex];
+        if (picToRemove && typeof picToRemove === 'object' && picToRemove.url && picToRemove.url.startsWith('blob:')) {
+          URL.revokeObjectURL(picToRemove.url);
+        }
+        return { ...item, pictures: (item.pictures || []).filter((_,pIdx) => pIdx !== picIndex) };
+      }
+      return item;
+    });
+    onPanelConfigChange({ ...currentConfig, items: newItems });
+  };
+  
+  const handlePictureFileChange = (itemIndex, picIndex, file) => {
+     if (file && onPanelFileChange) {
+        const pathData = { field: 'pictures', blockItemIndex: itemIndex, pictureIndex: picIndex };
+        onPanelFileChange(pathData, file); 
+     }
+  };
+  
+  const handlePictureUrlChange = (itemIndex, picIndex, url) => {
+    const newItems = items.map((item, i) => {
+      if (i === itemIndex && typeof item === 'object' && item !== null) {
+        const newPictures = (item.pictures || []).map((pic, pIdx) => {
+          if (pIdx === picIndex) {
+            if (typeof pic === 'object' && pic.file && pic.url && pic.url.startsWith('blob:')) {
+              URL.revokeObjectURL(pic.url);
+            }
+            return { file: null, url: url, name: url.split('/').pop() || `image_${pIdx}`, originalUrl: url };
+          }
+          return pic;
+        });
+        return { ...item, pictures: newPictures };
+      }
+      return item;
+    });
+    onPanelConfigChange({ ...currentConfig, items: newItems });
+  };
+
+  return (
+    <div className="p-3 space-y-3 bg-gray-800 text-gray-200 rounded-b-md max-h-[70vh] overflow-y-auto">
+      {hasStructuredItems && items.length > 0 && (
+        <div className="border-t border-gray-700 pt-3">
+          <h4 className="text-sm font-semibold mb-2">Manage Item Images ({items.length})</h4>
+          {items.map((item, index) => {
+            if (typeof item !== 'object' || item === null) {
+              return (
+                <div key={index} className="p-2.5 mb-2.5 bg-gray-750 border border-gray-600 rounded-md">
+                  <span className="text-xs font-medium text-gray-400">Item {index + 1} (Not a structured item, cannot manage images)</span>
+                </div>
+              );
+            }
+            return (
+              <div key={item.id || index} className="p-2.5 mb-2.5 bg-gray-750 border border-gray-600 rounded-md">
+                <div className="flex justify-between items-center mb-1.5">
+                  <span className="text-xs font-medium text-gray-400">Images for: {item.name || `Item ${index + 1}`}</span>
+                </div>
+
+                <div>
+                  <label className="text-xs text-gray-400 block mb-0.5">Pictures:</label>
+                  {(item.pictures || []).map((pic, picIdx) => (
+                    <div key={picIdx} className="flex items-center space-x-1 mb-1 p-1 bg-gray-700 rounded">
+                      {currentGetDisplayUrl(pic) && <img src={currentGetDisplayUrl(pic)} alt={`Thumb ${picIdx}`} className="h-8 w-8 object-cover rounded"/>}
+                      <input type="text" placeholder="Image URL" value={(typeof pic === 'object' && pic !== null ? pic.url : String(pic)) || ''} onChange={(e) => handlePictureUrlChange(index, picIdx, e.target.value)} className="flex-grow p-1 bg-gray-600 border-gray-500 rounded text-xs" />
+                      <label className="text-xs bg-teal-600 hover:bg-teal-500 text-white px-1.5 py-1 rounded cursor-pointer">
+                        <FaImage size={10} className="inline"/>
+                        <input type="file" accept="image/*" className="hidden" onChange={(e) => handlePictureFileChange(index, picIdx, e.target.files?.[0])} />
+                      </label>
+                      <button onClick={() => removePicture(index, picIdx)} className="text-red-500 hover:text-red-400 p-0.5"><FaTimes size={10}/></button>
+                    </div>
+                  ))}
+                  <button onClick={() => addPictureSlot(index)} className="text-xs bg-green-600 hover:bg-green-500 text-white px-1.5 py-0.5 rounded mt-0.5"><FaPlus size={8} className="inline mr-0.5"/>Add Picture Slot</button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      
+      {!hasStructuredItems && (
+        <div className="p-3 text-center text-gray-400 text-sm">
+          Image management is available for structured list items. This list is currently simple.
+        </div>
+      )}
+
+      {hasStructuredItems && items.length === 0 && (
+         <div className="p-3 text-center text-gray-400 text-sm">
+          No items to manage images for. Add items in the main editor view.
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default GeneralList;

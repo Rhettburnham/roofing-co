@@ -383,7 +383,7 @@ PageHeroBlock.EditorPanel = function PageHeroBlockEditorPanel({ currentConfig, o
       <h5 className="text-sm font-semibold border-t border-gray-700 pt-2 mt-3">Call to Action Button</h5>
        <div>
         <label className="block text-xs font-medium text-gray-300">Button Text:</label>
-        <input type="text" value={formData.buttonText || ''} onChange={(e) => handleChange('buttonText', e.target.value)} placeholder="Optional" className="mt-0.5 panel-text-input-xs input-button-text-ph-panel"/>
+        <input type="text" value={formData.buttonText || ''} onChange={(e) => handleChange('buttonText', e.target.value)} placeholder="Optional" className="mt-0.5 panel-text-input-xs"/>
       </div>
       <div>
         <label className="block text-xs font-medium text-gray-300">Button Link:</label>
@@ -427,7 +427,6 @@ PageHeroBlock.EditorPanel = function PageHeroBlockEditorPanel({ currentConfig, o
       <style jsx global>{`
         .panel-text-input-xs { display: block; width: 100%; padding: 0.375rem 0.5rem; font-size: 0.75rem; background-color: #4B5563; border: 1px solid #6B7280; border-radius: 0.25rem; color:white; }
         .panel-select-xs { display: block; width: 100%; padding: 0.375rem 0.5rem; font-size: 0.75rem; background-color: #4B5563; border: 1px solid #6B7280; border-radius: 0.25rem; color:white; }
-        .input-button-text-ph-panel { /* Applied on top of panel-text-input-xs */ font-size: 1.125rem; /* text-lg */ font-weight: 600; /* font-semibold */ }
       `}</style>
     </div>
   );

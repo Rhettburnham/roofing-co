@@ -144,7 +144,7 @@ export const ConfigProvider = ({ children }) => {
             const [combinedResponse, colorsResponse, servicesResponse] = await Promise.all([
               fetch("/data/raw_data/step_4/combined_data.json"),
               fetch("/data/raw_data/step_4/colors_output.json"),
-              fetch("/data/raw_data/step_4/services.json")
+              fetch("/data/ignore/services.json")
             ]);
 
             const configData = {

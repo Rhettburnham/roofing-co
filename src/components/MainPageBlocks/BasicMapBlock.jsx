@@ -14,6 +14,8 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import * as FaIcons from "react-icons/fa";
 import IconSelectorModal from "../common/IconSelectorModal";
 import ThemeColorPicker from "../common/ThemeColorPicker";
+import PanelImagesController from "../common/PanelImagesController";
+import PropTypes from "prop-types";
 
 // Register ScrollTrigger plugin with GSAP
 gsap.registerPlugin(ScrollTrigger);
@@ -23,18 +25,38 @@ const getDisplayUrl = (imageValue, defaultPath = null) => {
   if (!imageValue) return defaultPath;
   if (typeof imageValue === 'string') return imageValue;
   if (typeof imageValue === 'object' && imageValue.url) return imageValue.url;
+  // If it's a File object directly (less common for this helper, but defensive)
+  if (imageValue instanceof File) return URL.createObjectURL(imageValue);
   return defaultPath;
 };
 
-// Helper to initialize image state: handles string path or {file, url, name} object
-const initializeImageState = (imageConfig, defaultPath) => {
-  if (imageConfig && typeof imageConfig === 'object' && imageConfig.url) {
-    return { ...imageConfig, name: imageConfig.name || imageConfig.url.split('/').pop() }; 
-  }
+// Helper to initialize image state: handles string path or {file, url, name, originalUrl} object
+const initializeImageState = (imageConfig, defaultStaticPath) => {
+  let file = null;
+  let url = defaultStaticPath;
+  let name = defaultStaticPath.split('/').pop();
+  let originalUrl = defaultStaticPath; // Default originalUrl is the static default path
+
   if (typeof imageConfig === 'string') {
-    return { file: null, url: imageConfig, name: imageConfig.split('/').pop() }; 
+    url = imageConfig;
+    name = imageConfig.split('/').pop();
+    originalUrl = imageConfig; // String path is the original
+  } else if (imageConfig && typeof imageConfig === 'object') {
+    // Use provided url for display, which could be a blob or a path
+    url = imageConfig.url || defaultStaticPath;
+    name = imageConfig.name || url.split('/').pop();
+    file = imageConfig.file || null; // Preserve file if it exists (e.g. from active editing state)
+    
+    // Determine originalUrl: prioritize existing originalUrl, then a non-blob url, then defaultStaticPath
+    if (imageConfig.originalUrl) {
+      originalUrl = imageConfig.originalUrl;
+    } else if (typeof imageConfig.url === 'string' && !imageConfig.url.startsWith('blob:')) {
+      originalUrl = imageConfig.url;
+    } else {
+      originalUrl = defaultStaticPath; // Fallback to static default if url is blob or missing
+    }
   }
-  return { file: null, url: defaultPath, name: defaultPath.split('/').pop() }; 
+  return { file, url, name, originalUrl };
 };
 
 // to do this needs to be centered where the lat is currentl seem up and to the right
@@ -298,7 +320,8 @@ function BasicMapPreview({
     bannerBackgroundColor,
     statsTextColor,
     showHoursButtonText,
-    hideHoursButtonText
+    hideHoursButtonText,
+    styling = { desktopHeightVH: 30, mobileHeightVW: 40 }
   } = mapData;
 
   useEffect(() => {
@@ -419,13 +442,18 @@ function BasicMapPreview({
   const currentShowHoursText = showHoursButtonText || "Show Hours";
   const currentHideHoursText = hideHoursButtonText || "Hide Hours";
 
+  // Calculate dynamic height based on styling
+  const dynamicMapHeight = isSmallScreen 
+    ? `${styling.mobileHeightVW}vw` 
+    : `${styling.desktopHeightVH}vh`;
+
   return (
     <section className="overflow-hidden" ref={sectionRef}>
       <div className="py-4 px-[4vw]">
-        <div className="relative flex flex-col md:flex-row gap-4 px-10 md:px-6 h-auto md:h-[30vh] md:justify-between w-full"> {/* Removed mt-4 */}
+        <div className="relative flex flex-col md:flex-row gap-4 px-10 md:px-6 md:justify-between w-full" style={{ height: dynamicMapHeight }}> 
           {/* Left: Map */}
           <div className="flex flex-col w-full md:w-[55%]">
-            <div className="relative h-[30vh] md:h-full w-full z-10"> {/* Swapped with stats/hours height, was h-[22vh] */}
+            <div className="relative h-full w-full z-10"> {/* Changed to full height */}
               <div className="w-full h-full rounded-xl overflow-hidden shadow-lg border border-gray-300 relative">
                 {/* Title with animation - conditionally editable - MOVED HERE */}
                 {readOnly ? (
@@ -529,7 +557,7 @@ function BasicMapPreview({
               </span>
             </button>
             <div 
-              className="relative h-[22vh] md:h-[calc(40vh-2.5rem)] rounded-b-xl overflow-hidden" // Swapped with map height, was h-[30vh]
+              className="relative h-full rounded-b-xl overflow-hidden" // Changed to full height
             >
               <WindowStrings
                 isVisible={isServiceHoursVisible}
@@ -627,127 +655,184 @@ function StatItemEditor({ stat, onChange, onRemove }) {
   );
 }
 
-function BasicMapEditorPanel({ localMapData, onPanelChange, themeColors }) {
-  const handleAddStat = () => {
-    onPanelChange(prev => ({ ...prev, stats: [...(prev.stats || []), { id: `stat_new_${Date.now()}`, icon: 'FaAward', value: '0', title: 'New Stat'}] }));
-  };
+// =============================================
+// Control Components for Tabs
+// =============================================
 
-  const handleRemoveStat = (index) => {
-    onPanelChange(prev => ({ ...prev, stats: prev.stats.filter((_, i) => i !== index) }));
-  };
-  
-  const handleMapFieldChange = (field, value, isCoordinate = false, coordIndex = 0) => {
-    if (isCoordinate) {
-        onPanelChange(prev => {
-            const newCenter = [...(prev.center || [0,0])];
-            newCenter[coordIndex] = parseFloat(value) || 0;
-            return {...prev, center: newCenter };
-        });
-    } else if (field === 'zoomLevel' || field === 'circleRadius') {
-        onPanelChange(prev => ({ ...prev, [field]: parseInt(value, 10) || 0 }));
-    } else {
-        onPanelChange(prev => ({ ...prev, [field]: value })); // For color strings etc.
-    }
+const BasicMapColorControls = ({ currentData, onControlsChange, themeColors }) => {
+  const handleColorUpdate = (fieldName, colorValue) => {
+    onControlsChange({ ...currentData, [fieldName]: colorValue });
   };
 
   return (
-    <div className="bg-black text-white p-3 rounded mt-0">
-      <h2 className="text-lg font-semibold mb-2.5 border-b border-gray-700 pb-1.5">Map Settings</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
-        
-        {/* Left Column */}
-        <div className="space-y-2.5 pr-2 md:border-r border-gray-600">
-          <h3 className="text-base font-medium text-gray-300">Map View</h3>
-          <div className="grid grid-cols-2 gap-x-2 gap-y-1.5">
-            <label className="block text-xs">
-              <span className="font-medium text-gray-400 block mb-0.5">Latitude:</span>
-              <input type="number" step="any" className="bg-gray-700 px-2 py-1 rounded w-full text-white focus:ring-blue-500 focus:border-blue-500 text-[11px]" value={localMapData.center?.[0] || 0} onChange={(e) => handleMapFieldChange('center', e.target.value, true, 0)}/>
-            </label>
-            <label className="block text-xs">
-              <span className="font-medium text-gray-400 block mb-0.5">Longitude:</span>
-              <input type="number" step="any" className="bg-gray-700 px-2 py-1 rounded w-full text-white focus:ring-blue-500 focus:border-blue-500 text-[11px]" value={localMapData.center?.[1] || 0} onChange={(e) => handleMapFieldChange('center', e.target.value, true, 1)}/>
-            </label>
-            <label className="block text-xs">
-              <span className="font-medium text-gray-400 block mb-0.5">Zoom:</span>
-              <input type="number" className="bg-gray-700 px-2 py-1 rounded w-full text-white focus:ring-blue-500 focus:border-blue-500 text-[11px]" value={localMapData.zoomLevel || 5} onChange={(e) => handleMapFieldChange('zoomLevel', e.target.value)}/>
-            </label>
-            <label className="block text-xs">
-              <span className="font-medium text-gray-400 block mb-0.5">Radius (m):</span>
-              <input type="number" className="bg-gray-700 px-2 py-1 rounded w-full text-white focus:ring-blue-500 focus:border-blue-500 text-[11px]" value={localMapData.circleRadius || 0} onChange={(e) => handleMapFieldChange('circleRadius', e.target.value)}/>
-            </label>
-          </div>
+    <div className="p-3 space-y-4">
+      <ThemeColorPicker
+        label="Banner Text Color:"
+        currentColorValue={currentData.bannerTextColor || '#FFFFFF'}
+        themeColors={themeColors}
+        onColorChange={(fieldName, value) => handleColorUpdate('bannerTextColor', value)}
+        fieldName="bannerTextColor"
+        className="text-xs"
+      />
+      <ThemeColorPicker
+        label="Banner Background:"
+        currentColorValue={currentData.bannerBackgroundColor || '#1f2937'}
+        themeColors={themeColors}
+        onColorChange={(fieldName, value) => handleColorUpdate('bannerBackgroundColor', value)}
+        fieldName="bannerBackgroundColor"
+        className="text-xs"
+      />
+      <ThemeColorPicker
+        label="Stats Panel Text Color:"
+        currentColorValue={currentData.statsTextColor || '#FFFFFF'}
+        themeColors={themeColors}
+        onColorChange={(fieldName, value) => handleColorUpdate('statsTextColor', value)}
+        fieldName="statsTextColor"
+        className="text-xs"
+      />
+    </div>
+  );
+};
 
-          <div className="pt-2 border-t border-gray-600 space-y-1.5">
-            <h3 className="text-base font-medium text-gray-300 mt-1 mb-1">Banner Styling</h3>
-            <ThemeColorPicker
-              label="Banner Text Color:"
-              currentColorValue={localMapData.bannerTextColor || '#FFFFFF'}
-              themeColors={themeColors}
-              onColorChange={handleMapFieldChange}
-              fieldName="bannerTextColor"
-              className="text-xs"
+const BasicMapStylingControls = ({ currentData, onControlsChange }) => {
+  const handleFieldChange = (field, value, isCoordinate = false, coordIndex = 0) => {
+    if (isCoordinate) {
+      const newCenter = [...(currentData.center || [0,0])];
+      newCenter[coordIndex] = parseFloat(value) || 0;
+      onControlsChange({ ...currentData, center: newCenter });
+    } else if (field === 'zoomLevel' || field === 'circleRadius') {
+      onControlsChange({ ...currentData, [field]: parseInt(value, 10) || 0 });
+    } else if (field === 'styling') {
+      onControlsChange({ ...currentData, styling: { ...currentData.styling, ...value } });
+    } else {
+      onControlsChange({ ...currentData, [field]: value });
+    }
+  };
+
+  const currentStyling = currentData.styling || { desktopHeightVH: 30, mobileHeightVW: 40 };
+
+  return (
+    <div className="p-3 space-y-4">
+      <div>
+        <h3 className="text-base font-medium text-gray-700 mb-3">Map Dimensions</h3>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="block text-sm">
+            <span className="font-medium text-gray-600 block mb-1">Desktop Height (vh):</span>
+            <input 
+              type="number" 
+              min="20" 
+              max="80" 
+              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm" 
+              value={currentStyling.desktopHeightVH || 30} 
+              onChange={(e) => handleFieldChange('styling', { desktopHeightVH: parseInt(e.target.value) || 30 })}
             />
-            <ThemeColorPicker
-              label="Banner Background:"
-              currentColorValue={localMapData.bannerBackgroundColor || '#1f2937'}
-              themeColors={themeColors}
-              onColorChange={handleMapFieldChange}
-              fieldName="bannerBackgroundColor"
-              className="text-xs"
+          </label>
+          <label className="block text-sm">
+            <span className="font-medium text-gray-600 block mb-1">Mobile Height (vw):</span>
+            <input 
+              type="number" 
+              min="30" 
+              max="80" 
+              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm" 
+              value={currentStyling.mobileHeightVW || 40} 
+              onChange={(e) => handleFieldChange('styling', { mobileHeightVW: parseInt(e.target.value) || 40 })}
             />
-          </div>
+          </label>
         </div>
+      </div>
 
-        {/* Right Column */}
-        <div className="space-y-3">
-          <div className="space-y-2">
-            <h3 className="text-base font-medium text-gray-300">Display & Stats Styling</h3>
-            <div className="grid grid-cols-2 gap-x-2 gap-y-1.5">
-                <label className="block text-xs"><span className="font-medium text-gray-400 block mb-0.5">Show Hours Text:</span>
-                <input type="text" className="bg-gray-700 px-2 py-1 rounded w-full text-[11px]" placeholder="Show Hours" value={localMapData.showHoursButtonText || ''} onChange={(e) => handleMapFieldChange('showHoursButtonText', e.target.value)}/>
-                </label>
-                <label className="block text-xs"><span className="font-medium text-gray-400 block mb-0.5">Hide Hours Text:</span>
-                <input type="text" className="bg-gray-700 px-2 py-1 rounded w-full text-[11px]" placeholder="Hide Hours" value={localMapData.hideHoursButtonText || ''} onChange={(e) => handleMapFieldChange('hideHoursButtonText', e.target.value)}/>
-                </label>
-            </div>
-            <ThemeColorPicker
-              label="Stats Panel Text Color:"
-              currentColorValue={localMapData.statsTextColor || '#FFFFFF'}
-              themeColors={themeColors}
-              onColorChange={handleMapFieldChange}
-              fieldName="statsTextColor"
-              className="text-xs"
+      <div>
+        <h3 className="text-base font-medium text-gray-700 mb-3">Map View Settings</h3>
+        <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+          <label className="block text-sm">
+            <span className="font-medium text-gray-600 block mb-1">Latitude:</span>
+            <input 
+              type="number" 
+              step="any" 
+              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm" 
+              value={currentData.center?.[0] || 0} 
+              onChange={(e) => handleFieldChange('center', e.target.value, true, 0)}
             />
-          </div>
-          
-          <div className="pt-2 border-t border-gray-600 mt-2.5">
-            <h3 className="text-base font-medium text-gray-300 mb-1.5">Stats Items <span className="text-gray-500 text-[10px]">(Max 4, edit in preview)</span></h3>
-             <div className="max-h-[150px] overflow-y-auto pr-1 text-[11px] space-y-1">
-                {(localMapData.stats || []).slice(0,4).map((stat, index) => (
-                    <div key={stat.id || index} className="bg-gray-700 p-1.5 rounded relative">
-                        <button onClick={() => handleRemoveStat(index)} className="absolute top-0.5 right-0.5 bg-red-600 text-white p-0.5 rounded-full text-[8px] leading-none hover:bg-red-700 w-3 h-3 flex items-center justify-center">X</button>
-                        <p className="text-gray-300 truncate pr-3">V: {stat.value || 'N/A'}</p>
-                        <p className="text-gray-300 truncate pr-3">T: {stat.title || 'N/A'}</p>
-                        <p className="text-[10px] text-gray-400 mt-0.5">Icon: {stat.icon || 'FaAward'}</p>
-                    </div>
-                ))}
-            </div>
-            { (localMapData.stats?.length || 0) < 4 &&
-                <button onClick={handleAddStat} className="bg-blue-600 text-white text-[10px] px-1.5 py-0.5 rounded mt-1.5 self-start hover:bg-blue-700">+ Add Stat</button>
-            }
+          </label>
+          <label className="block text-sm">
+            <span className="font-medium text-gray-600 block mb-1">Longitude:</span>
+            <input 
+              type="number" 
+              step="any" 
+              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm" 
+              value={currentData.center?.[1] || 0} 
+              onChange={(e) => handleFieldChange('center', e.target.value, true, 1)}
+            />
+          </label>
+          <label className="block text-sm">
+            <span className="font-medium text-gray-600 block mb-1">Zoom Level:</span>
+            <input 
+              type="number" 
+              min="1" 
+              max="20" 
+              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm" 
+              value={currentData.zoomLevel || 5} 
+              onChange={(e) => handleFieldChange('zoomLevel', e.target.value)}
+            />
+          </label>
+          <label className="block text-sm">
+            <span className="font-medium text-gray-600 block mb-1">Circle Radius (m):</span>
+            <input 
+              type="number" 
+              min="0" 
+              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm" 
+              value={currentData.circleRadius || 0} 
+              onChange={(e) => handleFieldChange('circleRadius', e.target.value)}
+            />
+          </label>
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-base font-medium text-gray-700 mb-3">Button Text</h3>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="block text-sm">
+            <span className="font-medium text-gray-600 block mb-1">Show Hours Text:</span>
+            <input 
+              type="text" 
+              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm" 
+              placeholder="Show Hours" 
+              value={currentData.showHoursButtonText || ''} 
+              onChange={(e) => handleFieldChange('showHoursButtonText', e.target.value)}
+            />
+          </label>
+          <label className="block text-sm">
+            <span className="font-medium text-gray-600 block mb-1">Hide Hours Text:</span>
+            <input 
+              type="text" 
+              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm" 
+              placeholder="Hide Hours" 
+              value={currentData.hideHoursButtonText || ''} 
+              onChange={(e) => handleFieldChange('hideHoursButtonText', e.target.value)}
+            />
+          </label>
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-base font-medium text-gray-700 mb-3">Stats Management</h3>
+        <div className="space-y-2">
+          <p className="text-sm text-gray-600">Stats can be edited directly in the preview. Maximum 4 stats allowed.</p>
+          <div className="text-sm text-gray-500">
+            Current stats: {(currentData.stats || []).length}/4
           </div>
         </div>
       </div>
     </div>
   );
-}
+};
 
 /* --------------------------------------------------
    4) MAIN EXPORT
    If readOnly = true => BasicMapPreview
-   If readOnly = false => BasicMapEditorPanel + BasicMapPreview (for inline edits)
+   If readOnly = false => BasicMapPreview (for inline edits) with tabsConfig
 -----------------------------------------------------*/
-export default function BasicMapBlock({
+function BasicMapBlock({
   readOnly = false,
   mapData,
   onConfigChange,
@@ -782,7 +867,8 @@ export default function BasicMapBlock({
       bannerBackgroundColor: initialConfig.bannerBackgroundColor || '#1f2937',
       statsTextColor: initialConfig.statsTextColor || '#FFFFFF',
       showHoursButtonText: initialConfig.showHoursButtonText || "Show Hours",
-      hideHoursButtonText: initialConfig.hideHoursButtonText || "Hide Hours"
+      hideHoursButtonText: initialConfig.hideHoursButtonText || "Hide Hours",
+      styling: initialConfig.styling || { desktopHeightVH: 30, mobileHeightVW: 40 }
     };
   });
 
@@ -810,8 +896,14 @@ export default function BasicMapBlock({
         }
 
 
-        const newMarkerIcon = initializeImageState(incomingData.markerIcon, prevLocal.markerIcon?.url);
-        const newStatsBg = initializeImageState(incomingData.statsBackgroundImage, prevLocal.statsBackgroundImage?.url);
+        const newMarkerIcon = initializeImageState(
+            incomingData.markerIcon, 
+            prevLocal.markerIcon?.originalUrl || "/assets/images/hero/clipped.png" // Use existing originalUrl or static default
+        );
+        const newStatsBg = initializeImageState(
+            incomingData.statsBackgroundImage, 
+            prevLocal.statsBackgroundImage?.originalUrl || "/assets/images/stats_background.jpg" // Use existing originalUrl or static default
+        );
         
         if (prevLocal.markerIcon?.file && prevLocal.markerIcon.url?.startsWith('blob:') && prevLocal.markerIcon.url !== newMarkerIcon.url) {
             URL.revokeObjectURL(prevLocal.markerIcon.url);
@@ -852,7 +944,8 @@ export default function BasicMapBlock({
           bannerBackgroundColor: incomingData.bannerBackgroundColor !== undefined ? incomingData.bannerBackgroundColor : prevLocal.bannerBackgroundColor,
           statsTextColor: incomingData.statsTextColor !== undefined ? incomingData.statsTextColor : prevLocal.statsTextColor,
           showHoursButtonText: incomingData.showHoursButtonText !== undefined ? incomingData.showHoursButtonText : prevLocal.showHoursButtonText,
-          hideHoursButtonText: incomingData.hideHoursButtonText !== undefined ? incomingData.hideHoursButtonText : prevLocal.hideHoursButtonText
+          hideHoursButtonText: incomingData.hideHoursButtonText !== undefined ? incomingData.hideHoursButtonText : prevLocal.hideHoursButtonText,
+          styling: incomingData.styling || prevLocal.styling
         };
       });
     }
@@ -882,6 +975,11 @@ export default function BasicMapBlock({
     setLocalMapData(prevState => {
       const newState = typeof updater === 'function' ? updater(prevState) : { ...prevState, ...updater };
       if (newState.stats && newState.stats.length > 4) newState.stats = newState.stats.slice(0, 4);
+      
+      if (!readOnly && onConfigChange) {
+        onConfigChange(newState);
+      }
+      
       return newState;
     });
   };
@@ -946,11 +1044,6 @@ export default function BasicMapBlock({
         onStatIconClick={handleStatIconEditClick} 
         onServiceHourChange={handleServiceHourLocalChange}
       />
-      <BasicMapEditorPanel
-        localMapData={localMapData}
-        onPanelChange={handleLocalDataChange} 
-        themeColors={themeColors}
-      />
       <IconSelectorModal
         isOpen={isIconModalOpen}
         onClose={() => setIsIconModalOpen(false)}
@@ -961,3 +1054,142 @@ export default function BasicMapBlock({
     </>
   );
 }
+
+BasicMapBlock.propTypes = {
+  readOnly: PropTypes.bool,
+  mapData: PropTypes.object,
+  onConfigChange: PropTypes.func,
+  themeColors: PropTypes.object,
+};
+// BasicMapImagesController for handling map images
+const BasicMapImagesController = ({ currentData, onControlsChange }) => {
+  const handleImageFileChange = (field, file) => {
+    if (!file) return;
+    const currentImageState = currentData[field];
+
+    // Revoke old blob URL if one exists
+    if (currentImageState && currentImageState.url && currentImageState.url.startsWith('blob:')) {
+      URL.revokeObjectURL(currentImageState.url);
+    }
+
+    const fileURL = URL.createObjectURL(file);
+    onControlsChange({
+      ...currentData,
+      [field]: {
+        file: file,
+        url: fileURL,
+        name: file.name,
+        originalUrl: currentImageState?.originalUrl || file.name
+      }
+    });
+  };
+
+  const handleImageUrlChange = (field, urlValue) => {
+    const currentImageState = currentData[field];
+    if (currentImageState && currentImageState.url && currentImageState.url.startsWith('blob:')) {
+      URL.revokeObjectURL(currentImageState.url);
+    }
+    onControlsChange({
+      ...currentData,
+      [field]: {
+        file: null,
+        url: urlValue,
+        name: urlValue.split('/').pop(),
+        originalUrl: urlValue
+      }
+    });
+  };
+
+  return (
+    <div className="p-3 space-y-4">
+      <div>
+        <h3 className="text-base font-medium text-gray-700 mb-3">Marker Icon</h3>
+        <label className="block text-sm mb-2">
+          <span className="font-medium text-gray-600 block mb-1">Icon Image:</span>
+          <input 
+            type="file" 
+            accept="image/*" 
+            className="w-full bg-gray-100 text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700" 
+            onChange={(e) => handleImageFileChange('markerIcon', e.target.files?.[0])} 
+          />
+        </label>
+        <input 
+          type="text" 
+          placeholder="Or paste image URL" 
+          value={getDisplayUrl(currentData.markerIcon) || ''} 
+          onChange={(e) => handleImageUrlChange('markerIcon', e.target.value)} 
+          className="bg-gray-100 px-3 py-2 rounded w-full text-sm mt-2"
+        />
+        {getDisplayUrl(currentData.markerIcon) && (
+          <img 
+            src={getDisplayUrl(currentData.markerIcon)} 
+            alt="Marker Icon Preview" 
+            className="mt-2 h-16 w-16 object-contain rounded bg-gray-200 p-1"
+          />
+        )}
+      </div>
+
+      <div>
+        <h3 className="text-base font-medium text-gray-700 mb-3">Stats Panel Background</h3>
+        <label className="block text-sm mb-2">
+          <span className="font-medium text-gray-600 block mb-1">Background Image:</span>
+          <input 
+            type="file" 
+            accept="image/*" 
+            className="w-full bg-gray-100 text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700" 
+            onChange={(e) => handleImageFileChange('statsBackgroundImage', e.target.files?.[0])} 
+          />
+        </label>
+        <input 
+          type="text" 
+          placeholder="Or paste image URL" 
+          value={getDisplayUrl(currentData.statsBackgroundImage) || ''} 
+          onChange={(e) => handleImageUrlChange('statsBackgroundImage', e.target.value)} 
+          className="bg-gray-100 px-3 py-2 rounded w-full text-sm mt-2"
+        />
+        {getDisplayUrl(currentData.statsBackgroundImage) && (
+          <img 
+            src={getDisplayUrl(currentData.statsBackgroundImage)} 
+            alt="Stats Background Preview" 
+            className="mt-2 h-24 w-full object-cover rounded bg-gray-200 p-1"
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Add tabsConfig to BasicMapBlock
+BasicMapBlock.tabsConfig = (localData, onControlsChange, themeColors) => {
+  const tabs = {};
+
+  // Images Tab
+  tabs.images = (props) => (
+    <BasicMapImagesController 
+      {...props} 
+      currentData={localData} 
+      onControlsChange={onControlsChange} 
+    />
+  );
+
+  // Colors Tab
+  tabs.colors = (props) => (
+    <BasicMapColorControls 
+      {...props} 
+      currentData={localData} 
+      onControlsChange={onControlsChange} 
+      themeColors={themeColors} 
+    />
+  );
+
+  // Styling Tab
+  tabs.styling = (props) => (
+    <BasicMapStylingControls 
+      {...props} 
+      currentData={localData} 
+      onControlsChange={onControlsChange}
+    />
+  );
+
+  return tabs;
+}; export default BasicMapBlock;
