@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const ViewPlan = () => {
-  const [subscriptions, setSubscriptions] = useState([]);
+  const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [domain, setDomain] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -23,8 +26,21 @@ const ViewPlan = () => {
         }
 
         const data = await response.json();
-        // Handle both single subscription and array of subscriptions
-        setSubscriptions(Array.isArray(data) ? data : [data]);
+        setSubscription(data);
+
+        // Fetch domain information
+        const domainResponse = await fetch('/api/auth/get-domain', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+        });
+
+        if (domainResponse.ok) {
+          const domainData = await domainResponse.json();
+          setDomain(domainData.domain);
+        }
       } catch (err) {
         setError(err.message);
       } finally {
@@ -34,6 +50,45 @@ const ViewPlan = () => {
 
     fetchSubscriptionDetails();
   }, []);
+
+  const handleCancelSubscription = async () => {
+    try {
+      setCancelling(true);
+      const response = await fetch('/api/auth/cancel-subscription', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to cancel subscription');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        // Refresh subscription data
+        const subResponse = await fetch('/api/auth/get-subscription', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+        });
+
+        if (subResponse.ok) {
+          const subData = await subResponse.json();
+          setSubscription(subData);
+        }
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setCancelling(false);
+      setShowCancelModal(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -51,7 +106,7 @@ const ViewPlan = () => {
     );
   }
 
-  if (!subscriptions.length) {
+  if (!subscription?.hasSubscription) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -68,6 +123,7 @@ const ViewPlan = () => {
   }
 
   const formatDate = (timestamp) => {
+    if (!timestamp) return 'N/A';
     return new Date(timestamp * 1000).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
@@ -75,62 +131,73 @@ const ViewPlan = () => {
     });
   };
 
+  const { subscription: subData } = subscription;
+
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Your Subscriptions</h1>
-        <div className="space-y-6">
-          {subscriptions.map((subscription, index) => (
-            <div key={index} className="bg-white shadow rounded-lg overflow-hidden">
-              <div className="px-4 py-5 sm:p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Subscription {index + 1}</h2>
-                
-                <div className="space-y-6">
-                  {/* Plan Type */}
-                  <div className="border-b pb-4">
-                    <h3 className="text-lg font-medium text-gray-900">Current Plan</h3>
-                    <p className="mt-1 text-sm text-gray-600">
-                      {subscription.planType === 'monthly' ? 'Monthly Plan' : 'Yearly Plan'}
-                    </p>
-                  </div>
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Your Subscription</h1>
+        <div className="bg-white shadow rounded-lg overflow-hidden">
+          <div className="px-4 py-5 sm:p-6">
+            <div className="space-y-6">
+              {/* Domain Information */}
+              {domain && (
+                <div className="border-b pb-4">
+                  <h3 className="text-lg font-medium text-gray-900">Your Domain</h3>
+                  <p className="mt-1 text-sm text-gray-600">
+                    {domain}
+                  </p>
+                </div>
+              )}
 
-                  {/* Signup Date */}
-                  <div className="border-b pb-4">
-                    <h3 className="text-lg font-medium text-gray-900">Signup Date</h3>
-                    <p className="mt-1 text-sm text-gray-600">
-                      {formatDate(subscription.created)}
-                    </p>
-                  </div>
+              {/* Plan Type */}
+              <div className="border-b pb-4">
+                <h3 className="text-lg font-medium text-gray-900">Current Plan</h3>
+                <p className="mt-1 text-sm text-gray-600">
+                  {subData.planType === 'monthly' ? 'Monthly Plan' : 'Yearly Plan'}
+                </p>
+              </div>
 
-                  {/* Next Payment */}
-                  <div className="border-b pb-4">
-                    <h3 className="text-lg font-medium text-gray-900">Next Payment</h3>
-                    <p className="mt-1 text-sm text-gray-600">
-                      {subscription.status === 'trialing' 
-                        ? `Trial ends on ${formatDate(subscription.trial_end)}`
-                        : formatDate(subscription.current_period_end)}
-                    </p>
-                  </div>
-
-                  {/* Domain Name */}
-                  <div className="border-b pb-4">
-                    <h3 className="text-lg font-medium text-gray-900">Domain Name</h3>
-                    <p className="mt-1 text-sm text-gray-600">
-                      {subscription.metadata?.domainName || 'Not set'}
-                    </p>
-                  </div>
-
-                  {/* Subscription Status */}
+              {/* Payment Dates */}
+              <div className="border-b pb-4">
+                <h3 className="text-lg font-medium text-gray-900">Payment Schedule</h3>
+                <div className="mt-2 space-y-2">
                   <div>
-                    <h3 className="text-lg font-medium text-gray-900">Status</h3>
+                    <p className="text-sm font-medium text-gray-500">Last Payment</p>
                     <p className="mt-1 text-sm text-gray-600">
-                      {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
+                      {formatDate(subData.currentPeriodStart)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Next Payment</p>
+                    <p className="mt-1 text-sm text-gray-600">
+                      {formatDate(subData.currentPeriodEnd)}
                     </p>
                   </div>
                 </div>
               </div>
+
+              {/* Subscription Status */}
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">Status</h3>
+                <p className="mt-1 text-sm text-gray-600">
+                  {subData.status ? subData.status.charAt(0).toUpperCase() + subData.status.slice(1) : 'Active'}
+                  {subData.cancelAtPeriodEnd && ' (Cancelling at period end)'}
+                </p>
+              </div>
+
+              {/* Product Details */}
+              {subData.product && (
+                <div className="border-t pt-4">
+                  <h3 className="text-lg font-medium text-gray-900">Plan Details</h3>
+                  <p className="mt-1 text-sm text-gray-600">{subData.product.name}</p>
+                  {subData.product.description && (
+                    <p className="mt-1 text-sm text-gray-500">{subData.product.description}</p>
+                  )}
+                </div>
+              )}
             </div>
-          ))}
+          </div>
         </div>
 
         {/* Action Buttons */}
@@ -141,6 +208,14 @@ const ViewPlan = () => {
           >
             Change Plan
           </button>
+          {!subData.cancelAtPeriodEnd && (
+            <button
+              onClick={() => setShowCancelModal(true)}
+              className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+            >
+              Cancel Subscription
+            </button>
+          )}
           <button
             onClick={() => navigate('/oneform')}
             className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
@@ -149,6 +224,34 @@ const ViewPlan = () => {
           </button>
         </div>
       </div>
+
+      {/* Cancel Confirmation Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Cancel Subscription</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Are you sure you want to cancel your subscription? This action is irreversible and your site will go down at the end of your current billing period.
+            </p>
+            <div className="flex space-x-4">
+              <button
+                onClick={() => setShowCancelModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                disabled={cancelling}
+              >
+                Keep Subscription
+              </button>
+              <button
+                onClick={handleCancelSubscription}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+                disabled={cancelling}
+              >
+                {cancelling ? 'Cancelling...' : 'Yes, Cancel Subscription'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
