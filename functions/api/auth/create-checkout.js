@@ -43,9 +43,16 @@ export async function onRequest(context) {
       }
   
       const requestBody = await request.json();
-      const { priceId, planType } = requestBody;
+      const { priceId, planType, billingDetails } = requestBody;
       if (!priceId) {
         return new Response(JSON.stringify({ error: 'Price ID is required' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+  
+      if (!billingDetails?.name || !billingDetails?.address) {
+        return new Response(JSON.stringify({ error: 'Billing details are required' }), {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
@@ -96,7 +103,7 @@ export async function onRequest(context) {
       // If customer exists, update metadata; otherwise, create new customer
       if (searchData.data && searchData.data.length > 0) {
         customer = searchData.data[0];
-        // Update customer metadata
+        // Update customer metadata and billing details
         await fetch(`https://api.stripe.com/v1/customers/${customer.id}`, {
           method: 'POST',
           headers: stripeHeaders,
@@ -104,10 +111,16 @@ export async function onRequest(context) {
             'metadata[userId]': userSession.user_id,
             'metadata[configId]': userSession.config_id,
             'metadata[planType]': planType || 'monthly',
+            'name': billingDetails.name,
+            'address[line1]': billingDetails.address.line1,
+            'address[city]': billingDetails.address.city,
+            'address[state]': billingDetails.address.state,
+            'address[postal_code]': billingDetails.address.postal_code,
+            'address[country]': billingDetails.address.country,
           }),
         });
       } else {
-        // Create new customer
+        // Create new customer with billing details
         const createRes = await fetch('https://api.stripe.com/v1/customers', {
           method: 'POST',
           headers: stripeHeaders,
@@ -116,6 +129,12 @@ export async function onRequest(context) {
             'metadata[userId]': userSession.user_id,
             'metadata[configId]': userSession.config_id,
             'metadata[planType]': planType || 'monthly',
+            'name': billingDetails.name,
+            'address[line1]': billingDetails.address.line1,
+            'address[city]': billingDetails.address.city,
+            'address[state]': billingDetails.address.state,
+            'address[postal_code]': billingDetails.address.postal_code,
+            'address[country]': billingDetails.address.country,
           }),
         });
   

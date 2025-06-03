@@ -120,7 +120,7 @@ export async function onRequest(context) {
 
     // Get customer's subscriptions, expanding latest_invoice
     console.log('Fetching customer subscriptions, expanding latest_invoice...');
-    const subscriptionsRes = await fetch(`https://api.stripe.com/v1/subscriptions?customer=${customer.id}&status=active&expand[]=data.latest_invoice`, {
+    const subscriptionsRes = await fetch(`https://api.stripe.com/v1/subscriptions?customer=${customer.id}&status=active,trialing&expand[]=data.latest_invoice`, {
       headers: stripeHeaders // Use consistent headers
     });
 
@@ -143,14 +143,14 @@ export async function onRequest(context) {
         currentPeriodStart: sub.current_period_start,
         cancelAtPeriodEnd: sub.cancel_at_period_end,
         planType: sub.metadata.planType,
-        latestInvoiceId: sub.latest_invoice?.id, // Log invoice ID
-        latestInvoicePaidAt: sub.latest_invoice?.paid_at, // Log paid_at
-        latestInvoiceNextPaymentAttempt: sub.latest_invoice?.next_payment_attempt // Log next_payment_attempt
+        latestInvoiceId: sub.latest_invoice?.id,
+        latestInvoicePaidAt: sub.latest_invoice?.paid_at,
+        latestInvoiceNextPaymentAttempt: sub.latest_invoice?.next_payment_attempt
       }))
     });
 
-    // Get the active subscriptions
-    const activeSubscriptions = subscriptionsData.data.filter(sub => sub.status === 'active');
+    // Get the active and trialing subscriptions
+    const activeSubscriptions = subscriptionsData.data.filter(sub => sub.status === 'active' || sub.status === 'trialing');
 
     if (!activeSubscriptions.length) {
       console.log('No active subscriptions found');
