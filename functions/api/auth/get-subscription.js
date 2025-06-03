@@ -139,16 +139,17 @@ export async function onRequest(context) {
         id: sub.id,
         status: sub.status,
         currentPeriodEnd: sub.current_period_end,
+        currentPeriodStart: sub.current_period_start,
         cancelAtPeriodEnd: sub.cancel_at_period_end,
         planType: sub.metadata.planType
       }))
     });
 
-    // Get the active subscription if any
-    const activeSubscription = subscriptionsData.data.find(sub => sub.status === 'active');
+    // Get the active subscriptions
+    const activeSubscriptions = subscriptionsData.data.filter(sub => sub.status === 'active');
     
-    if (!activeSubscription) {
-      console.log('No active subscription found');
+    if (!activeSubscriptions.length) {
+      console.log('No active subscriptions found');
       return new Response(JSON.stringify({ 
         hasSubscription: false,
         message: 'No active subscription found'
@@ -160,51 +161,55 @@ export async function onRequest(context) {
       });
     }
 
-    // Get the product details for the subscription
-    console.log('Fetching product details...');
-    const productRes = await fetch(`https://api.stripe.com/v1/products/${activeSubscription.metadata.productId}`, {
-      headers: {
-        'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
-        'Content-Type': 'application/x-www-form-urlencoded'
-      }
-    });
-
-    if (!productRes.ok) {
-      const error = await productRes.text();
-      console.error('Failed to fetch product details:', {
-        status: productRes.status,
-        error
+    // Get product details for all subscriptions
+    const subscriptionsWithProducts = await Promise.all(activeSubscriptions.map(async (subscription) => {
+      const productRes = await fetch(`https://api.stripe.com/v1/products/${subscription.metadata.productId}`, {
+        headers: {
+          'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
       });
-      throw new Error(`Failed to fetch product details: ${error}`);
-    }
 
-    const productDetails = await productRes.json();
-    console.log('Product details:', {
-      id: productDetails.id,
-      name: productDetails.name,
-      description: productDetails.description
-    });
+      if (!productRes.ok) {
+        const error = await productRes.text();
+        console.error('Failed to fetch product details:', {
+          status: productRes.status,
+          error
+        });
+        throw new Error(`Failed to fetch product details: ${error}`);
+      }
 
-    // Prepare the response
-    const subscriptionData = {
-      hasSubscription: true,
-      subscription: {
-        id: activeSubscription.id,
-        status: activeSubscription.status,
-        currentPeriodEnd: activeSubscription.current_period_end,
-        cancelAtPeriodEnd: activeSubscription.cancel_at_period_end,
-        planType: activeSubscription.metadata.planType,
+      const productDetails = await productRes.json();
+      console.log('Product details:', {
+        id: productDetails.id,
+        name: productDetails.name,
+        description: productDetails.description
+      });
+
+      return {
+        id: subscription.id,
+        status: subscription.status,
+        currentPeriodStart: subscription.current_period_start,
+        currentPeriodEnd: subscription.current_period_end,
+        cancelAtPeriodEnd: subscription.cancel_at_period_end,
+        planType: subscription.metadata.planType,
         product: {
           id: productDetails.id,
           name: productDetails.name,
           description: productDetails.description
         }
-      }
+      };
+    }));
+
+    // Prepare the response
+    const responseData = {
+      hasSubscription: true,
+      subscriptions: subscriptionsWithProducts
     };
 
-    console.log('Sending subscription data:', subscriptionData);
+    console.log('Sending subscription data:', responseData);
 
-    return new Response(JSON.stringify(subscriptionData), {
+    return new Response(JSON.stringify(responseData), {
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/json',

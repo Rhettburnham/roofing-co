@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const ViewPlan = () => {
-  const [subscription, setSubscription] = useState(null);
+  const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [selectedSubscription, setSelectedSubscription] = useState(null);
   const [domain, setDomain] = useState(null);
   const navigate = useNavigate();
 
@@ -26,7 +27,7 @@ const ViewPlan = () => {
         }
 
         const data = await response.json();
-        setSubscription(data);
+        setSubscriptions(data.subscriptions || []);
 
         // Fetch domain information
         const domainResponse = await fetch('/api/auth/get-domain', {
@@ -52,6 +53,8 @@ const ViewPlan = () => {
   }, []);
 
   const handleCancelSubscription = async () => {
+    if (!selectedSubscription) return;
+
     try {
       setCancelling(true);
       const response = await fetch('/api/auth/cancel-subscription', {
@@ -79,7 +82,7 @@ const ViewPlan = () => {
 
         if (subResponse.ok) {
           const subData = await subResponse.json();
-          setSubscription(subData);
+          setSubscriptions(subData.subscriptions || []);
         }
       }
     } catch (err) {
@@ -87,6 +90,7 @@ const ViewPlan = () => {
     } finally {
       setCancelling(false);
       setShowCancelModal(false);
+      setSelectedSubscription(null);
     }
   };
 
@@ -106,7 +110,7 @@ const ViewPlan = () => {
     );
   }
 
-  if (!subscription?.hasSubscription) {
+  if (!subscriptions.length) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -131,94 +135,105 @@ const ViewPlan = () => {
     });
   };
 
-  const { subscription: subData } = subscription;
-
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Your Subscription</h1>
-        <div className="bg-white shadow rounded-lg overflow-hidden">
-          <div className="px-4 py-5 sm:p-6">
-            <div className="space-y-6">
-              {/* Domain Information */}
-              {domain && (
-                <div className="border-b pb-4">
-                  <h3 className="text-lg font-medium text-gray-900">Your Domain</h3>
-                  <p className="mt-1 text-sm text-gray-600">
-                    {domain}
-                  </p>
-                </div>
-              )}
-
-              {/* Plan Type */}
-              <div className="border-b pb-4">
-                <h3 className="text-lg font-medium text-gray-900">Current Plan</h3>
-                <p className="mt-1 text-sm text-gray-600">
-                  {subData.planType === 'monthly' ? 'Monthly Plan' : 'Yearly Plan'}
-                </p>
-              </div>
-
-              {/* Payment Dates */}
-              <div className="border-b pb-4">
-                <h3 className="text-lg font-medium text-gray-900">Payment Schedule</h3>
-                <div className="mt-2 space-y-2">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Last Payment</p>
-                    <p className="mt-1 text-sm text-gray-600">
-                      {formatDate(subData.currentPeriodStart)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Next Payment</p>
-                    <p className="mt-1 text-sm text-gray-600">
-                      {formatDate(subData.currentPeriodEnd)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Subscription Status */}
-              <div>
-                <h3 className="text-lg font-medium text-gray-900">Status</h3>
-                <p className="mt-1 text-sm text-gray-600">
-                  {subData.status ? subData.status.charAt(0).toUpperCase() + subData.status.slice(1) : 'Active'}
-                  {subData.cancelAtPeriodEnd && ' (Cancelling at period end)'}
-                </p>
-              </div>
-
-              {/* Product Details */}
-              {subData.product && (
-                <div className="border-t pt-4">
-                  <h3 className="text-lg font-medium text-gray-900">Plan Details</h3>
-                  <p className="mt-1 text-sm text-gray-600">{subData.product.name}</p>
-                  {subData.product.description && (
-                    <p className="mt-1 text-sm text-gray-500">{subData.product.description}</p>
-                  )}
-                </div>
-              )}
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Your Subscriptions</h1>
+        
+        {/* Domain Information */}
+        {domain && (
+          <div className="mb-8 bg-white shadow rounded-lg overflow-hidden">
+            <div className="px-4 py-5 sm:p-6">
+              <h3 className="text-lg font-medium text-gray-900">Your Domain</h3>
+              <p className="mt-1 text-sm text-gray-600">{domain}</p>
             </div>
           </div>
+        )}
+
+        {/* Subscriptions List */}
+        <div className="space-y-6">
+          {subscriptions.map((subscription) => (
+            <div key={subscription.id} className="bg-white shadow rounded-lg overflow-hidden">
+              <div className="px-4 py-5 sm:p-6">
+                <div className="space-y-6">
+                  {/* Plan Type */}
+                  <div className="border-b pb-4">
+                    <h3 className="text-lg font-medium text-gray-900">Current Plan</h3>
+                    <p className="mt-1 text-sm text-gray-600">
+                      {subscription.planType === 'monthly' ? 'Monthly Plan' : 'Yearly Plan'}
+                    </p>
+                  </div>
+
+                  {/* Payment Dates */}
+                  <div className="border-b pb-4">
+                    <h3 className="text-lg font-medium text-gray-900">Payment Schedule</h3>
+                    <div className="mt-2 space-y-2">
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">Last Payment</p>
+                        <p className="mt-1 text-sm text-gray-600">
+                          {formatDate(subscription.currentPeriodStart)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">Next Payment</p>
+                        <p className="mt-1 text-sm text-gray-600">
+                          {formatDate(subscription.currentPeriodEnd)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Subscription Status */}
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900">Status</h3>
+                    <p className="mt-1 text-sm text-gray-600">
+                      {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
+                      {subscription.cancelAtPeriodEnd && ' (Cancelling at period end)'}
+                    </p>
+                  </div>
+
+                  {/* Product Details */}
+                  {subscription.product && (
+                    <div className="border-t pt-4">
+                      <h3 className="text-lg font-medium text-gray-900">Plan Details</h3>
+                      <p className="mt-1 text-sm text-gray-600">{subscription.product.name}</p>
+                      {subscription.product.description && (
+                        <p className="mt-1 text-sm text-gray-500">{subscription.product.description}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="border-t pt-4 flex space-x-4">
+                    <button
+                      onClick={() => navigate('/initial-payment')}
+                      className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                    >
+                      Change Plan
+                    </button>
+                    {!subscription.cancelAtPeriodEnd && (
+                      <button
+                        onClick={() => {
+                          setSelectedSubscription(subscription);
+                          setShowCancelModal(true);
+                        }}
+                        className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                      >
+                        Cancel Subscription
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
 
-        {/* Action Buttons */}
-        <div className="mt-8 flex space-x-4">
-          <button
-            onClick={() => navigate('/initial-payment')}
-            className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-          >
-            Change Plan
-          </button>
-          {!subData.cancelAtPeriodEnd && (
-            <button
-              onClick={() => setShowCancelModal(true)}
-              className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-            >
-              Cancel Subscription
-            </button>
-          )}
+        {/* Return to OneForm Button */}
+        <div className="mt-8">
           <button
             onClick={() => navigate('/oneform')}
-            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+            className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
           >
             Return to OneForm
           </button>
@@ -226,16 +241,19 @@ const ViewPlan = () => {
       </div>
 
       {/* Cancel Confirmation Modal */}
-      {showCancelModal && (
+      {showCancelModal && selectedSubscription && (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Cancel Subscription</h3>
             <p className="text-sm text-gray-500 mb-4">
-              Are you sure you want to cancel your subscription? This action is irreversible and your site will go down at the end of your current billing period.
+              Are you sure you want to cancel your {selectedSubscription.planType} subscription? This action is irreversible and your site will go down at the end of your current billing period ({formatDate(selectedSubscription.currentPeriodEnd)}).
             </p>
             <div className="flex space-x-4">
               <button
-                onClick={() => setShowCancelModal(false)}
+                onClick={() => {
+                  setShowCancelModal(false);
+                  setSelectedSubscription(null);
+                }}
                 className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
                 disabled={cancelling}
               >
