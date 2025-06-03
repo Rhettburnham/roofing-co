@@ -144,6 +144,7 @@ export async function onRequest(context) {
           'payment_settings[payment_method_types][]': 'card',
           'payment_settings[save_default_payment_method]': 'on_subscription',
           'expand[]': 'latest_invoice.payment_intent', // Attempt to expand latest_invoice and its nested payment_intent
+          'trial_period_days': '30' // Add 30-day free trial
         }),
       });
   
