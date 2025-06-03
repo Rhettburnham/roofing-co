@@ -284,9 +284,17 @@ const traverseAndModifyDataForZip = async (originalDataNode, assetsToCollect, pa
           pathContext
         });
 
-        // Use the same path structure as the ZIP file
-        pathInZip = `assets/images/team/${fileName}`;
-        jsonUrl = pathInZip;
+        // Use the same path logic as the ZIP file
+        if (originalDataNode.originalUrl && typeof originalDataNode.originalUrl === 'string') {
+          let tempPath = originalDataNode.originalUrl;
+          if (tempPath.startsWith('/')) tempPath = tempPath.substring(1);
+          pathInZip = tempPath.startsWith('assets/') ? tempPath : `assets/${tempPath}`;
+          jsonUrl = pathInZip;
+        } else {
+          // Use the same path structure as the ZIP file
+          pathInZip = `assets/images/team/${fileName}`;
+          jsonUrl = pathInZip;
+        }
 
         // Add the blob URL to be processed later
         assetsToCollect.push({
@@ -1123,6 +1131,14 @@ export default function OneFormAuthButton({
                        transition-all duration-300 shadow-lg"
             >
               Buy Plan
+            </button>
+            <button
+              onClick={() => window.location.href = '/view-plan'}
+              className="px-4 py-2 rounded-full bg-indigo-600 text-white 
+                       border border-indigo-700 hover:bg-indigo-700 
+                       transition-all duration-300 shadow-lg"
+            >
+              View Plan
             </button>
           </div>
           <button

@@ -1071,26 +1071,33 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
       // Preserve all data before switching tabs
       setMainPageFormData(prev => {
         console.log("[TabSwitch] Preserving main page data:", prev);
-        return preserveImageUrls(prev);
+        const preserved = deepCloneWithFiles(prev);
+        console.log("[TabSwitch] Preserved main page data with files:", preserved);
+        return preserved;
       });
       
       // For about page, ensure we're using the current state
       if (aboutPageJsonData) {
         console.log("[TabSwitch] Current about page data:", aboutPageJsonData);
-        const preserved = JSON.parse(JSON.stringify(preserveImageUrls(aboutPageJsonData)));
+        const preserved = deepCloneWithFiles(aboutPageJsonData);
+        console.log("[TabSwitch] Preserved about page data with files:", preserved);
         setAboutPageJsonData(preserved);
         setInitialAboutPageJsonData(preserved);
       }
       
       setAllServiceBlocksData(prev => {
         console.log("[TabSwitch] Preserving showcase data:", prev);
-        return preserveImageUrls(prev);
+        const preserved = deepCloneWithFiles(prev);
+        console.log("[TabSwitch] Preserved showcase data with files:", preserved);
+        return preserved;
       });
       
       // Also preserve services data
       setManagedServicesData(prev => {
         console.log("[TabSwitch] Preserving services data:", prev);
-        return preserveImageUrls(prev);
+        const preserved = deepCloneWithFiles(prev);
+        console.log("[TabSwitch] Preserved services data with files:", preserved);
+        return preserved;
       });
       
       console.log('[TabSwitch] Preserved all data during tab switch');

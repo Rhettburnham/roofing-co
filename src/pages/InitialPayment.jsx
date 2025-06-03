@@ -270,13 +270,6 @@ const CheckoutForm = ({ selectedPlan, prices }) => {
         >
           {loading ? 'Processing...' : `Subscribe to ${selectedPlan === 'monthly' ? 'Monthly' : 'Yearly'} Plan`}
         </button>
-        <button
-          type="button"
-          onClick={() => navigate('/view-plan')}
-          className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-        >
-          View Plan
-        </button>
       </div>
     </form>
   );

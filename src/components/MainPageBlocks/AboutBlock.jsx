@@ -605,57 +605,59 @@ export default function AboutBlock({
         URL.revokeObjectURL(currentHeroImage.url);
       }
       const fileURL = URL.createObjectURL(file);
-      setLocalData(prev => ({
-        ...prev,
+      const updatedData = {
+        ...localData,
         heroImage: {
           file,
           url: fileURL,
           name: file.name,
           originalUrl: originalUrl
         }
-      }));
+      };
+      setLocalData(updatedData);
+      onConfigChange(updatedData);
     } else if (fieldOrPath.teamIndex !== undefined) {
       // Team photo
       const teamIndex = fieldOrPath.teamIndex;
-      setLocalData(prev => {
-        const newTeam = [...prev.team];
-        const currentPhoto = newTeam[teamIndex]?.photo;
-        if (currentPhoto?.url?.startsWith('blob:')) {
-          URL.revokeObjectURL(currentPhoto.url);
+      const newTeam = [...localData.team];
+      const currentPhoto = newTeam[teamIndex]?.photo;
+      if (currentPhoto?.url?.startsWith('blob:')) {
+        URL.revokeObjectURL(currentPhoto.url);
+      }
+      const fileURL = URL.createObjectURL(file);
+      newTeam[teamIndex] = {
+        ...newTeam[teamIndex],
+        photo: {
+          file,
+          url: fileURL,
+          name: file.name,
+          originalUrl: currentPhoto?.originalUrl
         }
-        const fileURL = URL.createObjectURL(file);
-        newTeam[teamIndex] = {
-          ...newTeam[teamIndex],
-          photo: {
-            file,
-            url: fileURL,
-            name: file.name,
-            originalUrl: currentPhoto?.originalUrl
-          }
-        };
-        return { ...prev, team: newTeam };
-      });
+      };
+      const updatedData = { ...localData, team: newTeam };
+      setLocalData(updatedData);
+      onConfigChange(updatedData);
     } else if (fieldOrPath.stepIndex !== undefined) {
       // Step video
       const stepIndex = fieldOrPath.stepIndex;
-      setLocalData(prev => {
-        const newSteps = [...prev.steps];
-        const currentVideo = newSteps[stepIndex]?.videoSrc;
-        if (currentVideo?.url?.startsWith('blob:')) {
-          URL.revokeObjectURL(currentVideo.url);
+      const newSteps = [...localData.steps];
+      const currentVideo = newSteps[stepIndex]?.videoSrc;
+      if (currentVideo?.url?.startsWith('blob:')) {
+        URL.revokeObjectURL(currentVideo.url);
+      }
+      const fileURL = URL.createObjectURL(file);
+      newSteps[stepIndex] = {
+        ...newSteps[stepIndex],
+        videoSrc: {
+          file,
+          url: fileURL,
+          name: file.name,
+          originalUrl: currentVideo?.originalUrl
         }
-        const fileURL = URL.createObjectURL(file);
-        newSteps[stepIndex] = {
-          ...newSteps[stepIndex],
-          videoSrc: {
-            file,
-            url: fileURL,
-            name: file.name,
-            originalUrl: currentVideo?.originalUrl
-          }
-        };
-        return { ...prev, steps: newSteps };
-      });
+      };
+      const updatedData = { ...localData, steps: newSteps };
+      setLocalData(updatedData);
+      onConfigChange(updatedData);
     }
   };
 
