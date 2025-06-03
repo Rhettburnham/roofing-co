@@ -94,11 +94,21 @@ const normalizeColorKeys = (colors) => {
   if (!colors) return {};
   const normalized = {};
   Object.entries(colors).forEach(([key, value]) => {
-    // Convert snake_case to kebab-case
+    // Convert snake_case to kebab-case for CSS variables
     const normalizedKey = key.replace(/_/g, '-');
     normalized[normalizedKey] = value;
   });
   return normalized;
+};
+
+// Apply colors to CSS variables
+const applyColorsToCSS = (colorData) => {
+  const normalizedColors = normalizeColorKeys(colorData);
+  Object.entries(normalizedColors).forEach(([key, value]) => {
+    const cssVarName = `--color-${key}`;
+    document.documentElement.style.setProperty(cssVarName, value);
+  });
+  return normalizedColors;
 };
 
 export const ConfigProvider = ({ children }) => {
@@ -114,16 +124,6 @@ export const ConfigProvider = ({ children }) => {
 
   // Development mode flag
   const isDevelopment = process.env.NODE_ENV === 'development';
-
-  // Apply colors to CSS variables
-  const applyColorsToCSS = (colorData) => {
-    const normalizedColors = normalizeColorKeys(colorData);
-    Object.entries(normalizedColors).forEach(([key, value]) => {
-      const cssVarName = `--color-${key}`;
-      document.documentElement.style.setProperty(cssVarName, value);
-    });
-    return normalizedColors;
-  };
 
   useEffect(() => {
     const loadConfig = async () => {
@@ -164,17 +164,21 @@ export const ConfigProvider = ({ children }) => {
             
             // 1. First try colors_output.json
             if (configData.colors) {
+              console.log("[ConfigContext] Loading colors from colors_output.json:", configData.colors);
               finalColors = configData.colors;
             }
             
             // 2. Then try combined_data.colors
             if (configData.combined_data?.colors) {
+              console.log("[ConfigContext] Loading colors from combined_data:", configData.combined_data.colors);
               finalColors = { ...finalColors, ...configData.combined_data.colors };
             }
             
             // 3. Apply colors if we have any
             if (finalColors) {
+              console.log("[ConfigContext] Final colors before normalization:", finalColors);
               const normalizedColors = applyColorsToCSS(finalColors);
+              console.log("[ConfigContext] Final normalized colors:", normalizedColors);
               setColors(normalizedColors);
             }
             
@@ -253,17 +257,21 @@ export const ConfigProvider = ({ children }) => {
           
           // 1. First try colors_output.json
           if (configData.colors) {
+            console.log("[ConfigContext] Loading colors from API colors_output:", configData.colors);
             finalColors = configData.colors;
           }
           
           // 2. Then try combined_data.colors
           if (configData.combined_data?.colors) {
+            console.log("[ConfigContext] Loading colors from API combined_data:", configData.combined_data.colors);
             finalColors = { ...finalColors, ...configData.combined_data.colors };
           }
           
           // 3. Apply colors if we have any
           if (finalColors) {
+            console.log("[ConfigContext] Final API colors before normalization:", finalColors);
             const normalizedColors = applyColorsToCSS(finalColors);
+            console.log("[ConfigContext] Final API normalized colors:", normalizedColors);
             setColors(normalizedColors);
           }
           

@@ -722,12 +722,14 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
       // Process services.json if available
       if (managedServicesDataCopy && !blockName) {
         const cleanedServicesData = processDataForJson(managedServicesDataCopy, assetsToCollect);
+        console.log("[OneForm] Saving services data:", cleanedServicesData);
         zip.file("jsons/services.json", JSON.stringify(cleanedServicesData, null, 2));
       }
 
       // Process about_page.json if available
       if (aboutPageJsonDataCopy && !blockName) {
         const cleanedAboutData = processDataForJson(aboutPageJsonDataCopy, assetsToCollect, 'AboutBlock');
+        console.log("[OneForm] Saving about page data:", cleanedAboutData);
         zip.file("jsons/about_page.json", JSON.stringify(cleanedAboutData, null, 2));
       }
 
@@ -740,9 +742,12 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
       // Process colors_output.json
       if (themeColors) {
         const colorsForJson = {};
-        Object.keys(themeColors).forEach(key => {
-          colorsForJson[key.replace(/-/g, '_')] = themeColors[key];
+        // Convert kebab-case to snake_case for the JSON output
+        Object.entries(themeColors).forEach(([key, value]) => {
+          const snakeCaseKey = key.replace(/-/g, '_');
+          colorsForJson[snakeCaseKey] = value;
         });
+        console.log("[OneForm] Saving colors data:", colorsForJson);
         zip.file("jsons/colors_output.json", JSON.stringify(colorsForJson, null, 2));
       }
 
@@ -838,6 +843,8 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   }, []);
 
   const handleMainPageFormChange = (newMainPageFormData) => {
+    console.log("[OneForm] Main page form data changed:", newMainPageFormData);
+    console.log("[OneForm] Previous main page data:", mainPageFormData);
     setMainPageFormData(prev => {
       const updatedData = {
         ...prev, 
@@ -845,20 +852,32 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         navbar: newMainPageFormData.navbar || prev.navbar,
         hero: newMainPageFormData.hero || prev.hero 
       };
-      console.log("Updated main page form data:", updatedData);
       
-      if (!blockName) { 
-        triggerAutoDownload();
+      // Only trigger auto-download if the data actually changed
+      if (JSON.stringify(updatedData) !== JSON.stringify(prev)) {
+        console.log("[OneForm] Main page changes detected, triggering auto-download");
+        if (!blockName) { 
+          triggerAutoDownload();
+        }
+      } else {
+        console.log("[OneForm] No actual changes in main page data");
       }
       
       return updatedData;
     });
-};
+  };
 
   const handleAboutConfigChange = (newAboutConfig) => {
     console.log("[OneForm] About page config changed:", newAboutConfig);
+    console.log("[OneForm] Previous about page data:", aboutPageJsonData);
     setAboutPageJsonData(preserveImageUrls(newAboutConfig));
-    triggerAutoDownload();
+    // Only trigger auto-download if the data actually changed
+    if (JSON.stringify(newAboutConfig) !== JSON.stringify(aboutPageJsonData)) {
+      console.log("[OneForm] About page changes detected, triggering auto-download");
+      triggerAutoDownload();
+    } else {
+      console.log("[OneForm] No actual changes in about page data");
+    }
   };
 
   const handleManagedServicesChange = (updatedServicePageData, serviceCategory, servicePageId) => {
@@ -868,6 +887,15 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         console.error(`[OneForm] Invalid service category '${serviceCategory}' in handleManagedServicesChange.`);
         return prevServicesData; 
       }
+
+      // Check if the data actually changed
+      const currentPage = prevServicesData[serviceCategory].find(page => page.id === servicePageId);
+      if (JSON.stringify(currentPage) === JSON.stringify(updatedServicePageData)) {
+        console.log("[OneForm] No actual changes in services data");
+        return prevServicesData;
+      }
+
+      console.log("[OneForm] Services changes detected, updating data");
       const updatedCategoryPages = prevServicesData[serviceCategory].map(page => {
         if (page.id === servicePageId) {
           return updatedServicePageData; 
@@ -884,17 +912,26 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   };
 
   const handleThemeColorChange = (newColorsObject, newSitePaletteArray) => {
-    setThemeColors(newColorsObject); 
-    if (newSitePaletteArray) {
-        setSitePalette(newSitePaletteArray);
-    }
-    Object.keys(newColorsObject).forEach(key => {
-      const cssVarName = `--color-${key}`;
-        document.documentElement.style.setProperty(cssVarName, newColorsObject[key]);
-    });
+    console.log("[OneForm] Theme colors changed:", newColorsObject);
+    console.log("[OneForm] Previous theme colors:", themeColors);
     
-    if (!blockName) {
-      triggerAutoDownload();
+    // Only trigger auto-download if the colors actually changed
+    if (JSON.stringify(newColorsObject) !== JSON.stringify(themeColors)) {
+      console.log("[OneForm] Color changes detected, updating and triggering auto-download");
+      setThemeColors(newColorsObject); 
+      if (newSitePaletteArray) {
+        setSitePalette(newSitePaletteArray);
+      }
+      Object.keys(newColorsObject).forEach(key => {
+        const cssVarName = `--color-${key}`;
+        document.documentElement.style.setProperty(cssVarName, newColorsObject[key]);
+      });
+      
+      if (!blockName) {
+        triggerAutoDownload();
+      }
+    } else {
+      console.log("[OneForm] No actual changes in theme colors");
     }
   };
 
