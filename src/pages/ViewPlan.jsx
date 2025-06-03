@@ -63,6 +63,9 @@ const ViewPlan = () => {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
+        body: JSON.stringify({
+          subscriptionId: selectedSubscription.id
+        })
       });
 
       if (!response.ok) {
@@ -186,10 +189,18 @@ const ViewPlan = () => {
                   {/* Subscription Status */}
                   <div>
                     <h3 className="text-lg font-medium text-gray-900">Status</h3>
-                    <p className="mt-1 text-sm text-gray-600">
-                      {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
-                      {subscription.cancelAtPeriodEnd && ' (Cancelling at period end)'}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        subscription.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        {subscription.status === 'active' ? 'Active' : 'Trialing'}
+                      </span>
+                      {subscription.status === 'trialing' && (
+                        <span className="text-sm text-gray-600">
+                          You haven't been charged yet. You have 30 free days after which your card will be charged.
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Product Details */}

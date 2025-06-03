@@ -118,25 +118,47 @@ export async function onRequest(context) {
       metadata: customer.metadata
     });
 
-    // Get customer's subscriptions, expanding latest_invoice
-    console.log('Fetching customer subscriptions, expanding latest_invoice...');
-    const subscriptionsRes = await fetch(`https://api.stripe.com/v1/subscriptions?customer=${customer.id}&status=active&status=trialing&expand[]=data.latest_invoice`, {
-      headers: stripeHeaders // Use consistent headers
+    // Get customer's active subscriptions
+    console.log('Fetching active subscriptions...');
+    const activeSubscriptionsRes = await fetch(`https://api.stripe.com/v1/subscriptions?customer=${customer.id}&status=active&expand[]=data.latest_invoice`, {
+      headers: stripeHeaders
     });
 
-    if (!subscriptionsRes.ok) {
-      const error = await subscriptionsRes.text();
-      console.error('Failed to fetch subscriptions:', {
-        status: subscriptionsRes.status,
+    if (!activeSubscriptionsRes.ok) {
+      const error = await activeSubscriptionsRes.text();
+      console.error('Failed to fetch active subscriptions:', {
+        status: activeSubscriptionsRes.status,
         error
       });
-      throw new Error(`Failed to fetch subscriptions: ${error}`);
+      throw new Error(`Failed to fetch active subscriptions: ${error}`);
     }
 
-    const subscriptionsData = await subscriptionsRes.json();
-    console.log('Subscriptions data:', {
-      totalSubscriptions: subscriptionsData.data.length,
-      subscriptions: subscriptionsData.data.map(sub => ({
+    // Get customer's trialing subscriptions
+    console.log('Fetching trialing subscriptions...');
+    const trialingSubscriptionsRes = await fetch(`https://api.stripe.com/v1/subscriptions?customer=${customer.id}&status=trialing&expand[]=data.latest_invoice`, {
+      headers: stripeHeaders
+    });
+
+    if (!trialingSubscriptionsRes.ok) {
+      const error = await trialingSubscriptionsRes.text();
+      console.error('Failed to fetch trialing subscriptions:', {
+        status: trialingSubscriptionsRes.status,
+        error
+      });
+      throw new Error(`Failed to fetch trialing subscriptions: ${error}`);
+    }
+
+    const activeData = await activeSubscriptionsRes.json();
+    const trialingData = await trialingSubscriptionsRes.json();
+
+    // Combine both subscription lists
+    const allSubscriptions = [...activeData.data, ...trialingData.data];
+    
+    console.log('Subscription data:', {
+      activeCount: activeData.data.length,
+      trialingCount: trialingData.data.length,
+      totalSubscriptions: allSubscriptions.length,
+      subscriptions: allSubscriptions.map(sub => ({
         id: sub.id,
         status: sub.status,
         currentPeriodEnd: sub.current_period_end,
@@ -149,11 +171,8 @@ export async function onRequest(context) {
       }))
     });
 
-    // Get the active and trialing subscriptions
-    const activeSubscriptions = subscriptionsData.data.filter(sub => sub.status === 'active' || sub.status === 'trialing');
-
-    if (!activeSubscriptions.length) {
-      console.log('No active subscriptions found');
+    if (!allSubscriptions.length) {
+      console.log('No active or trialing subscriptions found');
       return new Response(JSON.stringify({
         hasSubscription: false,
         message: 'No active subscription found'
@@ -166,7 +185,7 @@ export async function onRequest(context) {
     }
 
     // Get product details for all subscriptions and include invoice details
-    const subscriptionsWithDetails = await Promise.all(activeSubscriptions.map(async (subscription) => {
+    const subscriptionsWithDetails = await Promise.all(allSubscriptions.map(async (subscription) => {
       const productRes = await fetch(`https://api.stripe.com/v1/products/${subscription.metadata.productId}`, {
         headers: stripeHeaders // Use consistent headers
       });

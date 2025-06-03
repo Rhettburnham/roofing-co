@@ -113,9 +113,25 @@ export async function onRequest(context) {
       email: customer.email
     });
 
-    // Get customer's active subscription
+    const requestBody = await request.json();
+    const { subscriptionId } = requestBody;
+
+    if (!subscriptionId) {
+      return new Response(JSON.stringify({ 
+        success: false,
+        message: 'Subscription ID is required'
+      }), {
+        status: 400,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
+      });
+    }
+
+    // Get customer's subscriptions
     console.log('Fetching customer subscriptions...');
-    const subscriptionsRes = await fetch(`https://api.stripe.com/v1/subscriptions?customer=${customer.id}&status=active`, {
+    const subscriptionsRes = await fetch(`https://api.stripe.com/v1/subscriptions?customer=${customer.id}&status=active,trialing`, {
       headers: {
         'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
         'Content-Type': 'application/x-www-form-urlencoded'
@@ -132,13 +148,23 @@ export async function onRequest(context) {
     }
 
     const subscriptionsData = await subscriptionsRes.json();
-    const activeSubscription = subscriptionsData.data.find(sub => sub.status === 'active');
+    console.log('Found subscriptions:', {
+      total: subscriptionsData.data.length,
+      subscriptions: subscriptionsData.data.map(sub => ({
+        id: sub.id,
+        status: sub.status,
+        planType: sub.metadata.planType
+      }))
+    });
+
+    // Find the specific subscription to cancel
+    const subscriptionToCancel = subscriptionsData.data.find(sub => sub.id === subscriptionId);
     
-    if (!activeSubscription) {
-      console.log('No active subscription found');
-      return new Response(JSON.stringify({ 
+    if (!subscriptionToCancel) {
+      console.log(`Subscription ${subscriptionId} not found`);
+      return new Response(JSON.stringify({
         success: false,
-        message: 'No active subscription found'
+        message: 'Subscription not found'
       }), {
         headers: {
           ...corsHeaders,
@@ -147,9 +173,9 @@ export async function onRequest(context) {
       });
     }
 
-    // Cancel the subscription at period end
-    console.log('Cancelling subscription...');
-    const cancelRes = await fetch(`https://api.stripe.com/v1/subscriptions/${activeSubscription.id}`, {
+    // Cancel the selected subscription
+    console.log(`Cancelling subscription ${subscriptionId} (${subscriptionToCancel.status})...`);
+    const cancelRes = await fetch(`https://api.stripe.com/v1/subscriptions/${subscriptionId}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
@@ -162,31 +188,35 @@ export async function onRequest(context) {
 
     if (!cancelRes.ok) {
       const error = await cancelRes.text();
-      console.error('Failed to cancel subscription:', {
-        status: cancelRes.status,
-        error
-      });
+      console.error(`Failed to cancel subscription ${subscriptionId}:`, error);
       throw new Error(`Failed to cancel subscription: ${error}`);
     }
 
     const cancelledSubscription = await cancelRes.json();
-    console.log('Subscription cancelled:', {
+    console.log(`Subscription ${subscriptionId} cancelled:`, {
       id: cancelledSubscription.id,
       cancelAtPeriodEnd: cancelledSubscription.cancel_at_period_end,
-      currentPeriodEnd: cancelledSubscription.current_period_end
+      status: cancelledSubscription.status
     });
 
-    // Update domain status in database
-    console.log('Updating domain status...');
-    await env.DB.prepare(
-      'UPDATE domains SET is_paid = 0 WHERE email = ?'
-    ).bind(userSession.email).run();
+    // Update domain status if this was the last active subscription
+    const remainingActiveSubscriptions = subscriptionsData.data.filter(sub => 
+      sub.id !== subscriptionId && (sub.status === 'active' || sub.status === 'trialing')
+    );
+
+    if (remainingActiveSubscriptions.length === 0) {
+      console.log('No remaining active subscriptions, updating domain status...');
+      await env.DB.prepare(
+        'UPDATE domains SET is_paid = 0 WHERE user_email = ?'
+      ).bind(userSession.email).run();
+    }
 
     return new Response(JSON.stringify({
       success: true,
       message: 'Subscription cancelled successfully',
       subscription: {
         id: cancelledSubscription.id,
+        status: cancelledSubscription.status,
         cancelAtPeriodEnd: cancelledSubscription.cancel_at_period_end,
         currentPeriodEnd: cancelledSubscription.current_period_end
       }
