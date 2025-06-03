@@ -379,6 +379,86 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         if (!currentMainPageData && !blockName) {
             console.log("[OneForm] Fetching combined_data.json as a fallback...");
             try {
+                // Check if we're on a custom domain
+                const customDomain = window.location.hostname !== 'roofing-co.pages.dev' && 
+                                   window.location.hostname !== 'roofing-www.pages.dev' &&
+                                   window.location.hostname !== 'localhost';
+                setIsCustomDomain(customDomain);
+
+                if (customDomain) {
+                    console.log("[OneForm] On custom domain:", window.location.hostname);
+                    try {
+                        // Fetch the domain-specific config
+                        const domainConfigResponse = await fetch('/api/public/config');
+                        console.log("[OneForm] Domain config response status:", domainConfigResponse.status);
+                        
+                        if (domainConfigResponse.ok) {
+                            const domainData = await domainConfigResponse.json();
+                            console.log("[OneForm] Successfully loaded domain config data");
+                            setMainPageFormData(domainData);
+                            setInitialFormDataForOldExport(JSON.parse(JSON.stringify(domainData)));
+                            return;
+                        } else {
+                            console.error("[OneForm] Failed to load domain config. Status:", domainConfigResponse.status);
+                            const errorText = await domainConfigResponse.text();
+                            console.error("[OneForm] Error response:", errorText);
+                        }
+                    } catch (domainConfigError) {
+                        console.error("[OneForm] Error loading domain config:", domainConfigError);
+                    }
+                }
+
+                // If not on custom domain or domain config failed, check authentication
+                if (!isDevelopment) {
+                    console.log("[OneForm] Checking authentication status...");
+                    const authResponse = await fetch('/api/auth/status', {
+                        credentials: 'include'
+                    });
+                    console.log("[OneForm] Auth response status:", authResponse.status);
+                    
+                    const authData = await authResponse.json();
+                    console.log("[OneForm] Auth data received:", authData);
+
+                    if (authData.isAuthenticated) {
+                        console.log("[OneForm] User is authenticated. Config ID:", authData.configId);
+                        try {
+                            // Fetch the user's custom config
+                            console.log("[OneForm] Fetching custom config from:", `/api/config/load`);
+                            const customConfigResponse = await fetch(`/api/config/load`, {
+                                credentials: 'include'
+                            });
+                            console.log("[OneForm] Custom config response status:", customConfigResponse.status);
+                            
+                            if (customConfigResponse.ok) {
+                                const configData = await customConfigResponse.json();
+                                console.log("[OneForm] Successfully loaded custom config data");
+                                if (configData.combined_data) {
+                                    setMainPageFormData(configData.combined_data);
+                                    setInitialFormDataForOldExport(JSON.parse(JSON.stringify(configData.combined_data)));
+                                }
+                                if (configData.about_page) {
+                                    setAboutPageJsonData(configData.about_page);
+                                    setInitialAboutPageJsonData(JSON.parse(JSON.stringify(configData.about_page)));
+                                }
+                                if (configData.all_blocks_showcase) {
+                                    setAllServiceBlocksData(configData.all_blocks_showcase);
+                                    setInitialAllServiceBlocksData(JSON.parse(JSON.stringify(configData.all_blocks_showcase)));
+                                }
+                                return;
+                            } else {
+                                console.error("[OneForm] Failed to load custom config. Status:", customConfigResponse.status);
+                                const errorText = await customConfigResponse.text();
+                                console.error("[OneForm] Error response:", errorText);
+                            }
+                        } catch (customConfigError) {
+                            console.error("[OneForm] Error loading custom config:", customConfigError);
+                        }
+                    } else {
+                        console.log("[OneForm] User is not authenticated");
+                    }
+                }
+
+                // Fallback to local files if all else fails
                 const combinedResponse = await fetch("/personal/new/jsons/combined_data.json");
                 if (combinedResponse.ok) {
                     const fetchedMainData = await combinedResponse.json();
