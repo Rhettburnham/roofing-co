@@ -50,36 +50,24 @@ export async function onRequest(context) {
     }
     console.log('Session ID from cookie:', sessionId ? 'present' : 'missing');
 
-    if (!sessionId) {
-      console.log('No session ID found');
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
-      });
+    let configId = 'default'; // Default config ID for non-authenticated users
+
+    if (sessionId) {
+      // Verify the session and get config ID
+      console.log('Querying database for session...');
+      const session = await env.DB.prepare(
+        'SELECT s.*, u.config_id FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.session_id = ? AND s.expires_at > datetime("now")'
+      ).bind(sessionId).first();
+
+      if (session) {
+        configId = session.config_id;
+        console.log('Config ID from session:', configId);
+      } else {
+        console.log('No valid session found, using default config');
+      }
+    } else {
+      console.log('No session ID found, using default config');
     }
-
-    // Verify the session and get config ID
-    console.log('Querying database for session...');
-    const session = await env.DB.prepare(
-      'SELECT s.*, u.config_id FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.session_id = ? AND s.expires_at > datetime("now")'
-    ).bind(sessionId).first();
-
-    if (!session) {
-      console.log('No valid session found');
-      return new Response(JSON.stringify({ error: 'Invalid session' }), {
-        status: 401,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
-      });
-    }
-
-    const configId = session.config_id;
-    console.log('Config ID from session:', configId);
 
     // Load all configs from R2
     console.log('Loading configs from R2...');

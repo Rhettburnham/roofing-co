@@ -216,10 +216,31 @@ export const ConfigProvider = ({ children }) => {
         setConfigId(authData.configId);
 
         // Load config data
-        const configResponse = await fetch('/api/config/load', {
-          credentials: 'include'
-        });
-        const configData = await configResponse.json();
+        let configData;
+        if (isCustomDomain) {
+          // For custom domains, always load the domain's config
+          const configResponse = await fetch('/api/public/config', {
+            credentials: 'include'
+          });
+          if (!configResponse.ok) {
+            throw new Error('Failed to load domain config');
+          }
+          // Public config endpoint returns just the combined data
+          const combinedData = await configResponse.json();
+          configData = {
+            success: true,
+            combined_data: combinedData
+          };
+        } else {
+          // For .dev domains, load user config if authenticated, otherwise load default
+          const configResponse = await fetch('/api/config/load', {
+            credentials: 'include'
+          });
+          if (!configResponse.ok) {
+            throw new Error('Failed to load config');
+          }
+          configData = await configResponse.json();
+        }
 
         if (configData.success) {
           // Update config data
