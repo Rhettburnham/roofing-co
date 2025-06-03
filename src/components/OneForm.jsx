@@ -98,7 +98,7 @@ function initializeMediaFieldsRecursive(data) {
 
   const directMediaFields = [
     'backgroundImage', 'heroImage', 'imageUrl', 'image', 'videoSrc', 'videoUrl',
-    'largeResidentialImg', 'largeCommercialImg', 'posterImage', 'icon' 
+    'largeResidentialImg', 'largeCommercialImg', 'posterImage', 'icon', 'logo'
   ];
 
   directMediaFields.forEach(field => {
@@ -470,7 +470,11 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         return originalDataNode.map((imageItem, imageIndex) => {
           if (imageItem && typeof imageItem === 'object') {
             const fileName = imageItem.name || imageItem.originalUrl?.split('/').pop() || `image_${imageIndex}`;
-            const imagePath = `img/main_page_images/${parentBlockName}/${fileName}`;
+            
+            // Use specific path for HeroBlock
+            const imagePath = parentBlockName === 'HeroBlock' 
+              ? `new/img/heroblock/${fileName}`
+              : `img/main_page_images/${parentBlockName}/${fileName}`;
             
             // If there's a file, collect it for the ZIP
             if (imageItem.file instanceof File) {
@@ -510,9 +514,13 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
       // Handle individual image objects
       if (originalDataNode.file instanceof File || (originalDataNode.url && originalDataNode.url.startsWith('blob:'))) {
         const fileName = originalDataNode.name || originalDataNode.file?.name || 'image';
-        const imagePath = parentBlockName 
-          ? `img/main_page_images/${parentBlockName}/${fileName}`
-          : `img/global_assets/${fileName}`;
+        
+        // Use specific path for HeroBlock
+        const imagePath = parentBlockName === 'HeroBlock'
+          ? `new/img/heroblock/${fileName}`
+          : parentBlockName 
+            ? `img/main_page_images/${parentBlockName}/${fileName}`
+            : `img/global_assets/${fileName}`;
 
         if (originalDataNode.file instanceof File) {
           assetsToCollect.push({
@@ -541,7 +549,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
       // Handle legacy heroImageFile
       if (parentBlockName === 'HeroBlock' && originalDataNode.heroImageFile instanceof File) {
         const fileName = originalDataNode.heroImageFile.name;
-        const imagePath = `img/main_page_images/HeroBlock/${fileName}`;
+        const imagePath = `new/img/heroblock/${fileName}`;
         
         assetsToCollect.push({
           path: imagePath,

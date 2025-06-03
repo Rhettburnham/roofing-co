@@ -24,22 +24,80 @@ const isColorDark = (hexColor) => {
   return hsp < 127.5;
 };
 
-// Helper to transform the themeColors object/array from OneForm into the array format ColorEditor uses
-// This can be adapted based on how ColorEditor.jsx exports its default definitions or how OneForm provides it.
+// Helper to transform the themeColors object/array from OneForm into a usable array
 const transformEditableColorsForPicker = (themeColorsInput) => {
-    if (Array.isArray(themeColorsInput)) return themeColorsInput;
-    if (typeof themeColorsInput === 'object' && themeColorsInput !== null) {
-        return Object.entries(themeColorsInput).map(([name, value], index) => ({
-            id: `theme-color-${name}-${index}`,
-            name: name,
-            label: name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-            value: typeof value === 'string' ? value : '#000000',
-            description: `Theme color: ${name}`,
-            isDefault: false,
-            isRemovable: false, 
-        }));
-    }
-    return [];
+  if (Array.isArray(themeColorsInput)) return themeColorsInput;
+  if (typeof themeColorsInput === 'object' && themeColorsInput !== null) {
+    return Object.entries(themeColorsInput).map(([name, value], index) => ({
+      id: `theme-color-${name}-${index}`,
+      name: name,
+      label: name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      value: typeof value === 'string' ? value : '#000000',
+      description: `Theme color: ${name}`,
+      isDefault: false,
+      isRemovable: false, 
+    }));
+  }
+  return [];
+};
+
+// Color Picker Modal Component
+const ColorPickerModal = ({ isOpen, onClose, currentColor, onColorSelect }) => {
+  const [selectedColor, setSelectedColor] = useState(currentColor);
+
+  useEffect(() => {
+    setSelectedColor(currentColor);
+  }, [currentColor]);
+
+  const handleSave = () => {
+    onColorSelect(selectedColor);
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 shadow-xl max-w-sm w-full mx-4">
+        <h3 className="text-lg font-semibold mb-4 text-gray-800">Choose Color</h3>
+        
+        <div className="mb-4">
+          <input
+            type="color"
+            value={selectedColor}
+            onChange={(e) => setSelectedColor(e.target.value)}
+            className="w-full h-20 rounded-md border border-gray-300 cursor-pointer"
+          />
+        </div>
+        
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Hex Value:</label>
+          <input
+            type="text"
+            value={selectedColor}
+            onChange={(e) => setSelectedColor(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="#000000"
+          />
+        </div>
+
+        <div className="flex justify-end space-x-3">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 const ThemeColorPicker = ({
@@ -50,25 +108,17 @@ const ThemeColorPicker = ({
   fieldName,
   className = '',
 }) => {
-  const [selectedColorName, setSelectedColorName] = useState('Custom');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [hexInputValue, setHexInputValue] = useState(currentColorValue);
   const dropdownRef = useRef(null);
 
   const paletteColors = transformEditableColorsForPicker(themeColors);
-  
+
+  // Update hex input when currentColorValue changes from outside
   useEffect(() => {
-    let matchedName = 'Custom';
-    if (paletteColors && currentColorValue) {
-      const normalizedCurrentColor = currentColorValue.toUpperCase();
-      for (const color of paletteColors) {
-        if (color.value.toUpperCase() === normalizedCurrentColor) {
-          matchedName = color.label; // Use label for display
-          break;
-        }
-      }
-    }
-    setSelectedColorName(matchedName);
-  }, [currentColorValue, paletteColors]);
+    setHexInputValue(currentColorValue);
+  }, [currentColorValue]);
 
   // Close dropdown if clicked outside
   useEffect(() => {
@@ -81,107 +131,129 @@ const ThemeColorPicker = ({
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [dropdownRef]);
+  }, []);
 
   const handlePaletteColorSelect = (color) => {
+    setHexInputValue(color.value);
     onColorChange(fieldName, color.value);
-    setSelectedColorName(color.label);
     setIsDropdownOpen(false);
   };
 
-  const handleDirectColorInputChange = (e) => {
-    const newColorValue = e.target.value;
-    onColorChange(fieldName, newColorValue);
-    // useEffect will update selectedColorName to 'Custom' if not in palette
+  const handleHexInputChange = (e) => {
+    const newValue = e.target.value;
+    setHexInputValue(newValue);
+    // Validate hex color format before calling onChange
+    if (/^#[0-9A-Fa-f]{6}$/.test(newValue) || /^#[0-9A-Fa-f]{3}$/.test(newValue)) {
+      onColorChange(fieldName, newValue);
+    }
   };
 
-  const labelStyle = "text-sm mb-1 font-medium text-gray-700";
+  const handleHexInputBlur = () => {
+    // On blur, ensure we have a valid hex color or revert to current
+    if (!/^#[0-9A-Fa-f]{6}$/.test(hexInputValue) && !/^#[0-9A-Fa-f]{3}$/.test(hexInputValue)) {
+      setHexInputValue(currentColorValue);
+    } else {
+      onColorChange(fieldName, hexInputValue);
+    }
+  };
+
+  const handleSplotchClick = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleModalColorSelect = (newColor) => {
+    setHexInputValue(newColor);
+    onColorChange(fieldName, newColor);
+  };
 
   return (
     <div className={`block text-sm ${className || ''}`}>
-      <span className={labelStyle}>{label}</span>
-      <div className="mt-1 mb-2 flex items-center space-x-2">
-        {/* Direct color input type=color */}
-        <input 
-          type="color" 
-          className="h-10 w-12 rounded-md shadow-sm cursor-pointer border border-gray-300 p-0.5"
-          value={currentColorValue || '#FFFFFF'} 
-          onChange={handleDirectColorInputChange}
-        />
-        {/* Read-only text input showing current hex, or direct hex input */}
-        <input
-          type="text"
-          className="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm sm:text-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-          value={currentColorValue || ''}
-          onChange={handleDirectColorInputChange}
-          placeholder="#RRGGBB"
-        />
-      </div>
-
-      {/* Dropdown for Palette Colors */}
-      {paletteColors.length > 0 && (
-        <div className="relative" ref={dropdownRef}>
+      {label && (
+        <span className="text-base font-semibold text-black block mb-2">
+          {label}
+        </span>
+      )}
+      <div className={`relative`} ref={dropdownRef}>
+        <div className="flex items-center space-x-2">
+          {/* Larger clickable circular color splotch on the left */}
+          <button
+            type="button"
+            onClick={handleSplotchClick}
+            className="w-8 h-8 rounded-full flex-shrink-0 border-2 border-gray-300 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer transition-all"
+            style={{ backgroundColor: currentColorValue }}
+            title="Click to open color picker"
+          />
+          
+          {/* Hex input in the middle */}
+          <input
+            type="text"
+            value={hexInputValue}
+            onChange={handleHexInputChange}
+            onBlur={handleHexInputBlur}
+            className="flex-1 px-3 py-2 text-sm bg-gray-700 border border-gray-600 rounded-l-md text-white focus:outline-none focus:border-blue-500"
+            placeholder="#000000"
+          />
+          
+          {/* More obvious dropdown button on the right */}
           <button
             type="button"
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500"
+            className="px-3 py-2 bg-blue-600 hover:bg-blue-700 border border-blue-600 border-l-0 rounded-r-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+            title="Choose from palette"
           >
-            <span className="flex items-center">
-              <span 
-                className="w-4 h-4 rounded-sm mr-2 border border-gray-400"
-                style={{ backgroundColor: currentColorValue }}
-              ></span>
-              {selectedColorName || 'Select Color'} {selectedColorName === 'Custom' && `(${currentColorValue})`}
-            </span>
-            {/* Chevron Icon */}
-            <svg className={`w-5 h-5 text-gray-400 transform transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <svg 
+              className={`w-4 h-4 transform transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} 
+              xmlns="http://www.w3.org/2000/svg" 
+              viewBox="0 0 20 20" 
+              fill="currentColor"
+            >
               <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
             </svg>
           </button>
+        </div>
 
-          {isDropdownOpen && (
-            <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto py-1">
+        {/* Dropdown menu with 4 columns */}
+        {isDropdownOpen && paletteColors.length > 0 && (
+          <div className="absolute z-50 mt-1 w-full bg-gray-800 border border-gray-600 rounded-md shadow-lg max-h-48 overflow-y-auto">
+            <div className="grid grid-cols-4 gap-2 p-3">
               {paletteColors.map((color) => (
                 <button
                   key={color.id || color.name}
                   onClick={() => handlePaletteColorSelect(color)}
-                  className={`w-full text-left px-3 py-2 text-sm flex items-center hover:bg-gray-100 ${currentColorValue.toUpperCase() === color.value.toUpperCase() ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-gray-900'}`}
-                  title={`${color.label} (${color.value})\n${color.description || ''}`}
+                  className="group flex flex-col items-center p-2 rounded hover:bg-gray-700 focus:outline-none focus:bg-gray-700"
+                  title={`${color.label} (${color.value})`}
                 >
-                  <span 
-                    className="w-4 h-4 rounded-sm mr-2.5 border border-gray-400 shrink-0"
+                  <div 
+                    className={`w-8 h-8 rounded-full border-2 transition-all ${
+                      currentColorValue.toUpperCase() === color.value.toUpperCase() 
+                        ? 'border-blue-400 ring-2 ring-blue-300' 
+                        : 'border-gray-500 group-hover:border-gray-400'
+                    }`}
                     style={{ backgroundColor: color.value }}
-                  ></span>
-                  <span className="flex-grow truncate">{color.label}</span>
-                  <span className="ml-2 text-gray-500 text-xs shrink-0">({color.value})</span>
+                  />
+                  <span className="text-xs text-gray-300 mt-1 text-center truncate w-full">
+                    {color.value}
+                  </span>
                 </button>
               ))}
-               <button // Option to explicitly set to custom if user wants to clear a palette selection
-                  onClick={() => {
-                      setSelectedColorName('Custom');
-                      setIsDropdownOpen(false);
-                      // Note: This doesn't change the color itself, only the displayed name if it was a palette color.
-                      // User would then use the hex input or color picker for a new custom value.
-                  }}
-                  className={`w-full text-left px-3 py-2 text-sm flex items-center hover:bg-gray-100 text-gray-700 italic`}
-                >
-                  <span 
-                    className="w-4 h-4 rounded-sm mr-2.5 border border-gray-400 shrink-0 bg-transparent flex items-center justify-center"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                  </span>
-                  Use Custom Color
-                </button>
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
+
+      {/* Color Picker Modal */}
+      <ColorPickerModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        currentColor={currentColorValue}
+        onColorSelect={handleModalColorSelect}
+      />
     </div>
   );
 };
 
 ThemeColorPicker.propTypes = {
-  label: PropTypes.string.isRequired,
+  label: PropTypes.string,
   currentColorValue: PropTypes.string,
   themeColors: PropTypes.oneOfType([PropTypes.object, PropTypes.array]), 
   onColorChange: PropTypes.func.isRequired,

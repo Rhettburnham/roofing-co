@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { PlusCircle, Trash2 } from 'lucide-react';
 
 const PanelImagesController = ({ currentData, onControlsChange, imageArrayFieldName = "images", getItemName, maxImages }) => {
   const images = currentData[imageArrayFieldName] || [];
+  const hasInitializedRef = useRef(false);
 
   const handleAddImageSlot = () => {
     const newImage = {
@@ -17,15 +18,75 @@ const PanelImagesController = ({ currentData, onControlsChange, imageArrayFieldN
     onControlsChange({ ...currentData, [imageArrayFieldName]: updatedImages });
   };
 
-  // Automatically add an initial slot if maxImages is 1 and no images currently exist.
+  // Automatically add an initial slot if maxImages is 1 and no images currently exist,
+  // but only if no image data has been provided from parent component
   useEffect(() => {
+    // Prevent running this effect multiple times
+    if (hasInitializedRef.current) return;
+    
     if (maxImages === 1 && images.length === 0) {
-      handleAddImageSlot();
+      // Check if there's any indication that an image should exist from parent data
+      const hasExistingImageData = currentData.heroImage || 
+                                   currentData.backgroundImage || 
+                                   currentData.imageUrl ||
+                                   currentData.image;
+      
+      // If there's existing image data, create a proper image object from it instead of an empty slot
+      if (hasExistingImageData) {
+        let existingImageUrl = null;
+        let existingImageName = 'Existing Image';
+        let existingOriginalUrl = null;
+        
+        // Handle different possible image data formats
+        if (currentData.heroImage) {
+          if (typeof currentData.heroImage === 'object' && currentData.heroImage.url) {
+            existingImageUrl = currentData.heroImage.url;
+            existingImageName = currentData.heroImage.name || 'Hero Image';
+            existingOriginalUrl = currentData.heroImage.originalUrl;
+          } else if (typeof currentData.heroImage === 'string') {
+            existingImageUrl = currentData.heroImage;
+            existingImageName = currentData.heroImage.split('/').pop() || 'Hero Image';
+            existingOriginalUrl = currentData.heroImage;
+          }
+        } else if (currentData.backgroundImage) {
+          if (typeof currentData.backgroundImage === 'string') {
+            existingImageUrl = currentData.backgroundImage;
+            existingImageName = currentData.backgroundImage.split('/').pop() || 'Background Image';
+            existingOriginalUrl = currentData.backgroundImage;
+          }
+        } else if (currentData.imageUrl) {
+          existingImageUrl = currentData.imageUrl;
+          existingImageName = currentData.imageUrl.split('/').pop() || 'Image';
+          existingOriginalUrl = currentData.imageUrl;
+        } else if (currentData.image) {
+          existingImageUrl = currentData.image;
+          existingImageName = currentData.image.split('/').pop() || 'Image';
+          existingOriginalUrl = currentData.image;
+        }
+        
+        // Create image object from existing data
+        if (existingImageUrl) {
+          const existingImageObject = {
+            file: null,
+            url: existingImageUrl,
+            name: existingImageName,
+            originalUrl: existingOriginalUrl,
+            id: `img_existing_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+          };
+          const updatedImages = [existingImageObject];
+          onControlsChange({ ...currentData, [imageArrayFieldName]: updatedImages });
+          hasInitializedRef.current = true;
+        }
+      } else {
+        // Only add empty slot if truly no image data exists
+        handleAddImageSlot();
+        hasInitializedRef.current = true;
+      }
+    } else if (images.length > 0) {
+      // Mark as initialized if images already exist
+      hasInitializedRef.current = true;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps 
-  }, [maxImages, images.length]); // Rerun if maxImages changes or images array length becomes 0.
-  // Note: handleAddImageSlot is not added to dependency array to prevent potential loops if it changes frequently.
-  // This is generally safe if handleAddImageSlot itself doesn't depend on frequently changing props/state not listed here.
+  }, [maxImages, images.length]); // Rerun if maxImages changes or images array length becomes 0, or if existing image data changes.
 
   const handleRemoveImage = (index) => {
     const imageToRemove = images[index];
@@ -85,8 +146,62 @@ const PanelImagesController = ({ currentData, onControlsChange, imageArrayFieldN
           </button>
         )}
       </div>
-      {images.length === 0 && (
+      {images.length === 0 && maxImages !== 1 && (
         <p className="text-sm text-gray-500 italic my-1">No image slots configured. Click "Add Image Slot" to add one.</p>
+      )}
+      {images.length === 0 && maxImages === 1 && (
+        <div className="bg-gray-50 p-2 rounded-lg shadow space-y-1 relative">
+          <div className="relative z-10">
+            <input
+              type="file"
+              accept="image/*"
+              id="panel-image-file-input-new"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  // For maxImages=1, replace the empty state with new image
+                  const newImage = {
+                    file: file,
+                    url: URL.createObjectURL(file),
+                    name: file.name,
+                    originalUrl: currentData.heroImage?.originalUrl || null,
+                    id: `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+                  };
+                  onControlsChange({ ...currentData, [imageArrayFieldName]: [newImage] });
+                }
+                e.target.value = null;
+              }}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => document.getElementById('panel-image-file-input-new')?.click()}
+              className="absolute top-0 left-0 bg-blue-600 text-white text-xs font-semibold py-1 px-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 shadow"
+            >
+              Choose Image
+            </button>
+          </div>
+          <div className="h-36 w-full flex items-center justify-center bg-gray-100 border-dashed border-gray-300 rounded text-gray-400 text-xs pt-7">
+            Image Preview
+          </div>
+          <input
+            type="text"
+            placeholder="Or Paste Image URL"
+            onChange={(e) => {
+              if (e.target.value.trim()) {
+                const newImage = {
+                  file: null,
+                  url: e.target.value,
+                  name: e.target.value.split('/').pop() || 'Pasted Image',
+                  originalUrl: e.target.value,
+                  id: `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+                };
+                onControlsChange({ ...currentData, [imageArrayFieldName]: [newImage] });
+              }
+            }}
+            className="mt-0.5 block w-full px-2 py-1 bg-white rounded-md shadow-sm sm:text-xs focus:ring-indigo-500 focus:border-indigo-500 ring-1 ring-gray-300 focus:ring-2"
+          />
+        </div>
       )}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
         {images.map((imgState, idx) => {

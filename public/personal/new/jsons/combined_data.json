@@ -378,6 +378,9 @@
       "blockName": "TestimonialBlock",
       "config": {
         "title": "Testimonials",
+        "variant": "default",
+        "backgroundColor": "#000000",
+        "arrowStyle": "default",
         "googleReviews": [
           {
             "name": "Valjean Whitlow",
@@ -438,6 +441,7 @@
         "logo": "/assets/images/hero/clipped.png",
         "headerText": "Contact ",
         "phone": "(404) 227-5000",
+        "variant": "nail",
         "showNailAnimation": true
       }
     },

@@ -19,7 +19,7 @@ const TopStickyEditPanel = ({ isOpen, onClose, activeBlockData }) => {
 
   const {
     blockName = 'Block',
-    EditorPanelComponent, // The original EditorPanel for the block
+    EditorPanelComponent, // The original EditorPanel for the block -- these shoudl be elimianted for the new standard verison
     config,
     onPanelChange,
     themeColors,
@@ -27,10 +27,13 @@ const TopStickyEditPanel = ({ isOpen, onClose, activeBlockData }) => {
     // Add any other specific props a block's panel might need
     onDataChange, // Keep for potential direct use by some legacy or specific tabs
     currentBannerColor, // Keep for potential direct use
+    // New props for PanelStylingController variants
+    animationDurationOptions, // For ButtonBlock animation duration ranges
+    buttonSizeOptions, // For ButtonBlock button size options
   } = activeBlockData || {};
 
   // Define the standard order of tabs
-  const standardTabOrder = ['images', 'colors', 'styling'];
+  const standardTabOrder = ['general', 'images', 'colors', 'styling'];
 
   const availableTabKeys = [
     tabsConfig?.images && typeof tabsConfig.images === 'function' ? 'images' : null,
@@ -39,6 +42,20 @@ const TopStickyEditPanel = ({ isOpen, onClose, activeBlockData }) => {
   ].filter(Boolean);
 
   const sortedTabKeys = [...availableTabKeys];
+
+  // DEBUG: Log available tabs and config
+  useEffect(() => {
+    if (isOpen && activeBlockData) {
+      console.log("[TopStickyEditPanel] DEBUG: Available tabs analysis:", {
+        blockName: activeBlockData.blockName,
+        hasTabsConfig: !!tabsConfig,
+        tabsConfigKeys: tabsConfig ? Object.keys(tabsConfig) : [],
+        availableTabKeys,
+        activeTab,
+        configStyling: activeBlockData.config?.styling
+      });
+    }
+  }, [isOpen, activeBlockData, tabsConfig, availableTabKeys, activeTab]);
 
   useEffect(() => {
     if (activeBlockData?.blockName !== prevBlockNameRef.current || !availableTabKeys.includes(activeTab)) {
@@ -72,6 +89,29 @@ const TopStickyEditPanel = ({ isOpen, onClose, activeBlockData }) => {
       />
     );
   }
+
+  // GeneralPanel for general settings (e.g., social icon location for BookingBlock)
+  const GeneralPanel = ({ config, onPanelChange }) => {
+    // Only for BookingBlock for now
+    const socialIconLocation = config?.socialIconLocation || 'above';
+    return (
+      <div className="p-4 space-y-6">
+        <div>
+          <label className="block text-sm font-medium mb-2">Social Media Icon Location:</label>
+          <select
+            value={socialIconLocation}
+            onChange={e => onPanelChange({ ...config, socialIconLocation: e.target.value })}
+            className="w-full bg-gray-100 px-3 py-2 rounded text-sm border border-gray-300 focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="above">Above Form</option>
+            <option value="below">Below Form</option>
+            <option value="hidden">Hidden</option>
+          </select>
+          <p className="text-xs text-gray-500 mt-2">Controls where the social media icons appear in the BookingBlock.</p>
+        </div>
+      </div>
+    );
+  };
 
   const renderTabContent = () => {
     console.log('[TopStickyEditPanel] renderTabContent called. Active Tab:', activeTab, 'TabsConfig:', tabsConfig);
@@ -107,9 +147,15 @@ const TopStickyEditPanel = ({ isOpen, onClose, activeBlockData }) => {
       // RichTextBlock specific props, ensure they are available if needed by the tab
       onDataChange: blockName === 'RichTextBlock' ? onDataChange : undefined,
       currentBannerColor: blockName === 'RichTextBlock' ? currentBannerColor : undefined,
+      // New props for PanelStylingController variants
+      animationDurationOptions: blockName === 'ButtonBlock' ? animationDurationOptions : undefined,
+      buttonSizeOptions: blockName === 'ButtonBlock' ? buttonSizeOptions : undefined,
     });
 
     console.log('[TopStickyEditPanel] Rendered content for tab', activeTab, ':', content ? 'Exists' : 'null/undefined');
+    if (activeTab === 'general' && blockName === 'BookingBlock') {
+      return <GeneralPanel config={config} onPanelChange={onPanelChange} />;
+    }
     return content ? <div className="p-4 bg-white">{content}</div> : <div className="p-6 text-center text-gray-500">No content available for this section.</div>;
   };
 
@@ -187,6 +233,9 @@ TopStickyEditPanel.propTypes = {
     // Props for RichTextBlock's EditorPanel (RichTextControlsPanel)
     onDataChange: PropTypes.func, // Specifically for RichTextBlock's onDataChange (or other blocks if needed)
     currentBannerColor: PropTypes.string, // Specifically for RichTextBlock (or other blocks if needed)
+    // New props for PanelStylingController variants
+    animationDurationOptions: PropTypes.object, // For ButtonBlock animation duration ranges
+    buttonSizeOptions: PropTypes.object, // For ButtonBlock button size options
   }),
 };
 

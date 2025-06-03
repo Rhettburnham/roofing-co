@@ -7,7 +7,7 @@
       "blockName": "HeroBlock",
       "config": {
         "title": "Commercial Roofing Solutions",
-        "backgroundImage": "public/personal/old/img/all_dev/assets/images/growth/hero_growth.jpg",
+        "backgroundImage": "/assets/images/growth/hero_growth.jpg",
         "backgroundColor": "#222222",
         "textColor": "#FFFFFF",
         "buttonText": "Learn More",
@@ -41,7 +41,7 @@
         "textColor": "#F0F0F0",
         "bannerHeight": "h-48",
         "paddingY": "py-12",
-        "backgroundImage": "public/personal/old/img/all_dev/assets/images/growth/hero_growth.jpg",
+        "backgroundImage": "/assets/images/growth/hero_growth.jpg",
         "backgroundColor": "#1F2937"
       }
     },
@@ -65,8 +65,8 @@
               "UV Resistance"
             ],
             "pictures": [
-              "public/personal/old/img/all_dev/assets/images/builtup/builtupdemo.avif",
-              "public/personal/old/img/all_dev/assets/images/builtup/builtuproofing2.jpg"
+              "/assets/images/builtup/builtupdemo.avif",
+              "/assets/images/builtup/builtuproofing2.jpg"
             ]
           },
           {
@@ -79,8 +79,8 @@
               "Ease of Installation"
             ],
             "pictures": [
-              "public/personal/old/img/all_dev/assets/images/builtup/modified1.jpg",
-              "public/personal/old/img/all_dev/assets/images/builtup/modified2.avif"
+              "/assets/images/builtup/modified1.jpg",
+              "/assets/images/builtup/modified2.avif"
             ]
           }
         ]
@@ -121,14 +121,14 @@
             "name": "Acrylic Coatings",
             "description": "Water-based, cost-effective, known for reflectivity and UV resistance.",
             "features": ["Cost-Effective", "Good Reflectivity", "Easy Application"],
-            "imageUrl": "public/personal/old/img/all_dev/assets/images/coating/acrylic.webp"
+            "imageUrl": "/assets/images/coating/acrylic.webp"
           },
           {
             "id": "silicone",
             "name": "Silicone Coatings",
             "description": "Reflective, excel with ponding water, superior UV/weather resistance.",
             "features": ["Exceptional Water Resistance", "High UV Stability", "Durable"],
-            "imageUrl": "public/personal/old/img/all_dev/assets/images/coating/silicone.jpg"
+            "imageUrl": "/assets/images/coating/silicone.jpg"
           }
         ]
       }
@@ -171,7 +171,7 @@
           {
             "id": "gutter_aluminum",
             "title": "Aluminum Gutters",
-            "image": "public/personal/old/img/all_dev/assets/images/gutter_image/Aluminum_gutter.webp",
+            "image": "/assets/images/gutter_image/Aluminum_gutter.webp",
             "alt": "Aluminum Gutters",
             "description": "Cost-effective, rust-resistant, and lightweight. Popular choice.",
             "rate": "$5 - $8 / LFT",
@@ -182,7 +182,7 @@
           {
             "id": "gutter_seamless",
             "title": "Seamless Gutters",
-            "image": "public/personal/old/img/all_dev/assets/images/gutter_image/Seamless_gutter.webp",
+            "image": "/assets/images/gutter_image/Seamless_gutter.webp",
             "alt": "Seamless Gutters",
             "description": "Custom-fitted, reducing leaks. Streamlined appearance.",
             "rate": "$8 - $12 / LFT",
@@ -234,14 +234,14 @@
             "id": "ridge_vents",
             "title": "Ridge Vents",
             "description": "Installed at the roof's peak to allow warm, humid air to escape, preventing moisture buildup.",
-            "image": "public/personal/old/img/all_dev/assets/images/ventilation/ridge_vent.jpeg",
+            "image": "/assets/images/ventilation/ridge_vent.jpeg",
             "alt": "Ridge Vents"
           },
           {
             "id": "soffit_vents",
             "title": "Soffit Vents",
             "description": "Installed under eaves to draw cool air into the attic for steady airflow.",
-            "image": "public/personal/old/img/all_dev/assets/images/ventilation/soffit_vent.avif",
+            "image": "/assets/images/ventilation/soffit_vent.avif",
             "alt": "Soffit Vents"
           }
         ]
@@ -292,7 +292,7 @@
             "title": "Metal Shingles",
             "description": "Superior durability, withstands harsh weather. Modern look, various finishes.",
             "benefit": "Long-lasting (40-70 years) and energy-efficient.",
-            "image": "public/personal/old/img/all_dev/assets/images/placeholder_shingle_metal.png" 
+            "image": "/assets/images/placeholder_shingle_metal.png" 
           }
         ],
         "detailBackgroundColor": "#F3F4F6",
@@ -308,7 +308,7 @@
     {
       "blockName": "ImageWrapBlock",
       "config": {
-        "imageUrl": "public/personal/old/img/all_dev/assets/images/ventilation/roof_installation.webp",
+        "imageUrl": "/assets/images/ventilation/roof_installation.webp",
         "altText": "Energy Efficient Roofing",
         "floatSide": "left",
         "maxWidthPx": 280,
@@ -324,17 +324,17 @@
         "items": [
           {
             "title": "Shingle Roofs",
-            "image": "public/personal/old/img/all_dev/assets/images/ventilation/vent_shingle.jpeg",
+            "image": "/assets/images/ventilation/vent_shingle.jpeg",
             "alt": "Ventilation for Shingle Roof"
           },
           {
             "title": "Metal Roofs",
-            "image": "public/personal/old/img/all_dev/assets/images/ventilation/vent_metal.jpg",
+            "image": "/assets/images/ventilation/vent_metal.jpg",
             "alt": "Ventilation for Metal Roof"
           },
           {
             "title": "Tile Roofs",
-            "image": "public/personal/old/img/all_dev/assets/images/ventilation/vent_tile.jpeg",
+            "image": "/assets/images/ventilation/vent_tile.jpeg",
             "alt": "Ventilation for Tile Roof"
           }
         ],

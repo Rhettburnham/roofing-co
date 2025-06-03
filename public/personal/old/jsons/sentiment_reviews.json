@@ -1,0 +1,130 @@
+[
+    {
+        "name": "Tommy Hunter",
+        "rating": "1",
+        "date": "6 months ago",
+        "review_text": "I would highly recommend avoiding this roofing company. Carl, left me hanging for two years without completing the job. The communication was terrible; they never checked in or followed up on the progress. After waiting so long with no …",
+        "sentiment": "negative",
+        "polarity": -0.2225
+    },
+    {
+        "name": "David Snyder",
+        "rating": "5",
+        "date": "4 years ago",
+        "review_text": "I would like to share a review of my experience with Craft Roofing Company. I had my roof replaced by them, and the results were outstanding. The installers were on time and finished the job in a little more than one day. The roof looks …",
+        "sentiment": "positive",
+        "polarity": 0.2708333333333333
+    },
+    {
+        "name": "Andrea",
+        "rating": "5",
+        "date": "2 years ago",
+        "review_text": "The company was great especially Mr. Carl.  He was able to come that morning after calling and fix my spot on my roof that was leaking. I have not had a company rapidly respond and fix the issue right then and there. Would definitely use for any future roofing concerns.",
+        "sentiment": "positive",
+        "polarity": 0.2642857142857143
+    },
+    {
+        "name": "Delvecchio Parks",
+        "rating": "1",
+        "date": "4 years ago",
+        "review_text": "Carl does not do business professionally. He was so quick to get the insurance money that he did not provide a itemized quote until after he scheduled workers to come to my house. We didn't even have a signed contract before the work was …",
+        "sentiment": "positive",
+        "polarity": 0.21666666666666667
+    },
+    {
+        "name": "ral K",
+        "rating": "5",
+        "date": "4 years ago",
+        "review_text": "Carl Craft and his company provided excellent, reliable, and quick service..he worked with insurance company, so our part was minimal. I would recommend him to anyone who is need of any type of roofing issues.",
+        "sentiment": "positive",
+        "polarity": 0.41111111111111104
+    },
+    {
+        "name": "Valjean Whitlow",
+        "rating": "5",
+        "date": "4 years ago",
+        "review_text": "Excellent workmanship and fair pricing! They handled everything with the insurance company, showed up when they said they would and cleaned up after they were done. They even replaced shingles on my porch and replaced one of my gutters, despite these things not being covered by insurance payment. I highly recommend them!",
+        "sentiment": "positive",
+        "polarity": 0.6916666666666668
+    },
+    {
+        "name": "MELODY WILLIAMS",
+        "rating": "5",
+        "date": "3 years ago",
+        "review_text": "Today I had a wonderful Roof inspection and minor repairs with Craft Roofing.  The Inspector was very knowledgeable about my roof and very informative.  I give the company a 5-star rating.",
+        "sentiment": "positive",
+        "polarity": 0.33749999999999997
+    },
+    {
+        "name": "Kim Payne",
+        "rating": "3",
+        "date": "4 years ago",
+        "review_text": "Someone from this company violated the no soliciting sign at the front of my neighborhood and then proceeded to knock nonstop on our front door for 15 minutes. Actually 15 minutes of banging. This was in the morning too and when someone …",
+        "sentiment": "neutral",
+        "polarity": 0.0
+    },
+    {
+        "name": "Nathan Asay",
+        "rating": "5",
+        "date": "4 years ago",
+        "review_text": "Craft Roofing did a fantastic job at replacing my shingles.  They were responsive, completed the entire project in one day and were  a pleasure to work with.",
+        "sentiment": "positive",
+        "polarity": 0.2
+    },
+    {
+        "name": "Dan Kile",
+        "rating": "5",
+        "date": "4 years ago",
+        "review_text": "Carl was excellent to work with. His crew was in and out quickly and cleaned up their mess.   I would highly recommend Craft Roofing.",
+        "sentiment": "positive",
+        "polarity": 0.3295833333333333
+    },
+    {
+        "name": "Gloria Mitchum",
+        "rating": "5",
+        "date": "2 years ago",
+        "review_text": "Mr Craft and his crew did a wonderful job replacing my roof. All of my questions were answered. Thank you so much & God bless",
+        "sentiment": "positive",
+        "polarity": 0.6
+    },
+    {
+        "name": "D Hase",
+        "rating": "5",
+        "date": "4 years ago",
+        "review_text": "It was a pleasure to work with a company.  They were professional, on time, met the quoted price and left the work area spotless!",
+        "sentiment": "positive",
+        "polarity": 0.05
+    },
+    {
+        "name": "Tim McCray",
+        "rating": "5",
+        "date": "a year ago",
+        "review_text": "N/A",
+        "sentiment": "neutral",
+        "polarity": 0.0
+    },
+    {
+        "name": "Marq Bell",
+        "rating": "5",
+        "date": "4 years ago",
+        "review_text": "N/A",
+        "sentiment": "neutral",
+        "polarity": 0.0
+    },
+    {
+        "name": "Debbie Barrett",
+        "rating": "5",
+        "date": "4 years ago",
+        "review_text": "N/A",
+        "sentiment": "neutral",
+        "polarity": 0.0
+    },
+    {
+        "name": "Lawrence Poindexter",
+        "rating": "5",
+        "date": "4 years ago",
+        "review_text": "N/A",
+        "sentiment": "neutral",
+        "polarity": 0.0
+    }
+]

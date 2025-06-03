@@ -33,8 +33,23 @@ const renderDynamicIcon = (packName, iconName, defaultIconComponent, props = { c
 // Helper to get display path for image previews
 const getDisplayPath = (pathOrFile) => {
   if (!pathOrFile) return '';
-  if (typeof pathOrFile === 'string') return pathOrFile; // URL or path
-  if (pathOrFile instanceof File) return URL.createObjectURL(pathOrFile); // File object
+  
+  // Handle object structure: { url: '...', file: File, name: '...', originalUrl: '...' }
+  if (typeof pathOrFile === 'object') {
+    if (pathOrFile.url) {
+      return pathOrFile.url; // This could be a blob URL or regular URL
+    }
+    if (pathOrFile instanceof File) {
+      return URL.createObjectURL(pathOrFile); // Convert File to blob URL
+    }
+    return '';
+  }
+  
+  // Handle string structure (direct URL path)
+  if (typeof pathOrFile === 'string') {
+    return pathOrFile; // URL or path string
+  }
+  
   return '';
 };
 
@@ -54,6 +69,13 @@ function HeroPreview({ heroconfig }) {
     return <p>No data found for HeroPreview.</p>;
   }
 
+  console.log("[HeroPreview] Received heroconfig:", {
+    hasImages: heroconfig.images?.length > 0,
+    imagesArray: heroconfig.images,
+    heroImage: heroconfig.heroImage,
+    readOnly: heroconfig.readOnly
+  });
+
   const bannerStyles = {
     "--banner-color": heroconfig.bannerColor || "#1e293b",
     "--top-banner-color": heroconfig.topBannerColor || "#FFFFFF",
@@ -69,7 +91,27 @@ function HeroPreview({ heroconfig }) {
   const [commercialServices, setCommercialServices] = useState([]);
 
   // Get heroImage from the new images array structure if present, otherwise use direct heroImage
-  const heroImageToDisplay = heroconfig.images && heroconfig.images[0] ? heroconfig.images[0].url : heroconfig.heroImage;
+  const heroImageToDisplay = (() => {
+    // First priority: images array (new structure for PanelImagesController)
+    if (heroconfig.images && heroconfig.images.length > 0) {
+      const imageObj = heroconfig.images[0];
+      // Use blob URL if file was uploaded, otherwise use the original URL
+      return imageObj.url || null;
+    }
+    
+    // Second priority: direct heroImage property (legacy or direct assignment)
+    if (heroconfig.heroImage) {
+      if (typeof heroconfig.heroImage === 'object' && heroconfig.heroImage.url) {
+        return heroconfig.heroImage.url;
+      }
+      if (typeof heroconfig.heroImage === 'string') {
+        return heroconfig.heroImage;
+      }
+    }
+    
+    // Fallback to default
+    return "/assets/images/hero/hero_split_background.jpg";
+  })();
 
   const {
     residential = { subServices: [], icon: 'Home', iconPack: 'lucide' },
@@ -164,7 +206,7 @@ function HeroPreview({ heroconfig }) {
 
     return (
       <div
-        className="w-1/2 h-full flex flex-col items-center justify-start pt-2 md:pt-4 cursor-pointer"
+        className="w-1/2 h-full flex flex-col items-center justify-center cursor-pointer"
         onClick={handleSectionAreaClick}
       >
         {/* Icon and Main Label (Horizontal when neutral, Icon slides left and sub-services appear right when active) */}
@@ -301,10 +343,11 @@ function HeroPreview({ heroconfig }) {
             style={{
               width: "130vw",
               left: "-15vw",
-              backgroundImage: `url('${getDisplayPath(heroImageToDisplay)}')`,
+              backgroundImage: `url('${heroImageToDisplay}')`,
               backgroundRepeat: "no-repeat",
               backgroundPosition: "center center",
               backgroundSize: "cover",
+              filter: "brightness(0.85) contrast(1.1)", // Enhanced visual appeal
             }}
             initial={{ x: "0%", scale: 1, transformOrigin: "center center" }}
             animate={{
@@ -315,7 +358,12 @@ function HeroPreview({ heroconfig }) {
             transition={{ duration: 0.6, ease: "easeInOut" }}
           />
         )}
-        <div className="relative w-full h-full flex pt-[6vh] md:pt-[8vh] z-10"> {/* Adjusted top padding slightly */}
+        {/* Add overlay for better text readability */}
+        <div 
+          className="absolute inset-0 bg-black bg-opacity-20"
+          style={{ zIndex: 2 }}
+        />
+        <div className="relative w-full h-full flex z-10"> {/* Removed fixed padding, now using justify-center in service sections */}
           {/* Residential Section */}
           {renderServiceSection('residential', residentialServices, residential)}
           {/* Commercial Section */}
@@ -482,7 +530,7 @@ export default function HeroBlock({
     if (dataToSave.images && dataToSave.images.length > 0) {
       const heroImageFromArray = dataToSave.images[0];
       
-      // Ensure we use original file names when available
+      // Ensure we use original file names when available, with proper heroblock naming
       let fileName = heroImageFromArray.name;
       if (heroImageFromArray.file instanceof File) {
         fileName = heroImageFromArray.file.name;
@@ -490,12 +538,17 @@ export default function HeroBlock({
         fileName = heroImageFromArray.originalUrl.split('/').pop();
       }
       
+      // Default to hero_split_background.jpg if no name is available
+      if (!fileName || fileName === 'Hero Image') {
+        fileName = 'hero_split_background.jpg';
+      }
+      
       // Keep the full image object structure for proper asset handling
       dataToSave.heroImage = {
         url: heroImageFromArray.url,
         file: heroImageFromArray.file,
         originalUrl: heroImageFromArray.originalUrl,
-        name: fileName || 'Hero Image',
+        name: fileName,
         id: heroImageFromArray.id
       };
       
@@ -504,12 +557,12 @@ export default function HeroBlock({
         id: img.id,
         url: img.url,
         file: img.file,
-        name: img.file instanceof File ? img.file.name : (img.originalUrl && !img.originalUrl.startsWith('blob:') ? img.originalUrl.split('/').pop() : img.name || 'Hero Image'),
+        name: img.file instanceof File ? img.file.name : (img.originalUrl && !img.originalUrl.startsWith('blob:') ? img.originalUrl.split('/').pop() : img.name || 'hero_split_background.jpg'),
         originalUrl: img.originalUrl
       }));
     } else {
       // Fallback to default if no images
-      dataToSave.heroImage = { url: '', file: null, originalUrl: '', name: 'Hero Image', id: null };
+      dataToSave.heroImage = { url: '', file: null, originalUrl: '', name: 'hero_split_background.jpg', id: null };
       dataToSave.images = [];
     }
 
@@ -560,30 +613,34 @@ export default function HeroBlock({
         id: img.id || `heroimg_existing_${index}_${Date.now()}`,
         url: img.url || defaultHeroImagePath,
         file: img.file instanceof File ? img.file : null,
-        name: img.name || img.url?.split('/').pop() || 'Hero Image',
+        name: img.name || img.url?.split('/').pop() || 'hero_split_background.jpg',
         originalUrl: img.originalUrl || (typeof img.url === 'string' && !img.url.startsWith('blob:') ? img.url : defaultHeroImagePath)
       }));
     } else {
-      // Initialize from heroImage prop or create default
-      let urlToUse = defaultHeroImagePath;
+      // Initialize from heroImage prop or create default - this handles combined_data.json structure
+      let urlToUse = null;
       let fileToUse = null;
-      let originalUrlToUse = defaultHeroImagePath;
-      let nameToUse = 'Hero Image';
+      let originalUrlToUse = null;
+      let nameToUse = 'hero_split_background.jpg';
       let idToUse = `heroimg_init_${Date.now()}`;
 
       const propImage = initialConfig.heroImage;
       if (propImage) {
         if (typeof propImage === 'object' && propImage.url !== undefined) {
+          // Object structure: { url: '...', file: File, name: '...', originalUrl: '...' }
           urlToUse = propImage.url || defaultHeroImagePath;
           fileToUse = (propImage.file instanceof File) ? propImage.file : null;
           originalUrlToUse = propImage.originalUrl || (typeof propImage.url === 'string' && !propImage.url.startsWith('blob:') ? propImage.url : defaultHeroImagePath);
-          nameToUse = propImage.name || (fileToUse?.name) || (typeof urlToUse === 'string' ? urlToUse.split('/').pop() : 'Hero Image') || 'Hero Image';
+          nameToUse = propImage.name || (fileToUse?.name) || (typeof urlToUse === 'string' ? urlToUse.split('/').pop() : 'hero_split_background.jpg') || 'hero_split_background.jpg';
           idToUse = propImage.id || idToUse;
         } else if (typeof propImage === 'string' && propImage.trim() !== '') {
+          // String structure from combined_data.json: "heroImage": "/assets/images/hero/hero_bg.png"
           urlToUse = propImage;
           originalUrlToUse = propImage;
-          nameToUse = propImage.split('/').pop() || 'Hero Image';
+          nameToUse = propImage.split('/').pop() || 'hero_split_background.jpg';
+          console.log("[HeroBlock] Initialized from JSON string heroImage:", propImage);
         } else if (propImage instanceof File) {
+          // Direct File object
           fileToUse = propImage;
           urlToUse = URL.createObjectURL(propImage);
           originalUrlToUse = initialConfig._heroImageOriginalPathFromProps || null; 
@@ -591,13 +648,27 @@ export default function HeroBlock({
         }
       }
       
-      initialImages = [{
-        id: idToUse,
-        url: urlToUse,
-        file: fileToUse,
-        name: nameToUse,
-        originalUrl: originalUrlToUse,
-      }];
+      // Only create images array if we have valid image data
+      if (urlToUse || fileToUse) {
+        initialImages = [{
+          id: idToUse,
+          url: urlToUse,
+          file: fileToUse,
+          name: nameToUse,
+          originalUrl: originalUrlToUse,
+        }];
+        console.log("[HeroBlock] Initialized images array from heroImage prop:", initialImages);
+      } else {
+        // Create default image object for preview
+        initialImages = [{
+          id: `heroimg_default_${Date.now()}`,
+          url: defaultHeroImagePath,
+          file: null,
+          name: 'hero_split_background.jpg',
+          originalUrl: defaultHeroImagePath,
+        }];
+        console.log("[HeroBlock] No image data found, initializing with default image object");
+      }
     }
 
     // Ensure subServices always have originalTitle for consistent slug generation
@@ -664,27 +735,27 @@ export default function HeroBlock({
             id: propImg.id || `heroimg_sync_${index}_${Date.now()}`,
             url: propImg.url || defaultHeroImagePathLocal,
             file: propImg.file instanceof File ? propImg.file : null,
-            name: propImg.name || propImg.url?.split('/').pop() || 'Hero Image',
+            name: propImg.name || propImg.url?.split('/').pop() || 'hero_split_background.jpg',
             originalUrl: propImg.originalUrl || (typeof propImg.url === 'string' && !propImg.url.startsWith('blob:') ? propImg.url : defaultHeroImagePathLocal)
           }));
         } else {
           // Fallback to heroImage prop handling
-          let newUrlSync = defaultHeroImagePathLocal;
+          let newUrlSync = null;
           let newFileSync = null;
-          let newOriginalUrlSync = defaultHeroImagePathLocal;
-          let newNameSync = 'Hero Image';
+          let newOriginalUrlSync = null;
+          let newNameSync = 'hero_split_background.jpg';
 
           const incomingImageProp = heroconfigProp.heroImage;
           if (incomingImageProp) {
             if (typeof incomingImageProp === 'object' && incomingImageProp.url !== undefined) {
-              newUrlSync = incomingImageProp.url || defaultHeroImagePathLocal;
+              newUrlSync = incomingImageProp.url || null;
               newFileSync = (incomingImageProp.file instanceof File) ? incomingImageProp.file : null;
-              newOriginalUrlSync = incomingImageProp.originalUrl || (typeof incomingImageProp.url === 'string' && !incomingImageProp.url.startsWith('blob:') ? incomingImageProp.url : defaultHeroImagePathLocal);
-              newNameSync = incomingImageProp.name || (newFileSync?.name) || (typeof newUrlSync === 'string' ? newUrlSync.split('/').pop() : 'Hero Image');
-            } else if (typeof incomingImageProp === 'string') {
+              newOriginalUrlSync = incomingImageProp.originalUrl || (typeof incomingImageProp.url === 'string' && !incomingImageProp.url.startsWith('blob:') ? incomingImageProp.url : null);
+              newNameSync = incomingImageProp.name || (newFileSync?.name) || (typeof newUrlSync === 'string' ? newUrlSync.split('/').pop() : 'hero_split_background.jpg');
+            } else if (typeof incomingImageProp === 'string' && incomingImageProp.trim() !== '') {
               newUrlSync = incomingImageProp;
               newOriginalUrlSync = incomingImageProp;
-              newNameSync = newUrlSync.split('/').pop() || 'Hero Image';
+              newNameSync = newUrlSync.split('/').pop() || 'hero_split_background.jpg';
             } else if (incomingImageProp instanceof File) {
               newFileSync = incomingImageProp;
               newUrlSync = URL.createObjectURL(incomingImageProp);
@@ -699,6 +770,7 @@ export default function HeroBlock({
             URL.revokeObjectURL(currentLocalImage.url);
           }
 
+          // Only create images array if we have valid image data
           if (newUrlSync || newFileSync) {
               newImagesState = [{
                   id: (currentLocalImage?.id) || `heroimg_sync_${Date.now()}`,
@@ -708,9 +780,17 @@ export default function HeroBlock({
                   originalUrl: newOriginalUrlSync,
               }];
           } else if (!heroconfigProp.hasOwnProperty('heroImage') && !heroconfigProp.hasOwnProperty('images')) {
+              // No image props provided, keep existing state
               newImagesState = prevLocalData.images || [];
           } else {
-              newImagesState = [];
+              // Empty image props provided, create default image object for preview
+              newImagesState = [{
+                id: `heroimg_default_sync_${Date.now()}`,
+                url: defaultHeroImagePathLocal,
+                file: null,
+                name: 'hero_split_background.jpg',
+                originalUrl: defaultHeroImagePathLocal,
+              }];
           }
         }
 
@@ -796,9 +876,29 @@ export default function HeroBlock({
       const otherChanges = { ...changedFields };
       delete otherChanges.styling;
 
+      // Handle images array updates from PanelImagesController
+      let newImages = prevData.images || [];
+      if (changedFields.images && Array.isArray(changedFields.images)) {
+        newImages = changedFields.images;
+        console.log("[HeroBlock] Updated images array from PanelImagesController:", newImages);
+        
+        // Also update heroImage for backward compatibility
+        if (newImages.length > 0) {
+          const primaryImage = newImages[0];
+          otherChanges.heroImage = {
+            url: primaryImage.url,
+            file: primaryImage.file,
+            name: primaryImage.name,
+            originalUrl: primaryImage.originalUrl,
+            id: primaryImage.id
+          };
+        }
+      }
+
       const newData = {
         ...prevData,
         ...otherChanges,
+        images: newImages,
         styling: newStyling,
       };
       console.log("[HeroBlock handleControlsChange->setLocalData] Merged data. newStyling:", newStyling, "newData.styling:", newData.styling);
@@ -938,6 +1038,7 @@ HeroBlock.tabsConfig = (blockCurrentData, onControlsChange, themeColors) => {
         {...props}
         currentData={processedData}
         onControlsChange={onControlsChange}
+        blockType="HeroBlock"
       />
     ),
   };

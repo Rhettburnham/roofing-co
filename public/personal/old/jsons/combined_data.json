@@ -20,9 +20,28 @@
         "href": "/#contact"
       }
     ],
-    "logo": "public/personal/old/img/main_page_images/HeroBlock/logo.png",
-    "whiteLogo": "public/personal/old/img/main_page_images/HeroBlock/logo.png",
-    "whiteLogoIcon": null
+    "logo": "/assets/images/hero/logo.png",
+    "whiteLogo": "/assets/images/hero/logo.png",
+    "whiteLogoIcon": null,
+    "animation": {
+      "naturalOffsetVh": 11,
+      "slideUpDistanceVh": 0,
+      "logoSizeUnscrolled": { "width": "18vh", "height": "18vh" },
+      "logoSizeScrolled": { "width": "14vh", "height": "14vh" }
+    },
+    "textSizes": {
+      "unscrolled": { "base": "text-[7vw]", "md": "text-[8vh]", "lg": "text-[5vh]" },
+      "scrolled": { "base": "text-[3vw]", "md": "text-[5vh]" }
+    },
+    "logoTextDistance": {
+      "unscrolled": { "base": "mr-2", "md": "mr-3" },
+      "scrolled": { "base": "mr-2", "md": "mr-2" }
+    },
+    "navbarHeight": {
+      "unscrolled": { "base": "h-[16vh]", "md": "h-[16vh]" },
+      "scrolled": { "base": "h-[10vh]", "md": "h-[10vh]" }
+    },
+    "invertLogoColor": false
   },
   "mainPageBlocks": [
     {
@@ -70,9 +89,10 @@
             }
           ]
         },
-        "logo": "public/personal/old/img/main_page_images/HeroBlock/logo.png",
-        "heroImage": "public/personal/old/img/main_page_images/HeroBlock/hero_bg.png",
+        "logo": "/assets/images/hero/logo.png",
+        "heroImage": "/assets/images/hero/hero_bg.png",
         "styling": {
+          "hasVariants": false,
           "desktopHeightVH": 30,
           "mobileHeightVW": 50
         }
@@ -81,11 +101,11 @@
     {
       "blockName": "RichTextBlock",
       "config": {
+        "variant": "classic",
         "heroText": "Protecting Your Home with Excellence",
         "accredited": true,
         "years_in_business": "11 Years of Roofing Experience",
-        "bus_description": "Cowboys-Vaqueros Construction has been a trusted name in the roofing industry for 11 years, delivering exceptional craftsmanship and reliability. Specializing in residential and commercial roofing, we combine time-tested techniques with modern materials to ensure durability, aesthetic appeal, and long-lasting protection for your property.",
-        "bus_description_second": "At Cowboys-Vaqueros Construction, we pride ourselves on personalized service and unwavering integrity. Our skilled team handles every project with meticulous attention to detail, from initial inspection to final installation. Customer satisfaction is our top priority, and we stand behind our work with industry-leading warranties and transparent communication.",
+        "bus_description": "Cowboys-Vaqueros Construction has been a trusted name in the roofing industry for 11 years, delivering exceptional craftsmanship and reliability. Specializing in residential and commercial roofing, we combine time-tested techniques with modern materials to ensure durability, aesthetic appeal, and long-lasting protection for your property.\n\nAt Cowboys-Vaqueros Construction, we pride ourselves on personalized service and unwavering integrity. Our skilled team handles every project with meticulous attention to detail, from initial inspection to final installation. Customer satisfaction is our top priority, and we stand behind our work with industry-leading warranties and transparent communication.",
         "cards": [
           {
             "title": "Expert Craftsmanship",
@@ -109,9 +129,9 @@
           }
         ],
         "images": [
-          "public/personal/old/img/main_page_images/RichTextBlock/richtext_1.jpg",
-          "public/personal/old/img/main_page_images/RichTextBlock/richtext_2.jpg",
-          "public/personal/old/img/main_page_images/RichTextBlock/richtext_3.webp"
+          "/assets/images/Richtext/richtext_1.jpg",
+          "/assets/images/Richtext/richtext_2.jpg",
+          "/assets/images/Richtext/richtext_3.webp"
         ],
         "description for the images": [
           "a roofer working on a roof",
@@ -119,32 +139,126 @@
           "a roofer climbing a ladder to inspect a roof"
         ],
         "backgroundColor": "#1e293b",
+        "variants": {
+          "classic": {
+            "id": "classic",
+            "heroText": "Protecting Your Home with Excellence",
+            "bus_description": "Cowboys-Vaqueros Construction has been a trusted name in the roofing industry for 11 years, delivering exceptional craftsmanship and reliability. Specializing in residential and commercial roofing, we combine time-tested techniques with modern materials to ensure durability, aesthetic appeal, and long-lasting protection for your property.\n\nAt Cowboys-Vaqueros Construction, we pride ourselves on personalized service and unwavering integrity. Our skilled team handles every project with meticulous attention to detail, from initial inspection to final installation. Customer satisfaction is our top priority, and we stand behind our work with industry-leading warranties and transparent communication.",
+            "cards": [
+              {
+                "title": "Expert Craftsmanship",
+                "desc": "Our seasoned professionals bring 11+ years of expertise, ensuring precision and quality in every roof we install or repair.",
+                "icon": "Tools"
+              },
+              {
+                "title": "Trusted Warranties",
+                "desc": "We offer robust warranties on materials and labor, giving you peace of mind for years to come.",
+                "icon": "Shield"
+              },
+              {
+                "title": "Personalized Service",
+                "desc": "From consultation to completion, we tailor solutions to fit your needs, budget, and timeline.",
+                "icon": "HeartHandshake"
+              },
+              {
+                "title": "BBB Accredited",
+                "desc": "Recognized for integrity, transparency and commitment to customer satisfaction by the Better Business Bureau.",
+                "icon": "Certificate"
+              }
+            ],
+            "layout": "default",
+            "showCards": true,
+            "showSlideshow": true,
+            "cardPosition": "top",
+            "textAlignment": "center"
+          },
+          "modern": {
+            "id": "modern",
+            "heroText": "Transform Your Space",
+            "bus_description": "Experience our modern approach to roofing with innovative solutions that blend cutting-edge technology with timeless craftsmanship. Our streamlined process delivers superior results efficiently, ensuring your project is completed on time and within budget.",
+            "cards": [
+              {
+                "title": "Advanced Technology",
+                "desc": "Utilizing the latest roofing technologies and materials for optimal performance and longevity.",
+                "icon": "Zap"
+              },
+              {
+                "title": "Efficient Process",
+                "desc": "Streamlined workflows and project management ensure timely completion without compromising quality.",
+                "icon": "Clock"
+              },
+              {
+                "title": "Sustainable Solutions",
+                "desc": "Eco-friendly materials and energy-efficient solutions for environmentally conscious homeowners.",
+                "icon": "Leaf"
+              }
+            ],
+            "layout": "split",
+            "showCards": true,
+            "showSlideshow": true,
+            "cardPosition": "side",
+            "textAlignment": "left"
+          },
+          "grid": {
+            "id": "grid",
+            "heroText": "Stories of Excellence",
+            "bus_description": "Discover our journey through craftsmanship and innovation, where every project tells a unique story of transformation. Each roof we create is a masterpiece, reflecting our commitment to artistry and functional excellence.",
+            "cards": [
+              {
+                "title": "Artisan Craftsmanship",
+                "desc": "Each project is approached with an artist's eye and a craftsman's skill.",
+                "icon": "Palette"
+              },
+              {
+                "title": "Signature Style",
+                "desc": "Distinctive designs that enhance your home's architectural character.",
+                "icon": "Award"
+              },
+              {
+                "title": "Creative Solutions",
+                "desc": "Innovative approaches to challenging roofing problems and unique requirements.",
+                "icon": "Lightbulb"
+              },
+              {
+                "title": "Visual Impact",
+                "desc": "Roofing solutions that make a statement and increase your property's curb appeal.",
+                "icon": "Eye"
+              }
+            ],
+            "layout": "grid",
+            "showCards": true,
+            "showSlideshow": true,
+            "cardPosition": "floating",
+            "textAlignment": "left"
+          }
+        },
         "styling": {
+          "hasVariants": true,
           "desktopHeightVH": 45,
           "mobileHeightVW": 75
         },
         "steps": [
           {
             "title": "Book",
-            "videoSrc": "public/personal/old/img/main_page_images/RichTextBlock/booking.mp4",
+            "videoSrc": "/assets/videos/our_process_videos/booking.mp4",
             "href": "/#booking",
             "scale": 0.8
           },
           {
             "title": "Inspection",
-            "videoSrc": "public/personal/old/img/main_page_images/RichTextBlock/magnify.mp4",
+            "videoSrc": "/assets/videos/our_process_videos/magnify.mp4",
             "href": "/inspection",
             "scale": 1.25
           },
           {
             "title": "Service",
-            "videoSrc": "public/personal/old/img/main_page_images/RichTextBlock/repair.mp4",
+            "videoSrc": "/assets/videos/our_process_videos/repair.mp4",
             "href": "/#packages",
             "scale": 1.1
           },
           {
             "title": "Review",
-            "videoSrc": "public/personal/old/img/main_page_images/RichTextBlock/approval.mp4",
+            "videoSrc": "/assets/videos/our_process_videos/approval.mp4",
             "href": "/#testimonials",
             "scale": 0.9
           }
@@ -157,25 +271,43 @@
         "text": "Services",
         "buttonLink": "/about",
         "images": [
-          "public/personal/old/img/main_page_images/ButtonBlock/i4.jpeg",
-          "public/personal/old/img/main_page_images/ButtonBlock/i8.webp",
-          "public/personal/old/img/main_page_images/ButtonBlock/i5.jpeg",
-          "public/personal/old/img/main_page_images/ButtonBlock/i6.jpeg",
-          "public/personal/old/img/main_page_images/ButtonBlock/i2.jpeg",
-          "public/personal/old/img/main_page_images/ButtonBlock/i3.jpeg",
-          "public/personal/old/img/main_page_images/ButtonBlock/i9.jpeg",
-          "public/personal/old/img/main_page_images/ButtonBlock/i10.webp",
-          "public/personal/old/img/main_page_images/ButtonBlock/i7.webp",
-          "public/personal/old/img/main_page_images/ButtonBlock/i11.jpeg",
-          "public/personal/old/img/main_page_images/ButtonBlock/i12.webp",
-          "public/personal/old/img/main_page_images/ButtonBlock/i1.jpeg"
+          "/assets/images/roof_slideshow/i4.jpeg",
+          "/assets/images/roof_slideshow/i8.webp",
+          "/assets/images/roof_slideshow/i5.jpeg",
+          "/assets/images/roof_slideshow/i6.jpeg",
+          "/assets/images/roof_slideshow/i2.jpeg",
+          "/assets/images/roof_slideshow/i3.jpeg",
+          "/assets/images/roof_slideshow/i9.jpeg",
+          "/assets/images/roof_slideshow/i10.webp",
+          "/assets/images/roof_slideshow/i7.webp",
+          "/assets/images/roof_slideshow/i11.jpeg",
+          "/assets/images/roof_slideshow/i12.webp",
+          "/assets/images/roof_slideshow/i1.jpeg"
         ],
         "description for the images": [
           "a house with a victorian chimney",
           "a shingled roof close up",
           "a roof being coated",
           "a roof being repaired"
-        ]
+        ],
+        "variant": "default",
+        "styling": {
+          "hasVariants": true,
+          "desktopHeightVH": 20,
+          "mobileHeightVW": 35,
+          "buttonSize": "large",
+          "animationSpeed": "normal",
+          "animationType": "slide",
+          "slideDuration": 40,
+          "animationDuration": 40,
+          "availableButtonSizes": ["small", "medium", "large", "extra-large"],
+          "buttonSizeLabels": {
+            "small": "Small - Compact button for subtle call-to-action",
+            "medium": "Medium - Standard button size for most use cases", 
+            "large": "Large - Prominent button for primary actions",
+            "extra-large": "Extra Large - Maximum impact button for hero sections"
+          }
+        }
       }
     },
     {
@@ -185,42 +317,47 @@
         "showNailAnimation": true,
         "items": [
           {
-            "before": "public/personal/old/img/main_page_images/BeforeAfterBlock/a1.jpeg",
-            "after": "public/personal/old/img/main_page_images/BeforeAfterBlock/b1.JPG",
+            "before": "/assets/images/beforeafter/a1.jpeg",
+            "after": "/assets/images/beforeafter/b1.JPG",
             "shingle": "Asphalt Shingle",
             "sqft": "2000 sqft"
           },
           {
-            "before": "public/personal/old/img/main_page_images/BeforeAfterBlock/a2.jpeg",
-            "after": "public/personal/old/img/main_page_images/BeforeAfterBlock/b2.jpeg",
+            "before": "/assets/images/beforeafter/a2.jpeg",
+            "after": "/assets/images/beforeafter/b2.jpeg",
             "shingle": "Metal Roofing",
             "sqft": "1800 sqft"
           },
           {
-            "before": "public/personal/old/img/main_page_images/BeforeAfterBlock/a3.jpeg",
-            "after": "public/personal/old/img/main_page_images/BeforeAfterBlock/b3.jpeg",
+            "before": "/assets/images/beforeafter/a3.jpeg",
+            "after": "/assets/images/beforeafter/b3.jpeg",
             "shingle": "Composite Shingle",
             "sqft": "2200 sqft"
           },
           {
-            "before": "public/personal/old/img/main_page_images/BeforeAfterBlock/a4.png",
-            "after": "public/personal/old/img/main_page_images/BeforeAfterBlock/b4.png",
-            "shingle": "Tile Roof",
-            "sqft": "2500 sqft"
+            "before": "/assets/images/beforeafter/a4.png",
+            "after": "/assets/images/beforeafter/b4.png",
+            "shingle": "Clay Tile",
+            "sqft": "1900 sqft"
           },
           {
-            "before": "public/personal/old/img/main_page_images/BeforeAfterBlock/a5.jpg",
-            "after": "public/personal/old/img/main_page_images/BeforeAfterBlock/b5.jpg",
-            "shingle": "Slate Shingles",
-            "sqft": "3000 sqft"
+            "before": "/assets/images/beforeafter/a5.jpg",
+            "after": "/assets/images/beforeafter/b5.jpg",
+            "shingle": "Slate Roofing",
+            "sqft": "2100 sqft"
           },
           {
-            "before": "public/personal/old/img/main_page_images/BeforeAfterBlock/a6.png",
-            "after": "public/personal/old/img/main_page_images/BeforeAfterBlock/b6.png",
-            "shingle": "Wood Shake",
-            "sqft": "2700 sqft"
+            "before": "/assets/images/beforeafter/a6.png",
+            "after": "/assets/images/beforeafter/b6.png",
+            "shingle": "Standing Seam Metal",
+            "sqft": "2400 sqft"
           }
-        ]
+        ],
+        "styling": {
+          "hasVariants": false,
+          "desktopHeightVH": 30,
+          "mobileHeightVW": 40
+        }
       }
     },
     {
@@ -235,8 +372,8 @@
         "circleRadius": 5047,
         "address": "40 Tipperary TrlSharpsburg, GA 30277-3502",
         "telephone": "(404) 227-5000",
-        "markerIcon": "public/personal/old/img/main_page_images/HeroBlock/logo.png",
-        "statsBackgroundImage": "public/personal/old/img/main_page_images/BasicMapBlock/stats_background.jpg",
+        "markerIcon": "/assets/images/hero/logo.png",
+        "statsBackgroundImage": "/assets/images/BasicMapBlock/stats_background.jpg",
         "bannerTextColor": "#FFFFFF",
         "bannerBackgroundColor": "#1F2937",
         "statsTextColor": "#FFFFFF",
@@ -304,7 +441,12 @@
             "value": "11",
             "icon": "FaCalendarAlt"
           }
-        ]
+        ],
+        "styling": {
+          "hasVariants": false,
+          "desktopHeightVH": 35,
+          "mobileHeightVW": 50
+        }
       }
     },
     {
@@ -375,21 +517,36 @@
             "title": "Maintenance"
           }
         ],
-        "largeResidentialImg": "public/personal/old/img/main_page_images/ServiceSliderBlock/main_image_expanded.jpg",
-        "largeCommercialImg": "public/personal/old/img/main_page_images/ServiceSliderBlock/commercialservices.jpg"
+        "largeResidentialImg": "/assets/images/services/main_image_expanded.jpg",
+        "largeCommercialImg": "/assets/images/services/commercialservices.jpg",
+        "styling": {
+          "hasVariants": false,
+          "desktopHeightVH": 28,
+          "mobileHeightVW": 45,
+          "hasGradient": true,
+          "shadowVariant": "medium",
+          "gradientConfig": {
+            "startColor": "#D9534F",
+            "endColor": "#FF6B6B",
+            "direction": "to right"
+          }
+        }
       }
     },
     {
       "blockName": "TestimonialBlock",
       "config": {
         "title": "Testimonials",
+        "variant": "default",
+        "backgroundColor": "#000000",
+        "arrowStyle": "default",
         "googleReviews": [
           {
             "name": "Valjean Whitlow",
             "stars": 5,
             "date": "4 years ago",
             "text": "Excellent workmanship and fair pricing! They handled everything with the insurance company, showed up when they said they would and cleaned up after they were done. They even replaced shingles on my porch and replaced one of my gutters, despite these things not being covered by insurance payment. I highly recommend them!",
-            "logo": "public/personal/old/img/main_page_images/TestimonialBlock/googleimage.png",
+            "logo": "/assets/images/hero/googleimage.png",
             "link": "https://www.google.com/maps"
           },
           {
@@ -397,7 +554,7 @@
             "stars": 5,
             "date": "2 years ago",
             "text": "Mr Craft and his crew did a wonderful job replacing my roof. All of my questions were answered. Thank you so much & God bless",
-            "logo": "public/personal/old/img/main_page_images/TestimonialBlock/googleimage.png",
+            "logo": "/assets/images/hero/googleimage.png",
             "link": "https://www.google.com/maps"
           },
           {
@@ -405,7 +562,7 @@
             "stars": 5,
             "date": "4 years ago",
             "text": "Carl Craft and his company provided excellent, reliable, and quick service..he worked with insurance company, so our part was minimal. I would recommend him to anyone who is need of any type of roofing issues.",
-            "logo": "public/personal/old/img/main_page_images/TestimonialBlock/googleimage.png",
+            "logo": "/assets/images/hero/googleimage.png",
             "link": "https://www.google.com/maps"
           },
           {
@@ -413,7 +570,7 @@
             "stars": 5,
             "date": "3 years ago",
             "text": "Today I had a wonderful Roof inspection and minor repairs with Craft Roofing.  The Inspector was very knowledgeable about my roof and very informative.  I give the company a 5-star rating.",
-            "logo": "public/personal/old/img/main_page_images/TestimonialBlock/googleimage.png",
+            "logo": "/assets/images/hero/googleimage.png",
             "link": "https://www.google.com/maps"
           },
           {
@@ -421,7 +578,7 @@
             "stars": 5,
             "date": "4 years ago",
             "text": "Carl was excellent to work with. His crew was in and out quickly and cleaned up their mess.   I would highly recommend Craft Roofing.",
-            "logo": "public/personal/old/img/main_page_images/TestimonialBlock/googleimage.png",
+            "logo": "/assets/images/hero/googleimage.png",
             "link": "https://www.google.com/maps"
           },
           {
@@ -429,7 +586,7 @@
             "stars": 5,
             "date": "4 years ago",
             "text": "I would like to share a review of my experience with Craft Roofing Company. I had my roof replaced by them, and the results were outstanding. The installers were on time and finished the job in a little more than one day. The roof looks …",
-            "logo": "public/personal/old/img/main_page_images/TestimonialBlock/googleimage.png",
+            "logo": "/assets/images/hero/googleimage.png",
             "link": "https://www.google.com/maps"
           }
         ],
@@ -440,10 +597,184 @@
     {
       "blockName": "BookingBlock",
       "config": {
-        "logo": "public/personal/old/img/main_page_images/HeroBlock/logo.png",
-        "headerText": "Contact ",
+        "logo": "/assets/images/hero/clipped.png",
         "phone": "(404) 227-5000",
-        "showNailAnimation": true
+        "variant": "nail",
+        "showNailAnimation": true,
+        "socialLinks": [
+          { "platform": "twitter", "url": "https://twitter.com" },
+          { "platform": "facebook", "url": "https://facebook.com" }
+        ],
+        "colors": {
+          "primaryBackground": "#1f2937",
+          "secondaryBackground": "#FFFFFF",
+          "primaryText": "#FFFFFF",
+          "secondaryText": "#374151",
+          "accentText": "#F97316",
+          "buttonBackground": "#F97316",
+          "buttonText": "#FFFFFF",
+          "inputBackground": "#FFFFFF",
+          "inputBorder": "#D1D5DB",
+          "inputText": "#374151",
+          "gradientStart": "#1f2937",
+          "gradientEnd": "#374151",
+          "overlayBackground": "rgba(0, 0, 0, 0.5)",
+          "cardBackground": "#FFFFFF",
+          "cardBorder": "#E5E7EB",
+          "successColor": "#10B981",
+          "errorColor": "#EF4444",
+          "warningColor": "#F59E0B",
+          "infoColor": "#3B82F6",
+          "modernGradientStart": "#1e293b",
+          "modernGradientEnd": "#334155",
+          "modernAccentStart": "#3b82f6",
+          "modernAccentEnd": "#8b5cf6",
+          "creativeGradientStart": "#4c1d95",
+          "creativeGradientEnd": "#be185d",
+          "creativeHeaderGradient": "#fbbf24",
+          "creativeSubHeaderColor": "#fed7aa",
+          "creativeBadgeGradientStart": "#fbbf24",
+          "creativeBadgeGradientEnd": "#f59e0b"
+        },
+        "variants": {
+          "nail": {
+            "id": "nail",
+            "headerText": "Contact Our Craftsmen",
+            "subHeaderText": "Get a Free Estimate Today",
+            "formTitle": "Request Your Quote",
+            "description": "Our experienced team brings traditional craftsmanship to modern roofing solutions.",
+            "showNailAnimation": true
+          },
+          "modern": {
+            "id": "modern",
+            "headerText": "Get Your Free Quote",
+            "subHeaderText": "Modern Solutions for Your Home",
+            "formTitle": "Start Your Project",
+            "description": "Experience the future of roofing with our innovative design and premium materials.",
+            "showNailAnimation": false,
+            "features": [
+              {
+                "id": "call_feature",
+                "emoji": "📞",
+                "title": "Call Us",
+                "subtitle": "Available 8AM - 6PM"
+              },
+              {
+                "id": "response_feature", 
+                "emoji": "💬",
+                "title": "Quick Response",
+                "subtitle": "We reply within 24 hours"
+              },
+              {
+                "id": "trusted_feature",
+                "emoji": "⭐",
+                "title": "Trusted Service", 
+                "subtitle": "11+ years of excellence"
+              }
+            ],
+            "formFields": {
+              "firstNamePlaceholder": "Enter your first name",
+              "lastNamePlaceholder": "Enter your last name", 
+              "emailPlaceholder": "Enter your email address",
+              "phonePlaceholder": "Enter your phone number",
+              "servicePlaceholder": "Select a service",
+              "messagePlaceholder": "Tell us about your project...",
+              "submitButtonText": "Get Free Quote",
+              "submittingText": "Sending..."
+            },
+            "serviceOptions": [
+              "Roof Installation",
+              "Roof Repair", 
+              "Roof Inspection",
+              "Gutter Installation",
+              "Commercial Roofing",
+              "Emergency Repairs"
+            ]
+          },
+          "creative": {
+            "id": "creative",
+            "headerText": "Transform Your Roof",
+            "subHeaderText": "Creative Solutions & Expert Installation",
+            "formTitle": "Let's Create Something Amazing",
+            "description": "Bring your vision to life with our artistic approach to roofing and exterior design.",
+            "showNailAnimation": false,
+            "badges": [
+              {
+                "id": "experience_badge",
+                "icon": "🏆",
+                "text": "11+ Years",
+                "subtitle": "Experience"
+              },
+              {
+                "id": "response_badge",
+                "icon": "⚡", 
+                "text": "24 Hours",
+                "subtitle": "Response"
+              },
+              {
+                "id": "insured_badge",
+                "icon": "🛡️",
+                "text": "Insured",
+                "subtitle": "& Bonded" 
+              },
+              {
+                "id": "warranty_badge",
+                "icon": "💯",
+                "text": "Warranty",
+                "subtitle": "Guaranteed"
+              }
+            ],
+            "formFields": {
+              "firstNamePlaceholder": "First Name",
+              "lastNamePlaceholder": "Last Name",
+              "emailPlaceholder": "Email Address", 
+              "phonePlaceholder": "Phone Number",
+              "servicePlaceholder": "🏠 Select Service",
+              "messagePlaceholder": "Tell us about your project...",
+              "submitButtonText": "🎯 Get Free Quote",
+              "submittingText": "🚀 Sending..."
+            },
+            "serviceOptions": [
+              "🔨 Roof Installation",
+              "🔧 Roof Repair",
+              "🔍 Roof Inspection", 
+              "🌧️ Gutter Services",
+              "🏢 Commercial Roofing",
+              "🎨 Custom Solutions"
+            ],
+            "galleryImages": [
+              {
+                "id": "craftsmanship_img",
+                "url": "/assets/images/roof_slideshow/i4.jpeg",
+                "alt": "Expert Craftsmanship",
+                "caption": "Quality roofing work"
+              },
+              {
+                "id": "materials_img", 
+                "url": "/assets/images/roof_slideshow/i8.webp",
+                "alt": "Premium Materials",
+                "caption": "Top-grade materials"
+              },
+              {
+                "id": "installation_img",
+                "url": "/assets/images/roof_slideshow/i5.jpeg", 
+                "alt": "Professional Installation",
+                "caption": "Expert installation"
+              },
+              {
+                "id": "residential_img",
+                "url": "/assets/images/roof_slideshow/i6.jpeg",
+                "alt": "Residential Projects", 
+                "caption": "Beautiful homes"
+              }
+            ]
+          }
+        },
+        "styling": {
+          "hasVariants": true,
+          "desktopHeightVH": 30,
+          "mobileHeightVW": 75
+        }
       }
     },
     {
@@ -457,14 +788,19 @@
           {
             "name": "Mr. Luis Aguilar-Lopez",
             "role": "Owner",
-            "image": "public/personal/old/img/about_page/team/roofer.png"
+            "image": "/assets/images/about_page/team/roofer.png"
           },
           {
             "name": "Ms. Erika Salinas",
             "role": "Manager",
-            "image": "public/personal/old/img/about_page/team/foreman.png"
+            "image": "/assets/images/about_page/team/foreman.png"
           }
-        ]
+        ],
+        "styling": {
+          "hasVariants": false,
+          "desktopHeightVH": 26,
+          "mobileHeightVW": 38
+        }
       }
     }
   ],

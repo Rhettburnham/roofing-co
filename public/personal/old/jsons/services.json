@@ -31,8 +31,8 @@
                 "colorPossibilities": "Typically gravel or mineral-surfaced finish in neutral tones. Reflective coatings can be applied for enhanced energy efficiency",
                 "installationTime": "Can be labor-intensive, taking several days to weeks depending on roof size and complexity",
                 "pictures": [
-                  "public/personal/old/img/all_dev/assets/images/builtup/builtupdemo.avif",
-                  "public/personal/old/img/all_dev/assets/images/builtup/builtuproofing2.jpg"
+                  "/personal/old/img/all_dev/assets/images/builtup/builtupdemo.avif",
+                  "/personal/old/img/all_dev/assets/images/builtup/builtuproofing2.jpg"
                 ]
               },
               {
@@ -48,8 +48,8 @@
                 "colorPossibilities": "Available in multiple colors and finishes (including shingle-like options)",
                 "installationTime": "Usually installed in 1–3 days, depending on roof size and chosen application method",
                 "pictures": [
-                  "public/personal/old/img/all_dev/assets/images/builtup/modified1.jpg",
-                  "public/personal/old/img/all_dev/assets/images/builtup/modified2.avif"
+                  "/personal/old/img/all_dev/assets/images/builtup/modified1.jpg",
+                  "/personal/old/img/all_dev/assets/images/builtup/modified2.avif"
                 ]
               }
             ]
@@ -101,8 +101,8 @@
                 "colorPossibilities": "Typically gravel/mineral finish in neutral tones; reflective coatings optional",
                 "installationTime": "Labor-intensive, can take days to weeks depending on roof size",
                 "pictures": [
-                  "public/personal/old/img/all_dev/assets/images/builtup/builtupdemo.avif",
-                  "public/personal/old/img/all_dev/assets/images/builtup/builtuproofing2.jpg"
+                  "/personal/old/img/all_dev/assets/images/builtup/builtupdemo.avif",
+                  "/personal/old/img/all_dev/assets/images/builtup/builtuproofing2.jpg"
                 ]
               },
               {
@@ -118,8 +118,8 @@
                 "colorPossibilities": "Multiple colors/finishes (including shingle-like options). Reflective coatings reduce cooling costs",
                 "installationTime": "Typically 1–3 days, depending on roof size and method",
                 "pictures": [
-                  "public/personal/old/img/all_dev/assets/images/builtup/modified1.jpg",
-                  "public/personal/old/img/all_dev/assets/images/builtup/modified2.avif"
+                  "/personal/old/img/all_dev/assets/images/builtup/modified1.jpg",
+                  "/personal/old/img/all_dev/assets/images/builtup/modified2.avif"
                 ]
               }
             ]
@@ -171,7 +171,7 @@
                 ],
                 "uses": "Works on metal, asphalt, single-ply membranes, etc.",
                 "limitations": "Not the best for continuous ponding water areas.",
-                "imageUrl": "public/personal/old/img/all_dev/assets/images/coating/acrylic.webp"
+                "imageUrl": "/personal/old/img/all_dev/assets/images/coating/acrylic.webp"
               },
               {
                 "id": 2,
@@ -184,7 +184,7 @@
                 ],
                 "uses": "Perfect for flat roofs in wet climates or heavy rainfall.",
                 "limitations": "Surface prep is key; silicone can be pricier than acrylic.",
-                "imageUrl": "public/personal/old/img/all_dev/assets/images/coating/silicone.jpg"
+                "imageUrl": "/personal/old/img/all_dev/assets/images/coating/silicone.jpg"
               },
               {
                 "id": 3,
@@ -197,7 +197,7 @@
                 ],
                 "uses": "Areas with mechanical stress or frequent foot traffic.",
                 "limitations": "Aromatic degrade under UV faster; aliphatic cost more but keep color better.",
-                "imageUrl": "public/personal/old/img/all_dev/assets/images/coating/polyurethane.jpg"
+                "imageUrl": "/personal/old/img/all_dev/assets/images/coating/polyurethane.jpg"
               },
               {
                 "id": 4,
@@ -210,7 +210,7 @@
                 ],
                 "uses": "Roofs with significant thermal movement or cracking issues.",
                 "limitations": "Can be more expensive; requires proper surface prep.",
-                "imageUrl": "public/personal/old/img/all_dev/assets/images/coating/elastomeric.jpg"
+                "imageUrl": "/personal/old/img/all_dev/assets/images/coating/elastomeric.jpg"
               },
               {
                 "id": 5,
@@ -223,7 +223,7 @@
                 ],
                 "uses": "New construction or major roof renovations requiring insulation upgrade.",
                 "limitations": "Requires specialized equipment and training; weather-dependent installation.",
-                "imageUrl": "public/personal/old/img/all_dev/assets/images/coating/spf.jpg"
+                "imageUrl": "/personal/old/img/all_dev/assets/images/coating/spf.jpg"
               }
             ]
           }
@@ -273,7 +273,7 @@
                 ],
                 "uses": "Commercial buildings, warehouses, retail spaces.",
                 "limitations": "Can be punctured by sharp objects; requires proper installation.",
-                "imageUrl": "public/personal/old/img/all_dev/assets/images/ply/Tpo.jpg"
+                "imageUrl": "/personal/old/img/all_dev/assets/images/builtup/Tpo.jpg"
               },
               {
                 "id": 2,
@@ -287,7 +287,7 @@
                 ],
                 "uses": "Restaurants, hospitals, facilities with grease/chemical exposure.",
                 "limitations": "Higher cost than TPO; plasticizers can migrate over time.",
-                "imageUrl": "public/personal/old/img/all_dev/assets/images/ply/pvc.jpg"
+                "imageUrl": "/personal/old/img/all_dev/assets/images/builtup/pvc.jpg"
               },
               {
                 "id": 3,
@@ -301,7 +301,7 @@
                 ],
                 "uses": "Commercial and residential flat roofs.",
                 "limitations": "Black color can increase cooling costs; seams are vulnerable points.",
-                "imageUrl": "public/personal/old/img/all_dev/assets/images/ply/epdm.jpg"
+                "imageUrl": "/personal/old/img/all_dev/assets/images/builtup/epdm.jpg"
               }
             ]
           }
@@ -373,7 +373,7 @@
               {
                 "id": "gutter_aluminum",
                 "title": "Aluminum Gutters",
-                "image": "public/personal/old/img/all_dev/assets/images/gutter_image/Aluminum_gutter.webp",
+                "image": "/personal/old/img/all_dev/assets/images/gutter_image/Aluminum_gutter.webp",
                 "alt": "Aluminum Gutters",
                 "description": "Cost-effective, rust-resistant, and lightweight. Popular choice.",
                 "rate": "$5 - $8 / LFT",
@@ -384,7 +384,7 @@
               {
                 "id": "gutter_seamless",
                 "title": "Seamless Gutters",
-                "image": "public/personal/old/img/all_dev/assets/images/gutter_image/Seamless_gutter.webp",
+                "image": "/personal/old/img/all_dev/assets/images/gutter_image/Seamless_gutter.webp",
                 "alt": "Seamless Gutters",
                 "description": "Custom-fitted, reducing leaks. Streamlined appearance.",
                 "rate": "$8 - $12 / LFT",
@@ -395,7 +395,7 @@
               {
                 "id": "gutter_steel",
                 "title": "Steel Gutters",
-                "image": "public/personal/old/img/all_dev/assets/images/gutter_image/steel_gutter.jpeg",
+                "image": "/personal/old/img/all_dev/assets/images/gutter_image/steel_gutter.jpeg",
                 "alt": "Steel Gutters",
                 "description": "Heavy-duty option for harsh weather conditions.",
                 "rate": "$9 - $15 / LFT",
@@ -406,7 +406,7 @@
               {
                 "id": "gutter_half_round",
                 "title": "Half-Round Gutters",
-                "image": "public/personal/old/img/all_dev/assets/images/gutter_image/Half_round_gutters.png",
+                "image": "/personal/old/img/all_dev/assets/images/gutter_image/Half_round_gutters.png",
                 "alt": "Half-Round Gutters",
                 "description": "Traditional style with excellent water flow.",
                 "rate": "$12 - $18 / LFT",
@@ -417,7 +417,7 @@
               {
                 "id": "gutter_copper",
                 "title": "Copper Gutters",
-                "image": "public/personal/old/img/all_dev/assets/images/gutter_image/Copper_gutter.webp",
+                "image": "/personal/old/img/all_dev/assets/images/gutter_image/Copper_gutter.webp",
                 "alt": "Copper Gutters",
                 "description": "Premium option with natural patina development.",
                 "rate": "$15 - $25 / LFT",
@@ -428,7 +428,7 @@
               {
                 "id": "gutter_vinyl",
                 "title": "Vinyl Gutters",
-                "image": "public/personal/old/img/all_dev/assets/images/gutter_image/Vinyl_gutter.webp",
+                "image": "/personal/old/img/all_dev/assets/images/gutter_image/Vinyl_gutter.webp",
                 "alt": "Vinyl Gutters",
                 "description": "Budget-friendly option, easy to install.",
                 "rate": "$3 - $6 / LFT",
@@ -504,7 +504,7 @@
               {
                 "id": "vent_ridge",
                 "title": "Ridge Vents",
-                "image": "public/personal/old/img/all_dev/assets/images/ventilation/ridge_vent.jpeg",
+                "image": "/personal/old/img/all_dev/assets/images/ventilation/ridge_vent.jpeg",
                 "alt": "Ridge Vents",
                 "description": "Continuous ventilation along the roof peak.",
                 "features": ["Continuous airflow", "Weather resistant", "Low profile"],
@@ -514,7 +514,7 @@
               {
                 "id": "vent_soffit",
                 "title": "Soffit Vents",
-                "image": "public/personal/old/img/all_dev/assets/images/ventilation/soffit_vent.avif",
+                "image": "/personal/old/img/all_dev/assets/images/ventilation/soffit_vent.avif",
                 "alt": "Soffit Vents",
                 "description": "Intake vents installed under roof eaves.",
                 "features": ["Fresh air intake", "Pest resistant", "Multiple styles"],
@@ -524,7 +524,7 @@
               {
                 "id": "vent_gable",
                 "title": "Gable Vents",
-                "image": "public/personal/old/img/all_dev/assets/images/ventilation/gable_vent.jpg",
+                "image": "/personal/old/img/all_dev/assets/images/ventilation/gable_vent.jpg",
                 "alt": "Gable Vents",
                 "description": "Traditional vents mounted on gable ends.",
                 "features": ["Cross ventilation", "Decorative options", "Easy installation"],
@@ -534,7 +534,7 @@
               {
                 "id": "vent_roof",
                 "title": "Roof Vents",
-                "image": "public/personal/old/img/all_dev/assets/images/ventilation/roof_vent.jpg",
+                "image": "/personal/old/img/all_dev/assets/images/ventilation/roof_vent.jpg",
                 "alt": "Roof Vents",
                 "description": "Individual exhaust vents for targeted ventilation.",
                 "features": ["Targeted exhaust", "Multiple sizes", "Durable construction"],
@@ -566,7 +566,7 @@
               {
                 "id": "vent_shingle",
                 "title": "Shingle Roof Ventilation",
-                "image": "public/personal/old/img/all_dev/assets/images/ventilation/vent_shingle.jpeg",
+                "image": "/personal/old/img/all_dev/assets/images/ventilation/vent_shingle.jpeg",
                 "alt": "Shingle Roof Ventilation",
                 "description": "Specialized ventilation solutions for asphalt shingle roofs.",
                 "features": ["Ridge vents", "Soffit vents", "Power vents"],
@@ -576,7 +576,7 @@
               {
                 "id": "vent_metal",
                 "title": "Metal Roof Ventilation",
-                "image": "public/personal/old/img/all_dev/assets/images/ventilation/vent_metal.jpg",
+                "image": "/personal/old/img/all_dev/assets/images/ventilation/vent_metal.jpg",
                 "alt": "Metal Roof Ventilation",
                 "description": "Ventilation systems designed for metal roofing.",
                 "features": ["Ridge caps", "Panel vents", "Turbine vents"],
@@ -586,7 +586,7 @@
               {
                 "id": "vent_tile",
                 "title": "Tile Roof Ventilation",
-                "image": "public/personal/old/img/all_dev/assets/images/ventilation/vent_tile.jpeg",
+                "image": "/personal/old/img/all_dev/assets/images/ventilation/vent_tile.jpeg",
                 "alt": "Tile Roof Ventilation",
                 "description": "Ventilation options that complement tile roofing.",
                 "features": ["Tile vents", "Ridge vents", "Hip vents"],
@@ -626,7 +626,7 @@
                   "Material staging",
                   "Access planning"
                 ],
-                "imageUrl": "public/personal/old/img/all_dev/assets/images/ventilation/roof_installation.webp"
+                "imageUrl": "/personal/old/img/all_dev/assets/images/shingleinstallation/inspection.jpg"
               }
             ]
           }

@@ -25,12 +25,12 @@
     {
       "name": "Mr. Carl Craft, President",
       "position": "Owner",
-      "photo": "public/personal/old/img/about_page/team/roofer.png"
+      "photo": "/personal/old/img/about_page/team/roofer.png"
     },
     {
       "name": "Mr. Carl Craft, President/Owner",
       "position": "Manager",
-      "photo": "public/personal/old/img/about_page/team/foreman.png"
+      "photo": "/personal/old/img/about_page/team/foreman.png"
     }
   ],
   "stats": [
@@ -55,29 +55,29 @@
       "icon": "FaHandshake"
     }
   ],
-  "heroImage": "public/personal/old/img/about_page/about-hero.jpg",
+  "heroImage": "/personal/old/img/about_page/about-hero.jpg",
   "steps": [
     {
       "title": "Book",
-      "videoSrc": "public/personal/old/img/main_page_images/RichTextBlock/booking.mp4",
+      "videoSrc": "/assets/videos/our_process_videos/booking.mp4",
       "href": "/#booking",
       "scale": 0.8
     },
     {
       "title": "Inspection",
-      "videoSrc": "public/personal/old/img/main_page_images/RichTextBlock/magnify.mp4",
+      "videoSrc": "/assets/videos/our_process_videos/magnify.mp4",
       "href": "/inspection",
       "scale": 1.25
     },
     {
       "title": "Service",
-      "videoSrc": "public/personal/old/img/main_page_images/RichTextBlock/repair.mp4",
+      "videoSrc": "/assets/videos/our_process_videos/repair.mp4",
       "href": "/#packages",
       "scale": 1.1
     },
     {
       "title": "Review",
-      "videoSrc": "public/personal/old/img/main_page_images/RichTextBlock/approval.mp4",
+      "videoSrc": "/assets/videos/our_process_videos/approval.mp4",
       "href": "/#testimonials",
       "scale": 0.9
     }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { PlusCircleIcon, TrashIcon } from '@heroicons/react/24/outline'; // Example icons
+import { PlusCircleIcon, TrashIcon } from '@heroicons/react/24/outline';
+import PanelColorPicker from './common/PanelColorPicker';
 
 // Define the original four default colors with their properties
 export const defaultColorDefinitions = [
@@ -90,6 +91,12 @@ const ColorEditor = ({ initialColors: initialColorsProp, onColorChange }) => {
     });
   };
 
+  // Create a theme colors object from all current colors (for the dropdown in PanelColorPicker)
+  const themeColorsForDropdown = editableColors.reduce((obj, color) => {
+    obj[color.name] = color.value;
+    return obj;
+  }, {});
+
   const addNewColor = () => {
     setEditableColors(prevColors => {
       let newColorName = `custom-color-${prevColors.filter(c => !c.isDefault).length + 1}`;
@@ -142,106 +149,106 @@ const ColorEditor = ({ initialColors: initialColorsProp, onColorChange }) => {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-5">
+      {/* Compact Grid Layout - 4 colors per row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {editableColors.map(color => (
+          <div key={color.id} className="p-3 bg-white rounded-lg shadow relative border">
+            {/* Remove button for custom colors */}
+            {color.isRemovable && (
+              <button
+                onClick={() => removeColor(color.id)}
+                className="absolute top-1 right-1 text-red-500 hover:text-red-700 p-1 bg-red-100 rounded-full"
+                title="Remove Color"
+              >
+                <TrashIcon className="h-3 w-3" />
+              </button>
+            )}
+            
+            {/* Label input */}
+            <div className="mb-2">
+              <input
+                type="text"
+                value={color.label}
+                onChange={(e) => handleColorPropertyChange(color.id, 'label', e.target.value)}
+                className="w-full px-2 py-1 text-sm font-medium bg-gray-50 border border-gray-200 rounded focus:outline-none focus:border-blue-500"
+                placeholder="Color Label"
+              />
+            </div>
+
+            {/* Color picker using PanelColorPicker component */}
+            <PanelColorPicker
+              currentColorValue={color.value}
+              themeColors={themeColorsForDropdown}
+              onColorChange={(fieldName, newValue) => handleColorPropertyChange(color.id, 'value', newValue)}
+              fieldName={`color-${color.id}`}
+              className="mb-2"
+            />
+
+            {/* CSS Variable name (read-only for defaults, editable for custom) */}
+            <div className="text-xs text-gray-500 mb-1">
+              CSS: --color-{color.name}
+            </div>
+            {!color.isDefault && (
+              <input
+                type="text"
+                value={color.name}
+                onChange={(e) => handleColorPropertyChange(color.id, 'name', e.target.value)}
+                className="w-full px-2 py-1 text-xs bg-gray-50 border border-gray-200 rounded focus:outline-none focus:border-blue-500"
+                placeholder="css-name"
+              />
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Live Preview Section */}
+      <div className="p-4 bg-white rounded-lg shadow">
+        <h2 className="text-lg font-semibold mb-3 text-gray-800 border-b pb-2">Live Preview</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
           {editableColors.map(color => (
-            <div key={color.id} className="p-4 bg-white rounded-lg shadow relative">
-              {color.isRemovable && (
-                <button
-                  onClick={() => removeColor(color.id)}
-                  className="absolute top-2 right-2 text-red-500 hover:text-red-700 p-1 bg-red-100 rounded-full"
-                  title="Remove Color"
-                >
-                  <TrashIcon className="h-5 w-5" />
-                </button>
-              )}
-              <div className="mb-2">
-                <label htmlFor={`${color.id}-label`} className="block text-sm font-medium text-gray-700">Label</label>
-                <input
-                  type="text"
-                  id={`${color.id}-label`}
-                  value={color.label}
-                  onChange={(e) => handleColorPropertyChange(color.id, 'label', e.target.value)}
-                  className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-              </div>
-              <div className="mb-2">
-                <label htmlFor={`${color.id}-name`} className="block text-sm font-medium text-gray-700">
-                  Name (for CSS: --color-{color.name || '...'}) 
-                </label>
-                <input
-                  type="text"
-                  id={`${color.id}-name`}
-                  value={color.name}
-                  onChange={(e) => handleColorPropertyChange(color.id, 'name', e.target.value)}
-                  className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  disabled={color.isDefault}
-                  readOnly={color.isDefault}
-                />
-                 {color.isDefault && <p className="text-xs text-gray-500 mt-1">Default color names cannot be changed.</p>}
-              </div>
-              <div className="mb-2">
-                <label htmlFor={`${color.id}-value`} className="block text-sm font-medium text-gray-700">Value</label>
-                <div className="flex items-center space-x-3">
-                  <input
-                    type="color"
-                    id={`${color.id}-value-picker`}
-                    value={color.value}
-                    onChange={(e) => handleColorPropertyChange(color.id, 'value', e.target.value)}
-                    className="h-10 w-12 p-0.5 border border-gray-300 rounded-md cursor-pointer shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                  <input
-                    type="text"
-                    id={`${color.id}-value-text`}
-                    value={color.value}
-                    onChange={(e) => handleColorPropertyChange(color.id, 'value', e.target.value)}
-                    className="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    placeholder="#RRGGBB"
-                  />
-                </div>
-              </div>
-              <div>
-                <label htmlFor={`${color.id}-description`} className="block text-sm font-medium text-gray-700">Description</label>
-                <input
-                  type="text"
-                  id={`${color.id}-description`}
-                  value={color.description}
-                  onChange={(e) => handleColorPropertyChange(color.id, 'description', e.target.value)}
-                  className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
+            <div key={`preview-${color.id}`} className="flex items-center p-2 bg-gray-50 rounded border">
+              <div 
+                className="w-6 h-6 rounded-full mr-3 border"
+                style={{ backgroundColor: color.value }}
+              />
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm truncate" style={{ color: color.value }}>
+                  {color.label}
+                </p>
+                <p className="text-xs text-gray-500 truncate">
+                  {color.value} • --color-{color.name}
+                </p>
               </div>
             </div>
           ))}
         </div>
-
-        <div className="p-4 bg-white rounded-lg shadow">
-          <h2 className="text-lg font-semibold mb-3 text-gray-800 border-b pb-2">Live Preview</h2>
-          <div className="space-y-4">
-            {editableColors.map(color => (
-              <div key={`preview-${color.id}`} style={{ padding: '0.75rem', borderRadius: '0.25rem', border: '1px solid #eee' }}>
-                <div className="flex items-center">
-                    <div style={{ width: '24px', height: '24px', backgroundColor: color.value, marginRight: '10px', borderRadius: '4px', border: '1px solid #ccc' }}></div>
-                    <div>
-                        <p className="font-medium" style={{ color: color.value }}>{color.label} (--color-{color.name})</p>
-                        <p className="text-xs text-gray-600">{color.value} - {color.description}</p>
-                    </div>
-                </div>
-              </div>
-            ))}
-            <div className="mt-6 p-3 border rounded-md" style={{borderColor: editableColors.find(c=>c.name==='accent')?.value || '#000000'}}>
-                <h4 className="font-medium" style={{color: editableColors.find(c=>c.name==='accent')?.value || '#000000'}}>Sample Card Header (Accent)</h4>
-                <p className="text-sm" style={{backgroundColor: editableColors.find(c=>c.name==='faint-color')?.value || '#f0f0f0', color: editableColors.find(c=>c.name==='banner')?.value || '#000000'}}>
-                    This card uses faint background, banner text, and an accent border.
-                </p>
-                <button className="mt-2 text-white px-3 py-1 rounded text-xs" style={{backgroundColor: editableColors.find(c=>c.name==='second-accent')?.value || '#cccccc'}}>
-                    CTA (Second Accent)
-                </button>
-                 {editableColors.find(c => c.name === 'custom-color-1') && (
-                     <button className="mt-2 ml-2 text-white px-3 py-1 rounded text-xs" style={{backgroundColor: editableColors.find(c=>c.name==='custom-color-1')?.value || '#000000'}}>
-                        CTA (Custom Color 1)
-                    </button>
-                 )}
-            </div>
+        
+        {/* Sample Usage */}
+        <div className="mt-6 p-3 border rounded-md" style={{borderColor: editableColors.find(c=>c.name==='accent')?.value || '#000000'}}>
+          <h4 className="font-medium" style={{color: editableColors.find(c=>c.name==='accent')?.value || '#000000'}}>
+            Sample Card Header (Accent)
+          </h4>
+          <p className="text-sm p-2 rounded mt-2" style={{
+            backgroundColor: editableColors.find(c=>c.name==='faint-color')?.value || '#f0f0f0', 
+            color: editableColors.find(c=>c.name==='banner')?.value || '#000000'
+          }}>
+            This card uses faint background, banner text, and an accent border.
+          </p>
+          <div className="flex gap-2 mt-3">
+            <button 
+              className="text-white px-3 py-1 rounded text-xs" 
+              style={{backgroundColor: editableColors.find(c=>c.name==='second-accent')?.value || '#cccccc'}}
+            >
+              CTA (Second Accent)
+            </button>
+            {editableColors.find(c => c.name === 'custom-color-1') && (
+              <button 
+                className="text-white px-3 py-1 rounded text-xs" 
+                style={{backgroundColor: editableColors.find(c=>c.name==='custom-color-1')?.value || '#000000'}}
+              >
+                CTA (Custom Color 1)
+              </button>
+            )}
           </div>
         </div>
       </div>

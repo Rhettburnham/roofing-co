@@ -94,11 +94,11 @@ const TestimonialItem = ({ testimonial }) => {
 
   return (
     <div
-      className="p-2 md:p- bg-white rounded-lg custom-circle-shadow relative cursor-pointer"
+      className="p-2 md:p-4 bg-white rounded-lg custom-circle-shadow relative cursor-pointer flex flex-col h-full overflow-hidden justify-between"
       onClick={handleExpandClick}
     >
       {/* Name, rating, date with logo to the left */}
-      <div className="flex items-start mb-2">
+      <div className="flex items-start mb-2 flex-shrink-0">
         {/* Logo on left, vertically centered with name and date */}
         {testimonial.link && testimonial.logo && (
           <a
@@ -117,30 +117,34 @@ const TestimonialItem = ({ testimonial }) => {
         )}
 
         {/* Name and date in column with reduced spacing */}
-        <div className="flex-grow">
+        <div className="flex-grow min-w-0">
           <div className="flex items-center justify-between gap-1">
-            <p className="text-[3vw] md:text-[1.8vh] font-semibold text-black font-sans truncate">
+            <p className="text-[3vw] md:text-[1.8vh] font-semibold text-black font-sans truncate min-w-0 overflow-hidden text-center">
               {testimonial.name}
             </p>
-            <div className="flex-shrink-0 ">
+            <div className="flex-shrink-0">
               <StarRating rating={testimonial.stars} />
             </div>
           </div>
-          <p className="text-gray-700 text-[3vw] md:text-[1.4vh] md:-mt-2">
+          <p className="text-gray-700 text-[3vw] md:text-[1.4vh] md:-mt-2 truncate text-center">
             {testimonial.date}
           </p>
         </div>
       </div>
 
       {/* Text */}
-      <p className="text-gray-800 indent-3">
-        <span className="text-[3.2vw] md:text-[2.2vh] block md:hidden">
-          {isExpanded ? testimonial.text : truncated}
-        </span>
-        <span className="md:text-xs hidden md:block font-serif">
-          {testimonial.text}
-        </span>
-      </p>
+      <div className="flex-grow min-h-0 flex items-center justify-center">
+        <div className="w-full text-center">
+          <p className="text-gray-800 indent-3 break-words text-center">
+            <span className="text-[3.2vw] md:text-[2.2vh] block md:hidden break-words">
+              {isExpanded ? testimonial.text : truncated}
+            </span>
+            <span className="md:text-xs hidden md:block font-serif break-words">
+              {testimonial.text}
+            </span>
+          </p>
+        </div>
+      </div>
     </div>
   );
 };
@@ -587,8 +591,12 @@ export default function CombinedPageBlock({ readOnly = false, config = {}, onCon
                 </div>
                 <div className="relative mt-3 pb-3">
                     {totalReviews > smallScreenChunkSize && currentTestimonialIndex > 0 && (<button onClick={() => handlePrevTestimonial(true)} className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-white text-gray-700 rounded-full w-6 h-6 flex items-center justify-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)] hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10 ml-2"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-3 h-3"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg></button>)}
-                    <div className="grid grid-cols-1 gap-3 px-6">
-                        {getVisibleReviews(true).map((t, idx) => (<TestimonialItem key={idx} testimonial={t} />))}
+                    <div className="flex flex-col gap-3 px-6">
+                        {getVisibleReviews(true).map((t, idx) => (
+                            <div key={idx} className="w-full">
+                                <TestimonialItem testimonial={t} />
+                            </div>
+                        ))}
                     </div>
                     {totalReviews > smallScreenChunkSize && currentTestimonialIndex + smallScreenChunkSize < totalReviews && (<button onClick={() => handleNextTestimonial(true)} className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-white text-gray-700 rounded-full w-6 h-6 flex items-center justify-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)] hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10 mr-2"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-3 h-3"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg></button>)}
                 </div>
@@ -606,9 +614,13 @@ export default function CombinedPageBlock({ readOnly = false, config = {}, onCon
                            : (<input type="text" value={localData.testimonialTitle} onChange={(e) => handleTestimonialTitleChange(e.target.value)} placeholder="Testimonial Title" className="text-5xl text-white mr-4 my-2 font-serif bg-transparent text-center focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded"/>)}
                 </div>
                 <div className="container mx-auto px-2 relative pb-3">
-                    <div className="grid gap-4 grid-cols-3">
+                    <div className="flex gap-4 justify-center items-stretch">
                         {currentTestimonialIndex > 0 && (<button onClick={() => handlePrevTestimonial(false)} className="absolute -left-4 top-1/2 transform -translate-y-1/2 bg-white text-gray-700 rounded-full w-8 h-8 flex items-center justify-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)] hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg></button>)}
-                        {getVisibleReviews(false).map((t, idx) => (<TestimonialItem key={idx} testimonial={t} />))}
+                        {getVisibleReviews(false).map((t, idx) => (
+                            <div key={idx} className="flex-1 min-w-0 max-w-md">
+                                <TestimonialItem testimonial={t} />
+                            </div>
+                        ))}
                         {currentTestimonialIndex + chunkSize < totalReviews && (<button onClick={() => handleNextTestimonial(false)} className="absolute -right-4 top-1/2 transform -translate-y-1/2 bg-white text-gray-700 rounded-full w-8 h-8 flex items-center justify-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)] hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg></button>)}
                     </div>
                 </div>

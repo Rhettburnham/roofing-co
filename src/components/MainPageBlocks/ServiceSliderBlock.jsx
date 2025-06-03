@@ -2,7 +2,10 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import IconSelectorModal from "../common/IconSelectorModal"; // Import IconSelectorModal here for the panel
+import ThemeColorPicker from "../common/ThemeColorPicker";
+import PanelImagesController from "../common/PanelImagesController";
 import { slugify } from "../../utils/slugify"; // Import slugify
+import PanelStylingController from "../common/PanelStylingController";
 
 // Icons
 import {
@@ -131,15 +134,113 @@ export default function ServiceSliderBlock({ readOnly = false, config = {}, onCo
       commercialServices: ensureOriginalTitle(initialConfig.commercialServices),
       largeResidentialImg: initializeImageState(initialConfig.largeResidentialImg, "/assets/images/main_image_expanded.jpg"),
       largeCommercialImg: initializeImageState(initialConfig.largeCommercialImg, "/assets/images/commercialservices.jpg"),
-      isCommercial: initialConfig.isCommercial || false, 
+      isCommercial: initialConfig.isCommercial || false,
+
+      // New styling options
+      styling: {
+        hasGradient: initialConfig.styling?.hasGradient || false,
+        shadowVariant: initialConfig.styling?.shadowVariant || 'default',
+        desktopHeightVH: initialConfig.styling?.desktopHeightVH || 30,
+        mobileHeightVW: initialConfig.styling?.mobileHeightVW || 50,
+        gradientConfig: initialConfig.styling?.gradientConfig || {
+          startColor: "#FF5733",
+          endColor: "#FF8C42",
+          direction: "to right"
+        },
+        ...initialConfig.styling
+      }
     };
   });
 
   const [currentEditDisplayType, setCurrentEditDisplayType] = useState(localData.isCommercial ? 'commercial' : 'residential');
   const [isIconModalOpen, setIsIconModalOpen] = useState(false);
   const [editingServiceInfo, setEditingServiceInfo] = useState({ type: null, index: null, field: null }); 
+  const [hasInitialAnimationPlayed, setHasInitialAnimationPlayed] = useState(false);
+  const [initialAnimationControls, setInitialAnimationControls] = useState({});
   
   const prevReadOnlyRef = useRef(readOnly);
+  const componentRef = useRef(null);
+
+  // Initial pulse animation effect - triggers when component is 70% visible
+  useEffect(() => {
+    if (!hasInitialAnimationPlayed && readOnly && !localData.isCommercial) {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting && entry.intersectionRatio >= 0.7) {
+              const residentialServices = localData.residentialServices || [];
+              const numServices = residentialServices.length;
+              
+              if (numServices > 0) {
+                const animationSequence = () => {
+                  const controls = {};
+                  
+                  // Initialize all items in rest state
+                  residentialServices.forEach((_, index) => {
+                    controls[index] = {
+                      scale: 1,
+                      borderRadius: "50%",
+                      iconOpacity: 1,
+                      imgOpacity: 0
+                    };
+                  });
+                  setInitialAnimationControls(controls);
+                  
+                  // Staggered expand animation (left to right)
+                  for (let i = 0; i < numServices; i++) {
+                    // Open each item with staggered timing
+                    setTimeout(() => {
+                      setInitialAnimationControls(prev => ({
+                        ...prev,
+                        [i]: {
+                          scale: 1.15,
+                          borderRadius: "10%",
+                          iconOpacity: 0,
+                          imgOpacity: 1
+                        }
+                      }));
+                    }, i * 500); // 0.3s expand + 0.2s wait = 0.5s stagger
+                    
+                    // Close each item 3 seconds after it opened (staggered closing)
+                    setTimeout(() => {
+                      setInitialAnimationControls(prev => ({
+                        ...prev,
+                        [i]: {
+                          scale: 1,
+                          borderRadius: "50%",
+                          iconOpacity: 1,
+                          imgOpacity: 0
+                        }
+                      }));
+                    }, i * 500 + 3000); // Open time + 3 seconds
+                  }
+                  
+                  // Clean up after the last animation is complete
+                  setTimeout(() => {
+                    setInitialAnimationControls({});
+                  }, (numServices - 1) * 500 + 3000 + 300); // Last open + 3s + transition time
+                };
+                
+                animationSequence();
+                setHasInitialAnimationPlayed(true);
+                observer.disconnect(); // Stop observing after animation starts
+              }
+            }
+          });
+        },
+        {
+          threshold: 0.7, // Trigger when 70% of component is visible
+          rootMargin: '0px'
+        }
+      );
+
+      if (componentRef.current) {
+        observer.observe(componentRef.current);
+      }
+
+      return () => observer.disconnect();
+    }
+  }, [hasInitialAnimationPlayed, readOnly, localData.isCommercial, localData.residentialServices]);
 
   useEffect(() => {
     if (config) {
@@ -277,31 +378,9 @@ export default function ServiceSliderBlock({ readOnly = false, config = {}, onCo
     });
   };
   
-  const handleTitleChange = (newTitle) => {
-    handleLocalDataChange(prev => ({ ...prev, title: newTitle }));
-  };
-
-  const handleServiceItemTitleChange = (serviceType, index, newTitle) => {
-    const serviceListKey = serviceType === 'residential' ? 'residentialServices' : 'commercialServices';
-    handleLocalDataChange(prev => {
-      const updatedServices = [...(prev[serviceListKey] || [])];
-      if(updatedServices[index]) {
-        // originalTitle should remain unchanged by this edit
-        updatedServices[index] = { ...updatedServices[index], title: newTitle }; 
-      }
-      return { ...prev, [serviceListKey]: updatedServices };
-    });
-  };
-  
   const openIconModalForServiceItem = (serviceType, index) => {
     if (readOnly) return; 
     setEditingServiceInfo({ type: serviceType, index: index, field: 'serviceItem' });
-    setIsIconModalOpen(true);
-  };
-
-  const openIconModalForButton = (buttonType) => { // buttonType: 'residentialButtonIcon' or 'commercialButtonIcon'
-    if (readOnly) return;
-    setEditingServiceInfo({ type: null, index: null, field: buttonType });
     setIsIconModalOpen(true);
   };
 
@@ -315,11 +394,6 @@ export default function ServiceSliderBlock({ readOnly = false, config = {}, onCo
         }
         return { ...prev, [serviceListKey]: updatedServices };
       });
-    } else if (editingServiceInfo.field === 'residentialButtonIcon' || editingServiceInfo.field === 'commercialButtonIcon') {
-        handleLocalDataChange(prev => ({ 
-            ...prev, 
-            [editingServiceInfo.field]: { pack, name: iconName }
-        }));
     }
     setIsIconModalOpen(false);
     setEditingServiceInfo({ type: null, index: null, field: null });
@@ -328,7 +402,44 @@ export default function ServiceSliderBlock({ readOnly = false, config = {}, onCo
   const displayType = readOnly ? (localData.isCommercial ? 'commercial' : 'residential') : currentEditDisplayType;
   const servicesForDisplay = displayType === 'commercial' ? (localData.commercialServices || []) : (localData.residentialServices || []);
   const wrapperClassName = `w-full bg-black relative ${readOnly ? 'mt-3' : ''}`;
-  
+
+  // Get shadow classes based on variant
+  const getShadowClasses = (variant) => {
+    switch (variant) {
+      case 'soft':
+        return 'shadow-lg';
+      case 'medium':
+        return 'shadow-xl drop-shadow-md';
+      case 'strong':
+        return 'shadow-2xl drop-shadow-lg';
+      default:
+        return 'shadow-md';
+    }
+  };
+
+  // Get button style based on gradient settings
+  const getButtonStyle = (isActive) => {
+    const config = isActive ? localData.activeButtonConfig : localData.inactiveButtonConfig;
+    
+    if (localData.styling?.hasGradient && isActive) {
+      const { startColor, endColor, direction } = localData.styling.gradientConfig || {};
+      return {
+        background: `linear-gradient(${direction || 'to right'}, ${startColor || config.bgColor}, ${endColor || config.bgColor})`,
+        color: config.textColor
+      };
+    }
+    
+    return {
+      backgroundColor: config.bgColor,
+      color: config.textColor
+    };
+  };
+
+  // Calculate dynamic height based on styling
+  const dynamicHeight = window.innerWidth < 768 
+    ? `${localData.styling?.mobileHeightVW || 50}vw` 
+    : `${localData.styling?.desktopHeightVH || 30}vh`;
+
   /* ---------------------------------------------------------------------
      TOGGLE BUTTONS (Residential  | Commercial)
      ------------------------------------------------------------------*/
@@ -338,14 +449,20 @@ export default function ServiceSliderBlock({ readOnly = false, config = {}, onCo
   const activeButtonClass = "scale-110 translate-x-4 text-white";
   const inactiveButtonClass = "bg-gray-600 text-white opacity-80";
 
+  // Mobile-specific button classes (smaller, rounded left corners, less padding)
+  const mobileButtonClass = 
+    "flex px-2 py-1 my-1 rounded-l-md rounded-r-md shadow-lg transform origin-right transition-all duration-300 font-serif";
+  const mobileActiveButtonClass = "scale-105 text-white";
+  const mobileInactiveButtonClass = "bg-gray-600 text-white opacity-80";
+
   // Default placeholder used when a service hover image is not provided
   const DEFAULT_SERVICE_HOVER_IMG = "/assets/images/clipped.png";
 
   const renderPreview = () => (
-    <div className={wrapperClassName}>
+    <div className={wrapperClassName} ref={componentRef}>
       {/* Small Screen */}
       <div className="block md:hidden relative w-full">
-          <div className="overflow-hidden w-full relative h-[40vh]">
+          <div className="overflow-hidden w-full relative" style={{ height: dynamicHeight }}>
             <motion.div
                 animate={{ x: displayType === 'commercial' ? "-50%" : "0%" }}
                 transition={{ duration: 0.8 }}
@@ -356,45 +473,47 @@ export default function ServiceSliderBlock({ readOnly = false, config = {}, onCo
             </motion.div>
           </div>
           <div className="absolute bottom-0 left-0 w-full h-[9.5vh] bg-black z-10 pointer-events-none" style={{ clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)" }}/>
-          {/* Title hidden for small screens */}
-          {/* {readOnly ? (
-            <h2 className="absolute top-[1vh] left-[2vw] text-left text-black text-[10vw]  drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-20 select-none">
-              {localData.title}
-            </h2>
-          ) : (
-            <input 
-                type="text" 
-                value={localData.title} 
-                onChange={(e) => handleTitleChange(e.target.value)} 
-                className="absolute top-[1vh] left-[2vw] text-left text-white text-[10vw] font-serif drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-20 bg-transparent focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-2 min-w-[70vw]"
-                placeholder="Section Title"
-            />
-          )} */}
           {/*  ------------------  TOGGLE BUTTONS (SMALL)  ------------------ */}
           <div className="absolute top-[2vh] left-0 right-0 z-30 flex flex-row justify-center items-center space-x-4 px-4">
             <motion.button
                 onClick={() => readOnly ? handleLocalDataChange(prev => ({...prev, isCommercial: false})) : setCurrentEditDisplayType('residential')}
-                style={{
-                    backgroundColor: (displayType === 'residential' ? localData.activeButtonConfig.bgColor : localData.inactiveButtonConfig.bgColor),
-                    color: (displayType === 'residential' ? localData.activeButtonConfig.textColor : localData.inactiveButtonConfig.textColor),
-                }}
-                className={`${commonButtonClass} ${displayType === 'residential' ? 'scale-105' : 'opacity-80'}`}
+                style={getButtonStyle(displayType === 'residential')}
+                className={`${mobileButtonClass} ${displayType === 'residential' ? mobileActiveButtonClass : mobileInactiveButtonClass}`}
                 animate={{ scale: displayType === 'residential' ? 1.05 : 1 }}
             >
-                {React.createElement(resolveIcon(localData.residentialButtonIcon.name, localData.residentialButtonIcon.pack), { className: "mr-2", size: 16, style: { color: displayType === 'residential' ? localData.activeButtonConfig.iconColor : localData.inactiveButtonConfig.iconColor } })}
-                <p className="text-[4vw] font-sans">{localData.residentialButtonText}</p>
+                {React.createElement(resolveIcon(localData.residentialButtonIcon.name, localData.residentialButtonIcon.pack), { className: "mr-1", size: 14, style: { color: displayType === 'residential' ? localData.activeButtonConfig.iconColor : localData.inactiveButtonConfig.iconColor } })}
+                {readOnly ? (
+                  <p className="text-[3.5vw] font-sans">{localData.residentialButtonText}</p>
+                ) : (
+                  <input
+                    type="text"
+                    value={localData.residentialButtonText}
+                    onChange={(e) => handleLocalDataChange(prev => ({ ...prev, residentialButtonText: e.target.value }))}
+                    className="text-[3.5vw] font-sans bg-transparent focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1"
+                    placeholder="Residential"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                )}
             </motion.button>
             <motion.button
                 onClick={() => readOnly ? handleLocalDataChange(prev => ({...prev, isCommercial: true})) : setCurrentEditDisplayType('commercial')}
-                style={{
-                    backgroundColor: (displayType === 'commercial' ? localData.activeButtonConfig.bgColor : localData.inactiveButtonConfig.bgColor),
-                    color: (displayType === 'commercial' ? localData.activeButtonConfig.textColor : localData.inactiveButtonConfig.textColor),
-                }}
-                className={`${commonButtonClass} ${displayType === 'commercial' ? 'scale-105' : 'opacity-80'}`}
+                style={getButtonStyle(displayType === 'commercial')}
+                className={`${mobileButtonClass} ${displayType === 'commercial' ? mobileActiveButtonClass : mobileInactiveButtonClass}`}
                 animate={{ scale: displayType === 'commercial' ? 1.05 : 1 }}
             >
-                {React.createElement(resolveIcon(localData.commercialButtonIcon.name, localData.commercialButtonIcon.pack), { className: "mr-2", size: 16, style: { color: displayType === 'commercial' ? localData.activeButtonConfig.iconColor : localData.inactiveButtonConfig.iconColor } })}
-                <p className="text-[4vw] font-sans">{localData.commercialButtonText}</p>
+                {React.createElement(resolveIcon(localData.commercialButtonIcon.name, localData.commercialButtonIcon.pack), { className: "mr-1", size: 14, style: { color: displayType === 'commercial' ? localData.activeButtonConfig.iconColor : localData.inactiveButtonConfig.iconColor } })}
+                {readOnly ? (
+                  <p className="text-[3.5vw] font-sans">{localData.commercialButtonText}</p>
+                ) : (
+                  <input
+                    type="text"
+                    value={localData.commercialButtonText}
+                    onChange={(e) => handleLocalDataChange(prev => ({ ...prev, commercialButtonText: e.target.value }))}
+                    className="text-[3.5vw] font-sans bg-transparent focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1"
+                    placeholder="Commercial"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                )}
             </motion.button>
           </div>
           <div className="absolute inset-0 flex flex-col items-center justify-start pt-[15vh] p-2 z-20"> {/* Adjusted pt for button row */} 
@@ -417,16 +536,37 @@ export default function ServiceSliderBlock({ readOnly = false, config = {}, onCo
                         const serviceContent = (
                           <motion.div 
                             onClick={() => !readOnly && openIconModalForServiceItem(displayType, originalIndex)}
-                            className={`relative overflow-hidden dark_button flex-col w-full h-28 flex items-center justify-center text-white text-[6vh] ${!readOnly ? 'cursor-pointer' : 'cursor-default'}`}
+                            className={`relative overflow-hidden dark_button flex-col w-full h-28 flex items-center justify-center text-white text-[6vh] ${!readOnly ? 'cursor-pointer' : 'cursor-default'} ${getShadowClasses(localData.styling?.shadowVariant || 'default')}`}
                             style={{ backgroundColor: localData.serviceItemConfig.bgColor }}
                             variants={hoverVariants}
                             initial="rest"
                             whileHover="hover"
+                            animate={initialAnimationControls[originalIndex] ? {
+                              scale: initialAnimationControls[originalIndex].scale,
+                              borderRadius: initialAnimationControls[originalIndex].borderRadius,
+                            } : undefined}
+                            transition={{ duration: 0.3 }}
                           >
-                            <motion.div variants={iconFade} className="z-10">
+                            <motion.div 
+                              variants={iconFade} 
+                              className="z-10"
+                              animate={initialAnimationControls[originalIndex] ? {
+                                opacity: initialAnimationControls[originalIndex].iconOpacity
+                              } : undefined}
+                              transition={{ duration: 0.15 }}
+                            >
                               {React.createElement(resolveIcon(service.icon, service.iconPack), { className: "w-[5vw] h-[5vw] md:w-10 md:h-10", style: { color: localData.serviceItemConfig.iconColor } })}
                             </motion.div>
-                            <motion.img variants={imgFade} src={service.hoverImg || DEFAULT_SERVICE_HOVER_IMG} alt="service" className="absolute inset-0 w-full h-full object-cover" />
+                            <motion.img 
+                              variants={imgFade} 
+                              src={service.hoverImg || DEFAULT_SERVICE_HOVER_IMG} 
+                              alt="service" 
+                              className="absolute inset-0 w-full h-full object-cover"
+                              animate={initialAnimationControls[originalIndex] ? {
+                                opacity: initialAnimationControls[originalIndex].imgOpacity
+                              } : undefined}
+                              transition={{ delay: 0.15, duration: 0.2 }}
+                            />
                             {readOnly ? (
                               <h3 className="mt-1 text-white text-lg drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]" style={{ color: localData.serviceItemConfig.textColor }}>
                                 {service.title}
@@ -435,7 +575,16 @@ export default function ServiceSliderBlock({ readOnly = false, config = {}, onCo
                               <input 
                                   type="text" 
                                   value={service.title} 
-                                  onChange={(e) => handleServiceItemTitleChange(displayType, originalIndex, e.target.value)}
+                                  onChange={(e) => {
+                                    const serviceListKey = displayType === 'residential' ? 'residentialServices' : 'commercialServices';
+                                    handleLocalDataChange(prev => {
+                                      const updatedServices = [...(prev[serviceListKey] || [])];
+                                      if(updatedServices[originalIndex]) {
+                                        updatedServices[originalIndex] = { ...updatedServices[originalIndex], title: e.target.value };
+                                      }
+                                      return { ...prev, [serviceListKey]: updatedServices };
+                                    });
+                                  }}
                                   className="mt-1 text-white text-lg drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] bg-transparent text-left "
                                   placeholder="Title"
                                   onClick={(e) => e.stopPropagation()}
@@ -468,7 +617,7 @@ export default function ServiceSliderBlock({ readOnly = false, config = {}, onCo
 
       {/* Large Screen */}
       <div className="hidden md:block overflow-hidden">
-          <div className="relative w-full h-[38vh]">
+          <div className="relative w-full" style={{ height: dynamicHeight }}>
             <motion.div
                 animate={{ x: displayType === 'commercial' ? "-50%" : "0%" }}
                 transition={{ duration: 1 }}
@@ -477,7 +626,7 @@ export default function ServiceSliderBlock({ readOnly = false, config = {}, onCo
                 <img src={getDisplayUrl(localData.largeResidentialImg)} alt="Residential Services" className="w-1/2 h-full object-cover" />
                 <img src={getDisplayUrl(localData.largeCommercialImg)} alt="Commercial Services" className="w-1/2 h-full object-cover" />
             </motion.div>
-            <div className="absolute top-0 w-full flex justify-start pl-6">
+            <div className="absolute -top-5 w-full flex justify-center">
               {readOnly ? (
                   <h2 className="relative z-40 text-white text-[8vh] tracking-wider font-serif first:drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,1.8)] select-none">
                     {localData.title}
@@ -486,33 +635,53 @@ export default function ServiceSliderBlock({ readOnly = false, config = {}, onCo
                   <input 
                       type="text" 
                       value={localData.title} 
-                      onChange={(e) => handleTitleChange(e.target.value)}
+                      onChange={(e) => handleLocalDataChange(prev => ({ ...prev, title: e.target.value }))}
                       className="relative z-40 text-white text-[8vh] tracking-wider font-serif bg-transparent text-left px-2 min-w-[50vw]"
                       placeholder="Section Title"
                   />
                 )}
             </div>
             {/*  ------------------  TOGGLE BUTTONS (LARGE)  ------------------ */}
-            <div className="absolute top-[10vh] left-0 z-30 flex flex-col">
+            <div className="absolute top-2 left-0 z-30 flex flex-col">
                 <motion.button
                     onClick={() => readOnly ? handleLocalDataChange(prev => ({...prev, isCommercial: false})) : setCurrentEditDisplayType('residential')}
-                    style={{
-                        backgroundColor: (displayType === 'residential' ? localData.activeButtonConfig.bgColor : undefined),
-                    }}
+                    style={getButtonStyle(displayType === 'residential')}
                     className={`${commonButtonClass} ${displayType === 'residential' ? activeButtonClass : inactiveButtonClass}`}
                     animate={{ x: displayType === 'residential' ? 12 : 0, scale: displayType === 'residential' ? 1.1 : 1 }}
                 >
-                    {React.createElement(resolveIcon(localData.residentialButtonIcon.name, localData.residentialButtonIcon.pack), { className: "mr-2", size: 24, style: { color: localData.activeButtonConfig.iconColor } })} {localData.residentialButtonText}
+                    {React.createElement(resolveIcon(localData.residentialButtonIcon.name, localData.residentialButtonIcon.pack), { className: "mr-2", size: 24, style: { color: localData.activeButtonConfig.iconColor } })} 
+                    {readOnly ? (
+                      localData.residentialButtonText
+                    ) : (
+                      <input
+                        type="text"
+                        value={localData.residentialButtonText}
+                        onChange={(e) => handleLocalDataChange(prev => ({ ...prev, residentialButtonText: e.target.value }))}
+                        className="bg-transparent focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1"
+                        placeholder="Residential"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    )}
                 </motion.button>
                 <motion.button
                     onClick={() => readOnly ? handleLocalDataChange(prev => ({...prev, isCommercial: true})) : setCurrentEditDisplayType('commercial')}
-                    style={{
-                        backgroundColor: (displayType === 'commercial' ? localData.activeButtonConfig.bgColor : undefined),
-                    }}
+                    style={getButtonStyle(displayType === 'commercial')}
                     className={`${commonButtonClass} ${displayType === 'commercial' ? activeButtonClass : inactiveButtonClass}`}
                     animate={{ x: displayType === 'commercial' ? 12 : 0, scale: displayType === 'commercial' ? 1.1 : 1 }}
                 >
-                    {React.createElement(resolveIcon(localData.commercialButtonIcon.name, localData.commercialButtonIcon.pack), { className: "mr-2", size: 24, style: { color: localData.activeButtonConfig.iconColor } })} {localData.commercialButtonText}
+                    {React.createElement(resolveIcon(localData.commercialButtonIcon.name, localData.commercialButtonIcon.pack), { className: "mr-2", size: 24, style: { color: localData.activeButtonConfig.iconColor } })} 
+                    {readOnly ? (
+                      localData.commercialButtonText
+                    ) : (
+                      <input
+                        type="text"
+                        value={localData.commercialButtonText}
+                        onChange={(e) => handleLocalDataChange(prev => ({ ...prev, commercialButtonText: e.target.value }))}
+                        className="bg-transparent focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1"
+                        placeholder="Commercial"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    )}
                 </motion.button>
             </div>
             <div className="absolute inset-0 flex items-center justify-center ">
@@ -534,16 +703,37 @@ export default function ServiceSliderBlock({ readOnly = false, config = {}, onCo
                           const serviceContent = (
                             <motion.div 
                               onClick={() => !readOnly && openIconModalForServiceItem(displayType, originalIndex)}
-                              className={`relative overflow-hidden dark_button flex-col w-28 h-28 flex items-center justify-center text-white text-[6vh] ${!readOnly ? 'cursor-pointer' : 'cursor-default'}`}
+                              className={`relative overflow-hidden dark_button flex-col w-28 h-28 flex items-center justify-center text-white text-[6vh] ${!readOnly ? 'cursor-pointer' : 'cursor-default'} ${getShadowClasses(localData.styling?.shadowVariant || 'default')}`}
                               style={{ backgroundColor: localData.serviceItemConfig.bgColor }}
                               variants={hoverVariants}
                               initial="rest"
                               whileHover="hover"
+                              animate={initialAnimationControls[originalIndex] ? {
+                                scale: initialAnimationControls[originalIndex].scale,
+                                borderRadius: initialAnimationControls[originalIndex].borderRadius,
+                              } : undefined}
+                              transition={{ duration: 0.3 }}
                             >
-                              <motion.div variants={iconFade} className="z-10">
+                              <motion.div 
+                                variants={iconFade} 
+                                className="z-10"
+                                animate={initialAnimationControls[originalIndex] ? {
+                                  opacity: initialAnimationControls[originalIndex].iconOpacity
+                                } : undefined}
+                                transition={{ duration: 0.15 }}
+                              >
                                 {React.createElement(resolveIcon(service.icon, service.iconPack), { className: "w-[5vw] h-[5vw] md:w-10 md:h-10", style: { color: localData.serviceItemConfig.iconColor } })}
                               </motion.div>
-                              <motion.img variants={imgFade} src={service.hoverImg || DEFAULT_SERVICE_HOVER_IMG} alt="service" className="absolute inset-0 w-full h-full object-cover" />
+                              <motion.img 
+                                variants={imgFade} 
+                                src={service.hoverImg || DEFAULT_SERVICE_HOVER_IMG} 
+                                alt="service" 
+                                className="absolute inset-0 w-full h-full object-cover"
+                                animate={initialAnimationControls[originalIndex] ? {
+                                  opacity: initialAnimationControls[originalIndex].imgOpacity
+                                } : undefined}
+                                transition={{ delay: 0.15, duration: 0.2 }}
+                              />
                               {readOnly ? (
                                 <h3 className="mt-1 text-white text-lg drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]" style={{ color: localData.serviceItemConfig.textColor }}>
                                   {service.title}
@@ -552,7 +742,16 @@ export default function ServiceSliderBlock({ readOnly = false, config = {}, onCo
                                 <input 
                                     type="text" 
                                     value={service.title} 
-                                    onChange={(e) => handleServiceItemTitleChange(displayType, originalIndex, e.target.value)}
+                                    onChange={(e) => {
+                                      const serviceListKey = displayType === 'residential' ? 'residentialServices' : 'commercialServices';
+                                      handleLocalDataChange(prev => {
+                                        const updatedServices = [...(prev[serviceListKey] || [])];
+                                        if(updatedServices[originalIndex]) {
+                                          updatedServices[originalIndex] = { ...updatedServices[originalIndex], title: e.target.value };
+                                        }
+                                        return { ...prev, [serviceListKey]: updatedServices };
+                                      });
+                                    }}
                                     className="mt-1 text-white text-lg drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] bg-transparent text-center focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded w-full truncate"
                                     placeholder="Title"
                                     onClick={(e) => e.stopPropagation()}
@@ -603,11 +802,6 @@ export default function ServiceSliderBlock({ readOnly = false, config = {}, onCo
   return (
     <>
       {renderPreview()} 
-      <ServiceSliderEditorPanel 
-        localData={localData}
-        onPanelChange={handleLocalDataChange} 
-        onOpenIconButtonModal={openIconModalForButton} // Pass specialized handler for button icons
-      />
       <IconSelectorModal 
         isOpen={isIconModalOpen}
         onClose={() => setIsIconModalOpen(false)}
@@ -619,187 +813,333 @@ export default function ServiceSliderBlock({ readOnly = false, config = {}, onCo
   );
 }
 
-function ServiceSliderEditorPanel({ localData, onPanelChange, onOpenIconButtonModal }) {
-  
-  const handleFieldChange = (field, value) => {
-    onPanelChange(prev => ({ ...prev, [field]: value }));
+// Expose tabsConfig for TopStickyEditPanel
+ServiceSliderBlock.tabsConfig = (blockCurrentData, onControlsChange, themeColors) => {
+  return {
+    images: (props) => (
+      <ServiceSliderImagesControls 
+        {...props} 
+        currentData={blockCurrentData}
+        onControlsChange={onControlsChange}
+        themeColors={themeColors}
+      />
+    ),
+    colors: (props) => (
+      <ServiceSliderColorControls 
+        {...props} 
+        currentData={blockCurrentData}
+        onControlsChange={onControlsChange}
+        themeColors={themeColors} 
+      />
+    ),
+    styling: (props) => (
+      <ServiceSliderStylingControls
+        {...props}
+        currentData={blockCurrentData}
+        onControlsChange={onControlsChange}
+      />
+    ),
   };
+};
 
-  const handleNestedFieldChange = (configKey, field, value) => {
-    onPanelChange(prevData => ({
-      ...prevData,
-      [configKey]: {
-        ...(prevData[configKey] || {}),
-        [field]: value,
-      }
-    }));
-  };
-  
-  const handleServiceListChange = (serviceType, index, field, value) => {
-    const serviceListKey = serviceType === 'residential' ? 'residentialServices' : 'commercialServices';
-    onPanelChange(prev => {
-        const updatedServices = [...(prev[serviceListKey] || [])];
-        if (updatedServices[index]) {
-          updatedServices[index] = { ...updatedServices[index], [field]: value };
-        }
-        return {...prev, [serviceListKey]: updatedServices };
-    });
-  };
-
-  const handleAddService = (serviceType) => {
-    const serviceListKey = serviceType === 'residential' ? 'residentialServices' : 'commercialServices';
-    const iconOptions = ['FaTools', 'FaFan', 'FaPaintRoller', 'FaTint', 'FaHomeIcon', 'FaBuilding', 'FaWarehouse', 'FaSmog', 'FaBroom', 'FaHardHat'];
-    const newTitle = `New ${serviceType.charAt(0).toUpperCase() + serviceType.slice(1)} Service`;
-    const newService = {
-      id: slugify(newTitle + " " + Date.now()), // Ensure unique ID, can be slug-based
-      icon: iconOptions[Math.floor(Math.random() * iconOptions.length)],
-      iconPack: 'fa', 
-      title: newTitle,
-      originalTitle: newTitle, 
-    };
-    onPanelChange(prev => ({...prev, [serviceListKey]: [...(prev[serviceListKey] || []), newService] }));
-  };
-
-  const handleRemoveService = (serviceType, index) => {
-    const serviceListKey = serviceType === 'residential' ? 'residentialServices' : 'commercialServices';
-    onPanelChange(prev => {
-        const updatedServices = [...(prev[serviceListKey] || [])];
-        updatedServices.splice(index, 1);
-        return {...prev, [serviceListKey]: updatedServices };
-    });
-  };
-
-  const handleImageUpload = (fieldName, file) => {
-    if (!file) return;
-    const currentImageState = localData[fieldName];
-    if (currentImageState && currentImageState.url && currentImageState.url.startsWith('blob:')) {
-        URL.revokeObjectURL(currentImageState.url);
+/* ==============================================
+   SERVICE SLIDER IMAGES CONTROLS
+   ----------------------------------------------
+   Handles image uploads for service banners
+=============================================== */
+const ServiceSliderImagesControls = ({ currentData, onControlsChange, themeColors }) => {
+  // Handle changes for residential image array
+  const handleResidentialImageChange = (updatedData) => {
+    const images = updatedData.images || [];
+    if (images.length > 0) {
+      onControlsChange({
+        ...currentData,
+        largeResidentialImg: images[0] // Take the first (and only) image
+      });
+    } else {
+      onControlsChange({
+        ...currentData,
+        largeResidentialImg: initializeImageState(null, "/assets/images/main_image_expanded.jpg")
+      });
     }
-    const fileURL = URL.createObjectURL(file);
-    onPanelChange(prev => ({ 
-        ...prev,
-        [fieldName]: { 
-            file: file, 
-            url: fileURL, 
-            name: file.name, 
-            originalUrl: currentImageState?.originalUrl 
-        }
-    }));
   };
-  
-  const handleImageUrlChange = (fieldName, url) => {
-    const currentImageState = localData[fieldName];
-    if (currentImageState && currentImageState.url && currentImageState.url.startsWith('blob:')) {
-        URL.revokeObjectURL(currentImageState.url);
+
+  // Handle changes for commercial image array  
+  const handleCommercialImageChange = (updatedData) => {
+    const images = updatedData.images || [];
+    if (images.length > 0) {
+      onControlsChange({
+        ...currentData,
+        largeCommercialImg: images[0] // Take the first (and only) image
+      });
+    } else {
+      onControlsChange({
+        ...currentData,
+        largeCommercialImg: initializeImageState(null, "/assets/images/commercialservices.jpg")
+      });
     }
-    onPanelChange(prev => ({ 
-        ...prev,
-        [fieldName]: { 
-            file: null, 
-            url: url, 
-            name: url.split('/').pop(), 
-            originalUrl: url 
-        }
-    }));
   };
-  
+
+  // Convert single image objects to array format for PanelImagesController
+  const residentialImageData = {
+    images: currentData.largeResidentialImg ? [currentData.largeResidentialImg] : []
+  };
+
+  const commercialImageData = {
+    images: currentData.largeCommercialImg ? [currentData.largeCommercialImg] : []
+  };
+
   return (
-    <div className="bg-white text-gray-800 px-4 py-2 rounded-lg mt-0 border border-gray-300">
-      <h2 className="text-xl font-semibold mb-3 border-b pb-2">Slider Settings</h2>
+    <div className="bg-white text-gray-800 p-3 rounded">
+      <h3 className="text-sm font-semibold mb-3">Banner Images</h3>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <div className="space-y-6">
         <div>
-            <label className="block text-sm font-medium text-gray-700">Residential Button Text:</label>
-            <input
-            type="text"
-            className="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-800"
-            value={localData.residentialButtonText || "Residential"}
-            onChange={(e) => handleFieldChange('residentialButtonText', e.target.value)}
-            />
-            <button 
-              onClick={() => onOpenIconButtonModal('residentialButtonIcon')}
-              className="mt-2 px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-            >
-              Change Residential Icon ({localData.residentialButtonIcon?.pack}/{localData.residentialButtonIcon?.name})
-            </button>
+          <h4 className="text-sm font-medium text-gray-700 mb-3">Residential Banner Image</h4>
+          <PanelImagesController
+            currentData={residentialImageData}
+            onControlsChange={handleResidentialImageChange}
+            imageArrayFieldName="images"
+            getItemName={(item, idx) => item.name || "Residential Banner"}
+            maxImages={1}
+          />
         </div>
+        
         <div>
-            <label className="block text-sm font-medium text-gray-700">Commercial Button Text:</label>
-            <input
-            type="text"
-            className="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-800"
-            value={localData.commercialButtonText || "Commercial"}
-            onChange={(e) => handleFieldChange('commercialButtonText', e.target.value)}
-            />
-            <button 
-              onClick={() => onOpenIconButtonModal('commercialButtonIcon')}
-              className="mt-2 px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-            >
-              Change Commercial Icon ({localData.commercialButtonIcon?.pack}/{localData.commercialButtonIcon?.name})
-            </button>
+          <h4 className="text-sm font-medium text-gray-700 mb-3">Commercial Banner Image</h4>
+          <PanelImagesController
+            currentData={commercialImageData}
+            onControlsChange={handleCommercialImageChange}
+            imageArrayFieldName="images"
+            getItemName={(item, idx) => item.name || "Commercial Banner"}
+            maxImages={1}
+          />
         </div>
       </div>
-
-      <h3 className="text-lg font-medium mt-4 pt-3 border-t">Main Toggle Button Colors</h3>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-        <div>
-            <label className="block text-sm font-medium text-gray-700">Active BG Color:</label>
-            <input type="color" className="mt-1 block w-full h-10" value={localData.activeButtonConfig?.bgColor || "#FF5733"} onChange={(e) => handleNestedFieldChange('activeButtonConfig', 'bgColor', e.target.value)} />
-        </div>
-        <div>
-            <label className="block text-sm font-medium text-gray-700">Active Text Color:</label>
-            <input type="color" className="mt-1 block w-full h-10" value={localData.activeButtonConfig?.textColor || "#FFFFFF"} onChange={(e) => handleNestedFieldChange('activeButtonConfig', 'textColor', e.target.value)} />
-        </div>
-        <div>
-            <label className="block text-sm font-medium text-gray-700">Active Icon Color:</label>
-            <input type="color" className="mt-1 block w-full h-10" value={localData.activeButtonConfig?.iconColor || "#FFFFFF"} onChange={(e) => handleNestedFieldChange('activeButtonConfig', 'iconColor', e.target.value)} />
-        </div>
-        <div>
-            <label className="block text-sm font-medium text-gray-700">Inactive BG Color:</label>
-            <input type="color" className="mt-1 block w-full h-10" value={localData.inactiveButtonConfig?.bgColor || "#6c757d"} onChange={(e) => handleNestedFieldChange('inactiveButtonConfig', 'bgColor', e.target.value)} />
-        </div>
-        <div>
-            <label className="block text-sm font-medium text-gray-700">Inactive Text Color:</label>
-            <input type="color" className="mt-1 block w-full h-10" value={localData.inactiveButtonConfig?.textColor || "#FFFFFF"} onChange={(e) => handleNestedFieldChange('inactiveButtonConfig', 'textColor', e.target.value)} />
-        </div>
-        <div>
-            <label className="block text-sm font-medium text-gray-700">Inactive Icon Color:</label>
-            <input type="color" className="mt-1 block w-full h-10" value={localData.inactiveButtonConfig?.iconColor || "#FFFFFF"} onChange={(e) => handleNestedFieldChange('inactiveButtonConfig', 'iconColor', e.target.value)} />
-        </div>
+      
+      <div className="mt-4 p-3 bg-gray-50 rounded-md border">
+        <h4 className="text-sm font-medium text-gray-600 mb-2">Image Guidelines:</h4>
+        <ul className="text-xs text-gray-500 space-y-1">
+          <li>• Banner images will be displayed as the background for each service type</li>
+          <li>• Recommended size: 1200x600px or similar aspect ratio</li>
+          <li>• Images should have good contrast for text overlay readability</li>
+          <li>• Use high-quality images that represent your services well</li>
+        </ul>
       </div>
-
-      <h3 className="text-lg font-medium mt-4 pt-3 border-t">Service Item Colors</h3>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-        <div>
-            <label className="block text-sm font-medium text-gray-700">Background Color:</label>
-            <input type="color" className="mt-1 block w-full h-10" value={localData.serviceItemConfig?.bgColor || "#1F2937"} onChange={(e) => handleNestedFieldChange('serviceItemConfig', 'bgColor', e.target.value)} />
-        </div>
-        <div>
-            <label className="block text-sm font-medium text-gray-700">Text Color:</label>
-            <input type="color" className="mt-1 block w-full h-10" value={localData.serviceItemConfig?.textColor || "#FFFFFF"} onChange={(e) => handleNestedFieldChange('serviceItemConfig', 'textColor', e.target.value)} />
-        </div>
-        <div>
-            <label className="block text-sm font-medium text-gray-700">Icon Color:</label>
-            <input type="color" className="mt-1 block w-full h-10" value={localData.serviceItemConfig?.iconColor || "#FFFFFF"} onChange={(e) => handleNestedFieldChange('serviceItemConfig', 'iconColor', e.target.value)} />
-        </div>
-      </div>
-
-      {/* Image Editors */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t mt-4">
-        <div>
-            <label className="block text-sm font-medium mb-1">Residential Banner Image:</label>
-            <input type="file" accept="image/*" onChange={(e) => handleImageUpload('largeResidentialImg', e.target.files?.[0])} className="mb-1 w-full text-xs file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"/>
-            <input type="text" value={getDisplayUrl(localData.largeResidentialImg, '') || ''} placeholder="Or enter image URL" onChange={(e) => handleImageUrlChange('largeResidentialImg', e.target.value)} className="w-full bg-gray-50 border border-gray-300 px-2 py-1 rounded text-xs"/>
-            {getDisplayUrl(localData.largeResidentialImg) && <img src={getDisplayUrl(localData.largeResidentialImg)} alt="Preview" className="mt-1 h-16 w-auto object-cover rounded border"/>}
-        </div>
-        <div>
-            <label className="block text-sm font-medium mb-1">Commercial Banner Image:</label>
-            <input type="file" accept="image/*" onChange={(e) => handleImageUpload('largeCommercialImg', e.target.files?.[0])} className="mb-1 w-full text-xs file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"/>
-            <input type="text" value={getDisplayUrl(localData.largeCommercialImg, '') || ''} placeholder="Or enter image URL" onChange={(e) => handleImageUrlChange('largeCommercialImg', e.target.value)} className="w-full bg-gray-50 border border-gray-300 px-2 py-1 rounded text-xs"/>
-            {getDisplayUrl(localData.largeCommercialImg) && <img src={getDisplayUrl(localData.largeCommercialImg)} alt="Preview" className="mt-1 h-16 w-auto object-cover rounded border"/>}
-        </div>
-      </div>
-      {/* IconSelectorModal is now managed by the main ServiceSliderBlock component */}
     </div>
   );
-} 
+};
+
+/* ==============================================
+   SERVICE SLIDER COLOR CONTROLS
+   ----------------------------------------------
+   Handles color customization for buttons and text
+=============================================== */
+const ServiceSliderColorControls = ({ currentData, onControlsChange, themeColors }) => {
+  const handleColorChange = (fieldName, value) => {
+    onControlsChange({ [fieldName]: value });
+  };
+
+  const handleNestedColorChange = (configKey, field, value) => {
+    onControlsChange({
+      [configKey]: {
+        ...(currentData[configKey] || {}),
+        [field]: value,
+      }
+    });
+  };
+
+  return (
+    <div className="bg-white text-gray-800 p-3 rounded">
+      <h3 className="text-sm font-semibold mb-3">Color Settings</h3>
+      
+      <div className="space-y-6">
+        <div>
+          <h4 className="text-sm font-medium mb-3 text-gray-700 border-b pb-1">Active Button Colors</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <ThemeColorPicker
+              label="Background:"
+              currentColorValue={currentData.activeButtonConfig?.bgColor || '#FF5733'}
+              themeColors={themeColors}
+              onColorChange={(field, value) => handleNestedColorChange('activeButtonConfig', 'bgColor', value)}
+              fieldName="activeButtonBgColor"
+            />
+            <ThemeColorPicker
+              label="Text:"
+              currentColorValue={currentData.activeButtonConfig?.textColor || '#FFFFFF'}
+              themeColors={themeColors}
+              onColorChange={(field, value) => handleNestedColorChange('activeButtonConfig', 'textColor', value)}
+              fieldName="activeButtonTextColor"
+            />
+            <ThemeColorPicker
+              label="Icon:"
+              currentColorValue={currentData.activeButtonConfig?.iconColor || '#FFFFFF'}
+              themeColors={themeColors}
+              onColorChange={(field, value) => handleNestedColorChange('activeButtonConfig', 'iconColor', value)}
+              fieldName="activeButtonIconColor"
+            />
+          </div>
+        </div>
+
+        <div>
+          <h4 className="text-sm font-medium mb-3 text-gray-700 border-b pb-1">Inactive Button Colors</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <ThemeColorPicker
+              label="Background:"
+              currentColorValue={currentData.inactiveButtonConfig?.bgColor || '#6c757d'}
+              themeColors={themeColors}
+              onColorChange={(field, value) => handleNestedColorChange('inactiveButtonConfig', 'bgColor', value)}
+              fieldName="inactiveButtonBgColor"
+            />
+            <ThemeColorPicker
+              label="Text:"
+              currentColorValue={currentData.inactiveButtonConfig?.textColor || '#FFFFFF'}
+              themeColors={themeColors}
+              onColorChange={(field, value) => handleNestedColorChange('inactiveButtonConfig', 'textColor', value)}
+              fieldName="inactiveButtonTextColor"
+            />
+            <ThemeColorPicker
+              label="Icon:"
+              currentColorValue={currentData.inactiveButtonConfig?.iconColor || '#FFFFFF'}
+              themeColors={themeColors}
+              onColorChange={(field, value) => handleNestedColorChange('inactiveButtonConfig', 'iconColor', value)}
+              fieldName="inactiveButtonIconColor"
+            />
+          </div>
+        </div>
+
+        <div>
+          <h4 className="text-sm font-medium mb-3 text-gray-700 border-b pb-1">Service Item Colors</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <ThemeColorPicker
+              label="Background:"
+              currentColorValue={currentData.serviceItemConfig?.bgColor || '#1F2937'}
+              themeColors={themeColors}
+              onColorChange={(field, value) => handleNestedColorChange('serviceItemConfig', 'bgColor', value)}
+              fieldName="serviceItemBgColor"
+            />
+            <ThemeColorPicker
+              label="Text:"
+              currentColorValue={currentData.serviceItemConfig?.textColor || '#FFFFFF'}
+              themeColors={themeColors}
+              onColorChange={(field, value) => handleNestedColorChange('serviceItemConfig', 'textColor', value)}
+              fieldName="serviceItemTextColor"
+            />
+            <ThemeColorPicker
+              label="Icon:"
+              currentColorValue={currentData.serviceItemConfig?.iconColor || '#FFFFFF'}
+              themeColors={themeColors}
+              onColorChange={(field, value) => handleNestedColorChange('serviceItemConfig', 'iconColor', value)}
+              fieldName="serviceItemIconColor"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ==============================================
+   SERVICE SLIDER STYLING CONTROLS
+   ----------------------------------------------
+   Simplified styling controls using standardized PanelStylingController
+=============================================== */
+const ServiceSliderStylingControls = ({ currentData, onControlsChange }) => {
+  const handleGradientConfigChange = (field, value) => {
+    onControlsChange({
+      styling: {
+        ...currentData.styling,
+        gradientConfig: {
+          ...(currentData.styling?.gradientConfig || {}),
+          [field]: value
+        }
+      }
+    });
+  };
+
+  const handleStylingChange = (field, value) => {
+    onControlsChange({
+      styling: {
+        ...currentData.styling,
+        [field]: value
+      }
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Height Controls - Using Standard PanelStylingController */}
+      <div>
+        <PanelStylingController
+          currentData={currentData}
+          onControlsChange={onControlsChange}
+          blockType="ServiceSliderBlock"
+          controlType="height"
+        />
+      </div>
+
+      {/* Shadow Variants - Using Standard PanelStylingController */}
+      <div>
+        <PanelStylingController
+          currentData={currentData}
+          onControlsChange={onControlsChange}
+          blockType="ServiceSliderBlock"
+          controlType="shadowVariants"
+        />
+      </div>
+
+      {/* Gradient Controls */}
+      <div className="p-4 bg-gray-800 text-white rounded-lg">
+        <h3 className="text-lg font-semibold mb-4 text-center">Button Gradient</h3>
+        <div className="space-y-4">
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              checked={currentData.styling?.hasGradient || false}
+              onChange={(e) => handleStylingChange('hasGradient', e.target.checked)}
+              className="mr-2"
+            />
+            <span className="text-sm">Enable gradient for active buttons</span>
+          </label>
+          
+          {currentData.styling?.hasGradient && (
+            <div className="space-y-3 pl-4 border-l-2 border-blue-200">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Start Color:</label>
+                <input
+                  type="color"
+                  value={currentData.styling?.gradientConfig?.startColor || '#FF5733'}
+                  onChange={(e) => handleGradientConfigChange('startColor', e.target.value)}
+                  className="w-full h-10 rounded border"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">End Color:</label>
+                <input
+                  type="color"
+                  value={currentData.styling?.gradientConfig?.endColor || '#FF8C42'}
+                  onChange={(e) => handleGradientConfigChange('endColor', e.target.value)}
+                  className="w-full h-10 rounded border"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Direction:</label>
+                <select
+                  value={currentData.styling?.gradientConfig?.direction || 'to right'}
+                  onChange={(e) => handleGradientConfigChange('direction', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-white rounded-md"
+                >
+                  <option value="to right">Left to Right</option>
+                  <option value="to left">Right to Left</option>
+                  <option value="to bottom">Top to Bottom</option>
+                  <option value="to top">Bottom to Top</option>
+                  <option value="45deg">Diagonal (45°)</option>
+                </select>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}; 
