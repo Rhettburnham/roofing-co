@@ -601,9 +601,11 @@ export default function AboutBlock({
       const currentHeroImage = localData.heroImage;
       let originalUrl = typeof currentHeroImage === 'string' ? currentHeroImage : currentHeroImage?.originalUrl;
 
+      // Clean up old blob URL if it exists
       if (currentHeroImage && typeof currentHeroImage === 'object' && currentHeroImage.url && currentHeroImage.url.startsWith('blob:')) {
         URL.revokeObjectURL(currentHeroImage.url);
       }
+
       const fileURL = URL.createObjectURL(file);
       const updatedData = {
         ...localData,
@@ -621,9 +623,12 @@ export default function AboutBlock({
       const teamIndex = fieldOrPath.teamIndex;
       const newTeam = [...localData.team];
       const currentPhoto = newTeam[teamIndex]?.photo;
+      
+      // Clean up old blob URL if it exists
       if (currentPhoto?.url?.startsWith('blob:')) {
         URL.revokeObjectURL(currentPhoto.url);
       }
+
       const fileURL = URL.createObjectURL(file);
       newTeam[teamIndex] = {
         ...newTeam[teamIndex],
@@ -642,9 +647,12 @@ export default function AboutBlock({
       const stepIndex = fieldOrPath.stepIndex;
       const newSteps = [...localData.steps];
       const currentVideo = newSteps[stepIndex]?.videoSrc;
+      
+      // Clean up old blob URL if it exists
       if (currentVideo?.url?.startsWith('blob:')) {
         URL.revokeObjectURL(currentVideo.url);
       }
+
       const fileURL = URL.createObjectURL(file);
       newSteps[stepIndex] = {
         ...newSteps[stepIndex],
@@ -674,6 +682,30 @@ export default function AboutBlock({
       originalUrl: urlValue
     };
   };
+
+  // Add cleanup effect for blob URLs
+  useEffect(() => {
+    return () => {
+      // Clean up hero image blob URL
+      if (localData.heroImage?.url?.startsWith('blob:')) {
+        URL.revokeObjectURL(localData.heroImage.url);
+      }
+
+      // Clean up team photo blob URLs
+      localData.team?.forEach(member => {
+        if (member.photo?.url?.startsWith('blob:')) {
+          URL.revokeObjectURL(member.photo.url);
+        }
+      });
+
+      // Clean up step video blob URLs
+      localData.steps?.forEach(step => {
+        if (step.videoSrc?.url?.startsWith('blob:')) {
+          URL.revokeObjectURL(step.videoSrc.url);
+        }
+      });
+    };
+  }, [localData]);
 
   if (readOnly && (!aboutData || Object.keys(aboutData).length === 0)) {
     return <div className="p-4 text-center text-gray-500">About information not available.</div>;

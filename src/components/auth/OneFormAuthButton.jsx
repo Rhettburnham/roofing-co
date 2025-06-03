@@ -4,6 +4,7 @@ import AdminButton from './AdminButton';
 import WorkerButton from './WorkerButton';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
+import { useNavigate } from 'react-router-dom';
 
 // Global cache for blob URL to data URL conversions
 const globalDataUrlCache = new Map();
@@ -556,6 +557,7 @@ export default function OneFormAuthButton({
   const [debug, setDebug] = useState('');
   const [isDevelopment] = useState(process.env.NODE_ENV === 'development');
   const [imagesBeingSent, setImagesBeingSent] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!isDevelopment) {
@@ -625,7 +627,7 @@ export default function OneFormAuthButton({
     } else {
       console.log("OneFormAuthButton: Redirecting to login page...");
       setDebug('Redirecting to login...');
-      window.location.href = '/login';
+      navigate('/login');
     }
   };
 
@@ -1125,7 +1127,7 @@ export default function OneFormAuthButton({
               {saveClicked ? 'Saving...' : 'Save Changes'}
             </button>
             <button
-              onClick={() => window.location.href = '/initial-payment'}
+              onClick={() => navigate('/initial-payment')}
               className="px-4 py-2 rounded-full bg-green-600 text-white 
                        border border-green-700 hover:bg-green-700 
                        transition-all duration-300 shadow-lg"
@@ -1133,7 +1135,7 @@ export default function OneFormAuthButton({
               Buy Plan
             </button>
             <button
-              onClick={() => window.location.href = '/view-plan'}
+              onClick={() => navigate('/view-plan')}
               className="px-4 py-2 rounded-full bg-indigo-600 text-white 
                        border border-indigo-700 hover:bg-indigo-700 
                        transition-all duration-300 shadow-lg"
