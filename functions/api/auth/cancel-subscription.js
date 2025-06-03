@@ -129,28 +129,53 @@ export async function onRequest(context) {
       });
     }
 
-    // Get customer's subscriptions
-    console.log('Fetching customer subscriptions...');
-    const subscriptionsRes = await fetch(`https://api.stripe.com/v1/subscriptions?customer=${customer.id}&status=active,trialing`, {
+    // Get customer's active subscriptions
+    console.log('Fetching active subscriptions...');
+    const activeSubscriptionsRes = await fetch(`https://api.stripe.com/v1/subscriptions?customer=${customer.id}&status=active`, {
       headers: {
         'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
         'Content-Type': 'application/x-www-form-urlencoded'
       }
     });
 
-    if (!subscriptionsRes.ok) {
-      const error = await subscriptionsRes.text();
-      console.error('Failed to fetch subscriptions:', {
-        status: subscriptionsRes.status,
+    if (!activeSubscriptionsRes.ok) {
+      const error = await activeSubscriptionsRes.text();
+      console.error('Failed to fetch active subscriptions:', {
+        status: activeSubscriptionsRes.status,
         error
       });
-      throw new Error(`Failed to fetch subscriptions: ${error}`);
+      throw new Error(`Failed to fetch active subscriptions: ${error}`);
     }
 
-    const subscriptionsData = await subscriptionsRes.json();
+    // Get customer's trialing subscriptions
+    console.log('Fetching trialing subscriptions...');
+    const trialingSubscriptionsRes = await fetch(`https://api.stripe.com/v1/subscriptions?customer=${customer.id}&status=trialing`, {
+      headers: {
+        'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    });
+
+    if (!trialingSubscriptionsRes.ok) {
+      const error = await trialingSubscriptionsRes.text();
+      console.error('Failed to fetch trialing subscriptions:', {
+        status: trialingSubscriptionsRes.status,
+        error
+      });
+      throw new Error(`Failed to fetch trialing subscriptions: ${error}`);
+    }
+
+    const activeData = await activeSubscriptionsRes.json();
+    const trialingData = await trialingSubscriptionsRes.json();
+
+    // Combine both subscription lists
+    const allSubscriptions = [...activeData.data, ...trialingData.data];
+    
     console.log('Found subscriptions:', {
-      total: subscriptionsData.data.length,
-      subscriptions: subscriptionsData.data.map(sub => ({
+      activeCount: activeData.data.length,
+      trialingCount: trialingData.data.length,
+      totalSubscriptions: allSubscriptions.length,
+      subscriptions: allSubscriptions.map(sub => ({
         id: sub.id,
         status: sub.status,
         planType: sub.metadata.planType
@@ -158,7 +183,7 @@ export async function onRequest(context) {
     });
 
     // Find the specific subscription to cancel
-    const subscriptionToCancel = subscriptionsData.data.find(sub => sub.id === subscriptionId);
+    const subscriptionToCancel = allSubscriptions.find(sub => sub.id === subscriptionId);
     
     if (!subscriptionToCancel) {
       console.log(`Subscription ${subscriptionId} not found`);
@@ -200,7 +225,7 @@ export async function onRequest(context) {
     });
 
     // Update domain status if this was the last active subscription
-    const remainingActiveSubscriptions = subscriptionsData.data.filter(sub => 
+    const remainingActiveSubscriptions = allSubscriptions.filter(sub => 
       sub.id !== subscriptionId && (sub.status === 'active' || sub.status === 'trialing')
     );
 
