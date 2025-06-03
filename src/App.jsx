@@ -16,6 +16,8 @@ import LoginPage from "./components/auth/LoginPage";
 import AdminPage from './pages/AdminPage';
 import WorkerPage from './components/WorkerPage';
 import InitialPayment from './pages/InitialPayment';
+import PaymentSuccess from './pages/PaymentSuccess';
+import ViewPlan from './pages/ViewPlan';
 
 
 // Removed direct import of ServicePage, ServicePageCreator will be used.
@@ -346,7 +348,34 @@ const AppRoutes = ({
       <Route path="/worker" element={<WorkerPage />} />
 
       {/* Initial Payment route */}
-      <Route path="/initial-payment" element={<InitialPayment />} />
+      <Route
+        path="/initial-payment"
+        element={
+          <Suspense fallback={<LoadingScreen />}>
+            <InitialPayment />
+          </Suspense>
+        }
+      />
+
+      {/* Payment Success route */}
+      <Route
+        path="/payment-success"
+        element={
+          <Suspense fallback={<LoadingScreen />}>
+            <PaymentSuccess />
+          </Suspense>
+        }
+      />
+
+      {/* View Plan route */}
+      <Route
+        path="/view-plan"
+        element={
+          <Suspense fallback={<LoadingScreen />}>
+            <ViewPlan />
+          </Suspense>
+        }
+      />
 
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
