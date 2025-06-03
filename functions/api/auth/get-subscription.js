@@ -120,7 +120,7 @@ export async function onRequest(context) {
 
     // Get customer's subscriptions, expanding latest_invoice
     console.log('Fetching customer subscriptions, expanding latest_invoice...');
-    const subscriptionsRes = await fetch(`https://api.stripe.com/v1/subscriptions?customer=${customer.id}&status=active,trialing&expand[]=data.latest_invoice`, {
+    const subscriptionsRes = await fetch(`https://api.stripe.com/v1/subscriptions?customer=${customer.id}&status=active&status=trialing&expand[]=data.latest_invoice`, {
       headers: stripeHeaders // Use consistent headers
     });
 
