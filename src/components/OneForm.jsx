@@ -596,11 +596,23 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
                 type: 'file'
               });
             } else if (imageItem.url && typeof imageItem.url === 'string' && imageItem.url.startsWith('blob:')) {
-              assetsToCollect.push({
-                path: imagePath,
-                url: imageItem.url,
-                type: 'blob'
-              });
+              // For blob URLs, try to get the original file or fetch from blob URL
+              if (imageItem.file) {
+                assetsToCollect.push({
+                  path: imagePath,
+                  file: imageItem.file,
+                  type: 'file'
+                });
+              } else {
+                console.log(`[OneForm] Fetching image from blob URL: ${imageItem.url}`);
+                // Add the blob URL to be processed later
+                assetsToCollect.push({
+                  path: imagePath,
+                  url: imageItem.url,
+                  type: 'blob',
+                  name: fileName
+                });
+              }
             } else if (imageItem.url && typeof imageItem.url === 'string' && !imageItem.url.startsWith('http')) {
               // Local asset that needs to be copied
               assetsToCollect.push({
@@ -641,11 +653,23 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
             type: 'file'
           });
         } else if (originalDataNode.url && originalDataNode.url.startsWith('blob:')) {
-          assetsToCollect.push({
-            path: imagePath,
-            url: originalDataNode.url,
-            type: 'blob'
-          });
+          // For blob URLs, try to get the original file or fetch from blob URL
+          if (originalDataNode.file) {
+            assetsToCollect.push({
+              path: imagePath,
+              file: originalDataNode.file,
+              type: 'file'
+            });
+          } else {
+            console.log(`[OneForm] Fetching image from blob URL: ${originalDataNode.url}`);
+            // Add the blob URL to be processed later
+            assetsToCollect.push({
+              path: imagePath,
+              url: originalDataNode.url,
+              type: 'blob',
+              name: fileName
+            });
+          }
         }
 
         // Return cleaned object for JSON (without mutating original)
@@ -656,27 +680,6 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
           originalUrl: originalDataNode.originalUrl || imagePath
           // Note: We deliberately exclude 'file' from the JSON output
         };
-      }
-
-      // Handle legacy heroImageFile
-      if (parentBlockName === 'HeroBlock' && originalDataNode.heroImageFile instanceof File) {
-        const fileName = originalDataNode.heroImageFile.name;
-        const imagePath = `new/img/heroblock/${fileName}`;
-        
-        assetsToCollect.push({
-          path: imagePath,
-          file: originalDataNode.heroImageFile,
-          type: 'file'
-        });
-
-        // Return cleaned object for JSON (create new object without mutating original)
-        const cleaned = { ...originalDataNode };
-        delete cleaned.heroImageFile;
-        delete cleaned.originalUrl;
-        delete cleaned._heroImageOriginalPathFromProps;
-        cleaned.heroImage = imagePath;
-        
-        return cleaned;
       }
 
       // Process object recursively
@@ -751,29 +754,38 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         zip.file("jsons/colors_output.json", JSON.stringify(colorsForJson, null, 2));
       }
 
-      // Add all collected assets to the ZIP
-      const assetPromises = assetsToCollect.map(async (asset) => {
+      // Process all collected assets
+      console.log("[OneForm] Processing collected assets:", assetsToCollect);
+      
+      // Process assets and add them to the ZIP
+      for (const asset of assetsToCollect) {
         try {
-          if (asset.type === 'file') {
+          if (asset.type === 'file' && asset.file instanceof File) {
+            console.log(`[OneForm] Adding file to ZIP: ${asset.path}`);
             zip.file(asset.path, asset.file);
-            console.log(`Added file to ZIP: ${asset.path}`);
-          } else if (asset.type === 'blob') {
+          } else if (asset.type === 'blob' && asset.url) {
+            console.log(`[OneForm] Fetching blob URL: ${asset.url}`);
             const response = await fetch(asset.url);
+            if (!response.ok) {
+              throw new Error(`Failed to fetch blob ${asset.url}: ${response.status} ${response.statusText}`);
+            }
             const blob = await response.blob();
+            console.log(`[OneForm] Adding blob to ZIP: ${asset.path}`);
             zip.file(asset.path, blob);
-            console.log(`Added blob to ZIP: ${asset.path}`);
-          } else if (asset.type === 'local') {
+          } else if (asset.type === 'local' && asset.url) {
+            console.log(`[OneForm] Fetching local file: ${asset.url}`);
             const response = await fetch(asset.url);
+            if (!response.ok) {
+              throw new Error(`Failed to fetch local file ${asset.url}: ${response.status} ${response.statusText}`);
+            }
             const blob = await response.blob();
+            console.log(`[OneForm] Adding local file to ZIP: ${asset.path}`);
             zip.file(asset.path, blob);
-            console.log(`Added local asset to ZIP: ${asset.path}`);
           }
         } catch (error) {
-          console.error(`Error processing asset ${asset.path}:`, error);
+          console.error(`[OneForm] Error processing asset ${asset.path}:`, error);
         }
-      });
-
-      await Promise.all(assetPromises);
+      }
 
       // Generate and download the ZIP
       const content = await zip.generateAsync({ type: "blob" });
@@ -843,8 +855,6 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   }, []);
 
   const handleMainPageFormChange = (newMainPageFormData) => {
-    console.log("[OneForm] Main page form data changed:", newMainPageFormData);
-    console.log("[OneForm] Previous main page data:", mainPageFormData);
     setMainPageFormData(prev => {
       const updatedData = {
         ...prev, 
@@ -852,32 +862,24 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         navbar: newMainPageFormData.navbar || prev.navbar,
         hero: newMainPageFormData.hero || prev.hero 
       };
+      console.log("Updated main page form data:", updatedData);
       
-      // Only trigger auto-download if the data actually changed
-      if (JSON.stringify(updatedData) !== JSON.stringify(prev)) {
-        console.log("[OneForm] Main page changes detected, triggering auto-download");
-        if (!blockName) { 
-          triggerAutoDownload();
-        }
-      } else {
-        console.log("[OneForm] No actual changes in main page data");
+      if (!blockName) { 
+        triggerAutoDownload();
       }
       
       return updatedData;
     });
-  };
+};
 
   const handleAboutConfigChange = (newAboutConfig) => {
     console.log("[OneForm] About page config changed:", newAboutConfig);
-    console.log("[OneForm] Previous about page data:", aboutPageJsonData);
-    setAboutPageJsonData(preserveImageUrls(newAboutConfig));
-    // Only trigger auto-download if the data actually changed
-    if (JSON.stringify(newAboutConfig) !== JSON.stringify(aboutPageJsonData)) {
-      console.log("[OneForm] About page changes detected, triggering auto-download");
-      triggerAutoDownload();
-    } else {
-      console.log("[OneForm] No actual changes in about page data");
-    }
+    // Deep clone the new config to ensure we have a fresh copy
+    const preservedConfig = JSON.parse(JSON.stringify(preserveImageUrls(newAboutConfig)));
+    setAboutPageJsonData(preservedConfig);
+    // Also update the initial data to match the new state
+    setInitialAboutPageJsonData(preservedConfig);
+    triggerAutoDownload();
   };
 
   const handleManagedServicesChange = (updatedServicePageData, serviceCategory, servicePageId) => {
@@ -887,18 +889,12 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         console.error(`[OneForm] Invalid service category '${serviceCategory}' in handleManagedServicesChange.`);
         return prevServicesData; 
       }
-
-      // Check if the data actually changed
-      const currentPage = prevServicesData[serviceCategory].find(page => page.id === servicePageId);
-      if (JSON.stringify(currentPage) === JSON.stringify(updatedServicePageData)) {
-        console.log("[OneForm] No actual changes in services data");
-        return prevServicesData;
-      }
-
-      console.log("[OneForm] Services changes detected, updating data");
       const updatedCategoryPages = prevServicesData[serviceCategory].map(page => {
         if (page.id === servicePageId) {
-          return updatedServicePageData; 
+          // Deep clone the updated data to preserve file objects
+          const preservedData = deepCloneWithFiles(updatedServicePageData);
+          console.log("[OneForm] Preserved service data with files:", preservedData);
+          return preservedData;
         }
         return page;
       });
@@ -906,32 +902,25 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         ...prevServicesData,
         [serviceCategory]: updatedCategoryPages,
       };
+      // Update servicesDataForOldExport with the new data
+      setServicesDataForOldExport(JSON.parse(JSON.stringify(newData)));
       triggerAutoDownload(); 
       return newData;
     });
   };
 
   const handleThemeColorChange = (newColorsObject, newSitePaletteArray) => {
-    console.log("[OneForm] Theme colors changed:", newColorsObject);
-    console.log("[OneForm] Previous theme colors:", themeColors);
-    
-    // Only trigger auto-download if the colors actually changed
-    if (JSON.stringify(newColorsObject) !== JSON.stringify(themeColors)) {
-      console.log("[OneForm] Color changes detected, updating and triggering auto-download");
-      setThemeColors(newColorsObject); 
-      if (newSitePaletteArray) {
+    setThemeColors(newColorsObject); 
+    if (newSitePaletteArray) {
         setSitePalette(newSitePaletteArray);
-      }
-      Object.keys(newColorsObject).forEach(key => {
-        const cssVarName = `--color-${key}`;
+    }
+    Object.keys(newColorsObject).forEach(key => {
+      const cssVarName = `--color-${key}`;
         document.documentElement.style.setProperty(cssVarName, newColorsObject[key]);
-      });
-      
-      if (!blockName) {
-        triggerAutoDownload();
-      }
-    } else {
-      console.log("[OneForm] No actual changes in theme colors");
+    });
+    
+    if (!blockName) {
+      triggerAutoDownload();
     }
   };
 
@@ -1079,11 +1068,32 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
     console.log(`[TabSwitch] Switching from ${activeTab} to ${tabId}`);
     
     if (activeTab !== tabId) {
-      setMainPageFormData(prev => preserveImageUrls(prev));
-      setAboutPageJsonData(prev => preserveImageUrls(prev));
-      setAllServiceBlocksData(prev => preserveImageUrls(prev));
+      // Preserve all data before switching tabs
+      setMainPageFormData(prev => {
+        console.log("[TabSwitch] Preserving main page data:", prev);
+        return preserveImageUrls(prev);
+      });
       
-      console.log('[TabSwitch] Preserved image URLs during tab switch');
+      // For about page, ensure we're using the current state
+      if (aboutPageJsonData) {
+        console.log("[TabSwitch] Current about page data:", aboutPageJsonData);
+        const preserved = JSON.parse(JSON.stringify(preserveImageUrls(aboutPageJsonData)));
+        setAboutPageJsonData(preserved);
+        setInitialAboutPageJsonData(preserved);
+      }
+      
+      setAllServiceBlocksData(prev => {
+        console.log("[TabSwitch] Preserving showcase data:", prev);
+        return preserveImageUrls(prev);
+      });
+      
+      // Also preserve services data
+      setManagedServicesData(prev => {
+        console.log("[TabSwitch] Preserving services data:", prev);
+        return preserveImageUrls(prev);
+      });
+      
+      console.log('[TabSwitch] Preserved all data during tab switch');
     }
     
     setActiveTab(tabId);

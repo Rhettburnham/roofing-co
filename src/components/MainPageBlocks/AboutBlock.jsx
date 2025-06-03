@@ -507,64 +507,33 @@ export default function AboutBlock({
     };
   });
 
+  // Sync with external data changes
+  useEffect(() => {
+    if (aboutData) {
+      setLocalData(prev => {
+        const newData = {
+          title: aboutData.title || prev.title,
+          subtitle: aboutData.subtitle || prev.subtitle,
+          history: aboutData.history || prev.history,
+          mission: aboutData.mission || prev.mission,
+          values: (aboutData.values || []).map(v => ({ ...v })),
+          team: (aboutData.team || []).map(t => ({ ...t, photo: initializeImageState(t.photo) })),
+          stats: (aboutData.stats || []).map(s => ({ ...s })),
+          heroImage: initializeImageState(aboutData.heroImage),
+          steps: (aboutData.steps || []).map(st => ({ ...st, videoSrc: initializeImageState(st.videoSrc) })),
+        };
+        return newData;
+      });
+    }
+  }, [aboutData]);
+
   const prevReadOnlyRef = useRef(readOnly);
   const prevAboutDataRef = useRef(aboutData);
 
   useEffect(() => {
-    if (aboutData && aboutData !== prevAboutDataRef.current) {
-      setLocalData(prevLocal => {
-        const newHeroImage = initializeImageState(aboutData.heroImage, prevLocal.heroImage?.originalUrl);
-        if(prevLocal.heroImage?.file && prevLocal.heroImage.url?.startsWith('blob:') && prevLocal.heroImage.url !== newHeroImage.url) {
-            URL.revokeObjectURL(prevLocal.heroImage.url);
-        }
-
-        const newTeam = (aboutData.team || []).map((newMember, idx) => {
-            const oldMember = prevLocal.team?.[idx];
-            const newPhoto = initializeImageState(newMember.photo, oldMember?.photo?.originalUrl);
-            if(oldMember?.photo?.file && oldMember.photo.url?.startsWith('blob:') && oldMember.photo.url !== newPhoto.url) {
-                 URL.revokeObjectURL(oldMember.photo.url);
-            }
-            return { ...newMember, photo: newPhoto };
-        });
-        
-        const newSteps = (aboutData.steps || []).map((newStep, idx) => {
-            const oldStep = prevLocal.steps?.[idx];
-            const newVideoSrc = initializeImageState(newStep.videoSrc, oldStep?.videoSrc?.originalUrl);
-             if(oldStep?.videoSrc?.file && oldStep.videoSrc.url?.startsWith('blob:') && oldStep.videoSrc.url !== newVideoSrc.url) {
-                 URL.revokeObjectURL(oldStep.videoSrc.url);
-            }
-            return { ...newStep, videoSrc: newVideoSrc };
-        });
-
-        return {
-          ...aboutData,
-          heroImage: newHeroImage,
-          team: newTeam,
-          steps: newSteps,
-          values: (aboutData.values || []).map(v => ({...v})),
-          stats: (aboutData.stats || []).map(s => ({...s})),
-        };
-      });
-      prevAboutDataRef.current = aboutData;
-    }
-  }, [aboutData]);
-
-  useEffect(() => {
-    return () => {
-      const cleanupItem = (item) => {
-        if (item && typeof item === 'object' && item.url && item.url.startsWith('blob:')) {
-          URL.revokeObjectURL(item.url);
-        }
-      };
-      cleanupItem(localData.heroImage);
-      (localData.team || []).forEach(member => cleanupItem(member.photo));
-      (localData.steps || []).forEach(step => cleanupItem(step.videoSrc));
-    };
-  }, [localData.heroImage, localData.team, localData.steps]);
-
-  useEffect(() => {
     if (prevReadOnlyRef.current === false && readOnly === true) {
       if (onConfigChange) {
+        console.log("[AboutBlock] Saving changes:", localData);
         onConfigChange(localData);
       }
     }
@@ -572,6 +541,7 @@ export default function AboutBlock({
   }, [readOnly, localData, onConfigChange]);
 
   const handleLocalDataUpdate = (updatedAboutData) => {
+    console.log("[AboutBlock] Local data updated:", updatedAboutData);
     setLocalData(updatedAboutData);
     if (!readOnly && onConfigChange) {
       onConfigChange(updatedAboutData);
@@ -579,7 +549,11 @@ export default function AboutBlock({
   };
 
   const handleFieldChange = (field, value) => {
-    setLocalData(prev => ({ ...prev, [field]: value }));
+    const updatedData = { ...localData, [field]: value };
+    setLocalData(updatedData);
+    if (!readOnly && onConfigChange) {
+      onConfigChange(updatedData);
+    }
   };
 
   const handleNestedChange = (listName, index, field, value) => {
@@ -588,30 +562,34 @@ export default function AboutBlock({
       if (newList[index]) {
         newList[index] = { ...newList[index], [field]: value };
       }
-      return { ...prev, [listName]: newList };
+      const updatedData = { ...prev, [listName]: newList };
+      if (!readOnly && onConfigChange) {
+        onConfigChange(updatedData);
+      }
+      return updatedData;
     });
   };
 
   const handleAddItem = (listName, newItemTemplate) => {
     setLocalData(prev => {
       const newList = [...(prev[listName] || []), newItemTemplate];
-      return { ...prev, [listName]: newList };
+      const updatedData = { ...prev, [listName]: newList };
+      if (!readOnly && onConfigChange) {
+        onConfigChange(updatedData);
+      }
+      return updatedData;
     });
   };
 
   const handleRemoveItem = (listName, index) => {
     setLocalData(prev => {
-      const list = prev[listName] || [];
-      const itemToRemove = list[index];
-      if (itemToRemove) {
-        for (const key in itemToRemove) {
-          if (itemToRemove[key] && typeof itemToRemove[key] === 'object' && itemToRemove[key].url && itemToRemove[key].url.startsWith('blob:')) {
-            URL.revokeObjectURL(itemToRemove[key].url);
-          }
-        }
+      const newList = [...(prev[listName] || [])];
+      newList.splice(index, 1);
+      const updatedData = { ...prev, [listName]: newList };
+      if (!readOnly && onConfigChange) {
+        onConfigChange(updatedData);
       }
-      const newList = list.filter((_, i) => i !== index);
-      return { ...prev, [listName]: newList };
+      return updatedData;
     });
   };
 

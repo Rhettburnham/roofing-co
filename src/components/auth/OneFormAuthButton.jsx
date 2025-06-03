@@ -278,12 +278,28 @@ const traverseAndModifyDataForZip = async (originalDataNode, assetsToCollect, pa
         cleanedObject.url = jsonUrl;
         return cleanedObject;
       } else {
-        console.warn(`[OneFormAuthButton] Skipping blob URL - no original file/blob:`, {
+        // If no original file/blob, try to fetch from blob URL
+        console.log(`[OneFormAuthButton] No original file/blob, fetching from blob URL:`, {
           url: blobUrl,
-          nodeType: typeof originalDataNode,
-          nodeKeys: Object.keys(originalDataNode)
+          pathContext
         });
-        return originalDataNode;
+
+        // Use the same path structure as the ZIP file
+        pathInZip = `assets/images/team/${fileName}`;
+        jsonUrl = pathInZip;
+
+        // Add the blob URL to be processed later
+        assetsToCollect.push({
+          pathInZip,
+          dataSource: blobUrl,
+          type: 'url',
+          originalUrl: originalDataNode.originalUrl
+        });
+
+        const cleanedObject = { ...originalDataNode };
+        delete cleanedObject.originalUrl;
+        cleanedObject.url = jsonUrl;
+        return cleanedObject;
       }
     }
     
@@ -666,25 +682,33 @@ export default function OneFormAuthButton({
       }
 
       // Process services data if changed
-      if (servicesData && JSON.stringify(servicesData) !== JSON.stringify(initialServicesData)) {
+      if (servicesData) {
         try {
+          console.log("[OneFormAuthButton] Processing services data:", {
+            currentServices: servicesData,
+            initialServices: initialServicesData,
+            hasChanges: JSON.stringify(servicesData) !== JSON.stringify(initialServicesData)
+          });
+
           const serviceAssetsForNew = [];
+          // Deep clone the services data to ensure we're working with a fresh copy
+          const currentServicesData = JSON.parse(JSON.stringify(servicesData));
           cleanedServicesDataNew = await traverseAndModifyDataForZip(
-            servicesData,
+            currentServicesData,
             serviceAssetsForNew,
             'servicesDataRoot',
             'user_uploads/services_data'
           );
           zip.file("services.json", JSON.stringify(cleanedServicesDataNew, null, 2));
           newCollectedAssets.push(...serviceAssetsForNew);
-          console.log("[OneFormAuthButton] Added services.json to ZIP");
+          console.log("[OneFormAuthButton] Added services.json to ZIP with data:", cleanedServicesDataNew);
         } catch (serviceError) {
           console.error("[OneFormAuthButton] Error processing services.json:", serviceError);
         }
       }
 
       // Process about page data if changed
-      if (aboutPageData && JSON.stringify(aboutPageData) !== JSON.stringify(initialAboutPageJsonData)) {
+      if (aboutPageData) {
         console.log("[OneFormAuthButton] Processing about_page.json for ZIP:", aboutPageData);
         let newAboutAssets = [];
         cleanedNewAboutData = await traverseAndModifyDataForZip(
@@ -714,7 +738,7 @@ export default function OneFormAuthButton({
       }
 
       // Add colors if changed
-      if (themeColors && JSON.stringify(themeColors) !== JSON.stringify(initialThemeColors)) {
+      if (themeColors /*&& JSON.stringify(themeColors) !== JSON.stringify(initialThemeColors)*/) {
         colorsForNewJson = {};
         Object.keys(themeColors).forEach(key => {
           colorsForNewJson[key.replace(/-/g, '_')] = themeColors[key];
