@@ -15,6 +15,7 @@ import ServicePage from "./components/ServicePage";
 import LoginPage from "./components/auth/LoginPage";
 import AdminPage from './pages/AdminPage';
 import WorkerPage from './components/WorkerPage';
+import InitialPayment from './pages/InitialPayment';
 
 
 // Removed direct import of ServicePage, ServicePageCreator will be used.
@@ -359,7 +360,10 @@ const AppRoutes = ({
       {/* Worker Page route */}
       <Route path="/worker" element={<WorkerPage />} />
 
-       <Route path="*" element={<NotFoundPage />} />
+      {/* Initial Payment route */}
+      <Route path="/initial-payment" element={<InitialPayment />} />
+
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 };

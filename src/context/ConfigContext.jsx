@@ -2,9 +2,92 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 
 const ConfigContext = createContext();
 
+// Debug panel component
+const DebugPanel = () => {
+  const [logs, setLogs] = useState([]);
+  
+  useEffect(() => {
+    const originalConsoleLog = console.log;
+    console.log = function(...args) {
+      // Call original console.log
+      originalConsoleLog.apply(console, args);
+      
+      // Add to our logs
+      const timestamp = new Date().toISOString();
+      const message = args.map(arg => 
+        typeof arg === 'object' ? JSON.stringify(arg, null, 2) : arg
+      ).join(' ');
+      
+      setLogs(prev => [...prev, `[${timestamp}] ${message}`]);
+    };
+    
+    return () => {
+      console.log = originalConsoleLog;
+    };
+  }, []);
+  
+  if (process.env.NODE_ENV !== 'development') return null;
+  
+  return (
+    <div style={{
+      position: 'fixed',
+      bottom: 0,
+      right: 0,
+      width: '400px',
+      height: '300px',
+      backgroundColor: 'rgba(0,0,0,0.8)',
+      color: 'white',
+      padding: '10px',
+      overflow: 'auto',
+      fontSize: '12px',
+      fontFamily: 'monospace',
+      zIndex: 9999
+    }}>
+      <div style={{ marginBottom: '10px' }}>
+        <button 
+          onClick={() => setLogs([])}
+          style={{ marginRight: '10px' }}
+        >
+          Clear
+        </button>
+      </div>
+      <div style={{ overflow: 'auto', height: 'calc(100% - 40px)' }}>
+        {logs.map((log, i) => (
+          <div key={i} style={{ marginBottom: '5px' }}>{log}</div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export function useConfig() {
   return useContext(ConfigContext);
 }
+
+// Custom logger for ConfigContext
+const configLogger = {
+  logs: [],
+  log: function(message) {
+    const timestamp = new Date().toISOString();
+    const logEntry = `[${timestamp}] ${message}\n`;
+    this.logs.push(logEntry);
+    
+    // Create a blob and download it
+    const blob = new Blob([this.logs.join('')], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'config-context-logs.txt';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  },
+  clear: function() {
+    this.logs = [];
+  }
+};
 
 // Helper function to normalize color keys
 const normalizeColorKeys = (colors) => {
@@ -27,6 +110,7 @@ export const ConfigProvider = ({ children }) => {
   const [isCustomDomain, setIsCustomDomain] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [configId, setConfigId] = useState(null);
+  const [virtualFS, setVirtualFS] = useState(null);
 
   // Development mode flag
   const isDevelopment = process.env.NODE_ENV === 'development';
@@ -186,14 +270,24 @@ export const ConfigProvider = ({ children }) => {
             const virtualFS = {};
             
             // Process each asset
-            Object.entries(configData.assets).forEach(([path, asset]) => {
-              // Create a blob URL for the asset
-              const blob = new Blob([asset.data], { type: asset.contentType });
-              const url = URL.createObjectURL(blob);
+            Object.entries(configData.assets).forEach(([path, url]) => {
+              // Normalize the path by removing any leading slashes
+              const normalizedPath = path.replace(/^\/+/, '');
               
-              // Store in virtual FS
-              virtualFS[path] = url;
+              // In development, we'll use the local public directory
+              if (isDevelopment) {
+                // For development, we'll use the original path since it's already relative to public
+                console.log(`Development mode: Using original path ${normalizedPath}`);
+                virtualFS[normalizedPath] = normalizedPath;
+              } else {
+                // Production mode: use the API URL
+                virtualFS[normalizedPath] = url;
+              }
+              console.log(`Registered asset override: ${normalizedPath} -> ${virtualFS[normalizedPath]}`);
             });
+
+            // Set the virtual file system
+            setVirtualFS(virtualFS);
 
             // Replace public assets with virtual ones
             const originalFetch = window.fetch;
@@ -203,13 +297,20 @@ export const ConfigProvider = ({ children }) => {
               // Check if this is an asset request
               if (url.startsWith('/assets/')) {
                 const relativePath = url.substring(1); // Remove leading slash
+                console.log(`Intercepted asset request: ${relativePath}`);
                 if (virtualFS[relativePath]) {
-                  // Return a Response with the virtual asset
-                  return new Response(await fetch(virtualFS[relativePath]).then(r => r.blob()), {
-                    headers: {
-                      'Content-Type': configData.assets[relativePath].contentType
-                    }
-                  });
+                  console.log(`Using override for ${relativePath}: ${virtualFS[relativePath]}`);
+                  // In development, we'll fetch from the local public directory
+                  if (isDevelopment) {
+                    // Use the path directly since it's already relative to public
+                    const localUrl = `/${virtualFS[relativePath]}`;
+                    console.log(`Development mode: Fetching from ${localUrl}`);
+                    return fetch(localUrl);
+                  }
+                  // Production mode: use the API URL
+                  return fetch(virtualFS[relativePath]);
+                } else {
+                  console.log(`No override found for ${relativePath}, using original`);
                 }
               }
               
@@ -217,13 +318,61 @@ export const ConfigProvider = ({ children }) => {
               return originalFetch(input, init);
             };
 
+            // Override getDisplayUrl to handle both custom and default images
+            const originalGetDisplayUrl = getDisplayUrl;
+            getDisplayUrl = (imageValue) => {
+              if (!imageValue) return null;
+              
+              // If it's a string path, check if we have an override
+              if (typeof imageValue === 'string') {
+                const path = imageValue.replace(/^\/+/, ''); // Remove all leading slashes
+                console.log(`getDisplayUrl called with string path: ${path}`);
+                if (virtualFS[path]) {
+                  const overrideUrl = virtualFS[path];
+                  console.log(`Using override for ${path}: ${overrideUrl}`);
+                  // In development, ensure path starts with /
+                  if (isDevelopment) {
+                    return `/${overrideUrl}`;
+                  }
+                  return overrideUrl;
+                }
+                return imageValue;
+              }
+              
+              // If it's an object with a url property
+              if (typeof imageValue === 'object' && imageValue.url) {
+                // If it's a blob URL, return it directly
+                if (imageValue.url.startsWith('blob:')) {
+                  console.log(`Using blob URL directly: ${imageValue.url}`);
+                  return imageValue.url;
+                }
+                
+                // If it's a path, check for override
+                const path = imageValue.url.replace(/^\/+/, ''); // Remove all leading slashes
+                console.log(`getDisplayUrl called with object URL: ${path}`);
+                if (virtualFS[path]) {
+                  const overrideUrl = virtualFS[path];
+                  console.log(`Using override for ${path}: ${overrideUrl}`);
+                  // In development, ensure path starts with /
+                  if (isDevelopment) {
+                    return `/${overrideUrl}`;
+                  }
+                  return overrideUrl;
+                }
+                return imageValue.url;
+              }
+              
+              return null;
+            };
+
             // Clean up function
             return () => {
               // Restore original fetch
               window.fetch = originalFetch;
-              
-              // Revoke all blob URLs
-              Object.values(virtualFS).forEach(url => URL.revokeObjectURL(url));
+              // Restore original getDisplayUrl
+              getDisplayUrl = originalGetDisplayUrl;
+              // Clear logs
+              configLogger.clear();
             };
           }
         }
@@ -247,9 +396,11 @@ export const ConfigProvider = ({ children }) => {
       error,
       isCustomDomain,
       isAuthenticated,
-      configId
+      configId,
+      virtualFS
     }}>
       {children}
+      {/* <DebugPanel /> */}
     </ConfigContext.Provider>
   );
 }; 
