@@ -12,6 +12,7 @@ import { FaWarehouse } from "react-icons/fa";
  * Animation Configuration Props:
  * - naturalOffsetVh: Controls how low the logo and text sit naturally (default: 7vh)
  * - slideUpDistanceVh: Controls how much the logo and text slide up during scroll animation (default: 7vh)
+ * - slideLeftDistance: Controls how much the logo and text slide left during scroll animation (default: { base: "0vw", md: "30vw" })
  * - logoSizeUnscrolled: Logo size when page is unscrolled (default: { width: '10vh', height: '10vh' })
  * - logoSizeScrolled: Logo size when page is scrolled (default: { width: '6vh', height: '6vh' })
  *
@@ -19,6 +20,7 @@ import { FaWarehouse } from "react-icons/fa";
  * <Navbar
  *   naturalOffsetVh={10}        // Components sit 10vh lower
  *   slideUpDistanceVh={5}       // Components slide up 5vh on scroll
+ *   slideLeftDistance={{ base: "0vw", md: "30vw" }}
  *   logoSizeUnscrolled={{ width: '12vh', height: '12vh' }}  // Larger unscrolled logo
  *   logoSizeScrolled={{ width: '4vh', height: '4vh' }}      // Smaller scrolled logo
  * />
@@ -39,18 +41,34 @@ const Navbar = ({
   onSubtitleChange, // New prop for live editing
   isEditingPreview, // Make sure this is destructured
   // Animation and sizing configuration props
-  naturalOffsetVh = 11, // How low components sit naturally (in vh)
-  slideUpDistanceVh = 0, // How much components slide up during animation (in vh)
-  logoSizeUnscrolled = { width: "18vh", height: "18vh" }, // Logo size when unscrolled
-  logoSizeScrolled = { width: "14vh", height: "14vh" }, // Logo size when scrolled
+  naturalOffsetVh = config?.animation?.naturalOffsetVh || { base: 8, md: 11 },
+  slideUpDistanceVh = config?.animation?.slideUpDistanceVh || 0,
+  slideLeftDistance = config?.animation?.slideLeftDistance || {
+    base: "0vw",
+    md: "30vw",
+  },
+  logoSizeUnscrolled = config?.animation?.logoSizeUnscrolled || {
+    base: { width: "12vh", height: "12vh" },
+    md: { width: "18vh", height: "18vh" },
+  },
+  logoSizeScrolled = config?.animation?.logoSizeScrolled || {
+    base: { width: "8vh", height: "8vh" },
+    md: { width: "14vh", height: "14vh" },
+  },
   // New configurable variables
   textSizes = {
     unscrolled: { base: "text-[7vw]", md: "text-[8vh]", lg: "text-[5vh]" },
     scrolled: { base: "text-[3vw]", md: "text-[5vh]" },
   },
-  logoTextDistance = {
-    unscrolled: { base: "mr-0", md: "mr-0" },
-    scrolled: { base: "mr-0", md: "mr-0" },
+  logoTitleDistance = config?.animation?.logoTitleDistance || {
+    unscrolled: {
+      base: "mr-1",
+      md: "mr-3",
+    },
+    scrolled: {
+      base: "mr-1",
+      md: "mr-2",
+    },
   },
   navbarHeight = {
     unscrolled: { base: "h-[16vh]", md: "h-[18vh]" },
@@ -161,7 +179,6 @@ const Navbar = ({
 
   useEffect(() => {
     const tl = gsap.timeline();
-    // Ensure refs are current and elements exist before animating
     const titleElement = titleRef.current;
     const logoElement = logoRef.current;
     const subTitleElement = subTitleRef.current;
@@ -184,82 +201,59 @@ const Navbar = ({
     ]);
 
     if (hasScrolled) {
-      // Step 1: Both logo and text slide up by configurable distance while subtitle fades
+      // Slide up and left
       tl.to([titleElement, logoElement], {
         y: `-${slideUpDistanceVh}vh`,
+        x: `-${slideLeftDistance.md}`,
         duration: 0.4,
         ease: "power2.out",
-      }).to(
-        subTitleElement,
-        {
-          opacity: 0,
-          duration: 0.4,
-          onComplete: () => {
-            if (subTitleElement) subTitleElement.style.display = "none";
+      })
+        .to(
+          subTitleElement,
+          {
+            opacity: 0,
+            duration: 0.4,
+            onComplete: () => {
+              if (subTitleElement) subTitleElement.style.display = "none";
+            },
           },
-        },
-        "<"
-      );
-
-      // Step 2: After 0.2s, logo shrinks for 0.3s
-      tl.to(
-        logoElement,
-        { scale: 0.6, duration: 0.3, ease: "power2.out" },
-        "+=0.2"
-      );
-
-      // Step 3: Logo and main title slide left by 30vw
-      tl.to([logoElement, titleElement], {
-        x: "-30vw",
-        duration: 0.5,
-        ease: "power2.out",
-      }).to(
-        titleContainerElement,
-        { alignItems: "center", duration: 0.2 },
-        "<"
-      );
+          "<"
+        )
+        .to(
+          titleContainerElement,
+          { alignItems: "center", duration: 0.2 },
+          "<"
+        );
     } else {
-      // Reset subtitle display and set initial states
+      // Reset to initial state
       if (subTitleElement) {
         subTitleElement.style.display = "";
         gsap.set(subTitleElement, { opacity: 0, y: "2vh" });
       }
 
-      // Step 1: ONLY title slides to the right (logo stays in place)
-      tl.to(titleElement, { x: "0", duration: 0.3, ease: "power2.out" });
-
-      // Step 2: Logo fades to 0 opacity as main text grows back to original position
-      tl.to(
-        logoElement,
-        { opacity: 0, x: "0", duration: 0.2, ease: "power2.out" },
-        "<"
-      ).to(
-        [titleElement, logoElement],
-        { y: "0", duration: 0.4, ease: "power2.out" },
-        "<"
-      );
-
-      // Step 3: Subtitle slides up to its position
-      tl.to(subTitleElement, {
-        opacity: 1,
+      tl.to([titleElement, logoElement], {
         y: "0",
-        duration: 0.3,
-        ease: "power2.out",
-      }).to(
-        titleContainerElement,
-        { alignItems: "flex-start", duration: 0.3, ease: "power2.out" },
-        "<"
-      );
-
-      // Step 4: Larger logo fades into place
-      tl.to(logoElement, {
-        opacity: 1,
-        scale: 1,
+        x: "0",
         duration: 0.4,
         ease: "power2.out",
-      });
+      })
+        .to(
+          subTitleElement,
+          {
+            opacity: 1,
+            y: "0",
+            duration: 0.3,
+            ease: "power2.out",
+          },
+          "<"
+        )
+        .to(
+          titleContainerElement,
+          { alignItems: "flex-start", duration: 0.3, ease: "power2.out" },
+          "<"
+        );
     }
-  }, [hasScrolled, slideUpDistanceVh]);
+  }, [hasScrolled, slideUpDistanceVh, slideLeftDistance]);
 
   const navLinksFromConfig = config?.navLinks || [
     { name: "About", href: "/about" },
@@ -267,10 +261,6 @@ const Navbar = ({
     { name: "Packages", href: "/#packages" },
   ];
 
-  const logoUrl = getDisplayUrl(
-    config?.logo,
-    "/assets/images/hero/clipped.png"
-  );
   const mainTitle = config?.title || "COWBOYS-VAQUEROS";
   const mainSubtitle = config?.subtitle || "CONSTRUCTION";
 
@@ -337,15 +327,15 @@ const Navbar = ({
         config?.unscrolledBackgroundColor === "bg-gray-900")) ||
     invertLogoColor;
 
-  // Build responsive logo margin classes
-  const logoMarginClasses = hasScrolled
-    ? `${logoTextDistance.scrolled.base} md:${logoTextDistance.scrolled.md}`
-    : `${logoTextDistance.unscrolled.base} md:${logoTextDistance.unscrolled.md}`;
+  // Build responsive margin classes
+  const marginClasses = hasScrolled
+    ? `${logoTitleDistance.scrolled.base} md:${logoTitleDistance.scrolled.md}`
+    : `${logoTitleDistance.unscrolled.base} md:${logoTitleDistance.unscrolled.md}`;
 
   // Build responsive text size classes
-  const titleSizeClasses = hasScrolled
+  const textSizeClasses = hasScrolled
     ? `${textSizes.scrolled.base} md:${textSizes.scrolled.md}`
-    : `${textSizes.unscrolled.base} md:${textSizes.unscrolled.md} ${textSizes.unscrolled.lg ? `lg:${textSizes.unscrolled.lg}` : ""}`;
+    : `${textSizes.unscrolled.base} md:${textSizes.unscrolled.md} lg:${textSizes.unscrolled.lg}`;
 
   let logoToDisplay;
   // Prioritize whiteLogoIcon if it's set and conditions are met
@@ -374,16 +364,25 @@ const Navbar = ({
           {/* Conditional rendering for whiteLogoIcon or whiteLogo image */}
           {logoToDisplay === "icon" ? (
             <div
-              className={`cursor-pointer transform-gpu ${logoMarginClasses}`}
+              className={`cursor-pointer transform-gpu ${marginClasses}`}
               onClick={handleLogoClick}
               style={{
-                marginTop: hasScrolled ? "0" : `${naturalOffsetVh}vh`,
+                marginTop: hasScrolled ? "0" : `${naturalOffsetVh.base}vh`,
                 width: hasScrolled
-                  ? logoSizeScrolled.width
-                  : logoSizeUnscrolled.width,
+                  ? logoSizeScrolled.base.width
+                  : logoSizeUnscrolled.base.width,
                 height: hasScrolled
-                  ? logoSizeScrolled.height
-                  : logoSizeUnscrolled.height,
+                  ? logoSizeScrolled.base.height
+                  : logoSizeUnscrolled.base.height,
+                [`@media (min-width: 768px)`]: {
+                  marginTop: hasScrolled ? "0" : `${naturalOffsetVh.md}vh`,
+                  width: hasScrolled
+                    ? logoSizeScrolled.md.width
+                    : logoSizeUnscrolled.md.width,
+                  height: hasScrolled
+                    ? logoSizeScrolled.md.height
+                    : logoSizeUnscrolled.md.height,
+                },
               }}
             >
               {renderDynamicIcon(
@@ -395,39 +394,56 @@ const Navbar = ({
             </div>
           ) : logoToDisplay === "whiteImage" ? (
             <img
-              src={getDisplayUrl(config.whiteLogo)} // Use the white logo URL
+              src={getDisplayUrl(config.whiteLogo)}
               alt="Logo White"
-              className={`cursor-pointer logo-fixed-size transform-gpu ${logoMarginClasses}`}
+              className={`cursor-pointer logo-fixed-size transform-gpu ${marginClasses}`}
               onClick={handleLogoClick}
               style={{
-                marginTop: hasScrolled ? "0" : `${naturalOffsetVh}vh`,
+                marginTop: hasScrolled ? "0" : `${naturalOffsetVh.base}vh`,
                 width: hasScrolled
-                  ? logoSizeScrolled.width
-                  : logoSizeUnscrolled.width,
+                  ? logoSizeScrolled.base.width
+                  : logoSizeUnscrolled.base.width,
                 height: hasScrolled
-                  ? logoSizeScrolled.height
-                  : logoSizeUnscrolled.height,
+                  ? logoSizeScrolled.base.height
+                  : logoSizeUnscrolled.base.height,
+                [`@media (min-width: 768px)`]: {
+                  marginTop: hasScrolled ? "0" : `${naturalOffsetVh.md}vh`,
+                  width: hasScrolled
+                    ? logoSizeScrolled.md.width
+                    : logoSizeUnscrolled.md.width,
+                  height: hasScrolled
+                    ? logoSizeScrolled.md.height
+                    : logoSizeUnscrolled.md.height,
+                },
               }}
             />
           ) : (
-            // 'defaultImage'
             <img
-              ref={logoRef} // Default logo ref - only attach ref to the element that might be animated by GSAP
+              ref={logoRef}
               src={getDisplayUrl(
                 config?.logo,
                 "/assets/images/hero/clipped.png"
               )}
               alt="Logo"
-              className={`cursor-pointer logo-fixed-size transform-gpu ${logoMarginClasses}`}
+              className={`cursor-pointer logo-fixed-size transform-gpu ${marginClasses}`}
               onClick={handleLogoClick}
               style={{
-                marginTop: hasScrolled ? "0" : `${naturalOffsetVh}vh`,
+                marginTop: hasScrolled ? "0" : `${naturalOffsetVh.base}vh`,
                 width: hasScrolled
-                  ? logoSizeScrolled.width
-                  : logoSizeUnscrolled.width,
+                  ? logoSizeScrolled.base.width
+                  : logoSizeUnscrolled.base.width,
                 height: hasScrolled
-                  ? logoSizeScrolled.height
-                  : logoSizeUnscrolled.height,
+                  ? logoSizeScrolled.base.height
+                  : logoSizeUnscrolled.base.height,
+                [`@media (min-width: 768px)`]: {
+                  marginTop: hasScrolled ? "0" : `${naturalOffsetVh.md}vh`,
+                  width: hasScrolled
+                    ? logoSizeScrolled.md.width
+                    : logoSizeUnscrolled.md.width,
+                  height: hasScrolled
+                    ? logoSizeScrolled.md.height
+                    : logoSizeUnscrolled.md.height,
+                },
               }}
             />
           )}
@@ -437,7 +453,10 @@ const Navbar = ({
             style={{
               alignItems: hasScrolled ? "center" : "flex-start",
               justifyContent: "center",
-              marginTop: hasScrolled ? "0" : `${naturalOffsetVh}vh`,
+              marginTop: hasScrolled ? "0" : `${naturalOffsetVh.base}vh`,
+              [`@media (min-width: 768px)`]: {
+                marginTop: hasScrolled ? "0" : `${naturalOffsetVh.md}vh`,
+              },
             }}
           >
             {isPreview && isEditingPreview && onTitleChange ? (
@@ -446,13 +465,13 @@ const Navbar = ({
                 ref={titleRef}
                 value={mainTitle}
                 onChange={(e) => onTitleChange(e.target.value)}
-                className={`whitespace-nowrap text-white text-center drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:6px_black ] font-rye font-ultra-condensed origin-left bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-300 p-1 rounded-sm z-10 relative ${titleSizeClasses}`}
+                className={`whitespace-nowrap text-white text-center drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:6px_black ] font-rye font-ultra-condensed origin-left bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-300 p-1 rounded-sm z-10 relative ${textSizeClasses}`}
                 onClick={(e) => e.stopPropagation()}
               />
             ) : (
               <h1
                 ref={titleRef}
-                className={`whitespace-nowrap text-white text-center drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:6px_black ] font-rye font-ultra-condensed origin-left ${titleSizeClasses}`}
+                className={`whitespace-nowrap text-white text-center drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:6px_black ] font-rye font-ultra-condensed origin-left ${textSizeClasses}`}
               >
                 {mainTitle}
               </h1>
@@ -580,70 +599,146 @@ const Navbar = ({
 
 Navbar.propTypes = {
   config: PropTypes.shape({
-    title: PropTypes.string, // New prop type
-    subtitle: PropTypes.string, // New prop type
+    title: PropTypes.string,
+    subtitle: PropTypes.string,
     navLinks: PropTypes.arrayOf(
-      PropTypes.shape({ name: PropTypes.string, href: PropTypes.string })
+      PropTypes.shape({
+        name: PropTypes.string,
+        href: PropTypes.string,
+      })
     ),
     logo: PropTypes.oneOfType([
-      // Updated prop type for logo
-      PropTypes.string,
-      PropTypes.shape({
-        url: PropTypes.string,
-        file: PropTypes.object, // File object
-        name: PropTypes.string,
-      }),
-    ]),
-    whiteLogo: PropTypes.oneOfType([
-      // Updated prop type for whiteLogo
       PropTypes.string,
       PropTypes.shape({
         url: PropTypes.string,
         file: PropTypes.object,
         name: PropTypes.string,
+        originalUrl: PropTypes.string,
+        id: PropTypes.string,
+      }),
+    ]),
+    whiteLogo: PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.shape({
+        url: PropTypes.string,
+        file: PropTypes.object,
+        name: PropTypes.string,
+        originalUrl: PropTypes.string,
+        id: PropTypes.string,
       }),
     ]),
     whiteLogoIcon: PropTypes.shape({
-      // New prop type for white logo icon
       pack: PropTypes.string,
       name: PropTypes.string,
     }),
-    useWhiteHamburger: PropTypes.bool,
+    animation: PropTypes.shape({
+      naturalOffsetVh: PropTypes.shape({
+        base: PropTypes.number,
+        md: PropTypes.number,
+      }),
+      slideUpDistanceVh: PropTypes.number,
+      slideLeftDistance: PropTypes.shape({
+        base: PropTypes.string,
+        md: PropTypes.string,
+      }),
+      logoSizeUnscrolled: PropTypes.shape({
+        base: PropTypes.shape({
+          width: PropTypes.string,
+          height: PropTypes.string,
+        }),
+        md: PropTypes.shape({
+          width: PropTypes.string,
+          height: PropTypes.string,
+        }),
+      }),
+      logoSizeScrolled: PropTypes.shape({
+        base: PropTypes.shape({
+          width: PropTypes.string,
+          height: PropTypes.string,
+        }),
+        md: PropTypes.shape({
+          width: PropTypes.string,
+          height: PropTypes.string,
+        }),
+      }),
+      logoTitleDistance: PropTypes.shape({
+        unscrolled: PropTypes.shape({
+          base: PropTypes.string,
+          md: PropTypes.string,
+        }),
+        scrolled: PropTypes.shape({
+          base: PropTypes.string,
+          md: PropTypes.string,
+        }),
+      }),
+    }),
+    textSizes: PropTypes.shape({
+      unscrolled: PropTypes.shape({
+        base: PropTypes.string,
+        md: PropTypes.string,
+        lg: PropTypes.string,
+      }),
+      scrolled: PropTypes.shape({
+        base: PropTypes.string,
+        md: PropTypes.string,
+      }),
+    }),
+    navbarHeight: PropTypes.shape({
+      unscrolled: PropTypes.shape({
+        base: PropTypes.string,
+        md: PropTypes.string,
+      }),
+      scrolled: PropTypes.shape({
+        base: PropTypes.string,
+        md: PropTypes.string,
+      }),
+    }),
     scrolledBackgroundColor: PropTypes.string,
     unscrolledBackgroundColor: PropTypes.string,
     dropdownBackgroundColor: PropTypes.string,
     dropdownTextColor: PropTypes.string,
+    useWhiteHamburger: PropTypes.bool,
+    invertLogoColor: PropTypes.bool,
   }),
+  onTitleChange: PropTypes.func,
+  onSubtitleChange: PropTypes.func,
   forceScrolledState: PropTypes.bool,
   isPreview: PropTypes.bool,
-  onTitleChange: PropTypes.func, // New prop type
-  onSubtitleChange: PropTypes.func, // New prop type
-  isEditingPreview: PropTypes.bool, // New prop type
-  naturalOffsetVh: PropTypes.number,
+  isEditingPreview: PropTypes.bool,
+  naturalOffsetVh: PropTypes.shape({
+    base: PropTypes.number,
+    md: PropTypes.number,
+  }),
   slideUpDistanceVh: PropTypes.number,
+  slideLeftDistance: PropTypes.shape({
+    base: PropTypes.string,
+    md: PropTypes.string,
+  }),
   logoSizeUnscrolled: PropTypes.shape({
-    width: PropTypes.string,
-    height: PropTypes.string,
+    base: PropTypes.shape({
+      width: PropTypes.string,
+      height: PropTypes.string,
+    }),
+    md: PropTypes.shape({
+      width: PropTypes.string,
+      height: PropTypes.string,
+    }),
   }),
   logoSizeScrolled: PropTypes.shape({
-    width: PropTypes.string,
-    height: PropTypes.string,
+    base: PropTypes.shape({
+      width: PropTypes.string,
+      height: PropTypes.string,
+    }),
+    md: PropTypes.shape({
+      width: PropTypes.string,
+      height: PropTypes.string,
+    }),
   }),
   textSizes: PropTypes.shape({
     unscrolled: PropTypes.shape({
       base: PropTypes.string,
       md: PropTypes.string,
       lg: PropTypes.string,
-    }),
-    scrolled: PropTypes.shape({
-      base: PropTypes.string,
-      md: PropTypes.string,
-    }),
-  }),
-  logoTextDistance: PropTypes.shape({
-    unscrolled: PropTypes.shape({
-      base: PropTypes.string,
-      md: PropTypes.string,
     }),
     scrolled: PropTypes.shape({
       base: PropTypes.string,

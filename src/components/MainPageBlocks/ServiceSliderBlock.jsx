@@ -661,7 +661,7 @@ export default function ServiceSliderBlock({
 
   // Mobile-specific button classes (smaller, rounded left corners, less padding)
   const mobileButtonClass =
-    "flex px-2 py-1 my-1 rounded-l-md rounded-r-md shadow-lg transform origin-right transition-all duration-300 font-serif";
+    "flex px-2 py-1 my-1  items-center rounded-md shadow-lg transform origin-right transition-all duration-300 font-serif";
   const mobileActiveButtonClass = "scale-105 text-white";
   const mobileInactiveButtonClass = "bg-gray-600 text-white opacity-80";
 
@@ -694,11 +694,11 @@ export default function ServiceSliderBlock({
           </motion.div>
         </div>
         <div
-          className="absolute bottom-0 left-0 w-full h-[9.5vh] bg-black z-10 pointer-events-none"
+          className="absolute bottom-0 left-0 w-full h-[5.5vh] bg-black z-10 pointer-events-none"
           style={{ clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)" }}
         />
         {/*  ------------------  TOGGLE BUTTONS (SMALL)  ------------------ */}
-        <div className="absolute top-[2vh] left-0 right-0 z-30 flex flex-row justify-center items-center space-x-4 px-4">
+        <div className="absolute top-[3vh] -translate-y-1/2 inset-0 z-30 flex flex-row justify-center items-center space-x-4 px-4">
           <motion.button
             onClick={() =>
               readOnly
@@ -798,7 +798,7 @@ export default function ServiceSliderBlock({
             )}
           </motion.button>
         </div>
-        <div className="absolute inset-0 flex flex-col items-center justify-start pt-[15vh] p-2 z-20">
+        <div className="absolute top-0 inset-0 flex flex-col items-center justify-start pt-[5vh] p-2 z-20">
           {" "}
           {/* Adjusted pt for button row */}
           <AnimatePresence mode="wait">
@@ -808,7 +808,7 @@ export default function ServiceSliderBlock({
                   ? "commercial-services"
                   : "residential-services"
               }
-              className="grid grid-cols-2 gap-x-4 gap-y-8 w-full px-4" // Changed to grid-cols-2 and added gap-y, w-full, px-4
+              className="flex justify-items-cneter grid grid-cols-2 gap-x-2 gap-y-2 w-full " // Changed to grid-cols-2 and added gap-y, w-full, px-4
               variants={containerVariants}
               initial="initial"
               animate="enter"
@@ -854,7 +854,7 @@ export default function ServiceSliderBlock({
                         !readOnly &&
                         openIconModalForServiceItem(displayType, originalIndex)
                       }
-                      className={`relative overflow-hidden dark_button flex-col w-full h-28 flex items-center justify-center text-white text-[6vh] ${!readOnly ? "cursor-pointer" : "cursor-default"} ${getShadowClasses(localData.styling?.shadowVariant || "default")}`}
+                      className={`relative overflow-hidden dark_button flex-col h-16 w-16 flex items-center justify-center text-white text-[3vh] ${!readOnly ? "cursor-pointer" : "cursor-default"} ${getShadowClasses(localData.styling?.shadowVariant || "default")}`}
                       style={{
                         backgroundColor: localData.serviceItemConfig.bgColor,
                       }}

@@ -348,68 +348,57 @@ const BookingPreview = memo(
     }, [isMobile, readOnly]);
 
     const toggleFormVisibility = useCallback(() => {
-      console.log(
-        "Book Now button clicked - isMobile:",
-        isMobile,
-        "isAnimating:",
-        isAnimating,
-        "readOnly:",
-        readOnly,
-        "isFormVisible:",
-        isFormVisible
-      );
-
-      if (!isMobile || isAnimating || readOnly) return;
-
-      // Check if the form container ref exists
-      if (!formContainerRef.current) {
-        console.warn(
-          "Form container ref not found, cannot toggle form visibility"
-        );
-        return;
+      if (isMobile) {
+        // Only animate on mobile
+        if (!isFormVisible) {
+          // Ensure the form container is visible
+          if (formContainerRef.current) {
+            formContainerRef.current.style.display = "block";
+          }
+          // Animation to expand banner into form
+          if (bannerRef.current) {
+            gsap.to(bannerRef.current, {
+              height: "auto",
+              duration: 0.5,
+              ease: "power2.inOut",
+              onComplete: () => {
+                // Fade in form elements
+                if (formContainerRef.current) {
+                  gsap.fromTo(
+                    formContainerRef.current,
+                    { opacity: 0, y: 20 },
+                    { opacity: 1, y: 0, duration: 0.3 }
+                  );
+                }
+              },
+            });
+          }
+        } else {
+          // Animation to collapse form back to banner
+          if (formContainerRef.current) {
+            gsap.to(formContainerRef.current, {
+              opacity: 0,
+              y: 20,
+              duration: 0.3,
+              onComplete: () => {
+                if (bannerRef.current) {
+                  gsap.to(bannerRef.current, {
+                    height: "auto",
+                    duration: 0.5,
+                    ease: "power2.inOut",
+                    onComplete: () => {
+                      // Don't hide the form container, just reduce opacity
+                      formContainerRef.current.style.opacity = "0";
+                    },
+                  });
+                }
+              },
+            });
+          }
+        }
       }
-
-      console.log("Starting form toggle animation");
-      setIsAnimating(true);
-
-      if (!isFormVisible) {
-        // Show form
-        gsap.set(formContainerRef.current, {
-          visibility: "visible",
-          pointerEvents: "auto",
-        });
-        gsap.to(formContainerRef.current, {
-          opacity: 1,
-          scale: 1,
-          duration: 0.3,
-          ease: "power2.out",
-          onComplete: () => {
-            console.log("Form show animation complete");
-            setIsAnimating(false);
-            setIsFormVisible(true);
-          },
-        });
-      } else {
-        // Hide form
-        gsap.to(formContainerRef.current, {
-          opacity: 0,
-          scale: 0.95,
-          duration: 0.3,
-          ease: "power2.in",
-          onComplete: () => {
-            if (formContainerRef.current) {
-              gsap.set(formContainerRef.current, {
-                visibility: "hidden",
-                pointerEvents: "none",
-              });
-            }
-            console.log("Form hide animation complete");
-            setIsAnimating(false);
-            setIsFormVisible(false);
-          },
-        });
-      }
-    }, [isFormVisible, isMobile, isAnimating, readOnly]);
+      setIsFormVisible((prev) => !prev);
+    }, [isFormVisible, isMobile]);
 
     const handleChange = useCallback(
       (e) =>
@@ -533,18 +522,16 @@ const BookingPreview = memo(
           </div>
 
           <div ref={contentRef} className="relative z-20">
-            <div className="relative py-3 px-4 flex flex-col items-center z-30">
-              <div className="flex items-center justify-center w-full">
+            {/* Header Section: Logo, Text, Button - Centered and aligned */}
+            <div className="flex flex-col items-center justify-center w-full pt-4 pb-0 px-2 z-30">
+              <div className="flex flex-col items-center w-full space-y-2">
                 <img
                   src={getLogoDisplayUrl(logo)}
                   alt="logo"
-                  className="w-20 h-20 mr-4 drop-shadow-[0_1.2px_1.2px_rgba(255,30,0,0.8)]"
+                  className="w-16 h-16 mb-1 drop-shadow-[0_1.2px_1.2px_rgba(255,30,0,0.8)]"
                   style={{ filter: "invert(1)" }}
                 />
-                <div
-                  className="text-left drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"
-                  style={{ color: currentHeaderTextColor }}
-                >
+                <div className="flex flex-col items-center w-full">
                   {!readOnly ? (
                     <input
                       type="text"
@@ -552,19 +539,18 @@ const BookingPreview = memo(
                       onChange={(e) =>
                         handleVariantFieldChange("headerText", e.target.value)
                       }
-                      className="text-2xl md:text-3xl font-bold bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-400/50 rounded p-1 w-full placeholder-gray-300"
+                      className="text-xl font-bold bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-400/50 rounded p-0 w-full text-center placeholder-gray-300"
                       placeholder="Header Text"
                       style={{ color: currentHeaderTextColor }}
                     />
                   ) : (
                     <h2
-                      className="text-2xl md:text-3xl font-bold"
+                      className="text-xl font-bold text-center"
                       style={{ color: currentHeaderTextColor }}
                     >
                       {headerText}
                     </h2>
                   )}
-
                   {!readOnly ? (
                     <input
                       type="text"
@@ -572,97 +558,59 @@ const BookingPreview = memo(
                       onChange={(e) =>
                         handleFieldChange("phone", e.target.value)
                       }
-                      className="font-bold md:text-lg bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-400/50 rounded p-1 w-full mt-1 placeholder-gray-300"
+                      className="font-bold text-base bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-400/50 rounded p-0 w-full mt-1 text-center placeholder-gray-300"
                       placeholder="Phone Number"
                       style={{ color: currentHeaderTextColor }}
                     />
                   ) : (
                     <p
-                      className="font-bold md:text-lg mt-1"
+                      className="font-bold text-base mt-1 text-center"
                       style={{ color: currentHeaderTextColor }}
                     >
                       {phone}
                     </p>
                   )}
                 </div>
-              </div>
-
-              {/* Social Icons - always show in edit mode, or show based on config in readOnly mode */}
-              {socialLinks &&
-                socialLinks.length > 0 &&
-                (!readOnly || socialIconLocation === "above") && (
-                  <div className="flex justify-center space-x-12 py-4">
-                    {socialLinks.map((social, index) => {
-                      const IconComponent =
-                        socialIconComponents[social.platform.toLowerCase()];
-                      return (
-                        <a
-                          key={index}
-                          href={social.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block"
-                          onClick={(e) => {
-                            if (!readOnly && readOnly !== undefined)
-                              e.preventDefault();
-                          }}
-                        >
-                          <div className="bg-second-accent p-2 rounded-md transform transition-transform hover:scale-110">
-                            <IconComponent className="w-8 h-8 text-white" />
-                          </div>
-                        </a>
-                      );
-                    })}
-                  </div>
+                {isMobile && (
+                  <button
+                    ref={toggleButtonRef}
+                    onClick={toggleFormVisibility}
+                    disabled={isAnimating}
+                    className={`mt-3 mb-0 px-6 py-2 rounded-md shadow-lg transition-all duration-300 border-2 border-black font-bold w-full max-w-xs ${isAnimating ? "opacity-50" : "opacity-100"}`}
+                    style={{
+                      backgroundColor: currentButtonBgColor,
+                      color: currentButtonTextColor,
+                    }}
+                  >
+                    {isFormVisible ? (
+                      <div className="relative z-40 flex space-x-1 justify-center">
+                        <div className="w-2 h-2 rounded-full bg-black"></div>
+                        <div className="w-2 h-2 rounded-full bg-black"></div>
+                        <div className="w-2 h-2 rounded-full bg-black"></div>
+                      </div>
+                    ) : (
+                      <span className="relative z-40 text-md font-semibold">
+                        BOOK NOW
+                      </span>
+                    )}
+                  </button>
                 )}
-
-              {isMobile && (
-                <button
-                  ref={toggleButtonRef}
-                  onClick={toggleFormVisibility}
-                  disabled={isAnimating}
-                  className={`mt-2 px-6 py-2 rounded-md shadow-lg relative transition-all duration-300 ${isAnimating ? "opacity-50" : "opacity-100"} border-2 border-black font-bold`}
-                  style={{
-                    backgroundColor: currentButtonBgColor,
-                    color: currentButtonTextColor,
-                  }}
-                >
-                  {isFormVisible ? (
-                    <div className="relative z-40 flex space-x-1 justify-center">
-                      <div className="w-2 h-2 rounded-full bg-black"></div>
-                      <div className="w-2 h-2 rounded-full bg-black"></div>
-                      <div className="w-2 h-2 rounded-full bg-black"></div>
-                    </div>
-                  ) : (
-                    <span className="relative z-40 text-md font-semibold">
-                      BOOK NOW
-                    </span>
-                  )}
-                </button>
-              )}
+              </div>
             </div>
-
+            {/* Form container: no extra margin/padding when collapsed */}
             <div
               ref={formContainerRef}
-              className="w-full pb-2"
+              className={`w-full transition-all duration-500 md:max-h-none md:overflow-visible ${isMobile ? (isFormVisible ? "max-h-[1000px] overflow-visible pt-2 pb-2" : "max-h-0 overflow-hidden p-0 m-0") : "pt-2 pb-2"}`}
               style={{
-                // Let GSAP handle all visibility/animation, avoid CSS conflicts
-                opacity: readOnly ? 1 : isMobile && !isFormVisible ? 0 : 1,
-                transform: readOnly
-                  ? "scale(1)"
-                  : isMobile && !isFormVisible
-                    ? "scale(0.95)"
-                    : "scale(1)",
-                visibility: readOnly
-                  ? "visible"
-                  : isMobile && !isFormVisible
-                    ? "hidden"
-                    : "visible",
-                pointerEvents: readOnly
-                  ? "auto"
-                  : isMobile && !isFormVisible
-                    ? "none"
-                    : "auto",
+                ...(isMobile
+                  ? {}
+                  : {
+                      opacity: 1,
+                      transform: "scale(1)",
+                      visibility: "visible",
+                      pointerEvents: "auto",
+                    }),
+                backgroundColor: undefined,
               }}
             >
               {socialLinks &&
@@ -1999,7 +1947,7 @@ const CreativeBookingVariant = memo(
                                     e.target.value
                                   )
                                 }
-                                className="bg-transparent focus:bg-white/10 focus:ring-1 focus:ring-orange-400 rounded px-2 py-1 w-full outline-none text-orange-200"
+                                className="bg-transparent focus:bg-white/10 focus:ring-1 focus:ring-orange-400 rounded px-2 py-1 outline-none w-full text-orange-200"
                                 placeholder="Subtitle"
                               />
                             </>

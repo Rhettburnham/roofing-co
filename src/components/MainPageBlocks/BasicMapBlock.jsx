@@ -1,11 +1,4 @@
-import React, {
-  useRef,
-  useState,
-  useEffect,
-  useMemo,
-  useCallback,
-  memo,
-} from "react";
+import { useRef, useState, useEffect, memo } from "react";
 import { MapContainer, TileLayer, Marker, Circle, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -14,7 +7,6 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import * as FaIcons from "react-icons/fa";
 import IconSelectorModal from "../common/IconSelectorModal";
 import ThemeColorPicker from "../common/ThemeColorPicker";
-import PanelImagesController from "../common/PanelImagesController";
 import PropTypes from "prop-types";
 
 // Register ScrollTrigger plugin with GSAP
@@ -23,8 +15,8 @@ gsap.registerPlugin(ScrollTrigger);
 // Helper to get display URL from string path or {url, file} object
 const getDisplayUrl = (imageValue, defaultPath = null) => {
   if (!imageValue) return defaultPath;
-  if (typeof imageValue === 'string') return imageValue;
-  if (typeof imageValue === 'object' && imageValue.url) return imageValue.url;
+  if (typeof imageValue === "string") return imageValue;
+  if (typeof imageValue === "object" && imageValue.url) return imageValue.url;
   // If it's a File object directly (less common for this helper, but defensive)
   if (imageValue instanceof File) return URL.createObjectURL(imageValue);
   return defaultPath;
@@ -34,23 +26,26 @@ const getDisplayUrl = (imageValue, defaultPath = null) => {
 const initializeImageState = (imageConfig, defaultStaticPath) => {
   let file = null;
   let url = defaultStaticPath;
-  let name = defaultStaticPath.split('/').pop();
+  let name = defaultStaticPath.split("/").pop();
   let originalUrl = defaultStaticPath; // Default originalUrl is the static default path
 
-  if (typeof imageConfig === 'string') {
+  if (typeof imageConfig === "string") {
     url = imageConfig;
-    name = imageConfig.split('/').pop();
+    name = imageConfig.split("/").pop();
     originalUrl = imageConfig; // String path is the original
-  } else if (imageConfig && typeof imageConfig === 'object') {
+  } else if (imageConfig && typeof imageConfig === "object") {
     // Use provided url for display, which could be a blob or a path
     url = imageConfig.url || defaultStaticPath;
-    name = imageConfig.name || url.split('/').pop();
+    name = imageConfig.name || url.split("/").pop();
     file = imageConfig.file || null; // Preserve file if it exists (e.g. from active editing state)
-    
+
     // Determine originalUrl: prioritize existing originalUrl, then a non-blob url, then defaultStaticPath
     if (imageConfig.originalUrl) {
       originalUrl = imageConfig.originalUrl;
-    } else if (typeof imageConfig.url === 'string' && !imageConfig.url.startsWith('blob:')) {
+    } else if (
+      typeof imageConfig.url === "string" &&
+      !imageConfig.url.startsWith("blob:")
+    ) {
       originalUrl = imageConfig.url;
     } else {
       originalUrl = defaultStaticPath; // Fallback to static default if url is blob or missing
@@ -128,83 +123,83 @@ const MapInteractionHandler = memo(({ mapActive }) => {
 /* --------------------------------------------------
    READ-ONLY SUBCOMPONENTS
 -----------------------------------------------------*/
-const StatItem = memo(({ iconName, title, value }) => {
-  const IconComp = useMemo(
-    () => FaIcons[iconName] || FaIcons.FaQuestionCircle,
-    [iconName]
-  );
-  const [count, setCount] = useState(0);
-
-  useEffect(() => {
-    let startValue = 0;
-    let startTime = null;
-    const duration = 2000;
-    let animationFrameId = null;
-
-    const tick = (timestamp) => {
-      if (!startTime) startTime = timestamp;
-      const elapsed = timestamp - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const currentValue = Math.floor(
-        progress * (value - startValue) + startValue
-      );
-      setCount(currentValue);
-
-      if (progress < 1) {
-        animationFrameId = requestAnimationFrame(tick);
-      }
-    };
-
-    animationFrameId = requestAnimationFrame(tick);
-
-    return () => {
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-      }
-    };
-  }, [value]);
-
-  return (
-    <div className="flex flex-col items-center justify-center text-center">
-      <div className="flex flex-row justify-center items-center text-gray-50/80">
-        <IconComp className="w-full h-full" />
-        <p className="ml-2  font-semibold text-yellow-100">{count}</p>
-      </div>
-      <div className="flex gap-1">
-        <p className="whitespace-nowrap  font-semibold text-white mt-1">
-          {title}
-        </p>
-      </div>
-    </div>
-  );
-});
-
-const StatsPanel = memo(({ stats, readOnly, onStatTextChange, onStatIconClick, statsTextColor }) => {
+const StatsPanel = memo(function StatsPanel({
+  stats,
+  readOnly,
+  onStatTextChange,
+  onStatIconClick,
+  statsTextColor,
+}) {
   const displayStats = [...(stats || [])];
-  while (displayStats.length < 4 && !readOnly) { // Only add placeholders if not readOnly and less than 4, or always show 4 if readOnly and less than 4 initially
-      displayStats.push({ value: '0', title: 'New Stat', icon: 'FaAward' });
+  while (displayStats.length < 4 && !readOnly) {
+    // Only add placeholders if not readOnly and less than 4, or always show 4 if readOnly and less than 4 initially
+    displayStats.push({ value: "0", title: "New Stat", icon: "FaAward" });
   }
   const gridStats = displayStats.slice(0, 4);
-  const currentStatsTextColor = statsTextColor || '#FFFFFF';
+  const currentStatsTextColor = statsTextColor || "#FFFFFF";
 
   return (
-    <div className={`w-full h-full grid gap-1 md:gap-2 grid-cols-2 text-center p-1 md:p-2`}>
+    <div
+      className={`w-full h-full grid gap-1 md:gap-2 grid-cols-2 text-center p-1 md:p-2`}
+    >
       {gridStats.map((stat, index) => {
         const IconComponent = FaIcons[stat.icon] || FaIcons.FaAward;
         return (
-          <div key={stat.id || index} className="flex flex-col items-center justify-center bg-white/30 rounded-lg p-1 shadow-md h-full">
-            <div className={`p-1 rounded-full ${!readOnly ? 'cursor-pointer hover:bg-white/20' : ''} transition-colors`} onClick={() => !readOnly && onStatIconClick && onStatIconClick(index)} title={!readOnly ? "Click to change icon" : ""}>
-              <IconComponent className="w-8 h-8 md:w-6 md:h-6 md:mb-1" style={{color: currentStatsTextColor}} />
+          <div
+            key={stat.id || index}
+            className="flex flex-col items-center justify-center bg-white/30 rounded-lg p-1 shadow-md h-full"
+          >
+            <div
+              className={`p-1 rounded-full ${!readOnly ? "cursor-pointer hover:bg-white/20" : ""} transition-colors`}
+              onClick={() =>
+                !readOnly && onStatIconClick && onStatIconClick(index)
+              }
+              title={!readOnly ? "Click to change icon" : ""}
+            >
+              <IconComponent
+                className="w-8 h-8 md:w-6 md:h-6 md:mb-1"
+                style={{ color: currentStatsTextColor }}
+              />
             </div>
             {readOnly ? (
-                <div className="text-lg md:text-lg font-bold" style={{color: currentStatsTextColor}}>{stat.value}</div>
+              <div
+                className="text-lg md:text-lg font-bold"
+                style={{ color: currentStatsTextColor }}
+              >
+                {stat.value}
+              </div>
             ) : (
-                <input type="text" style={{color: currentStatsTextColor}} className="text-lg md:text-lg font-bold text-white bg-transparent text-center w-full focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 placeholder-gray-300" value={stat.value || ""} onChange={(e) => onStatTextChange && onStatTextChange(index, 'value', e.target.value)} placeholder="Value"/>
+              <input
+                type="text"
+                style={{ color: currentStatsTextColor }}
+                className="text-lg md:text-lg font-bold text-white bg-transparent text-center w-full focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 placeholder-gray-300"
+                value={stat.value || ""}
+                onChange={(e) =>
+                  onStatTextChange &&
+                  onStatTextChange(index, "value", e.target.value)
+                }
+                placeholder="Value"
+              />
             )}
             {readOnly ? (
-                <div className="text-[3vw] md:text-sm font-medium line-clamp-1" style={{color: currentStatsTextColor}}>{stat.title || stat.label}</div>
+              <div
+                className="text-[3vw] md:text-sm font-medium line-clamp-1"
+                style={{ color: currentStatsTextColor }}
+              >
+                {stat.title || stat.label}
+              </div>
             ) : (
-                <input type="text" style={{color: currentStatsTextColor}} className="text-[3vw] md:text-sm text-white font-medium line-clamp-1 bg-transparent text-center w-full focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 placeholder-gray-300" value={stat.title || stat.label || ""} onChange={(e) => onStatTextChange && onStatTextChange(index, 'title', e.target.value)} placeholder="Title"/>
+              <input
+                type="text"
+                style={{ color: currentStatsTextColor }}
+                className="text-[3vw] md:text-sm text-white font-medium line-clamp-1 bg-transparent text-center w-full focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 placeholder-gray-300"
+                value={stat.title || stat.label || ""}
+                onChange={(e) =>
+                  onStatTextChange &&
+                  onStatTextChange(index, "title", e.target.value)
+                }
+                placeholder="Title"
+              />
             )}
           </div>
         );
@@ -213,8 +208,17 @@ const StatsPanel = memo(({ stats, readOnly, onStatTextChange, onStatIconClick, s
   );
 });
 
+StatsPanel.displayName = "StatsPanel";
+StatsPanel.propTypes = {
+  stats: PropTypes.array,
+  readOnly: PropTypes.bool,
+  onStatTextChange: PropTypes.func,
+  onStatIconClick: PropTypes.func,
+  statsTextColor: PropTypes.string,
+};
+
 // Window strings component
-const WindowStrings = memo(({ isVisible }) => {
+const WindowStrings = memo(function WindowStrings({ isVisible }) {
   const leftRef = useRef(null);
   const rightRef = useRef(null);
 
@@ -284,19 +288,20 @@ const WindowStrings = memo(({ isVisible }) => {
   );
 });
 
-// Removed `max-h-[75vh] overflow-auto` to allow full height on smaller screens and avoid vertical scrolling.
-function BasicMapPreview({ 
-  mapData, 
-  readOnly = true, 
-  onInlineChange, 
-  onStatTextChange, 
-  onStatIconClick, 
-  onServiceHourChange
-}) {
-  if (!mapData) {
-    return <p>No map data found.</p>;
-  }
+WindowStrings.displayName = "WindowStrings";
+WindowStrings.propTypes = {
+  isVisible: PropTypes.bool.isRequired,
+};
 
+// Removed `max-h-[75vh] overflow-auto` to allow full height on smaller screens and avoid vertical scrolling.
+function BasicMapPreview({
+  mapData,
+  readOnly = true,
+  onInlineChange,
+  onStatTextChange,
+  onStatIconClick,
+  onServiceHourChange,
+}) {
   const [isServiceHoursVisible, setIsServiceHoursVisible] = useState(false);
   const [isSmallScreen, setIsSmallScreen] = useState(
     typeof window !== "undefined" ? window.innerWidth <= 768 : false
@@ -304,6 +309,10 @@ function BasicMapPreview({
   const [mapActive, setMapActive] = useState(false);
   const titleRef = useRef(null);
   const sectionRef = useRef(null);
+
+  if (!mapData) {
+    return <p>No map data found.</p>;
+  }
 
   const {
     center,
@@ -321,7 +330,7 @@ function BasicMapPreview({
     statsTextColor,
     showHoursButtonText,
     hideHoursButtonText,
-    styling = { desktopHeightVH: 30, mobileHeightVW: 40 }
+    styling = { desktopHeightVH: 30, mobileHeightVW: 40 },
   } = mapData;
 
   useEffect(() => {
@@ -362,7 +371,7 @@ function BasicMapPreview({
         scrollTrigger: {
           id: "titleAnimation",
           trigger: sectionRef.current,
-          start: "bottom 70%", 
+          start: "bottom 70%",
           toggleActions: "play none none none",
           once: true,
         },
@@ -380,7 +389,7 @@ function BasicMapPreview({
         scrollTrigger: {
           id: "titleAnimation",
           trigger: sectionRef.current,
-          start: "top 40%", 
+          start: "top 40%",
           toggleActions: "play none none none",
           once: true,
         },
@@ -408,22 +417,32 @@ function BasicMapPreview({
               className={`${idx % 2 === 0 ? "bg-gray-50" : "bg-white"} border-b border-gray-300`}
             >
               <td className="w-1/2 py-[0.5vh] md:py-[.5vh] px-2 md:px-4 text-[2.8vw] md:text-sm font-medium text-left border-r border-gray-300">
-                {readOnly ? item.day : (
-                  <input 
-                    type="text" 
-                    value={item.day || ''}
-                    onChange={(e) => onServiceHourChange && onServiceHourChange(idx, 'day', e.target.value)}
+                {readOnly ? (
+                  item.day
+                ) : (
+                  <input
+                    type="text"
+                    value={item.day || ""}
+                    onChange={(e) =>
+                      onServiceHourChange &&
+                      onServiceHourChange(idx, "day", e.target.value)
+                    }
                     className="bg-transparent w-full focus:outline-none focus:ring-1 focus:ring-blue-500 rounded p-0.5 placeholder-gray-400"
                     placeholder="Day"
                   />
                 )}
               </td>
               <td className="w-1/2 py-[0.5vh] md:py-[.5vh] px-2 md:px-4 text-[2.8vw] md:text-sm text-gray-800 text-left">
-                {readOnly ? item.time : (
-                  <input 
-                    type="text" 
-                    value={item.time || ''}
-                    onChange={(e) => onServiceHourChange && onServiceHourChange(idx, 'time', e.target.value)}
+                {readOnly ? (
+                  item.time
+                ) : (
+                  <input
+                    type="text"
+                    value={item.time || ""}
+                    onChange={(e) =>
+                      onServiceHourChange &&
+                      onServiceHourChange(idx, "time", e.target.value)
+                    }
                     className="bg-transparent w-full focus:outline-none focus:ring-1 focus:ring-blue-500 rounded p-0.5 placeholder-gray-400"
                     placeholder="Time"
                   />
@@ -436,29 +455,29 @@ function BasicMapPreview({
     </div>
   );
 
-  const currentBannerBgColor = bannerBackgroundColor || '#1f2937';
-  const currentBannerTextColor = bannerTextColor || '#FFFFFF';
+  const currentBannerBgColor = bannerBackgroundColor || "#1f2937";
+  const currentBannerTextColor = bannerTextColor || "#FFFFFF";
   const currentShowHoursText = showHoursButtonText || "Show Hours";
   const currentHideHoursText = hideHoursButtonText || "Hide Hours";
 
   // Calculate dynamic height based on styling
-  const dynamicMapHeight = isSmallScreen 
-    ? `${styling.mobileHeightVW}vw` 
+  const dynamicMapHeight = isSmallScreen
+    ? `${styling.mobileHeightVW || 60}vw`
     : `${styling.desktopHeightVH}vh`;
 
   return (
     <section className="overflow-hidden" ref={sectionRef}>
-      <div className="py-4 px-[4vw]">
-        <div className="relative flex flex-col md:flex-row gap-4 px-10 md:px-6 md:justify-between w-full" style={{ height: dynamicMapHeight }}> 
+      <div className="py-4 px-2 md:px-[4vw]">
+        <div className="relative flex flex-col md:flex-row gap-2 md:gap-4 px-2 md:px-10 md:justify-between w-full">
           {/* Left: Map */}
-          <div className="flex flex-col w-full md:w-[55%]">
-            <div className="relative h-full w-full z-10"> {/* Changed to full height */}
+          <div className="flex flex-col w-full md:w-[55%] min-h-[200px]">
+            <div className="relative w-full aspect-[4/3] min-h-[200px] md:h-full z-10 pt-8 md:pt-0">
               <div className="w-full h-full rounded-xl overflow-hidden shadow-lg border border-gray-300 relative">
                 {/* Title with animation - conditionally editable - MOVED HERE */}
                 {readOnly ? (
                   <h1
                     ref={titleRef}
-                    className="absolute top-2 left-1 text-[2.5vh] md:text-[2.5vh] font-normal text-white font-serif title-animation z-20 p-2 bg-banner bg-opacity-30 pl-6 -ml-4 rounded"
+                    className="absolute top-2 left-1 text-[2.5vh] md:text-[2.5vh] font-normal text-white font-serif title-animation z-30 p-2 bg-banner bg-opacity-30 pl-6 -ml-4 rounded"
                   >
                     {title || "Are we in your area?"}
                   </h1>
@@ -466,11 +485,11 @@ function BasicMapPreview({
                   <input
                     type="text"
                     ref={titleRef}
-                    className="absolute top-2 left-1 text-[2.5vh] md:text-[3vh] font-normal text-white font-serif z-20 p-2 bg-banner bg-opacity-30 pl-6 -ml-4 focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded placeholder-gray-300"
+                    className="absolute top-2 left-1 text-[2.5vh] md:text-[3vh] font-normal text-white font-serif z-30 p-2 bg-banner bg-opacity-30 pl-6 -ml-4 focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded placeholder-gray-300"
                     value={title || ""}
-                    onChange={(e) => onInlineChange('title', e.target.value)}
+                    onChange={(e) => onInlineChange("title", e.target.value)}
                     placeholder="Section Title"
-                    style={{mixBlendMode: 'difference'}} // Helps with visibility over varied map parts
+                    style={{ mixBlendMode: "difference" }} // Helps with visibility over varied map parts
                   />
                 )}
                 <MapContainer
@@ -509,32 +528,45 @@ function BasicMapPreview({
                   </div>
                 )}
                 {/* Bottom overlay: address + phone - conditionally editable */}
-                <div className="absolute bottom-0 w-full bg-banner text-white  z-10 py-2 px-3 flex justify-between items-center" style={{backgroundColor: currentBannerBgColor, color: currentBannerTextColor}}>
+                <div
+                  className="absolute bottom-0 w-full bg-banner text-white  z-10 py-2 px-3 flex justify-between items-center"
+                  style={{
+                    backgroundColor: currentBannerBgColor,
+                    color: currentBannerTextColor,
+                  }}
+                >
                   {readOnly ? (
                     <>
                       <div className=" text-[2.5vw] md:text-[2.3vh] leading-tight text-left">
                         {address}
                       </div>
                       <div className="text-[2.5vw] md:text-[2vh] text-white font-semibold leading-tight text-right">
-                        <a href={`tel:${telephone?.replace(/[^0-9]/g, "")}`} style={{color: currentBannerTextColor}}>
+                        <a
+                          href={`tel:${telephone?.replace(/[^0-9]/g, "")}`}
+                          style={{ color: currentBannerTextColor }}
+                        >
                           {telephone}
                         </a>
                       </div>
                     </>
                   ) : (
                     <>
-                      <input 
+                      <input
                         type="text"
                         className="bg-transparent font-semibold text-[2.5vw] md:text-[2vh] leading-tight text-left w-3/5 focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 text-white placeholder-gray-300"
                         value={address || ""}
-                        onChange={(e) => onInlineChange('address', e.target.value)}
+                        onChange={(e) =>
+                          onInlineChange("address", e.target.value)
+                        }
                         placeholder="Address"
                       />
-                      <input 
+                      <input
                         type="text"
                         className="bg-transparent text-[2.5vw] md:text-[2vh] text-white font-semibold leading-tight text-right w-2/5 focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 placeholder-gray-300"
                         value={telephone || ""}
-                        onChange={(e) => onInlineChange('telephone', e.target.value)}
+                        onChange={(e) =>
+                          onInlineChange("telephone", e.target.value)
+                        }
                         placeholder="Telephone"
                       />
                     </>
@@ -543,36 +575,47 @@ function BasicMapPreview({
               </div>
             </div>
           </div>
-          {/* Right: Stats + Service Hours - Stats conditionally editable */} 
-          <div className="flex flex-col w-full md:w-[43%]">
+          {/* Right: Stats + Service Hours - Stats conditionally editable */}
+          <div className="flex flex-col w-full md:w-[43%] min-h-[300px] mt-4 md:mt-0">
             <button
               type="button"
               onClick={() => setIsServiceHoursVisible(!isServiceHoursVisible)}
-              className="absolute dark_button bg-gray-700 rounded-t-xl py-1 md:py-2 px-4 flex justify-end items-center w-full text-white transition-all duration-300 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] font-serif z-30 relative"
+              className="relative md:absolute dark_button bg-gray-700 rounded-t-xl py-1 md:py-2 px-4 flex justify-end items-center w-full text-white transition-all duration-300 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] font-serif z-30"
               style={{ willChange: "transform" }}
             >
               <span className="font-serif text-[2vh]">
-                {isServiceHoursVisible ? currentHideHoursText : currentShowHoursText}
+                {isServiceHoursVisible
+                  ? currentHideHoursText
+                  : currentShowHoursText}
               </span>
             </button>
-            <div 
-              className="relative h-full rounded-b-xl overflow-hidden" // Changed to full height
+            <div
+              className="relative h-full rounded-b-xl overflow-hidden min-h-[300px]" // Changed to full height
             >
-              <WindowStrings
-                isVisible={isServiceHoursVisible}
-              />
+              <WindowStrings isVisible={isServiceHoursVisible} />
               {/* Stats background and content - conditionally editable stats */}
               <div className="absolute inset-0 z-10">
                 <div className="absolute inset-0">
                   <img
-                    src={getDisplayUrl(statsBackgroundImage, "/assets/images/stats_background.jpg")}
+                    src={getDisplayUrl(
+                      statsBackgroundImage,
+                      "/assets/images/stats_background.jpg"
+                    )}
                     alt="Stats BG"
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-black opacity-20"></div>
                 </div>
-                <div className={`relative w-full h-full flex items-center justify-center overflow-hidden ${readOnly ? '' : 'p-1 md:p-2'}`}> 
-                  <StatsPanel stats={stats} readOnly={readOnly} onStatTextChange={onStatTextChange} onStatIconClick={onStatIconClick} statsTextColor={statsTextColor} />
+                <div
+                  className={`relative w-full h-full flex items-center justify-center overflow-hidden ${readOnly ? "" : "p-1 md:p-2"}`}
+                >
+                  <StatsPanel
+                    stats={stats}
+                    readOnly={readOnly}
+                    onStatTextChange={onStatTextChange}
+                    onStatIconClick={onStatIconClick}
+                    statsTextColor={statsTextColor}
+                  />
                 </div>
               </div>
 
@@ -596,69 +639,28 @@ function BasicMapPreview({
   );
 }
 
+BasicMapPreview.propTypes = {
+  mapData: PropTypes.object,
+  readOnly: PropTypes.bool,
+  onInlineChange: PropTypes.func,
+  onStatTextChange: PropTypes.func,
+  onStatIconClick: PropTypes.func,
+  onServiceHourChange: PropTypes.func,
+};
+
 /* --------------------------------------------------
    EDITOR SUBCOMPONENTS
 -----------------------------------------------------*/
-function StatItemEditor({ stat, onChange, onRemove }) {
-  const IconComp = FaIcons[stat.icon] || FaIcons.FaQuestionCircle;
-
-  return (
-    <div className="relative bg-white p-2 rounded mb-2 w-[90%] md:w-[80%]">
-      <button
-        onClick={onRemove}
-        className="absolute top-2 right-2 bg-red-600 text-white text-xs px-2 py-1 rounded"
-      >
-        Remove
-      </button>
-      <div className="flex items-center space-x-3">
-        <IconComp className="text-[7vh] text-gray-800" />
-        <div>
-          <p className="text-base md:text-xl font-semibold text-yellow-600">
-            {stat.value}
-          </p>
-          <p className="text-sm font-semibold text-black">{stat.title}</p>
-        </div>
-      </div>
-      <div className="mt-2 border-t pt-2">
-        <label className="block text-xs mb-1">
-          Title:
-          <input
-            type="text"
-            className="w-full bg-gray-200 rounded px-2 py-1"
-            value={stat.title}
-            onChange={(e) => onChange({ ...stat, title: e.target.value })}
-          />
-        </label>
-        <label className="block text-xs mb-1">
-          Value:
-          <input
-            type="number"
-            className="w-full bg-gray-200 rounded px-2 py-1"
-            value={stat.value}
-            onChange={(e) =>
-              onChange({ ...stat, value: parseInt(e.target.value, 10) })
-            }
-          />
-        </label>
-        <label className="block text-xs mb-1">
-          Icon (e.g. FaUsers):
-          <input
-            type="text"
-            className="w-full bg-gray-200 rounded px-2 py-1"
-            value={stat.icon}
-            onChange={(e) => onChange({ ...stat, icon: e.target.value })}
-          />
-        </label>
-      </div>
-    </div>
-  );
-}
 
 // =============================================
 // Control Components for Tabs
 // =============================================
 
-const BasicMapColorControls = ({ currentData, onControlsChange, themeColors }) => {
+const BasicMapColorControls = ({
+  currentData,
+  onControlsChange,
+  themeColors,
+}) => {
   const handleColorUpdate = (fieldName, colorValue) => {
     onControlsChange({ ...currentData, [fieldName]: colorValue });
   };
@@ -667,25 +669,31 @@ const BasicMapColorControls = ({ currentData, onControlsChange, themeColors }) =
     <div className="p-3 space-y-4">
       <ThemeColorPicker
         label="Banner Text Color:"
-        currentColorValue={currentData.bannerTextColor || '#FFFFFF'}
+        currentColorValue={currentData.bannerTextColor || "#FFFFFF"}
         themeColors={themeColors}
-        onColorChange={(fieldName, value) => handleColorUpdate('bannerTextColor', value)}
+        onColorChange={(fieldName, value) =>
+          handleColorUpdate("bannerTextColor", value)
+        }
         fieldName="bannerTextColor"
         className="text-xs"
       />
       <ThemeColorPicker
         label="Banner Background:"
-        currentColorValue={currentData.bannerBackgroundColor || '#1f2937'}
+        currentColorValue={currentData.bannerBackgroundColor || "#1f2937"}
         themeColors={themeColors}
-        onColorChange={(fieldName, value) => handleColorUpdate('bannerBackgroundColor', value)}
+        onColorChange={(fieldName, value) =>
+          handleColorUpdate("bannerBackgroundColor", value)
+        }
         fieldName="bannerBackgroundColor"
         className="text-xs"
       />
       <ThemeColorPicker
         label="Stats Panel Text Color:"
-        currentColorValue={currentData.statsTextColor || '#FFFFFF'}
+        currentColorValue={currentData.statsTextColor || "#FFFFFF"}
         themeColors={themeColors}
-        onColorChange={(fieldName, value) => handleColorUpdate('statsTextColor', value)}
+        onColorChange={(fieldName, value) =>
+          handleColorUpdate("statsTextColor", value)
+        }
         fieldName="statsTextColor"
         className="text-xs"
       />
@@ -694,129 +702,185 @@ const BasicMapColorControls = ({ currentData, onControlsChange, themeColors }) =
 };
 
 const BasicMapStylingControls = ({ currentData, onControlsChange }) => {
-  const handleFieldChange = (field, value, isCoordinate = false, coordIndex = 0) => {
+  const handleFieldChange = (
+    field,
+    value,
+    isCoordinate = false,
+    coordIndex = 0
+  ) => {
     if (isCoordinate) {
-      const newCenter = [...(currentData.center || [0,0])];
+      const newCenter = [...(currentData.center || [0, 0])];
       newCenter[coordIndex] = parseFloat(value) || 0;
       onControlsChange({ ...currentData, center: newCenter });
-    } else if (field === 'zoomLevel' || field === 'circleRadius') {
+    } else if (field === "zoomLevel" || field === "circleRadius") {
       onControlsChange({ ...currentData, [field]: parseInt(value, 10) || 0 });
-    } else if (field === 'styling') {
-      onControlsChange({ ...currentData, styling: { ...currentData.styling, ...value } });
+    } else if (field === "styling") {
+      onControlsChange({
+        ...currentData,
+        styling: { ...currentData.styling, ...value },
+      });
     } else {
       onControlsChange({ ...currentData, [field]: value });
     }
   };
 
-  const currentStyling = currentData.styling || { desktopHeightVH: 30, mobileHeightVW: 40 };
+  const currentStyling = currentData.styling || {
+    desktopHeightVH: 30,
+    mobileHeightVW: 40,
+  };
 
   return (
     <div className="p-3 space-y-4">
       <div>
-        <h3 className="text-base font-medium text-gray-700 mb-3">Map Dimensions</h3>
+        <h3 className="text-base font-medium text-gray-700 mb-3">
+          Map Dimensions
+        </h3>
         <div className="grid grid-cols-2 gap-3">
           <label className="block text-sm">
-            <span className="font-medium text-gray-600 block mb-1">Desktop Height (vh):</span>
-            <input 
-              type="number" 
-              min="20" 
-              max="80" 
-              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm" 
-              value={currentStyling.desktopHeightVH || 30} 
-              onChange={(e) => handleFieldChange('styling', { desktopHeightVH: parseInt(e.target.value) || 30 })}
+            <span className="font-medium text-gray-600 block mb-1">
+              Desktop Height (vh):
+            </span>
+            <input
+              type="number"
+              min="20"
+              max="80"
+              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              value={currentStyling.desktopHeightVH || 30}
+              onChange={(e) =>
+                handleFieldChange("styling", {
+                  desktopHeightVH: parseInt(e.target.value) || 30,
+                })
+              }
             />
           </label>
           <label className="block text-sm">
-            <span className="font-medium text-gray-600 block mb-1">Mobile Height (vw):</span>
-            <input 
-              type="number" 
-              min="30" 
-              max="80" 
-              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm" 
-              value={currentStyling.mobileHeightVW || 40} 
-              onChange={(e) => handleFieldChange('styling', { mobileHeightVW: parseInt(e.target.value) || 40 })}
+            <span className="font-medium text-gray-600 block mb-1">
+              Mobile Height (vw):
+            </span>
+            <input
+              type="number"
+              min="30"
+              max="80"
+              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              value={currentStyling.mobileHeightVW || 40}
+              onChange={(e) =>
+                handleFieldChange("styling", {
+                  mobileHeightVW: parseInt(e.target.value) || 40,
+                })
+              }
             />
           </label>
         </div>
       </div>
 
       <div>
-        <h3 className="text-base font-medium text-gray-700 mb-3">Map View Settings</h3>
+        <h3 className="text-base font-medium text-gray-700 mb-3">
+          Map View Settings
+        </h3>
         <div className="grid grid-cols-2 gap-x-3 gap-y-2">
           <label className="block text-sm">
-            <span className="font-medium text-gray-600 block mb-1">Latitude:</span>
-            <input 
-              type="number" 
-              step="any" 
-              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm" 
-              value={currentData.center?.[0] || 0} 
-              onChange={(e) => handleFieldChange('center', e.target.value, true, 0)}
+            <span className="font-medium text-gray-600 block mb-1">
+              Latitude:
+            </span>
+            <input
+              type="number"
+              step="any"
+              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              value={currentData.center?.[0] || 0}
+              onChange={(e) =>
+                handleFieldChange("center", e.target.value, true, 0)
+              }
             />
           </label>
           <label className="block text-sm">
-            <span className="font-medium text-gray-600 block mb-1">Longitude:</span>
-            <input 
-              type="number" 
-              step="any" 
-              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm" 
-              value={currentData.center?.[1] || 0} 
-              onChange={(e) => handleFieldChange('center', e.target.value, true, 1)}
+            <span className="font-medium text-gray-600 block mb-1">
+              Longitude:
+            </span>
+            <input
+              type="number"
+              step="any"
+              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              value={currentData.center?.[1] || 0}
+              onChange={(e) =>
+                handleFieldChange("center", e.target.value, true, 1)
+              }
             />
           </label>
           <label className="block text-sm">
-            <span className="font-medium text-gray-600 block mb-1">Zoom Level:</span>
-            <input 
-              type="number" 
-              min="1" 
-              max="20" 
-              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm" 
-              value={currentData.zoomLevel || 5} 
-              onChange={(e) => handleFieldChange('zoomLevel', e.target.value)}
+            <span className="font-medium text-gray-600 block mb-1">
+              Zoom Level:
+            </span>
+            <input
+              type="number"
+              min="1"
+              max="20"
+              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              value={currentData.zoomLevel || 5}
+              onChange={(e) => handleFieldChange("zoomLevel", e.target.value)}
             />
           </label>
           <label className="block text-sm">
-            <span className="font-medium text-gray-600 block mb-1">Circle Radius (m):</span>
-            <input 
-              type="number" 
-              min="0" 
-              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm" 
-              value={currentData.circleRadius || 0} 
-              onChange={(e) => handleFieldChange('circleRadius', e.target.value)}
+            <span className="font-medium text-gray-600 block mb-1">
+              Circle Radius (m):
+            </span>
+            <input
+              type="number"
+              min="0"
+              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              value={currentData.circleRadius || 0}
+              onChange={(e) =>
+                handleFieldChange("circleRadius", e.target.value)
+              }
             />
           </label>
         </div>
       </div>
 
       <div>
-        <h3 className="text-base font-medium text-gray-700 mb-3">Button Text</h3>
+        <h3 className="text-base font-medium text-gray-700 mb-3">
+          Button Text
+        </h3>
         <div className="grid grid-cols-2 gap-3">
           <label className="block text-sm">
-            <span className="font-medium text-gray-600 block mb-1">Show Hours Text:</span>
-            <input 
-              type="text" 
-              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm" 
-              placeholder="Show Hours" 
-              value={currentData.showHoursButtonText || ''} 
-              onChange={(e) => handleFieldChange('showHoursButtonText', e.target.value)}
+            <span className="font-medium text-gray-600 block mb-1">
+              Show Hours Text:
+            </span>
+            <input
+              type="text"
+              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              placeholder="Show Hours"
+              value={currentData.showHoursButtonText || ""}
+              onChange={(e) =>
+                handleFieldChange("showHoursButtonText", e.target.value)
+              }
             />
           </label>
           <label className="block text-sm">
-            <span className="font-medium text-gray-600 block mb-1">Hide Hours Text:</span>
-            <input 
-              type="text" 
-              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm" 
-              placeholder="Hide Hours" 
-              value={currentData.hideHoursButtonText || ''} 
-              onChange={(e) => handleFieldChange('hideHoursButtonText', e.target.value)}
+            <span className="font-medium text-gray-600 block mb-1">
+              Hide Hours Text:
+            </span>
+            <input
+              type="text"
+              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              placeholder="Hide Hours"
+              value={currentData.hideHoursButtonText || ""}
+              onChange={(e) =>
+                handleFieldChange("hideHoursButtonText", e.target.value)
+              }
             />
           </label>
         </div>
       </div>
 
       <div>
-        <h3 className="text-base font-medium text-gray-700 mb-3">Stats Management</h3>
+        <h3 className="text-base font-medium text-gray-700 mb-3">
+          Stats Management
+        </h3>
         <div className="space-y-2">
-          <p className="text-sm text-gray-600">Stats can be edited directly in the preview. Maximum 4 stats allowed.</p>
+          <p className="text-sm text-gray-600">
+            Stats can be edited directly in the preview. Maximum 4 stats
+            allowed.
+          </p>
           <div className="text-sm text-gray-500">
             Current stats: {(currentData.stats || []).length}/4
           </div>
@@ -844,9 +908,16 @@ function BasicMapBlock({
     const initialConfig = mapData || {};
     let centerArray = [34.0522, -118.2437]; // Default center
     if (initialConfig.center) {
-      if (Array.isArray(initialConfig.center) && initialConfig.center.length === 2) {
+      if (
+        Array.isArray(initialConfig.center) &&
+        initialConfig.center.length === 2
+      ) {
         centerArray = initialConfig.center;
-      } else if (typeof initialConfig.center === 'object' && initialConfig.center.lat !== undefined && initialConfig.center.lng !== undefined) {
+      } else if (
+        typeof initialConfig.center === "object" &&
+        initialConfig.center.lat !== undefined &&
+        initialConfig.center.lng !== undefined
+      ) {
         centerArray = [initialConfig.center.lat, initialConfig.center.lng];
       }
     }
@@ -858,16 +929,34 @@ function BasicMapBlock({
       circleRadius: initialConfig.circleRadius || 5000,
       address: initialConfig.address || "123 Main St, Anytown, USA",
       telephone: initialConfig.telephone || "(555) 123-4567",
-      serviceHours: (initialConfig.serviceHours || []).map(sh => ({ ...sh, id: sh.id || `sh_${Math.random().toString(36).substr(2, 5)}` })),
-      stats: (initialConfig.stats || []).map((st, idx) => ({ ...st, id: st.id || `stat_${idx}_${Date.now()}`, icon: st.icon || 'FaAward' })).slice(0,4),
-      markerIcon: initializeImageState(initialConfig.markerIcon, "/assets/images/hero/clipped.png"),
-      statsBackgroundImage: initializeImageState(initialConfig.statsBackgroundImage, "/assets/images/stats_background.jpg"),
-      bannerTextColor: initialConfig.bannerTextColor || '#FFFFFF',
-      bannerBackgroundColor: initialConfig.bannerBackgroundColor || '#1f2937',
-      statsTextColor: initialConfig.statsTextColor || '#FFFFFF',
+      serviceHours: (initialConfig.serviceHours || []).map((sh) => ({
+        ...sh,
+        id: sh.id || `sh_${Math.random().toString(36).substr(2, 5)}`,
+      })),
+      stats: (initialConfig.stats || [])
+        .map((st, idx) => ({
+          ...st,
+          id: st.id || `stat_${idx}_${Date.now()}`,
+          icon: st.icon || "FaAward",
+        }))
+        .slice(0, 4),
+      markerIcon: initializeImageState(
+        initialConfig.markerIcon,
+        "/assets/images/hero/clipped.png"
+      ),
+      statsBackgroundImage: initializeImageState(
+        initialConfig.statsBackgroundImage,
+        "/assets/images/stats_background.jpg"
+      ),
+      bannerTextColor: initialConfig.bannerTextColor || "#FFFFFF",
+      bannerBackgroundColor: initialConfig.bannerBackgroundColor || "#1f2937",
+      statsTextColor: initialConfig.statsTextColor || "#FFFFFF",
       showHoursButtonText: initialConfig.showHoursButtonText || "Show Hours",
       hideHoursButtonText: initialConfig.hideHoursButtonText || "Hide Hours",
-      styling: initialConfig.styling || { desktopHeightVH: 30, mobileHeightVW: 40 }
+      styling: initialConfig.styling || {
+        desktopHeightVH: 30,
+        mobileHeightVW: 40,
+      },
     };
   });
 
@@ -877,74 +966,145 @@ function BasicMapBlock({
 
   useEffect(() => {
     if (mapData) {
-      setLocalMapData(prevLocal => {
+      setLocalMapData((prevLocal) => {
         const incomingData = { ...mapData }; // Clone mapData to safely modify
 
         // Transform center if it's an object in incomingData and not an array
-        if (incomingData.center && typeof incomingData.center === 'object' && !Array.isArray(incomingData.center)) {
-            if (incomingData.center.lat !== undefined && incomingData.center.lng !== undefined) {
-                incomingData.center = [incomingData.center.lat, incomingData.center.lng];
-            } else {
-                // Malformed or incomplete center object, retain previous or default by deleting from incoming
-                // so prevLocal.center (which is an array) is used.
-                delete incomingData.center; 
-            }
-        } else if (Array.isArray(incomingData.center) && incomingData.center.length !== 2) {
-            // If it is an array but not a valid coordinate pair, remove it to use prevLocal.center
-             delete incomingData.center;
+        if (
+          incomingData.center &&
+          typeof incomingData.center === "object" &&
+          !Array.isArray(incomingData.center)
+        ) {
+          if (
+            incomingData.center.lat !== undefined &&
+            incomingData.center.lng !== undefined
+          ) {
+            incomingData.center = [
+              incomingData.center.lat,
+              incomingData.center.lng,
+            ];
+          } else {
+            // Malformed or incomplete center object, retain previous or default by deleting from incoming
+            // so prevLocal.center (which is an array) is used.
+            delete incomingData.center;
+          }
+        } else if (
+          Array.isArray(incomingData.center) &&
+          incomingData.center.length !== 2
+        ) {
+          // If it is an array but not a valid coordinate pair, remove it to use prevLocal.center
+          delete incomingData.center;
         }
-
 
         const newMarkerIcon = initializeImageState(
-            incomingData.markerIcon, 
-            prevLocal.markerIcon?.originalUrl || "/assets/images/hero/clipped.png" // Use existing originalUrl or static default
+          incomingData.markerIcon,
+          prevLocal.markerIcon?.originalUrl || "/assets/images/hero/clipped.png" // Use existing originalUrl or static default
         );
         const newStatsBg = initializeImageState(
-            incomingData.statsBackgroundImage, 
-            prevLocal.statsBackgroundImage?.originalUrl || "/assets/images/stats_background.jpg" // Use existing originalUrl or static default
+          incomingData.statsBackgroundImage,
+          prevLocal.statsBackgroundImage?.originalUrl ||
+            "/assets/images/stats_background.jpg" // Use existing originalUrl or static default
         );
-        
-        if (prevLocal.markerIcon?.file && prevLocal.markerIcon.url?.startsWith('blob:') && prevLocal.markerIcon.url !== newMarkerIcon.url) {
-            URL.revokeObjectURL(prevLocal.markerIcon.url);
+
+        if (
+          prevLocal.markerIcon?.file &&
+          prevLocal.markerIcon.url?.startsWith("blob:") &&
+          prevLocal.markerIcon.url !== newMarkerIcon.url
+        ) {
+          URL.revokeObjectURL(prevLocal.markerIcon.url);
         }
-        if (prevLocal.statsBackgroundImage?.file && prevLocal.statsBackgroundImage.url?.startsWith('blob:') && prevLocal.statsBackgroundImage.url !== newStatsBg.url) {
-            URL.revokeObjectURL(prevLocal.statsBackgroundImage.url);
+        if (
+          prevLocal.statsBackgroundImage?.file &&
+          prevLocal.statsBackgroundImage.url?.startsWith("blob:") &&
+          prevLocal.statsBackgroundImage.url !== newStatsBg.url
+        ) {
+          URL.revokeObjectURL(prevLocal.statsBackgroundImage.url);
         }
 
-        const newStatsList = (incomingData.stats || prevLocal.stats || []).map((statFromProp, index) => {
-          const localStat = prevLocal.stats?.find(s => s.id === statFromProp.id) || prevLocal.stats?.[index] || {};
-          const mergedStat = {
-            ...localStat,
-            ...statFromProp,
-            id: statFromProp.id || localStat.id || `stat_update_${index}_${Date.now()}`,
-            icon: statFromProp.icon || localStat.icon || 'FaAward',
-          };
-          // Prioritize local unsaved changes for value and title if they differ from incoming prop and are not empty
-          if (localStat.value !== statFromProp.value && localStat.value !== (statFromProp.value || "")) mergedStat.value = localStat.value;
-          else mergedStat.value = statFromProp.value || ""; // Default to prop or empty
-          
-          if (localStat.title !== statFromProp.title && localStat.title !== (statFromProp.title || "")) mergedStat.title = localStat.title;
-          else mergedStat.title = statFromProp.title || ""; // Default to prop or empty
-          return mergedStat;
-        }).slice(0,4);
+        const newStatsList = (incomingData.stats || prevLocal.stats || [])
+          .map((statFromProp, index) => {
+            const localStat =
+              prevLocal.stats?.find((s) => s.id === statFromProp.id) ||
+              prevLocal.stats?.[index] ||
+              {};
+            const mergedStat = {
+              ...localStat,
+              ...statFromProp,
+              id:
+                statFromProp.id ||
+                localStat.id ||
+                `stat_update_${index}_${Date.now()}`,
+              icon: statFromProp.icon || localStat.icon || "FaAward",
+            };
+            // Prioritize local unsaved changes for value and title if they differ from incoming prop and are not empty
+            if (
+              localStat.value !== statFromProp.value &&
+              localStat.value !== (statFromProp.value || "")
+            )
+              mergedStat.value = localStat.value;
+            else mergedStat.value = statFromProp.value || ""; // Default to prop or empty
+
+            if (
+              localStat.title !== statFromProp.title &&
+              localStat.title !== (statFromProp.title || "")
+            )
+              mergedStat.title = localStat.title;
+            else mergedStat.title = statFromProp.title || ""; // Default to prop or empty
+            return mergedStat;
+          })
+          .slice(0, 4);
 
         return {
           ...prevLocal, // Start with previous local state
           ...incomingData, // Spread potentially modified incomingData (center is now an array or deleted)
           // Explicitly set fields that need careful merging or transformation
-          title: (prevLocal.title !== incomingData.title && prevLocal.title !== (incomingData.title || "Are we in your area?")) ? prevLocal.title : incomingData.title || "Are we in your area?",
-          address: (prevLocal.address !== incomingData.address && prevLocal.address !== (incomingData.address || "")) ? prevLocal.address : incomingData.address || "",
-          telephone: (prevLocal.telephone !== incomingData.telephone && prevLocal.telephone !== (incomingData.telephone || "")) ? prevLocal.telephone : incomingData.telephone || "",
+          title:
+            prevLocal.title !== incomingData.title &&
+            prevLocal.title !== (incomingData.title || "Are we in your area?")
+              ? prevLocal.title
+              : incomingData.title || "Are we in your area?",
+          address:
+            prevLocal.address !== incomingData.address &&
+            prevLocal.address !== (incomingData.address || "")
+              ? prevLocal.address
+              : incomingData.address || "",
+          telephone:
+            prevLocal.telephone !== incomingData.telephone &&
+            prevLocal.telephone !== (incomingData.telephone || "")
+              ? prevLocal.telephone
+              : incomingData.telephone || "",
           stats: newStatsList,
-          serviceHours: (incomingData.serviceHours || prevLocal.serviceHours || []).map(sh => ({ ...sh, id: sh.id || `sh_${Math.random().toString(36).substr(2, 5)}` })),
+          serviceHours: (
+            incomingData.serviceHours ||
+            prevLocal.serviceHours ||
+            []
+          ).map((sh) => ({
+            ...sh,
+            id: sh.id || `sh_${Math.random().toString(36).substr(2, 5)}`,
+          })),
           markerIcon: newMarkerIcon,
           statsBackgroundImage: newStatsBg,
-          bannerTextColor: incomingData.bannerTextColor !== undefined ? incomingData.bannerTextColor : prevLocal.bannerTextColor,
-          bannerBackgroundColor: incomingData.bannerBackgroundColor !== undefined ? incomingData.bannerBackgroundColor : prevLocal.bannerBackgroundColor,
-          statsTextColor: incomingData.statsTextColor !== undefined ? incomingData.statsTextColor : prevLocal.statsTextColor,
-          showHoursButtonText: incomingData.showHoursButtonText !== undefined ? incomingData.showHoursButtonText : prevLocal.showHoursButtonText,
-          hideHoursButtonText: incomingData.hideHoursButtonText !== undefined ? incomingData.hideHoursButtonText : prevLocal.hideHoursButtonText,
-          styling: incomingData.styling || prevLocal.styling
+          bannerTextColor:
+            incomingData.bannerTextColor !== undefined
+              ? incomingData.bannerTextColor
+              : prevLocal.bannerTextColor,
+          bannerBackgroundColor:
+            incomingData.bannerBackgroundColor !== undefined
+              ? incomingData.bannerBackgroundColor
+              : prevLocal.bannerBackgroundColor,
+          statsTextColor:
+            incomingData.statsTextColor !== undefined
+              ? incomingData.statsTextColor
+              : prevLocal.statsTextColor,
+          showHoursButtonText:
+            incomingData.showHoursButtonText !== undefined
+              ? incomingData.showHoursButtonText
+              : prevLocal.showHoursButtonText,
+          hideHoursButtonText:
+            incomingData.hideHoursButtonText !== undefined
+              ? incomingData.hideHoursButtonText
+              : prevLocal.hideHoursButtonText,
+          styling: incomingData.styling || prevLocal.styling,
         };
       });
     }
@@ -971,14 +1131,18 @@ function BasicMapBlock({
   }, [readOnly, localMapData, onConfigChange]);
 
   const handleLocalDataChange = (updater) => {
-    setLocalMapData(prevState => {
-      const newState = typeof updater === 'function' ? updater(prevState) : { ...prevState, ...updater };
-      if (newState.stats && newState.stats.length > 4) newState.stats = newState.stats.slice(0, 4);
-      
+    setLocalMapData((prevState) => {
+      const newState =
+        typeof updater === "function"
+          ? updater(prevState)
+          : { ...prevState, ...updater };
+      if (newState.stats && newState.stats.length > 4)
+        newState.stats = newState.stats.slice(0, 4);
+
       if (!readOnly && onConfigChange) {
         onConfigChange(newState);
       }
-      
+
       return newState;
     });
   };
@@ -991,13 +1155,16 @@ function BasicMapBlock({
 
   const handleIconSelectionForStat = (pack, iconName) => {
     if (editingStatIndexForIcon !== null) {
-        handleLocalDataChange(prev => {
-            const newStats = [...(prev.stats || [])];
-            if (newStats[editingStatIndexForIcon]) {
-                newStats[editingStatIndexForIcon] = { ...newStats[editingStatIndexForIcon], icon: iconName };
-            }
-            return { ...prev, stats: newStats };
-        });
+      handleLocalDataChange((prev) => {
+        const newStats = [...(prev.stats || [])];
+        if (newStats[editingStatIndexForIcon]) {
+          newStats[editingStatIndexForIcon] = {
+            ...newStats[editingStatIndexForIcon],
+            icon: iconName,
+          };
+        }
+        return { ...prev, stats: newStats };
+      });
     }
     setIsIconModalOpen(false);
     setEditingStatIndexForIcon(null);
@@ -1008,47 +1175,65 @@ function BasicMapBlock({
   };
 
   const handleServiceHourLocalChange = (index, field, value) => {
-    handleLocalDataChange(prev => {
-        const newServiceHours = [...(prev.serviceHours || [])];
-        // Ensure the service hour object exists
-        while(newServiceHours.length <= index) newServiceHours.push({ id: `sh_new_${newServiceHours.length}`, day: '', time: '' });
-        if (newServiceHours[index]) {
-            newServiceHours[index] = { ...newServiceHours[index], [field]: value };
-        }
-        return { ...prev, serviceHours: newServiceHours };
+    handleLocalDataChange((prev) => {
+      const newServiceHours = [...(prev.serviceHours || [])];
+      // Ensure the service hour object exists
+      while (newServiceHours.length <= index)
+        newServiceHours.push({
+          id: `sh_new_${newServiceHours.length}`,
+          day: "",
+          time: "",
+        });
+      if (newServiceHours[index]) {
+        newServiceHours[index] = { ...newServiceHours[index], [field]: value };
+      }
+      return { ...prev, serviceHours: newServiceHours };
     });
   };
 
   const handleStatTextChange = (index, field, value) => {
-    handleLocalDataChange(prev => {
+    handleLocalDataChange((prev) => {
       const currentStats = prev.stats || [];
       const newStats = [...currentStats];
-      while(newStats.length <= index && index < 4) newStats.push({ id: `stat_new_${newStats.length}`, icon: 'FaAward', value: '', title: '' });
-      if (newStats[index]) newStats[index] = { ...newStats[index], [field]: value };
-      return { ...prev, stats: newStats.slice(0,4) }; 
+      while (newStats.length <= index && index < 4)
+        newStats.push({
+          id: `stat_new_${newStats.length}`,
+          icon: "FaAward",
+          value: "",
+          title: "",
+        });
+      if (newStats[index])
+        newStats[index] = { ...newStats[index], [field]: value };
+      return { ...prev, stats: newStats.slice(0, 4) };
     });
   };
-  
+
   if (readOnly) {
     return <BasicMapPreview mapData={localMapData} readOnly={true} />;
   }
-  
+
   return (
     <>
-      <BasicMapPreview 
-        mapData={localMapData} 
+      <BasicMapPreview
+        mapData={localMapData}
         readOnly={false}
         onInlineChange={handleInlineChange}
         onStatTextChange={handleStatTextChange}
-        onStatIconClick={handleStatIconEditClick} 
+        onStatIconClick={handleStatIconEditClick}
         onServiceHourChange={handleServiceHourLocalChange}
       />
       <IconSelectorModal
         isOpen={isIconModalOpen}
         onClose={() => setIsIconModalOpen(false)}
         onIconSelect={handleIconSelectionForStat}
-        currentIconPack="fa" 
-        currentIconName={editingStatIndexForIcon !== null && localMapData.stats && localMapData.stats[editingStatIndexForIcon] ? localMapData.stats[editingStatIndexForIcon].icon : null}
+        currentIconPack="fa"
+        currentIconName={
+          editingStatIndexForIcon !== null &&
+          localMapData.stats &&
+          localMapData.stats[editingStatIndexForIcon]
+            ? localMapData.stats[editingStatIndexForIcon].icon
+            : null
+        }
       />
     </>
   );
@@ -1067,7 +1252,11 @@ const BasicMapImagesController = ({ currentData, onControlsChange }) => {
     const currentImageState = currentData[field];
 
     // Revoke old blob URL if one exists
-    if (currentImageState && currentImageState.url && currentImageState.url.startsWith('blob:')) {
+    if (
+      currentImageState &&
+      currentImageState.url &&
+      currentImageState.url.startsWith("blob:")
+    ) {
       URL.revokeObjectURL(currentImageState.url);
     }
 
@@ -1078,14 +1267,18 @@ const BasicMapImagesController = ({ currentData, onControlsChange }) => {
         file: file,
         url: fileURL,
         name: file.name,
-        originalUrl: currentImageState?.originalUrl || file.name
-      }
+        originalUrl: currentImageState?.originalUrl || file.name,
+      },
     });
   };
 
   const handleImageUrlChange = (field, urlValue) => {
     const currentImageState = currentData[field];
-    if (currentImageState && currentImageState.url && currentImageState.url.startsWith('blob:')) {
+    if (
+      currentImageState &&
+      currentImageState.url &&
+      currentImageState.url.startsWith("blob:")
+    ) {
       URL.revokeObjectURL(currentImageState.url);
     }
     onControlsChange({
@@ -1093,63 +1286,77 @@ const BasicMapImagesController = ({ currentData, onControlsChange }) => {
       [field]: {
         file: null,
         url: urlValue,
-        name: urlValue.split('/').pop(),
-        originalUrl: urlValue
-      }
+        name: urlValue.split("/").pop(),
+        originalUrl: urlValue,
+      },
     });
   };
 
   return (
     <div className="p-3 space-y-4">
       <div>
-        <h3 className="text-base font-medium text-gray-700 mb-3">Marker Icon</h3>
+        <h3 className="text-base font-medium text-gray-700 mb-3">
+          Marker Icon
+        </h3>
         <label className="block text-sm mb-2">
-          <span className="font-medium text-gray-600 block mb-1">Icon Image:</span>
-          <input 
-            type="file" 
-            accept="image/*" 
-            className="w-full bg-gray-100 text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700" 
-            onChange={(e) => handleImageFileChange('markerIcon', e.target.files?.[0])} 
+          <span className="font-medium text-gray-600 block mb-1">
+            Icon Image:
+          </span>
+          <input
+            type="file"
+            accept="image/*"
+            className="w-full bg-gray-100 text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700"
+            onChange={(e) =>
+              handleImageFileChange("markerIcon", e.target.files?.[0])
+            }
           />
         </label>
-        <input 
-          type="text" 
-          placeholder="Or paste image URL" 
-          value={getDisplayUrl(currentData.markerIcon) || ''} 
-          onChange={(e) => handleImageUrlChange('markerIcon', e.target.value)} 
+        <input
+          type="text"
+          placeholder="Or paste image URL"
+          value={getDisplayUrl(currentData.markerIcon) || ""}
+          onChange={(e) => handleImageUrlChange("markerIcon", e.target.value)}
           className="bg-gray-100 px-3 py-2 rounded w-full text-sm mt-2"
         />
         {getDisplayUrl(currentData.markerIcon) && (
-          <img 
-            src={getDisplayUrl(currentData.markerIcon)} 
-            alt="Marker Icon Preview" 
+          <img
+            src={getDisplayUrl(currentData.markerIcon)}
+            alt="Marker Icon Preview"
             className="mt-2 h-16 w-16 object-contain rounded bg-gray-200 p-1"
           />
         )}
       </div>
 
       <div>
-        <h3 className="text-base font-medium text-gray-700 mb-3">Stats Panel Background</h3>
+        <h3 className="text-base font-medium text-gray-700 mb-3">
+          Stats Panel Background
+        </h3>
         <label className="block text-sm mb-2">
-          <span className="font-medium text-gray-600 block mb-1">Background Image:</span>
-          <input 
-            type="file" 
-            accept="image/*" 
-            className="w-full bg-gray-100 text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700" 
-            onChange={(e) => handleImageFileChange('statsBackgroundImage', e.target.files?.[0])} 
+          <span className="font-medium text-gray-600 block mb-1">
+            Background Image:
+          </span>
+          <input
+            type="file"
+            accept="image/*"
+            className="w-full bg-gray-100 text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700"
+            onChange={(e) =>
+              handleImageFileChange("statsBackgroundImage", e.target.files?.[0])
+            }
           />
         </label>
-        <input 
-          type="text" 
-          placeholder="Or paste image URL" 
-          value={getDisplayUrl(currentData.statsBackgroundImage) || ''} 
-          onChange={(e) => handleImageUrlChange('statsBackgroundImage', e.target.value)} 
+        <input
+          type="text"
+          placeholder="Or paste image URL"
+          value={getDisplayUrl(currentData.statsBackgroundImage) || ""}
+          onChange={(e) =>
+            handleImageUrlChange("statsBackgroundImage", e.target.value)
+          }
           className="bg-gray-100 px-3 py-2 rounded w-full text-sm mt-2"
         />
         {getDisplayUrl(currentData.statsBackgroundImage) && (
-          <img 
-            src={getDisplayUrl(currentData.statsBackgroundImage)} 
-            alt="Stats Background Preview" 
+          <img
+            src={getDisplayUrl(currentData.statsBackgroundImage)}
+            alt="Stats Background Preview"
             className="mt-2 h-24 w-full object-cover rounded bg-gray-200 p-1"
           />
         )}
@@ -1164,31 +1371,44 @@ BasicMapBlock.tabsConfig = (localData, onControlsChange, themeColors) => {
 
   // Images Tab
   tabs.images = (props) => (
-    <BasicMapImagesController 
-      {...props} 
-      currentData={localData} 
-      onControlsChange={onControlsChange} 
+    <BasicMapImagesController
+      {...props}
+      currentData={localData}
+      onControlsChange={onControlsChange}
     />
   );
 
   // Colors Tab
   tabs.colors = (props) => (
-    <BasicMapColorControls 
-      {...props} 
-      currentData={localData} 
-      onControlsChange={onControlsChange} 
-      themeColors={themeColors} 
+    <BasicMapColorControls
+      {...props}
+      currentData={localData}
+      onControlsChange={onControlsChange}
+      themeColors={themeColors}
     />
   );
 
   // Styling Tab
   tabs.styling = (props) => (
-    <BasicMapStylingControls 
-      {...props} 
-      currentData={localData} 
+    <BasicMapStylingControls
+      {...props}
+      currentData={localData}
       onControlsChange={onControlsChange}
     />
   );
 
   return tabs;
-}; export default BasicMapBlock;
+};
+
+DropMarker.displayName = "DropMarker";
+DropMarker.propTypes = {
+  position: PropTypes.array.isRequired,
+  iconUrl: PropTypes.any,
+};
+
+MapInteractionHandler.displayName = "MapInteractionHandler";
+MapInteractionHandler.propTypes = {
+  mapActive: PropTypes.bool.isRequired,
+};
+
+export default BasicMapBlock;

@@ -39,20 +39,43 @@
   ],
   "whiteLogoIcon": null,
   "animation": {
-    "naturalOffsetVh": 11,
+    "naturalOffsetVh": {
+      "base": 3,
+      "md": 11
+    },
     "slideUpDistanceVh": 0,
-    "logoSizeUnscrolled": { "width": "18vh", "height": "18vh" },
-    "logoSizeScrolled": { "width": "14vh", "height": "14vh" }
+    "slideLeftDistance": {
+      "base": "0vw",
+      "md": "30vw"
+    },
+    "logoSizeUnscrolled": {
+      "base": { "width": "8vh", "height": "8vh" },
+      "md": { "width": "18vh", "height": "18vh" }
+    },
+    "logoSizeScrolled": {
+      "base": { "width": "8vh", "height": "8vh" },
+      "md": { "width": "14vh", "height": "14vh" }
+    },
+    "logoTitleDistance": {
+      "unscrolled": {
+        "base": "-mr-3",
+        "md": "mr-3"
+      },
+      "scrolled": {
+        "base": "-mr-4",
+        "md": "mr-2"
+      }
+    }
   },
   "textSizes": {
     "unscrolled": {
-      "base": "text-[4vw]",
-      "md": "text-[8vh]",
+      "base": "text-[4.5vw]",
+      "md": "text-[6vh]",
       "lg": "text-[5vh]"
     },
     "scrolled": {
-      "base": "text-[2vw]",
-      "md": "text-[5vh]"
+      "base": "text-[3.5vw]",
+      "md": "text-[4vh]"
     }
   },
   "logoTextDistance": {

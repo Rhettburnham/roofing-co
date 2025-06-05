@@ -1007,10 +1007,7 @@ const MainPageForm = ({
           <div className="relative">
             <Navbar
               config={navbarConfig}
-              animationConfig={{
-                ...(navbarConfig?.animation || {}),
-                isScrolled: previewNavbarAsScrolled,
-              }}
+              forceScrolledState={previewNavbarAsScrolled}
               isPreview={true}
             />
           </div>
@@ -1026,6 +1023,57 @@ const MainPageForm = ({
             </button>
           </div>
         </div>
+      )}
+
+      {/* TopStickyEditPanel for Navbar */}
+      {!singleBlockMode && activeEditBlock === "navbar" && (
+        <TopStickyEditPanel
+          isOpen={activeEditBlock === "navbar"}
+          onClose={() => handleToggleEditState("navbar")}
+          activeBlockData={{
+            blockName: "Navbar",
+            config: navbarConfig,
+            onPanelChange: handleNavbarConfigChange,
+            tabsConfig: {
+              general: (props) => (
+                <NavbarGeneralControls
+                  {...props}
+                  currentData={navbarConfig}
+                  onControlsChange={handleNavbarConfigChange}
+                  onPreviewStateChange={setPreviewNavbarAsScrolled}
+                  previewNavbarAsScrolled={previewNavbarAsScrolled}
+                />
+              ),
+              images: (props) => (
+                <NavbarImagesControls
+                  {...props}
+                  currentData={navbarConfig}
+                  onControlsChange={handleNavbarConfigChange}
+                  themeColors={themeColors}
+                />
+              ),
+              colors: (props) => (
+                <NavbarColorControls
+                  {...props}
+                  currentData={navbarConfig}
+                  onControlsChange={handleNavbarConfigChange}
+                  themeColors={themeColors}
+                />
+              ),
+              styling: (props) => (
+                <NavbarStylingControls
+                  {...props}
+                  currentData={navbarConfig}
+                  onControlsChange={handleNavbarConfigChange}
+                  previewNavbarAsScrolled={previewNavbarAsScrolled}
+                  setPreviewNavbarAsScrolled={setPreviewNavbarAsScrolled}
+                />
+              ),
+            },
+            themeColors,
+            sitePalette,
+          }}
+        />
       )}
 
       {currentMainPageBlocks.map((block) => {
