@@ -346,15 +346,21 @@ function RichTextPreview({
         ? slideshowImageSources
         : ["/assets/images/Richtext/roof_workers.jpg"];
 
+    // Separate useEffect for slideshow to prevent affecting card animations
     useEffect(() => {
+      let slideshowInterval;
       if (displaySlideshowImages.length > 1) {
-        const slideshowInterval = setInterval(() => {
+        slideshowInterval = setInterval(() => {
           setCurrentImageSlideshowIndex(
             (prevIndex) => (prevIndex + 1) % displaySlideshowImages.length
           );
         }, 3000);
-        return () => clearInterval(slideshowInterval);
       }
+      return () => {
+        if (slideshowInterval) {
+          clearInterval(slideshowInterval);
+        }
+      };
     }, [displaySlideshowImages.length]);
 
     const overlayImages = richTextData.overlayImages || [
@@ -379,6 +385,11 @@ function RichTextPreview({
       onCardFieldChange,
       onRemoveCard,
     }) {
+      console.log(
+        `FeatureCard ${index} render - playIntroAnimation:`,
+        playIntroAnimation
+      );
+
       const IconToRender = Icons[IconName] || Icons.Star;
 
       const baseClasses =
@@ -422,6 +433,9 @@ function RichTextPreview({
           variants={cardAnimationVariants}
           initial={playIntroAnimation ? "hidden" : "visible"}
           animate={"visible"}
+          onAnimationComplete={() =>
+            console.log(`Card ${index} animation completed`)
+          }
         >
           <div
             className="absolute top-0 right-0 w-8 h-8 sm:w-12 sm:h-12 md:w-16 md:h-16 z-20 rounded-tr-lg"
@@ -525,8 +539,14 @@ function RichTextPreview({
     };
 
     const ImageSlideshow = () => {
+      console.log(
+        "ImageSlideshow render - current index:",
+        currentImageSlideshowIndex
+      );
+
       if (!displaySlideshowImages || displaySlideshowImages.length === 0)
         return null;
+
       return (
         <div className="absolute inset-0 w-full h-full">
           <AnimatePresence initial={false} mode="wait">
@@ -542,6 +562,9 @@ function RichTextPreview({
               onError={(e) => {
                 e.target.style.display = "none";
               }}
+              onAnimationComplete={() =>
+                console.log("Slideshow image transition completed")
+              }
             />
           </AnimatePresence>
           {displaySlideshowImages.length === 0 && (
@@ -844,16 +867,82 @@ export default function RichTextBlock({
 
   // Move animation state management here to prevent resets on re-renders
   const animationPlayedRef = useRef(false);
-  const [playIntroAnimationForCards, setPlayIntroAnimationForCards] = useState(
-    () => {
-      // Initialize animation state only once when component is first created
-      if (!animationPlayedRef.current) {
+  const [playIntroAnimationForCards, setPlayIntroAnimationForCards] =
+    useState(false);
+
+  // Initialize animation state only once when component mounts
+  useEffect(() => {
+    console.log(
+      "RichTextBlock mount effect - animationPlayedRef:",
+      animationPlayedRef.current
+    );
+    if (!animationPlayedRef.current) {
+      console.log("Setting initial animation state to true");
+      setPlayIntroAnimationForCards(true);
+      // Set a timeout to turn off the animation after all cards have animated
+      const timeout = setTimeout(() => {
+        console.log("Turning off animation state after initial animation");
+        setPlayIntroAnimationForCards(false);
         animationPlayedRef.current = true;
-        return true;
-      }
-      return false;
+      }, 2000); // Adjust this timeout based on your animation duration
+      return () => clearTimeout(timeout);
     }
-  );
+  }, []);
+
+  // Reset animation state when readOnly changes from true to false
+  useEffect(() => {
+    console.log(
+      "ReadOnly changed - prev:",
+      prevReadOnlyRef.current,
+      "current:",
+      readOnly
+    );
+    if (prevReadOnlyRef.current === true && readOnly === false) {
+      console.log("Resetting animation state due to readOnly change");
+      animationPlayedRef.current = false;
+      setPlayIntroAnimationForCards(true);
+      // Set a timeout to turn off the animation after all cards have animated
+      const timeout = setTimeout(() => {
+        console.log("Turning off animation state after readOnly change");
+        setPlayIntroAnimationForCards(false);
+        animationPlayedRef.current = true;
+      }, 2000); // Adjust this timeout based on your animation duration
+      return () => clearTimeout(timeout);
+    }
+    prevReadOnlyRef.current = readOnly;
+  }, [readOnly]);
+
+  // Separate slideshow state management
+  const [currentImageSlideshowIndex, setCurrentImageSlideshowIndex] =
+    useState(0);
+  const slideshowIntervalRef = useRef(null);
+
+  // Handle slideshow separately from card animations
+  useEffect(() => {
+    console.log(
+      "Slideshow effect triggered - current index:",
+      currentImageSlideshowIndex
+    );
+    const slideshowImageSources = localData.images
+      ?.map((img) => (img && typeof img === "object" && img.url ? img.url : ""))
+      .filter((img) => img);
+
+    if (slideshowImageSources?.length > 1) {
+      console.log("Setting up slideshow interval");
+      slideshowIntervalRef.current = setInterval(() => {
+        setCurrentImageSlideshowIndex(
+          (prevIndex) => (prevIndex + 1) % slideshowImageSources.length
+        );
+      }, 3000);
+    }
+
+    return () => {
+      if (slideshowIntervalRef.current) {
+        console.log("Cleaning up slideshow interval");
+        clearInterval(slideshowIntervalRef.current);
+      }
+    };
+  }, [localData.images]);
 
   useEffect(() => {
     const effectiveBackgroundColor =
@@ -1218,15 +1307,21 @@ const ModernRichTextVariant = memo(
         ? slideshowImageSources
         : ["/assets/images/Richtext/roof_workers.jpg"];
 
+    // Separate useEffect for slideshow
     useEffect(() => {
+      let slideshowInterval;
       if (displaySlideshowImages.length > 1) {
-        const slideshowInterval = setInterval(() => {
+        slideshowInterval = setInterval(() => {
           setCurrentImageSlideshowIndex(
             (prevIndex) => (prevIndex + 1) % displaySlideshowImages.length
           );
         }, 4000);
-        return () => clearInterval(slideshowInterval);
       }
+      return () => {
+        if (slideshowInterval) {
+          clearInterval(slideshowInterval);
+        }
+      };
     }, [displaySlideshowImages.length]);
 
     // Calculate dynamic height based on styling - reduced height for modern
@@ -1244,6 +1339,11 @@ const ModernRichTextVariant = memo(
       openIconModalForCard,
       playIntroAnimation,
     }) => {
+      console.log(
+        `FeatureCard ${index} render - playIntroAnimation:`,
+        playIntroAnimation
+      );
+
       const IconToRender = Icons[card.icon] || Icons.Star;
 
       return (
@@ -1325,6 +1425,11 @@ const ModernRichTextVariant = memo(
     };
 
     const ImageGallery = () => {
+      console.log(
+        "ImageSlideshow render - current index:",
+        currentImageSlideshowIndex
+      );
+
       if (!displaySlideshowImages || displaySlideshowImages.length === 0)
         return null;
 
@@ -1540,15 +1645,21 @@ const GridRichTextVariant = memo(
         ? slideshowImageSources
         : ["/assets/images/Richtext/roof_workers.jpg"];
 
+    // Separate useEffect for slideshow
     useEffect(() => {
+      let slideshowInterval;
       if (displaySlideshowImages.length > 1) {
-        const slideshowInterval = setInterval(() => {
+        slideshowInterval = setInterval(() => {
           setCurrentImageSlideshowIndex(
             (prevIndex) => (prevIndex + 1) % displaySlideshowImages.length
           );
         }, 5000);
-        return () => clearInterval(slideshowInterval);
       }
+      return () => {
+        if (slideshowInterval) {
+          clearInterval(slideshowInterval);
+        }
+      };
     }, [displaySlideshowImages.length]);
 
     // Calculate dynamic height based on styling
@@ -1566,6 +1677,11 @@ const GridRichTextVariant = memo(
       openIconModalForCard,
       playIntroAnimation,
     }) => {
+      console.log(
+        `FeatureCard ${index} render - playIntroAnimation:`,
+        playIntroAnimation
+      );
+
       const IconToRender = Icons[card.icon] || Icons.Star;
 
       // Color scheme for cards
@@ -1659,11 +1775,16 @@ const GridRichTextVariant = memo(
     };
 
     const ImageMosaic = () => {
+      console.log(
+        "ImageSlideshow render - current index:",
+        currentImageSlideshowIndex
+      );
+
       if (!displaySlideshowImages || displaySlideshowImages.length === 0)
         return null;
 
       return (
-        <div className="relative w-full h-full mb-[3vh] md:mb-[5vh] lg:mb-[7vh] lg:h-80 rounded-2xl overflow-hidden shadow-xl">
+        <div className="relative w-full h-full mb-[3vh] md:mb-[9vh] lg:mb-[12vh] lg:h-80 rounded-2xl overflow-hidden shadow-xl">
           <AnimatePresence initial={false} mode="wait">
             <motion.img
               key={currentImageSlideshowIndex}
@@ -1677,6 +1798,9 @@ const GridRichTextVariant = memo(
               onError={(e) => {
                 e.target.style.display = "none";
               }}
+              onAnimationComplete={() =>
+                console.log("Slideshow image transition completed")
+              }
             />
           </AnimatePresence>
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20"></div>
@@ -1702,7 +1826,7 @@ const GridRichTextVariant = memo(
 
     return (
       <div className="w-full mx-auto " style={{ minHeight: dynamicHeight }}>
-        <div className="space-y-1">
+        <div className="space-y-8 md:space-y-12 lg:space-y-16">
           {/* Hero Section */}
           {(heroText || !readOnly) && (
             <div className="text-center space-y-6">
