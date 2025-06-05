@@ -84,7 +84,7 @@
             "description": "Main service text color"
           },
           {
-            "id": "hero-secondary-001", 
+            "id": "hero-secondary-001",
             "name": "secondary-accent",
             "label": "Secondary Accent",
             "value": "#3b82f6",
@@ -93,8 +93,8 @@
         ],
         "styling": {
           "hasVariants": false,
-          "desktopHeightVH": 30,
-          "mobileHeightVW": 50
+          "desktopHeightVH": 10,
+          "mobileHeightVW": 10
         }
       }
     },
@@ -234,8 +234,8 @@
         },
         "styling": {
           "hasVariants": true,
-          "desktopHeightVH": 45,
-          "mobileHeightVW": 75
+          "desktopHeightVH": 30,
+          "mobileHeightVW": 35
         },
         "steps": [
           {
@@ -264,7 +264,7 @@
           }
         ]
       }
-    },    
+    },
     {
       "blockName": "ButtonBlock",
       "config": {
@@ -293,8 +293,8 @@
         "variant": "default",
         "styling": {
           "hasVariants": true,
-          "desktopHeightVH": 20,
-          "mobileHeightVW": 35,
+          "desktopHeightVH": 10,
+          "mobileHeightVW": 20,
           "buttonSize": "large",
           "animationSpeed": "normal",
           "animationType": "slide",
@@ -303,7 +303,7 @@
           "availableButtonSizes": ["small", "medium", "large", "extra-large"],
           "buttonSizeLabels": {
             "small": "Small - Compact button for subtle call-to-action",
-            "medium": "Medium - Standard button size for most use cases", 
+            "medium": "Medium - Standard button size for most use cases",
             "large": "Large - Prominent button for primary actions",
             "extra-large": "Extra Large - Maximum impact button for hero sections"
           }
@@ -477,22 +477,26 @@
           {
             "icon": "FaHardHat",
             "iconPack": "fa",
-            "title": "Shingling"
+            "title": "Shingling",
+            "image": "/personal/old/img/main_page_images/ServiceSliderBlock/service_1.jpeg"
           },
           {
             "icon": "FaHomeIcon",
             "iconPack": "fa",
-            "title": "Chimney"
+            "title": "Chimney",
+            "image": "/personal/old/img/main_page_images/ServiceSliderBlock/service_2.jpeg"
           },
           {
             "icon": "FaTools",
             "iconPack": "fa",
-            "title": "Siding"
+            "title": "Siding",
+            "image": "/personal/old/img/main_page_images/ServiceSliderBlock/service_3.jpeg"
           },
           {
             "icon": "FaBroom",
             "iconPack": "fa",
-            "title": "Repairs"
+            "title": "Repairs",
+            "image": "/personal/old/img/main_page_images/ServiceSliderBlock/service_4.jpg"
           }
         ],
         "commercialServices": [
@@ -660,7 +664,7 @@
                 "subtitle": "Available 8AM - 6PM"
               },
               {
-                "id": "response_feature", 
+                "id": "response_feature",
                 "emoji": "💬",
                 "title": "Quick Response",
                 "subtitle": "We reply within 24 hours"
@@ -668,13 +672,13 @@
               {
                 "id": "trusted_feature",
                 "emoji": "⭐",
-                "title": "Trusted Service", 
+                "title": "Trusted Service",
                 "subtitle": "11+ years of excellence"
               }
             ],
             "formFields": {
               "firstNamePlaceholder": "Enter your first name",
-              "lastNamePlaceholder": "Enter your last name", 
+              "lastNamePlaceholder": "Enter your last name",
               "emailPlaceholder": "Enter your email address",
               "phonePlaceholder": "Enter your phone number",
               "servicePlaceholder": "Select a service",
@@ -684,7 +688,7 @@
             },
             "serviceOptions": [
               "Roof Installation",
-              "Roof Repair", 
+              "Roof Repair",
               "Roof Inspection",
               "Gutter Installation",
               "Commercial Roofing",
@@ -707,7 +711,7 @@
               },
               {
                 "id": "response_badge",
-                "icon": "⚡", 
+                "icon": "⚡",
                 "text": "24 Hours",
                 "subtitle": "Response"
               },
@@ -715,7 +719,7 @@
                 "id": "insured_badge",
                 "icon": "🛡️",
                 "text": "Insured",
-                "subtitle": "& Bonded" 
+                "subtitle": "& Bonded"
               },
               {
                 "id": "warranty_badge",
@@ -727,7 +731,7 @@
             "formFields": {
               "firstNamePlaceholder": "First Name",
               "lastNamePlaceholder": "Last Name",
-              "emailPlaceholder": "Email Address", 
+              "emailPlaceholder": "Email Address",
               "phonePlaceholder": "Phone Number",
               "servicePlaceholder": "🏠 Select Service",
               "messagePlaceholder": "Tell us about your project...",
@@ -737,7 +741,7 @@
             "serviceOptions": [
               "🔨 Roof Installation",
               "🔧 Roof Repair",
-              "🔍 Roof Inspection", 
+              "🔍 Roof Inspection",
               "🌧️ Gutter Services",
               "🏢 Commercial Roofing",
               "🎨 Custom Solutions"
@@ -750,21 +754,21 @@
                 "caption": "Quality roofing work"
               },
               {
-                "id": "materials_img", 
+                "id": "materials_img",
                 "url": "/assets/images/roof_slideshow/i8.webp",
                 "alt": "Premium Materials",
                 "caption": "Top-grade materials"
               },
               {
                 "id": "installation_img",
-                "url": "/assets/images/roof_slideshow/i5.jpeg", 
+                "url": "/assets/images/roof_slideshow/i5.jpeg",
                 "alt": "Professional Installation",
                 "caption": "Expert installation"
               },
               {
                 "id": "residential_img",
                 "url": "/assets/images/roof_slideshow/i6.jpeg",
-                "alt": "Residential Projects", 
+                "alt": "Residential Projects",
                 "caption": "Beautiful homes"
               }
             ]

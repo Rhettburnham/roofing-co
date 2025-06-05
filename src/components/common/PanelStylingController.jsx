@@ -1,50 +1,57 @@
-import React, { useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
+import React, { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 
 // Animation definitions for different animation types
 const animationDefinitions = {
   nail: {
-    label: 'Nail Animation',
-    description: 'Animated nails that slide in with the section header',
-    icon: '🔨',
+    label: "Nail Animation",
+    description: "Animated nails that slide in with the section header",
+    icon: "🔨",
     defaultEnabled: true,
-    supportedBlocks: ['BookingBlock', 'EmployeesBlock', 'BeforeAfterBlock']
+    supportedBlocks: ["BookingBlock", "EmployeesBlock", "BeforeAfterBlock"],
   },
   fadeIn: {
-    label: 'Fade In',
-    description: 'Elements fade in smoothly as they come into view',
-    icon: '✨',
+    label: "Fade In",
+    description: "Elements fade in smoothly as they come into view",
+    icon: "✨",
     defaultEnabled: true,
-    supportedBlocks: ['BookingBlock', 'EmployeesBlock', 'BeforeAfterBlock', 'ServiceSliderBlock', 'HeroBlock']
+    supportedBlocks: [
+      "BookingBlock",
+      "EmployeesBlock",
+      "BeforeAfterBlock",
+      "ServiceSliderBlock",
+      "HeroBlock",
+    ],
   },
   slideIn: {
-    label: 'Slide Animation',
-    description: 'Elements slide in from different directions',
-    icon: '➡️',
+    label: "Slide Animation",
+    description: "Elements slide in from different directions",
+    icon: "➡️",
     defaultEnabled: true,
-    supportedBlocks: ['ServiceSliderBlock', 'ButtonBlock', 'HeroBlock']
+    supportedBlocks: ["ServiceSliderBlock", "ButtonBlock", "HeroBlock"],
   },
   bounceIn: {
-    label: 'Bounce Effect',
-    description: 'Elements bounce in with elastic timing',
-    icon: '⚽',
+    label: "Bounce Effect",
+    description: "Elements bounce in with elastic timing",
+    icon: "⚽",
     defaultEnabled: false,
-    supportedBlocks: ['ButtonBlock', 'ServiceSliderBlock']
+    supportedBlocks: ["ButtonBlock", "ServiceSliderBlock"],
   },
   scaleIn: {
-    label: 'Scale Animation',
-    description: 'Elements scale up from small to normal size',
-    icon: '🔍',
+    label: "Scale Animation",
+    description: "Elements scale up from small to normal size",
+    icon: "🔍",
     defaultEnabled: true,
-    supportedBlocks: ['BookingBlock', 'ServiceSliderBlock', 'HeroBlock']
+    supportedBlocks: ["BookingBlock", "ServiceSliderBlock", "HeroBlock"],
   },
   shrink: {
-    label: 'Shrink Effect',
-    description: 'Hero section shrinks from initial to final height after a delay',
-    icon: '📏',
+    label: "Shrink Effect",
+    description:
+      "Hero section shrinks from initial to final height after a delay",
+    icon: "📏",
     defaultEnabled: true,
-    supportedBlocks: ['HeroBlock']
-  }
+    supportedBlocks: ["HeroBlock"],
+  },
 };
 
 // Animation Preview Component
@@ -53,55 +60,59 @@ const AnimationPreview = ({ animationType, isEnabled, onClick }) => {
   if (!animation) return null;
 
   return (
-    <div 
+    <div
       className={`
         relative cursor-pointer rounded-lg border-2 transition-all duration-200 p-3
-        ${isEnabled 
-          ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200' 
-          : 'border-gray-300 bg-gray-50 hover:border-gray-400'
+        ${
+          isEnabled
+            ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
+            : "border-gray-300 bg-gray-50 hover:border-gray-400"
         }
       `}
       onClick={onClick}
     >
       {/* Animation Type Icon */}
       <div className="flex items-center justify-center mb-2">
-        <div className={`
+        <div
+          className={`
           text-2xl transition-transform duration-200
-          ${isEnabled ? 'animate-pulse' : 'opacity-60'}
-        `}>
+          ${isEnabled ? "animate-pulse" : "opacity-60"}
+        `}
+        >
           {animation.icon}
         </div>
       </div>
-      
+
       {/* Animation Info */}
       <div className="text-center">
-        <div className={`
+        <div
+          className={`
           font-medium text-sm mb-1
-          ${isEnabled ? 'text-blue-700' : 'text-gray-600'}
-        `}>
+          ${isEnabled ? "text-blue-700" : "text-gray-600"}
+        `}
+        >
           {animation.label}
         </div>
         <div className="text-xs text-gray-500 leading-tight">
           {animation.description}
         </div>
       </div>
-      
+
       {/* Enabled indicator */}
       {isEnabled && (
         <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
           <div className="w-2 h-2 bg-white rounded-full"></div>
         </div>
       )}
-      
+
       {/* Visual Animation Preview */}
       <div className="mt-2 h-1 bg-gray-200 rounded overflow-hidden">
-        <div className={`
+        <div
+          className={`
           h-full transition-all duration-500 rounded
-          ${isEnabled 
-            ? 'bg-blue-500 animate-pulse' 
-            : 'bg-gray-300'
-          }
-        `} />
+          ${isEnabled ? "bg-blue-500 animate-pulse" : "bg-gray-300"}
+        `}
+        />
       </div>
     </div>
   );
@@ -117,15 +128,21 @@ const AnimationControls = ({ currentData, onControlsChange, blockType }) => {
   // Get current animation states
   const getCurrentAnimationState = (animationType) => {
     // Handle legacy showNailAnimation for backwards compatibility
-    if (animationType === 'nail' && currentData.showNailAnimation !== undefined) {
+    if (
+      animationType === "nail" &&
+      currentData.showNailAnimation !== undefined
+    ) {
       return currentData.showNailAnimation;
     }
-    
+
     // Check for modern animation state structure
-    if (currentData.animations && currentData.animations[animationType] !== undefined) {
+    if (
+      currentData.animations &&
+      currentData.animations[animationType] !== undefined
+    ) {
       return currentData.animations[animationType];
     }
-    
+
     // Default to animation's default enabled state
     return animationDefinitions[animationType]?.defaultEnabled || false;
   };
@@ -133,49 +150,51 @@ const AnimationControls = ({ currentData, onControlsChange, blockType }) => {
   const handleAnimationToggle = (animationType) => {
     const currentState = getCurrentAnimationState(animationType);
     const newState = !currentState;
-    
+
     // Handle legacy nail animation for backwards compatibility
-    if (animationType === 'nail') {
+    if (animationType === "nail") {
       onControlsChange({
         showNailAnimation: newState,
         animations: {
           ...currentData.animations,
-          [animationType]: newState
-        }
+          [animationType]: newState,
+        },
       });
     } else {
       // Modern animation state structure
       onControlsChange({
         animations: {
           ...currentData.animations,
-          [animationType]: newState
-        }
+          [animationType]: newState,
+        },
       });
     }
   };
 
   const handleToggleAll = () => {
-    const anyEnabled = supportedAnimations.some(animation => getCurrentAnimationState(animation.key));
+    const anyEnabled = supportedAnimations.some((animation) =>
+      getCurrentAnimationState(animation.key)
+    );
     const newState = !anyEnabled;
-    
+
     const newAnimations = {};
     const updateData = {};
-    
-    supportedAnimations.forEach(animation => {
+
+    supportedAnimations.forEach((animation) => {
       newAnimations[animation.key] = newState;
-      
+
       // Handle legacy nail animation
-      if (animation.key === 'nail') {
+      if (animation.key === "nail") {
         updateData.showNailAnimation = newState;
       }
     });
-    
+
     onControlsChange({
       ...updateData,
       animations: {
         ...currentData.animations,
-        ...newAnimations
-      }
+        ...newAnimations,
+      },
     });
   };
 
@@ -183,7 +202,9 @@ const AnimationControls = ({ currentData, onControlsChange, blockType }) => {
     <div className="p-4 bg-white text-gray-800 rounded">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-800">Animation Settings</h3>
+        <h3 className="text-lg font-semibold text-gray-800">
+          Animation Settings
+        </h3>
         <button
           onClick={handleToggleAll}
           className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm transition-colors"
@@ -191,17 +212,18 @@ const AnimationControls = ({ currentData, onControlsChange, blockType }) => {
           Toggle All
         </button>
       </div>
-      
+
       {/* Description */}
       <p className="text-sm text-gray-600 mb-4">
-        Control which animations are enabled for this {blockType.replace('Block', '')} section. 
-        Animations enhance the user experience by providing smooth visual transitions.
+        Control which animations are enabled for this{" "}
+        {blockType.replace("Block", "")} section. Animations enhance the user
+        experience by providing smooth visual transitions.
       </p>
-      
+
       {/* Animation Grid */}
       {supportedAnimations.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
-          {supportedAnimations.map(animation => (
+          {supportedAnimations.map((animation) => (
             <AnimationPreview
               key={animation.key}
               animationType={animation.key}
@@ -216,18 +238,22 @@ const AnimationControls = ({ currentData, onControlsChange, blockType }) => {
           <p>No animations available for this block type</p>
         </div>
       )}
-      
+
       {/* Animation Summary */}
       <div className="mt-4 p-3 bg-gray-50 rounded border">
         <div className="text-sm text-gray-700">
           <span className="font-medium">
-            {supportedAnimations.filter(animation => getCurrentAnimationState(animation.key)).length}
+            {
+              supportedAnimations.filter((animation) =>
+                getCurrentAnimationState(animation.key)
+              ).length
+            }
           </span>
-          {' of '}
+          {" of "}
           <span className="font-medium">{supportedAnimations.length}</span>
-          {' animations enabled'}
+          {" animations enabled"}
         </div>
-        
+
         {/* Performance note */}
         <div className="text-xs text-gray-500 mt-2">
           💡 Tip: Fewer animations may improve performance on older devices
@@ -238,11 +264,11 @@ const AnimationControls = ({ currentData, onControlsChange, blockType }) => {
 };
 
 // Simple component shape previews for different variants
-const VariantPreview = ({ variant, blockType = 'BookingBlock' }) => {
+const VariantPreview = ({ variant, blockType = "BookingBlock" }) => {
   const getPreviewContent = () => {
-    if (blockType === 'BookingBlock') {
+    if (blockType === "BookingBlock") {
       switch (variant) {
-        case 'nail':
+        case "nail":
           return (
             <div className="w-full h-full bg-gradient-to-br from-amber-50 to-amber-100 relative overflow-hidden">
               {/* Wood plank effect */}
@@ -263,7 +289,7 @@ const VariantPreview = ({ variant, blockType = 'BookingBlock' }) => {
               </div>
             </div>
           );
-        case 'modern':
+        case "modern":
           return (
             <div className="w-full h-full bg-gradient-to-r from-slate-50 to-gray-100 relative">
               {/* Split screen effect */}
@@ -279,7 +305,7 @@ const VariantPreview = ({ variant, blockType = 'BookingBlock' }) => {
               <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-blue-300 to-gray-300"></div>
             </div>
           );
-        case 'creative':
+        case "creative":
           return (
             <div className="w-full h-full bg-gradient-to-br from-purple-50 to-pink-50 relative overflow-hidden">
               {/* Three column layout */}
@@ -307,10 +333,10 @@ const VariantPreview = ({ variant, blockType = 'BookingBlock' }) => {
           );
       }
     }
-    
-    if (blockType === 'RichTextBlock') {
+
+    if (blockType === "RichTextBlock") {
       switch (variant) {
-        case 'classic':
+        case "classic":
           return (
             <div className="w-full h-full bg-gradient-to-br from-blue-50 to-indigo-100 relative overflow-hidden">
               {/* Cards at top */}
@@ -325,7 +351,7 @@ const VariantPreview = ({ variant, blockType = 'BookingBlock' }) => {
               </div>
             </div>
           );
-        case 'modern':
+        case "modern":
           return (
             <div className="w-full h-full bg-gradient-to-r from-slate-900 to-blue-900 relative">
               {/* Split layout */}
@@ -346,22 +372,22 @@ const VariantPreview = ({ variant, blockType = 'BookingBlock' }) => {
               </div>
             </div>
           );
-        case 'grid':
+        case "grid":
           return (
             <div className="w-full h-full bg-gradient-to-br from-gray-50 to-blue-50 relative overflow-hidden">
               {/* Hero text area at top */}
               <div className="absolute top-1 left-2 right-2 h-1 bg-gray-700 rounded"></div>
-              
+
               {/* Image area in center */}
               <div className="absolute top-3 left-1 right-1 h-3 bg-blue-300 rounded"></div>
-              
+
               {/* Grid of cards at bottom */}
               <div className="absolute bottom-1 left-1 right-1 grid grid-cols-3 gap-0.5">
                 <div className="h-2 bg-blue-500 rounded"></div>
                 <div className="h-2 bg-green-500 rounded"></div>
                 <div className="h-2 bg-purple-500 rounded"></div>
               </div>
-              
+
               {/* Clean layout indicators */}
               <div className="absolute top-1 right-1 w-1 h-1 bg-blue-400 rounded-full"></div>
               <div className="absolute bottom-1 left-1 w-1 h-1 bg-green-400 rounded-full"></div>
@@ -375,7 +401,7 @@ const VariantPreview = ({ variant, blockType = 'BookingBlock' }) => {
           );
       }
     }
-    
+
     // Add more block types here in the future
     return (
       <div className="w-full h-full bg-gray-100 flex items-center justify-center">
@@ -395,40 +421,40 @@ const VariantPreview = ({ variant, blockType = 'BookingBlock' }) => {
 const ShadowVariantPreview = ({ variant, isSelected, onClick }) => {
   const getShadowClasses = (variant) => {
     switch (variant) {
-      case 'soft':
-        return 'shadow-lg';
-      case 'medium':
-        return 'shadow-xl drop-shadow-md';
-      case 'strong':
-        return 'shadow-2xl drop-shadow-lg';
+      case "soft":
+        return "shadow-lg";
+      case "medium":
+        return "shadow-xl drop-shadow-md";
+      case "strong":
+        return "shadow-2xl drop-shadow-lg";
       default:
-        return 'shadow-md';
+        return "shadow-md";
     }
   };
 
   const getVariantLabel = (variant) => {
     switch (variant) {
-      case 'soft':
-        return 'Soft';
-      case 'medium':
-        return 'Medium';
-      case 'strong':
-        return 'Strong';
+      case "soft":
+        return "Soft";
+      case "medium":
+        return "Medium";
+      case "strong":
+        return "Strong";
       default:
-        return 'Default';
+        return "Default";
     }
   };
 
   const getVariantDescription = (variant) => {
     switch (variant) {
-      case 'soft':
-        return 'Subtle shadow effect';
-      case 'medium':
-        return 'Enhanced shadow with drop effect';
-      case 'strong':
-        return 'Bold shadow for prominence';
+      case "soft":
+        return "Subtle shadow effect";
+      case "medium":
+        return "Enhanced shadow with drop effect";
+      case "strong":
+        return "Bold shadow for prominence";
       default:
-        return 'Standard shadow';
+        return "Standard shadow";
     }
   };
 
@@ -443,17 +469,21 @@ const ShadowVariantPreview = ({ variant, isSelected, onClick }) => {
           onChange={onClick}
           className="sr-only"
         />
-        
+
         {/* Button Preview with Shadow */}
-        <div className={`relative mb-2 p-1 rounded-lg transition-all duration-200 ${
-          isSelected 
-            ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-gray-800' 
-            : 'ring-1 ring-gray-600 group-hover:ring-gray-500'
-        }`}>
-          <div className={`w-16 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-md flex items-center justify-center text-white text-xs font-medium ${getShadowClasses(variant)}`}>
+        <div
+          className={`relative mb-2 p-1 rounded-lg transition-all duration-200 ${
+            isSelected
+              ? "ring-2 ring-blue-500 ring-offset-2 ring-offset-gray-800"
+              : "ring-1 ring-gray-600 group-hover:ring-gray-500"
+          }`}
+        >
+          <div
+            className={`w-16 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-md flex items-center justify-center text-white text-xs font-medium ${getShadowClasses(variant)}`}
+          >
             Button
           </div>
-          
+
           {/* Selected indicator */}
           {isSelected && (
             <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
@@ -461,45 +491,81 @@ const ShadowVariantPreview = ({ variant, isSelected, onClick }) => {
             </div>
           )}
         </div>
-        
+
         {/* Variant Name */}
-        <div className={`text-center transition-colors duration-200 ${
-          isSelected ? 'text-blue-400' : 'text-gray-300 group-hover:text-white'
-        }`}>
+        <div
+          className={`text-center transition-colors duration-200 ${
+            isSelected
+              ? "text-blue-400"
+              : "text-gray-300 group-hover:text-white"
+          }`}
+        >
           <div className="font-medium text-sm">{getVariantLabel(variant)}</div>
-          <div className="text-xs text-gray-400 mt-1 max-w-24 leading-tight">{getVariantDescription(variant)}</div>
+          <div className="text-xs text-gray-400 mt-1 max-w-24 leading-tight">
+            {getVariantDescription(variant)}
+          </div>
         </div>
       </label>
     </div>
   );
 };
 
-const PanelStylingController = ({ 
-  currentData, 
-  onControlsChange, 
-  step = 0.5, 
-  blockType = 'BookingBlock',
-  controlType = 'height', // 'height', 'animationDuration', 'buttonSize', 'shadowVariants', 'animations'
+const PanelStylingController = ({
+  currentData,
+  onControlsChange,
+  step = 0.5,
+  blockType = "BookingBlock",
+  controlType = "height", // 'height', 'animationDuration', 'buttonSize', 'shadowVariants', 'animations'
   animationDurationOptions = null, // For ButtonBlock animation duration ranges
-  buttonSizeOptions = null // For ButtonBlock button size options
+  buttonSizeOptions = null, // For ButtonBlock button size options
 }) => {
-  const initialStyling = currentData.styling || { desktopHeightVH: 30, mobileHeightVW: 75 };
-  const [activeMode, setActiveMode] = useState('laptop'); // 'laptop' or 'mobile'
-  
+  const initialStyling = currentData.styling || {
+    desktopHeightVH: 30,
+    mobileHeightVW: 75,
+  };
+  const [activeMode, setActiveMode] = useState("laptop"); // 'laptop' or 'mobile'
+
   // Ensure initial values are numbers with proper ranges based on block type
   const getHeightRanges = (blockType) => {
     const ranges = {
-      'BookingBlock': { desktop: { min: 20, max: 50 }, mobile: { min: 60, max: 100 } },
-      'HeroBlock': { desktop: { min: 25, max: 45 }, mobile: { min: 40, max: 80 } },
-      'RichTextBlock': { desktop: { min: 30, max: 60 }, mobile: { min: 50, max: 90 } },
-      'ButtonBlock': { desktop: { min: 10, max: 25 }, mobile: { min: 25, max: 50 } },
-      'BeforeAfterBlock': { desktop: { min: 20, max: 40 }, mobile: { min: 30, max: 50 } },
-      'BasicMapBlock': { desktop: { min: 25, max: 45 }, mobile: { min: 35, max: 60 } },
-      'ServiceSliderBlock': { desktop: { min: 20, max: 50 }, mobile: { min: 30, max: 60 } },
-      'TestimonialBlock': { desktop: { min: 25, max: 45 }, mobile: { min: 35, max: 60 } },
-      'EmployeesBlock': { desktop: { min: 20, max: 35 }, mobile: { min: 25, max: 45 } }
+      BookingBlock: {
+        desktop: { min: 20, max: 50 },
+        mobile: { min: 60, max: 100 },
+      },
+      HeroBlock: {
+        desktop: { min: 25, max: 45 },
+        mobile: { min: 40, max: 80 },
+      },
+      RichTextBlock: {
+        desktop: { min: 30, max: 60 },
+        mobile: { min: 50, max: 90 },
+      },
+      ButtonBlock: {
+        desktop: { min: 10, max: 25 },
+        mobile: { min: 10, max: 50 },
+      },
+      BeforeAfterBlock: {
+        desktop: { min: 20, max: 40 },
+        mobile: { min: 30, max: 50 },
+      },
+      BasicMapBlock: {
+        desktop: { min: 25, max: 45 },
+        mobile: { min: 35, max: 60 },
+      },
+      ServiceSliderBlock: {
+        desktop: { min: 20, max: 50 },
+        mobile: { min: 30, max: 60 },
+      },
+      TestimonialBlock: {
+        desktop: { min: 25, max: 45 },
+        mobile: { min: 35, max: 60 },
+      },
+      EmployeesBlock: {
+        desktop: { min: 20, max: 35 },
+        mobile: { min: 25, max: 45 },
+      },
     };
-    return ranges[blockType] || ranges['ButtonBlock'];
+    return ranges[blockType] || ranges["ButtonBlock"];
   };
 
   const getAnimationDurationRanges = () => {
@@ -507,34 +573,68 @@ const PanelStylingController = ({
   };
 
   const getButtonSizeOptions = () => {
-    return buttonSizeOptions || [
-      { value: 'small', label: 'Small', description: 'Compact button size' },
-      { value: 'medium', label: 'Medium', description: 'Standard button size' },
-      { value: 'large', label: 'Large', description: 'Prominent button size' },
-      { value: 'extra-large', label: 'Extra Large', description: 'Maximum impact button' }
-    ];
+    return (
+      buttonSizeOptions || [
+        { value: "small", label: "Small", description: "Compact button size" },
+        {
+          value: "medium",
+          label: "Medium",
+          description: "Standard button size",
+        },
+        {
+          value: "large",
+          label: "Large",
+          description: "Prominent button size",
+        },
+        {
+          value: "extra-large",
+          label: "Extra Large",
+          description: "Maximum impact button",
+        },
+      ]
+    );
   };
 
   const heightRanges = getHeightRanges(blockType);
   const animationRanges = getAnimationDurationRanges();
   const buttonSizes = getButtonSizeOptions();
-  
+
   const [desktopHeight, setDesktopHeight] = useState(
-    Math.max(heightRanges.desktop.min, Math.min(heightRanges.desktop.max, parseFloat(initialStyling.desktopHeightVH) || 30))
+    Math.max(
+      heightRanges.desktop.min,
+      Math.min(
+        heightRanges.desktop.max,
+        parseFloat(initialStyling.desktopHeightVH) || 30
+      )
+    )
   );
   const [mobileHeight, setMobileHeight] = useState(
-    Math.max(heightRanges.mobile.min, Math.min(heightRanges.mobile.max, parseFloat(initialStyling.mobileHeightVW) || 75))
+    Math.max(
+      heightRanges.mobile.min,
+      Math.min(
+        heightRanges.mobile.max,
+        parseFloat(initialStyling.mobileHeightVW) || 75
+      )
+    )
   );
   const [animationDuration, setAnimationDuration] = useState(
-    Math.max(animationRanges.min, Math.min(animationRanges.max, parseFloat(currentData.slideDuration || currentData.styling?.slideDuration) || animationRanges.default))
+    Math.max(
+      animationRanges.min,
+      Math.min(
+        animationRanges.max,
+        parseFloat(
+          currentData.slideDuration || currentData.styling?.slideDuration
+        ) || animationRanges.default
+      )
+    )
   );
   const [buttonSize, setButtonSize] = useState(
-    currentData.buttonSize || currentData.styling?.buttonSize || 'medium'
+    currentData.buttonSize || currentData.styling?.buttonSize || "medium"
   );
 
   // Check if this component supports variants from the styling object
   const supportsVariants = currentData.styling?.hasVariants === true;
-  
+
   // DEBUG: Log variant support detection
   console.log("[PanelStylingController] DEBUG: Variant support check:", {
     blockType,
@@ -542,50 +642,86 @@ const PanelStylingController = ({
     currentDataStyling: currentData.styling,
     hasVariants: currentData.styling?.hasVariants,
     supportsVariants,
-    currentVariant: currentData.variant
+    currentVariant: currentData.variant,
   });
-  
+
   const getDefaultVariant = (blockType) => {
     switch (blockType) {
-      case 'BookingBlock':
-        return 'nail';
-      case 'RichTextBlock':
-        return 'classic';
+      case "BookingBlock":
+        return "nail";
+      case "RichTextBlock":
+        return "classic";
       default:
-        return 'default';
+        return "default";
     }
   };
   const currentVariant = currentData.variant || getDefaultVariant(blockType);
-  
+
   // Control what to show based on controlType
-  const showHeightControls = !(blockType === 'BookingBlock' && supportsVariants) && controlType === 'height';
-  const showAnimationControls = controlType === 'animationDuration';
-  const showButtonSizeControls = controlType === 'buttonSize';
-  const showShadowVariants = controlType === 'shadowVariants';
+  const showHeightControls =
+    !(blockType === "BookingBlock" && supportsVariants) &&
+    controlType === "height";
+  const showAnimationControls = controlType === "animationDuration";
+  const showButtonSizeControls = controlType === "buttonSize";
+  const showShadowVariants = controlType === "shadowVariants";
 
   useEffect(() => {
-    const newStyling = currentData.styling || { desktopHeightVH: 30, mobileHeightVW: 75 };
+    const newStyling = currentData.styling || {
+      desktopHeightVH: 30,
+      mobileHeightVW: 75,
+    };
     const ranges = getHeightRanges(blockType);
     const animRanges = getAnimationDurationRanges();
-    
+
     // Ensure values are within proper ranges
-    setDesktopHeight(Math.max(ranges.desktop.min, Math.min(ranges.desktop.max, parseFloat(newStyling.desktopHeightVH) || 30)));
-    setMobileHeight(Math.max(ranges.mobile.min, Math.min(ranges.mobile.max, parseFloat(newStyling.mobileHeightVW) || 75)));
-    setAnimationDuration(Math.max(animRanges.min, Math.min(animRanges.max, parseFloat(currentData.slideDuration || currentData.styling?.slideDuration) || animRanges.default)));
-    setButtonSize(currentData.buttonSize || currentData.styling?.buttonSize || 'medium');
-  }, [currentData.styling, currentData.slideDuration, currentData.buttonSize, blockType, animationDurationOptions]);
+    setDesktopHeight(
+      Math.max(
+        ranges.desktop.min,
+        Math.min(
+          ranges.desktop.max,
+          parseFloat(newStyling.desktopHeightVH) || 30
+        )
+      )
+    );
+    setMobileHeight(
+      Math.max(
+        ranges.mobile.min,
+        Math.min(ranges.mobile.max, parseFloat(newStyling.mobileHeightVW) || 75)
+      )
+    );
+    setAnimationDuration(
+      Math.max(
+        animRanges.min,
+        Math.min(
+          animRanges.max,
+          parseFloat(
+            currentData.slideDuration || currentData.styling?.slideDuration
+          ) || animRanges.default
+        )
+      )
+    );
+    setButtonSize(
+      currentData.buttonSize || currentData.styling?.buttonSize || "medium"
+    );
+  }, [
+    currentData.styling,
+    currentData.slideDuration,
+    currentData.buttonSize,
+    blockType,
+    animationDurationOptions,
+  ]);
 
   const handleSliderChange = (e) => {
     const value = parseFloat(e.target.value);
-    if (controlType === 'height') {
-      if (activeMode === 'laptop') {
+    if (controlType === "height") {
+      if (activeMode === "laptop") {
         setDesktopHeight(value);
         onControlsChange({
           ...currentData,
           styling: {
             ...initialStyling,
             desktopHeightVH: value,
-          }
+          },
         });
       } else {
         setMobileHeight(value);
@@ -594,10 +730,10 @@ const PanelStylingController = ({
           styling: {
             ...initialStyling,
             mobileHeightVW: value,
-          }
+          },
         });
       }
-    } else if (controlType === 'animationDuration') {
+    } else if (controlType === "animationDuration") {
       setAnimationDuration(value);
       onControlsChange({
         ...currentData,
@@ -605,7 +741,7 @@ const PanelStylingController = ({
         styling: {
           ...initialStyling,
           slideDuration: value,
-        }
+        },
       });
     }
   };
@@ -614,33 +750,42 @@ const PanelStylingController = ({
     const value = parseFloat(e.target.value);
     if (isNaN(value)) return;
 
-    if (controlType === 'height') {
+    if (controlType === "height") {
       const ranges = getHeightRanges(blockType);
-      
-      if (activeMode === 'laptop') {
-        const clampedValue = Math.max(ranges.desktop.min, Math.min(ranges.desktop.max, value));
+
+      if (activeMode === "laptop") {
+        const clampedValue = Math.max(
+          ranges.desktop.min,
+          Math.min(ranges.desktop.max, value)
+        );
         setDesktopHeight(clampedValue);
         onControlsChange({
           ...currentData,
           styling: {
             ...initialStyling,
             desktopHeightVH: clampedValue,
-          }
+          },
         });
       } else {
-        const clampedValue = Math.max(ranges.mobile.min, Math.min(ranges.mobile.max, value));
+        const clampedValue = Math.max(
+          ranges.mobile.min,
+          Math.min(ranges.mobile.max, value)
+        );
         setMobileHeight(clampedValue);
         onControlsChange({
           ...currentData,
           styling: {
             ...initialStyling,
             mobileHeightVW: clampedValue,
-          }
+          },
         });
       }
-    } else if (controlType === 'animationDuration') {
+    } else if (controlType === "animationDuration") {
       const animRanges = getAnimationDurationRanges();
-      const clampedValue = Math.max(animRanges.min, Math.min(animRanges.max, value));
+      const clampedValue = Math.max(
+        animRanges.min,
+        Math.min(animRanges.max, value)
+      );
       setAnimationDuration(clampedValue);
       onControlsChange({
         ...currentData,
@@ -648,7 +793,7 @@ const PanelStylingController = ({
         styling: {
           ...initialStyling,
           slideDuration: clampedValue,
-        }
+        },
       });
     }
   };
@@ -661,14 +806,14 @@ const PanelStylingController = ({
       styling: {
         ...initialStyling,
         buttonSize: newSize,
-      }
+      },
     });
   };
 
   const handleVariantChange = (newVariant) => {
     onControlsChange({
       ...currentData,
-      variant: newVariant
+      variant: newVariant,
     });
   };
 
@@ -678,37 +823,37 @@ const PanelStylingController = ({
       styling: {
         ...initialStyling,
         shadowVariant: newShadowVariant,
-      }
+      },
     });
   };
 
   // Get current values based on control type
   const getCurrentValue = () => {
-    if (controlType === 'height') {
-      return activeMode === 'laptop' ? desktopHeight : mobileHeight;
-    } else if (controlType === 'animationDuration') {
+    if (controlType === "height") {
+      return activeMode === "laptop" ? desktopHeight : mobileHeight;
+    } else if (controlType === "animationDuration") {
       return animationDuration;
     }
     return 0;
   };
 
   const getCurrentUnit = () => {
-    if (controlType === 'height') {
-      return activeMode === 'laptop' ? 'vh' : 'vw';
-    } else if (controlType === 'animationDuration') {
-      return 's';
+    if (controlType === "height") {
+      return activeMode === "laptop" ? "vh" : "vw";
+    } else if (controlType === "animationDuration") {
+      return "s";
     }
-    return '';
+    return "";
   };
 
   const getCurrentRanges = () => {
-    if (controlType === 'height') {
+    if (controlType === "height") {
       const ranges = getHeightRanges(blockType);
       return {
-        min: activeMode === 'laptop' ? ranges.desktop.min : ranges.mobile.min,
-        max: activeMode === 'laptop' ? ranges.desktop.max : ranges.mobile.max
+        min: activeMode === "laptop" ? ranges.desktop.min : ranges.mobile.min,
+        max: activeMode === "laptop" ? ranges.desktop.max : ranges.mobile.max,
       };
-    } else if (controlType === 'animationDuration') {
+    } else if (controlType === "animationDuration") {
       return animationRanges;
     }
     return { min: 0, max: 100 };
@@ -719,39 +864,75 @@ const PanelStylingController = ({
   const ranges = getCurrentRanges();
   const minValue = ranges.min;
   const maxValue = ranges.max;
-  const stepValue = controlType === 'height' ? (activeMode === 'laptop' ? 1 : 5) : 5;
+  const stepValue =
+    controlType === "height" ? (activeMode === "laptop" ? 1 : 5) : 5;
 
   // Get original height ranges for preset buttons (only needed for height control)
-  const originalHeightRanges = controlType === 'height' ? getHeightRanges(blockType) : null;
+  const originalHeightRanges =
+    controlType === "height" ? getHeightRanges(blockType) : null;
 
   const getVariantOptions = () => {
-    if (blockType === 'BookingBlock') {
+    if (blockType === "BookingBlock") {
       return [
-        { value: 'nail', label: 'Nail Style', description: 'Original design with nail animations and wood plank styling' },
-        { value: 'modern', label: 'Modern', description: 'Clean, minimalist design with gradients and split-screen layout' },
-        { value: 'creative', label: 'Creative', description: 'Image-rich design with playful elements and three-column layout' }
+        {
+          value: "nail",
+          label: "Nail Style",
+          description:
+            "Original design with nail animations and wood plank styling",
+        },
+        {
+          value: "modern",
+          label: "Modern",
+          description:
+            "Clean, minimalist design with gradients and split-screen layout",
+        },
+        {
+          value: "creative",
+          label: "Creative",
+          description:
+            "Image-rich design with playful elements and three-column layout",
+        },
       ];
     }
-    
-    if (blockType === 'RichTextBlock') {
+
+    if (blockType === "RichTextBlock") {
       return [
-        { value: 'classic', label: 'Classic', description: 'Original layout with hero text, slideshow background, and cards above' },
-        { value: 'modern', label: 'Modern', description: 'Clean split-screen layout with text on one side and gallery on the other' },
-        { value: 'grid', label: 'Grid', description: 'Clean grid layout with structured cards and clear content sections' }
+        {
+          value: "classic",
+          label: "Classic",
+          description:
+            "Original layout with hero text, slideshow background, and cards above",
+        },
+        {
+          value: "modern",
+          label: "Modern",
+          description:
+            "Clean split-screen layout with text on one side and gallery on the other",
+        },
+        {
+          value: "grid",
+          label: "Grid",
+          description:
+            "Clean grid layout with structured cards and clear content sections",
+        },
       ];
     }
-    
+
     // Add more block types here as they get variant support
     return [
-      { value: 'default', label: 'Default', description: 'Standard design variant' }
+      {
+        value: "default",
+        label: "Default",
+        description: "Standard design variant",
+      },
     ];
   };
 
   const variantOptions = getVariantOptions();
-  const currentShadowVariant = currentData.styling?.shadowVariant || 'default';
+  const currentShadowVariant = currentData.styling?.shadowVariant || "default";
 
   // Render based on control type
-  if (controlType === 'animations') {
+  if (controlType === "animations") {
     return (
       <AnimationControls
         currentData={currentData}
@@ -767,9 +948,16 @@ const PanelStylingController = ({
       {supportsVariants && (
         <div className="mb-6 pb-6 border-b border-gray-600">
           {/* DEBUG: Log that we're rendering the variant selector */}
-          {console.log("[PanelStylingController] DEBUG: Rendering variant selector for", blockType, "with variants:", variantOptions)}
-          <h3 className="text-lg font-semibold mb-4 text-center">Design Variant</h3>
-          
+          {console.log(
+            "[PanelStylingController] DEBUG: Rendering variant selector for",
+            blockType,
+            "with variants:",
+            variantOptions
+          )}
+          <h3 className="text-lg font-semibold mb-4 text-center">
+            Design Variant
+          </h3>
+
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {variantOptions.map((option) => (
               <div key={option.value} className="relative">
@@ -782,15 +970,20 @@ const PanelStylingController = ({
                     onChange={() => handleVariantChange(option.value)}
                     className="sr-only"
                   />
-                  
+
                   {/* Visual Preview with Selection Ring */}
-                  <div className={`relative mb-2 p-1 rounded-lg transition-all duration-200 ${
-                    currentVariant === option.value 
-                      ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-gray-800' 
-                      : 'ring-1 ring-gray-600 group-hover:ring-gray-500'
-                  }`}>
-                    <VariantPreview variant={option.value} blockType={blockType} />
-                    
+                  <div
+                    className={`relative mb-2 p-1 rounded-lg transition-all duration-200 ${
+                      currentVariant === option.value
+                        ? "ring-2 ring-blue-500 ring-offset-2 ring-offset-gray-800"
+                        : "ring-1 ring-gray-600 group-hover:ring-gray-500"
+                    }`}
+                  >
+                    <VariantPreview
+                      variant={option.value}
+                      blockType={blockType}
+                    />
+
                     {/* Selected indicator */}
                     {currentVariant === option.value && (
                       <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
@@ -798,13 +991,19 @@ const PanelStylingController = ({
                       </div>
                     )}
                   </div>
-                  
+
                   {/* Variant Name */}
-                  <div className={`text-center transition-colors duration-200 ${
-                    currentVariant === option.value ? 'text-blue-400' : 'text-gray-300 group-hover:text-white'
-                  }`}>
+                  <div
+                    className={`text-center transition-colors duration-200 ${
+                      currentVariant === option.value
+                        ? "text-blue-400"
+                        : "text-gray-300 group-hover:text-white"
+                    }`}
+                  >
                     <div className="font-medium text-sm">{option.label}</div>
-                    <div className="text-xs text-gray-400 mt-1 max-w-24 leading-tight">{option.description}</div>
+                    <div className="text-xs text-gray-400 mt-1 max-w-24 leading-tight">
+                      {option.description}
+                    </div>
                   </div>
                 </label>
               </div>
@@ -816,14 +1015,32 @@ const PanelStylingController = ({
       {/* Shadow Variants (for ServiceSliderBlock) */}
       {showShadowVariants && (
         <div className="mb-6 pb-6 border-b border-gray-600">
-          <h3 className="text-lg font-semibold mb-4 text-center">Service Item Shadows</h3>
-          
+          <h3 className="text-lg font-semibold mb-4 text-center">
+            Service Item Shadows
+          </h3>
+
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {[
-              { value: 'default', label: 'Default', description: 'Standard shadow' },
-              { value: 'soft', label: 'Soft', description: 'Subtle shadow effect' },
-              { value: 'medium', label: 'Medium', description: 'Enhanced shadow with drop effect' },
-              { value: 'strong', label: 'Strong', description: 'Bold shadow for prominence' }
+              {
+                value: "default",
+                label: "Default",
+                description: "Standard shadow",
+              },
+              {
+                value: "soft",
+                label: "Soft",
+                description: "Subtle shadow effect",
+              },
+              {
+                value: "medium",
+                label: "Medium",
+                description: "Enhanced shadow with drop effect",
+              },
+              {
+                value: "strong",
+                label: "Strong",
+                description: "Bold shadow for prominence",
+              },
             ].map((option) => (
               <ShadowVariantPreview
                 key={option.value}
@@ -839,26 +1056,28 @@ const PanelStylingController = ({
       {/* Height Controls - only show when showHeightControls is true */}
       {showHeightControls && (
         <div className="mb-4">
-          <h3 className="text-lg font-semibold mb-3 text-center">Height Controls</h3>
-          
+          <h3 className="text-lg font-semibold mb-3 text-center">
+            Height Controls
+          </h3>
+
           {/* Mode Toggle */}
           <div className="flex bg-gray-700 rounded-lg p-1 mb-4">
             <button
-              onClick={() => setActiveMode('laptop')}
+              onClick={() => setActiveMode("laptop")}
               className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                activeMode === 'laptop' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'text-gray-300 hover:text-white'
+                activeMode === "laptop"
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-300 hover:text-white"
               }`}
             >
               💻 Desktop (md+)
             </button>
             <button
-              onClick={() => setActiveMode('mobile')}
+              onClick={() => setActiveMode("mobile")}
               className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                activeMode === 'mobile' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'text-gray-300 hover:text-white'
+                activeMode === "mobile"
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-300 hover:text-white"
               }`}
             >
               📱 Mobile
@@ -868,17 +1087,20 @@ const PanelStylingController = ({
           {/* Current Value Display */}
           <div className="text-center mb-4">
             <div className="text-2xl font-bold text-blue-400">
-              {currentValue}{currentUnit}
+              {currentValue}
+              {currentUnit}
             </div>
             <div className="text-sm text-gray-400">
-              {activeMode === 'laptop' ? 'Desktop Height' : 'Mobile Height'}
+              {activeMode === "laptop" ? "Desktop Height" : "Mobile Height"}
             </div>
           </div>
 
           {/* Range Slider - Similar to VideoCTA.jsx */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              {activeMode === 'laptop' ? `Desktop Height (${minValue}-${maxValue}vh)` : `Mobile Height (${minValue}-${maxValue}vw)`}
+              {activeMode === "laptop"
+                ? `Desktop Height (${minValue}-${maxValue}vh)`
+                : `Mobile Height (${minValue}-${maxValue}vw)`}
             </label>
             <input
               type="range"
@@ -890,8 +1112,14 @@ const PanelStylingController = ({
               className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer slider-thumb"
             />
             <div className="flex justify-between text-xs text-gray-400 mt-1">
-              <span>{minValue}{currentUnit}</span>
-              <span>{maxValue}{currentUnit}</span>
+              <span>
+                {minValue}
+                {currentUnit}
+              </span>
+              <span>
+                {maxValue}
+                {currentUnit}
+              </span>
             </div>
           </div>
 
@@ -910,28 +1138,54 @@ const PanelStylingController = ({
                 onChange={handleNumberInputChange}
                 className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
-              <span className="ml-2 text-gray-400 font-medium">{currentUnit}</span>
+              <span className="ml-2 text-gray-400 font-medium">
+                {currentUnit}
+              </span>
             </div>
           </div>
 
           {/* Quick Presets */}
           <div className="grid grid-cols-3 gap-2">
-            {activeMode === 'laptop' ? (
+            {activeMode === "laptop" ? (
               <>
                 <button
-                  onClick={() => handleSliderChange({ target: { value: originalHeightRanges.desktop.min + 5 } })}
+                  onClick={() =>
+                    handleSliderChange({
+                      target: { value: originalHeightRanges.desktop.min + 5 },
+                    })
+                  }
                   className="py-2 px-3 bg-gray-700 hover:bg-gray-600 rounded text-sm transition-colors"
                 >
                   Compact ({originalHeightRanges.desktop.min + 5}vh)
                 </button>
                 <button
-                  onClick={() => handleSliderChange({ target: { value: Math.round((originalHeightRanges.desktop.min + originalHeightRanges.desktop.max) / 2) } })}
+                  onClick={() =>
+                    handleSliderChange({
+                      target: {
+                        value: Math.round(
+                          (originalHeightRanges.desktop.min +
+                            originalHeightRanges.desktop.max) /
+                            2
+                        ),
+                      },
+                    })
+                  }
                   className="py-2 px-3 bg-gray-700 hover:bg-gray-600 rounded text-sm transition-colors"
                 >
-                  Default ({Math.round((originalHeightRanges.desktop.min + originalHeightRanges.desktop.max) / 2)}vh)
+                  Default (
+                  {Math.round(
+                    (originalHeightRanges.desktop.min +
+                      originalHeightRanges.desktop.max) /
+                      2
+                  )}
+                  vh)
                 </button>
                 <button
-                  onClick={() => handleSliderChange({ target: { value: originalHeightRanges.desktop.max - 5 } })}
+                  onClick={() =>
+                    handleSliderChange({
+                      target: { value: originalHeightRanges.desktop.max - 5 },
+                    })
+                  }
                   className="py-2 px-3 bg-gray-700 hover:bg-gray-600 rounded text-sm transition-colors"
                 >
                   Tall ({originalHeightRanges.desktop.max - 5}vh)
@@ -940,19 +1194,43 @@ const PanelStylingController = ({
             ) : (
               <>
                 <button
-                  onClick={() => handleSliderChange({ target: { value: originalHeightRanges.mobile.min + 10 } })}
+                  onClick={() =>
+                    handleSliderChange({
+                      target: { value: originalHeightRanges.mobile.min + 10 },
+                    })
+                  }
                   className="py-2 px-3 bg-gray-700 hover:bg-gray-600 rounded text-sm transition-colors"
                 >
                   Compact ({originalHeightRanges.mobile.min + 10}vw)
                 </button>
                 <button
-                  onClick={() => handleSliderChange({ target: { value: Math.round((originalHeightRanges.mobile.min + originalHeightRanges.mobile.max) / 2) } })}
+                  onClick={() =>
+                    handleSliderChange({
+                      target: {
+                        value: Math.round(
+                          (originalHeightRanges.mobile.min +
+                            originalHeightRanges.mobile.max) /
+                            2
+                        ),
+                      },
+                    })
+                  }
                   className="py-2 px-3 bg-gray-700 hover:bg-gray-600 rounded text-sm transition-colors"
                 >
-                  Default ({Math.round((originalHeightRanges.mobile.min + originalHeightRanges.mobile.max) / 2)}vw)
+                  Default (
+                  {Math.round(
+                    (originalHeightRanges.mobile.min +
+                      originalHeightRanges.mobile.max) /
+                      2
+                  )}
+                  vw)
                 </button>
                 <button
-                  onClick={() => handleSliderChange({ target: { value: originalHeightRanges.mobile.max - 10 } })}
+                  onClick={() =>
+                    handleSliderChange({
+                      target: { value: originalHeightRanges.mobile.max - 10 },
+                    })
+                  }
                   className="py-2 px-3 bg-gray-700 hover:bg-gray-600 rounded text-sm transition-colors"
                 >
                   Tall ({originalHeightRanges.mobile.max - 10}vw)
@@ -966,16 +1244,16 @@ const PanelStylingController = ({
       {/* Animation Duration Controls - only show when showAnimationControls is true */}
       {showAnimationControls && (
         <div className="mb-4">
-          <h3 className="text-lg font-semibold mb-3 text-center">Animation Duration</h3>
-          
+          <h3 className="text-lg font-semibold mb-3 text-center">
+            Animation Duration
+          </h3>
+
           {/* Current Value Display */}
           <div className="text-center mb-4">
             <div className="text-2xl font-bold text-blue-400">
               {animationDuration}s
             </div>
-            <div className="text-sm text-gray-400">
-              Animation Duration
-            </div>
+            <div className="text-sm text-gray-400">Animation Duration</div>
           </div>
 
           {/* Range Slider - Similar to VideoCTA.jsx */}
@@ -1020,19 +1298,36 @@ const PanelStylingController = ({
           {/* Quick Presets */}
           <div className="grid grid-cols-3 gap-2">
             <button
-              onClick={() => handleSliderChange({ target: { value: animationRanges.min + 10 } })}
+              onClick={() =>
+                handleSliderChange({
+                  target: { value: animationRanges.min + 10 },
+                })
+              }
               className="py-2 px-3 bg-gray-700 hover:bg-gray-600 rounded text-sm transition-colors"
             >
               Short (10s)
             </button>
             <button
-              onClick={() => handleSliderChange({ target: { value: Math.round((animationRanges.min + animationRanges.max) / 2) } })}
+              onClick={() =>
+                handleSliderChange({
+                  target: {
+                    value: Math.round(
+                      (animationRanges.min + animationRanges.max) / 2
+                    ),
+                  },
+                })
+              }
               className="py-2 px-3 bg-gray-700 hover:bg-gray-600 rounded text-sm transition-colors"
             >
-              Default ({Math.round((animationRanges.min + animationRanges.max) / 2)}s)
+              Default (
+              {Math.round((animationRanges.min + animationRanges.max) / 2)}s)
             </button>
             <button
-              onClick={() => handleSliderChange({ target: { value: animationRanges.max - 10 } })}
+              onClick={() =>
+                handleSliderChange({
+                  target: { value: animationRanges.max - 10 },
+                })
+              }
               className="py-2 px-3 bg-gray-700 hover:bg-gray-600 rounded text-sm transition-colors"
             >
               Long ({animationRanges.max - 10}s)
@@ -1042,7 +1337,7 @@ const PanelStylingController = ({
       )}
 
       {/* Button Size Controls */}
-      {controlType === 'buttonSize' && (
+      {controlType === "buttonSize" && (
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1053,33 +1348,39 @@ const PanelStylingController = ({
               onChange={(e) => handleButtonSizeChange(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              {buttonSizeOptions.map(option => (
+              {buttonSizeOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
               ))}
             </select>
-            {buttonSizeOptions.find(opt => opt.value === currentValue)?.description && (
+            {buttonSizeOptions.find((opt) => opt.value === currentValue)
+              ?.description && (
               <p className="mt-1 text-xs text-gray-500">
-                {buttonSizeOptions.find(opt => opt.value === currentValue).description}
+                {
+                  buttonSizeOptions.find((opt) => opt.value === currentValue)
+                    .description
+                }
               </p>
             )}
           </div>
-          
+
           {/* Button Size Preview Cards */}
           <div className="grid grid-cols-2 gap-2">
-            {buttonSizeOptions.map(option => (
+            {buttonSizeOptions.map((option) => (
               <button
                 key={option.value}
                 onClick={() => handleButtonSizeChange(option.value)}
                 className={`p-3 text-center rounded-md border transition-all ${
                   currentValue === option.value
-                    ? 'border-blue-500 bg-blue-50 text-blue-700' 
-                    : 'border-gray-200 bg-white hover:border-gray-300'
+                    ? "border-blue-500 bg-blue-50 text-blue-700"
+                    : "border-gray-200 bg-white hover:border-gray-300"
                 }`}
               >
                 <div className="font-medium text-sm">{option.label}</div>
-                <div className="text-xs text-gray-500 mt-1">{option.description}</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {option.description}
+                </div>
               </button>
             ))}
           </div>
@@ -1138,4 +1439,4 @@ PanelStylingController.propTypes = {
   buttonSizeOptions: PropTypes.array,
 };
 
-export default PanelStylingController; 
+export default PanelStylingController;
