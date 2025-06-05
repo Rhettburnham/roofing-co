@@ -36,22 +36,6 @@ const CheckoutForm = ({ selectedPlan, prices }) => {
 
       // Get form data
       const formData = new FormData(e.target);
-      const billingDetails = {
-        name: `${formData.get('firstName')} ${formData.get('lastName')}`,
-        address: {
-          line1: formData.get('address'),
-          city: formData.get('city'),
-          state: formData.get('state'),
-          postal_code: formData.get('postalCode'),
-          country: formData.get('country'),
-        },
-      };
-
-      // Get the card element
-      const cardElement = elements.getElement(CardElement);
-      if (!cardElement) {
-        throw new Error('Card element not found');
-      }
 
       // Create subscription with default_incomplete
       const response = await fetch('/api/auth/create-checkout', {
@@ -63,6 +47,16 @@ const CheckoutForm = ({ selectedPlan, prices }) => {
         body: JSON.stringify({
           priceId: selectedPlan === 'monthly' ? MONTHLY_PRICE_ID : YEARLY_PRICE_ID,
           planType: selectedPlan,
+          billingDetails: {
+            name: `${formData.get('firstName')} ${formData.get('lastName')}`,
+            address: {
+              line1: formData.get('address'),
+              city: formData.get('city'),
+              state: formData.get('state'),
+              postal_code: formData.get('postalCode'),
+              country: formData.get('country'),
+            },
+          },
         })
       });
 
@@ -79,8 +73,17 @@ const CheckoutForm = ({ selectedPlan, prices }) => {
         // If clientSecret is present, confirm the payment
         const { error: confirmError } = await stripe.confirmCardPayment(clientSecret, {
           payment_method: {
-            card: cardElement,
-            billing_details: billingDetails
+            card: elements.getElement(CardElement),
+            billing_details: {
+              name: `${formData.get('firstName')} ${formData.get('lastName')}`,
+              address: {
+                line1: formData.get('address'),
+                city: formData.get('city'),
+                state: formData.get('state'),
+                postal_code: formData.get('postalCode'),
+                country: formData.get('country'),
+              },
+            }
           }
         });
 
@@ -269,13 +272,6 @@ const CheckoutForm = ({ selectedPlan, prices }) => {
           className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
         >
           {loading ? 'Processing...' : `Subscribe to ${selectedPlan === 'monthly' ? 'Monthly' : 'Yearly'} Plan`}
-        </button>
-        <button
-          type="button"
-          onClick={() => navigate('/view-plan')}
-          className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-        >
-          View Plan
         </button>
       </div>
     </form>

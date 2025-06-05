@@ -77,7 +77,7 @@ function AboutPreview({
               alt={title || 'About Hero'} 
               className="rounded-lg shadow-xl w-full h-64 md:h-96 object-cover" 
             />
-          )}
+            )}
         </div>
 
         {/* History */}
@@ -257,7 +257,7 @@ function AboutPreview({
             ))}
           </div>
           {!readOnly && (
-            <div className="text-center mt-6">
+             <div className="text-center mt-6">
               <button 
                 onClick={() => onAddItem && onAddItem('stats', { title: "New Stat", value: "0", icon: "FaQuestionCircle" })} 
                 className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded text-sm"
@@ -273,25 +273,25 @@ function AboutPreview({
           <h2 className="text-2xl md:text-3xl font-semibold mb-6 text-center">Our Process</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-8">
             {(steps || []).map((step, index) => {
-              const videoDisplayUrl = getDisplayUrl(step.videoSrc, "");
-              return (
+                const videoDisplayUrl = getDisplayUrl(step.videoSrc, "");
+                return (
                 <div key={index} className="flex flex-col items-center text-center p-3 rounded-lg shadow bg-white">
-                  {videoDisplayUrl && (
-                    <div className="w-full h-32 bg-black rounded-md overflow-hidden mb-3 flex items-center justify-center">
-                      <video 
-                        src={videoDisplayUrl} 
-                        className="max-w-full max-h-full object-contain"
+                        {videoDisplayUrl && (
+                             <div className="w-full h-32 bg-black rounded-md overflow-hidden mb-3 flex items-center justify-center">
+                                <video 
+                                    src={videoDisplayUrl} 
+                                    className="max-w-full max-h-full object-contain"
                         autoPlay={!readOnly}
-                        loop 
-                        muted 
-                        playsInline 
+                                    loop 
+                                    muted 
+                                    playsInline 
                         controls={readOnly}
-                      />
-                    </div>
-                  )}
-                  {readOnly ? (
-                    <h3 className="text-lg font-medium">{step.title}</h3>
-                  ) : (
+                                />
+                            </div>
+                        )}
+                        {readOnly ? (
+                            <h3 className="text-lg font-medium">{step.title}</h3>
+                        ) : (
                     <input 
                       type="text" 
                       value={step.title} 
@@ -299,10 +299,10 @@ function AboutPreview({
                       className={`text-lg font-medium text-center w-full ${commonInputClass} mb-1`}
                       placeholder="Step Title"
                     />
-                  )}
-                  {readOnly ? (
-                    step.href && <a href={step.href} className="text-blue-600 hover:text-blue-800 text-sm mt-1">Learn More</a>
-                  ) : (
+                        )}
+                        {readOnly ? (
+                            step.href && <a href={step.href} className="text-blue-600 hover:text-blue-800 text-sm mt-1">Learn More</a>
+                        ) : (
                     <input 
                       type="text" 
                       value={step.href || ""} 
@@ -310,11 +310,11 @@ function AboutPreview({
                       className={`text-blue-600 text-sm text-center w-full ${commonInputClass} mt-1`}
                       placeholder="Link URL (e.g., /#contact)"
                     />
-                  )}
-                  {!readOnly && (
+                        )}
+                        {!readOnly && (
                     <>
-                      <div className="w-full mt-2">
-                        <label className="block text-xs font-medium text-gray-600">Scale (e.g., 1.0):</label>
+                             <div className="w-full mt-2">
+                                <label className="block text-xs font-medium text-gray-600">Scale (e.g., 1.0):</label>
                         <input 
                           type="number" 
                           step="0.01" 
@@ -322,7 +322,7 @@ function AboutPreview({
                           onChange={(e) => onNestedChange && onNestedChange('steps', index, 'scale', parseFloat(e.target.value))} 
                           className={`text-sm text-center w-20 mx-auto ${commonInputClass}`}
                         />
-                      </div>
+                             </div>
                       <button 
                         onClick={() => onRemoveItem && onRemoveItem('steps', index)} 
                         className="text-red-500 hover:text-red-700 text-xs mt-3"
@@ -330,13 +330,13 @@ function AboutPreview({
                         Remove Step
                       </button>
                     </>
-                  )}
-                </div>
-              );
+                        )}
+                    </div>
+                );
             })}
           </div>
-          {!readOnly && (
-            <div className="text-center mt-6">
+           {!readOnly && (
+             <div className="text-center mt-6">
               <button 
                 onClick={() => onAddItem && onAddItem('steps', { title: "New Step", videoSrc: "", href: "", scale: 1.0 })} 
                 className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded text-sm"
@@ -507,64 +507,33 @@ export default function AboutBlock({
     };
   });
 
+  // Sync with external data changes
+  useEffect(() => {
+    if (aboutData) {
+      setLocalData(prev => {
+        const newData = {
+          title: aboutData.title || prev.title,
+          subtitle: aboutData.subtitle || prev.subtitle,
+          history: aboutData.history || prev.history,
+          mission: aboutData.mission || prev.mission,
+          values: (aboutData.values || []).map(v => ({ ...v })),
+          team: (aboutData.team || []).map(t => ({ ...t, photo: initializeImageState(t.photo) })),
+          stats: (aboutData.stats || []).map(s => ({ ...s })),
+          heroImage: initializeImageState(aboutData.heroImage),
+          steps: (aboutData.steps || []).map(st => ({ ...st, videoSrc: initializeImageState(st.videoSrc) })),
+        };
+        return newData;
+      });
+    }
+  }, [aboutData]);
+
   const prevReadOnlyRef = useRef(readOnly);
   const prevAboutDataRef = useRef(aboutData);
 
   useEffect(() => {
-    if (aboutData && aboutData !== prevAboutDataRef.current) {
-      setLocalData(prevLocal => {
-        const newHeroImage = initializeImageState(aboutData.heroImage, prevLocal.heroImage?.originalUrl);
-        if(prevLocal.heroImage?.file && prevLocal.heroImage.url?.startsWith('blob:') && prevLocal.heroImage.url !== newHeroImage.url) {
-            URL.revokeObjectURL(prevLocal.heroImage.url);
-        }
-
-        const newTeam = (aboutData.team || []).map((newMember, idx) => {
-            const oldMember = prevLocal.team?.[idx];
-            const newPhoto = initializeImageState(newMember.photo, oldMember?.photo?.originalUrl);
-            if(oldMember?.photo?.file && oldMember.photo.url?.startsWith('blob:') && oldMember.photo.url !== newPhoto.url) {
-                 URL.revokeObjectURL(oldMember.photo.url);
-            }
-            return { ...newMember, photo: newPhoto };
-        });
-        
-        const newSteps = (aboutData.steps || []).map((newStep, idx) => {
-            const oldStep = prevLocal.steps?.[idx];
-            const newVideoSrc = initializeImageState(newStep.videoSrc, oldStep?.videoSrc?.originalUrl);
-             if(oldStep?.videoSrc?.file && oldStep.videoSrc.url?.startsWith('blob:') && oldStep.videoSrc.url !== newVideoSrc.url) {
-                 URL.revokeObjectURL(oldStep.videoSrc.url);
-            }
-            return { ...newStep, videoSrc: newVideoSrc };
-        });
-
-        return {
-          ...aboutData,
-          heroImage: newHeroImage,
-          team: newTeam,
-          steps: newSteps,
-          values: (aboutData.values || []).map(v => ({...v})),
-          stats: (aboutData.stats || []).map(s => ({...s})),
-        };
-      });
-      prevAboutDataRef.current = aboutData;
-    }
-  }, [aboutData]);
-
-  useEffect(() => {
-    return () => {
-      const cleanupItem = (item) => {
-        if (item && typeof item === 'object' && item.url && item.url.startsWith('blob:')) {
-          URL.revokeObjectURL(item.url);
-        }
-      };
-      cleanupItem(localData.heroImage);
-      (localData.team || []).forEach(member => cleanupItem(member.photo));
-      (localData.steps || []).forEach(step => cleanupItem(step.videoSrc));
-    };
-  }, [localData.heroImage, localData.team, localData.steps]);
-
-  useEffect(() => {
     if (prevReadOnlyRef.current === false && readOnly === true) {
       if (onConfigChange) {
+        console.log("[AboutBlock] Saving changes:", localData);
         onConfigChange(localData);
       }
     }
@@ -572,6 +541,7 @@ export default function AboutBlock({
   }, [readOnly, localData, onConfigChange]);
 
   const handleLocalDataUpdate = (updatedAboutData) => {
+    console.log("[AboutBlock] Local data updated:", updatedAboutData);
     setLocalData(updatedAboutData);
     if (!readOnly && onConfigChange) {
       onConfigChange(updatedAboutData);
@@ -579,7 +549,11 @@ export default function AboutBlock({
   };
 
   const handleFieldChange = (field, value) => {
-    setLocalData(prev => ({ ...prev, [field]: value }));
+    const updatedData = { ...localData, [field]: value };
+    setLocalData(updatedData);
+    if (!readOnly && onConfigChange) {
+      onConfigChange(updatedData);
+    }
   };
 
   const handleNestedChange = (listName, index, field, value) => {
@@ -588,30 +562,34 @@ export default function AboutBlock({
       if (newList[index]) {
         newList[index] = { ...newList[index], [field]: value };
       }
-      return { ...prev, [listName]: newList };
+      const updatedData = { ...prev, [listName]: newList };
+      if (!readOnly && onConfigChange) {
+        onConfigChange(updatedData);
+      }
+      return updatedData;
     });
   };
 
   const handleAddItem = (listName, newItemTemplate) => {
     setLocalData(prev => {
       const newList = [...(prev[listName] || []), newItemTemplate];
-      return { ...prev, [listName]: newList };
+      const updatedData = { ...prev, [listName]: newList };
+      if (!readOnly && onConfigChange) {
+        onConfigChange(updatedData);
+      }
+      return updatedData;
     });
   };
 
   const handleRemoveItem = (listName, index) => {
     setLocalData(prev => {
-      const list = prev[listName] || [];
-      const itemToRemove = list[index];
-      if (itemToRemove) {
-        for (const key in itemToRemove) {
-          if (itemToRemove[key] && typeof itemToRemove[key] === 'object' && itemToRemove[key].url && itemToRemove[key].url.startsWith('blob:')) {
-            URL.revokeObjectURL(itemToRemove[key].url);
-          }
-        }
+      const newList = [...(prev[listName] || [])];
+      newList.splice(index, 1);
+      const updatedData = { ...prev, [listName]: newList };
+      if (!readOnly && onConfigChange) {
+        onConfigChange(updatedData);
       }
-      const newList = list.filter((_, i) => i !== index);
-      return { ...prev, [listName]: newList };
+      return updatedData;
     });
   };
 
@@ -623,61 +601,71 @@ export default function AboutBlock({
       const currentHeroImage = localData.heroImage;
       let originalUrl = typeof currentHeroImage === 'string' ? currentHeroImage : currentHeroImage?.originalUrl;
 
+      // Clean up old blob URL if it exists
       if (currentHeroImage && typeof currentHeroImage === 'object' && currentHeroImage.url && currentHeroImage.url.startsWith('blob:')) {
         URL.revokeObjectURL(currentHeroImage.url);
       }
+
       const fileURL = URL.createObjectURL(file);
-      setLocalData(prev => ({
-        ...prev,
+      const updatedData = {
+        ...localData,
         heroImage: {
           file,
           url: fileURL,
           name: file.name,
           originalUrl: originalUrl
         }
-      }));
+      };
+      setLocalData(updatedData);
+      onConfigChange(updatedData);
     } else if (fieldOrPath.teamIndex !== undefined) {
       // Team photo
       const teamIndex = fieldOrPath.teamIndex;
-      setLocalData(prev => {
-        const newTeam = [...prev.team];
-        const currentPhoto = newTeam[teamIndex]?.photo;
-        if (currentPhoto?.url?.startsWith('blob:')) {
-          URL.revokeObjectURL(currentPhoto.url);
+      const newTeam = [...localData.team];
+      const currentPhoto = newTeam[teamIndex]?.photo;
+      
+      // Clean up old blob URL if it exists
+      if (currentPhoto?.url?.startsWith('blob:')) {
+        URL.revokeObjectURL(currentPhoto.url);
+      }
+
+      const fileURL = URL.createObjectURL(file);
+      newTeam[teamIndex] = {
+        ...newTeam[teamIndex],
+        photo: {
+          file,
+          url: fileURL,
+          name: file.name,
+          originalUrl: currentPhoto?.originalUrl
         }
-        const fileURL = URL.createObjectURL(file);
-        newTeam[teamIndex] = {
-          ...newTeam[teamIndex],
-          photo: {
-            file,
-            url: fileURL,
-            name: file.name,
-            originalUrl: currentPhoto?.originalUrl
-          }
-        };
-        return { ...prev, team: newTeam };
-      });
+      };
+      const updatedData = { ...localData, team: newTeam };
+      setLocalData(updatedData);
+      onConfigChange(updatedData);
     } else if (fieldOrPath.stepIndex !== undefined) {
       // Step video
       const stepIndex = fieldOrPath.stepIndex;
-      setLocalData(prev => {
-        const newSteps = [...prev.steps];
-        const currentVideo = newSteps[stepIndex]?.videoSrc;
-        if (currentVideo?.url?.startsWith('blob:')) {
-          URL.revokeObjectURL(currentVideo.url);
+      const newSteps = [...localData.steps];
+      const currentVideo = newSteps[stepIndex]?.videoSrc;
+      
+      // Clean up old blob URL if it exists
+      if (currentVideo?.url?.startsWith('blob:')) {
+        URL.revokeObjectURL(currentVideo.url);
+      }
+
+      const fileURL = URL.createObjectURL(file);
+      newSteps[stepIndex] = {
+        ...newSteps[stepIndex],
+        videoSrc: {
+          file,
+          url: fileURL,
+          name: file.name,
+          originalUrl: currentVideo?.originalUrl
         }
-        const fileURL = URL.createObjectURL(file);
-        newSteps[stepIndex] = {
-          ...newSteps[stepIndex],
-          videoSrc: {
-            file,
-            url: fileURL,
-            name: file.name,
-            originalUrl: currentVideo?.originalUrl
-          }
-        };
-        return { ...prev, steps: newSteps };
-      });
+      };
+      const updatedData = { ...localData, steps: newSteps };
+      setLocalData(updatedData);
+      onConfigChange(updatedData);
     }
   };
 
@@ -695,16 +683,40 @@ export default function AboutBlock({
     };
   };
 
+  // Add cleanup effect for blob URLs
+  useEffect(() => {
+    return () => {
+      // Clean up hero image blob URL
+      if (localData.heroImage?.url?.startsWith('blob:')) {
+        URL.revokeObjectURL(localData.heroImage.url);
+      }
+
+      // Clean up team photo blob URLs
+      localData.team?.forEach(member => {
+        if (member.photo?.url?.startsWith('blob:')) {
+          URL.revokeObjectURL(member.photo.url);
+        }
+      });
+
+      // Clean up step video blob URLs
+      localData.steps?.forEach(step => {
+        if (step.videoSrc?.url?.startsWith('blob:')) {
+          URL.revokeObjectURL(step.videoSrc.url);
+        }
+      });
+    };
+  }, [localData]);
+
   if (readOnly && (!aboutData || Object.keys(aboutData).length === 0)) {
     return <div className="p-4 text-center text-gray-500">About information not available.</div>;
   }
-
+  
   // Always show the preview, with optional editor panel at bottom
   return (
     <>
       <AboutPreview
-        aboutData={readOnly ? aboutData : localData}
-        readOnly={readOnly}
+      aboutData={readOnly ? aboutData : localData}
+      readOnly={readOnly}
         onFieldChange={!readOnly ? handleFieldChange : undefined}
         onNestedChange={!readOnly ? handleNestedChange : undefined}
         onAddItem={!readOnly ? handleAddItem : undefined}

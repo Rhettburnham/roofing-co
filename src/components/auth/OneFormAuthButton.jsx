@@ -4,6 +4,7 @@ import AdminButton from './AdminButton';
 import WorkerButton from './WorkerButton';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
+import { useNavigate } from 'react-router-dom';
 
 // Global cache for blob URL to data URL conversions
 const globalDataUrlCache = new Map();
@@ -278,12 +279,36 @@ const traverseAndModifyDataForZip = async (originalDataNode, assetsToCollect, pa
         cleanedObject.url = jsonUrl;
         return cleanedObject;
       } else {
-        console.warn(`[OneFormAuthButton] Skipping blob URL - no original file/blob:`, {
+        // If no original file/blob, try to fetch from blob URL
+        console.log(`[OneFormAuthButton] No original file/blob, fetching from blob URL:`, {
           url: blobUrl,
-          nodeType: typeof originalDataNode,
-          nodeKeys: Object.keys(originalDataNode)
+          pathContext
         });
-        return originalDataNode;
+
+        // Use the same path logic as the ZIP file
+        if (originalDataNode.originalUrl && typeof originalDataNode.originalUrl === 'string') {
+          let tempPath = originalDataNode.originalUrl;
+          if (tempPath.startsWith('/')) tempPath = tempPath.substring(1);
+          pathInZip = tempPath.startsWith('assets/') ? tempPath : `assets/${tempPath}`;
+          jsonUrl = pathInZip;
+        } else {
+          // Use the same path structure as the ZIP file
+          pathInZip = `assets/images/team/${fileName}`;
+          jsonUrl = pathInZip;
+        }
+
+        // Add the blob URL to be processed later
+        assetsToCollect.push({
+          pathInZip,
+          dataSource: blobUrl,
+          type: 'url',
+          originalUrl: originalDataNode.originalUrl
+        });
+
+        const cleanedObject = { ...originalDataNode };
+        delete cleanedObject.originalUrl;
+        cleanedObject.url = jsonUrl;
+        return cleanedObject;
       }
     }
     
@@ -532,6 +557,7 @@ export default function OneFormAuthButton({
   const [debug, setDebug] = useState('');
   const [isDevelopment] = useState(process.env.NODE_ENV === 'development');
   const [imagesBeingSent, setImagesBeingSent] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!isDevelopment) {
@@ -601,7 +627,7 @@ export default function OneFormAuthButton({
     } else {
       console.log("OneFormAuthButton: Redirecting to login page...");
       setDebug('Redirecting to login...');
-      window.location.href = '/login';
+      navigate('/login');
     }
   };
 
@@ -666,25 +692,33 @@ export default function OneFormAuthButton({
       }
 
       // Process services data if changed
-      if (servicesData && JSON.stringify(servicesData) !== JSON.stringify(initialServicesData)) {
+      if (servicesData) {
         try {
+          console.log("[OneFormAuthButton] Processing services data:", {
+            currentServices: servicesData,
+            initialServices: initialServicesData,
+            hasChanges: JSON.stringify(servicesData) !== JSON.stringify(initialServicesData)
+          });
+
           const serviceAssetsForNew = [];
+          // Deep clone the services data to ensure we're working with a fresh copy
+          const currentServicesData = JSON.parse(JSON.stringify(servicesData));
           cleanedServicesDataNew = await traverseAndModifyDataForZip(
-            servicesData,
+            currentServicesData,
             serviceAssetsForNew,
             'servicesDataRoot',
             'user_uploads/services_data'
           );
           zip.file("services.json", JSON.stringify(cleanedServicesDataNew, null, 2));
           newCollectedAssets.push(...serviceAssetsForNew);
-          console.log("[OneFormAuthButton] Added services.json to ZIP");
+          console.log("[OneFormAuthButton] Added services.json to ZIP with data:", cleanedServicesDataNew);
         } catch (serviceError) {
           console.error("[OneFormAuthButton] Error processing services.json:", serviceError);
         }
       }
 
       // Process about page data if changed
-      if (aboutPageData && JSON.stringify(aboutPageData) !== JSON.stringify(initialAboutPageJsonData)) {
+      if (aboutPageData) {
         console.log("[OneFormAuthButton] Processing about_page.json for ZIP:", aboutPageData);
         let newAboutAssets = [];
         cleanedNewAboutData = await traverseAndModifyDataForZip(
@@ -714,7 +748,7 @@ export default function OneFormAuthButton({
       }
 
       // Add colors if changed
-      if (themeColors && JSON.stringify(themeColors) !== JSON.stringify(initialThemeColors)) {
+      if (themeColors /*&& JSON.stringify(themeColors) !== JSON.stringify(initialThemeColors)*/) {
         colorsForNewJson = {};
         Object.keys(themeColors).forEach(key => {
           colorsForNewJson[key.replace(/-/g, '_')] = themeColors[key];
@@ -1093,12 +1127,20 @@ export default function OneFormAuthButton({
               {saveClicked ? 'Saving...' : 'Save Changes'}
             </button>
             <button
-              onClick={() => window.location.href = '/initial-payment'}
+              onClick={() => navigate('/initial-payment')}
               className="px-4 py-2 rounded-full bg-green-600 text-white 
                        border border-green-700 hover:bg-green-700 
                        transition-all duration-300 shadow-lg"
             >
               Buy Plan
+            </button>
+            <button
+              onClick={() => navigate('/view-plan')}
+              className="px-4 py-2 rounded-full bg-indigo-600 text-white 
+                       border border-indigo-700 hover:bg-indigo-700 
+                       transition-all duration-300 shadow-lg"
+            >
+              View Plan
             </button>
           </div>
           <button

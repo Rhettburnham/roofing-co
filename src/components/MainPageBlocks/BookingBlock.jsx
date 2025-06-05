@@ -449,11 +449,11 @@ const BookingPreview = memo(({ bookingData, readOnly, onBookingDataChange, socia
               <form onSubmit={handleSubmit} className="w-full">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="md:col-span-1 p-2 rounded-md bg-gray-50 transition-transform hover:scale-105"><input type="text" name="firstName" value={formData.firstName} onChange={handleChange} placeholder="First Name" required className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600" style={{color: currentInputTextColor}} disabled={readOnly}/></div>
-                    <div className="md:col-span-1 p-2 rounded-md bg-gray-50 transition-transform hover:scale-105"><input type="text" name="lastName" value={formData.lastName} onChange={handleChange} placeholder="Last Name" required className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600" style={{color: currentInputTextColor}} disabled={readOnly}/></div>
-                    <div className="md:col-span-2 p-2 rounded-md bg-gray-50 transition-transform hover:scale-105"><input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Your Email" required className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600" style={{color: currentInputTextColor}} disabled={readOnly}/></div>
-                    <div className="md:col-span-1 p-2 rounded-md bg-gray-50 transition-transform hover:scale-105"><input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="Your Phone" required className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600" style={{color: currentInputTextColor}} disabled={readOnly}/></div>
-                    <div className="md:col-span-1 p-2 rounded-md bg-gray-50 transition-transform hover:scale-105"><div onClick={() => !readOnly && setIsModalOpen(true)} className={`w-full p-2 bg-transparent border-b border-gray-400 ${!readOnly ? 'cursor-pointer' : 'cursor-default'}`} style={{color: formData.service ? currentInputTextColor : '#4B5563' }}>{formData.service ? formData.service : "Select a Service"}</div></div>
+                    <div className="md:col-span-1 p-2 rounded-md bg-gray-50 transition-transform hover:scale-105"><input type="text" name="firstName" value={formData.firstName} onChange={handleChange} placeholder="First Name" required className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600" style={{color: currentInputTextColor}} /></div>
+                    <div className="md:col-span-1 p-2 rounded-md bg-gray-50 transition-transform hover:scale-105"><input type="text" name="lastName" value={formData.lastName} onChange={handleChange} placeholder="Last Name" required className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600" style={{color: currentInputTextColor}} /></div>
+                    <div className="md:col-span-2 p-2 rounded-md bg-gray-50 transition-transform hover:scale-105"><input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Your Email" required className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600" style={{color: currentInputTextColor}} /></div>
+                    <div className="md:col-span-1 p-2 rounded-md bg-gray-50 transition-transform hover:scale-105"><input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="Your Phone" required className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600" style={{color: currentInputTextColor}} /></div>
+                    <div className="md:col-span-1 p-2 rounded-md bg-gray-50 transition-transform hover:scale-105"><div onClick={() => setIsModalOpen(true)} className="w-full p-2 bg-transparent border-b border-gray-400 cursor-pointer" style={{color: formData.service ? currentInputTextColor : '#4B5563' }}>{formData.service ? formData.service : "Select a Service"}</div></div>
                   </div>
                   
                   <div className="md:col-span-1 p-2 rounded-md bg-gray-50 transition-transform hover:scale-105 h-full flex flex-col">
@@ -466,18 +466,17 @@ const BookingPreview = memo(({ bookingData, readOnly, onBookingDataChange, socia
                       rows="4" 
                       className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-blue-600 placeholder-gray-600 flex-grow" 
                       style={{color: currentInputTextColor, resize: 'none'}} 
-                      disabled={readOnly}
                     />
                   </div>
                 </div>
-                <div className="flex justify-center w-full mt-4 relative"><button type="submit" disabled={readOnly} className="relative px-8 py-2 text-lg font-semibold rounded-md md:w-auto shadow-md" style={{color: currentButtonTextColor, backgroundColor: currentButtonBgColor}}>Submit</button></div>
+                <div className="flex justify-center w-full mt-4 relative"><button type="submit" className="relative px-8 py-2 text-lg font-semibold rounded-md md:w-auto shadow-md" style={{color: currentButtonTextColor, backgroundColor: currentButtonBgColor}}>Submit</button></div>
               </form>
             </div>
           </div>
         </div>
       </div>
 
-      {isModalOpen && !readOnly && (
+      {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" onClick={() => setIsModalOpen(false)}>
           <div className="bg-white rounded-lg p-4 md:p-6 relative max-w-md w-full mx-2" onClick={(e) => e.stopPropagation()}>
             <button onClick={() => setIsModalOpen(false)} className="absolute top-2 right-2 text-gray-600 hover:text-gray-800 focus:outline-none"><X className="w-6 h-6" /></button>

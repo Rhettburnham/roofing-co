@@ -436,6 +436,86 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         if (!currentMainPageData && !blockName) {
             console.log("[OneForm] Fetching combined_data.json as a fallback...");
             try {
+                // Check if we're on a custom domain
+                const customDomain = window.location.hostname !== 'roofing-co.pages.dev' && 
+                                   window.location.hostname !== 'roofing-www.pages.dev' &&
+                                   window.location.hostname !== 'localhost';
+                setIsCustomDomain(customDomain);
+
+                if (customDomain) {
+                    console.log("[OneForm] On custom domain:", window.location.hostname);
+                    try {
+                        // Fetch the domain-specific config
+                        const domainConfigResponse = await fetch('/api/public/config');
+                        console.log("[OneForm] Domain config response status:", domainConfigResponse.status);
+                        
+                        if (domainConfigResponse.ok) {
+                            const domainData = await domainConfigResponse.json();
+                            console.log("[OneForm] Successfully loaded domain config data");
+                            setMainPageFormData(domainData);
+                            setInitialFormDataForOldExport(JSON.parse(JSON.stringify(domainData)));
+                            return;
+                        } else {
+                            console.error("[OneForm] Failed to load domain config. Status:", domainConfigResponse.status);
+                            const errorText = await domainConfigResponse.text();
+                            console.error("[OneForm] Error response:", errorText);
+                        }
+                    } catch (domainConfigError) {
+                        console.error("[OneForm] Error loading domain config:", domainConfigError);
+                    }
+                }
+
+                // If not on custom domain or domain config failed, check authentication
+                if (!isDevelopment) {
+                    console.log("[OneForm] Checking authentication status...");
+                    const authResponse = await fetch('/api/auth/status', {
+                        credentials: 'include'
+                    });
+                    console.log("[OneForm] Auth response status:", authResponse.status);
+                    
+                    const authData = await authResponse.json();
+                    console.log("[OneForm] Auth data received:", authData);
+
+                    if (authData.isAuthenticated) {
+                        console.log("[OneForm] User is authenticated. Config ID:", authData.configId);
+                        try {
+                            // Fetch the user's custom config
+                            console.log("[OneForm] Fetching custom config from:", `/api/config/load`);
+                            const customConfigResponse = await fetch(`/api/config/load`, {
+                                credentials: 'include'
+                            });
+                            console.log("[OneForm] Custom config response status:", customConfigResponse.status);
+                            
+                            if (customConfigResponse.ok) {
+                                const configData = await customConfigResponse.json();
+                                console.log("[OneForm] Successfully loaded custom config data");
+                                if (configData.combined_data) {
+                                    setMainPageFormData(configData.combined_data);
+                                    setInitialFormDataForOldExport(JSON.parse(JSON.stringify(configData.combined_data)));
+                                }
+                                if (configData.about_page) {
+                                    setAboutPageJsonData(configData.about_page);
+                                    setInitialAboutPageJsonData(JSON.parse(JSON.stringify(configData.about_page)));
+                                }
+                                if (configData.all_blocks_showcase) {
+                                    setAllServiceBlocksData(configData.all_blocks_showcase);
+                                    setInitialAllServiceBlocksData(JSON.parse(JSON.stringify(configData.all_blocks_showcase)));
+                                }
+                                return;
+                            } else {
+                                console.error("[OneForm] Failed to load custom config. Status:", customConfigResponse.status);
+                                const errorText = await customConfigResponse.text();
+                                console.error("[OneForm] Error response:", errorText);
+                            }
+                        } catch (customConfigError) {
+                            console.error("[OneForm] Error loading custom config:", customConfigError);
+                        }
+                    } else {
+                        console.log("[OneForm] User is not authenticated");
+                    }
+                }
+
+                // Fallback to local files if all else fails
                 const combinedResponse = await fetch("/personal/new/jsons/combined_data.json");
                 if (combinedResponse.ok) {
                     const fetchedMainData = await combinedResponse.json();
@@ -666,13 +746,26 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
                 serviceContext: serviceContext
               });
             } else if (imageItem.url && typeof imageItem.url === 'string' && imageItem.url.startsWith('blob:')) {
-              assetsToCollect.push({
-                path: imagePath,
-                url: imageItem.url,
-                type: 'blob',
-                originalName: originalFileName,
-                serviceContext: serviceContext
-              });
+              // Combined approach: handle both file objects and blob URLs
+              if (imageItem.file) {
+                assetsToCollect.push({
+                  path: imagePath,
+                  file: imageItem.file,
+                  type: 'file',
+                  originalName: originalFileName,
+                  serviceContext: serviceContext
+                });
+              } else {
+                console.log(`[OneForm] Fetching image from blob URL: ${imageItem.url}`);
+                assetsToCollect.push({
+                  path: imagePath,
+                  url: imageItem.url,
+                  type: 'blob',
+                  originalName: originalFileName,
+                  serviceContext: serviceContext,
+                  name: originalFileName
+                });
+              }
             } else if (imageItem.url && typeof imageItem.url === 'string' && !imageItem.url.startsWith('http')) {
               // Local asset that needs to be copied
               assetsToCollect.push({
@@ -711,13 +804,26 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
             serviceContext: serviceContext
           });
         } else if (originalDataNode.url && originalDataNode.url.startsWith('blob:')) {
-          assetsToCollect.push({
-            path: imagePath,
-            url: originalDataNode.url,
-            type: 'blob',
-            originalName: originalFileName,
-            serviceContext: serviceContext
-          });
+          // Combined approach: handle both file objects and blob URLs
+          if (originalDataNode.file) {
+            assetsToCollect.push({
+              path: imagePath,
+              file: originalDataNode.file,
+              type: 'file',
+              originalName: originalFileName,
+              serviceContext: serviceContext
+            });
+          } else {
+            console.log(`[OneForm] Fetching image from blob URL: ${originalDataNode.url}`);
+            assetsToCollect.push({
+              path: imagePath,
+              url: originalDataNode.url,
+              type: 'blob',
+              originalName: originalFileName,
+              serviceContext: serviceContext,
+              name: originalFileName
+            });
+          }
         }
 
         // Return cleaned object for JSON (create new object, don't mutate original)
@@ -730,7 +836,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         };
       }
 
-      // Handle legacy heroImageFile
+      // Handle legacy heroImageFile - preserve this functionality
       if (parentBlockName === 'HeroBlock' && originalDataNode.heroImageFile instanceof File) {
         const fileName = originalDataNode.heroImageFile.name;
         const imagePath = generateAssetPath(fileName, 'HeroBlock', contentType, serviceContext, originalDataNode.originalUrl || originalDataNode._heroImageOriginalPathFromProps);
@@ -806,15 +912,17 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         zip.file("jsons/nav.json", JSON.stringify(cleanedNavbarData, null, 2));
       }
 
-      // Process services.json if available
+      // Process services.json if available - combined approach
       if (managedServicesDataCopy && !blockName) {
         const cleanedServicesData = processDataForJson(managedServicesDataCopy, assetsToCollect, null, false, 'services');
+        console.log("[OneForm] Saving services data:", cleanedServicesData);
         zip.file("jsons/services.json", JSON.stringify(cleanedServicesData, null, 2));
       }
 
       // Process about_page.json if available
       if (aboutPageJsonDataCopy && !blockName) {
-        const cleanedAboutData = processDataForJson(aboutPageJsonDataCopy, assetsToCollect, 'AboutBlock', false, 'about');
+        const cleanedAboutData = processDataForJson(aboutPageJsonDataCopy, assetsToCollect, 'AboutBlock');
+        console.log("[OneForm] Saving about page data:", cleanedAboutData);
         zip.file("jsons/about_page.json", JSON.stringify(cleanedAboutData, null, 2));
       }
 
@@ -827,35 +935,47 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
       // Process colors_output.json
       if (themeColors) {
         const colorsForJson = {};
-        Object.keys(themeColors).forEach(key => {
-          colorsForJson[key.replace(/-/g, '_')] = themeColors[key];
+        // Convert kebab-case to snake_case for the JSON output
+        Object.entries(themeColors).forEach(([key, value]) => {
+          const snakeCaseKey = key.replace(/-/g, '_');
+          colorsForJson[snakeCaseKey] = value;
         });
+        console.log("[OneForm] Saving colors data:", colorsForJson);
         zip.file("jsons/colors_output.json", JSON.stringify(colorsForJson, null, 2));
       }
 
-      // Add all collected assets to the ZIP
-      const assetPromises = assetsToCollect.map(async (asset) => {
+      // Process all collected assets
+      console.log("[OneForm] Processing collected assets:", assetsToCollect);
+      
+      // Process assets and add them to the ZIP
+      for (const asset of assetsToCollect) {
         try {
-          if (asset.type === 'file') {
+          if (asset.type === 'file' && asset.file instanceof File) {
+            console.log(`[OneForm] Adding file to ZIP: ${asset.path}`);
             zip.file(asset.path, asset.file);
-            console.log(`Added file to ZIP: ${asset.path}`);
-          } else if (asset.type === 'blob') {
+          } else if (asset.type === 'blob' && asset.url) {
+            console.log(`[OneForm] Fetching blob URL: ${asset.url}`);
             const response = await fetch(asset.url);
+            if (!response.ok) {
+              throw new Error(`Failed to fetch blob ${asset.url}: ${response.status} ${response.statusText}`);
+            }
             const blob = await response.blob();
+            console.log(`[OneForm] Adding blob to ZIP: ${asset.path}`);
             zip.file(asset.path, blob);
-            console.log(`Added blob to ZIP: ${asset.path}`);
-          } else if (asset.type === 'local') {
+          } else if (asset.type === 'local' && asset.url) {
+            console.log(`[OneForm] Fetching local file: ${asset.url}`);
             const response = await fetch(asset.url);
+            if (!response.ok) {
+              throw new Error(`Failed to fetch local file ${asset.url}: ${response.status} ${response.statusText}`);
+            }
             const blob = await response.blob();
+            console.log(`[OneForm] Adding local file to ZIP: ${asset.path}`);
             zip.file(asset.path, blob);
-            console.log(`Added local asset to ZIP: ${asset.path}`);
           }
         } catch (error) {
-          console.error(`Error processing asset ${asset.path}:`, error);
+          console.error(`[OneForm] Error processing asset ${asset.path}:`, error);
         }
-      });
-
-      await Promise.all(assetPromises);
+      }
 
       // Create a manifest file to track changes
       const manifest = {
@@ -1012,7 +1132,12 @@ See manifest.json for detailed asset information.
 
   const handleAboutConfigChange = (newAboutConfig) => {
     console.log("[OneForm] About page config changed:", newAboutConfig);
-    setAboutPageJsonData(preserveImageUrls(newAboutConfig));
+    // Combined approach: preserve URLs and update both current and initial data
+    const preservedConfig = preserveImageUrls(newAboutConfig);
+    setAboutPageJsonData(preservedConfig);
+    // Deep clone to ensure fresh copy and update initial data
+    const clonedConfig = JSON.parse(JSON.stringify(preservedConfig));
+    setInitialAboutPageJsonData(clonedConfig);
   };
 
   const handleNavbarConfigChange = (newNavbarConfig) => {
@@ -1029,7 +1154,10 @@ See manifest.json for detailed asset information.
       }
       const updatedCategoryPages = prevServicesData[serviceCategory].map(page => {
         if (page.id === servicePageId) {
-          return updatedServicePageData; 
+          // Deep clone the updated data to preserve file objects
+          const preservedData = deepCloneWithFiles(updatedServicePageData);
+          console.log("[OneForm] Preserved service data with files:", preservedData);
+          return preservedData;
         }
         return page;
       });
@@ -1037,6 +1165,8 @@ See manifest.json for detailed asset information.
         ...prevServicesData,
         [serviceCategory]: updatedCategoryPages,
       };
+      // Update servicesDataForOldExport with the new data
+      setServicesDataForOldExport(JSON.parse(JSON.stringify(newData)));
       return newData;
     });
   };
@@ -1192,11 +1322,39 @@ See manifest.json for detailed asset information.
     console.log(`[TabSwitch] Switching from ${activeTab} to ${tabId}`);
     
     if (activeTab !== tabId) {
-      setMainPageFormData(prev => preserveImageUrls(prev));
-      setAboutPageJsonData(prev => preserveImageUrls(prev));
-      setAllServiceBlocksData(prev => preserveImageUrls(prev));
+      // Preserve all data before switching tabs
+      setMainPageFormData(prev => {
+        console.log("[TabSwitch] Preserving main page data:", prev);
+        const preserved = deepCloneWithFiles(prev);
+        console.log("[TabSwitch] Preserved main page data with files:", preserved);
+        return preserved;
+      });
       
-      console.log('[TabSwitch] Preserved image URLs during tab switch');
+      // For about page, ensure we're using the current state
+      if (aboutPageJsonData) {
+        console.log("[TabSwitch] Current about page data:", aboutPageJsonData);
+        const preserved = deepCloneWithFiles(aboutPageJsonData);
+        console.log("[TabSwitch] Preserved about page data with files:", preserved);
+        setAboutPageJsonData(preserved);
+        setInitialAboutPageJsonData(preserved);
+      }
+      
+      setAllServiceBlocksData(prev => {
+        console.log("[TabSwitch] Preserving showcase data:", prev);
+        const preserved = deepCloneWithFiles(prev);
+        console.log("[TabSwitch] Preserved showcase data with files:", preserved);
+        return preserved;
+      });
+      
+      // Also preserve services data
+      setManagedServicesData(prev => {
+        console.log("[TabSwitch] Preserving services data:", prev);
+        const preserved = deepCloneWithFiles(prev);
+        console.log("[TabSwitch] Preserved services data with files:", preserved);
+        return preserved;
+      });
+      
+      console.log('[TabSwitch] Preserved all data during tab switch');
     }
     
     setActiveTab(tabId);

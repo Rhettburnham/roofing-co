@@ -46,12 +46,18 @@ const PaymentSuccess = () => {
               <p>Status: {status}</p>
             </div>
 
-            <div className="mt-8">
+            <div className="mt-8 space-y-4">
               <button
                 onClick={() => navigate('/oneform')}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                className="w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
               >
-                Return to OneForm
+                Start Editing
+              </button>
+              <button
+                onClick={() => navigate('/view-plan')}
+                className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+              >
+                View Plan
               </button>
             </div>
           </div>
