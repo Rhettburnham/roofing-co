@@ -2,6 +2,20 @@ import React, { useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { PlusCircle, Trash2 } from 'lucide-react';
 
+// Helper to get display URL from string path or {url, file} object - similar to BeforeAfterBlock
+const getDisplayUrl = (imageValue, defaultPath = null) => {
+  if (imageValue && typeof imageValue === 'object' && imageValue.url) {
+    return imageValue.url;
+  }
+  if (typeof imageValue === 'string') {
+    if (imageValue.startsWith('/') || imageValue.startsWith('blob:') || imageValue.startsWith('data:')) {
+      return imageValue;
+    }
+    return `/${imageValue.replace(/^\.\//, "")}`;
+  }
+  return defaultPath;
+};
+
 const PanelImagesController = ({ currentData, onControlsChange, imageArrayFieldName = "images", getItemName, maxImages }) => {
   const images = currentData[imageArrayFieldName] || [];
   const hasInitializedRef = useRef(false);
@@ -206,7 +220,7 @@ const PanelImagesController = ({ currentData, onControlsChange, imageArrayFieldN
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
         {images.map((imgState, idx) => {
           const itemName = getItemName ? getItemName(imgState, idx) : (imgState?.name || `Image ${idx + 1}`);
-          const previewUrl = imgState?.url;
+          const previewUrl = getDisplayUrl(imgState);
 
           return (
             <div key={imgState?.id || idx} className="bg-gray-50 p-2 rounded-lg shadow space-y-1 relative">
@@ -247,7 +261,10 @@ const PanelImagesController = ({ currentData, onControlsChange, imageArrayFieldN
                   src={previewUrl}
                   alt={`${itemName} Preview`}
                   className="h-36 w-full object-cover rounded bg-gray-100 p-1 pt-7"
-                  onError={(e) => { e.target.style.display = 'none'; }}
+                  onError={(e) => { 
+                    console.warn(`Failed to load image: ${previewUrl}`);
+                    e.target.style.display = 'none'; 
+                  }}
                 />
               ) : (
                 <div className="h-36 w-full flex items-center justify-center bg-gray-100 border-dashed border-gray-300 rounded text-gray-400 text-xs pt-7">
@@ -258,7 +275,7 @@ const PanelImagesController = ({ currentData, onControlsChange, imageArrayFieldN
               <input
                 type="text"
                 placeholder="Or Paste Image URL"
-                value={(imgState?.url && !imgState.url.startsWith('blob:')) ? imgState.url : ''}
+                value={(imgState?.url && !imgState.url.startsWith('blob:') && !imgState.url.startsWith('/assets/')) ? imgState.url : ''}
                 onChange={(e) => handleImageUrlChange(idx, e.target.value)}
                 className="mt-0.5 block w-full px-2 py-1 bg-white rounded-md shadow-sm sm:text-xs focus:ring-indigo-500 focus:border-indigo-500 ring-1 ring-gray-300 focus:ring-2"
               />

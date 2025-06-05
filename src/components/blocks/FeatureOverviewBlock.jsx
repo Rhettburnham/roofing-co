@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import * as LucideIcons from "lucide-react";
+import { FaTrash, FaPlus } from 'react-icons/fa';
+import ThemeColorPicker from '../common/ThemeColorPicker';
 
 /**
  * FeatureOverviewBlock
@@ -119,73 +121,6 @@ FeatureOverviewPreview.propTypes = {
   readOnly: PropTypes.bool.isRequired,
   onInlineChange: PropTypes.func.isRequired,
   onIconClick: PropTypes.func,
-};
-
-function FeatureOverviewPanel({ localConfig, onPanelChange, onAddAdvantage, onRemoveAdvantage }) {
-  const {
-    advantages,
-    overviewTitleColor, overviewTextColor, advantagesTitleColor, advantageTextColor, advantageIconColor, backgroundColor
-  } = localConfig;
-
-  const handleColorChange = (field, value) => {
-    onPanelChange({ ...localConfig, [field]: value });
-  };
-
-  return (
-    <div className="p-4 bg-gray-800 text-white rounded-lg space-y-4">
-      <h3 className="text-lg font-semibold border-b border-gray-700 pb-2">Feature Overview Settings</h3>
-      
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Overall BG Color:</label>
-          <input type="color" value={backgroundColor || '#F9FAFB'} onChange={(e) => handleColorChange('backgroundColor', e.target.value)} className="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-md" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Overview Title Color:</label>
-          <input type="color" value={overviewTitleColor || '#1A202C'} onChange={(e) => handleColorChange('overviewTitleColor', e.target.value)} className="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-md" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Overview Text Color:</label>
-          <input type="color" value={overviewTextColor || '#4A5568'} onChange={(e) => handleColorChange('overviewTextColor', e.target.value)} className="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-md" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Advantages Title Color:</label>
-          <input type="color" value={advantagesTitleColor || '#1A202C'} onChange={(e) => handleColorChange('advantagesTitleColor', e.target.value)} className="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-md" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Advantage Text Color:</label>
-          <input type="color" value={advantageTextColor || '#333333'} onChange={(e) => handleColorChange('advantageTextColor', e.target.value)} className="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-md" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Advantage Icon Color:</label>
-          <input type="color" value={advantageIconColor || '#2C5282'} onChange={(e) => handleColorChange('advantageIconColor', e.target.value)} className="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-md" />
-        </div>
-      </div>
-
-      <div className="border-t border-gray-700 pt-4">
-        <div className="flex justify-between items-center mb-2">
-          <h4 className="text-md font-medium text-gray-200">Advantages List:</h4>
-          <button onClick={onAddAdvantage} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs">+ Add Advantage</button>
-        </div>
-        <div className="max-h-60 overflow-y-auto space-y-2 pr-2">
-          {(advantages || []).map((adv, index) => (
-            <div key={adv.id || index} className="flex items-center justify-between bg-gray-700 p-2 rounded">
-              <span className="text-sm text-gray-300 truncate w-3/4" title={adv.text}>{adv.text || '(New Advantage)'}</span>
-              <button onClick={() => onRemoveAdvantage(index)} className="text-red-400 hover:text-red-300 text-xs">Remove</button>
-            </div>
-          ))}
-          {(!advantages || advantages.length === 0) && <p className="text-xs text-gray-400 text-center py-2">No advantages listed.</p>}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-FeatureOverviewPanel.propTypes = {
-  localConfig: PropTypes.object.isRequired,
-  onPanelChange: PropTypes.func.isRequired,
-  onAddAdvantage: PropTypes.func.isRequired,
-  onRemoveAdvantage: PropTypes.func.isRequired,
 };
 
 const FeatureOverviewBlock = ({
@@ -371,6 +306,78 @@ FeatureOverviewBlock.propTypes = {
   onConfigChange: PropTypes.func,
 };
 
-FeatureOverviewBlock.EditorPanel = FeatureOverviewPanel;
+FeatureOverviewBlock.tabsConfig = (config, onPanelChange, themeColors) => {
+  const { advantages = [] } = config;
+
+  const handlePanelColorChange = (fieldName, value) => {
+    onPanelChange({ ...config, [fieldName]: value });
+  };
+
+  const handleAddAdvantageFromPanel = () => {
+    const newAdvantage = {
+      id: `adv_panel_${Date.now()}`,
+      text: 'New Advantage from Panel',
+      icon: config.advantages?.[0]?.icon || 'CheckCircle', // Default to first item's icon or CheckCircle
+    };
+    onPanelChange({ ...config, advantages: [...advantages, newAdvantage] });
+  };
+
+  const handleRemoveAdvantageFromPanel = (indexToRemove) => {
+    const newAdvantages = advantages.filter((_, index) => index !== indexToRemove);
+    onPanelChange({ ...config, advantages: newAdvantages });
+  };
+  
+  const colorPickerProps = (label, fieldName, defaultColor) => ({
+    label,
+    fieldName,
+    currentColorValue: config[fieldName] || defaultColor,
+    onColorChange: handlePanelColorChange, // Direct pass since it expects (field, value)
+    themeColors,
+    className: "text-xs"
+  });
+
+  return {
+    general: () => (
+      <div className="p-3 space-y-3">
+        <h3 className="text-sm font-semibold mb-2 text-gray-700 text-center border-b pb-1.5">Manage Advantages</h3>
+        <p className="text-xs text-gray-500 mb-2">Advantage text and icons are edited directly on the block preview.</p>
+        {(advantages || []).map((adv, idx) => (
+          <div key={adv.id || idx} className="flex items-center justify-between p-1.5 bg-gray-100 rounded-md shadow-sm">
+            <span className="text-xs text-gray-600 truncate pr-2">{idx + 1}. {adv.text || '(Untitled Advantage)'}</span>
+            <button
+              type="button"
+              onClick={() => handleRemoveAdvantageFromPanel(idx)}
+              className="p-1 bg-red-500 text-white rounded-full shadow-md hover:bg-red-600 transition-colors flex-shrink-0"
+              title="Remove Advantage"
+            >
+              <FaTrash size={10} />
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={handleAddAdvantageFromPanel}
+          className="w-full mt-2 text-xs bg-green-600 hover:bg-green-500 text-white px-2 py-1.5 rounded-md shadow flex items-center justify-center"
+        >
+          <FaPlus size={10} className="mr-1" /> Add Advantage
+        </button>
+        {(!advantages || advantages.length === 0) && <p className="text-xs text-gray-400 text-center italic mt-2">No advantages defined.</p>}
+      </div>
+    ),
+    colors: () => (
+      <div className="p-3 space-y-3">
+        <h3 className="text-sm font-semibold mb-2 text-gray-700 text-center border-b pb-1.5">Color Settings</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <ThemeColorPicker {...colorPickerProps("Overall BG Color", "backgroundColor", "#F9FAFB")} />
+          <ThemeColorPicker {...colorPickerProps("Overview Title Color", "overviewTitleColor", "#1A202C")} />
+          <ThemeColorPicker {...colorPickerProps("Overview Text Color", "overviewTextColor", "#4A5568")} />
+          <ThemeColorPicker {...colorPickerProps("Advantages Title Color", "advantagesTitleColor", "#1A202C")} />
+          <ThemeColorPicker {...colorPickerProps("Advantage Text Color", "advantageTextColor", "#333333")} />
+          <ThemeColorPicker {...colorPickerProps("Advantage Icon Color", "advantageIconColor", "#2C5282")} />
+        </div>
+      </div>
+    ),
+  };
+};
 
 export default FeatureOverviewBlock; 

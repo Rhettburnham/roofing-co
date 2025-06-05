@@ -1,11 +1,43 @@
 import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
+import ThemeColorPicker from "../common/ThemeColorPicker"; // Assuming correct path
 
 const CheckIcon = (props) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" {...props}>
     <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
   </svg>
 );
+
+// Reusable EditableField component
+const EditableField = ({ value, onChange, placeholder, type='text', className, style, rows, isEditable }) => {
+  if (!isEditable) {
+    const Tag = type === 'textarea' ? 'div' : 'span';
+    const displayValue = value || <span className="text-gray-400/70 italic">({placeholder})</span>;
+    return <Tag className={`${className} ${type === 'textarea' ? 'whitespace-pre-wrap' : ''}`} style={style}>{displayValue}</Tag>;
+  }
+  const [currentValue, setCurrentValue] = useState(value);
+  const inputRef = useRef(null);
+  useEffect(() => { setCurrentValue(value); }, [value]);
+
+  useEffect(() => {
+    if (type === 'textarea' && inputRef.current) {
+      inputRef.current.style.height = 'auto';
+      inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
+    }
+  }, [currentValue, type]);
+
+  const handleChange = (e) => setCurrentValue(e.target.value);
+  const handleBlur = () => { if (value !== currentValue) onChange(currentValue); };
+  const handleKeyDown = (e) => {
+    if (type !== 'textarea' && e.key === 'Enter') { handleBlur(); e.preventDefault(); }
+    else if (e.key === 'Escape') { setCurrentValue(value); inputRef.current?.blur(); }
+  };
+  const inputClasses = `bg-transparent border-b-2 border-dashed focus:border-gray-400/70 outline-none w-full ${className}`;
+  if (type === 'textarea') {
+    return <textarea ref={inputRef} value={currentValue || ''} onChange={handleChange} onBlur={handleBlur} onKeyDown={handleKeyDown} placeholder={placeholder} className={inputClasses} style={style} rows={rows} />;
+  }
+  return <input ref={inputRef} type={type} value={currentValue || ''} onChange={handleChange} onBlur={handleBlur} onKeyDown={handleKeyDown} placeholder={placeholder} className={inputClasses} style={style} />;
+};
 
 /**
  * PricingTableBlock
@@ -29,13 +61,16 @@ const PricingTableBlock = ({
   readOnly = false,
   onConfigChange,
 }) => {
-  const [localConfig, setLocalConfig] = useState(() => {
+  const [localConfig, setLocalConfig] = useState(() => deriveInitialLocalData(config));
+  const prevReadOnlyRef = useRef(readOnly);
+
+  function deriveInitialLocalData(inputConfig) {
     const defaultConfig = {
       sectionTitle: 'Our Pricing Plans',
       tiers: [
-        { id: `tier_${Date.now()}_1`, name: 'Basic', price: '$29', frequency: '/month', description: 'Basic features for individuals.', features: ['Feature 1', 'Feature 2'], ctaText: 'Get Started', ctaLink: '#basic', isFeatured: false, featuredText: 'Popular' },
-        { id: `tier_${Date.now()}_2`, name: 'Pro', price: '$79', frequency: '/month', description: 'Advanced features for professionals.', features: ['All Basic Features', 'Feature 3', 'Feature 4'], ctaText: 'Choose Pro', ctaLink: '#pro', isFeatured: true, featuredText: 'Best Value' },
-        { id: `tier_${Date.now()}_3`, name: 'Enterprise', price: 'Contact Us', frequency: '', description: 'Custom solutions for large teams.', features: ['All Pro Features', 'Dedicated Support', 'Custom Integrations'], ctaText: 'Contact Sales', ctaLink: '#enterprise', isFeatured: false, featuredText: '' },
+        { id: `tier_default_1_${Date.now()}`, name: 'Basic', price: '$29', frequency: '/month', description: 'Basic features for individuals.', features: ['Feature 1', 'Feature 2'], ctaText: 'Get Started', ctaLink: '#basic', isFeatured: false, featuredText: 'Popular' },
+        { id: `tier_default_2_${Date.now()}`, name: 'Pro', price: '$79', frequency: '/month', description: 'Advanced features for professionals.', features: ['All Basic Features', 'Feature 3', 'Feature 4'], ctaText: 'Choose Pro', ctaLink: '#pro', isFeatured: true, featuredText: 'Best Value' },
+        { id: `tier_default_3_${Date.now()}`, name: 'Enterprise', price: 'Contact Us', frequency: '', description: 'Custom solutions for large teams.', features: ['All Pro Features', 'Dedicated Support', 'Custom Integrations'], ctaText: 'Contact Sales', ctaLink: '#enterprise', isFeatured: false, featuredText: '' },
       ],
       titleColor: '#1A202C',
       tierNameColor: '#2D3748',
@@ -49,193 +84,166 @@ const PricingTableBlock = ({
       tierBackgroundColor: '#FFFFFF',
       featuredTierBackgroundColor: '#EBF8FF',
     };
-    const initialData = config || {};
+    const initialData = { ...defaultConfig, ...inputConfig };
     return {
-      ...defaultConfig,
       ...initialData,
-      tiers: (initialData.tiers || defaultConfig.tiers).map((tier, index) => ({
-        ...defaultConfig.tiers[0],
+      tiers: (initialData.tiers || []).map((tier, index) => ({
+        ...defaultConfig.tiers[index % defaultConfig.tiers.length], // Cycle through defaults for structure
         ...tier,
         id: tier.id || `tier_init_${index}_${Date.now()}`,
-        features: tier.features || [],
+        features: Array.isArray(tier.features) ? tier.features : (defaultConfig.tiers[index % defaultConfig.tiers.length]?.features || []),
       })),
     };
-  });
-
-  const prevReadOnlyRef = useRef(readOnly);
+  }
 
   useEffect(() => {
     if (config) {
-      setLocalConfig(prevLocal => {
-        const newTiers = (config.tiers || []).map((propTier) => {
-          const localTier = prevLocal.tiers.find(lt => lt.id === propTier.id) || {}; 
-          return {
-            ...localTier,
-            ...propTier,
-            id: propTier.id || localTier.id || `tier_prop_${Date.now()}`,
-            name: readOnly ? (propTier.name ?? localTier.name) : localTier.name,
-            price: readOnly ? (propTier.price ?? localTier.price) : localTier.price,
-            frequency: readOnly ? (propTier.frequency ?? localTier.frequency) : localTier.frequency,
-            description: readOnly ? (propTier.description ?? localTier.description) : localTier.description,
-            features: readOnly ? (propTier.features ?? localTier.features) : localTier.features,
-            ctaText: readOnly ? (propTier.ctaText ?? localTier.ctaText) : localTier.ctaText,
-            ctaLink: readOnly ? (propTier.ctaLink ?? localTier.ctaLink) : localTier.ctaLink,
-            featuredText: readOnly ? (propTier.featuredText ?? localTier.featuredText) : localTier.featuredText,
-            isFeatured: propTier.isFeatured !== undefined ? propTier.isFeatured : localTier.isFeatured,
-          };
-        });
-
-        return {
-          ...prevLocal,
-          ...config,
-          sectionTitle: readOnly ? (config.sectionTitle ?? prevLocal.sectionTitle) : prevLocal.sectionTitle,
-          tiers: newTiers,
-        };
-      });
+        setLocalConfig(prevLocal => deriveInitialLocalData(config));
     }
-  }, [config, readOnly]);
+  }, [config]);
 
   useEffect(() => {
-    if (prevReadOnlyRef.current === false && readOnly === true && onConfigChange) {
+    if (prevReadOnlyRef.current === false && readOnly === true && typeof onConfigChange === 'function') {
       onConfigChange(localConfig);
     }
     prevReadOnlyRef.current = readOnly;
   }, [readOnly, localConfig, onConfigChange]);
 
-  const handleLocalChange = (path, value) => {
-    if (readOnly) return;
-    const [field, tierId, itemField, featureIndexStr] = path.split('.');
-
-    setLocalConfig(prev => {
-      if (field === 'tiers' && tierId) {
-        const newTiers = prev.tiers.map(tier => {
-          if (tier.id === tierId) {
-            if (itemField === 'features' && featureIndexStr !== undefined) {
-              const featureIndex = parseInt(featureIndexStr, 10);
-              const newFeatures = tier.features.map((feat, fIdx) => fIdx === featureIndex ? value : feat);
-              return { ...tier, features: newFeatures };
-            }
-            return { ...tier, [itemField]: value };
-          }
-          return tier;
-        });
-        return { ...prev, tiers: newTiers };
+  const handleInlineChange = (path, value) => {
+    if (readOnly || typeof onConfigChange !== 'function') return;
+    const keys = path.split('.');
+    let newConfig = JSON.parse(JSON.stringify(localConfig));
+    let currentLevel = newConfig;
+    for (let i = 0; i < keys.length - 1; i++) {
+      const key = keys[i];
+      if (Array.isArray(currentLevel[key]) && keys[i+1] !== undefined) {
+        const itemId = keys[i+1];
+        const itemIndex = currentLevel[key].findIndex(item => item.id === itemId);
+        if (itemIndex > -1) { currentLevel = currentLevel[key][itemIndex]; i++; }
+        else { console.warn('Item not found in array for inline change:', path); return; }
       } else {
-        return { ...prev, [field]: value };
+        currentLevel = currentLevel[key];
       }
-    });
-  };
+      if (!currentLevel) { console.warn('Invalid path for inline change:', path); return; }
+    }
+    const finalKey = keys[keys.length - 1];
+    const finalKeyIsArrayIndex = !isNaN(parseInt(finalKey, 10));
 
-  const handlePanelDataChange = (newData) => {
-    if (readOnly) return;
-    setLocalConfig(prev => ({ ...prev, ...newData }));
+    if(Array.isArray(currentLevel) && finalKeyIsArrayIndex){
+        currentLevel[parseInt(finalKey, 10)] = value;
+    } else {
+        currentLevel[finalKey] = value;
+    }
+    setLocalConfig(newConfig);
+    onConfigChange(newConfig); // Live update
   };
 
   const addFeatureToTierInline = (tierId) => {
-    if (readOnly) return;
-    setLocalConfig(prev => ({
-      ...prev,
-      tiers: prev.tiers.map(tier => 
-        tier.id === tierId ? { ...tier, features: [...(tier.features || []), 'New Feature'] } : tier
-      )
-    }));
+    if (readOnly || typeof onConfigChange !== 'function') return;
+    const newConfig = JSON.parse(JSON.stringify(localConfig));
+    const tierIndex = newConfig.tiers.findIndex(t => t.id === tierId);
+    if (tierIndex > -1) {
+      newConfig.tiers[tierIndex].features = [...(newConfig.tiers[tierIndex].features || []), 'New Feature'];
+      setLocalConfig(newConfig);
+      onConfigChange(newConfig);
+    }
   };
 
   const removeFeatureFromTierInline = (tierId, featureIndex) => {
-    if (readOnly) return;
-    setLocalConfig(prev => ({
-      ...prev,
-      tiers: prev.tiers.map(tier => {
-        if (tier.id === tierId) {
-          return { ...tier, features: tier.features.filter((_, fIdx) => fIdx !== featureIndex) };
-        }
-        return tier;
-      })
-    }));
+    if (readOnly || typeof onConfigChange !== 'function') return;
+    const newConfig = JSON.parse(JSON.stringify(localConfig));
+    const tierIndex = newConfig.tiers.findIndex(t => t.id === tierId);
+    if (tierIndex > -1 && newConfig.tiers[tierIndex].features) {
+      newConfig.tiers[tierIndex].features.splice(featureIndex, 1);
+      setLocalConfig(newConfig);
+      onConfigChange(newConfig);
+    }
   };
-
+  
   const { sectionTitle, tiers } = localConfig;
   const { titleColor, tierNameColor, priceColor, descriptionColor, featureTextColor, ctaButtonColor, ctaTextColor, featuredBadgeColor, featuredBadgeTextColor, tierBackgroundColor, featuredTierBackgroundColor } = localConfig;
-
-  const EditableField = ({ value, onChange, placeholder, type='text', className, style, rows}) => (
-    type === 'textarea' ?
-    <textarea value={value} onChange={onChange} placeholder={placeholder} className={`bg-transparent border-b-2 border-dashed focus:border-gray-400 outline-none w-full ${className}`} style={style} rows={rows} /> :
-    <input type={type} value={value} onChange={onChange} placeholder={placeholder} className={`bg-transparent border-b-2 border-dashed focus:border-gray-400 outline-none w-full ${className}`} style={style} />
-  );
   
   return (
-    <>
-      <div className="pricing-table-block py-8 md:py-12 bg-gray-100">
-        <div className="container mx-auto px-4">
-          {readOnly ? (
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-8 md:mb-12" style={{ color: titleColor }}>{sectionTitle}</h2>
-          ) : (
-            <EditableField value={sectionTitle} onChange={(e) => handleLocalChange('sectionTitle', e.target.value)} placeholder="Section Title" className="text-3xl md:text-4xl font-bold text-center mb-8 md:mb-12 block mx-auto" style={{ color: titleColor }} />
-          )}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 items-stretch">
-            {(tiers || []).map((tier) => (
-              <div
-                key={tier.id}
-                className={`p-6 rounded-xl shadow-lg flex flex-col relative overflow-hidden ${tier.isFeatured ? 'border-2' : 'border'}`}
-                style={{
-                  backgroundColor: tier.isFeatured ? featuredTierBackgroundColor : tierBackgroundColor,
-                  borderColor: tier.isFeatured ? featuredBadgeColor : '#E2E8F0'
-                }}
-              >
-                {tier.isFeatured && (
-                  readOnly ? (
-                    <div className="absolute top-0 -right-10 transform rotate-45 px-8 py-1 text-xs font-semibold tracking-wider uppercase z-10" style={{ backgroundColor: featuredBadgeColor, color: featuredBadgeTextColor }}>{tier.featuredText || 'Featured'}</div>
-                  ) : (
-                    <>
-                      <EditableField value={tier.featuredText || 'Featured'} onChange={(e) => handleLocalChange(`tiers.${tier.id}.featuredText`, e.target.value)} placeholder="Badge Text" className="absolute top-2.5 right-[-35px] transform rotate-45 w-[150px] text-xs font-semibold tracking-wider uppercase text-center bg-transparent border-0 z-20" style={{ backgroundColor: 'transparent', color: featuredBadgeTextColor}}/>
-                      <div className="absolute top-0 -right-10 transform rotate-45 px-8 py-1 z-10 pointer-events-none" style={{ backgroundColor: featuredBadgeColor, color: featuredBadgeTextColor}}><span className="opacity-0">{tier.featuredText || 'Featured'}</span></div>
-                    </>
-                  )
-                )}
+    <div className={`pricing-table-block py-8 md:py-12 ${!readOnly ? 'bg-slate-50 border-2 border-blue-300/50' : 'bg-gray-100'}`}>
+      <div className="container mx-auto px-4">
+          <EditableField 
+            value={sectionTitle} 
+            onChange={(val) => handleInlineChange('sectionTitle', val)} 
+            placeholder="Section Title" 
+            className="text-3xl md:text-4xl font-bold text-center mb-8 md:mb-12 block mx-auto" 
+            style={{ color: titleColor }} 
+            isEditable={!readOnly}
+          />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 items-stretch">
+          {(tiers || []).map((tier) => (
+            <div
+              key={tier.id}
+              className={`p-6 rounded-xl shadow-lg flex flex-col relative overflow-hidden ${tier.isFeatured ? 'border-2' : 'border'}`}
+              style={{
+                backgroundColor: tier.isFeatured ? featuredTierBackgroundColor : tierBackgroundColor,
+                borderColor: tier.isFeatured ? featuredBadgeColor : '#E2E8F0'
+              }}
+            >
+              {tier.isFeatured && (
+                  <EditableField 
+                    value={tier.featuredText || 'Featured'} 
+                    onChange={(val) => handleInlineChange(`tiers.${tier.id}.featuredText`, val)} 
+                    placeholder="Badge Text" 
+                    className="absolute top-2.5 right-[-35px] transform rotate-45 w-[150px] text-xs font-semibold tracking-wider uppercase text-center bg-transparent border-0 z-20" 
+                    style={{ backgroundColor: 'transparent', color: featuredBadgeTextColor}}
+                    isEditable={!readOnly}
+                  />
+              )}
+              {/* This div creates the visual banner part, text is overlaid */} 
+              {tier.isFeatured && <div className="absolute top-0 -right-10 transform rotate-45 px-8 py-1 z-10 pointer-events-none" style={{ backgroundColor: featuredBadgeColor }}><span className="opacity-0">{tier.featuredText || 'Featured'}</span></div>}
 
-                {readOnly ? <h3 className="text-2xl font-semibold mb-2" style={{ color: tierNameColor }}>{tier.name}</h3> : <EditableField value={tier.name} onChange={(e) => handleLocalChange(`tiers.${tier.id}.name`, e.target.value)} placeholder="Tier Name" className="text-2xl font-semibold mb-2" style={{ color: tierNameColor }} />}
-                
-                {readOnly ? <p className="text-4xl font-bold mb-1" style={{ color: priceColor }}>{tier.price}<span className="text-lg font-normal" style={{ color: descriptionColor }}>{tier.frequency}</span></p> :
-                  <div className="flex items-baseline mb-1">
-                    <EditableField value={tier.price} onChange={(e) => handleLocalChange(`tiers.${tier.id}.price`, e.target.value)} placeholder="$XX" className="text-4xl font-bold w-auto mr-1" style={{ color: priceColor }} />
-                    <EditableField value={tier.frequency} onChange={(e) => handleLocalChange(`tiers.${tier.id}.frequency`, e.target.value)} placeholder="/month" className="text-lg font-normal w-auto" style={{ color: descriptionColor }} />
-                  </div>}
-                {readOnly ? <p className="text-sm mb-6 min-h-[40px]" style={{ color: descriptionColor }}>{tier.description}</p> : <EditableField value={tier.description} onChange={(e) => handleLocalChange(`tiers.${tier.id}.description`, e.target.value)} placeholder="Tier description" className="text-sm mb-6 min-h-[40px] resize-none" style={{ color: descriptionColor }} type="textarea" rows={2}/>}
-
-                <ul className="space-y-3 flex-grow mb-8">
-                  {(tier.features || []).map((feature, featureIndex) => (
-                    <li key={featureIndex} className="flex items-start">
-                      <CheckIcon className="w-5 h-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                      {readOnly ? <span style={{ color: featureTextColor }}>{feature}</span> :
-                        <div className="flex-grow flex items-center">
-                          <EditableField value={feature} onChange={(e) => handleLocalChange(`tiers.${tier.id}.features.${featureIndex}`, e.target.value)} placeholder="Feature description" className="text-sm" style={{ color: featureTextColor }} />
-                          <button onClick={() => removeFeatureFromTierInline(tier.id, featureIndex)} className="ml-2 text-red-500 hover:text-red-700 text-xs p-1">✕</button>
-                        </div>
-                      }
-                    </li>
-                  ))}
-                  {!readOnly && <button onClick={() => addFeatureToTierInline(tier.id)} className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium">+ Add feature</button>}
-                </ul>
-
-                <div className="mt-auto">
-                  {readOnly ? (
-                    <a href={tier.ctaLink || '#'} className="block w-full text-center py-3 px-6 rounded-lg font-semibold transition-colors hover:opacity-90" style={{ backgroundColor: ctaButtonColor, color: ctaTextColor }}>{tier.ctaText}</a>
-                  ) : (
-                    <>
-                      <EditableField value={tier.ctaText} onChange={(e) => handleLocalChange(`tiers.${tier.id}.ctaText`, e.target.value)} placeholder="Button Text" className="block w-full text-center py-3 px-6 rounded-lg font-semibold border border-dashed mb-2" style={{ backgroundColor: ctaButtonColor, color: ctaTextColor, borderColor: ctaTextColor }} />
-                      <EditableField value={tier.ctaLink} onChange={(e) => handleLocalChange(`tiers.${tier.id}.ctaLink`, e.target.value)} placeholder="Button Link (#contact)" className="block w-full text-center py-1 px-2 rounded-md text-xs mt-1" style={{color: descriptionColor}}/>
-                    </>
-                  )}
-                </div>
+              <EditableField value={tier.name} onChange={(val) => handleInlineChange(`tiers.${tier.id}.name`, val)} placeholder="Tier Name" className="text-2xl font-semibold mb-2" style={{ color: tierNameColor }} isEditable={!readOnly}/>
+              
+              <div className="flex items-baseline mb-1">
+                <EditableField value={tier.price} onChange={(val) => handleInlineChange(`tiers.${tier.id}.price`, val)} placeholder="$XX" className="text-4xl font-bold w-auto mr-1" style={{ color: priceColor }} isEditable={!readOnly}/>
+                <EditableField value={tier.frequency} onChange={(val) => handleInlineChange(`tiers.${tier.id}.frequency`, val)} placeholder="/month" className="text-lg font-normal w-auto" style={{ color: descriptionColor }} isEditable={!readOnly}/>
               </div>
-            ))}
-          </div>
+              <EditableField value={tier.description} onChange={(val) => handleInlineChange(`tiers.${tier.id}.description`, val)} placeholder="Tier description" className="text-sm mb-6 min-h-[40px] resize-none" style={{ color: descriptionColor }} type="textarea" rows={2} isEditable={!readOnly}/>
+
+              <ul className="space-y-3 flex-grow mb-8">
+                {(tier.features || []).map((feature, featureIndex) => (
+                  <li key={featureIndex} className="flex items-start">
+                    <CheckIcon className="w-5 h-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <EditableField value={feature} onChange={(val) => handleInlineChange(`tiers.${tier.id}.features.${featureIndex}`, val)} placeholder="Feature description" className="text-sm flex-1" style={{ color: featureTextColor }} isEditable={!readOnly}/>
+                    {!readOnly && <button onClick={() => removeFeatureFromTierInline(tier.id, featureIndex)} className="ml-2 text-red-400 hover:text-red-600 text-xs p-0.5">✕</button>}
+                  </li>
+                ))}
+                {!readOnly && <button onClick={() => addFeatureToTierInline(tier.id)} className="mt-2 text-blue-500 hover:text-blue-600 text-sm font-medium">+ Add feature</button>}
+              </ul>
+
+              <div className="mt-auto">
+                  <EditableField 
+                    value={tier.ctaText} 
+                    onChange={(val) => handleInlineChange(`tiers.${tier.id}.ctaText`, val)} 
+                    placeholder="Button Text" 
+                    className="block w-full text-center py-3 px-6 rounded-lg font-semibold border border-dashed mb-2" 
+                    style={{ backgroundColor: ctaButtonColor, color: ctaTextColor, borderColor: ctaButtonColor ? 'transparent' : ctaTextColor }} 
+                    isEditable={!readOnly} 
+                  />
+                {!readOnly && (
+                  <EditableField 
+                    value={tier.ctaLink} 
+                    onChange={(val) => handleInlineChange(`tiers.${tier.id}.ctaLink`, val)} 
+                    placeholder="Button Link (#contact)" 
+                    className="block w-full text-center py-1 px-2 rounded-md text-xs mt-1 border-b border-dashed" 
+                    style={{color: descriptionColor}}
+                    isEditable={!readOnly}
+                  />
+                )}
+                {readOnly && (
+                    <a href={tier.ctaLink || '#'} className="block w-full text-center py-3 px-6 rounded-lg font-semibold transition-colors hover:opacity-90" style={{ backgroundColor: ctaButtonColor, color: ctaTextColor }}>{tier.ctaText}</a>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
-      {!readOnly && (
-        <PricingTableBlock.EditorPanel currentConfig={localConfig} onPanelConfigChange={handlePanelDataChange} />
-      )}
-    </>
+    </div>
   );
 };
 
@@ -270,35 +278,39 @@ PricingTableBlock.propTypes = {
   onConfigChange: PropTypes.func,
 };
 
-PricingTableBlock.EditorPanel = ({ currentConfig, onPanelConfigChange }) => {
+PricingTableBlock.tabsConfig = (currentConfig, onPanelChange, themeColors) => {
   const { tiers = [] } = currentConfig;
 
-  const handleTierUpdate = (tierId, field, value) => {
+  const handleTierUpdateInPanel = (tierId, field, value) => {
     const updatedTiers = tiers.map(tier => 
       tier.id === tierId ? { ...tier, [field]: value } : tier
     );
-    onPanelConfigChange({ tiers: updatedTiers });
+    onPanelChange({ ...currentConfig, tiers: updatedTiers });
   };
 
-  const addTier = () => {
+  const addTierToPanel = () => {
     const newTier = {
-      id: `tier_${Date.now()}`,
+      id: `tier_panel_${Date.now()}`,
       name: 'New Plan', price: '$0', frequency: '/month', 
       description: 'New plan description.', features: ['Feature A'], 
       ctaText: 'Sign Up', ctaLink: '#new', 
       isFeatured: false, featuredText: ''
     };
-    onPanelConfigChange({ tiers: [...tiers, newTier] });
+    onPanelChange({ ...currentConfig, tiers: [...tiers, newTier] });
   };
 
-  const removeTier = (tierIdToRemove) => {
-    onPanelConfigChange({ tiers: tiers.filter(tier => tier.id !== tierIdToRemove) });
+  const removeTierFromPanel = (tierIdToRemove) => {
+    onPanelChange({ ...currentConfig, tiers: tiers.filter(tier => tier.id !== tierIdToRemove) });
   };
 
-  const handleColorChange = (field, value) => {
-    onPanelConfigChange({ [field]: value });
-  };
-
+  const colorPickerProps = (label, fieldName, defaultColor) => ({
+    label,
+    fieldName,
+    currentColorValue: currentConfig[fieldName] || defaultColor,
+    onColorChange: (name, value) => onPanelChange({ ...currentConfig, [name]: value }),
+    themeColors,
+  });
+  
   const colorFields = [
     { label: 'Section Title Color', field: 'titleColor', default: '#1A202C' },
     { label: 'Tier Name Color', field: 'tierNameColor', default: '#2D3748' },
@@ -313,61 +325,51 @@ PricingTableBlock.EditorPanel = ({ currentConfig, onPanelConfigChange }) => {
     { label: 'Featured Tier BG', field: 'featuredTierBackgroundColor', default: '#EBF8FF' },
   ];
 
-  return (
-    <div className="p-4 bg-gray-800 text-white rounded-b-md space-y-6">
-      <h3 className="text-xl font-semibold border-b border-gray-700 pb-2 mb-4">Pricing Table Settings</h3>
-
-      <div className="space-y-3">
-        <div className="flex justify-between items-center">
-          <h4 className="text-lg font-medium text-gray-200">Pricing Tiers:</h4>
-          <button onClick={addTier} className="bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded text-xs font-medium">+ Add Tier</button>
+  return {
+    general: () => (
+      <div className="p-4 space-y-4">
+         <h3 className="text-lg font-semibold text-gray-700 mb-2 border-b pb-1">Manage Pricing Tiers</h3>
+         <p className="text-xs text-gray-500 mb-3">Tier names, prices, descriptions, features, and CTA text/links are editable directly on the block preview.</p>
+        <div className="flex justify-between items-center mb-2">
+          <h4 className="text-md font-semibold text-gray-700">Tiers:</h4>
+          <button onClick={addTierToPanel} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-md shadow">+ Add Tier</button>
         </div>
-        <div className="max-h-[40vh] overflow-y-auto space-y-2 pr-2">
+        <div className="max-h-[40vh] overflow-y-auto space-y-2 pr-1">
           {tiers.map((tier) => (
-            <div key={tier.id} className="p-3 bg-gray-750 rounded-md border border-gray-600 flex justify-between items-center">
-              <span className="text-gray-200 text-sm truncate w-2/3" title={tier.name}>{tier.name || '(Untitled Tier)'}</span>
+            <div key={tier.id} className="p-3 bg-gray-50 rounded-md border border-gray-200 flex justify-between items-center shadow-sm">
+              <span className="text-sm text-gray-700 font-medium truncate w-2/3" title={tier.name}>{tier.name || '(Untitled Tier)'}</span>
               <div className="flex items-center space-x-2">
-                 <label htmlFor={`featured-${tier.id}`} className="text-xs text-gray-300 flex items-center">
+                <label htmlFor={`featured-${tier.id}`} className="text-xs text-gray-600 flex items-center cursor-pointer">
                     <input 
                         type="checkbox" 
                         id={`featured-${tier.id}`} 
                         checked={tier.isFeatured || false} 
-                        onChange={(e) => handleTierUpdate(tier.id, 'isFeatured', e.target.checked)} 
-                        className="form-checkbox h-4 w-4 text-orange-500 bg-gray-600 border-gray-500 rounded mr-1.5 focus:ring-orange-400"
+                        onChange={(e) => handleTierUpdateInPanel(tier.id, 'isFeatured', e.target.checked)} 
+                        className="form-checkbox h-3.5 w-3.5 text-orange-500 bg-gray-100 border-gray-300 rounded focus:ring-orange-400 focus:ring-offset-0"
                     />
-                    Featured
+                    <span className="ml-1.5">Featured</span>
                 </label>
-                <button onClick={() => removeTier(tier.id)} className="text-red-400 hover:text-red-300 text-xs font-semibold">Remove</button>
+                <button onClick={() => removeTierFromPanel(tier.id)} className="text-red-500 hover:text-red-700 text-xs font-semibold p-0.5 hover:bg-red-100 rounded-full">✕ Remove</button>
               </div>
             </div>
           ))}
-          {tiers.length === 0 && <p className="text-xs text-gray-400 text-center py-2">No pricing tiers defined. Add one to get started.</p>}
+          {tiers.length === 0 && <p className="text-xs text-gray-400 text-center py-4">No pricing tiers defined.</p>}
         </div>
       </div>
-
-      <div className="border-t border-gray-700 pt-4">
-        <h4 className="text-lg font-medium text-gray-200 mb-3">Color Customization:</h4>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-3">
+    ),
+    colors: () => (
+      <div className="p-4 space-y-3">
+        <h3 className="text-lg font-semibold text-gray-700 mb-3">Color Customization</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-3">
           {colorFields.map(cf => (
             <div key={cf.field}>
-              <label className="block text-xs font-medium text-gray-300 mb-1">{cf.label}:</label>
-              <input 
-                type="color" 
-                value={currentConfig[cf.field] || cf.default} 
-                onChange={(e) => handleColorChange(cf.field, e.target.value)} 
-                className="mt-1 h-9 w-full border-gray-600 rounded-md bg-gray-700 cursor-pointer p-0.5"
-              />
+              <ThemeColorPicker {...colorPickerProps(cf.label, cf.field, cf.default)} />
             </div>
           ))}
         </div>
       </div>
-    </div>
-  );
-};
-
-PricingTableBlock.EditorPanel.propTypes = {
-  currentConfig: PropTypes.object.isRequired,
-  onPanelConfigChange: PropTypes.func.isRequired,
+    ),
+  };
 };
 
 export default PricingTableBlock; 

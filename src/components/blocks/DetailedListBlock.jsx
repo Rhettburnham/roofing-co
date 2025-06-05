@@ -3,6 +3,8 @@ import PropTypes from 'prop-types';
 import { motion } from "framer-motion";
 import { FaCheckCircle } from "react-icons/fa";
 import ReactMarkdown from "react-markdown";
+import PanelImagesController from "../common/PanelImagesController";
+import ThemeColorPicker from "../common/ThemeColorPicker";
 
 /**
  * DetailedListBlock
@@ -729,223 +731,167 @@ DetailedListBlock.propTypes = {
     onFileChange: PropTypes.func, 
 };
 
-DetailedListBlock.EditorPanel = function DetailedListBlockEditorPanel({ currentConfig, onPanelConfigChange, onPanelFileChange, getDisplayUrl }) {
-    const [formData, setFormData] = useState(currentConfig || {});
-
-    useEffect(() => {
-        setFormData(currentConfig || {});
-    }, [currentConfig]);
-
-    const handleOverallChange = (field, value) => {
-        const newFormData = { ...formData, [field]: value };
-        setFormData(newFormData);
-        onPanelConfigChange(newFormData); // Propagate all changes live
-    };
-
-    const handleItemDetailChange = (itemIndex, field, value) => {
-        const updatedItems = (formData.items || []).map((item, i) => 
-            i === itemIndex ? { ...item, [field]: value } : item
-        );
-        handleOverallChange('items', updatedItems);
-    };
-
-    const handleItemAdvantageChange = (itemIndex, advIndex, value) => {
-        const updatedItems = (formData.items || []).map((item, i) => {
-            if (i === itemIndex) {
-                const updatedAdvantages = (item.advantages || []).map((adv, j) => 
-                    j === advIndex ? value : adv
-                );
-                return { ...item, advantages: updatedAdvantages };
-            }
-            return item;
+DetailedListBlock.tabsConfig = (config, onPanelChange, themeColors, sitePalette, onPanelFileChange) => {
+  // Helper for transforming items for PanelImagesController
+  const getImagesForController = () => {
+    return (config?.items || []).reduce((acc, item, itemIndex) => {
+      if (item && typeof item === 'object' && item.pictures) {
+        item.pictures.forEach((pic, picIndex) => {
+          acc.push({
+            // Ensure pic is an object, if it's a string, convert it.
+            ...(typeof pic === 'string' ? { url: pic, name: pic.split('/').pop() || `Image ${picIndex + 1}`, originalUrl: pic } : pic),
+            id: `item_${item.id || itemIndex}_pic_${picIndex}`, // Ensure unique ID for controller
+            name: `${item.name || `Item ${itemIndex + 1}`} - Image ${picIndex + 1}`,
+            itemIndex, // To map back to the correct item
+            picIndex   // To map back to the correct picture in the item's array
+          });
         });
-        handleOverallChange('items', updatedItems);
-    };
+      }
+      return acc;
+    }, []);
+  };
 
-    const handleAddItemAdvantage = (itemIndex) => {
-        const updatedItems = (formData.items || []).map((item, i) => {
-            if (i === itemIndex) {
-                return { ...item, advantages: [...(item.advantages || []), 'New Advantage'] };
-            }
-            return item;
-        });
-        handleOverallChange('items', updatedItems);
-    };
+  const handleImagesChangeFromController = (updatedFlatImages) => {
+    const newItems = JSON.parse(JSON.stringify(config?.items || [])); // Deep clone
 
-    const handleRemoveItemAdvantage = (itemIndex, advIndex) => {
-        const updatedItems = (formData.items || []).map((item, i) => {
-            if (i === itemIndex) {
-                const updatedAdvantages = (item.advantages || []).filter((_, j) => j !== advIndex);
-                return { ...item, advantages: updatedAdvantages };
-            }
-            return item;
-        });
-        handleOverallChange('items', updatedItems);
-    };
+    // Clear existing pictures from items to rebuild them based on controller's state
+    newItems.forEach(item => {
+        if (item && typeof item === 'object') item.pictures = [];
+    });
 
-    const handleAddItem = () => {
-        const newItem = {
-            id: `item_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-            name: 'New Item',
-            description: 'New item description.',
-            advantages: ['Advantage 1'],
-            colorPossibilities: '',
-            installationTime: '',
-            pictures: [] // Start with an empty pictures array
+    (updatedFlatImages || []).forEach(imgCtrl => {
+      if (imgCtrl.itemIndex !== undefined && newItems[imgCtrl.itemIndex]) {
+        const itemToUpdate = newItems[imgCtrl.itemIndex];
+        if (!itemToUpdate.pictures) itemToUpdate.pictures = [];
+        
+        // Construct the picture object to store
+        const picToStore = {
+          url: imgCtrl.url || '', // Ensure URL is always present
+          name: imgCtrl.name || (imgCtrl.url || '').split('/').pop() || `Image ${imgCtrl.picIndex + 1}`,
+          originalUrl: imgCtrl.originalUrl || imgCtrl.url || ''
         };
-        handleOverallChange('items', [...(formData.items || []), newItem]);
-    };
-
-    const handleRemoveItem = (itemIndex) => {
-        const itemToRemove = formData.items?.[itemIndex];
-        if (itemToRemove && itemToRemove.pictures) {
-            itemToRemove.pictures.forEach(pic => {
-                if (typeof pic === 'object' && pic.url && pic.url.startsWith('blob:')) {
-                    URL.revokeObjectURL(pic.url);
-                }
-            });
+        if (imgCtrl.file) { // If a file object is present (from upload)
+          picToStore.file = imgCtrl.file;
         }
-        const updatedItems = (formData.items || []).filter((_, i) => i !== itemIndex);
-        handleOverallChange('items', updatedItems);
-    };
-
-    const handleItemPictureChange = (itemIndex, picIndex, file) => {
-        if (file && onPanelFileChange) {
-            // This tells ServiceEditPage to handle the file and update the config path
-            onPanelFileChange({ blockItemIndex: itemIndex, pictureIndex: picIndex, file: file, field: 'pictures'});
+        
+        // Place it at the correct picIndex, filling with null if needed (though PanelImagesController should maintain order)
+        while (itemToUpdate.pictures.length <= imgCtrl.picIndex) {
+            itemToUpdate.pictures.push(null);
         }
+        itemToUpdate.pictures[imgCtrl.picIndex] = picToStore;
+      }
+    });
+    // Filter out any nulls that might have been pushed if indices were skipped (shouldn't happen with PIC)
+    newItems.forEach(item => {
+        if (item && typeof item === 'object' && item.pictures) {
+            item.pictures = item.pictures.filter(p => p !== null);
+        }
+    });
+
+    onPanelChange({ ...config, items: newItems });
+  };
+
+  const handleAddItem = () => {
+    const newItem = {
+      id: `item_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      name: 'New Siding Type',
+      description: 'Detailed description of this new siding type, its benefits, and application scenarios.',
+      advantages: ['Advantage A', 'Advantage B'],
+      colorPossibilities: 'Various colors available',
+      installationTime: 'Typically X-Y days',
+      pictures: []
     };
-    
-    const handleAddPictureToItem = (itemIndex) => {
-        const updatedItems = (formData.items || []).map((item, i) => {
-            if (i === itemIndex) {
-                // Add a null placeholder. The actual file object will be added by ServiceEditPage
-                return { ...item, pictures: [...(item.pictures || []), null] }; 
+    onPanelChange({ ...config, items: [...(config.items || []), newItem] });
+  };
+
+  const handleRemoveItem = (indexToRemove) => {
+    const updatedItems = (config.items || []).filter((_, i) => i !== indexToRemove);
+    // Clean up blob URLs for removed item's pictures
+    const itemRemoved = (config.items || [])[indexToRemove];
+    if (itemRemoved && itemRemoved.pictures) {
+        itemRemoved.pictures.forEach(pic => {
+            if (pic && typeof pic === 'object' && pic.url && pic.url.startsWith('blob:')) {
+                URL.revokeObjectURL(pic.url);
             }
-            return item;
         });
-        handleOverallChange('items', updatedItems);
-    };
+    }
+    onPanelChange({ ...config, items: updatedItems });
+  };
+  
+  const colorPickerProps = (label, fieldName, defaultColor) => ({
+    label,
+    fieldName,
+    currentColorValue: config[fieldName] || defaultColor,
+    onColorChange: (name, value) => onPanelChange({ ...config, [name]: value }),
+    themeColors,
+    className: "text-xs"
+  });
 
-    const handleRemoveItemPicture = (itemIndex, picIndex) => {
-        const updatedItems = (formData.items || []).map((item, i) => {
-            if (i === itemIndex) {
-                const picToRemove = item.pictures?.[picIndex];
-                if (typeof picToRemove === 'object' && picToRemove.url && picToRemove.url.startsWith('blob:')) {
-                    URL.revokeObjectURL(picToRemove.url);
-                }
-                const updatedPictures = (item.pictures || []).filter((_, j) => j !== picIndex);
-                return { ...item, pictures: updatedPictures };
-            }
-            return item;
-        });
-        handleOverallChange('items', updatedItems);
-    };
-
-
-    return (
-        <div className="space-y-6 p-3 bg-gray-50 rounded-md shadow">
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Main Title (Panel Edit):</label>
-                <input 
-                    type="text" 
-                    value={formData.title || ''} 
-                    onChange={(e) => handleOverallChange('title', e.target.value)} 
-                    className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-            </div>
-
-            <h4 className="text-lg font-semibold text-gray-700 pt-3 border-t mt-5">Color Scheme</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Overall Background Color:</label>
-                    <input type="color" value={formData.backgroundColor || '#FFFFFF'} onChange={(e) => handleOverallChange('backgroundColor', e.target.value)} className="mt-1 h-8 w-full p-0.5 border border-gray-300 rounded-md" />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Overall Text Color:</label>
-                    <input type="color" value={formData.textColor || '#333333'} onChange={(e) => handleOverallChange('textColor', e.target.value)} className="mt-1 h-8 w-full p-0.5 border border-gray-300 rounded-md" />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Item Background Color:</label>
-                    <input type="color" value={formData.itemBackgroundColor || '#F9FAFB'} onChange={(e) => handleOverallChange('itemBackgroundColor', e.target.value)} className="mt-1 h-8 w-full p-0.5 border border-gray-300 rounded-md" />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Item Text Color:</label>
-                    <input type="color" value={formData.itemTextColor || '#111827'} onChange={(e) => handleOverallChange('itemTextColor', e.target.value)} className="mt-1 h-8 w-full p-0.5 border border-gray-300 rounded-md" />
-                </div>
-                 <div>
-                    <label className="block text-sm font-medium text-gray-700">Image Border Color (Edit Mode):</label>
-                    <input type="color" value={formData.imageBorderColor || '#E5E7EB'} onChange={(e) => handleOverallChange('imageBorderColor', e.target.value)} className="mt-1 h-8 w-full p-0.5 border border-gray-300 rounded-md" />
-                </div>
-            </div>
-
-            <h4 className="text-lg font-semibold text-gray-700 pt-3 border-t mt-5">Manage Items</h4>
-            {(formData.items || []).map((item, itemIndex) => (
-                <div key={item.id || itemIndex} className="space-y-3 p-3 border border-gray-200 rounded-md bg-white">
-                    <div className="flex justify-between items-center">
-                        <h5 className="text-md font-semibold text-gray-600">Item {itemIndex + 1}: {item.name || 'Unnamed Item'}</h5>
-                        <button onClick={() => handleRemoveItem(itemIndex)} className="text-xs text-red-500 hover:text-red-700 font-semibold">Remove Item</button>
-                    </div>
-                    <div>
-                        <label className="block text-xs font-medium text-gray-600">Name (Panel Edit):</label>
-                        <input type="text" value={item.name || ''} onChange={(e) => handleItemDetailChange(itemIndex, 'name', e.target.value)} className="mt-0.5 block w-full px-2 py-1 text-sm bg-gray-50 border border-gray-300 rounded-md" />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-medium text-gray-600">Description (Panel Edit):</label>
-                        <textarea value={item.description || ''} onChange={(e) => handleItemDetailChange(itemIndex, 'description', e.target.value)} rows={3} className="mt-0.5 block w-full px-2 py-1 text-sm bg-gray-50 border border-gray-300 rounded-md resize-none" />
-                    </div>
-                    
-                    <div>
-                        <label className="block text-xs font-medium text-gray-600">Advantages (Panel Edit):</label>
-                        {(item.advantages || []).map((adv, advIndex) => (
-                            <div key={advIndex} className="flex items-center space-x-2 mt-1">
-                                <input type="text" value={adv} onChange={(e) => handleItemAdvantageChange(itemIndex, advIndex, e.target.value)} className="flex-grow px-2 py-1 text-xs bg-gray-50 border border-gray-300 rounded-md" />
-                                <button onClick={() => handleRemoveItemAdvantage(itemIndex, advIndex)} className="text-xs text-red-500 hover:text-red-700 font-semibold">&times; Remove</button>
-                            </div>
-                        ))}
-                        <button onClick={() => handleAddItemAdvantage(itemIndex)} className="mt-1 text-xs text-blue-500 hover:text-blue-700 font-semibold">+ Add Advantage</button>
-                    </div>
-
-                    <div>
-                        <label className="block text-xs font-medium text-gray-600">Pictures:</label>
-                        {(item.pictures || []).map((pic, picIndex) => {
-                            const picUrl = getDisplayUrl ? getDisplayUrl(pic) : (typeof pic === 'object' && pic?.url ? pic.url : typeof pic === 'string' ? pic : '');
-                            return (
-                                <div key={picIndex} className="flex items-center space-x-2 mt-1 p-1 border border-dashed border-gray-300 rounded">
-                                    {picUrl && <img src={picUrl} alt={`Pic ${picIndex + 1}`} className="h-12 w-12 object-cover rounded" />}
-                                    <input 
-                                        type="file" 
-                                        accept="image/*" 
-                                        onChange={(e) => handleItemPictureChange(itemIndex, picIndex, e.target.files[0])} 
-                                        className="flex-grow text-xs file:text-xs file:mr-1 file:py-0.5 file:px-1 file:rounded file:border-0 file:font-semibold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100"
-                                    />
-                                    <button onClick={() => handleRemoveItemPicture(itemIndex, picIndex)} className="text-xs text-red-500 hover:text-red-700 font-semibold">&times; Remove</button>
-                                </div>
-                            );
-                        })}
-                        <button onClick={() => handleAddPictureToItem(itemIndex)} className="mt-1 text-xs text-blue-500 hover:text-blue-700 font-semibold">+ Add Picture Slot</button>
-                    </div>
-                    
-                    <div>
-                        <label className="block text-xs font-medium text-gray-600">Color Possibilities:</label>
-                        <input type="text" value={item.colorPossibilities || ''} onChange={(e) => handleItemDetailChange(itemIndex, 'colorPossibilities', e.target.value)} className="mt-0.5 block w-full px-2 py-1 text-sm bg-gray-50 border border-gray-300 rounded-md" />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-medium text-gray-600">Installation Time:</label>
-                        <input type="text" value={item.installationTime || ''} onChange={(e) => handleItemDetailChange(itemIndex, 'installationTime', e.target.value)} className="mt-0.5 block w-full px-2 py-1 text-sm bg-gray-50 border border-gray-300 rounded-md" />
-                    </div>
-                </div>
-            ))}
-            <button onClick={handleAddItem} className="mt-4 px-3 py-1.5 text-sm bg-green-500 hover:bg-green-600 text-white rounded-md shadow-sm font-semibold">+ Add New Item</button>
+  return {
+    general: () => (
+      <div className="p-3 space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Section Title (Editable inline too):</label>
+          <input
+            type="text"
+            value={config.title || config.sectionTitle || ''}
+            onChange={(e) => onPanelChange({ ...config, sectionTitle: e.target.value, title: e.target.value })}
+            className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
         </div>
-    );
-};
-
-DetailedListBlock.EditorPanel.propTypes = {
-    currentConfig: PropTypes.object.isRequired,
-    onPanelConfigChange: PropTypes.func.isRequired,
-    onPanelFileChange: PropTypes.func.isRequired, 
-    getDisplayUrl: PropTypes.func.isRequired, 
+        <div>
+          <h4 className="text-sm font-semibold text-gray-700 mb-2">Manage Siding Options:</h4>
+          <p className="text-xs text-gray-500 mb-3">Name, description, advantages, etc., are editable directly on the block preview.</p>
+          {(config.items || []).map((item, index) => (
+            <div key={item.id || index} className="flex items-center justify-between p-2 bg-gray-50 rounded-md mb-2 shadow-sm">
+              <span className="text-xs text-gray-600 truncate w-3/4" title={item.name}>{index + 1}. {item.name || '(Untitled Item)'}</span>
+              <button
+                onClick={() => handleRemoveItem(index)}
+                className="text-red-500 hover:text-red-700 text-xs font-semibold p-1 hover:bg-red-100 rounded-full"
+                title="Remove Item"
+              >
+                ✕ Remove
+              </button>
+            </div>
+          ))}
+          <button
+            onClick={handleAddItem}
+            className="mt-2 w-full px-4 py-2 border border-dashed border-gray-300 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 hover:border-solid"
+          >
+            + Add Siding Option
+          </button>
+        </div>
+      </div>
+    ),
+    images: () => (
+      (config?.items || []).length > 0 ? (
+        <PanelImagesController
+          currentData={{ images: getImagesForController() }}
+          onControlsChange={handleImagesChangeFromController}
+          imageArrayFieldName="images"
+          getItemName={(img) => img?.name || 'Item Image'}
+          // onPanelFileChange is not directly used by PIC, it calls onControlsChange with file objects
+        />
+      ) : (
+        <div className="p-6 text-center text-gray-500">
+            <p>No items available to manage images for. Add items in the 'General' tab first.</p>
+        </div>
+      )
+    ),
+    colors: () => (
+      <div className="p-3 space-y-3">
+        <h4 className="text-sm font-semibold text-gray-700 mb-2">Color Scheme:</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <ThemeColorPicker {...colorPickerProps("Overall Background", "backgroundColor", "#FFFFFF")} />
+          <ThemeColorPicker {...colorPickerProps("Overall Text Color", "textColor", "#333333")} />
+          <ThemeColorPicker {...colorPickerProps("Item Background", "itemBackgroundColor", "#F9FAFB")} />
+          <ThemeColorPicker {...colorPickerProps("Item Text Color", "itemTextColor", "#111827")} />
+          <ThemeColorPicker {...colorPickerProps("Image Border (Edit Preview)", "imageBorderColor", "#E5E7EB")} />
+        </div>
+      </div>
+    ),
+    // Styling tab could be added if more specific styling options are needed beyond colors
+  };
 };
 
 export default DetailedListBlock;

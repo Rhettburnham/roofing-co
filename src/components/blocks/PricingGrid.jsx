@@ -1,6 +1,8 @@
 // src/components/blocks/PricingGrid.jsx
 import React, { useState, useEffect, useRef } from "react";
 import { FaPencilAlt, FaPlus, FaTrash, FaImage, FaTimes, FaToggleOn, FaToggleOff } from "react-icons/fa";
+import PropTypes from 'prop-types';
+import PanelImagesController from "../common/PanelImagesController"; // Assuming correct path
 
 /**
  * PricingGrid
@@ -20,7 +22,7 @@ import { FaPencilAlt, FaPlus, FaTrash, FaImage, FaTimes, FaToggleOn, FaToggleOff
  * }
  */
 
-// Helper function
+// Helper function to get display URL
 const getDisplayUrlHelper = (value) => {
   if (!value) return null;
   if (typeof value === "string") return value;
@@ -28,94 +30,109 @@ const getDisplayUrlHelper = (value) => {
   return null;
 };
 
-// EditableText Component (Copied)
-const EditableText = ({ value, onChange, onBlur, tag: Tag = 'p', className = '', inputClassName = '', isTextarea = false, placeholder = "Edit", readOnly = false, style = {} }) => {
-  const [isEditing, setIsEditing] = useState(false);
+// Helper to initialize image state (consistent with other blocks)
+const initializeImageState = (imageValue, defaultPath = '') => {
+  let fileObject = null;
+  let urlToDisplay = defaultPath;
+  let nameToStore = defaultPath ? defaultPath.split('/').pop() : 'placeholder.jpg';
+  let originalUrlToStore = defaultPath;
+
+  if (imageValue && typeof imageValue === 'object') {
+    urlToDisplay = imageValue.url || defaultPath;
+    nameToStore = imageValue.name || (urlToDisplay ? urlToDisplay.split('/').pop() : 'image.jpg');
+    fileObject = imageValue.file || null;
+    originalUrlToStore = imageValue.originalUrl || (typeof imageValue.url === 'string' && !imageValue.url.startsWith('blob:') ? imageValue.url : defaultPath);
+  } else if (typeof imageValue === 'string' && imageValue) {
+    urlToDisplay = imageValue;
+    nameToStore = imageValue.split('/').pop();
+    originalUrlToStore = imageValue;
+  }
+  return { file: fileObject, url: urlToDisplay, name: nameToStore, originalUrl: originalUrlToStore };
+};
+
+// Reusable EditableText Component (simplified for this block's needs)
+const EditableText = ({ value, onChange, tag: Tag = 'p', className = '', placeholder = "Edit", readOnly = false, isTextarea = false, style = {} }) => {
   const [currentValue, setCurrentValue] = useState(value);
   const inputRef = useRef(null);
 
   useEffect(() => { setCurrentValue(value); }, [value]);
 
   useEffect(() => {
-    if (isEditing && inputRef.current) {
-      inputRef.current.focus();
-      if (isTextarea && inputRef.current.scrollHeight > inputRef.current.clientHeight) {
-        inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
-      }
-    }
-  }, [isEditing, isTextarea]);
-  
-  const handleInputChange = (e) => {
-    setCurrentValue(e.target.value);
-    if (isTextarea && inputRef.current) {
+    if (!readOnly && inputRef.current && isTextarea) {
       inputRef.current.style.height = 'auto';
       inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
     }
+  }, [currentValue, readOnly, isTextarea]);
+
+  const handleChange = (e) => {
+    if (readOnly) return;
+    setCurrentValue(e.target.value);
   };
 
   const handleBlur = () => {
-    setIsEditing(false);
-    if (currentValue !== value) { onChange(currentValue); }
-    if (onBlur) onBlur();
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !isTextarea) { handleBlur(); }
-    else if (e.key === 'Escape') { setCurrentValue(value); setIsEditing(false); if (onBlur) onBlur(); }
-  };
-
-  const activateEditMode = () => { if (!readOnly && !isEditing) { setIsEditing(true); } };
-
-  if (!readOnly && isEditing) {
-    const commonInputProps = {
-      ref: inputRef, value: currentValue, onChange: handleInputChange, onBlur: handleBlur, onKeyDown: handleKeyDown,
-      className: `${className} ${inputClassName} outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 rounded-sm bg-white/80 placeholder-gray-500/70 shadow-inner`,
-      style: { ...style, width: '100%' }
-    };
-    if (isTextarea) return <textarea {...commonInputProps} rows={Math.max(1, (currentValue || '').split('\\n').length)} placeholder={placeholder} />;
-    return <input {...commonInputProps} type="text" placeholder={placeholder} />;
-  }
-  const cursorClass = !readOnly && !isEditing ? 'cursor-pointer hover:bg-gray-400/10' : '';
-  return (
-    <Tag className={`${className} ${cursorClass} transition-colors duration-150 ease-in-out p-0 m-0 min-h-[1em] w-full break-words`} onClick={activateEditMode} title={!readOnly ? "Click to edit" : ""} style={style}>
-      {value || <span className="text-gray-400/80 italic text-sm">({placeholder})</span>}
-    </Tag>
-  );
-};
-
-const PricingGridDisplay = ({ config = {}, readOnly = false, onConfigChange }) => {
-  const {
-    showPrice = true,
-    items = [
-      { id:1, title: "Sample Item 1", image: "https://via.placeholder.com/150/CCCCCC/FFFFFF?text=Sample1", alt: "Sample Alt 1", description: "This is a description for sample item 1.", rate: "$10/unit" },
-      { id:2, title: "Sample Item 2", image: "https://via.placeholder.com/150/AAAAAA/FFFFFF?text=Sample2", alt: "Sample Alt 2", description: "This is a description for sample item 2. It can be a bit longer to test wrapping.", rate: "$20/unit" },
-    ],
-  } = config;
-
-  const handleItemChange = (index, field, value) => {
-    if (onConfigChange) {
-      const newItems = items.map((item, idx) => 
-        idx === index ? { ...item, [field]: value } : item
-      );
-      onConfigChange({ ...config, items: newItems });
+    if (readOnly) return;
+    if (value !== currentValue) {
+      onChange(currentValue);
     }
   };
 
-    return (
-    <div className={`container mx-auto px-4 md:px-10 py-4 md:py-8 ${!readOnly ? 'p-1 bg-slate-50' : ''}`}>
+  if (readOnly) {
+    const displayValue = value || <span className="text-gray-400/70 italic">({placeholder})</span>;
+    return <Tag className={className} style={style}>{displayValue}</Tag>;
+  }
+
+  const inputClasses = `bg-transparent border-b border-dashed border-gray-400/60 focus:border-blue-500 focus:ring-0 outline-none w-full ${className}`;
+
+  if (isTextarea) {
+    return <textarea ref={inputRef} value={currentValue || ''} onChange={handleChange} onBlur={handleBlur} placeholder={placeholder} className={inputClasses} style={{...style, resize: 'none'}} rows={2} />;
+  }
+  return <input ref={inputRef} type="text" value={currentValue || ''} onChange={handleChange} onBlur={handleBlur} placeholder={placeholder} className={inputClasses} style={style} />;
+};
+
+const PricingGridDisplay = ({ config = {}, readOnly, onConfigChange }) => {
+  const {
+    showPrice = true,
+    items = [
+      { id:1, title: "Sample Item 1", image: initializeImageState("https://via.placeholder.com/150/CCCCCC/FFFFFF?text=Sample1"), alt: "Sample Alt 1", description: "This is a description for sample item 1.", rate: "$10/unit" },
+      { id:2, title: "Sample Item 2", image: initializeImageState("https://via.placeholder.com/150/AAAAAA/FFFFFF?text=Sample2"), alt: "Sample Alt 2", description: "This is a description for sample item 2. It can be a bit longer to test wrapping.", rate: "$20/unit" },
+    ],
+    title = "Pricing Options" // Added default title for the section
+  } = config;
+
+  const handleItemChange = (index, field, value) => {
+    if (readOnly || !onConfigChange) return;
+    const newItems = items.map((item, idx) => 
+      idx === index ? { ...item, [field]: value } : item
+    );
+    onConfigChange({ ...config, items: newItems });
+  };
+  
+  const handleTitleChange = (newTitle) => {
+    if (readOnly || !onConfigChange) return;
+    onConfigChange({ ...config, title: newTitle });
+  }
+
+  return (
+    <div className={`container mx-auto px-4 md:px-10 py-4 md:py-8 ${!readOnly ? 'p-1 bg-slate-50 border-2 border-blue-300/50' : 'bg-gray-100'}`}>
+        <EditableText 
+            tag="h2"
+            value={title}
+            onChange={handleTitleChange}
+            readOnly={readOnly}
+            className="text-2xl md:text-3xl font-bold text-gray-800 text-center mb-6 md:mb-8"
+            placeholder="Section Title"
+        />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         {(items || []).map((g, idx) => (
             <div
-            key={g.id || idx}
-            className="relative flex flex-col md:flex-row items-center md:space-x-4 p-3 md:p-4 rounded-lg shadow-md bg-white/80 hover:shadow-lg transition-all duration-300"
+              key={g.id || idx}
+              className="relative flex flex-col md:flex-row items-center md:space-x-4 p-3 md:p-4 rounded-lg shadow-md bg-white/90 hover:shadow-lg transition-all duration-300 backdrop-blur-sm border border-gray-200/50"
             >
             {getDisplayUrlHelper(g.image) ? (
               <img
                 src={getDisplayUrlHelper(g.image)}
                 alt={g.alt || g.title}
-                className={`w-full md:w-32 h-32 md:h-32 object-cover rounded-lg mb-2 md:mb-0 shadow ${
-                  g.title === "Steel Gutters" ? "transform -scale-x-100" : ""
-                }`}
+                className={`w-full md:w-32 h-32 md:h-32 object-cover rounded-lg mb-2 md:mb-0 shadow ${g.title === "Steel Gutters" ? "transform -scale-x-100" : ""}`}
               />
             ) : (
               !readOnly && <div className="w-full md:w-32 h-32 md:h-32 bg-gray-200 flex items-center justify-center text-gray-400 text-sm rounded-lg mb-2 md:mb-0">Add Image in Panel</div>
@@ -126,7 +143,6 @@ const PricingGridDisplay = ({ config = {}, readOnly = false, onConfigChange }) =
                 value={g.title} 
                 onChange={(newVal) => handleItemChange(idx, "title", newVal)} 
                 className="text-lg font-bold text-gray-800" 
-                inputClassName="text-lg font-bold text-gray-800 w-full" 
                 readOnly={readOnly} 
                 placeholder="Item Title"
               />
@@ -135,7 +151,6 @@ const PricingGridDisplay = ({ config = {}, readOnly = false, onConfigChange }) =
                 value={g.description} 
                 onChange={(newVal) => handleItemChange(idx, "description", newVal)} 
                 className="text-sm md:text-base text-gray-700 mt-1" 
-                inputClassName="text-sm md:text-base text-gray-700 w-full" 
                 isTextarea 
                 readOnly={readOnly} 
                 placeholder="Item description..."
@@ -146,7 +161,6 @@ const PricingGridDisplay = ({ config = {}, readOnly = false, onConfigChange }) =
                     value={g.rate} 
                     onChange={(newVal) => handleItemChange(idx, "rate", newVal)} 
                     className="text-sm md:text-base font-semibold mt-1 text-blue-600" 
-                    inputClassName="text-sm md:text-base font-semibold text-blue-600 w-full" 
                     readOnly={readOnly} 
                     placeholder="Item rate, e.g. $X/unit"
                 />
@@ -159,177 +173,194 @@ const PricingGridDisplay = ({ config = {}, readOnly = false, onConfigChange }) =
     </div>
   );
 };
+PricingGridDisplay.propTypes = {
+    config: PropTypes.object,
+    readOnly: PropTypes.bool,
+    onConfigChange: PropTypes.func,
+}
 
-const PricingGrid = ({
-  config = {},
-  readOnly = false,
-  onConfigChange,
-  onToggleEditor,
-  // onFileChange for EditorPanel
-}) => {
+const PricingGrid = ({ config = {}, readOnly = false, onConfigChange, getDisplayUrl: getDisplayUrlFromProp }) => {
+  // The main component now primarily manages local state for the panel and passes data to display.
+  // Inline editing logic is within PricingGridDisplay itself.
+  const [localConfig, setLocalConfig] = useState(() => {
+    const initial = { ...config };
+    return {
+      ...initial,
+      items: (initial.items || []).map(item => ({
+        ...item,
+        image: initializeImageState(item.image, '/assets/images/placeholder.jpg')
+      }))
+    };
+  });
 
-  if (!readOnly) {
-    return (
-      <div className="relative group border-2 border-blue-400/50">
-        <PricingGridDisplay 
-            config={config} 
-            readOnly={false} 
-            onConfigChange={onConfigChange} 
-        />
-        {onToggleEditor && (
-          <button
-            onClick={onToggleEditor}
-            className="absolute top-2 right-2 z-30 p-2 bg-gray-700 text-white rounded-full shadow-lg hover:bg-gray-800 transition-colors opacity-50 group-hover:opacity-100"
-            title="Open Editor Panel"
-          >
-            <FaPencilAlt size={16} />
-          </button>
-        )}
-      </div>
-    );
-  }
-  return <PricingGridDisplay config={config} readOnly={true} />;
-};
+  useEffect(() => {
+    // Sync localConfig with config prop, especially for image objects
+    const initial = { ...config };
+    setLocalConfig({
+        ...initial,
+        items: (initial.items || []).map(item => ({
+            ...item,
+            image: initializeImageState(item.image, '/assets/images/placeholder.jpg')
+        }))
+    });
+  }, [config]);
 
-PricingGrid.EditorPanel = ({ currentConfig, onPanelConfigChange, onPanelFileChange, getDisplayUrl }) => {
-  const {
-    showPrice = true,
-    items = [],
-  } = currentConfig;
+  // When onConfigChange is called by PricingGridDisplay (due to inline edit)
+  // or by the panel (via tabsConfig calling its own onPanelChange which is this onConfigChange)
+  const handleConfigUpdateFromChildOrPanel = (newFullConfig) => {
+    // Update local state first to reflect changes immediately if panel is open
+    const updatedItems = (newFullConfig.items || []).map(item => ({
+        ...item,
+        // Ensure image objects are correctly formatted before setting local state or passing up
+        image: typeof item.image === 'string' ? initializeImageState(item.image) : item.image 
+    }));
+    setLocalConfig({...newFullConfig, items: updatedItems });
 
-  const currentGetDisplayUrl = typeof getDisplayUrl === 'function' ? getDisplayUrl : getDisplayUrlHelper;
-
-  const handleShowPriceToggle = () => {
-    onPanelConfigChange({ showPrice: !showPrice });
+    // Then, call the parent's onConfigChange with the fully processed data
+    if (onConfigChange) {
+        onConfigChange({...newFullConfig, items: updatedItems });
+    }
   };
 
-  const handleItemAltChange = (idx, altText) => {
-    const newItems = items.map((item, itemIdx) => 
-      itemIdx === idx ? { ...item, alt: altText } : item
-    );
-    onPanelConfigChange({ items: newItems });
-  };
-
-  const handleImageFileChange = (itemIndex, file) => {
-     if (file && onPanelFileChange) {
-        const pathData = { field: 'image', blockItemIndex: itemIndex };
-        onPanelFileChange(pathData, file); 
-     }
-  };
-
-  const handleImageUrlChange = (itemIndex, url) => {
-    const newItems = items.map((item, i) => {
-      if (i === itemIndex) {
-        if (typeof item.image === 'object' && item.image?.file && item.image?.url?.startsWith('blob:')) {
+  // Cleanup blob URLs
+  useEffect(() => {
+    return () => {
+      (localConfig.items || []).forEach(item => {
+        if (item.image?.file && item.image.url?.startsWith('blob:')) {
           URL.revokeObjectURL(item.image.url);
         }
-        return { ...item, image: { file: null, url: url, name: url.split('/').pop() || `image_${i}`, originalUrl: url } };
-      }
-      return item;
-    });
-    onPanelConfigChange({ items: newItems });
-  };
-
-  const addItem = () => {
-    const newItem = { 
-        id: Date.now(), 
-        title: "New Item", 
-        image: { url: "", name: "New Image", file: null, originalUrl: "" }, 
-        alt: "",
-        description: "Description for new item.", 
-        rate: "$0/unit" 
+      });
     };
-    const newItems = [...(items || []), newItem];
-    onPanelConfigChange({ items: newItems });
-  };
-
-  const removeItem = (idxToRemove) => {
-    const itemToRemove = items[idxToRemove];
-    if (itemToRemove && typeof itemToRemove.image === 'object' && itemToRemove.image?.url?.startsWith('blob:')){
-        URL.revokeObjectURL(itemToRemove.image.url);
-    }
-    const newItems = (items || []).filter((_, idx) => idx !== idxToRemove);
-    onPanelConfigChange({ items: newItems });
-  };
-  
-  const inputBaseClass = "mt-1 w-full px-2 py-1.5 bg-gray-600 text-white rounded-md border border-gray-500 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs";
-  const labelBaseClass = "block text-xs font-medium text-gray-300 mb-0.5";
+  }, [localConfig.items]);
 
   return (
-    <div className="p-3 space-y-3 bg-gray-800 text-gray-200 rounded-b-md max-h-[70vh] overflow-y-auto">
-      <div className="flex items-center justify-between pb-2 border-b border-gray-700">
-        <h3 className="text-sm font-semibold text-gray-200">Pricing Grid Settings</h3>
-        <button 
-            onClick={handleShowPriceToggle} 
-            className={`p-1.5 rounded-full transition-colors duration-200 flex items-center text-xs ${showPrice ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-600 hover:bg-gray-500'}`}
-            title={showPrice ? "Hide Prices" : "Show Prices"}
-        >
-            {showPrice ? <FaToggleOn size={18} className="mr-1 text-white" /> : <FaToggleOff size={18} className="mr-1 text-gray-400" />}
-            <span className="text-white">{showPrice ? 'Prices Shown' : 'Prices Hidden'}</span>
-        </button>
-      </div>
-      
-      <h4 className="text-xs font-semibold text-gray-300 pt-2">Manage Items:</h4>
-      {(items || []).map((item, idx) => (
-        <div key={item.id || idx} className="border border-gray-700 p-2.5 rounded-md mb-2 bg-gray-750 shadow-sm">
-          <div className="flex justify-between items-center mb-1.5">
-            <span className="text-xs font-medium text-gray-400 truncate pr-2">{idx + 1}. {item.title || 'Untitled Item'}</span>
-            <button
-              type="button"
-              onClick={() => removeItem(idx)}
-              className="p-1 bg-red-600 text-white rounded-full shadow-md hover:bg-red-700 transition-colors flex-shrink-0"
-              title="Remove Item"
-            >
-              <FaTrash size={10} />
-            </button>
-          </div>
-
-          <div>
-            <label className={labelBaseClass}>Image:</label>
-            <div className="flex items-center space-x-1 mb-1 p-1 bg-gray-700 rounded">
-                {currentGetDisplayUrl(item.image) && <img src={currentGetDisplayUrl(item.image)} alt={`Thumb ${idx}`} className="h-8 w-8 object-cover rounded"/>}
-            <input
-              type="text"
-                    placeholder="Image URL" 
-                    value={(typeof item.image === 'string' && !item.image.startsWith('blob:')) ? item.image : (item.image?.originalUrl || item.image?.url || '')}
-                    onChange={(e) => handleImageUrlChange(idx, e.target.value)} 
-                    className="flex-grow p-1 bg-gray-600 border-gray-500 rounded text-xs" 
-                />
-                <label className="text-xs bg-teal-600 hover:bg-teal-500 text-white px-1.5 py-1 rounded cursor-pointer">
-                    <FaImage size={10} className="inline"/>
-                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageFileChange(idx, e.target.files?.[0])} />
-          </label>
-                 {item.image && (item.image.url || typeof item.image === 'string') && (
-                    <button onClick={() => handleImageUrlChange(idx, '')} className="text-red-500 hover:text-red-400 p-0.5" title="Remove Image">
-                        <FaTimes size={10}/>
-                    </button>
-                )}
-            </div>
-          </div>
-
-          <div>
-            <label className={labelBaseClass}>Alt Text (for image accessibility):</label>
-            <input
-              type="text"
-              value={item.alt || ""}
-              onChange={(e) => handleItemAltChange(idx, e.target.value)}
-              className={inputBaseClass}
-              placeholder="Descriptive alt text..."
-            />
-          </div>
-        </div>
-      ))}
-
-      <button
-        type="button"
-        onClick={addItem}
-        className="w-full mt-2 text-xs bg-green-600 hover:bg-green-500 text-white px-2 py-1 rounded-md shadow flex items-center justify-center"
-      >
-        <FaPlus size={10} className="mr-1" /> Add Item
-      </button>
-      {(!items || items.length === 0) && <p className="text-xs text-gray-400 text-center italic mt-2">No items defined. Click 'Add Item' to start.</p>}
-    </div>
+    <PricingGridDisplay 
+        config={localConfig} // Display uses localConfig which is synced with prop
+        readOnly={readOnly} 
+        onConfigChange={!readOnly ? handleConfigUpdateFromChildOrPanel : undefined}
+        // getDisplayUrl is not needed by PricingGridDisplay as it uses getDisplayUrlHelper
+    />
   );
+};
+
+PricingGrid.propTypes = {
+  config: PropTypes.object,
+  readOnly: PropTypes.bool,
+  onConfigChange: PropTypes.func,
+  getDisplayUrl: PropTypes.func, // Passed by ServiceEditPage/OneForm
+};
+
+
+PricingGrid.tabsConfig = (currentConfig, onPanelChange, themeColors, sitePalette) => {
+  const { showPrice = true, items = [] } = currentConfig;
+
+  const handleShowPriceToggle = () => {
+    onPanelChange({ ...currentConfig, showPrice: !showPrice });
+  };
+
+  const handleItemTextChangeInPanel = (index, field, value) => {
+    const newItems = items.map((item, itemIdx) => 
+      itemIdx === index ? { ...item, [field]: value } : item
+    );
+    onPanelChange({ ...currentConfig, items: newItems });
+  };
+
+  const addItemToPanel = () => {
+    const newItem = { 
+        id: `pg_item_${Date.now()}`,
+        title: "New Pricing Item", 
+        image: initializeImageState(null, '/assets/images/placeholder.jpg'), 
+        alt: "New item placeholder",
+        description: "Description for this new pricing item.", 
+        rate: "$0/unit" 
+    };
+    onPanelChange({ ...currentConfig, items: [...items, newItem] });
+  };
+
+  const removeItemFromPanel = (index) => {
+    const itemToRemove = items[index];
+    if(itemToRemove?.image?.file && itemToRemove.image.url?.startsWith('blob:')) {
+        URL.revokeObjectURL(itemToRemove.image.url);
+    }
+    const newItems = items.filter((_, i) => i !== index);
+    onPanelChange({ ...currentConfig, items: newItems });
+  };
+  
+  // Prepare data for PanelImagesController
+  const imagesForController = items.map((item, index) => ({
+    ...(item.image || initializeImageState(null, '/assets/images/placeholder.jpg')),
+    id: item.id || `pg_item_img_${index}`,
+    name: item.title || `Pricing Item ${index + 1}`,
+    itemIndex: index,
+  }));
+
+  const onImagesControllerChange = (updatedData) => {
+    const newItems = [...items];
+    (updatedData.images || []).forEach(imgCtrl => {
+      if (imgCtrl.itemIndex !== undefined && newItems[imgCtrl.itemIndex]) {
+        const oldImageState = newItems[imgCtrl.itemIndex].image;
+        if (oldImageState?.file && oldImageState.url?.startsWith('blob:')) {
+          if ((imgCtrl.file && oldImageState.url !== imgCtrl.url) || (!imgCtrl.file && oldImageState.url !== imgCtrl.originalUrl)) {
+            URL.revokeObjectURL(oldImageState.url);
+          }
+        }
+        newItems[imgCtrl.itemIndex].image = {
+          file: imgCtrl.file || null,
+          url: imgCtrl.url || '',
+          name: imgCtrl.name || (imgCtrl.url || '').split('/').pop() || 'image.jpg',
+          originalUrl: imgCtrl.originalUrl || imgCtrl.url || ''
+        };
+      }
+    });
+    onPanelChange({ ...currentConfig, items: newItems });
+  };
+
+  return {
+    general: () => (
+      <div className="p-4 space-y-4">
+        <div className="flex items-center justify-between pb-2">
+            <h3 className="text-lg font-semibold text-gray-700">General Settings</h3>
+            <button 
+                onClick={handleShowPriceToggle} 
+                className={`p-1.5 rounded-full transition-colors duration-200 flex items-center text-xs ${showPrice ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-500 hover:bg-gray-600'}`}
+                title={showPrice ? "Hide Prices" : "Show Prices"}
+            >
+                {showPrice ? <FaToggleOn size={16} className="mr-1.5 text-white" /> : <FaToggleOff size={16} className="mr-1.5 text-gray-300" />}
+                <span className="text-white font-medium">{showPrice ? 'Prices Shown' : 'Prices Hidden'}</span>
+            </button>
+        </div>
+        <div className="border-t pt-4">
+          <h4 className="text-md font-semibold text-gray-700 mb-2">Manage Items:</h4>
+           <p className="text-xs text-gray-500 mb-3">Title, description, and rate are editable directly on the block preview.</p>
+          {(items || []).map((item, idx) => (
+            <div key={item.id || idx} className="p-3 bg-gray-50 rounded-md mb-3 shadow-sm border border-gray-200">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-gray-800 font-medium">Item {idx + 1}: {item.title || '(Untitled)'}</span>
+                <button onClick={() => removeItemFromPanel(idx)} className="text-xs text-red-600 hover:text-red-800 font-semibold p-1 hover:bg-red-100 rounded-full">✕ Remove</button>
+              </div>
+              <div className="space-y-2">
+                 <div>
+                  <label className="block text-xs font-medium text-gray-600">Alt Text (for image):</label>
+                  <input type="text" value={item.alt || ""} onChange={(e) => handleItemTextChangeInPanel(idx, "alt", e.target.value)} className="mt-0.5 block w-full px-2 py-1.5 bg-white border border-gray-300 rounded-md sm:text-xs" />
+                </div>
+              </div>
+            </div>
+          ))}
+          <button onClick={addItemToPanel} className="mt-3 w-full px-4 py-2 border border-dashed border-gray-300 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 hover:border-solid">+ Add Item</button>
+        </div>
+      </div>
+    ),
+    images: () => (
+      <PanelImagesController
+        currentData={{ images: imagesForController }}
+        onControlsChange={onImagesControllerChange}
+        imageArrayFieldName="images"
+        getItemName={(img) => img?.name || 'Pricing Item Image'}
+        allowAdd={false} 
+        allowRemove={false}
+      />
+    ),
+  };
 };
 
 export default PricingGrid;

@@ -1,7 +1,9 @@
 // src/components/blocks/ListImageVerticalBlock.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { FaCheck } from "react-icons/fa";
+import PropTypes from 'prop-types';
+import PanelImagesController from "../common/PanelImagesController";
 
 /**
  * ListImageVerticalBlock
@@ -21,53 +23,63 @@ import { FaCheck } from "react-icons/fa";
  *   ]
  * }
  */
-const ListImageVerticalBlock = ({ config = {}, readOnly = false, onConfigChange, onFileChange }) => {
+const ListImageVerticalBlock = ({ config = {}, getDisplayUrl: getDisplayUrlFromProp }) => {
   const { listTitle = "Our Services", items = [] } = config;
-  const [selectedItem, setSelectedItem] = useState(0);
+  
+  // Use the passed getDisplayUrlFromProp if available, otherwise fallback to local helper
+  const effectiveGetDisplayUrl = typeof getDisplayUrlFromProp === 'function' ? getDisplayUrlFromProp : getDisplayUrl;
 
-  // Helper function to get display URL
-  const getDisplayUrl = (value) => {
-    if (!value) return null;
-    if (typeof value === "string") return value;
-    if (typeof value === "object" && value.url) return value.url;
-    return null;
-  };
+  // Add a useEffect to log when the component re-renders with new config for debugging
+  useEffect(() => {
+    console.log("[ListImageVerticalBlock] Display component re-rendered with config:", config);
+  }, [config]);
 
-  if (readOnly) {
-    return (
-      <section className="py-6 px-4 md:px-8 lg:px-16">
+  return (
+    <section className="py-6 px-4 md:px-8 lg:px-16">
+      {listTitle && (
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-6 md:mb-8 text-gray-800">
           {listTitle}
         </h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-          {items.map((item, index) => (
+      )}
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+        {(items || []).map((item, index) => {
+          const imageUrl = effectiveGetDisplayUrl(item.image, "/assets/images/placeholder_rect_1.jpg");
+          return (
             <div 
               key={item.id || index}
               className="bg-white rounded-lg shadow-lg overflow-hidden flex flex-col h-full transition-transform duration-300 hover:scale-[1.02]"
             >
-              {/* Image at top */}
-              {getDisplayUrl(item.image) && (
+              {imageUrl && (
                 <div className="aspect-video w-full overflow-hidden">
                   <img 
-                    src={getDisplayUrl(item.image)} 
-                    alt={item.title} 
+                    src={imageUrl} 
+                    alt={item.title || `Item ${index + 1}`}
                     className="w-full h-full object-cover"
                   />
                 </div>
               )}
+              {!imageUrl && (
+                <div className="aspect-video w-full overflow-hidden bg-gray-200 flex items-center justify-center text-gray-400">
+                  No Image
+                </div>
+              )}
               
-              <div className="p-4 sm:p-6 flex-grow @container">
-                <h3 className="text-xl @md:text-2xl font-semibold mb-2 text-gray-800">
-                  {item.title}
-                </h3>
+              <div className="p-4 sm:p-6 flex-grow flex flex-col @container">
+                {item.title && (
+                  <h3 className="text-xl @md:text-2xl font-semibold mb-2 text-gray-800">
+                    {item.title}
+                  </h3>
+                )}
                 
-                <p className="text-sm @md:text-base text-gray-600 mb-4">
-                  {item.description}
-                </p>
+                {item.description && (
+                  <p className="text-sm @md:text-base text-gray-600 mb-4 flex-grow">
+                    {item.description}
+                  </p>
+                )}
                 
                 {item.benefits && item.benefits.length > 0 && (
-                  <div className="mt-auto">
+                  <div className="mt-auto pt-3 border-t border-gray-200">
                     <h4 className="text-base @md:text-lg font-semibold mb-2 text-gray-700">
                       Benefits:
                     </h4>
@@ -83,202 +95,183 @@ const ListImageVerticalBlock = ({ config = {}, readOnly = false, onConfigChange,
                 )}
               </div>
             </div>
-          ))}
-        </div>
-      </section>
-    );
-  }
+          );
+        })}
+      </div>
+    </section>
+  );
+};
 
-  // EDIT MODE - structured editor
-  const handleFieldChange = (field, value) => {
-    onConfigChange?.({
-      ...config,
-      [field]: value,
-    });
-  };
+ListImageVerticalBlock.propTypes = {
+  config: PropTypes.shape({
+    listTitle: PropTypes.string,
+    items: PropTypes.arrayOf(PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      title: PropTypes.string,
+      description: PropTypes.string,
+      benefits: PropTypes.arrayOf(PropTypes.string),
+      image: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
+    }))
+  }),
+  getDisplayUrl: PropTypes.func, // For ServiceEditPage context
+};
 
-  const updateItem = (index, field, value) => {
-    const newItems = [...items];
-    newItems[index] = {
-      ...newItems[index],
-      [field]: value,
-    };
-    handleFieldChange("items", newItems);
+ListImageVerticalBlock.tabsConfig = (currentConfig, onPanelChange, themeColors, sitePalette) => {
+  const { items = [] } = currentConfig || {};
+
+  const handlePanelFieldChange = (field, value, itemIndex = null, subField = null, benefitIndex = null) => {
+    let newConfig = { ...currentConfig };
+    if (itemIndex !== null) { // Change within an item
+      const newItems = [...(newConfig.items || [])];
+      if (newItems[itemIndex]) {
+        if (subField === 'benefits' && benefitIndex !== null) {
+          const newBenefits = [...(newItems[itemIndex].benefits || [])];
+          newBenefits[benefitIndex] = value;
+          newItems[itemIndex] = { ...newItems[itemIndex], benefits: newBenefits };
+        } else if (subField) {
+          newItems[itemIndex] = { ...newItems[itemIndex], [subField]: value };
+        }
+        newConfig.items = newItems;
+      } 
+    } else { // Top-level field change
+      newConfig[field] = value;
+    }
+    onPanelChange(newConfig);
   };
 
   const addItem = () => {
-    const newItems = [
-      ...items,
-      {
-        id: Date.now(),
-        title: "New Service",
-        description: "Service description",
-        benefits: ["Benefit 1"],
-        image: { url: "", file: null, name: "new_service_image", originalUrl: "" }
-      }
-    ];
-    handleFieldChange("items", newItems);
+    const newItem = {
+      id: `item_${Date.now()}_${Math.random().toString(36).substr(2,5)}`,
+      title: "New Service Item",
+      description: "Description of this new service item.",
+      benefits: ["Key benefit 1", "Key benefit 2"],
+      image: initializeImageState(null, "/assets/images/placeholder_rect_1.jpg") 
+    };
+    onPanelChange({ ...currentConfig, items: [...(currentConfig.items || []), newItem] });
   };
 
-  const removeItem = (index) => {
-    const newItems = [...items];
-    newItems.splice(index, 1);
-    handleFieldChange("items", newItems);
-  };
-
-  const addBenefit = (itemIndex) => {
-    const newItems = [...items];
-    newItems[itemIndex].benefits = [
-      ...(newItems[itemIndex].benefits || []),
-      "New benefit"
-    ];
-    handleFieldChange("items", newItems);
-  };
-
-  const updateBenefit = (itemIndex, benefitIndex, value) => {
-    const newItems = [...items];
-    newItems[itemIndex].benefits[benefitIndex] = value;
-    handleFieldChange("items", newItems);
-  };
-
-  const removeBenefit = (itemIndex, benefitIndex) => {
-    const newItems = [...items];
-    newItems[itemIndex].benefits.splice(benefitIndex, 1);
-    handleFieldChange("items", newItems);
-  };
-
-  const handleImageUpload = (itemIndex, file) => {
-    if (!file) return;
-    if (onFileChange) {
-      const pathData = { field: 'image', blockItemIndex: itemIndex }; 
-      onFileChange(pathData, file);
-    } else {
-      console.warn("ListImageVerticalBlock: onFileChange prop not provided. Cannot handle file upload.");
-      const fileURL = URL.createObjectURL(file);
-      updateItem(itemIndex, "image", { url: fileURL, file: file, name: file.name, originalUrl: "" });
+  const removeItem = (indexToRemove) => {
+    const itemRemoved = (currentConfig.items || [])[indexToRemove];
+    if (itemRemoved?.image?.file && itemRemoved.image.url?.startsWith('blob:')) {
+        URL.revokeObjectURL(itemRemoved.image.url);
     }
+    const newItems = (currentConfig.items || []).filter((_, i) => i !== indexToRemove);
+    onPanelChange({ ...currentConfig, items: newItems });
+  };
+
+  const addBenefitToItem = (itemIndex) => {
+    const newItems = (currentConfig.items || []).map((item, i) => {
+      if (i === itemIndex) {
+        return { ...item, benefits: [...(item.benefits || []), "New Benefit"] };
+      }
+      return item;
+    });
+    onPanelChange({ ...currentConfig, items: newItems });
+  };
+
+  const removeBenefitFromItem = (itemIndex, benefitIndexToRemove) => {
+    const newItems = (currentConfig.items || []).map((item, i) => {
+      if (i === itemIndex) {
+        return { ...item, benefits: (item.benefits || []).filter((_, bIdx) => bIdx !== benefitIndexToRemove) };
+      }
+      return item;
+    });
+    onPanelChange({ ...currentConfig, items: newItems });
   };
   
-  // Render the edit mode
-  return (
-    <div className="p-4 bg-gray-700 rounded text-white">
-      <h3 className="font-bold text-lg mb-4">List Image Vertical Block Editor</h3>
-      
-      {/* List Title */}
-      <label className="block text-sm mb-2">
-        List Title:
-        <input
-          type="text"
-          value={listTitle}
-          onChange={(e) => handleFieldChange("listTitle", e.target.value)}
-          className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
-        />
-      </label>
-      
-      {/* Items */}
-      <div className="mt-4 space-y-4">
-        {items.map((item, itemIndex) => (
-          <div key={item.id || itemIndex} className="border border-gray-500 rounded p-3">
-            <div className="flex justify-between items-center mb-2">
-              <h4 className="font-semibold text-base">Item {itemIndex + 1}</h4>
-              <button
-                onClick={() => removeItem(itemIndex)}
-                className="bg-red-600 text-white px-2 py-1 rounded text-sm"
-              >
-                Remove
-              </button>
-            </div>
-            
-            {/* Item Title */}
-            <label className="block text-sm mb-2">
-              Title:
-              <input
-                type="text"
-                value={item.title || ''}
-                onChange={(e) => updateItem(itemIndex, "title", e.target.value)}
-                className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
-              />
-            </label>
-            
-            {/* Description */}
-            <label className="block text-sm mb-2">
-              Description:
-              <textarea
-                rows={2}
-                value={item.description || ''}
-                onChange={(e) => updateItem(itemIndex, "description", e.target.value)}
-                className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
-              />
-            </label>
-            
-            {/* Image Upload */}
-            <label className="block text-sm mb-2">
-              Image:
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  if (e.target.files && e.target.files[0]) {
-                    handleImageUpload(itemIndex, e.target.files[0]);
-                  }
-                }}
-                className="mt-1 w-full px-2 py-1 bg-gray-600 text-white rounded border border-gray-500"
-              />
-            </label>
-            
-            {getDisplayUrl(item.image) && (
-              <div className="my-2">
-                <img
-                  src={getDisplayUrl(item.image)}
-                  alt={item.title || `Item ${itemIndex}`}
-                  className="h-20 object-cover rounded"
-                />
+  // Prepare data for PanelImagesController
+  const imagesForController = items.map((item, index) => ({
+    ...(item.image || initializeImageState(null, '/assets/images/placeholder_rect_1.jpg')),
+    id: item.id || `vert_list_item_img_${index}`,
+    name: item.title || `List Item ${index + 1}`,
+    itemIndex: index,
+  }));
+
+  const onImagesControllerChange = (updatedData) => {
+    const newItems = [...items];
+    (updatedData.images || []).forEach(imgCtrl => {
+      if (imgCtrl.itemIndex !== undefined && newItems[imgCtrl.itemIndex]) {
+        const oldImageState = newItems[imgCtrl.itemIndex].image;
+        if (oldImageState?.file && oldImageState.url?.startsWith('blob:')) {
+          if ((imgCtrl.file && oldImageState.url !== imgCtrl.url) || (!imgCtrl.file && oldImageState.url !== imgCtrl.originalUrl)) {
+            URL.revokeObjectURL(oldImageState.url);
+          }
+        }
+        newItems[imgCtrl.itemIndex].image = {
+          file: imgCtrl.file || null,
+          url: imgCtrl.url || '',
+          name: imgCtrl.name || (imgCtrl.url || '').split('/').pop() || 'image.jpg',
+          originalUrl: imgCtrl.originalUrl || imgCtrl.url || ''
+        };
+      }
+    });
+    onPanelChange({ ...currentConfig, items: newItems });
+  };
+
+  return {
+    general: () => (
+      <div className="p-4 space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">List Title:</label>
+          <input 
+            type="text" 
+            value={currentConfig.listTitle || ''} 
+            onChange={(e) => handlePanelFieldChange('listTitle', e.target.value)} 
+            className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            placeholder="Enter list title"
+          />
+        </div>
+        <div className="border-t pt-4">
+          <div className="flex justify-between items-center mb-2">
+            <h4 className="text-md font-semibold text-gray-700">List Items:</h4>
+            <button onClick={addItem} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-md shadow">+ Add Item</button>
+          </div>
+          {(items || []).map((item, idx) => (
+            <div key={item.id || idx} className="p-3 bg-gray-50 rounded-md mb-3 shadow-sm border border-gray-200 space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-800 font-medium">Item {idx + 1}</span>
+                <button onClick={() => removeItem(idx)} className="text-xs text-red-600 hover:text-red-800 font-semibold p-1 hover:bg-red-100 rounded-full">✕ Remove</button>
               </div>
-            )}
-            
-            {/* Benefits */}
-            <div className="mt-2">
-              <div className="flex justify-between items-center mb-1">
-                <label className="text-sm font-medium">Benefits:</label>
-                <button
-                  onClick={() => addBenefit(itemIndex)}
-                  className="text-xs bg-blue-600 text-white px-2 py-1 rounded"
-                >
-                  Add Benefit
-                </button>
+              <div>
+                <label className="block text-xs font-medium text-gray-600">Title:</label>
+                <input type="text" value={item.title || ""} onChange={(e) => handlePanelFieldChange('items', e.target.value, idx, "title")} className="mt-0.5 block w-full px-2 py-1.5 bg-white border border-gray-300 rounded-md sm:text-xs" />
               </div>
-              
-              <div className="space-y-2">
-                {(item.benefits || []).map((benefit, benefitIndex) => (
-                  <div key={benefitIndex} className="flex items-center">
-                    <input
-                      type="text"
-                      value={benefit}
-                      onChange={(e) => updateBenefit(itemIndex, benefitIndex, e.target.value)}
-                      className="flex-grow px-2 py-1 bg-gray-600 text-white rounded-l border border-gray-500"
-                    />
-                    <button
-                      onClick={() => removeBenefit(itemIndex, benefitIndex)}
-                      className="bg-red-600 text-white px-2 py-1 rounded-r border border-red-700"
-                    >
-                      ✕
-                    </button>
+              <div>
+                <label className="block text-xs font-medium text-gray-600">Description:</label>
+                <textarea rows={3} value={item.description || ""} onChange={(e) => handlePanelFieldChange('items', e.target.value, idx, "description")} className="mt-0.5 block w-full px-2 py-1.5 bg-white border border-gray-300 rounded-md sm:text-xs resize-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600">Benefits:</label>
+                {(item.benefits || []).map((benefit, bIdx) => (
+                  <div key={bIdx} className="flex items-center mt-0.5">
+                    <input type="text" value={benefit} onChange={(e) => handlePanelFieldChange('items', e.target.value, idx, 'benefits', bIdx)} className="flex-grow px-2 py-1 bg-white border border-gray-300 rounded-l-md sm:text-xs" />
+                    <button onClick={() => removeBenefitFromItem(idx, bIdx)} className="bg-red-500 text-white px-2 py-1 rounded-r-md text-xs hover:bg-red-600">✕</button>
                   </div>
                 ))}
+                <button onClick={() => addBenefitToItem(idx)} className="mt-1 text-blue-600 hover:text-blue-800 text-xs font-medium">+ Add Benefit</button>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-      
-      <button
-        onClick={addItem}
-        className="mt-4 bg-blue-600 text-white px-3 py-2 rounded"
-      >
-        Add New Item
-      </button>
-    </div>
-  );
+    ),
+    images: () => (
+      items.length > 0 ? (
+        <PanelImagesController
+          currentData={{ images: imagesForController }}
+          onControlsChange={onImagesControllerChange}
+          imageArrayFieldName="images"
+          getItemName={(img) => img?.name || 'List Item Image'}
+          allowAdd={false} // Item addition handled in general tab
+          allowRemove={false} // Item removal handled in general tab
+        />
+      ) : (
+        <div className="p-6 text-center text-gray-500">
+          <p>No items available to manage images for. Add items in the 'General' tab first.</p>
+        </div>
+      )
+    ),
+  };
 };
 
 export default ListImageVerticalBlock;

@@ -49,11 +49,11 @@ const Navbar = ({
     scrolled: { base: 'text-[3vw]', md: 'text-[5vh]' }
   },
   logoTextDistance = {
-    unscrolled: { base: 'mr-2', md: 'mr-3' },
-    scrolled: { base: 'mr-2', md: 'mr-2' }
+    unscrolled: { base: 'mr-0', md: 'mr-0' },
+    scrolled: { base: 'mr-0', md: 'mr-0' }
   },
   navbarHeight = {
-    unscrolled: { base: 'h-[16vh]', md: 'h-[16vh]' },
+    unscrolled: { base: 'h-[16vh]', md: 'h-[18vh]' },
     scrolled: { base: 'h-[10vh]', md: 'h-[10vh]' }
   },
   invertLogoColor = false, // Whether to invert logo colors

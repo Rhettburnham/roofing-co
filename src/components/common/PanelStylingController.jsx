@@ -15,14 +15,14 @@ const animationDefinitions = {
     description: 'Elements fade in smoothly as they come into view',
     icon: '✨',
     defaultEnabled: true,
-    supportedBlocks: ['BookingBlock', 'EmployeesBlock', 'BeforeAfterBlock', 'ServiceSliderBlock']
+    supportedBlocks: ['BookingBlock', 'EmployeesBlock', 'BeforeAfterBlock', 'ServiceSliderBlock', 'HeroBlock']
   },
   slideIn: {
     label: 'Slide Animation',
     description: 'Elements slide in from different directions',
     icon: '➡️',
     defaultEnabled: true,
-    supportedBlocks: ['ServiceSliderBlock', 'ButtonBlock']
+    supportedBlocks: ['ServiceSliderBlock', 'ButtonBlock', 'HeroBlock']
   },
   bounceIn: {
     label: 'Bounce Effect',
@@ -36,7 +36,14 @@ const animationDefinitions = {
     description: 'Elements scale up from small to normal size',
     icon: '🔍',
     defaultEnabled: true,
-    supportedBlocks: ['BookingBlock', 'ServiceSliderBlock']
+    supportedBlocks: ['BookingBlock', 'ServiceSliderBlock', 'HeroBlock']
+  },
+  shrink: {
+    label: 'Shrink Effect',
+    description: 'Hero section shrinks from initial to final height after a delay',
+    icon: '📏',
+    defaultEnabled: true,
+    supportedBlocks: ['HeroBlock']
   }
 };
 

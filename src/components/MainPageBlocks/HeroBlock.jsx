@@ -11,6 +11,8 @@ import ThemeColorPicker from "../common/ThemeColorPicker"; // Import common Them
 import PropTypes from "prop-types";
 import PanelStylingController from "../common/PanelStylingController";
 import PanelImagesController from "../common/PanelImagesController";
+import BrightnessController from "../common/BrightnessController";
+import FontController from "../common/FontController";
 
 const iconPacks = {
   lucide: LucideIcons,
@@ -85,6 +87,8 @@ function HeroPreview({ heroconfig }) {
   const { 
     styling: { desktopHeightVH = 30, mobileHeightVW = 75 } = {},
     readOnly: isPreviewReadOnly,
+    brightness = 50, // Default brightness
+    textSettings = {},
   } = heroconfig;
 
   const [residentialServices, setResidentialServices] = useState([]);
@@ -113,6 +117,32 @@ function HeroPreview({ heroconfig }) {
     return "/assets/images/hero/hero_split_background.jpg";
   })();
 
+  // Calculate brightness filter
+  const getBrightnessFilter = (brightnessValue) => {
+    // Convert 0-100 brightness to CSS filter brightness (0.3 to 1.2)
+    const filterValue = 0.3 + (brightnessValue / 100) * 0.9;
+    return `brightness(${filterValue}) contrast(1.1)`;
+  };
+
+  // Get text styles from textSettings
+  const getTextStyles = () => {
+    if (!textSettings || Object.keys(textSettings).length === 0) {
+      return {}; // Use default styles
+    }
+    
+    return {
+      fontFamily: textSettings.fontFamily || 'inherit',
+      fontSize: textSettings.fontSize ? `${textSettings.fontSize}px` : 'inherit',
+      fontWeight: textSettings.fontWeight || 'inherit',
+      lineHeight: textSettings.lineHeight || 'inherit',
+      letterSpacing: textSettings.letterSpacing ? `${textSettings.letterSpacing}px` : 'inherit',
+      textAlign: textSettings.textAlign || 'inherit',
+      color: textSettings.color || 'inherit',
+    };
+  };
+
+  const textStyles = getTextStyles();
+
   const {
     residential = { subServices: [], icon: 'Home', iconPack: 'lucide' },
     commercial = { subServices: [], icon: 'Building2', iconPack: 'lucide' },
@@ -132,7 +162,8 @@ function HeroPreview({ heroconfig }) {
           label: service.title, // This is the editable display title
           route: `/services/${type}/${slug}`,
           id: service.id, // Ensure id is carried over
-          originalTitle: originalIdentifier // Ensure originalTitle is present
+          originalTitle: originalIdentifier, // Ensure originalTitle is present
+          slug: slug, // Preserve the slug for routing
         };
       });
     };
@@ -230,6 +261,7 @@ function HeroPreview({ heroconfig }) {
               <motion.p
                 key={`${type}-text-label-main`}
                 className={serviceSectionTextBaseClass}
+                style={textStyles}
                 variants={textLabelAnimationVariants}
                 initial="exit"
                 animate="enter"
@@ -324,9 +356,9 @@ function HeroPreview({ heroconfig }) {
   return (
     <section className="relative overflow-y-hidden" style={bannerStyles}>
       <div 
-        className={`absolute top-[0vh] left-0 right-0 from-0% to-transparent pointer-events-none ${activeSection === "neutral" ? "h-[18vh] md:h-[13.5vh]" : "h-[10vh] md:h-[10vh]"}`} 
+        className={`absolute top-[0vh] left-0 right-0 from-0% to-transparent z-60 pointer-events-none ${activeSection === "neutral" ? "h-[18vh] md:h-[13.5vh]" : "h-[10vh] md:h-[10vh]"}`} 
         style={{ 
-          backgroundImage: `linear-gradient(to bottom, var(--top-banner-color) 10%, rgba(255,255,255,0) 100%)`,
+          backgroundImage: `linear-gradient(to bottom, ${topBannerColor || '#FFFFFF'} 20%, rgba(255, 255, 255, 0) 100%)`,
           transition: "height 0.3s ease-out 0.4s", 
           zIndex: 1 
         }}
@@ -347,7 +379,7 @@ function HeroPreview({ heroconfig }) {
               backgroundRepeat: "no-repeat",
               backgroundPosition: "center center",
               backgroundSize: "cover",
-              filter: "brightness(0.85) contrast(1.1)", // Enhanced visual appeal
+              filter: getBrightnessFilter(brightness),
             }}
             initial={{ x: "0%", scale: 1, transformOrigin: "center center" }}
             animate={{
@@ -394,27 +426,123 @@ const HeroColorControls = ({ currentData, onControlsChange, themeColors }) => {
   const handleTopBannerColorChange = (color) => {
     onControlsChange({ topBannerColor: color });
   };
+
+  const handleCustomColorChange = (colorId, property, value) => {
+    const colors = currentData.colors || [];
+    const updatedColors = colors.map(color => 
+      color.id === colorId ? { ...color, [property]: value } : color
+    );
+    onControlsChange({ colors: updatedColors });
+  };
+
+  const handleAddCustomColor = () => {
+    const colors = currentData.colors || [];
+    const newColor = {
+      id: `hero-custom-${Date.now()}`,
+      name: `custom-${colors.length + 1}`,
+      label: `Custom Color ${colors.length + 1}`,
+      value: "#3b82f6",
+      description: "Custom hero color"
+    };
+    onControlsChange({ colors: [...colors, newColor] });
+  };
+
+  const handleRemoveCustomColor = (colorId) => {
+    const colors = currentData.colors || [];
+    const updatedColors = colors.filter(color => color.id !== colorId);
+    onControlsChange({ colors: updatedColors });
+  };
+
   return (
-    <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div>
-        <ThemeColorPicker
-          label="Top Banner Gradient:"
-          currentColorValue={currentData.topBannerColor || "#FFFFFF"}
-          themeColors={themeColors}
-          onColorChange={(fieldName, value) => handleTopBannerColorChange(value)}
-          fieldName="topBannerColor" className="mt-0" />
+    <div className="p-3 space-y-6">
+      <h3 className="text-lg font-semibold mb-3 text-center border-b border-gray-600 pb-2 text-gray-100">Hero Colors</h3>
+      
+      {/* Gradient Colors */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <ThemeColorPicker
+            label="Top Banner Gradient:"
+            currentColorValue={currentData.topBannerColor || "#FFFFFF"}
+            themeColors={themeColors}
+            onColorChange={(fieldName, value) => handleTopBannerColorChange(value)}
+            fieldName="topBannerColor" 
+            className="mt-0" 
+          />
+        </div>
+        <div>
+          <ThemeColorPicker
+            label="Bottom Banner Gradient:"
+            currentColorValue={currentData.bannerColor || "#1e293b"}
+            themeColors={themeColors}
+            onColorChange={(fieldName, value) => handleBannerColorChange(value)}
+            fieldName="bannerColor" 
+            className="mt-0" 
+          />
+        </div>
       </div>
-      <div>
-        <ThemeColorPicker
-          label="Bottom Banner Gradient:"
-          currentColorValue={currentData.bannerColor || "#1e293b"}
-          themeColors={themeColors}
-          onColorChange={(fieldName, value) => handleBannerColorChange(value)}
-          fieldName="bannerColor" className="mt-0" />
+
+      {/* Custom Hero Colors */}
+      <div className="mt-6">
+        <div className="flex items-center justify-between mb-4">
+          <h4 className="text-md font-medium text-gray-200">Custom Hero Colors</h4>
+          <button
+            onClick={handleAddCustomColor}
+            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-md transition-colors"
+          >
+            + Add Color
+          </button>
+        </div>
+        
+        {(currentData.colors || []).map((color, index) => (
+          <div key={color.id} className="bg-gray-700 p-3 rounded-lg mb-3">
+            <div className="flex items-center justify-between mb-2">
+              <input
+                type="text"
+                value={color.label}
+                onChange={(e) => handleCustomColorChange(color.id, 'label', e.target.value)}
+                className="bg-gray-600 text-white px-2 py-1 rounded text-sm flex-1 mr-2"
+                placeholder="Color Name"
+              />
+              <button
+                onClick={() => handleRemoveCustomColor(color.id)}
+                className="text-red-400 hover:text-red-300 text-sm px-2 py-1"
+              >
+                Remove
+              </button>
+            </div>
+            <div className="flex items-center space-x-2">
+              <input
+                type="color"
+                value={color.value}
+                onChange={(e) => handleCustomColorChange(color.id, 'value', e.target.value)}
+                className="w-8 h-8 rounded border border-gray-500"
+              />
+              <input
+                type="text"
+                value={color.value}
+                onChange={(e) => handleCustomColorChange(color.id, 'value', e.target.value)}
+                className="bg-gray-600 text-white px-2 py-1 rounded text-sm flex-1"
+                placeholder="#000000"
+              />
+            </div>
+            <input
+              type="text"
+              value={color.description || ''}
+              onChange={(e) => handleCustomColorChange(color.id, 'description', e.target.value)}
+              className="bg-gray-600 text-white px-2 py-1 rounded text-sm w-full mt-2"
+              placeholder="Color description..."
+            />
+          </div>
+        ))}
+        
+        {(!currentData.colors || currentData.colors.length === 0) && (
+          <p className="text-gray-400 text-sm italic">No custom colors defined. Click "Add Color" to create one.</p>
+        )}
       </div>
     </div>
   );
 };
+
 HeroColorControls.propTypes = {
     currentData: PropTypes.object.isRequired,
     onControlsChange: PropTypes.func.isRequired,
@@ -513,9 +641,20 @@ export default function HeroBlock({
   heroconfig: heroconfigProp = { 
     residential: { subServices: [], icon: 'Home', iconPack: 'lucide' },
     commercial: { subServices: [], icon: 'Building2', iconPack: 'lucide' },
-    heroImage: "/assets/images/hero/hero_split_background.jpg", 
+    images: [],
     bannerColor: "#1e293b",
     topBannerColor: "#FFFFFF",
+    brightness: 75,
+    textSettings: {
+      fontFamily: "Inter",
+      fontSize: 20,
+      fontWeight: 600,
+      lineHeight: 1.4,
+      letterSpacing: 0.5,
+      textAlign: "center",
+      color: "#FFFFFF"
+    },
+    colors: [],
     styling: { desktopHeightVH: 30, mobileHeightVW: 75 },
   },
   readOnly = false,
@@ -590,6 +729,7 @@ export default function HeroBlock({
         title: s.label || s.title, // Prefer label if it exists (from editable input)
         originalTitle: s.originalTitle || s.label || s.title, 
         id: s.id,
+        slug: s.slug, // Preserve the slug for routing
     }));
     dataToSave.residential = { ...(currentData.residential || {}), subServices: transformSubServices(currentData.residential?.subServices) };
     dataToSave.commercial = { ...(currentData.commercial || {}), subServices: transformSubServices(currentData.commercial?.subServices) };
@@ -697,6 +837,17 @@ export default function HeroBlock({
       },
       bannerColor: initialConfig.bannerColor || "#1e293b",
       topBannerColor: initialConfig.topBannerColor || "#FFFFFF",
+      brightness: initialConfig.brightness !== undefined ? initialConfig.brightness : 75,
+      textSettings: {
+        fontFamily: initialConfig.textSettings?.fontFamily || "Inter",
+        fontSize: initialConfig.textSettings?.fontSize || 20,
+        fontWeight: initialConfig.textSettings?.fontWeight || 600,
+        lineHeight: initialConfig.textSettings?.lineHeight || 1.4,
+        letterSpacing: initialConfig.textSettings?.letterSpacing || 0.5,
+        textAlign: initialConfig.textSettings?.textAlign || "center",
+        color: initialConfig.textSettings?.color || "#FFFFFF",
+      },
+      colors: initialConfig.colors || [],
       styling: {
         desktopHeightVH: initialStyling.desktopHeightVH !== undefined ? Number(initialStyling.desktopHeightVH) : 30,
         mobileHeightVW: initialStyling.mobileHeightVW !== undefined ? Number(initialStyling.mobileHeightVW) : 75,
@@ -706,6 +857,9 @@ export default function HeroBlock({
 
   const [isIconModalOpen, setIsIconModalOpen] = useState(false);
   const [editingIconServiceType, setEditingIconServiceType] = useState(null);
+  
+  // Track blob URLs for proper cleanup without interfering with downloads
+  const blobUrlsRef = useRef(new Set());
 
   useEffect(() => {
     if (heroconfigProp) {
@@ -918,7 +1072,16 @@ export default function HeroBlock({
     setLocalData(prevData => {
       const services = prevData[serviceType]?.subServices || [];
       const updatedServices = services.map(service => service.id === serviceId ? { ...service, label: newName } : service);
-      return { ...prevData, [serviceType]: { ...prevData[serviceType], subServices: updatedServices } };
+      const newData = { ...prevData, [serviceType]: { ...prevData[serviceType], subServices: updatedServices } };
+      
+      // Immediately propagate changes to parent for live updates and JSON download
+      if (!readOnly && typeof onConfigChange === 'function') {
+        const dataForParent = prepareDataForOnConfigChange(newData);
+        console.log("[HeroBlock] Service name changed. Calling onConfigChange immediately with:", dataForParent);
+        onConfigChange(dataForParent);
+      }
+      
+      return newData;
     });
   };
 
@@ -927,7 +1090,16 @@ export default function HeroBlock({
       const services = prevData[serviceType]?.subServices || [];
       const newServiceId = `service-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
       const newService = { title: "New Service", label: "New Service", id: newServiceId, originalTitle: "New Service" };
-      return { ...prevData, [serviceType]: { ...prevData[serviceType], subServices: [...services, newService] } };
+      const newData = { ...prevData, [serviceType]: { ...prevData[serviceType], subServices: [...services, newService] } };
+      
+      // Immediately propagate changes to parent for live updates and JSON download
+      if (!readOnly && typeof onConfigChange === 'function') {
+        const dataForParent = prepareDataForOnConfigChange(newData);
+        console.log("[HeroBlock] Service added. Calling onConfigChange immediately with:", dataForParent);
+        onConfigChange(dataForParent);
+      }
+      
+      return newData;
     });
   };
 
@@ -935,7 +1107,16 @@ export default function HeroBlock({
     setLocalData(prevData => {
       const services = prevData[serviceType]?.subServices || [];
       const updatedServices = services.filter(service => service.id !== serviceIdToRemove);
-      return { ...prevData, [serviceType]: { ...prevData[serviceType], subServices: updatedServices } };
+      const newData = { ...prevData, [serviceType]: { ...prevData[serviceType], subServices: updatedServices } };
+      
+      // Immediately propagate changes to parent for live updates and JSON download
+      if (!readOnly && typeof onConfigChange === 'function') {
+        const dataForParent = prepareDataForOnConfigChange(newData);
+        console.log("[HeroBlock] Service removed. Calling onConfigChange immediately with:", dataForParent);
+        onConfigChange(dataForParent);
+      }
+      
+      return newData;
     });
   };
   
@@ -946,14 +1127,25 @@ export default function HeroBlock({
 
   const handleIconSelectionConfirm = (selectedPack, selectedIconName) => {
     if (editingIconServiceType) {
-      setLocalData(prevData => ({
-        ...prevData, 
-        [editingIconServiceType]: { 
-          ...prevData[editingIconServiceType], 
-          icon: selectedIconName, 
-          iconPack: selectedPack 
-        },
-      }));
+      setLocalData(prevData => {
+        const newData = {
+          ...prevData, 
+          [editingIconServiceType]: { 
+            ...prevData[editingIconServiceType], 
+            icon: selectedIconName, 
+            iconPack: selectedPack 
+          },
+        };
+        
+        // Immediately propagate changes to parent for live updates and JSON download
+        if (!readOnly && typeof onConfigChange === 'function') {
+          const dataForParent = prepareDataForOnConfigChange(newData);
+          console.log("[HeroBlock] Service icon changed. Calling onConfigChange immediately with:", dataForParent);
+          onConfigChange(dataForParent);
+        }
+        
+        return newData;
+      });
     }
     setIsIconModalOpen(false); 
     setEditingIconServiceType(null);
@@ -967,15 +1159,38 @@ export default function HeroBlock({
     readOnly: false,
   } : { readOnly: true };
 
+  // Track and cleanup blob URLs properly
   useEffect(() => {
-    const currentImageObj = localData.images && localData.images[0];
-    const currentImageUrl = currentImageObj?.url;
-
+    // Cleanup function only runs on unmount
     return () => {
-      if (currentImageUrl && typeof currentImageUrl === 'string' && currentImageUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(currentImageUrl);
-      }
+      // Only cleanup on component unmount
+      console.log('[HeroBlock] Component unmounting, cleaning up blob URLs');
+      blobUrlsRef.current.forEach(url => {
+        try {
+          URL.revokeObjectURL(url);
+        } catch (error) {
+          console.warn('[HeroBlock] Error revoking blob URL:', url, error);
+        }
+      });
+      blobUrlsRef.current.clear();
     };
+  }, []); // No dependencies - only run on mount/unmount
+
+  // Helper function to track new blob URLs
+  const trackBlobUrl = (url) => {
+    if (url && url.startsWith('blob:')) {
+      blobUrlsRef.current.add(url);
+    }
+  };
+
+  // Track existing blob URLs after mount and when images change
+  useEffect(() => {
+    const currentImages = localData.images || [];
+    currentImages.forEach(img => {
+      if (img.url && img.url.startsWith('blob:')) {
+        blobUrlsRef.current.add(img.url);
+      }
+    });
   }, [localData.images]);
 
   const previewConfig = {
@@ -1034,12 +1249,35 @@ HeroBlock.tabsConfig = (blockCurrentData, onControlsChange, themeColors) => {
       themeColors={themeColors} 
     />,
     styling: (props) => (
-      <PanelStylingController
-        {...props}
-        currentData={processedData}
-        onControlsChange={onControlsChange}
-        blockType="HeroBlock"
-      />
+      <div className="space-y-6">
+        <PanelStylingController
+          {...props}
+          currentData={processedData}
+          onControlsChange={onControlsChange}
+          blockType="HeroBlock"
+        />
+        
+        <div className="border-t border-gray-300 pt-6">
+          <BrightnessController
+            currentData={processedData}
+            onControlsChange={onControlsChange}
+            fieldName="brightness"
+            label="Hero Image Brightness"
+            min={10}
+            max={100}
+            step={5}
+          />
+        </div>
+        
+        <div className="border-t border-gray-300 pt-6">
+          <FontController
+            currentData={processedData}
+            onControlsChange={onControlsChange}
+            fieldPrefix="textSettings"
+            label="Service Text Settings"
+          />
+        </div>
+      </div>
     ),
   };
 };

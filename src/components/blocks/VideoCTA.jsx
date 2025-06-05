@@ -4,6 +4,8 @@ import { motion } from "framer-motion";
 import { HashLink } from "react-router-hash-link";
 import { FaPencilAlt, FaVideo, FaTimes } from "react-icons/fa";
 import ThemeColorPicker from "../common/ThemeColorPicker";
+import PanelImagesController from "../common/PanelImagesController";
+import PanelStylingController from "../common/PanelStylingController";
 
 // Helper function (can be moved to a utils file if used elsewhere)
 const getDisplayUrlHelper = (value) => {
@@ -94,7 +96,7 @@ const EditableText = ({ value, onChange, onBlur, tag: Tag = 'p', className = '',
   );
 };
 
-const VideoCTADisplay = ({ config = {}, isPreview = false, readOnly = false, onConfigChange }) => {
+const VideoCTADisplay = ({ config = {}, isPreview = false, readOnly = false, onConfigChange, children }) => {
   const {
     videoSrc: rawVideoSrc,
     title = "Ready to Upgrade Your Siding?",
@@ -147,6 +149,7 @@ const VideoCTADisplay = ({ config = {}, isPreview = false, readOnly = false, onC
 
   return (
     <section className={sectionClasses}>
+      {children}
       <div className={videoContainerClasses}>
         {displayVideoSrc ? (
           <video
@@ -226,29 +229,34 @@ const VideoCTA = ({
   themeColors, // Passed from ServiceEditPage/OneForm
   onFileChange, // Passed from ServiceEditPage/OneForm for file uploads
 }) => {
+  const [isEditing, setIsEditing] = useState(false);
 
-  // When not in readOnly mode (i.e., editor is active for this block)
+  const handleToggleEdit = () => {
+    setIsEditing(prev => !prev);
+  };
+
+  // Standard MainPageForm icons
+  const PencilIcon = ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487a2.032 2.032 0 112.872 2.872L7.5 21.613H4v-3.5L16.862 4.487z"/></svg> );
+  const CheckIcon = ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> );
+
+  // EDIT MODE (Component controls editing inline) 
   if (!readOnly) {
-  return (
-      <div className="relative group border-2 border-blue-400/50 p-1 bg-slate-50"> {/* Visual cue for active edit state */}
-        <VideoCTADisplay
-          config={config}
-          isPreview={false} // in-place editing, not a separate preview
-          readOnly={false}  // activate editable fields
-          onConfigChange={onConfigChange} // Pass down to allow EditableText to update config
-        />
-        {/* The onToggleEditor button is managed by ServiceEditPage to open the external panel */}
-      {onToggleEditor && (
+    return (
+      <VideoCTADisplay 
+        config={config} 
+        isPreview={true} 
+        readOnly={!isEditing} 
+        onConfigChange={onConfigChange} // Pass down to allow EditableText to update config
+      >
         <button
-          onClick={onToggleEditor}
-            className="absolute top-2 right-2 z-30 p-2 bg-gray-700 text-white rounded-full shadow-lg hover:bg-gray-800 transition-colors opacity-50 group-hover:opacity-100"
-            title="Open Editor Panel for Styles & Video Source"
+          onClick={handleToggleEdit}
+          className={`absolute top-4 right-4 z-50 ${isEditing ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-700 hover:bg-gray-600'} text-white rounded-full p-2 shadow-lg transition-colors`}
+          title={isEditing ? "Finish Editing" : "Edit Video CTA"}
         >
-          <FaPencilAlt size={16} />
+          {isEditing ? CheckIcon : PencilIcon}
         </button>
-      )}
-    </div>
-  );
+      </VideoCTADisplay>
+    );
   }
 
   // READ-ONLY (Live Page View)
@@ -378,6 +386,163 @@ VideoCTA.EditorPanel = ({ currentConfig, onPanelConfigChange, onPanelFileChange,
       </div>
     </div>
   );
+};
+
+// Static method for TopStickyEditPanel integration
+VideoCTA.tabsConfig = (config, onControlsChange, themeColors, sitePalette) => {
+  return {
+    images: () => (
+      <div className="p-4 space-y-4">
+        <h3 className="text-lg font-semibold mb-4 text-gray-700">Video Management</h3>
+        
+        <div className="space-y-3">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Video Source</label>
+          
+          {/* Video Preview */}
+          {config?.videoSrc?.url && (
+            <div className="mb-3">
+              <video 
+                src={config.videoSrc.url} 
+                className="w-full h-32 object-cover rounded border" 
+                controls={false} 
+                muted 
+                loop 
+                playsInline
+              >
+                Your browser does not support the video tag.
+              </video>
+              <p className="text-xs text-gray-500 mt-1">
+                {config.videoSrc.name || 'Video Preview'}
+              </p>
+            </div>
+          )}
+          
+          {/* Video URL Input */}
+          <div className="space-y-2">
+            <input
+              type="text"
+              placeholder="Paste video URL (YouTube, Vimeo, or direct link)"
+              value={config?.videoSrc?.originalUrl || ''}
+              onChange={(e) => onControlsChange({ 
+                ...config, 
+                videoSrc: { 
+                  url: e.target.value, 
+                  originalUrl: e.target.value,
+                  name: e.target.value.split('/').pop() || 'Video',
+                  file: null 
+                }
+              })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            
+            {/* File Upload */}
+            <div className="flex items-center space-x-2">
+              <label className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer text-center">
+                <FaVideo className="inline mr-2" />
+                Upload Video File
+                <input
+                  type="file"
+                  accept="video/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const fileURL = URL.createObjectURL(file);
+                      onControlsChange({
+                        ...config,
+                        videoSrc: {
+                          file: file,
+                          url: fileURL,
+                          name: file.name,
+                          originalUrl: `uploads/${file.name}`
+                        }
+                      });
+                    }
+                  }}
+                />
+              </label>
+              
+              {config?.videoSrc?.url && (
+                <button
+                  onClick={() => onControlsChange({ ...config, videoSrc: null })}
+                  className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                  title="Remove Video"
+                >
+                  <FaTimes />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    ),
+    
+    colors: () => (
+      <div className="p-4 space-y-4">
+        <h3 className="text-lg font-semibold mb-4 text-gray-700">Color & Text Settings</h3>
+        
+        <ThemeColorPicker
+          label="Text Color"
+          fieldName="textColor"
+          currentColorValue={config?.textColor || '#FFFFFF'}
+          onColorChange={(fieldName, value) => onControlsChange({ ...config, [fieldName]: value })}
+          themeColors={themeColors}
+        />
+        
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">Text Alignment</label>
+          <select
+            value={config?.textAlignment || 'center'}
+            onChange={(e) => onControlsChange({ ...config, textAlignment: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="left">Left</option>
+            <option value="center">Center</option>
+            <option value="right">Right</option>
+          </select>
+        </div>
+        
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
+            Overlay Opacity: {config?.overlayOpacity || 0.5}
+          </label>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value={config?.overlayOpacity || 0.5}
+            onChange={(e) => onControlsChange({ ...config, overlayOpacity: parseFloat(e.target.value) })}
+            className="w-full"
+          />
+          <div className="flex justify-between text-xs text-gray-500">
+            <span>Transparent</span>
+            <span>Opaque</span>
+          </div>
+        </div>
+        
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">Button Link</label>
+          <input
+            type="text"
+            placeholder="e.g., /#contact or /services"
+            value={config?.buttonLink || '/#contact'}
+            onChange={(e) => onControlsChange({ ...config, buttonLink: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      </div>
+    ),
+    
+    styling: () => (
+      <PanelStylingController
+        currentData={config}
+        onControlsChange={onControlsChange}
+        blockType="VideoCTA"
+        controlType="height"
+      />
+    )
+  };
 };
 
 export default VideoCTA;

@@ -1,13 +1,15 @@
 // src/components/blocks/HeroBlock.jsx
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import ThemeColorPicker from "../common/ThemeColorPicker"; // Assuming a common color picker
+import ThemeColorPicker from "../common/ThemeColorPicker";
+import PanelImagesController from "../common/PanelImagesController";
+import PanelStylingController from "../common/PanelStylingController";
 
-// Helper function (can be moved to a utils file if used elsewhere)
+// Helper function to get display URL
 const getDisplayUrlHelper = (value) => {
   if (!value) return null;
-  if (typeof value === "string") return value; // Handles direct URLs or blob URLs
-  if (value.url) return value.url; // Handles { url: '...', file: File }
+  if (typeof value === "string") return value;
+  if (value.url) return value.url;
   return null;
 };
 
@@ -16,34 +18,46 @@ const getDisplayUrlHelper = (value) => {
  *
  * Props:
  *  - config: {
- *      backgroundImage?: string | { url: string, file?: File, name?: string, originalUrl?: string },
- *      title?: string (default 'Siding Options'),
- *      icon?: string (Font Awesome class or emoji),
- *      subList?: string[] (array of sub items),
- *      shrinkAfterMs?: number (default 1000),
- *      initialHeight?: string (default '40vh'),
- *      finalHeight?: string (default '20vh'),
+ *      images?: Array of image objects,
+ *      backgroundImage?: string | object (legacy support),
+ *      title?: string (default 'Hero Title'),
  *      titleTextColor?: string (default '#FFFFFF'),
- *      subListTextColor?: string (default '#FFFFFF'),
- *      fallbackBackgroundColor?: string (default '#333333')
+ *      fallbackBackgroundColor?: string (default '#333333'),
+ *      styling?: { desktopHeightVH: number, mobileHeightVW: number },
+ *      animations?: { shrink: boolean, fadeIn: boolean, slideIn: boolean, scaleIn: boolean },
+ *      shrinkAfterMs?: number (default 1000) - legacy support,
+ *      initialHeight?: string (default '40vh') - legacy support,
+ *      finalHeight?: string (default '20vh') - legacy support,
  *    }
- *  - readOnly: boolean => if true, render "live" version with the shrinking effect
+ *  - readOnly: boolean => if true, render "live" version with effects
  *  - onConfigChange: function => called in edit mode to update config
  *  - themeColors: object => for ThemeColorPicker
  */
 const HeroBlock = ({ config = {}, readOnly = false, onConfigChange, themeColors }) => {
   const {
-    backgroundImage: rawBackgroundImage,
-    title = "Siding Options",
-    icon = "🏠",
-    subList = ["Professional Installation", "Quality Materials", "Expert Service"],
+    images = [],
+    backgroundImage: legacyBackgroundImage,
+    title = "Hero Title",
+    titleTextColor = "#FFFFFF",
+    fallbackBackgroundColor = "#333333",
+    styling = { desktopHeightVH: 40, mobileHeightVW: 75 },
+    animations = { shrink: true, fadeIn: true, slideIn: true, scaleIn: true },
+    // Legacy support
     shrinkAfterMs = 1000,
     initialHeight = "40vh",
     finalHeight = "20vh",
-    titleTextColor = "#FFFFFF",
-    subListTextColor = "#FFFFFF",
-    fallbackBackgroundColor = "#333333", // A dark fallback
   } = config;
+
+  // Handle legacy backgroundImage prop - convert to images array format
+  const getBackgroundImage = () => {
+    if (images && images.length > 0) {
+      return getDisplayUrlHelper(images[0]);
+    }
+    if (legacyBackgroundImage) {
+      return getDisplayUrlHelper(legacyBackgroundImage);
+    }
+    return null;
+  };
 
   const [isShrunk, setIsShrunk] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -53,16 +67,17 @@ const HeroBlock = ({ config = {}, readOnly = false, onConfigChange, themeColors 
     setEditableTitle(title);
   }, [title]);
 
+  // Handle shrink animation if enabled
   useEffect(() => {
-    if (readOnly) {
+    if (readOnly && animations.shrink) {
       const timer = setTimeout(() => {
         setIsShrunk(true);
       }, shrinkAfterMs);
       return () => clearTimeout(timer);
     } else {
-      setIsShrunk(false); // Ensure it's not shrunk when in edit mode preview
+      setIsShrunk(false);
     }
-  }, [readOnly, shrinkAfterMs]);
+  }, [readOnly, animations.shrink, shrinkAfterMs]);
 
   const handleTitleChange = (e) => {
     setEditableTitle(e.target.value);
@@ -74,279 +89,196 @@ const HeroBlock = ({ config = {}, readOnly = false, onConfigChange, themeColors 
       onConfigChange({ ...config, title: editableTitle });
     }
   };
-  
-  const displayBackgroundImage = getDisplayUrlHelper(rawBackgroundImage);
 
-  const currentHeight = readOnly && isShrunk ? finalHeight : initialHeight;
+  const displayBackgroundImage = getBackgroundImage();
+
+  // Calculate heights based on styling or legacy props
+  const getInitialHeight = () => {
+    if (styling.desktopHeightVH) {
+      return `${styling.desktopHeightVH}vh`;
+    }
+    return initialHeight;
+  };
+
+  const getFinalHeight = () => {
+    if (styling.desktopHeightVH && animations.shrink) {
+      return `${Math.max(20, styling.desktopHeightVH * 0.6)}vh`; // 60% of initial height, minimum 20vh
+    }
+    return finalHeight;
+  };
+
+  const currentHeight = readOnly && isShrunk && animations.shrink ? getFinalHeight() : getInitialHeight();
 
   const sectionStyle = {
     zIndex: 20,
     height: currentHeight,
     backgroundColor: !displayBackgroundImage ? fallbackBackgroundColor : 'transparent',
-    position: 'relative', // Ensure relative positioning for absolute children
+    position: 'relative',
   };
 
   const bgDivStyle = {
     backgroundImage: displayBackgroundImage ? `url('${displayBackgroundImage}')` : 'none',
-    backgroundSize: displayBackgroundImage ? (readOnly && isShrunk ? "110%" : "120%") : 'cover', // Slightly different zoom for shrunk state
+    backgroundSize: displayBackgroundImage ? (readOnly && isShrunk ? "110%" : "120%") : 'cover',
     backgroundPosition: displayBackgroundImage ? (readOnly && isShrunk ? "center center" : "center left") : 'center center',
+  };
+
+  // Animation variants
+  const titleVariants = {
+    hidden: { y: readOnly && animations.slideIn ? -50 : 0, opacity: readOnly && animations.fadeIn ? 0 : 1 },
+    visible: { 
+      y: 0, 
+      opacity: 1,
+      scale: animations.scaleIn ? [0.9, 1] : 1,
+      transition: { 
+        duration: readOnly ? 1 : 0.3,
+        ease: "easeOut"
+      }
+    }
   };
 
   return (
     <motion.section
-      className="relative bg-banner" // bg-banner might be overridden by fallbackBackgroundColor or image
+      className="relative bg-banner"
       style={sectionStyle}
-      initial={{ height: initialHeight }}
+      initial={{ height: getInitialHeight() }}
       animate={{ height: currentHeight }}
-      transition={{ duration: readOnly ? 1 : 0.3 }} // Faster transition if not in live readOnly mode
+      transition={{ duration: readOnly ? 1 : 0.3 }}
     >
       <div
         className="absolute inset-0 bg-cover bg-center w-full h-full transition-all duration-1000"
         style={bgDivStyle}
       ></div>
-      
-      {/* Main content container - perfectly centered vertically and horizontally */}
       <div className="relative z-10 h-full flex items-center justify-center p-4">
-        <div className="text-center flex flex-col items-center justify-center space-y-4">
-          {/* Icon */}
-          {icon && (
-            <motion.div
-              initial={{ scale: readOnly ? 0 : 1, opacity: readOnly ? 0 : 1 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: readOnly ? 0.8 : 0.3, delay: readOnly ? 0.2 : 0 }}
-              className="text-4xl sm:text-5xl md:text-6xl mb-2"
-              style={{ color: titleTextColor }}
-            >
-              {icon.startsWith('fa-') ? (
-                <i className={`fas ${icon}`}></i>
-              ) : (
-                icon
-              )}
-            </motion.div>
-          )}
-
-          {/* Title */}
-          {isEditingTitle && !readOnly ? (
-            <input
-              type="text"
-              value={editableTitle}
-              onChange={handleTitleChange}
-              onBlur={saveTitle}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") saveTitle();
-                if (e.key === "Escape") {
-                  setEditableTitle(title); // Revert
-                  setIsEditingTitle(false);
-                }
-              }}
-              className="text-center text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-wider bg-transparent outline-none border-b-2 border-gray-400 focus:border-white"
-              style={{ color: titleTextColor, width: 'auto', minWidth: '50%' }}
-              autoFocus
-            />
-          ) : (
-            <motion.h1
-              initial={{ y: readOnly ? -30 : 0, opacity: readOnly ? 0 : 1 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: readOnly ? 0.8 : 0.3, delay: readOnly ? 0.4 : 0 }}
-              className="text-center text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-wider"
-              style={{ color: titleTextColor, cursor: !readOnly ? "pointer" : "default" }}
-              onClick={() => {
-                if (!readOnly) setIsEditingTitle(true);
-              }}
-            >
-              {editableTitle}
-            </motion.h1>
-          )}
-
-          {/* Sub List */}
-          {subList && subList.length > 0 && (
-            <motion.div
-              initial={{ y: readOnly ? 30 : 0, opacity: readOnly ? 0 : 1 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: readOnly ? 0.8 : 0.3, delay: readOnly ? 0.6 : 0 }}
-              className="mt-4 space-y-2"
-            >
-              {subList.map((item, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ x: readOnly ? (index % 2 === 0 ? -20 : 20) : 0, opacity: readOnly ? 0 : 1 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ duration: readOnly ? 0.6 : 0.3, delay: readOnly ? 0.8 + (index * 0.1) : 0 }}
-                  className="text-center text-sm sm:text-base md:text-lg font-medium"
-                  style={{ color: subListTextColor }}
-                >
-                  • {item}
-                </motion.div>
-              ))}
-            </motion.div>
-          )}
-        </div>
+        {isEditingTitle && !readOnly ? (
+          <input
+            type="text"
+            value={editableTitle}
+            onChange={handleTitleChange}
+            onBlur={saveTitle}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") saveTitle();
+              if (e.key === "Escape") {
+                setEditableTitle(title);
+                setIsEditingTitle(false);
+              }
+            }}
+            className="text-center text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-wider bg-transparent outline-none border-b-2 border-gray-400 focus:border-white"
+            style={{ color: titleTextColor, width: 'auto', minWidth: '50%' }}
+            autoFocus
+          />
+        ) : (
+          <motion.h1
+            variants={titleVariants}
+            initial="hidden"
+            animate="visible"
+            className="text-center text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-wider"
+            style={{ color: titleTextColor, cursor: !readOnly ? "pointer" : "default" }}
+            onClick={() => {
+              if (!readOnly) setIsEditingTitle(true);
+            }}
+          >
+            {editableTitle}
+          </motion.h1>
+        )}
       </div>
     </motion.section>
   );
 };
 
-HeroBlock.EditorPanel = ({ currentConfig, onPanelConfigChange, onPanelFileChange, getDisplayUrl, themeColors }) => {
-  const {
-    backgroundImage: rawBackgroundImage,
-    icon = "🏠",
-    subList = ["Professional Installation", "Quality Materials", "Expert Service"],
-    shrinkAfterMs = 1000,
-    initialHeight = "40vh",
-    finalHeight = "20vh",
-    titleTextColor = "#FFFFFF",
-    subListTextColor = "#FFFFFF",
-    fallbackBackgroundColor = "#333333",
-  } = currentConfig;
-
-  const handleFieldChange = (field, value) => {
-    onPanelConfigChange({ ...currentConfig, [field]: value });
-  };
-
-  const handleFileEvent = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const fileURL = URL.createObjectURL(file);
-      const newFileObject = {
-        file: file,
-        url: fileURL,
-        name: file.name,
-        originalUrl: typeof rawBackgroundImage === 'object' ? rawBackgroundImage.originalUrl : (typeof rawBackgroundImage === 'string' ? rawBackgroundImage : '')
-      };
-      // Use onPanelFileChange for the background image specifically
-      onPanelFileChange('backgroundImage', newFileObject);
-    }
-  };
-
-  const handleSubListChange = (index, value) => {
-    const newSubList = [...subList];
-    newSubList[index] = value;
-    handleFieldChange('subList', newSubList);
-  };
-
-  const addSubListItem = () => {
-    handleFieldChange('subList', [...subList, 'New Item']);
-  };
-
-  const removeSubListItem = (index) => {
-    const newSubList = subList.filter((_, i) => i !== index);
-    handleFieldChange('subList', newSubList);
-  };
-  
-  const displayImageUrl = getDisplayUrl(rawBackgroundImage);
-
-  return (
-    <div className="p-3 space-y-3 bg-gray-800 text-gray-200 rounded-b-md">
-      <div>
-        <label className="block text-xs font-medium mb-1">Background Image:</label>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleFileEvent}
-          className="w-full text-sm p-1.5 bg-gray-700 border border-gray-600 rounded-md file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700"
+// Static method for TopStickyEditPanel integration
+HeroBlock.tabsConfig = (config, onControlsChange, themeColors, sitePalette) => {
+  return {
+    images: () => (
+      <PanelImagesController
+        currentData={{ 
+          images: config?.images || (config?.backgroundImage ? [config.backgroundImage] : [])
+        }}
+        onControlsChange={(updatedData) => {
+          const images = updatedData.images || [];
+          onControlsChange({ ...config, images });
+        }}
+        imageArrayFieldName="images"
+        getItemName={() => 'Hero Background Image'}
+        maxImages={1}
+      />
+    ),
+    
+    colors: () => (
+      <div className="p-4 space-y-4">
+        <h3 className="text-lg font-semibold mb-4 text-gray-700">Color Settings</h3>
+        
+        <ThemeColorPicker
+          label="Title Text Color"
+          fieldName="titleTextColor"
+          currentColorValue={config?.titleTextColor || '#FFFFFF'}
+          onColorChange={(fieldName, value) => onControlsChange({ ...config, [fieldName]: value })}
+          themeColors={themeColors}
         />
-        {displayImageUrl && (
-          <img
-            src={displayImageUrl}
-            alt="Background Preview"
-            className="mt-2 h-20 w-full object-cover rounded bg-gray-700 border border-gray-600"
-          />
-        )}
-         <input
-          type="text"
-          placeholder="Or paste image URL"
-          value={(typeof rawBackgroundImage === 'string' && !rawBackgroundImage.startsWith('blob:')) ? rawBackgroundImage : (displayImageUrl && displayImageUrl.startsWith('blob:')) ? '' : (rawBackgroundImage?.url || '')}
-          onChange={(e) => {
-             const newFileObject = {
-                file: null, // Pasted URL means no local file initially
-                url: e.target.value,
-                name: e.target.value.split('/').pop() || 'pasted_image',
-                originalUrl: e.target.value
-             };
-             // For pasted URLs, it's simpler to just update the config directly via onPanelConfigChange
-             // as onPanelFileChange is more for actual File objects.
-             // However, to keep consistency with how file objects are structured:
-             onPanelConfigChange({ ...currentConfig, backgroundImage: newFileObject });
-          }}
-          className="mt-1 w-full p-1.5 bg-gray-700 border border-gray-600 rounded-md text-sm"
-        />
-      </div>
-
-      <div>
-        <label className="block text-xs font-medium mb-1">Icon (emoji or Font Awesome class):</label>
-        <input
-          type="text"
-          value={icon}
-          onChange={(e) => handleFieldChange('icon', e.target.value)}
-          placeholder="🏠 or fa-home"
-          className="w-full p-1.5 bg-gray-700 border border-gray-600 rounded-md text-sm"
-        />
-      </div>
-
-      <div>
-        <label className="block text-xs font-medium mb-1">Sub List Items:</label>
-        {subList.map((item, index) => (
-          <div key={index} className="flex items-center gap-2 mb-2">
-            <input
-              type="text"
-              value={item}
-              onChange={(e) => handleSubListChange(index, e.target.value)}
-              className="flex-1 p-1.5 bg-gray-700 border border-gray-600 rounded-md text-sm"
-            />
-            <button
-              onClick={() => removeSubListItem(index)}
-              className="px-2 py-1 bg-red-600 hover:bg-red-700 rounded text-xs"
-            >
-              Remove
-            </button>
-          </div>
-        ))}
-        <button
-          onClick={addSubListItem}
-          className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs"
-        >
-          Add Item
-        </button>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div>
-          <label className="block text-xs font-medium mb-1">Title Text Color:</label>
-          <ThemeColorPicker
-            label=""
-            fieldName="titleTextColor"
-            currentColorValue={titleTextColor}
-            onColorChange={(fieldName, value) => handleFieldChange(fieldName, value)}
-            themeColors={themeColors || { accent: '#007bff', text: '#ffffff', background: '#333333' }} // Provide some defaults
-            className="mt-0"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium mb-1">Sub List Text Color:</label>
-          <ThemeColorPicker
-            label=""
-            fieldName="subListTextColor"
-            currentColorValue={subListTextColor}
-            onColorChange={(fieldName, value) => handleFieldChange(fieldName, value)}
-            themeColors={themeColors || { accent: '#007bff', text: '#ffffff', background: '#333333' }}
-            className="mt-0"
-          />
-        </div>
-      </div>
-      
-      <div>
-        <label className="block text-xs font-medium mb-1">Fallback Background Color (if no image):</label>
-         <ThemeColorPicker
-          label=""
+        
+        <ThemeColorPicker
+          label="Fallback Background Color"
           fieldName="fallbackBackgroundColor"
-          currentColorValue={fallbackBackgroundColor}
-          onColorChange={(fieldName, value) => handleFieldChange(fieldName, value)}
-          themeColors={themeColors || { accent: '#007bff', text: '#ffffff', background: '#333333' }}
-          className="mt-0"
+          currentColorValue={config?.fallbackBackgroundColor || '#333333'}
+          onColorChange={(fieldName, value) => onControlsChange({ ...config, [fieldName]: value })}
+          themeColors={themeColors}
         />
       </div>
-    </div>
-  );
+    ),
+    
+    styling: () => (
+      <div className="p-4 space-y-6">
+        <h3 className="text-lg font-semibold mb-4 text-gray-700">Size & Animation Settings</h3>
+        
+        {/* Height Controls */}
+        <div>
+          <h4 className="text-sm font-medium text-gray-700 mb-3">Block Height</h4>
+          <PanelStylingController 
+            currentData={config} 
+            onControlsChange={onControlsChange} 
+            blockType="HeroBlock"
+            controlType="height"
+          />
+        </div>
+
+        {/* Animation Settings */}
+        <div>
+          <h4 className="text-sm font-medium text-gray-700 mb-3">Animation Settings</h4>
+          <PanelStylingController 
+            currentData={config} 
+            onControlsChange={onControlsChange} 
+            blockType="HeroBlock"
+            controlType="animations"
+          />
+        </div>
+
+        {/* Shrink Animation Specific Settings */}
+        {config?.animations?.shrink && (
+          <div className="border-t border-gray-200 pt-4">
+            <h4 className="text-sm font-medium text-gray-700 mb-3">Shrink Animation Settings</h4>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Shrink Delay: {config?.shrinkAfterMs || 1000}ms
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="5000"
+                step="100"
+                value={config?.shrinkAfterMs || 1000}
+                onChange={(e) => onControlsChange({ ...config, shrinkAfterMs: parseInt(e.target.value) })}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs text-gray-500">
+                <span>Instant</span>
+                <span>5 seconds</span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Time before hero section shrinks</p>
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  };
 };
 
 export default HeroBlock;

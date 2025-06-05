@@ -30,9 +30,7 @@ const iconPacks = {
   lucide: FilteredLucideIcons,
   fa: { // Manually list Fa icons to be used or import * as FaIconsModule and assign.
     FaTools, FaFan, FaPaintRoller, FaTint, 
-    FaHomeIcon: FaHomeIcon, // This was the potential issue, if iconName is 'FaHomeIcon'
-    // Let's change the key to match the alias if that's what you intend to store in config
-    FaHomeIcon: FaHomeIcon, // Use the alias as the key if names like 'FaHomeIcon' are stored
+    FaHomeIcon: FaHomeIcon, // For home-related services
     FaBuilding, FaWarehouse, FaSmog, FaBroom, FaHardHat, FaQuestionCircle
   },
 };

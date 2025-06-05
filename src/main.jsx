@@ -53,9 +53,7 @@ preloadLinks.forEach((linkProps) => {
 });
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
-    <ConfigProvider>
+  <ConfigProvider>
     <App />
-    </ConfigProvider>
-  </React.StrictMode>
+  </ConfigProvider>
 );

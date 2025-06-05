@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
+import ThemeColorPicker from '../common/ThemeColorPicker';
+import PanelImagesController from '../common/PanelImagesController';
 
 /**
  * CardGridBlock
@@ -286,9 +288,9 @@ const CardGridBlock = ({
         </div>
       </section>
       {!readOnly && (
-        <CardGridBlock.EditorPanel
+        <CardGridBlock.tabsConfig
           currentConfig={localConfig}
-          onPanelConfigChange={handlePanelDataChange}
+          onPanelChange={handlePanelDataChange}
           getDisplayUrl={(imgState) => getEffectiveDisplayUrl(imgState, getDisplayUrl)}
         />
       )}
@@ -316,31 +318,49 @@ CardGridBlock.propTypes = {
   getDisplayUrl: PropTypes.func,
 };
 
-CardGridBlock.EditorPanel = ({ currentConfig, onPanelConfigChange, getDisplayUrl: getDisplayUrlForPanel }) => {
-  const { items = [], backgroundColor, paragraphTextColor, itemTitleColor, sectionGradientFrom, sectionGradientTo } = currentConfig;
+CardGridBlock.tabsConfig = (currentConfig, onPanelChange, themeColors, sitePalette) => {
+  const { items = [], backgroundColor, paragraphTextColor, itemTitleColor, sectionGradientFrom, sectionGradientTo, columns = 3 } = currentConfig;
 
-  const handleItemFieldChange = (index, field, value) => {
-    const updatedItems = items.map((item, i) => 
-      i === index ? { ...item, [field]: value } : item
-    );
-    onPanelConfigChange({ items: updatedItems });
-  };
-
-  const handleItemImageUpdate = (index, imageValue) => {
-    const updatedItems = items.map((item, i) => {
-      if (i === index) {
-        if (imageValue instanceof File) {
-          return { ...item, image: { file: imageValue } };
+  const handleItemImageUpdate = (itemIndex, imageProperty, value) => {
+    const newItems = items.map((item, i) => {
+      if (i === itemIndex) {
+        if (imageProperty === 'file' && value instanceof File) {
+          // Revoke old blob URL if it exists
+          if (item.image?.file && item.image.url?.startsWith('blob:')) {
+            URL.revokeObjectURL(item.image.url);
+          }
+          return { 
+            ...item, 
+            image: { 
+              file: value, 
+              url: URL.createObjectURL(value), 
+              name: value.name, 
+              originalUrl: item.image?.originalUrl || '' // Preserve original URL if it existed
+            }
+          };
+        } else if (imageProperty === 'url' && typeof value === 'string'){
+           // Revoke old blob URL if replacing with a direct URL
+          if (item.image?.file && item.image.url?.startsWith('blob:')) {
+            URL.revokeObjectURL(item.image.url);
+          }
+          return { 
+            ...item, 
+            image: { 
+              file: null, 
+              url: value, 
+              name: value.split('/').pop(),
+              originalUrl: value
+            }
+          };
         }
-        return { ...item, image: imageValue };
       }
       return item;
     });
-    onPanelConfigChange({ items: updatedItems });
+    onPanelChange({ ...currentConfig, items: newItems });
   };
 
   const addItem = () => {
-    const newItemId = `new_item_${Date.now()}`;
+    const newItemId = `item_new_${Date.now()}`;
     const newItems = [
       ...items, 
       { 
@@ -350,91 +370,153 @@ CardGridBlock.EditorPanel = ({ currentConfig, onPanelConfigChange, getDisplayUrl
         alt: "New item placeholder" 
       }
     ];
-    onPanelConfigChange({ items: newItems });
+    onPanelChange({ ...currentConfig, items: newItems });
   };
 
   const removeItem = (index) => {
+    const itemToRemove = items[index];
+    if (itemToRemove?.image?.file && itemToRemove.image.url?.startsWith('blob:')){
+        URL.revokeObjectURL(itemToRemove.image.url);
+    }
     const updatedItems = items.filter((_, i) => i !== index);
-    onPanelConfigChange({ items: updatedItems });
+    onPanelChange({ ...currentConfig, items: updatedItems });
   };
 
   const handleColorChange = (field, value) => {
-    onPanelConfigChange({ [field]: value });
+    onPanelChange({ ...currentConfig, [field]: value });
+  };
+  
+  const handleColumnsChange = (newColumns) => {
+    onPanelChange({ ...currentConfig, columns: parseInt(newColumns, 10) || 3 });
   };
 
-  return (
-    <div className="p-4 bg-gray-800 text-white rounded-b-md space-y-6">
-      <h3 className="text-xl font-semibold border-b border-gray-700 pb-2 mb-4">Card Grid Settings</h3>
+  // Prepare data for PanelImagesController
+  const imagesForController = items.map((item, index) => ({
+    ...(item.image || initializeImageState(null, '/assets/images/placeholder_sq_1.jpg')),
+    id: item.id || `card_item_img_${index}`,
+    name: item.title || `Card Item ${index + 1}`,
+    itemIndex: index,
+  }));
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  const onImagesControllerChange = (updatedData) => {
+    const newItems = [...items]; // Start with a copy of current items
+    (updatedData.images || []).forEach(imgCtrl => {
+      if (imgCtrl.itemIndex !== undefined && newItems[imgCtrl.itemIndex]) {
+        const oldImageState = newItems[imgCtrl.itemIndex].image;
+        // Revoke old blob URL if a new file is provided or URL changes significantly
+        if (oldImageState?.file && oldImageState.url?.startsWith('blob:')) {
+          if ((imgCtrl.file && oldImageState.url !== imgCtrl.url) || (!imgCtrl.file && oldImageState.url !== imgCtrl.originalUrl)) {
+            URL.revokeObjectURL(oldImageState.url);
+          }
+        }
+        newItems[imgCtrl.itemIndex].image = {
+          file: imgCtrl.file || null,
+          url: imgCtrl.url || '',
+          name: imgCtrl.name || (imgCtrl.url || '').split('/').pop() || 'image.jpg',
+          originalUrl: imgCtrl.originalUrl || imgCtrl.url || ''
+        };
+      } else if (imgCtrl.itemIndex !== undefined && !newItems[imgCtrl.itemIndex]) {
+        // This case implies PanelImagesController might be adding an image for a non-existent item,
+        // which shouldn't happen if PanelImagesController only modifies existing images.
+        // If PanelImagesController can ADD images, we need to handle creating a new item here.
+        // For now, assume it only modifies.
+         console.warn("PanelImagesController tried to update a non-existent item index: ", imgCtrl.itemIndex);
+      }
+    });
+    onPanelChange({ ...currentConfig, items: newItems });
+  };
+
+  return {
+    general: () => (
+      <div className="p-4 space-y-4">
+        <h3 className="text-lg font-semibold text-gray-700 mb-2">Grid Structure</h3>
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Section Gradient From:</label>
-          <input type="color" value={sectionGradientFrom || '#E0E7FF'} onChange={(e) => handleColorChange('sectionGradientFrom', e.target.value)} className="mt-1 h-10 w-full border-gray-600 rounded-md bg-gray-700 cursor-pointer"/>
+          <label className="block text-sm font-medium text-gray-600 mb-1">Number of Columns (1-3):</label>
+          <select 
+            value={columns || 3} 
+            onChange={(e) => handleColumnsChange(e.target.value)} 
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm"
+          >
+            {[1, 2, 3].map(num => <option key={num} value={num}>{num}</option>)}
+          </select>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Section Gradient To:</label>
-          <input type="color" value={sectionGradientTo || '#FFFFFF'} onChange={(e) => handleColorChange('sectionGradientTo', e.target.value)} className="mt-1 h-10 w-full border-gray-600 rounded-md bg-gray-700 cursor-pointer"/>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Fallback BG Color:</label>
-          <input type="color" value={backgroundColor || '#FFFFFF'} onChange={(e) => handleColorChange('backgroundColor', e.target.value)} className="mt-1 h-10 w-full border-gray-600 rounded-md bg-gray-700 cursor-pointer"/>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Paragraph Text Color:</label>
-          <input type="color" value={paragraphTextColor || '#374151'} onChange={(e) => handleColorChange('paragraphTextColor', e.target.value)} className="mt-1 h-10 w-full border-gray-600 rounded-md bg-gray-700 cursor-pointer"/>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Item Title Color:</label>
-          <input type="color" value={itemTitleColor || '#1F2937'} onChange={(e) => handleColorChange('itemTitleColor', e.target.value)} className="mt-1 h-10 w-full border-gray-600 rounded-md bg-gray-700 cursor-pointer"/>
+        <div className="border-t pt-4">
+          <h4 className="text-md font-semibold text-gray-700 mb-2">Manage Items:</h4>
+          <p className="text-xs text-gray-500 mb-3">Item titles and alt text are editable directly on the block preview.</p>
+          {(items || []).map((item, index) => (
+            <div key={item.id || index} className="flex items-center justify-between p-2 bg-gray-50 rounded-md mb-2 shadow-sm">
+              <span className="text-sm text-gray-600 truncate w-3/4" title={item.title}>{index + 1}. {item.title || '(Untitled Item)'}</span>
+              <button 
+                onClick={() => removeItem(index)} 
+                className="text-red-500 hover:text-red-700 text-xs font-semibold p-1 hover:bg-red-100 rounded-full"
+                title="Remove Item"
+              >
+                ✕ Remove
+              </button>
+            </div>
+          ))}
+          <button 
+            onClick={addItem} 
+            className="mt-2 w-full px-4 py-2 border border-dashed border-gray-300 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 hover:border-solid"
+          >
+            + Add Grid Item
+          </button>
         </div>
       </div>
-
-      <div className="space-y-4">
-        <h4 className="text-lg font-medium text-gray-200 border-t border-gray-700 pt-4">Grid Items:</h4>
-        {items.map((col, idx) => (
-          <div key={col.id || idx} className="border border-gray-700 p-3 rounded-md bg-gray-750 space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-md font-semibold text-gray-300">Column {idx + 1} (ID: {col.id})</span>
-              <button type="button" onClick={() => removeItem(idx)} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs font-medium">Remove</button>
-            </div>
-            
-            <div>
-              <label className="block text-xs font-medium text-gray-400 mb-0.5">Image URL:</label>
-              <input
-                type="text"
-                value={col.image?.originalUrl || col.image?.url || (typeof col.image === 'string' ? col.image : '')}
-                onChange={(e) => handleItemImageUpdate(idx, e.target.value)}
-                className="mt-1 w-full px-2 py-1.5 bg-gray-600 text-white rounded border border-gray-500 text-sm placeholder-gray-400"
-                placeholder="e.g., /assets/images/img.jpg"
-              />
-            </div>
-            <div>
-                <label className="block text-xs font-medium text-gray-400 mb-0.5">Or Upload Image:</label>
-                <input 
-                    type="file" 
-                    accept="image/*" 
-                    onChange={(e) => e.target.files && e.target.files.length > 0 && handleItemImageUpdate(idx, e.target.files[0])}
-                    className="mt-1 block w-full text-xs text-gray-300 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-indigo-500 file:text-white hover:file:bg-indigo-600 cursor-pointer"
-                />
-            </div>
-            {getDisplayUrlForPanel(col.image) && (
-              <img src={getDisplayUrlForPanel(col.image)} alt={col.alt || "Preview"} className="mt-1 max-h-24 w-auto rounded object-contain bg-gray-600 p-0.5" />
-            )}
-
-          </div>
-        ))}
-        <button type="button" onClick={addItem} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-medium w-full mt-2">
-          + Add Column
-        </button>
+    ),
+    images: () => (
+      <PanelImagesController
+        currentData={{ images: imagesForController }}
+        onControlsChange={onImagesControllerChange}
+        imageArrayFieldName="images"
+        getItemName={(img) => img?.name || 'Card Image'}
+        allowAdd={false} // We manage adding/removing items in the 'general' tab
+        allowRemove={false} // We manage adding/removing items in the 'general' tab
+      />
+    ),
+    colors: () => (
+      <div className="p-4 space-y-3">
+        <h3 className="text-lg font-semibold text-gray-700 mb-3">Color Customization</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <ThemeColorPicker
+            label="Section Gradient From:"
+            fieldName="sectionGradientFrom"
+            currentColorValue={sectionGradientFrom || '#E0E7FF'}
+            onColorChange={handleColorChange}
+            themeColors={themeColors}
+          />
+          <ThemeColorPicker
+            label="Section Gradient To:"
+            fieldName="sectionGradientTo"
+            currentColorValue={sectionGradientTo || '#FFFFFF'}
+            onColorChange={handleColorChange}
+            themeColors={themeColors}
+          />
+          <ThemeColorPicker
+            label="Fallback BG Color:"
+            fieldName="backgroundColor"
+            currentColorValue={backgroundColor || '#FFFFFF'}
+            onColorChange={handleColorChange}
+            themeColors={themeColors}
+          />
+          <ThemeColorPicker
+            label="Paragraph Text Color:"
+            fieldName="paragraphTextColor"
+            currentColorValue={paragraphTextColor || '#374151'}
+            onColorChange={handleColorChange}
+            themeColors={themeColors}
+          />
+          <ThemeColorPicker
+            label="Item Title Color:"
+            fieldName="itemTitleColor"
+            currentColorValue={itemTitleColor || '#1F2937'}
+            onColorChange={handleColorChange}
+            themeColors={themeColors}
+          />
+        </div>
       </div>
-    </div>
-  );
-};
-
-CardGridBlock.EditorPanel.propTypes = {
-  currentConfig: PropTypes.object.isRequired,
-  onPanelConfigChange: PropTypes.func.isRequired,
-  getDisplayUrl: PropTypes.func.isRequired,
+    ),
+  };
 };
 
 export default CardGridBlock; 

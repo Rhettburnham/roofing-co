@@ -73,6 +73,36 @@ const deriveInitialLocalData = (richTextDataInput, currentBannerColor) => {
       id: `default_img_${Date.now()}_${index}`
     }));
   }
+
+  // Provide meaningful defaults for text content if not provided
+  const defaultHeroText = initial.heroText || "Welcome to Our Professional Roofing Company";
+  const defaultBusDescription = initial.bus_description || initial.bus_description_second || 
+    "We are committed to providing high-quality roofing services with over 20 years of experience. Our expert team delivers reliable solutions for both residential and commercial properties.";
+  
+  // Default cards with meaningful content if none provided
+  const defaultCards = initial.cards && initial.cards.length > 0 ? initial.cards : [
+    {
+      id: `card_${Date.now()}_1`,
+      icon: 'Shield',
+      iconPack: 'lucide',
+      title: 'Quality Guarantee',
+      desc: 'We guarantee the quality of our work with comprehensive warranties and reliable materials.'
+    },
+    {
+      id: `card_${Date.now()}_2`, 
+      icon: 'Users',
+      iconPack: 'lucide',
+      title: 'Expert Team',
+      desc: 'Our certified professionals have years of experience in residential and commercial roofing.'
+    },
+    {
+      id: `card_${Date.now()}_3`,
+      icon: 'Clock',
+      iconPack: 'lucide', 
+      title: 'Fast Service',
+      desc: 'Quick response times and efficient project completion to minimize disruption.'
+    }
+  ];
   
   return {
     // Core data that applies to all variants
@@ -109,19 +139,19 @@ const deriveInitialLocalData = (richTextDataInput, currentBannerColor) => {
     backgroundColor: initial.backgroundColor || currentBannerColor || "#1e293b",
     variant: currentVariant,
     
-    // Shared content across all variants (not variant-specific)
-    heroText: initial.heroText || "",
+    // Shared content across all variants (not variant-specific) - with meaningful defaults
+    heroText: defaultHeroText,
     accredited: initial.accredited || false,
-    years_in_business: initial.years_in_business || "",
-    bus_description: initial.bus_description || initial.bus_description_second || "",
-    cards: initial.cards?.map(c => ({ 
+    years_in_business: initial.years_in_business || "20+",
+    bus_description: defaultBusDescription,
+    cards: defaultCards.map(c => ({ 
       ...c, 
       id: c.id || `card_${Math.random().toString(36).substr(2, 9)}`, 
       icon: c.icon || 'Star', 
       iconPack: c.iconPack || 'lucide', 
       title: c.title || "Card Title", 
       desc: c.desc || "Card description." 
-    })) || [],
+    })),
     
     // Variant-specific layout and styling configurations only
     layout: variantSpecificData.layout || 'default',
@@ -149,19 +179,8 @@ const deriveInitialLocalData = (richTextDataInput, currentBannerColor) => {
 Displays content. If not readOnly, allows inline editing of text fields and card icons/text.
 =============================================
 */
-function RichTextPreview({ richTextData, readOnly, bannerColor, openIconModalForCard, onRichTextDataChange, onAddCard, onRemoveCard }) {
+function RichTextPreview({ richTextData, readOnly, bannerColor, openIconModalForCard, onRichTextDataChange, onAddCard, onRemoveCard, playIntroAnimationForCards }) {
   const [currentImageSlideshowIndex, setCurrentImageSlideshowIndex] = useState(0);
-  const animationPlayedThisInstanceRef = useRef(false);
-  const [playIntroAnimationForCards, setPlayIntroAnimationForCards] = useState(false);
-
-  useEffect(() => {
-    if (!animationPlayedThisInstanceRef.current) {
-      setPlayIntroAnimationForCards(true); 
-      animationPlayedThisInstanceRef.current = true;    
-    } else {
-      setPlayIntroAnimationForCards(false); 
-    }
-  }, []); 
 
   if (!richTextData) {
     return <p className="text-center py-4">No RichText data found.</p>;
@@ -225,8 +244,6 @@ function RichTextPreview({ richTextData, readOnly, bannerColor, openIconModalFor
             onAddCard={onAddCard}
             onRemoveCard={onRemoveCard}
             playIntroAnimationForCards={playIntroAnimationForCards}
-            currentImageSlideshowIndex={currentImageSlideshowIndex}
-            setCurrentImageSlideshowIndex={setCurrentImageSlideshowIndex}
           />
         );
       case "grid":
@@ -239,8 +256,6 @@ function RichTextPreview({ richTextData, readOnly, bannerColor, openIconModalFor
             onAddCard={onAddCard}
             onRemoveCard={onRemoveCard}
             playIntroAnimationForCards={playIntroAnimationForCards}
-            currentImageSlideshowIndex={currentImageSlideshowIndex}
-            setCurrentImageSlideshowIndex={setCurrentImageSlideshowIndex}
           />
         );
       case "classic":
@@ -634,6 +649,7 @@ RichTextPreview.propTypes = {
   onRichTextDataChange: PropTypes.func.isRequired,
   onAddCard: PropTypes.func,
   onRemoveCard: PropTypes.func,
+  playIntroAnimationForCards: PropTypes.bool,
 };
 
 // =============================================
@@ -693,7 +709,17 @@ export default function RichTextBlock({
 
   const [isIconModalOpenForCards, setIsIconModalOpenForCards] = useState(false);
   const [editingCardIndexForIcon, setEditingCardIndexForIcon] = useState(null);
-  const [currentImageSlideshowIndex, setCurrentImageSlideshowIndex] = useState(0); // Slideshow state
+
+  // Move animation state management here to prevent resets on re-renders
+  const animationPlayedRef = useRef(false);
+  const [playIntroAnimationForCards, setPlayIntroAnimationForCards] = useState(() => {
+    // Initialize animation state only once when component is first created
+    if (!animationPlayedRef.current) {
+      animationPlayedRef.current = true;
+      return true;
+    }
+    return false;
+  });
 
   useEffect(() => {
     const effectiveBackgroundColor = richTextData?.backgroundColor || bannerColor;
@@ -814,36 +840,32 @@ export default function RichTextBlock({
 
   // Render different variants based on the variant prop
   const renderVariant = () => {
-    // Use richTextData.variant if available, otherwise fall back to the variant prop
-    const activeVariant = richTextData?.variant || variant;
+    // Use localData.variant if available, otherwise fall back to the variant prop
+    const activeVariant = localData?.variant || variant;
     
     switch (activeVariant) {
       case "modern":
         return (
           <ModernRichTextVariant
-            richTextData={richTextData}
+            richTextData={localData}
             readOnly={readOnly}
-            onRichTextDataChange={onRichTextDataChange}
-            openIconModalForCard={openIconModalForCard}
-            onAddCard={onAddCard}
-            onRemoveCard={onRemoveCard}
-            playIntroAnimationForCards={false}
-            currentImageSlideshowIndex={currentImageSlideshowIndex}
-            setCurrentImageSlideshowIndex={setCurrentImageSlideshowIndex}
+            onRichTextDataChange={handleLocalDataChange}
+            openIconModalForCard={!readOnly ? openIconModalForCardCallback : undefined}
+            onAddCard={!readOnly ? handleAddCard : undefined}
+            onRemoveCard={!readOnly ? handleRemoveCard : undefined}
+            playIntroAnimationForCards={playIntroAnimationForCards}
           />
         );
       case "grid":
         return (
           <GridRichTextVariant
-            richTextData={richTextData}
+            richTextData={localData}
             readOnly={readOnly}
-            onRichTextDataChange={onRichTextDataChange}
-            openIconModalForCard={openIconModalForCard}
-            onAddCard={onAddCard}
-            onRemoveCard={onRemoveCard}
-            playIntroAnimationForCards={false}
-            currentImageSlideshowIndex={currentImageSlideshowIndex}
-            setCurrentImageSlideshowIndex={setCurrentImageSlideshowIndex}
+            onRichTextDataChange={handleLocalDataChange}
+            openIconModalForCard={!readOnly ? openIconModalForCardCallback : undefined}
+            onAddCard={!readOnly ? handleAddCard : undefined}
+            onRemoveCard={!readOnly ? handleRemoveCard : undefined}
+            playIntroAnimationForCards={playIntroAnimationForCards}
           />
         );
       case "classic":
@@ -857,6 +879,7 @@ export default function RichTextBlock({
             onRichTextDataChange={handleLocalDataChange}
             onAddCard={!readOnly ? handleAddCard : undefined}
             onRemoveCard={!readOnly ? handleRemoveCard : undefined}
+            playIntroAnimationForCards={playIntroAnimationForCards}
           />
         );
     }
@@ -961,9 +984,7 @@ const ModernRichTextVariant = memo(({
   openIconModalForCard, 
   onAddCard, 
   onRemoveCard,
-  playIntroAnimationForCards,
-  currentImageSlideshowIndex,
-  setCurrentImageSlideshowIndex
+  playIntroAnimationForCards
 }) => {
   const { 
     heroText = "", 
@@ -974,6 +995,9 @@ const ModernRichTextVariant = memo(({
     styling = { desktopHeightVH: 45, mobileHeightVW: 75 },
     variantColors = {}
   } = richTextData || {};
+
+  // Add slideshow state management to this variant
+  const [currentImageSlideshowIndex, setCurrentImageSlideshowIndex] = useState(0);
 
   const handleFieldChange = (field, value) => {
     onRichTextDataChange({ ...richTextData, [field]: value });
@@ -1004,21 +1028,21 @@ const ModernRichTextVariant = memo(({
       }, 4000); 
       return () => clearInterval(slideshowInterval);
     }
-  }, [displaySlideshowImages.length, setCurrentImageSlideshowIndex]);
+  }, [displaySlideshowImages.length]);
 
   // Calculate dynamic height based on styling - reduced height for modern
   const dynamicHeight = window.innerWidth < 768 
     ? `${Math.max(50, styling.mobileHeightVW * 0.8)}vw` 
     : `${Math.max(25, styling.desktopHeightVH * 0.7)}vh`;
 
-  const ModernFeatureCard = ({ card, index, readOnly, onCardFieldChange, onRemoveCard, openIconModalForCard }) => {
+  const ModernFeatureCard = ({ card, index, readOnly, onCardFieldChange, onRemoveCard, openIconModalForCard, playIntroAnimation }) => {
     const IconToRender = Icons[card.icon] || Icons.Star;
     
     return (
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={playIntroAnimation ? { opacity: 0, y: 20 } : { opacity: 1, y: 0 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.1 }}
+        transition={playIntroAnimation ? { delay: index * 0.1 } : { duration: 0 }}
         className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 hover:bg-white/20 transition-all duration-300 group"
       >
         <div className="flex items-start space-x-3">
@@ -1085,9 +1109,9 @@ const ModernRichTextVariant = memo(({
         {displaySlideshowImages.slice(0, 4).map((img, index) => (
           <motion.div
             key={index}
-            initial={{ opacity: 0, scale: 0.8 }}
+            initial={playIntroAnimationForCards ? { opacity: 0, scale: 0.8 } : { opacity: 1, scale: 1 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: index * 0.1 }}
+            transition={playIntroAnimationForCards ? { delay: index * 0.1 } : { duration: 0 }}
             className={`relative overflow-hidden rounded-lg ${
               index === 0 ? 'col-span-2 row-span-2' : ''
             }`}
@@ -1178,6 +1202,7 @@ const ModernRichTextVariant = memo(({
                     onCardFieldChange={handleCardChange}
                     onRemoveCard={onRemoveCard}
                     openIconModalForCard={openIconModalForCard}
+                    playIntroAnimation={playIntroAnimationForCards}
                   />
                 ))}
                 
@@ -1217,8 +1242,6 @@ ModernRichTextVariant.propTypes = {
   onAddCard: PropTypes.func,
   onRemoveCard: PropTypes.func,
   playIntroAnimationForCards: PropTypes.bool,
-  currentImageSlideshowIndex: PropTypes.number,
-  setCurrentImageSlideshowIndex: PropTypes.func,
 };
 
 /* ===============================================
@@ -1234,9 +1257,7 @@ const GridRichTextVariant = memo(({
   openIconModalForCard, 
   onAddCard, 
   onRemoveCard,
-  playIntroAnimationForCards,
-  currentImageSlideshowIndex,
-  setCurrentImageSlideshowIndex
+  playIntroAnimationForCards
 }) => {
   const { 
     heroText = "", 
@@ -1247,6 +1268,9 @@ const GridRichTextVariant = memo(({
     styling = { desktopHeightVH: 45, mobileHeightVW: 75 },
     variantColors = {}
   } = richTextData || {};
+
+  // Add slideshow state management to this variant
+  const [currentImageSlideshowIndex, setCurrentImageSlideshowIndex] = useState(0);
 
   const handleFieldChange = (field, value) => {
     onRichTextDataChange({ ...richTextData, [field]: value });
@@ -1277,14 +1301,14 @@ const GridRichTextVariant = memo(({
       }, 5000); 
       return () => clearInterval(slideshowInterval);
     }
-  }, [displaySlideshowImages.length, setCurrentImageSlideshowIndex]);
+  }, [displaySlideshowImages.length]);
 
   // Calculate dynamic height based on styling
   const dynamicHeight = window.innerWidth < 768 
     ? `${styling.mobileHeightVW}vw` 
     : `${styling.desktopHeightVH}vh`;
 
-  const GridFeatureCard = ({ card, index, readOnly, onCardFieldChange, onRemoveCard, openIconModalForCard }) => {
+  const GridFeatureCard = ({ card, index, readOnly, onCardFieldChange, onRemoveCard, openIconModalForCard, playIntroAnimation }) => {
     const IconToRender = Icons[card.icon] || Icons.Star;
     
     // Color scheme for cards
@@ -1301,9 +1325,9 @@ const GridRichTextVariant = memo(({
     
     return (
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
+        initial={playIntroAnimation ? { opacity: 0, y: 30 } : { opacity: 1, y: 0 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.1 }}
+        transition={playIntroAnimation ? { delay: index * 0.1 } : { duration: 0 }}
         className={`bg-gradient-to-br ${cardColor} rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 group relative`}
       >
         {!readOnly && (
@@ -1472,6 +1496,7 @@ const GridRichTextVariant = memo(({
                   onCardFieldChange={handleCardChange}
                   onRemoveCard={onRemoveCard}
                   openIconModalForCard={openIconModalForCard}
+                  playIntroAnimation={playIntroAnimationForCards}
                 />
               ))}
             </div>
@@ -1503,6 +1528,4 @@ GridRichTextVariant.propTypes = {
   onAddCard: PropTypes.func,
   onRemoveCard: PropTypes.func,
   playIntroAnimationForCards: PropTypes.bool,
-  currentImageSlideshowIndex: PropTypes.number,
-  setCurrentImageSlideshowIndex: PropTypes.func,
 };

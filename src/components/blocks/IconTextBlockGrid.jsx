@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
+import PanelImagesController from "../common/PanelImagesController";
+import ThemeColorPicker from "../common/ThemeColorPicker";
 
 /**
  * IconTextBlockGrid
@@ -34,7 +36,10 @@ const initializeImageState = (imageValue, defaultPath = '') => {
 const getEffectiveDisplayUrl = (imageState, getDisplayUrlProp, defaultPath = '') => {
   if (getDisplayUrlProp && imageState) return getDisplayUrlProp(imageState);
   if (imageState && typeof imageState === 'object' && imageState.url) return imageState.url;
-  if (typeof imageState === 'string' && imageState) return imageState.startsWith('/') || imageState.startsWith('blob:') || imageState.startsWith('data:') ? imageState : (imageState.startsWith('.') ? imageState : `/${imageState.replace(/^\/*/, "")}`);
+  if (typeof imageState === 'string' && imageState) {
+    if (imageState.startsWith('/') || imageState.startsWith('blob:') || imageState.startsWith('data:')) return imageState;
+    return imageState.startsWith('.') ? imageState : `/${imageState.replace(/^\/+/, "")}`;
+  }
   return defaultPath;
 };
 
@@ -74,12 +79,12 @@ function IconTextBlockGridPreview({ localConfig, readOnly, onInlineChange, getDi
                 {imageUrl ? (
                   <img
                     src={imageUrl}
-                    alt={item.alt || item.title}
+                    alt={item.alt || item.title || "Feature Image"}
                     className="w-full h-48 object-cover mb-4 mx-auto"
                     style={{ borderRadius: imageBorderRadius }}
                   />
                 ) : (
-                  !readOnly && <div className="w-full h-48 mb-4 mx-auto flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg text-gray-400" style={{ borderRadius: imageBorderRadius }}>Set Image in Panel</div>
+                  !readOnly && <div className="w-full h-48 mb-4 mx-auto flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg text-gray-400" style={{ borderRadius: imageBorderRadius }}>Image Missing</div>
                 )}
 
                 {readOnly ? (

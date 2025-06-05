@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { FaCheckCircle, FaPlus, FaTrash, FaTimes, FaPencilAlt } from "react-icons/fa";
+import PanelImagesController from "../common/PanelImagesController";
 
 // Copied and adapted EditableText from GeneralList.jsx
 const EditableText = ({ value, onChange, onBlur, tag: Tag = 'p', className = '', inputClassName = '', isTextarea = false, placeholder = "Edit", readOnly = false }) => {
@@ -111,10 +112,23 @@ const EditableText = ({ value, onChange, onBlur, tag: Tag = 'p', className = '',
  */
 const GeneralListVariant2 = ({
   config = {},
-  readOnly = true,
+  readOnly = false,
   onConfigChange,
+  getDisplayUrl,
+  onFileChange,
+  themeColors,
   onToggleEditor
 }) => {
+  const [isEditing, setIsEditing] = useState(false);
+
+  const handleToggleEdit = () => {
+    setIsEditing(prev => !prev);
+  };
+
+  // Standard MainPageForm icons
+  const PencilIcon = ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487a2.032 2.032 0 112.872 2.872L7.5 21.613H4v-3.5L16.862 4.487z"/></svg> );
+  const CheckIcon = ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> );
+
   const {
     title = "Selection Title",
     items = [],
@@ -151,13 +165,6 @@ const GeneralListVariant2 = ({
     handleFieldChange("items", newItems);
   };
   
-  const getDisplayUrl = (value) => { // Simple helper, can be enhanced for File objects
-    if (!value) return null;
-    if (typeof value === 'string') return value;
-    if (value.url) return value.url;
-    return null;
-  };
-
   const activeItem = items[selectedIndex] || {}; // Fallback to empty object if no items or invalid index
 
   // Common styling
@@ -178,362 +185,229 @@ const GeneralListVariant2 = ({
   );
 
   return (
-    <section className={`${sectionClasses} ${!readOnly ? 'pb-12' : ''}`}>
-      {!readOnly && onToggleEditor && (
+    <section className={`relative w-full px-4 md:px-8 py-8 bg-gradient-to-br from-blue-50 to-white ${!readOnly && isEditing ? 'border-2 border-blue-400/50' : ''}`}>
+      {!readOnly && (
         <button
-          onClick={onToggleEditor}
-          className="absolute top-2 right-2 z-20 p-2 bg-gray-700 text-white rounded-full shadow-lg hover:bg-gray-800 transition-colors opacity-50 group-hover:opacity-100"
-          title="Open Editor Panel"
+          onClick={handleToggleEdit}
+          className={`absolute top-4 right-4 z-50 ${isEditing ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-700 hover:bg-gray-600'} text-white rounded-full p-2 shadow-lg transition-colors`}
+          title={isEditing ? "Finish Editing" : "Edit List Variant 2"}
         >
-          <FaPencilAlt size={16} />
+          {isEditing ? CheckIcon : PencilIcon}
         </button>
       )}
-      <TitleComponent />
 
-      {/* Item Selector Buttons */}
-      {items.length > 0 && (
-        <div className="flex flex-wrap justify-center mb-4 gap-2">
-          {items.map((item, idx) => (
-            <div key={item.id || idx} className="relative group/itembtn">
-                <button
-                    onClick={() => setSelectedIndex(idx)}
-                    className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full font-semibold shadow-lg transition-all duration-300 ${
-                        selectedIndex === idx
-                        ? "bg-second-accent text-white shadow-2xl ring-2 ring-offset-1 ring-second-accent/70"
-                        : "bg-accent text-black hover:bg-accent/80"
-                    }`}
-                >
-                    <EditableText
-                        tag="span"
-                        value={item.name}
-                        onChange={(newVal) => handleItemFieldChange(idx, "name", newVal)}
-                        readOnly={readOnly}
-                        className={`font-semibold ${selectedIndex === idx ? "text-white" : "text-black"}`}
-                        inputClassName={`font-semibold ${selectedIndex === idx ? "text-white bg-second-accent/80" : "text-black bg-accent/80"} w-auto`}
-                        placeholder="Item Name"
-                    />
-                </button>
-                {!readOnly && (
-                    <button 
-                        onClick={(e) => {
-                            e.stopPropagation(); // Prevent button click if EditPanel has own logic
-                            // Call removeItem from EditorPanel or via onConfigChange directly
-                            const newItems = items.filter((_, i) => i !== idx);
-                            handleFieldChange("items", newItems);
-                            if (selectedIndex === idx) {
-                              setSelectedIndex(Math.max(0, idx -1));
-                            } else if (selectedIndex > idx) {
-                              setSelectedIndex(selectedIndex -1);
-                            }
-                        }} 
-                        className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full shadow-md opacity-0 group-hover/itembtn:opacity-100 hover:bg-red-600 transition-opacity duration-150 z-10"
-                        title="Remove Item"
-                    >
-                        <FaTrash size={10} />
-                    </button>
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-8">
+          <EditableText
+            value={config.title || "Section Title"}
+            onChange={(newVal) => onConfigChange({ ...config, title: newVal })}
+            tag="h2"
+            className="text-4xl font-bold text-gray-800 mb-4"
+            inputClassName="text-4xl font-bold text-gray-800 text-center w-full"
+            placeholder="Section Title"
+            readOnly={readOnly || !isEditing}
+          />
+          <EditableText
+            value={config.description || "Section description goes here"}
+            onChange={(newVal) => onConfigChange({ ...config, description: newVal })}
+            tag="p"
+            className="text-lg text-gray-600 max-w-2xl mx-auto"
+            inputClassName="text-lg text-gray-600 w-full"
+            isTextarea={true}
+            placeholder="Section Description"
+            readOnly={readOnly || !isEditing}
+          />
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {(config.items || []).map((item, index) => (
+            <div key={item.id || index} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow group">
+              <div className="p-6">
+                <EditableText
+                  value={item.title || "Item Title"}
+                  onChange={(newVal) => {
+                    const newItems = (config.items || []).map((itm, i) => 
+                      i === index ? { ...itm, title: newVal } : itm
+                    );
+                    onConfigChange({ ...config, items: newItems });
+                  }}
+                  tag="h3"
+                  className="text-xl font-semibold text-gray-800 mb-3"
+                  inputClassName="text-xl font-semibold text-gray-800 w-full"
+                  placeholder="Item Title"
+                  readOnly={readOnly || !isEditing}
+                />
+                <EditableText
+                  value={item.description || "Item description"}
+                  onChange={(newVal) => {
+                    const newItems = (config.items || []).map((itm, i) => 
+                      i === index ? { ...itm, description: newVal } : itm
+                    );
+                    onConfigChange({ ...config, items: newItems });
+                  }}
+                  tag="p"
+                  className="text-gray-600 leading-relaxed"
+                  inputClassName="text-gray-600 w-full"
+                  isTextarea={true}
+                  placeholder="Item Description"
+                  readOnly={readOnly || !isEditing}
+                />
+                {!readOnly && isEditing && (
+                  <button
+                    onClick={() => {
+                      const newItems = (config.items || []).filter((_, i) => i !== index);
+                      onConfigChange({ ...config, items: newItems });
+                    }}
+                    className="opacity-0 group-hover:opacity-100 absolute top-2 right-2 text-red-500 hover:text-red-700 transition-opacity p-2"
+                    title="Remove Item"
+                  >
+                    <FaTimes size={16} />
+                  </button>
                 )}
+              </div>
             </div>
           ))}
         </div>
-      )}
-      
-      {items.length === 0 && !readOnly && (
-        <div className="text-center py-6 text-gray-500">
-          <p>No items yet. Add items using the editor panel.</p>
-           <button
-                onClick={onToggleEditor} // Or a direct add function if panel is too much for just this
-                className="mt-2 px-3 py-1.5 bg-blue-500 text-white rounded-md shadow-md hover:bg-blue-600 transition-colors text-sm"
+
+        {!readOnly && isEditing && (
+          <div className="text-center mt-8">
+            <button
+              onClick={() => {
+                const newItems = [...(config.items || []), { 
+                  id: Date.now(), 
+                  title: "New Item", 
+                  description: "Item description" 
+                }];
+                onConfigChange({ ...config, items: newItems });
+              }}
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
             >
-                <FaPlus size={10} className="inline mr-1" /> Open Editor to Add Items
+              <FaPlus size={16} className="inline mr-2" />
+              Add New Item
             </button>
-        </div>
-      )}
-
-      {/* Selected item details */}
-      {items.length > 0 && (
-        <motion.div
-          key={activeItem.id || selectedIndex}
-          className={`${detailsCardClasses} ${editModeBorderClass}`}
-          variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-          initial="hidden"
-          animate="visible"
-          exit="hidden"
-          transition={{ duration: 0.4 }}
-        >
-          <EditableText
-            tag="h3"
-            value={activeItem.name}
-            onChange={(newVal) => handleItemFieldChange(selectedIndex, "name", newVal)}
-            readOnly={readOnly} // Name is also editable from buttons, make this readOnly if it causes issues or sync it. For now, editable here too.
-            className="text-[3.5vh] font-bold mb-2 text-gray-800 text-center"
-            inputClassName="text-[3.5vh] font-bold mb-2 text-gray-800 text-center w-auto"
-            placeholder="Item Title"
-          />
-          
-          <EditableText
-            tag="div" // Using div for multi-line potential, ReactMarkdown will handle <p>
-            value={activeItem.description}
-            onChange={(newVal) => handleItemFieldChange(selectedIndex, "description", newVal)}
-            readOnly={readOnly}
-            isTextarea
-            className="text-gray-700 mb-3 whitespace-pre-wrap" // Added whitespace-pre-wrap
-            inputClassName="text-gray-700 w-full"
-            placeholder="Item description..."
-          />
-
-          <div className="flex flex-col @lg:flex-row gap-6"> {/* Changed md: to @lg: for container query */}
-            <div className="flex-1">
-              {((activeItem.features && activeItem.features.length > 0) || !readOnly) && (
-                <div className="mb-4">
-                  <h4 className="text-lg font-semibold text-gray-800 mb-1">Features:</h4>
-                  <ul className="space-y-1">
-                    {(activeItem.features || []).map((feat, i) => (
-                      <li key={i} className="flex items-start space-x-2 group/feature">
-                        <FaCheckCircle className="text-green-600 mt-1 flex-shrink-0" />
-                        <EditableText
-                          tag="span"
-                          value={feat}
-                          onChange={(newVal) => handleFeatureChange(selectedIndex, i, newVal)}
-                          readOnly={readOnly}
-                          className="text-gray-700 flex-grow"
-                          inputClassName="text-gray-700 w-full"
-                          placeholder="Feature description"
-                        />
-                        {!readOnly && (
-                          <button 
-                            onClick={() => {
-                                const currentItem = items[selectedIndex];
-                                const updatedFeatures = [...(currentItem.features || [])];
-                                updatedFeatures.splice(i, 1);
-                                handleItemFieldChange(selectedIndex, "features", updatedFeatures);
-                            }}
-                            className="ml-1 p-0.5 text-red-500 hover:text-red-600 opacity-0 group-hover/feature:opacity-100 transition-opacity"
-                            title="Remove Feature"
-                          >
-                            <FaTimes size={12} />
-                          </button>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                   {!readOnly && (
-                        <button
-                            onClick={() => {
-                                const currentItem = items[selectedIndex];
-                                const updatedFeatures = [...(currentItem.features || []), "New Feature"];
-                                handleItemFieldChange(selectedIndex, "features", updatedFeatures);
-                            }}
-                            className="mt-1.5 text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded-md shadow"
-                        >
-                           <FaPlus size={10} className="inline mr-1" /> Add Feature
-                        </button>
-                    )}
-                     {(!activeItem.features || activeItem.features.length === 0) && !readOnly && <p className="text-xs text-gray-400 ml-1 italic mt-1">No features listed. Click 'Add Feature'.</p>}
-                </div>
-              )}
-
-              { (activeItem.uses || !readOnly) && (
-                <div className="text-gray-700 mb-2">
-                  <strong>Uses: </strong>
-                  <EditableText
-                    tag="span"
-                    value={activeItem.uses}
-                    onChange={(newVal) => handleItemFieldChange(selectedIndex, "uses", newVal)}
-                    readOnly={readOnly}
-                    className="text-gray-700"
-                    inputClassName="text-gray-700 inline-block w-auto"
-                    placeholder="Item uses..."
-                  />
-                </div>
-              )}
-              { (activeItem.limitations || !readOnly) && (
-                <div className="text-gray-700 mb-2">
-                  <strong>Limitations: </strong>
-                  <EditableText
-                    tag="span"
-                    value={activeItem.limitations}
-                    onChange={(newVal) => handleItemFieldChange(selectedIndex, "limitations", newVal)}
-                    readOnly={readOnly}
-                    className="text-gray-700"
-                    inputClassName="text-gray-700 inline-block w-auto"
-                    placeholder="Item limitations..."
-                  />
-                </div>
-              )}
-            </div>
-
-            {(activeItem.imageUrl || !readOnly) && (
-              <div className="flex-1 flex items-center justify-center">
-                {activeItem.imageUrl ? (
-                    <img
-                        src={getDisplayUrl(activeItem.imageUrl)}
-                        alt={activeItem.name || 'Item Image'}
-                        className="max-w-full h-auto max-h-64 object-contain rounded-lg shadow-md" // Changed to object-contain and max-h
-                    />
-                ) : (
-                    !readOnly && <p className="text-sm text-gray-400">No image. Add URL in Editor Panel.</p>
-                )}
-              </div>
-            )}
           </div>
-        </motion.div>
-      )}
+        )}
+      </div>
     </section>
   );
 };
 
-export const GeneralListVariant2EditorPanel = ({ currentConfig, onPanelConfigChange, onPanelFileChange }) => {
-  const {
-    title = "Selection Title",
-    items = [],
-  } = currentConfig;
+GeneralListVariant2.tabsConfig = (config, onPanelChange, themeColors, sitePalette, onPanelFileChange) => {
+  const { items = [] } = config;
 
-  const handleConfigUpdate = (newConfig) => {
-    onPanelConfigChange?.(newConfig);
+  // Helper for transforming items for PanelImagesController
+  const getImagesForController = () => {
+    return (config?.items || []).map((item, index) => ({
+      // Ensure item.imageUrl is treated as an image object for PanelImagesController
+      ...( (typeof item.imageUrl === 'string') ? { url: item.imageUrl, name: item.name || `Item ${index+1} Image`, originalUrl: item.imageUrl } : (item.imageUrl || { url: '', name: 'Default Image', originalUrl: '' }) ),
+      id: item.id || `item_img_${index}`,
+      name: item.name || `Item ${index + 1} Image`, // Use item name for better context in controller
+      itemIndex: index, // To map back
+    }));
   };
 
-  const handleMainTitleChange = (newTitle) => {
-    handleConfigUpdate({ ...currentConfig, title: newTitle });
+  const handleImagesChangeFromController = (updatedFlatImages) => {
+    const newItems = JSON.parse(JSON.stringify(config?.items || [])); // Deep clone
+
+    (updatedFlatImages || []).forEach(imgCtrl => {
+      if (imgCtrl.itemIndex !== undefined && newItems[imgCtrl.itemIndex]) {
+        const itemToUpdate = newItems[imgCtrl.itemIndex];
+        // Construct the image object to store, handling potential file object
+        const imageToStore = {
+          url: imgCtrl.url || '',
+          name: imgCtrl.name || (imgCtrl.url || '').split('/').pop() || `Image ${imgCtrl.itemIndex + 1}`,
+          originalUrl: imgCtrl.originalUrl || imgCtrl.url || ''
+        };
+        if (imgCtrl.file) {
+          imageToStore.file = imgCtrl.file;
+        }
+        itemToUpdate.imageUrl = imageToStore;
+      }
+    });
+    onPanelChange({ ...config, items: newItems });
   };
   
-  const updateItemField = (idx, field, value) => {
-    const newItems = currentConfig.items.map((item, i) => 
-      i === idx ? { ...item, [field]: value } : item
-    );
-    handleConfigUpdate({ ...currentConfig, items: newItems });
-  };
-  
-  const addItem = () => {
-    const newItemId = Date.now();
-    const newItems = [
-      ...(currentConfig.items || []),
-      {
-        id: newItemId,
-        name: "New Option",
-        description: "Description for new option.", // Added default description
-        features: ["Feature 1", "Feature 2"], // Added default features
-        uses: "Typical uses.", // Added default uses
-        limitations: "Known limitations.", // Added default limitations
-        imageUrl: "", // Default empty image URL
-      },
-    ];
-    handleConfigUpdate({ ...currentConfig, items: newItems });
-    // Parent component (ServiceEditPage) should manage selectedIndex if needed
+  const handleAddItem = () => {
+    const newItemId = `item_${Date.now()}`;
+    const newItem = {
+      id: newItemId,
+      name: "New Option",
+      description: "Detailed description for this new option.",
+      features: ["Feature A", "Feature B"],
+      uses: "Common application areas.",
+      limitations: "Known limitations or considerations.",
+      imageUrl: { url: "", name: "placeholder.jpg", file: null, originalUrl: "" } // Default empty image object
+    };
+    onPanelChange({ ...config, items: [...(config.items || []), newItem] });
   };
 
-  const removeItem = (idx) => {
-    const newItems = (currentConfig.items || []).filter((_, i) => i !== idx);
-    handleConfigUpdate({ ...currentConfig, items: newItems });
-  };
-
-  // Get display URL for previews
-  const getDisplayUrl = (value) => {
-    if (!value) return null;
-    if (typeof value === 'string') return value; // Direct URL or blob URL
-    if (value.url) return value.url; // Object like { url: '...', file: File }
-    return null;
-  };
-
-  const handleItemImageFileChange = (itemIndex, file) => {
-    if (file && onPanelFileChange) {
-      // The pathData helps ServiceEditPage determine where to put the uploaded file's URL
-      const pathData = { 
-        field: 'items', // Indicates the 'items' array in the config
-        blockItemIndex: itemIndex, // The index of the item within the 'items' array
-        property: 'imageUrl' // The specific property within the item object to update
-      };
-      onPanelFileChange(pathData, file); 
+  const handleRemoveItem = (indexToRemove) => {
+    const itemRemoved = (config.items || [])[indexToRemove];
+    if (itemRemoved?.imageUrl && typeof itemRemoved.imageUrl === 'object' && itemRemoved.imageUrl.url?.startsWith('blob:')) {
+        URL.revokeObjectURL(itemRemoved.imageUrl.url);
     }
-  };
-  
-  const handleItemImageUrlManualChange = (itemIndex, url) => {
-    // This allows manually pasting a URL if no file is uploaded
-    // Construct an object similar to what onPanelFileChange would produce for consistency if needed by parent,
-    // or just update the string directly.
-    const newValue = { url: url, file: null, name: url.split('/').pop() || 'pasted_image' }; // Basic object structure
-    updateItemField(itemIndex, "imageUrl", newValue); // or just `url` if parent expects string
+    const updatedItems = (config.items || []).filter((_, i) => i !== indexToRemove);
+    onPanelChange({ ...config, items: updatedItems });
   };
 
-
-  return (
-    <div className="p-3 space-y-3 bg-gray-800 text-gray-200 rounded-b-md max-h-[70vh] overflow-y-auto">
-      <div>
-        <label className="block text-xs font-medium mb-1">Block Title (Editable Inline Too):</label>
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => handleMainTitleChange(e.target.value)}
-          className="w-full p-1.5 bg-gray-700 border border-gray-600 rounded-md text-sm"
-          placeholder="Enter block title"
-        />
-      </div>
-      
-      <div className="border-t border-gray-700 pt-3">
-        <div className="flex justify-between items-center mb-2">
-            <h4 className="text-sm font-semibold">Manage Items ({items.length})</h4>
-            <button
-                onClick={addItem}
-                className="px-2 py-1 bg-green-600 text-white rounded-md text-xs hover:bg-green-700 transition-colors"
-            >
-                <FaPlus size={10} className="inline mr-1" /> Add Item
-            </button>
+  return {
+    general: () => (
+      <div className="p-3 space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Block Title (Editable inline too):</label>
+          <input
+            type="text"
+            value={config.title || ''}
+            onChange={(e) => onPanelChange({ ...config, title: e.target.value })}
+            className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            placeholder="Enter block title"
+          />
         </div>
-
-        {items.length === 0 && <p className="text-xs text-gray-400 italic text-center py-2">No items yet. Click "Add Item".</p>}
-
-        {items.map((item, idx) => (
-          <div key={item.id || idx} className="p-2.5 mb-2 bg-gray-750 border border-gray-600 rounded-md space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-xs font-medium text-gray-400 truncate pr-2">{item.name || `Item ${idx + 1}`}</span>
-              <button
-                onClick={() => removeItem(idx)}
-                className="p-1 bg-red-600 text-white rounded-full text-xs hover:bg-red-700 transition-colors flex-shrink-0"
+        <div className="border-t pt-4">
+          <h4 className="text-sm font-semibold text-gray-700 mb-2">Manage Items:</h4>
+          <p className="text-xs text-gray-500 mb-3">Item details (name, description, features, etc.) are editable directly on the block preview.</p>
+          {(items || []).map((item, index) => (
+            <div key={item.id || index} className="flex items-center justify-between p-2 bg-gray-50 rounded-md mb-2 shadow-sm">
+              <span className="text-xs text-gray-600 truncate w-3/4" title={item.name}>{index + 1}. {item.name || '(Untitled Item)'}</span>
+              <button 
+                onClick={() => handleRemoveItem(index)} 
+                className="text-red-500 hover:text-red-700 text-xs font-semibold p-1 hover:bg-red-100 rounded-full"
                 title="Remove Item"
               >
-                <FaTrash size={10} />
+                ✕ Remove
               </button>
             </div>
-            <div>
-                <label className="block text-xs text-gray-400 mb-0.5">Name (Editable Inline Too):</label>
-                <input
-                    type="text"
-                    value={item.name || ''}
-                    onChange={(e) => updateItemField(idx, "name", e.target.value)}
-                    className="w-full p-1 bg-gray-700 border-gray-600 rounded text-xs"
-                    placeholder="Item Name"
-                />
-            </div>
-             <div>
-                <label className="block text-xs text-gray-400 mb-0.5">Image:</label>
-                <div className="flex items-center space-x-2">
-                    <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handleItemImageFileChange(idx, e.target.files?.[0])}
-                        className="w-full text-xs p-1 bg-gray-700 border border-gray-600 rounded-md file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
-                    />
-                </div>
-                <input 
-                    type="text"
-                    value={getDisplayUrl(item.imageUrl) || ''} // Show current URL (blob or direct)
-                    onChange={(e) => handleItemImageUrlManualChange(idx, e.target.value)}
-                    className="mt-1 w-full p-1 bg-gray-700 border-gray-600 rounded text-xs"
-                    placeholder="Or paste image URL"
-                />
-                {getDisplayUrl(item.imageUrl) && (
-                    <img 
-                        src={getDisplayUrl(item.imageUrl)} 
-                        alt={`${item.name || 'Item'} preview`}
-                        className="mt-2 h-20 w-auto rounded object-contain bg-gray-600 border border-gray-500 p-0.5"
-                    />
-                )}
-            </div>
-          </div>
-        ))}
+          ))}
+          <button 
+            onClick={handleAddItem} 
+            className="mt-2 w-full px-4 py-2 border border-dashed border-gray-300 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 hover:border-solid"
+          >
+            + Add Item
+          </button>
+           {(items || []).length === 0 && <p className="text-xs text-gray-400 text-center italic mt-2">No items yet. Click "Add Item".</p>}
+        </div>
       </div>
-    </div>
-  );
+    ),
+    images: () => (
+      (items || []).length > 0 ? (
+        <PanelImagesController
+          currentData={{ images: getImagesForController() }}
+          onControlsChange={handleImagesChangeFromController} // This expects { images: [...] }
+          imageArrayFieldName="images"
+          getItemName={(img) => img?.name || 'Item Image'} // Uses the name property from the transformed image object
+          allowAdd={false} // Adding items is handled in general tab
+          allowRemove={false} // Removing items is handled in general tab
+        />
+      ) : (
+        <div className="p-6 text-center text-gray-500">
+          <p>No items available to manage images for. Add items in the 'General' tab first.</p>
+        </div>
+      )
+    ),
+    // Colors and Styling tabs can be added here if needed for this block
+    // colors: () => ( <div className="p-4">Color controls here...</div> ),
+    // styling: () => ( <div className="p-4">Styling controls here...</div> ),
+  };
 };
-
 
 export default GeneralListVariant2;

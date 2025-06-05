@@ -36,6 +36,7 @@ const TopStickyEditPanel = ({ isOpen, onClose, activeBlockData }) => {
   const standardTabOrder = ['general', 'images', 'colors', 'styling'];
 
   const availableTabKeys = [
+    tabsConfig?.general && typeof tabsConfig.general === 'function' ? 'general' : null,
     tabsConfig?.images && typeof tabsConfig.images === 'function' ? 'images' : null,
     tabsConfig?.colors && typeof tabsConfig.colors === 'function' ? 'colors' : null,
     tabsConfig?.styling && typeof tabsConfig.styling === 'function' ? 'styling' : null,
@@ -66,7 +67,7 @@ const TopStickyEditPanel = ({ isOpen, onClose, activeBlockData }) => {
       } else if (availableTabKeys.length > 0) {
         setActiveTab(availableTabKeys[0]); // Fallback to the first available tab if no preferred ones are present
       } else {
-        setActiveTab('images'); // Default if no tabs are available (should be rare)
+        setActiveTab('general'); // Default if no tabs are available (should be rare)
       }
     }
     prevBlockNameRef.current = activeBlockData?.blockName;
@@ -90,24 +91,39 @@ const TopStickyEditPanel = ({ isOpen, onClose, activeBlockData }) => {
     );
   }
 
-  // GeneralPanel for general settings (e.g., social icon location for BookingBlock)
-  const GeneralPanel = ({ config, onPanelChange }) => {
-    // Only for BookingBlock for now
-    const socialIconLocation = config?.socialIconLocation || 'above';
+  // Generic GeneralPanel for general settings - now more flexible
+  const GeneralPanel = ({ config, onPanelChange, blockName }) => {
+    // Handle different block types with their specific general settings
+    if (blockName === 'BookingBlock') {
+      const socialIconLocation = config?.socialIconLocation || 'above';
+      return (
+        <div className="p-4 space-y-6">
+          <h3 className="text-lg font-semibold mb-4 text-gray-700">General Settings</h3>
+          <div>
+            <label className="block text-sm font-medium mb-2">Social Media Icon Location:</label>
+            <select
+              value={socialIconLocation}
+              onChange={e => onPanelChange({ ...config, socialIconLocation: e.target.value })}
+              className="w-full bg-gray-100 px-3 py-2 rounded text-sm border border-gray-300 focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="above">Above Form</option>
+              <option value="below">Below Form</option>
+              <option value="hidden">Hidden</option>
+            </select>
+            <p className="text-xs text-gray-500 mt-2">Controls where the social media icons appear in the BookingBlock.</p>
+          </div>
+        </div>
+      );
+    }
+    
+    // Default general panel for blocks without specific general settings
     return (
       <div className="p-4 space-y-6">
-        <div>
-          <label className="block text-sm font-medium mb-2">Social Media Icon Location:</label>
-          <select
-            value={socialIconLocation}
-            onChange={e => onPanelChange({ ...config, socialIconLocation: e.target.value })}
-            className="w-full bg-gray-100 px-3 py-2 rounded text-sm border border-gray-300 focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="above">Above Form</option>
-            <option value="below">Below Form</option>
-            <option value="hidden">Hidden</option>
-          </select>
-          <p className="text-xs text-gray-500 mt-2">Controls where the social media icons appear in the BookingBlock.</p>
+        <h3 className="text-lg font-semibold mb-4 text-gray-700">General Settings</h3>
+        <div className="text-center py-8 text-gray-500">
+          <div className="text-3xl mb-2">⚙️</div>
+          <p className="mb-2">No general settings available</p>
+          <p className="text-sm">This block uses the dedicated general tab for content management.</p>
         </div>
       </div>
     );
@@ -124,9 +140,11 @@ const TopStickyEditPanel = ({ isOpen, onClose, activeBlockData }) => {
         return (
           <div className="p-4 bg-white">
             <EditorPanelComponent
-              localData={config}
-              onPanelChange={onPanelChange}
+              currentConfig={config}
+              onPanelConfigChange={onPanelChange}
+              onPanelFileChange={activeBlockData?.onFileChange}
               themeColors={themeColors}
+              getDisplayUrl={activeBlockData?.getDisplayUrl}
               // RichTextBlock specific props - pass them if available
               onDataChange={onDataChange}
               currentBannerColor={currentBannerColor}
@@ -153,9 +171,12 @@ const TopStickyEditPanel = ({ isOpen, onClose, activeBlockData }) => {
     });
 
     console.log('[TopStickyEditPanel] Rendered content for tab', activeTab, ':', content ? 'Exists' : 'null/undefined');
-    if (activeTab === 'general' && blockName === 'BookingBlock') {
-      return <GeneralPanel config={config} onPanelChange={onPanelChange} />;
+    
+    // Special handling for general tab when using legacy GeneralPanel
+    if (activeTab === 'general' && blockName === 'BookingBlock' && !content) {
+      return <GeneralPanel config={config} onPanelChange={onPanelChange} blockName={blockName} />;
     }
+    
     return content ? <div className="p-4 bg-white">{content}</div> : <div className="p-6 text-center text-gray-500">No content available for this section.</div>;
   };
 
@@ -180,38 +201,35 @@ const TopStickyEditPanel = ({ isOpen, onClose, activeBlockData }) => {
       }}
       className="top-sticky-edit-panel"
     >
-      <div className="flex justify-between items-center px-4 py-2 bg-gray-800 text-white flex-shrink-0">
-        <span className="font-semibold text-lg">Editing: {blockName}</span>
-        <button
-          type="button"
-          onClick={onClose}
-          className="text-gray-300 hover:text-white p-1 rounded-full hover:bg-gray-700"
-          aria-label="Close edit panel"
-        >
-          <X size={22} />
-        </button>
-      </div>
 
-      <div className="bg-gray-100 border-b border-gray-300 flex-shrink-0">
-        <nav className="flex px-1 sm:px-2" aria-label="Tabs">
-          {availableAndSortedTabs.map((tabName) => (
-            <button
-              key={tabName}
-              onClick={() => setActiveTab(tabName)}
-              className={`capitalize whitespace-nowrap py-2 sm:py-3 px-3 sm:px-5 text-sm font-medium focus:outline-none transition-all duration-150 ease-in-out
-                ${activeTab === tabName
-                  ? 'text-blue-600 border-b-2 border-blue-600 animate-pulse-text-blue'
-                  : 'text-gray-600 hover:text-gray-800 border-b-2 border-transparent hover:border-gray-300 bg-white hover:bg-gray-50'
-                }
-              `}
-              // Add a simple CSS animation for the pulse effect on text color
-              // This will be defined in a global CSS or a style tag if necessary.
-              // For now, 'animate-pulse-text-blue' is a placeholder for such a class.
-            >
-              {tabName}
-            </button>
-          ))}
-        </nav>
+      <div className=" flex flex-row items-center justify-between bg-black border-gray-300 flex-shrink-0">
+        <button
+            type="button"
+            onClick={onClose}
+            className="text-white text-[3vh] md:text-[6vw] text-bold hover:text-white p-1 rounded-full hover:bg-gray-700"
+            aria-label="Close edit panel"
+          >
+            <X size={22} />
+        </button>
+        <div className="border-b border-black">
+          <nav className="-mb-px flex -space-x-3 px-4" aria-label="Tabs">
+            {availableAndSortedTabs.map((tabName) => (
+              <button
+                key={tabName}
+                onClick={() => setActiveTab(tabName)}
+                className={`
+                  whitespace-nowrap py-2 px-6 border-b-2 font-medium text-sm capitalize
+                  ${activeTab === tabName
+                    ? 'border-blue-500 ml-2 text-left text-white font-bold bg-banner rounded-t-lg shadow-xl '
+                    : 'border-transparent text-black fotn-semibold hover:text-gray-700 bg-blue-50 rounded-t-lg shadow-xl hover:border-gray-300'
+                  }
+                `}
+              >
+                {tabName}
+              </button>
+            ))}
+          </nav>
+        </div>
       </div>
       <div className="panel-content overflow-y-auto flex-grow bg-white">
         {renderTabContent()}

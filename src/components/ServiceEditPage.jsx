@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import PropTypes from "prop-types";
+import TopStickyEditPanel from "./TopStickyEditPanel";
 // import JSZip from "jszip"; // No longer needed for zipping here
 // import { useConfig } from "../context/ConfigContext"; // No longer needed for services
 
@@ -85,7 +86,7 @@ ServiceEditPage Component
 ---------------------------------------------
 This component provides a comprehensive editor for service pages.
 It loads data from services.json and allows editing of all
-service page content.
+service page content with TopStickyEditPanel integration.
 =============================================
 */
 const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange, themeColors }) => {
@@ -97,6 +98,7 @@ const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange
   const [currentPage, setCurrentPage] = useState(null);
   const [selectedBlockType, setSelectedBlockType] = useState(Object.keys(blockMap)[0]);
   const [activeEditBlockIndex, setActiveEditBlockIndex] = useState(null);
+  const [isEditPanelOpen, setIsEditPanelOpen] = useState(false);
 
   // Derive currentPage from props
   useEffect(() => {
@@ -104,21 +106,22 @@ const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange
       const page = servicesDataFromProps[selectedCategory].find(
         (p) => p.id === Number(selectedPageId)
       );
-      setCurrentPage(page || null); // Set to null if page not found
+      setCurrentPage(page || null);
       if (!page) {
         console.warn(`[ServiceEditPage] Page not found for category '${selectedCategory}', ID '${selectedPageId}'`);
-        // Optionally reset selectedPageId to the first available if current one is invalid
         if (servicesDataFromProps[selectedCategory].length > 0) {
           setSelectedPageId(servicesDataFromProps[selectedCategory][0].id);
         }
       }
     } else {
-      setCurrentPage(null); // No data or category
+      setCurrentPage(null);
     }
   }, [servicesDataFromProps, selectedCategory, selectedPageId]);
 
+  // Close panel when changing blocks or pages
   useEffect(() => {
     setActiveEditBlockIndex(null);
+    setIsEditPanelOpen(false);
   }, [selectedCategory, selectedPageId]);
 
   // Helper to get display URL (can be enhanced for file objects later)
@@ -440,53 +443,77 @@ const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange
   const renderPageButtons = () => {
     if (!servicesDataFromProps) return <p>No service data provided.</p>;
     return (
-      <div className="mb-6 flex justify-between items-start">
-        <div className="flex flex-col space-y-2 items-start">
-          {Object.keys(servicesDataFromProps).map((category) => (
-            <button
-              key={category}
-              onClick={() => {
-                setSelectedCategory(category);
-                if (servicesDataFromProps[category] && servicesDataFromProps[category].length > 0) {
-                  setSelectedPageId(servicesDataFromProps[category][0].id);
-                } else {
-                  setSelectedPageId(null); // No pages in this category
-                }
-              }}
-              className={`px-4 py-2 rounded text-sm font-medium w-full text-left ${selectedCategory === category ? 'bg-blue text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-            >
-              {category.charAt(0).toUpperCase() + category.slice(1)}
-            </button>
-          ))}
+      <div className="mb-0 bg-gray-50 border-b border-gray-300 overflow-hidden">
+        {/* Category Tabs Section */}
+        <div className="bg-black border-b border-gray-300">
+          <div className="px-4 py-2">
+            <h3 className="text-white text-sm font-medium mb-2">Service Categories</h3>
+            <nav className="-mb-px flex -space-x-3" aria-label="Category Tabs">
+              {Object.keys(servicesDataFromProps).map((category) => (
+                <button
+                  key={category}
+                  onClick={() => {
+                    setSelectedCategory(category);
+                    if (servicesDataFromProps[category] && servicesDataFromProps[category].length > 0) {
+                      setSelectedPageId(servicesDataFromProps[category][0].id);
+                    } else {
+                      setSelectedPageId(null);
+                    }
+                  }}
+                  className={`
+                    whitespace-nowrap py-2 px-6 border-b-2 font-medium text-sm capitalize
+                    ${selectedCategory === category
+                      ? 'border-blue-500 ml-2 text-left text-white font-bold bg-banner rounded-t-lg shadow-xl'
+                      : 'border-transparent text-black font-semibold hover:text-gray-700 bg-blue-50 rounded-t-lg shadow-xl hover:border-gray-300'
+                    }
+                  `}
+                >
+                  {category.charAt(0).toUpperCase() + category.slice(1)}
+                </button>
+              ))}
+            </nav>
+          </div>
         </div>
 
-        <div className="flex flex-wrap gap-2 justify-start items-start w-3/4">
-          {servicesDataFromProps[selectedCategory] && servicesDataFromProps[selectedCategory].map((page) => {
-            const heroBlock =
-              page.blocks.find((b) => b.blockName === "HeroBlock") ||
-              page.blocks[0];
-            const serviceName =
-              heroBlock?.config?.title ||
-              page.name ||
-              page.title ||
-              `Service ${page.id}`;
+        {/* Service Pages Tabs Section */}
+        <div className="bg-black border-b border-gray-300">
+          <div className="px-4 py-2">
+            <h3 className="text-white text-sm font-medium mb-2">Service Pages</h3>
+            <nav className="-mb-px flex flex-wrap gap-1" aria-label="Service Page Tabs">
+              {servicesDataFromProps[selectedCategory] && servicesDataFromProps[selectedCategory].map((page) => {
+                const heroBlock =
+                  page.blocks.find((b) => b.blockName === "HeroBlock") ||
+                  page.blocks[0];
+                const serviceName =
+                  heroBlock?.config?.title ||
+                  page.name ||
+                  page.title ||
+                  `Service ${page.id}`;
 
-            return (
-              <button
-                key={page.id}
-                onClick={() => setSelectedPageId(page.id)}
-                className={`px-3 py-1 rounded text-xs ${selectedPageId === page.id ? 'bg-blue text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-              >
-                {serviceName}
-              </button>
-            );
-          })}
+                return (
+                  <button
+                    key={page.id}
+                    onClick={() => setSelectedPageId(page.id)}
+                    className={`
+                      whitespace-nowrap py-2 px-4 border-b-2 font-medium text-xs
+                      ${selectedPageId === page.id
+                        ? 'border-blue-500 text-white font-bold bg-banner rounded-t-lg shadow-xl'
+                        : 'border-transparent text-black font-semibold hover:text-gray-700 bg-blue-50 rounded-t-lg shadow-xl hover:border-gray-300'
+                      }
+                    `}
+                  >
+                    {serviceName}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
         </div>
       </div>
     );
   };
 
-  // SVG icons
+  // Icons
   const PencilIcon = (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -494,7 +521,7 @@ const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange
       viewBox="0 0 24 24"
       strokeWidth="1.5"
       stroke="currentColor"
-      className="w-5 h-5" // Adjusted size for toggle button
+      className="w-5 h-5"
     >
       <path
         strokeLinecap="round"
@@ -504,162 +531,91 @@ const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange
     </svg>
   );
 
-  const CheckIcon = (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
-    </svg>
-  );
+  // Get active block data for TopStickyEditPanel
+  const getActiveBlockData = () => {
+    if (activeEditBlockIndex === null || !currentPage) return null;
+    
+    const block = currentPage.blocks[activeEditBlockIndex];
+    if (!block) return null;
+    
+    const Component = blockMap[block.blockName];
+    if (!Component) return null;
+
+    return {
+      blockName: block.blockName,
+      config: block.config,
+      themeColors,
+      onPanelChange: (newConfig) => handleBlockConfigUpdate(activeEditBlockIndex, newConfig),
+      onFileChange: (fieldKey, fileOrFileObject) => handleFileChangeForBlock(activeEditBlockIndex, fieldKey, fileOrFileObject),
+      getDisplayUrl: getDisplayUrlHelper,
+      tabsConfig: Component.tabsConfig ? Component.tabsConfig(
+        block.config,
+        (newConfig) => handleBlockConfigUpdate(activeEditBlockIndex, newConfig),
+        themeColors,
+        { /* sitePalette - could be populated if needed */ }
+      ) : null,
+      // Legacy support for blocks without tabsConfig
+      EditorPanelComponent: Component.EditorPanel,
+    };
+  };
 
   /* 
   =============================================
   renderBlockEditor
   ---------------------------------------------
-  Renders the editor for a specific block.
+  Renders each block with selection capability for editing.
   =============================================
   */
   const renderBlockEditor = (block, blockIndex) => {
     if (!currentPage) return null;
     const Component = blockMap[block.blockName];
-    const isEditingThisBlock = activeEditBlockIndex === blockIndex;
-    if (!Component) return <div key={`unknown-${blockIndex}`} className="bg-red-100 p-4 mb-0"><p className="text-red-700">Unknown block type: {block.blockName}</p></div>;
+    const isActiveBlock = activeEditBlockIndex === blockIndex;
+    
+    if (!Component) {
+      return (
+        <div key={`unknown-${blockIndex}`} className="bg-red-100 p-4 mb-0">
+          <p className="text-red-700">Unknown block type: {block.blockName}</p>
+        </div>
+      );
+    }
+
     const blockConfig = block.config || {};
+    
     return (
-      <div key={block.uniqueKey || blockIndex} className="relative border-t border-b border-gray-300 mb-0 bg-white overflow-hidden">
-        <div className="absolute top-2 right-2 z-40">
-          <button type="button" onClick={() => setActiveEditBlockIndex(isEditingThisBlock ? null : blockIndex)} className={`${isEditingThisBlock ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-700 hover:bg-gray-600'} text-white rounded-full p-2 shadow-lg transition-colors`} title={isEditingThisBlock ? "Done Editing" : "Edit Block"}>
-            {isEditingThisBlock ? CheckIcon : PencilIcon}
+      <div 
+        key={block.uniqueKey || blockIndex} 
+        className={`relative border-t border-b border-gray-300 mb-0 bg-white overflow-hidden group ${isActiveBlock ? 'ring-2 ring-blue-500 ring-inset' : ''}`}
+      >
+        {/* Block Selection/Edit Button */}
+        <div className="absolute top-2 right-2 z-30">
+          <button 
+            type="button" 
+            onClick={() => {
+              if (isActiveBlock) {
+                setActiveEditBlockIndex(null);
+                setIsEditPanelOpen(false);
+              } else {
+                setActiveEditBlockIndex(blockIndex);
+                setIsEditPanelOpen(true);
+              }
+            }}
+            className={`${isActiveBlock ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'} text-white rounded-full p-2 shadow-lg transition-colors opacity-70 group-hover:opacity-100`}
+            title={isActiveBlock ? "Close Editor" : "Edit Block"}
+          >
+            {PencilIcon}
           </button>
         </div>
+
+        {/* Render Block with Inline Editing Support */}
         <Component 
           config={blockConfig} 
-          readOnly={!isEditingThisBlock} 
-          onConfigChange={(newFullConfig) => handleBlockConfigUpdate(blockIndex, newFullConfig)}
+          readOnly={!isActiveBlock} // Enable inline editing when block is active
+          onConfigChange={isActiveBlock ? (newConfig) => handleBlockConfigUpdate(blockIndex, newConfig) : undefined}
+          onFileChange={isActiveBlock ? (fieldKey, fileOrFileObject) => handleFileChangeForBlock(blockIndex, fieldKey, fileOrFileObject) : undefined}
           getDisplayUrl={getDisplayUrlHelper}
-          onFileChange={(fieldKey, fileOrFileObject) => handleFileChangeForBlock(blockIndex, fieldKey, fileOrFileObject)}
-          themeColors={themeColors} // Pass themeColors here
+          themeColors={themeColors}
+          onToggleEditor={isActiveBlock ? () => setIsEditPanelOpen(!isEditPanelOpen) : undefined}
         />
-        {isEditingThisBlock && Component.EditorPanel && (
-          <div className="border-t border-gray-200 bg-gray-100 p-4">
-            <h3 className="text-md font-semibold text-gray-700 mb-3">{block.blockName} - Edit Panel</h3>
-            <Component.EditorPanel
-              currentConfig={blockConfig}
-              onPanelConfigChange={(updatedFields) => {
-                const currentBlockConfig = currentPage.blocks[blockIndex].config || {};
-                const newConfig = { ...currentBlockConfig, ...updatedFields };
-                handleBlockConfigUpdate(blockIndex, newConfig);
-              }}
-              onPanelFileChange={(fieldKey, fileOrFileObject) => {
-                handleFileChangeForBlock(blockIndex, fieldKey, fileOrFileObject);
-              }}
-              getDisplayUrl={getDisplayUrlHelper}
-              themeColors={themeColors}
-            />
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  /* 
-  =============================================
-  handleMoveBlock
-  ---------------------------------------------
-  Moves a block up or down in the page layout.
-  =============================================
-  */
-  const handleMoveBlock = (blockIndex, direction) => {
-    if (!currentPage) return;
-    const updatedBlocks = [...currentPage.blocks];
-    const newIndex = direction === "up" ? blockIndex - 1 : blockIndex + 1;
-    if (newIndex < 0 || newIndex >= updatedBlocks.length) return;
-    const temp = updatedBlocks[blockIndex];
-    updatedBlocks[blockIndex] = updatedBlocks[newIndex];
-    updatedBlocks[newIndex] = temp;
-    updatePageAndPropagate({ ...currentPage, blocks: updatedBlocks });
-  };
-
-  /* 
-  =============================================
-  handleRemoveBlock
-  ---------------------------------------------
-  Removes a block from the page layout.
-  =============================================
-  */
-  const handleRemoveBlock = (blockIndex) => {
-    if (!currentPage || !window.confirm("Are you sure you want to remove this block?")) return;
-    const updatedBlocks = currentPage.blocks.filter((_, index) => index !== blockIndex);
-    updatePageAndPropagate({ ...currentPage, blocks: updatedBlocks });
-  };
-
-  /* 
-  =============================================
-  renderObjectField
-  ---------------------------------------------
-  Renders form controls for object-type configuration fields.
-  =============================================
-  */
-  const renderObjectField = (blockIndex, key, obj) => {
-    return (
-      <div key={key} className="mb-3 border p-2 rounded">
-        <label className="block mb-1 font-semibold text-gray-300">{key} (Object):</label>
-        <div className="space-y-2">
-          {Object.entries(obj).map(([subKey, subValue]) => {
-            if (typeof subValue === "boolean") {
-              return (
-                <div key={subKey} className="mb-2">
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={subValue}
-                      onChange={(e) => {
-                        const updatedObj = {
-                          ...obj,
-                          [subKey]: e.target.checked,
-                        };
-                        handleConfigChange(blockIndex, key, updatedObj);
-                      }}
-                      className="mr-2"
-                    />
-                    <span>{subKey}</span>
-                  </label>
-                </div>
-              );
-            } else if (typeof subValue === "number") {
-              return (
-                <div key={subKey} className="mb-2">
-                  <label className="block mb-1">{subKey}:</label>
-                  <input
-                    type="number"
-                    value={subValue}
-                    onChange={(e) => {
-                      const updatedObj = {
-                        ...obj,
-                        [subKey]: parseFloat(e.target.value),
-                      };
-                      handleConfigChange(blockIndex, key, updatedObj);
-                    }}
-                    className="w-full p-1 border rounded text-gray-800"
-                  />
-                </div>
-              );
-            } else {
-              return (
-                <div key={subKey} className="mb-2">
-                  <label className="block mb-1">{subKey}:</label>
-                  <input
-                    type="text"
-                    value={subValue || ""}
-                    onChange={(e) => {
-                      const updatedObj = { ...obj, [subKey]: e.target.value };
-                      handleConfigChange(blockIndex, key, updatedObj);
-                    }}
-                    className="w-full p-1 border rounded text-gray-800"
-                  />
-                </div>
-              );
-            }
-          })}
-        </div>
       </div>
     );
   };
@@ -673,7 +629,6 @@ const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange
   */
   const renderAddBlockSection = () => {
     const blockOptions = Object.keys(blockMap).map((blockName) => {
-      // Create more user-friendly display names
       const displayNames = {
         HeroBlock: "Hero Section",
         GeneralList: "Service Options List",
@@ -712,10 +667,11 @@ const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange
       updatedBlocks.splice(insertIndex, 0, newBlock);
       updatePageAndPropagate({ ...currentPage, blocks: updatedBlocks });
       setActiveEditBlockIndex(insertIndex);
+      setIsEditPanelOpen(true);
     };
 
     return (
-      <div className="flex items-center gap-3 mb-4 p-3 bg-white border border-gray-300 rounded">
+      <div className="flex items-center gap-3 mb-0 p-3 bg-white border-b border-gray-300">
         <select
           value={selectedBlockType}
           onChange={(e) => setSelectedBlockType(e.target.value)}
@@ -741,7 +697,6 @@ const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange
    * Get default configuration for a block type
    */
   const getDefaultConfigForBlock = (blockType) => {
-    // Default configurations for different block types
     const defaults = {
       HeroBlock: {
         backgroundImage: { url: "", file: null, name: "", originalUrl: ""},
@@ -762,7 +717,16 @@ const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange
           },
         ],
       },
-      // Add defaults for other block types as needed
+      VideoCTA: {
+        videoSrc: { url: "", file: null, name: "", originalUrl: "" },
+        title: "Ready to Get Started?",
+        description: "Contact us today for more information.",
+        buttonText: "Contact Us",
+        buttonLink: "/#contact",
+        textColor: "#FFFFFF",
+        textAlignment: "center",
+        overlayOpacity: 0.5,
+      },
       GridImageTextBlock: {
         columns: 2,
         items: [
@@ -776,11 +740,10 @@ const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange
       },
     };
 
-    // Return the default config for the requested block type, or a generic empty object
     return defaults[blockType] || {};
   };
 
-  if (!currentPage && !servicesDataFromProps) { // Initial loading state check
+  if (!currentPage && !servicesDataFromProps) {
     return <div className="min-h-screen flex items-center justify-center"><p>Loading service editor...</p></div>;
   }
   if (!servicesDataFromProps || Object.keys(servicesDataFromProps).length === 0) {
@@ -788,26 +751,39 @@ const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange
   }
   if (!currentPage) {
     return (
-        <div className="p-4">
-            {renderPageButtons()} {/* Still show page buttons to allow selection if possible */}
+        <div className="">
+            {renderPageButtons()}
             <p className="text-center mt-4">Please select a service page to edit, or page not found for current selection.</p>
         </div>
     );
   }
 
   return (
-    <div className="p-4">
-      {renderPageButtons()}
-      {renderAddBlockSection()}
-      <div className="border border-gray-300 rounded overflow-hidden">
-        {currentPage.blocks.map((block, blockIndex) => renderBlockEditor(block, blockIndex))}
+    <div className="relative">
+      {/* Top Sticky Edit Panel */}
+      <TopStickyEditPanel
+        isOpen={isEditPanelOpen}
+        onClose={() => {
+          setIsEditPanelOpen(false);
+          setActiveEditBlockIndex(null);
+        }}
+        activeBlockData={getActiveBlockData()}
+      />
+
+      {/* Main Content */}
+      <div className="">
+        {renderPageButtons()}
+        {renderAddBlockSection()}
+        <div className="overflow-hidden">
+          {currentPage.blocks.map((block, blockIndex) => renderBlockEditor(block, blockIndex))}
+        </div>
       </div>
     </div>
   );
 };
 
 ServiceEditPage.propTypes = {
-  servicesData: PropTypes.object, // Expects the full services object
+  servicesData: PropTypes.object,
   onServicesChange: PropTypes.func.isRequired,
   themeColors: PropTypes.object,
 };

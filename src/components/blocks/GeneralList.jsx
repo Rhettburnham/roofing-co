@@ -1,9 +1,12 @@
-
 // src/components/blocks/GeneralList.jsx
 import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { FaCheckCircle, FaPlus, FaTrash, FaImage, FaTimes, FaPencilAlt } from "react-icons/fa";
 import ReactMarkdown from "react-markdown";
+import PanelImagesController from "../common/PanelImagesController";
+import PanelStylingController from "../common/PanelStylingController";
+import ThemeColorPicker from "../common/ThemeColorPicker";
+import PanelTextSectionController from '../common/PanelTextSectionController';
 
 /**
  * GeneralList
@@ -114,6 +117,7 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
 
   const displayTitle = rawSectionTitle || rawTitle || "Service List";
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [isEditing, setIsEditing] = useState(false);
 
   const currentGetDisplayUrl = typeof getDisplayUrl === 'function' ? getDisplayUrl : getDisplayUrlHelper;
   const hasStructuredItems = items.length > 0 && typeof items[0] === "object" && items[0] !== null && !Array.isArray(items[0]);
@@ -198,6 +202,10 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
   const commonSectionWrapperClasses = "my-6 container mx-auto px-4 md:px-16 relative group";
   const commonCardClasses = "bg-white rounded-lg shadow-lg p-6 mx-auto max-w-4xl"; // Centered card with max-width
   const editModeBorderClass = "border-2 border-blue-400/50";
+
+  const handleToggleEdit = () => {
+    setIsEditing(prev => !prev);
+  };
 
   // --- READ-ONLY RENDERING --- 
   if (readOnly) {
@@ -301,14 +309,18 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
   const activeItemForEdit = items[selectedIndex] || {};
 
     return (
-    <section className={`${commonSectionWrapperClasses} ${!readOnly && onToggleEditor ? 'py-8' : ''} ${!readOnly ? 'pb-12' : ''}`}>
-      {!readOnly && onToggleEditor && (
+    <section className={`${commonSectionWrapperClasses} ${!readOnly && isEditing ? 'py-8' : ''} ${!readOnly ? 'pb-12' : ''}`}>
+      {!readOnly && (
         <button
-          onClick={onToggleEditor}
-          className="absolute top-2 right-2 z-20 p-2 bg-gray-700 text-white rounded-full shadow-lg hover:bg-gray-800 transition-colors opacity-50 group-hover:opacity-100"
-          title="Open Editor Panel"
+          onClick={handleToggleEdit}
+          className={`absolute top-4 right-4 z-50 ${isEditing ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-700 hover:bg-gray-600'} text-white rounded-full p-2 shadow-lg transition-colors`}
+          title={isEditing ? "Finish Editing" : "Edit List"}
         >
-          <FaPencilAlt size={16} />
+          {isEditing ? (
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487a2.032 2.032 0 112.872 2.872L7.5 21.613H4v-3.5L16.862 4.487z"/></svg>
+          )}
         </button>
       )}
       <div className="text-center mb-4">
@@ -319,7 +331,7 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
           className="text-2xl md:text-3xl font-semibold text-gray-800 inline-block"
           inputClassName="text-2xl md:text-3xl font-semibold text-gray-800 text-center w-auto"
           placeholder="Section Title"
-          readOnly={readOnly}
+          readOnly={readOnly || !isEditing}
         />
       </div>
 
@@ -340,10 +352,10 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
                   className={`font-semibold ${selectedIndex === index ? "text-white" : "text-black"}`} // Match button text color
                   inputClassName={`font-semibold w-auto ${selectedIndex === index ? "text-white bg-second-accent/80" : "text-black bg-accent/80"}`}
                   placeholder="Item Name"
-                  readOnly={readOnly}
+                  readOnly={readOnly || !isEditing}
                 />
               </button>
-              {!readOnly && (
+              {!readOnly && isEditing && (
                 <button 
                   onClick={() => removeItem(index)} 
                   className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full shadow-md opacity-0 group-hover/itembtn:opacity-100 hover:bg-red-600 transition-opacity duration-150 z-10"
@@ -357,8 +369,8 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
         </div>
       )}
 
-      <div className={`${commonCardClasses} ${!readOnly ? editModeBorderClass : ''} relative`}> 
-        {!readOnly && (
+      <div className={`${commonCardClasses} ${!readOnly && isEditing ? editModeBorderClass : ''} relative`}> 
+        {!readOnly && isEditing && (
           <div className="absolute top-2 right-2 flex space-x-1 z-10">
             <button 
               onClick={addItem} 
@@ -370,7 +382,7 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
           </div>
         )}
         
-        {!hasStructuredItems && !readOnly && (
+        {!hasStructuredItems && !readOnly && isEditing && (
           <div className="absolute top-2 left-2 flex space-x-1 z-10 items-center">
             <span className="text-xs text-gray-500 mr-1">Style:</span>
             <select 
@@ -402,9 +414,9 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
                   inputClassName="text-gray-700 text-lg w-full"
                   isTextarea={String(item).length > 70 || String(item).includes('\n')}
                   placeholder="List item content"
-                  readOnly={readOnly}
+                  readOnly={readOnly || !isEditing}
                 />
-                {!readOnly && (
+                {!readOnly && isEditing && (
                   <button 
                     onClick={() => removeItem(index)} 
                     className="ml-2 p-1 text-red-500 hover:text-red-600 opacity-0 group-hover/simpleitem:opacity-100 transition-opacity duration-150"
@@ -418,7 +430,7 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
             {items.length === 0 && 
               <div className="text-gray-500 text-center py-10">
                 <p className="mb-2">No items yet.</p>
-                {!readOnly && (
+                {!readOnly && isEditing && (
                   <button 
                     onClick={addItem} 
                     className="px-3 py-1.5 bg-blue-500 text-white rounded-md shadow-md hover:bg-blue-600 transition-colors text-sm"
@@ -435,7 +447,7 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
           items.length === 0 ? (
              <div className="text-gray-500 text-center py-10">
                 <p className="mb-2">No items yet. Add a structured item to begin.</p>
-                {!readOnly && (
+                {!readOnly && isEditing && (
                   <button 
                     onClick={addItem} 
                     className="px-3 py-1.5 bg-blue-500 text-white rounded-md shadow-md hover:bg-blue-600 transition-colors text-sm"
@@ -449,9 +461,6 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
                 key={activeItemForEdit.id || selectedIndex} // Keyed for re-render on selection change
                 className="w-full"
             >
-                {/* Name is edited via the buttons above, so display it statically here or omit if redundant */} 
-                {/* <h3 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 text-gray-800 text-center md:text-left">{activeItemForEdit.name}</h3> */} 
-                
                 <div className="mb-3">
                   <EditableText
                     value={activeItemForEdit.description || ""}
@@ -461,11 +470,11 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
                     inputClassName="text-gray-700 text-sm sm:text-base md:text-lg w-full"
                     isTextarea
                     placeholder="Item description..."
-                    readOnly={readOnly}
+                    readOnly={readOnly || !isEditing}
                   />
                 </div>
 
-                { (activeItemForEdit.advantages && activeItemForEdit.advantages.length > 0) || !readOnly ? (
+                { (activeItemForEdit.advantages && activeItemForEdit.advantages.length > 0) || (!readOnly && isEditing) ? (
                     <div className="mb-3">
                         <h4 className="text-lg sm:text-xl font-semibold mb-1 text-gray-700">Advantages</h4>
                         <ul className="grid grid-cols-1 @[600px]:grid-cols-2 gap-x-4 gap-y-0.5 text-gray-600 pl-1">
@@ -479,9 +488,9 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
                             className="text-gray-600 text-sm md:text-base flex-grow"
                             inputClassName="text-gray-600 text-sm md:text-base w-full"
                             placeholder="Advantage"
-                            readOnly={readOnly}
+                            readOnly={readOnly || !isEditing}
                             />
-                            {!readOnly && (
+                            {!readOnly && isEditing && (
                               <button 
                                 onClick={() => removeAdvantage(selectedIndex, advIndex)}
                                 className="ml-1 p-0.5 text-red-500 hover:text-red-600 opacity-0 group-hover/advantage:opacity-100 transition-opacity duration-150"
@@ -494,20 +503,19 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
                         ))}
                         </ul>
                         {/* Add Advantage Button */}
-                        {!readOnly && (
+                        {!readOnly && isEditing && (
                             <button 
                                 onClick={() => addAdvantage(selectedIndex)} 
                                 className="mt-1.5 text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded-md shadow"
                             >
                                 <FaPlus size={10} className="inline mr-1" /> Add Advantage
                             </button>
-                        )
-                        }
-                        {(activeItemForEdit.advantages || []).length === 0 && !readOnly && <p className="text-xs text-gray-400 ml-2 italic mt-1">No advantages listed. Click 'Add Advantage' to add one.</p>}
+                        )}
+                        {(activeItemForEdit.advantages || []).length === 0 && !readOnly && isEditing && <p className="text-xs text-gray-400 ml-2 italic mt-1">No advantages listed. Click 'Add Advantage' to add one.</p>}
                     </div>
                 ) : null}
                 
-                {(activeItemForEdit.pictures && activeItemForEdit.pictures.length > 0) || !readOnly ? (
+                {(activeItemForEdit.pictures && activeItemForEdit.pictures.length > 0) || (!readOnly && isEditing) ? (
                     <div className="mb-4">
                         <h4 className="text-lg sm:text-xl font-semibold mb-2 text-gray-700">Gallery</h4>
                         {(activeItemForEdit.pictures && activeItemForEdit.pictures.length > 0) ? (
@@ -516,11 +524,11 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
                                 <div key={picIdx} className="aspect-square overflow-hidden rounded-lg shadow-md"><img src={currentGetDisplayUrl(pic)} alt={`Preview ${picIdx}`} className="w-full h-full object-cover"/></div>
                                 ))}
                             </div>
-                        ) : <p className="text-xs text-gray-400 italic mt-1">No pictures. Add pictures using the editor panel.</p>}
+                        ) : (!readOnly && isEditing && <p className="text-xs text-gray-400 italic mt-1">No pictures. Add pictures using the editor panel.</p>)}
                     </div>
                 ) : null}
 
-                { (activeItemForEdit.colorPossibilities || activeItemForEdit.installationTime || !readOnly) ? (
+                { (activeItemForEdit.colorPossibilities || activeItemForEdit.installationTime || (!readOnly && isEditing)) ? (
                     <div className="text-sm text-gray-600 space-y-1">
                         <div>
                         <strong className="text-gray-700">Color Options: </strong>
@@ -531,7 +539,7 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
                             className="text-gray-600 text-sm"
                             inputClassName="text-gray-600 text-sm w-auto inline-block"
                             placeholder="e.g., Various colors"
-                            readOnly={readOnly}
+                            readOnly={readOnly || !isEditing}
                         />
                         </div>
                         <div>
@@ -542,11 +550,11 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
                             tag="span"
                             className="text-gray-600 text-sm"
                             inputClassName="text-gray-600 text-sm w-auto inline-block"
-                            placeholder="e.g., 1-2 days"
-                            readOnly={readOnly}
+                            placeholder="e.g., 2-3 days"
+                            readOnly={readOnly || !isEditing}
                         />
-          </div>
-        </div>
+                        </div>
+                    </div>
                 ) : null}
             </motion.div>
           )
@@ -556,120 +564,183 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
   );
 };
 
-GeneralList.EditorPanel = ({ currentConfig, onPanelConfigChange, onPanelFileChange, getDisplayUrl, themeColors }) => {
-  const {
-    sectionTitle: rawSectionTitle,
-    title: rawTitle,
-    items = [],
-    listStyle = "none",
-  } = currentConfig;
+// Static method for TopStickyEditPanel integration
+GeneralList.tabsConfig = (config, onControlsChange, themeColors, sitePalette) => {
+  const hasStructuredItems = config?.items?.length > 0 && typeof config.items[0] === "object" && config.items[0] !== null && !Array.isArray(config.items[0]);
 
-  const hasStructuredItems = items.length > 0 && typeof items[0] === "object" && items[0] !== null && !Array.isArray(items[0]);
-  const currentGetDisplayUrl = typeof getDisplayUrl === 'function' ? getDisplayUrl : getDisplayUrlHelper;
-
-  const addPictureSlot = (itemIndex) => {
-    const newItems = items.map((item, i) => {
-      if (i === itemIndex && typeof item === 'object' && item !== null) {
-        return { ...item, pictures: [...(item.pictures || []), { url: '', name: 'New Picture', file: null, originalUrl: '' }] };
-      }
-      return item;
-    });
-    onPanelConfigChange({ ...currentConfig, items: newItems });
-  };
-
-  const removePicture = (itemIndex, picIndex) => {
-    const newItems = items.map((item, i) => {
-      if (i === itemIndex && typeof item === 'object' && item !== null) {
-        const picToRemove = (item.pictures || [])[picIndex];
-        if (picToRemove && typeof picToRemove === 'object' && picToRemove.url && picToRemove.url.startsWith('blob:')) {
-          URL.revokeObjectURL(picToRemove.url);
-        }
-        return { ...item, pictures: (item.pictures || []).filter((_,pIdx) => pIdx !== picIndex) };
-      }
-      return item;
-    });
-    onPanelConfigChange({ ...currentConfig, items: newItems });
-  };
-  
-  const handlePictureFileChange = (itemIndex, picIndex, file) => {
-     if (file && onPanelFileChange) {
-        const pathData = { field: 'pictures', blockItemIndex: itemIndex, pictureIndex: picIndex };
-        onPanelFileChange(pathData, file); 
-     }
-  };
-  
-  const handlePictureUrlChange = (itemIndex, picIndex, url) => {
-    const newItems = items.map((item, i) => {
-      if (i === itemIndex && typeof item === 'object' && item !== null) {
-        const newPictures = (item.pictures || []).map((pic, pIdx) => {
-          if (pIdx === picIndex) {
-            if (typeof pic === 'object' && pic.file && pic.url && pic.url.startsWith('blob:')) {
-              URL.revokeObjectURL(pic.url);
-            }
-            return { file: null, url: url, name: url.split('/').pop() || `image_${pIdx}`, originalUrl: url };
-          }
-          return pic;
-        });
-        return { ...item, pictures: newPictures };
-      }
-      return item;
-    });
-    onPanelConfigChange({ ...currentConfig, items: newItems });
-  };
-
-  return (
-    <div className="p-3 space-y-3 bg-gray-800 text-gray-200 rounded-b-md max-h-[70vh] overflow-y-auto">
-      {hasStructuredItems && items.length > 0 && (
-        <div className="border-t border-gray-700 pt-3">
-          <h4 className="text-sm font-semibold mb-2">Manage Item Images ({items.length})</h4>
-          {items.map((item, index) => {
-            if (typeof item !== 'object' || item === null) {
-              return (
-                <div key={index} className="p-2.5 mb-2.5 bg-gray-750 border border-gray-600 rounded-md">
-                  <span className="text-xs font-medium text-gray-400">Item {index + 1} (Not a structured item, cannot manage images)</span>
-                </div>
-              );
-            }
-            return (
-              <div key={item.id || index} className="p-2.5 mb-2.5 bg-gray-750 border border-gray-600 rounded-md">
-                <div className="flex justify-between items-center mb-1.5">
-                  <span className="text-xs font-medium text-gray-400">Images for: {item.name || `Item ${index + 1}`}</span>
-                </div>
-
-                <div>
-                  <label className="text-xs text-gray-400 block mb-0.5">Pictures:</label>
-                  {(item.pictures || []).map((pic, picIdx) => (
-                    <div key={picIdx} className="flex items-center space-x-1 mb-1 p-1 bg-gray-700 rounded">
-                      {currentGetDisplayUrl(pic) && <img src={currentGetDisplayUrl(pic)} alt={`Thumb ${picIdx}`} className="h-8 w-8 object-cover rounded"/>}
-                      <input type="text" placeholder="Image URL" value={(typeof pic === 'object' && pic !== null ? pic.url : String(pic)) || ''} onChange={(e) => handlePictureUrlChange(index, picIdx, e.target.value)} className="flex-grow p-1 bg-gray-600 border-gray-500 rounded text-xs" />
-                      <label className="text-xs bg-teal-600 hover:bg-teal-500 text-white px-1.5 py-1 rounded cursor-pointer">
-                        <FaImage size={10} className="inline"/>
-                        <input type="file" accept="image/*" className="hidden" onChange={(e) => handlePictureFileChange(index, picIdx, e.target.files?.[0])} />
-                      </label>
-                      <button onClick={() => removePicture(index, picIdx)} className="text-red-500 hover:text-red-400 p-0.5"><FaTimes size={10}/></button>
-                    </div>
-                  ))}
-                  <button onClick={() => addPictureSlot(index)} className="text-xs bg-green-600 hover:bg-green-500 text-white px-1.5 py-0.5 rounded mt-0.5"><FaPlus size={8} className="inline mr-0.5"/>Add Picture Slot</button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+  return {
+    general: () => {
+      // Determine which control type to use based on the current items structure
+      const controlType = hasStructuredItems ? 'items' : 'simpleItems';
       
-      {!hasStructuredItems && (
-        <div className="p-3 text-center text-gray-400 text-sm">
-          Image management is available for structured list items. This list is currently simple.
+      return (
+        <PanelTextSectionController
+          currentData={config}
+          onControlsChange={onControlsChange}
+          controlType={controlType}
+          blockType="GeneralList"
+          sectionConfig={hasStructuredItems ? {
+            label: 'Service Items',
+            itemLabel: 'Service',
+            arrayFieldName: 'items',
+            itemTemplate: {
+              id: Date.now(),
+              name: "New Service",
+              description: "Service description",
+              advantages: ["Advantage 1"],
+              colorPossibilities: "Various",
+              installationTime: "1-2 days",
+              pictures: []
+            },
+            showIcons: false,
+            showDescriptions: true,
+            isStructured: true
+          } : {
+            label: 'List Items',
+            itemLabel: 'Item',
+            arrayFieldName: 'items',
+            itemTemplate: "New List Item",
+            showIcons: false,
+            showDescriptions: false,
+            isSimple: true
+          }}
+        />
+      );
+    },
+    
+    images: () => hasStructuredItems ? (
+      <PanelImagesController
+        currentData={{ 
+          images: config?.items?.reduce((acc, item, itemIndex) => {
+            if (item?.pictures) {
+              item.pictures.forEach((pic, picIndex) => {
+                acc.push({
+                  ...pic,
+                  id: `item_${itemIndex}_pic_${picIndex}`,
+                  name: `${item.name || `Item ${itemIndex + 1}`} - Image ${picIndex + 1}`,
+                  itemIndex,
+                  picIndex
+                });
+              });
+            }
+            return acc;
+          }, []) || []
+        }}
+        onControlsChange={(updatedData) => {
+          // Convert flat images back to nested structure
+          const newItems = [...(config?.items || [])];
+          updatedData.images.forEach(img => {
+            if (img.itemIndex !== undefined && img.picIndex !== undefined) {
+              if (!newItems[img.itemIndex]) newItems[img.itemIndex] = { pictures: [] };
+              if (!newItems[img.itemIndex].pictures) newItems[img.itemIndex].pictures = [];
+              newItems[img.itemIndex].pictures[img.picIndex] = img;
+            }
+          });
+          onControlsChange({ ...config, items: newItems });
+        }}
+        imageArrayFieldName="images"
+        getItemName={(img) => img?.name || 'List Item Image'}
+      />
+    ) : (
+      <div className="p-6 text-center text-gray-500">
+        <p className="mb-2">Image management is available for structured list items.</p>
+        <p className="text-sm">Convert this to a structured list to manage individual item images.</p>
+      </div>
+    ),
+    
+    colors: () => (
+      <div className="p-4 space-y-4">
+        <h3 className="text-lg font-semibold mb-4 text-gray-700">Color Settings</h3>
+        
+        <ThemeColorPicker
+          label="Text Color"
+          fieldName="textColor"
+          currentColorValue={config?.textColor || themeColors?.text || '#374151'}
+          onColorChange={(fieldName, value) => onControlsChange({ ...config, [fieldName]: value })}
+          themeColors={themeColors}
+        />
+        
+        <ThemeColorPicker
+          label="Background Color"
+          fieldName="backgroundColor"
+          currentColorValue={config?.backgroundColor || themeColors?.background || '#FFFFFF'}
+          onColorChange={(fieldName, value) => onControlsChange({ ...config, [fieldName]: value })}
+          themeColors={themeColors}
+        />
+        
+        <ThemeColorPicker
+          label="Accent Color (Selected Item)"
+          fieldName="accentColor"
+          currentColorValue={config?.accentColor || themeColors?.accent || '#3B82F6'}
+          onColorChange={(fieldName, value) => onControlsChange({ ...config, [fieldName]: value })}
+          themeColors={themeColors}
+        />
+      </div>
+    ),
+    
+    styling: () => (
+      <div className="p-4 space-y-4">
+        <h3 className="text-lg font-semibold mb-4 text-gray-700">Layout & Style Settings</h3>
+        
+        {!hasStructuredItems && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              List Style
+            </label>
+            <select
+              value={config?.listStyle || 'none'}
+              onChange={(e) => onControlsChange({ ...config, listStyle: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="none">No Bullets/Numbers</option>
+              <option value="bullet">Bullet Points</option>
+              <option value="numbered">Numbered List</option>
+            </select>
+            <p className="mt-1 text-xs text-gray-500">
+              Choose how simple list items are displayed
+            </p>
+          </div>
+        )}
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Card Style
+          </label>
+          <select
+            value={config?.cardStyle || 'default'}
+            onChange={(e) => onControlsChange({ ...config, cardStyle: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="default">Default Cards</option>
+            <option value="minimal">Minimal Style</option>
+            <option value="elevated">Elevated Cards</option>
+            <option value="bordered">Bordered Style</option>
+          </select>
         </div>
-      )}
-
-      {hasStructuredItems && items.length === 0 && (
-         <div className="p-3 text-center text-gray-400 text-sm">
-          No items to manage images for. Add items in the main editor view.
-        </div>
-      )}
-    </div>
-  );
+        
+        {hasStructuredItems && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Gallery Grid
+            </label>
+            <select
+              value={config?.galleryColumns || 'auto'}
+              onChange={(e) => onControlsChange({ ...config, galleryColumns: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="auto">Auto (Responsive)</option>
+              <option value="2">2 Columns</option>
+              <option value="3">3 Columns</option>
+              <option value="4">4 Columns</option>
+            </select>
+            <p className="mt-1 text-xs text-gray-500">
+              Controls image gallery layout for structured items
+            </p>
+          </div>
+        )}
+      </div>
+    )
+  };
 };
 
 export default GeneralList;

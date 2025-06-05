@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from "react";
 
 const ConfigContext = createContext();
 
@@ -112,20 +112,31 @@ export const ConfigProvider = ({ children }) => {
   const [configId, setConfigId] = useState(null);
   const [virtualFS, setVirtualFS] = useState(null);
 
-  // Development mode flag
-  const isDevelopment = process.env.NODE_ENV === 'development';
+  // Development mode flag - memoized to prevent changes
+  const isDevelopment = useMemo(() => process.env.NODE_ENV === 'development', []);
+  
+  // Ref to prevent duplicate loads
+  const loadingRef = useRef(false);
+  const loadedRef = useRef(false);
 
-  // Apply colors to CSS variables
-  const applyColorsToCSS = (colorData) => {
+  // Apply colors to CSS variables - memoized
+  const applyColorsToCSS = useCallback((colorData) => {
     const normalizedColors = normalizeColorKeys(colorData);
     Object.entries(normalizedColors).forEach(([key, value]) => {
       const cssVarName = `--color-${key}`;
       document.documentElement.style.setProperty(cssVarName, value);
     });
     return normalizedColors;
-  };
+  }, []);
 
   useEffect(() => {
+    // Prevent duplicate loads
+    if (loadingRef.current || loadedRef.current) {
+      return;
+    }
+    
+    loadingRef.current = true;
+
     const loadConfig = async () => {
       try {
         setLoading(true);
@@ -196,6 +207,7 @@ export const ConfigProvider = ({ children }) => {
               setServices(finalServices);
             }
 
+            loadedRef.current = true;
             setLoading(false);
             return;
           } catch (err) {
@@ -376,29 +388,35 @@ export const ConfigProvider = ({ children }) => {
             };
           }
         }
+        
+        loadedRef.current = true;
       } catch (err) {
         console.error('Error loading config:', err);
         setError(err.message);
       } finally {
         setLoading(false);
+        loadingRef.current = false;
       }
     };
 
     loadConfig();
-  }, [isDevelopment]);
+  }, []); // Empty dependency array - only run once
+
+  // Memoize the context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({
+    config, 
+    colors, 
+    services, 
+    loading, 
+    error,
+    isCustomDomain,
+    isAuthenticated,
+    configId,
+    virtualFS
+  }), [config, colors, services, loading, error, isCustomDomain, isAuthenticated, configId, virtualFS]);
 
   return (
-    <ConfigContext.Provider value={{ 
-      config, 
-      colors, 
-      services, 
-      loading, 
-      error,
-      isCustomDomain,
-      isAuthenticated,
-      configId,
-      virtualFS
-    }}>
+    <ConfigContext.Provider value={contextValue}>
       {children}
       {/* <DebugPanel /> */}
     </ConfigContext.Provider>

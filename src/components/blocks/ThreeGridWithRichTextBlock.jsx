@@ -105,38 +105,64 @@ const ThreeGridWithRichTextBlock = ({
   config = {},
   readOnly = false,
   onConfigChange,
+  getDisplayUrl,
+  onFileChange,
+  themeColors,
   onToggleEditor,
 }) => {
+  const [isEditing, setIsEditing] = useState(false);
+
+  const handleToggleEdit = () => {
+    setIsEditing(prev => !prev);
+  };
+
+  // Standard MainPageForm icons
+  const PencilIcon = ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487a2.032 2.032 0 112.872 2.872L7.5 21.613H4v-3.5L16.862 4.487z"/></svg> );
+  const CheckIcon = ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> );
+
   const {
     paragraphText = "",
     items = [],
   } = config;
 
+  const handleLocalChange = (field, value, itemIndex = null) => {
+    if (onConfigChange) {
+      if (itemIndex !== null) {
+        const newItems = items.map((item, idx) => 
+          idx === itemIndex ? { ...item, [field]: value } : item
+        );
+        onConfigChange({ ...config, items: newItems });
+      } else {
+        onConfigChange({ ...config, [field]: value });
+      }
+    }
+  };
+
   if (!readOnly) {
     return (
-      <div className="relative group border-2 border-blue-400/50">
+      <section className={`relative w-full px-4 md:px-8 py-6 bg-gray-50 ${isEditing ? 'border-2 border-blue-400/50' : ''}`}>
+        <button
+          onClick={handleToggleEdit}
+          className={`absolute top-4 right-4 z-50 ${isEditing ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-700 hover:bg-gray-600'} text-white rounded-full p-2 shadow-lg transition-colors`}
+          title={isEditing ? "Finish Editing" : "Edit Three Grid Section"}
+        >
+          {isEditing ? CheckIcon : PencilIcon}
+        </button>
+
         <ThreeGridDisplay 
           config={config} 
-          readOnly={false} 
-          onConfigChange={onConfigChange} 
+          readOnly={!isEditing} 
+          onConfigChange={onConfigChange}
+          getDisplayUrl={getDisplayUrl}
         />
-        {onToggleEditor && (
-          <button
-            onClick={onToggleEditor}
-            className="absolute top-2 right-2 z-30 p-2 bg-gray-700 text-white rounded-full shadow-lg hover:bg-gray-800 transition-colors opacity-50 group-hover:opacity-100"
-            title="Open Editor Panel"
-          >
-            <FaPencilAlt size={16} />
-          </button>
-          )}
-        </div>
+      </section>
     );
   }
 
-  return <ThreeGridDisplay config={config} readOnly={true} />;
+  return <ThreeGridDisplay config={config} readOnly={true} getDisplayUrl={getDisplayUrl} />;
 };
 
-const ThreeGridDisplay = ({ config = {}, readOnly = false, onConfigChange }) => {
+const ThreeGridDisplay = ({ config = {}, readOnly = false, onConfigChange, getDisplayUrl }) => {
   const {
     paragraphText = "This is a default paragraph. Click to edit this text. You can add more details or introductory content here.",
     items = [
@@ -177,14 +203,14 @@ const ThreeGridDisplay = ({ config = {}, readOnly = false, onConfigChange }) => 
         <div className="grid gap-6 md:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 px-2 md:px-10">
           {(items || []).map((col, idx) => (
             <div key={col.id || idx} className="flex flex-col items-center text-center p-2 bg-white/30 rounded-lg shadow">
-              {getDisplayUrlHelper(col.image) && (
+              {getDisplayUrl(col.image) && (
                   <img
-                  src={getDisplayUrlHelper(col.image)}
+                  src={getDisplayUrl(col.image)}
                   alt={col.alt || col.title || "Grid item image"}
                   className="w-full h-[15vh] md:h-48 object-cover shadow-md rounded-t-lg"
                   />
                 )}
-              {!getDisplayUrlHelper(col.image) && !readOnly && (
+              {!getDisplayUrl(col.image) && !readOnly && (
                 <div className="w-full h-[15vh] md:h-48 bg-gray-200 flex items-center justify-center text-gray-500 text-sm rounded-t-lg">
                   Add image in Editor Panel
                 </div>

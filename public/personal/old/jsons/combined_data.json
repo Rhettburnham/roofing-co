@@ -1,96 +1,96 @@
 {
-  "navbar": {
-    "title": "COWBOYS-VAQUEROS",
-    "subtitle": "CONSTRUCTION",
-    "navLinks": [
-      {
-        "name": "About",
-        "href": "/about"
-      },
-      {
-        "name": "Booking",
-        "href": "/#book"
-      },
-      {
-        "name": "Services",
-        "href": "/#services"
-      },
-      {
-        "name": "Contact",
-        "href": "/#contact"
-      }
-    ],
-    "logo": "/assets/images/hero/logo.png",
-    "whiteLogo": "/assets/images/hero/logo.png",
-    "whiteLogoIcon": null,
-    "animation": {
-      "naturalOffsetVh": 11,
-      "slideUpDistanceVh": 0,
-      "logoSizeUnscrolled": { "width": "18vh", "height": "18vh" },
-      "logoSizeScrolled": { "width": "14vh", "height": "14vh" }
-    },
-    "textSizes": {
-      "unscrolled": { "base": "text-[7vw]", "md": "text-[8vh]", "lg": "text-[5vh]" },
-      "scrolled": { "base": "text-[3vw]", "md": "text-[5vh]" }
-    },
-    "logoTextDistance": {
-      "unscrolled": { "base": "mr-2", "md": "mr-3" },
-      "scrolled": { "base": "mr-2", "md": "mr-2" }
-    },
-    "navbarHeight": {
-      "unscrolled": { "base": "h-[16vh]", "md": "h-[16vh]" },
-      "scrolled": { "base": "h-[10vh]", "md": "h-[10vh]" }
-    },
-    "invertLogoColor": false
-  },
   "mainPageBlocks": [
     {
       "blockName": "HeroBlock",
       "config": {
-        "mainTitle": "COWBOY-VAQUEROS",
-        "subTitle": "CONSTRUTION",
         "residential": {
           "subServices": [
             {
               "title": "Shingling",
-              "slug": "residential-1-shingling"
+              "id": "service-shingling-001",
+              "originalTitle": "Shingling"
             },
             {
               "title": "Chimney",
-              "slug": "residential-2-chimney"
+              "id": "service-chimney-002",
+              "originalTitle": "Chimney"
             },
             {
               "title": "Siding",
-              "slug": "residential-3-siding"
+              "id": "service-siding-003",
+              "originalTitle": "Siding"
             },
             {
               "title": "Repairs",
-              "slug": "residential-4-repairs"
+              "id": "service-repairs-004",
+              "originalTitle": "Repairs"
             }
-          ]
+          ],
+          "icon": "Home",
+          "iconPack": "lucide"
         },
         "commercial": {
           "subServices": [
             {
               "title": "Metal Roof",
-              "slug": "commercial-1-metal-roof"
+              "id": "service-metal-roof-001",
+              "originalTitle": "Metal Roof"
             },
             {
               "title": "Flat Roof",
-              "slug": "commercial-2-flat-roof"
+              "id": "service-flat-roof-002",
+              "originalTitle": "Flat Roof"
             },
             {
               "title": "Restoration",
-              "slug": "commercial-3-restoration"
+              "id": "service-restoration-003",
+              "originalTitle": "Restoration"
             },
             {
               "title": "Maintenance",
-              "slug": "commercial-4-maintenance"
+              "id": "service-maintenance-004",
+              "originalTitle": "Maintenance"
             }
-          ]
+          ],
+          "icon": "Building2",
+          "iconPack": "lucide"
         },
-        "logo": "/assets/images/hero/logo.png",
-        "heroImage": "/assets/images/hero/hero_bg.png",
+        "images": [
+          {
+            "id": "hero-bg-001",
+            "url": "/assets/images/hero/hero_bg.png",
+            "name": "hero_bg.png",
+            "originalUrl": "/assets/images/hero/hero_bg.png"
+          }
+        ],
+        "bannerColor": "#1e293b",
+        "topBannerColor": "#FFFFFF",
+        "brightness": 75,
+        "textSettings": {
+          "fontFamily": "Inter",
+          "fontSize": 20,
+          "fontWeight": 600,
+          "lineHeight": 1.4,
+          "letterSpacing": 0.5,
+          "textAlign": "center",
+          "color": "#FFFFFF"
+        },
+        "colors": [
+          {
+            "id": "hero-primary-001",
+            "name": "primary-text",
+            "label": "Primary Text",
+            "value": "#FFFFFF",
+            "description": "Main service text color"
+          },
+          {
+            "id": "hero-secondary-001", 
+            "name": "secondary-accent",
+            "label": "Secondary Accent",
+            "value": "#3b82f6",
+            "description": "Icon and hover colors"
+          }
+        ],
         "styling": {
           "hasVariants": false,
           "desktopHeightVH": 30,

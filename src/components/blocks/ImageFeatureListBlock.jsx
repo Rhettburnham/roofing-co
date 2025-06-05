@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { FaCheckCircle } from "react-icons/fa";
 import PropTypes from 'prop-types';
+import PanelImagesController from "../common/PanelImagesController";
 
 /**
  * ImageFeatureListBlock
@@ -321,59 +322,109 @@ ImageFeatureListBlock.propTypes = {
   onConfigChange: PropTypes.func,
 };
 
-ImageFeatureListBlock.EditorPanel = function ImageFeatureListBlockEditorPanel({ currentConfig, onPanelConfigChange, onPanelFileChange, getDisplayUrl }) {
-  const handleChange = (field, value) => {
-    onPanelConfigChange({ ...currentConfig, [field]: value });
-  };
+ImageFeatureListBlock.tabsConfig = (config, onPanelChange, themeColors, sitePalette, onPanelFileChange) => {
+  const { items = [] } = config;
 
-  const handleItemChange = (itemIndex, itemField, value) => {
-    const updatedItems = (currentConfig.items || []).map((item, i) => {
-      if (i === itemIndex) {
-        return { ...item, [itemField]: value };
+  const handleItemManagement = (action, index = null, field = null, value = null) => {
+    let newItems = [...(config.items || [])];
+    if (action === 'add') {
+      newItems.push({
+        id: `item_${Date.now()}`,
+        name: "New Feature Item",
+        description: "Description for the new feature.",
+        features: ["Benefit 1", "Benefit 2"],
+        uses: "Primary uses.",
+        limitations: "Considerations.",
+        imageUrl: { url: "", file: null, name: "placeholder.jpg", originalUrl: "" }
+      });
+    } else if (action === 'remove' && index !== null) {
+      const itemRemoved = newItems[index];
+      if (itemRemoved?.imageUrl && typeof itemRemoved.imageUrl === 'object' && itemRemoved.imageUrl.url?.startsWith('blob:')) {
+        URL.revokeObjectURL(itemRemoved.imageUrl.url);
       }
-      return item;
-    });
-    onPanelConfigChange({ ...currentConfig, items: updatedItems });
-  };
-  
-  const handleItemFileChange = (itemIndex, file) => {
-    if (onPanelFileChange) {
-        // For items, the path usually includes the item index and the field (e.g., imageUrl)
-        onPanelFileChange({ blockItemIndex: itemIndex, field: 'imageUrl' }, file);
+      newItems.splice(index, 1);
+    } else if (action === 'update' && index !== null && field !== null) {
+      if (newItems[index]) {
+        newItems[index] = { ...newItems[index], [field]: value };
+      }
     }
+    onPanelChange({ ...config, items: newItems });
   };
 
-  return (
-    <div style={{ padding: '10px', background: '#e0e0e0' }}>
-      <h5>Image Feature List Editor</h5>
-      <div>
-        <label>Title: </label>
-        <input type="text" value={currentConfig.title || ''} onChange={(e) => handleChange('title', e.target.value)} />
-      </div>
-      {(currentConfig.items || []).map((item, index) => (
-        <div key={item.id || index} style={{ border: '1px solid #ccc', padding: '10px', marginTop: '10px' }}>
-          <h6>Item {index + 1}</h6>
-          <div><label>Name: </label><input type="text" value={item.name || ''} onChange={e => handleItemChange(index, 'name', e.target.value)} /></div>
-          <div><label>Description: </label><textarea value={item.description || ''} onChange={e => handleItemChange(index, 'description', e.target.value)} /></div>
-          <div>
-            <label>Image: </label>
-            <input type="file" accept="image/*" onChange={(e) => handleItemFileChange(index, e.target.files[0])} />
-            {getDisplayUrl && item.imageUrl && <img src={getDisplayUrl(item.imageUrl)} alt="preview" style={{width: '50px', height: '50px'}}/>}
-            <input type="text" placeholder="Or paste URL" value={typeof item.imageUrl === 'string' ? item.imageUrl : (item.imageUrl?.originalUrl || '')} onChange={e => handleItemChange(index, 'imageUrl', e.target.value)} />
-          </div>
-          {/* Add controls for features, uses, limitations if needed */}
-        </div>
-      ))}
-      {/* Add button to add new item */}
-    </div>
-  );
-};
+  // Prepare data for PanelImagesController
+  const imagesForController = items.map((item, index) => ({
+    ...( (typeof item.imageUrl === 'string') 
+        ? { url: item.imageUrl, name: item.name || `Item ${index+1} Image`, originalUrl: item.imageUrl } 
+        : (item.imageUrl || { url: '', name: 'Default Image', originalUrl: '' }) ),
+    id: item.id || `feature_item_img_${index}`,
+    name: item.name || `Feature Item ${index + 1}`,
+    itemIndex: index, // To map back to the correct item
+  }));
 
-ImageFeatureListBlock.EditorPanel.propTypes = {
-    currentConfig: PropTypes.object.isRequired,
-    onPanelConfigChange: PropTypes.func.isRequired,
-    onPanelFileChange: PropTypes.func,
-    getDisplayUrl: PropTypes.func,
+  const onImagesControllerChange = (updatedData) => {
+    const newItems = [...items]; // Start with a copy of current items
+    (updatedData.images || []).forEach(imgCtrl => {
+      if (imgCtrl.itemIndex !== undefined && newItems[imgCtrl.itemIndex]) {
+        const oldImageState = newItems[imgCtrl.itemIndex].imageUrl;
+        if (oldImageState?.file && oldImageState.url?.startsWith('blob:')) {
+          if ((imgCtrl.file && oldImageState.url !== imgCtrl.url) || (!imgCtrl.file && oldImageState.url !== imgCtrl.originalUrl)) {
+            URL.revokeObjectURL(oldImageState.url);
+          }
+        }
+        newItems[imgCtrl.itemIndex].imageUrl = {
+          file: imgCtrl.file || null,
+          url: imgCtrl.url || '',
+          name: imgCtrl.name || (imgCtrl.url || '').split('/').pop() || 'image.jpg',
+          originalUrl: imgCtrl.originalUrl || imgCtrl.url || ''
+        };
+      }
+    });
+    onPanelChange({ ...config, items: newItems });
+  };
+
+  return {
+    general: () => (
+      <div className="p-4 space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Block Title (Editable inline):</label>
+          <input 
+            type="text" 
+            value={config.title || ''} 
+            onChange={(e) => onPanelChange({ ...config, title: e.target.value })} 
+            className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            placeholder="Enter block title"
+          />
+        </div>
+        <div className="border-t pt-4">
+          <h4 className="text-md font-semibold text-gray-700 mb-2">Feature Items:</h4>
+          <p className="text-xs text-gray-500 mb-3">Item details (name, description, features, etc.) are editable directly on the block preview.</p>
+          {(items || []).map((item, idx) => (
+            <div key={item.id || idx} className="flex items-center justify-between p-2 bg-gray-50 rounded-md mb-2 shadow-sm">
+              <span className="text-sm text-gray-600 truncate w-3/4" title={item.name}>{idx + 1}. {item.name || '(Untitled Item)'}</span>
+              <button onClick={() => handleItemManagement('remove', idx)} className="text-xs text-red-600 hover:text-red-800 font-semibold p-1 hover:bg-red-100 rounded-full" title="Remove Item">✕ Remove</button>
+            </div>
+          ))}
+          <button onClick={() => handleItemManagement('add')} className="mt-3 w-full px-4 py-2 border border-dashed border-gray-300 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 hover:border-solid">+ Add Feature Item</button>
+        </div>
+      </div>
+    ),
+    images: () => (
+      (items || []).length > 0 ? (
+        <PanelImagesController
+          currentData={{ images: imagesForController }}
+          onControlsChange={onImagesControllerChange} 
+          imageArrayFieldName="images"
+          getItemName={(img) => img?.name || 'Feature Image'}
+          allowAdd={false} // Item addition handled in general tab
+          allowRemove={false} // Item removal handled in general tab
+        />
+      ) : (
+        <div className="p-6 text-center text-gray-500">
+          <p>No items available to manage images for. Add items in the 'General' tab first.</p>
+        </div>
+      )
+    ),
+  };
 };
 
 export default ImageFeatureListBlock; 

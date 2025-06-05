@@ -1,5 +1,5 @@
 // BeforeAfterBlock.jsx
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import ThemeColorPicker from "../common/ThemeColorPicker";
@@ -95,6 +95,16 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
   const showNailAnimation = beforeAfterData?.showNailAnimation !== undefined ? beforeAfterData.showNailAnimation : true; // Default to true
   console.log(`[BeforeAfterPreview] Instance created/re-rendered. Initial showNailAnimation prop from beforeAfterData: ${showNailAnimation}`);
 
+  // Memoize formatted items to prevent unnecessary recalculations
+  const formattedItems = useMemo(() => {
+    return items.map((item, index) => ({
+      ...item,
+      id: item.id || `item-preview-${index}`,
+      beforeDisplayUrl: getDisplayUrl(item.before, "/assets/images/beforeafter/default_before.jpg"),
+      afterDisplayUrl: getDisplayUrl(item.after, "/assets/images/beforeafter/default_after.jpg"),
+    }));
+  }, [items]);
+
   // Initialize viewStates when items change
   useEffect(() => {
     const initialViewStates = {};
@@ -102,21 +112,10 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
       initialViewStates[index] = "before"; // Default to 'before'
     });
     setViewStates(initialViewStates);
-  }, [items]);
+  }, [items.length]); // Only depend on items count
 
-  // Use getDisplayUrl for formattedItems
-  // Ensure default paths are robust
-  const formattedItems = items.map((item, index) => ({
-    ...item,
-    id: item.id || `item-preview-${index}`,
-    beforeDisplayUrl: getDisplayUrl(item.before, "/assets/images/beforeafter/default_before.jpg"),
-    afterDisplayUrl: getDisplayUrl(item.after, "/assets/images/beforeafter/default_after.jpg"),
-  }));
-
-  const handleBoxClick = (item) => {
-    // In edit mode, clicking the card might be for editing, not opening modal
-    // Or, keep modal functionality but ensure it doesn't interfere with text editing clicks.
-    // For now, modal is primary for read-only, can be re-evaluated.
+  // Memoize handlers to prevent unnecessary re-renders
+  const handleBoxClick = useCallback((item) => {
     if (readOnly) {
         setSelectedImages({
             before: item.beforeDisplayUrl,
@@ -126,26 +125,27 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
         });
         setShowModal(true);
     }
-  };
+  }, [readOnly]);
 
-  const closeModal = () => {
+  const closeModal = useCallback(() => {
     setShowModal(false);
     setSelectedImages(null);
-  };
+  }, []);
 
-  const toggleCardViewState = (index) => {
-    // Allow toggling view even in edit mode for the preview.
+  const toggleCardViewState = useCallback((index) => {
     setViewStates((prevStates) => ({
       ...prevStates,
       [index]: prevStates[index] === "before" ? "after" : "before",
     }));
-  };
+  }, []);
 
-  // GSAP animations
+  // GSAP animations - memoized to prevent recreation
   useEffect(() => {
     const nailElement = nailRef.current;
     const textElement = textRef.current;
     const headerElement = headerRef.current;
+
+    if (!nailElement || !textElement || !headerElement) return;
 
     console.log(`[BeforeAfterPreview GSAP Effect] Running. showNailAnimation: ${showNailAnimation}`);
 
@@ -197,14 +197,15 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
     };
   }, [showNailAnimation]); // Only depend on showNailAnimation
 
-  // Box animations - separate effect
+  // Box animations - separate effect with proper cleanup
   useEffect(() => {
-    if (!items.length) return;
+    if (!formattedItems.length) return;
 
-    console.log(`[BeforeAfterPreview Box Animations Effect] Running. items count: ${items.length}`);
+    console.log(`[BeforeAfterPreview Box Animations Effect] Running. items count: ${formattedItems.length}`);
 
     // Box animations
     const boxEls = boxesRef.current.filter((box) => box !== null);
+    if (!boxEls.length) return;
 
     // Decide how many columns you want - now 3 for md+
     const numCols = 3;
@@ -311,9 +312,9 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
       gsap.killTweensOf(boxEls.map(b => b?.querySelector?.(".overlay-text")).filter(Boolean));
       gsap.killTweensOf(boxEls);
     };
-  }, [items]); // Only depend on items
+  }, [formattedItems.length]); // Only depend on items count
 
-  // Handle view state changes for card flipping
+  // Handle view state changes for card flipping - memoized
   useEffect(() => {
     const boxEls = boxesRef.current.filter((box) => box !== null);
 
@@ -351,7 +352,7 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
         });
       }
     });
-  }, [viewStates, items]); // items dependency added for safety if card count changes
+  }, [viewStates]); // Only depend on viewStates
 
   return (
     <>
@@ -950,60 +951,6 @@ const BeforeAfterImagesControls = ({ currentData, onControlsChange, themeColors 
               >
                 Remove
               </button>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 mb-2">
-              <div className="text-center">
-                <span className="text-xs text-gray-500">Before</span>
-                {getDisplayUrl(item.before) && (
-                  <img 
-                    src={getDisplayUrl(item.before)} 
-                    alt="Before" 
-                    className="w-full h-16 object-cover rounded border mt-1"
-                  />
-                )}
-              </div>
-              <div className="text-center">
-                <span className="text-xs text-gray-500">After</span>
-                {getDisplayUrl(item.after) && (
-                  <img 
-                    src={getDisplayUrl(item.after)} 
-                    alt="After" 
-                    className="w-full h-16 object-cover rounded border mt-1"
-                  />
-                )}
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="block text-xs mb-1">Shingle Type:</label>
-                <input
-                  type="text"
-                  value={item.shingle || ""}
-                  onChange={(e) => {
-                    const updatedItems = [...items];
-                    updatedItems[index] = { ...updatedItems[index], shingle: e.target.value };
-                    onControlsChange({ items: updatedItems });
-                  }}
-                  className="w-full bg-white border border-gray-300 px-2 py-1 rounded text-xs"
-                  placeholder="Enter shingle type"
-                />
-              </div>
-              <div>
-                <label className="block text-xs mb-1">Square Feet:</label>
-                <input
-                  type="text"
-                  value={item.sqft || ""}
-                  onChange={(e) => {
-                    const updatedItems = [...items];
-                    updatedItems[index] = { ...updatedItems[index], sqft: e.target.value };
-                    onControlsChange({ items: updatedItems });
-                  }}
-                  className="w-full bg-white border border-gray-300 px-2 py-1 rounded text-xs"
-                  placeholder="Enter square feet"
-                />
-              </div>
             </div>
           </div>
         ))}

@@ -400,7 +400,6 @@ function BasicMapPreview({
   const renderServiceHoursTable = () => (
     <div className="w-full h-full flex flex-col p-0 overflow-y-auto">
       <table className="w-full">
-        {" "}
         {/* No outer border, parent sliding div has it */}
         <tbody className="text-gray-800">
           {serviceHours.map((item, idx) => (

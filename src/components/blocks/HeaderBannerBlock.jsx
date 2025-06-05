@@ -1,5 +1,7 @@
 // src/components/blocks/HeaderBannerBlock.jsx
 import React from "react";
+import PanelImagesController from "../common/PanelImagesController";
+import ThemeColorPicker from "../common/ThemeColorPicker";
 
 // A simple EditableText component
 const EditableText = ({ value, onChange, tag: Tag = 'span', className = '', placeholder = 'Enter text', readOnly = false, inputType = 'text' }) => {
@@ -98,46 +100,52 @@ const HeaderBannerBlock = ({ config = {}, readOnly = true, onConfigChange }) => 
   const {
     title = "Welcome",
     subtitle = "Explore our services",
-    backgroundImage = "", // Can be a string URL or an object { url: string, file?: File }
+    backgroundImage = "", 
     textColor = "#FFFFFF",
     textAlign = "center",
     titleFontSize = "text-3xl sm:text-4xl md:text-5xl lg:text-6xl",
     subtitleFontSize = "text-base sm:text-lg md:text-xl",
-    bannerMinHeight = "auto", // e.g., '300px', 'auto'
-    paddingClasses = "py-4 md:py-6 lg:py-8", // Default padding classes
+    bannerMinHeight = "auto", 
+    paddingClasses = "py-4 md:py-6 lg:py-8", 
+    overlayOpacity = 0.5 // Added from old panel logic if needed
   } = config;
 
   // Helper function to get display URL
   const getDisplayUrl = (value) => {
     if (!value) return null;
-    if (typeof value === "string") return value;
+    // Handle new image object structure from PanelImagesController
     if (typeof value === "object" && value.url) return value.url;
+    // Handle direct string URL (legacy or manual input)
+    if (typeof value === "string") return value;
     return null;
   };
 
   const displayBackground = getDisplayUrl(backgroundImage) || "/assets/images/default-banner.jpg";
 
   const handleInlineChange = (field, newValue) => {
-    onConfigChange?.({ ...config, [field]: newValue });
+    if (onConfigChange) {
+        onConfigChange({ ...config, [field]: newValue });
+    }
   };
 
   const sectionStyle = {
-    backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7)), url('${displayBackground}')`,
+    backgroundImage: `linear-gradient(rgba(0, 0, 0, ${overlayOpacity}), rgba(0, 0, 0, ${overlayOpacity + 0.2 > 1 ? 1 : overlayOpacity + 0.2})), url('${displayBackground}')`,
     minHeight: bannerMinHeight !== 'auto' ? bannerMinHeight : undefined,
+    color: textColor // Moved text color here for simplicity as it applies to all text
   };
 
   const textAlignClass = {
-    left: 'text-left',
-    center: 'text-center',
-    right: 'text-right',
+    left: 'text-left items-start',
+    center: 'text-center items-center',
+    right: 'text-right items-end',
   }[textAlign] || 'text-center';
 
     return (
       <section 
-      className={`relative w-full flex items-center justify-center bg-cover bg-center bg-no-repeat overflow-hidden ${paddingClasses}`}
+      className={`relative w-full flex ${textAlignClass} bg-cover bg-center bg-no-repeat overflow-hidden ${paddingClasses}`}
       style={sectionStyle}
       >
-      <div className={`container mx-auto px-4 ${textAlignClass}`}>
+      <div className={`container mx-auto px-4`}> {/* Removed textAlignClass from here, applied to parent flex */}
         <EditableText
           tag="h1"
           value={title}
@@ -145,7 +153,7 @@ const HeaderBannerBlock = ({ config = {}, readOnly = true, onConfigChange }) => 
           readOnly={readOnly}
           className={`font-bold mb-4 md:mb-6 ${titleFontSize}`}
           placeholder="Enter Title"
-          style={{ color: textColor }} // Apply text color directly
+          // style={{ color: textColor }} // Style inherited from sectionStyle
         />
         { (subtitle || !readOnly) && (
           <EditableText
@@ -153,10 +161,10 @@ const HeaderBannerBlock = ({ config = {}, readOnly = true, onConfigChange }) => 
             value={subtitle}
             onChange={(val) => handleInlineChange("subtitle", val)}
             readOnly={readOnly}
-            className={`max-w-2xl mx-auto ${subtitleFontSize} ${textAlign === 'center' ? 'mx-auto' : textAlign === 'left' ? 'mr-auto' : 'ml-auto'}`}
+            className={`max-w-2xl ${textAlign === 'center' ? 'mx-auto' : textAlign === 'left' ? 'mr-auto ml-0' : 'ml-auto mr-0'} ${subtitleFontSize}`}
             placeholder="Enter Subtitle"
-            inputType="textarea" // Subtitle can be multi-line
-            style={{ color: textColor }} // Apply text color directly
+            inputType="textarea" 
+            // style={{ color: textColor }} // Style inherited from sectionStyle
           />
           )}
         </div>
@@ -164,129 +172,136 @@ const HeaderBannerBlock = ({ config = {}, readOnly = true, onConfigChange }) => 
     );
 };
 
-export const HeaderBannerBlockEditorPanel = ({ config = {}, onPanelConfigChange, onPanelFileChange }) => {
-  const {
-    backgroundImage, // Handled by file input
-    textColor = "#FFFFFF",
-    textAlign = "center",
-    titleFontSize = "text-3xl sm:text-4xl md:text-5xl lg:text-6xl",
-    subtitleFontSize = "text-base sm:text-lg md:text-xl",
-    bannerMinHeight = "auto",
-    paddingClasses = "py-4 md:py-6 lg:py-8",
-  } = config;
-
-  const handleFieldChange = (field, value) => {
-    onPanelConfigChange?.({ ...config, [field]: value });
+HeaderBannerBlock.tabsConfig = (config, onPanelChange, themeColors) => {
+  const handlePanelFieldChange = (field, value) => {
+    // Ensure overlayOpacity is a number
+    if (field === 'overlayOpacity') {
+        const numValue = parseFloat(value);
+        value = isNaN(numValue) ? 0.5 : Math.max(0, Math.min(1, numValue));
+    }
+    onPanelChange({ ...config, [field]: value });
   };
 
-  const getDisplayUrl = (value) => {
-    if (!value) return null;
-    if (typeof value === "string") return value;
-    if (typeof value === "object" && value.url) return value.url;
-    return null;
-  };
-  const currentBgUrl = getDisplayUrl(backgroundImage);
+  // Prepare data for PanelImagesController (single image)
+  const imagesForController = config.backgroundImage && typeof config.backgroundImage === 'object' && config.backgroundImage.url
+    ? [{ ...config.backgroundImage, id: 'bgImage', name: 'Background Image' }]
+    : (typeof config.backgroundImage === 'string' && config.backgroundImage
+        ? [{ url: config.backgroundImage, id: 'bgImage', name: 'Background Image', originalUrl: config.backgroundImage }]
+        : []);
 
-  return (
-    <div className="p-4 space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Background Image</label>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => {
-            if (e.target.files && e.target.files[0]) {
-              onPanelFileChange?.("backgroundImage", e.target.files[0]);
-            }
-          }}
-          className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-        />
-        {currentBgUrl && (
-        <div className="mt-2">
-            <p className="text-xs text-gray-500 mb-1">Current Background Preview:</p>
-          <img
-              src={currentBgUrl}
-            alt="Banner background preview"
-              className="w-full h-32 object-cover rounded border"
+  const onImageControllerChange = (updatedData) => {
+    const newImageArray = updatedData.images || [];
+    if (newImageArray.length > 0) {
+      onPanelChange({ ...config, backgroundImage: newImageArray[0] });
+    } else {
+      onPanelChange({ ...config, backgroundImage: { url: '', name: '', originalUrl: '' } }); // Clear image
+    }
+  };
+
+  return {
+    general: () => (
+      <div className="p-4 space-y-4">
+        <div>
+          <label htmlFor="textAlign" className="block text-sm font-medium text-gray-700">Text Alignment</label>
+          <select
+            id="textAlign"
+            value={config.textAlign || 'center'}
+            onChange={(e) => handlePanelFieldChange("textAlign", e.target.value)}
+            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md bg-white"
+          >
+            <option value="left">Left</option>
+            <option value="center">Center</option>
+            <option value="right">Right</option>
+          </select>
+        </div>
+        <div>
+          <label htmlFor="bannerMinHeight" className="block text-sm font-medium text-gray-700">Banner Min Height</label>
+          <input
+            type="text"
+            id="bannerMinHeight"
+            value={config.bannerMinHeight || 'auto'}
+            onChange={(e) => handlePanelFieldChange("bannerMinHeight", e.target.value)}
+            placeholder="e.g., 300px, 50vh, auto"
+            className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 bg-white"
           />
         </div>
-      )}
+        <div>
+            <label htmlFor="overlayOpacity" className="block text-sm font-medium text-gray-700">
+                Background Overlay Opacity: {config.overlayOpacity !== undefined ? config.overlayOpacity.toFixed(2) : (0.5).toFixed(2)}
+            </label>
+            <input 
+                type="range" 
+                id="overlayOpacity" 
+                min="0" 
+                max="1" 
+                step="0.01" 
+                value={config.overlayOpacity !== undefined ? config.overlayOpacity : 0.5} 
+                onChange={(e) => handlePanelFieldChange("overlayOpacity", e.target.value)} 
+                className="mt-1 w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+            />
+        </div>
       </div>
-
-      <div>
-        <label htmlFor="textColor" className="block text-sm font-medium text-gray-700">Text Color</label>
-        <input
-          type="color"
-          id="textColor"
-          value={textColor}
-          onChange={(e) => handleFieldChange("textColor", e.target.value)}
-          className="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+    ),
+    images: () => (
+        <PanelImagesController
+            currentData={{ images: imagesForController }}
+            onControlsChange={onImageControllerChange} // This function will receive {images: [...]} 
+            imageArrayFieldName="images"
+            getItemName={() => 'Background Image'}
+            maxImages={1} // Only one background image
+            allowAdd={imagesForController.length === 0} // Allow add only if no image is set
+            allowRemove={imagesForController.length > 0} // Allow remove if an image is set
+        />
+    ),
+    colors: () => (
+      <div className="p-4 space-y-4">
+        <ThemeColorPicker
+          label="Text Color"
+          fieldName="textColor"
+          currentColorValue={config.textColor || "#FFFFFF"}
+          onColorChange={(fieldName, value) => handlePanelFieldChange(fieldName, value)}
+          themeColors={themeColors}
         />
       </div>
-
-      <div>
-        <label htmlFor="textAlign" className="block text-sm font-medium text-gray-700">Text Alignment</label>
-        <select
-          id="textAlign"
-          value={textAlign}
-          onChange={(e) => handleFieldChange("textAlign", e.target.value)}
-          className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-        >
-          <option value="left">Left</option>
-          <option value="center">Center</option>
-          <option value="right">Right</option>
-        </select>
+    ),
+    styling: () => (
+      <div className="p-4 space-y-4">
+        <div>
+          <label htmlFor="titleFontSize" className="block text-sm font-medium text-gray-700">Title Font Size (Tailwind)</label>
+          <input
+            type="text"
+            id="titleFontSize"
+            value={config.titleFontSize || 'text-5xl'}
+            onChange={(e) => handlePanelFieldChange("titleFontSize", e.target.value)}
+            placeholder="e.g., text-5xl md:text-6xl"
+            className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 bg-white"
+          />
+        </div>
+        <div>
+          <label htmlFor="subtitleFontSize" className="block text-sm font-medium text-gray-700">Subtitle Font Size (Tailwind)</label>
+          <input
+            type="text"
+            id="subtitleFontSize"
+            value={config.subtitleFontSize || 'text-xl'}
+            onChange={(e) => handlePanelFieldChange("subtitleFontSize", e.target.value)}
+            placeholder="e.g., text-xl md:text-2xl"
+            className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 bg-white"
+          />
+        </div>
+        <div>
+          <label htmlFor="paddingClasses" className="block text-sm font-medium text-gray-700">Padding Classes (Tailwind)</label>
+          <input
+            type="text"
+            id="paddingClasses"
+            value={config.paddingClasses || 'py-8 md:py-16'}
+            onChange={(e) => handlePanelFieldChange("paddingClasses", e.target.value)}
+            placeholder="e.g., py-8 md:py-16"
+            className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 bg-white"
+          />
+        </div>
       </div>
-
-      <div>
-        <label htmlFor="titleFontSize" className="block text-sm font-medium text-gray-700">Title Font Size (Tailwind)</label>
-        <input
-          type="text"
-          id="titleFontSize"
-          value={titleFontSize}
-          onChange={(e) => handleFieldChange("titleFontSize", e.target.value)}
-          placeholder="e.g., text-5xl"
-          className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2"
-        />
-      </div>
-      
-      <div>
-        <label htmlFor="subtitleFontSize" className="block text-sm font-medium text-gray-700">Subtitle Font Size (Tailwind)</label>
-        <input
-          type="text"
-          id="subtitleFontSize"
-          value={subtitleFontSize}
-          onChange={(e) => handleFieldChange("subtitleFontSize", e.target.value)}
-          placeholder="e.g., text-xl"
-          className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2"
-        />
-      </div>
-
-      <div>
-        <label htmlFor="bannerMinHeight" className="block text-sm font-medium text-gray-700">Banner Min Height</label>
-        <input
-          type="text"
-          id="bannerMinHeight"
-          value={bannerMinHeight}
-          onChange={(e) => handleFieldChange("bannerMinHeight", e.target.value)}
-          placeholder="e.g., 300px, 50vh, auto"
-          className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2"
-        />
-      </div>
-
-      <div>
-        <label htmlFor="paddingClasses" className="block text-sm font-medium text-gray-700">Padding Classes (Tailwind)</label>
-        <input
-          type="text"
-          id="paddingClasses"
-          value={paddingClasses}
-          onChange={(e) => handleFieldChange("paddingClasses", e.target.value)}
-          placeholder="e.g., py-8 md:py-16"
-          className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2"
-        />
-      </div>
-    </div>
-  );
+    ),
+  };
 };
 
 export default HeaderBannerBlock;

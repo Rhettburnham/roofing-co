@@ -499,7 +499,12 @@ const App = () => {
 
   return (
     <ConfigProvider>
-    <Router>
+    <Router
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true
+      }}
+    >
       <ScrollRestoration />
       <NavbarWrapper navbarConfig={navbarConfig} />
         <div className="pt-0">

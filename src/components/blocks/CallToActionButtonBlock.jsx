@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import { HashLink } from "react-router-hash-link";
+import ThemeColorPicker from "../common/ThemeColorPicker";
 
 const renderIcon = (iconConfig, baseClassName = "w-6 h-6 mr-2", isEditing) => {
   if (!iconConfig) return null;
@@ -149,119 +150,115 @@ CallToActionButtonBlock.propTypes = {
   onConfigChange: PropTypes.func,
 };
 
-CallToActionButtonBlock.EditorPanel = ({ currentConfig, onPanelConfigChange }) => {
-  const [localPanelData, setLocalPanelData] = useState(currentConfig);
-
-  useEffect(() => {
-    setLocalPanelData(currentConfig);
-  }, [currentConfig]);
-
-  const handlePanelChange = (field, value) => {
+CallToActionButtonBlock.tabsConfig = (config, onPanelChange, themeColors) => {
+  const handlePanelInputChange = (field, value) => {
     const updatedValue = (field === 'openInNewTab') ? (value === true || value === 'true') : value;
-    const newConfig = { ...localPanelData, [field]: updatedValue };
-    setLocalPanelData(newConfig);
-    onPanelConfigChange(newConfig);
-  };
-  
-  const handleSvgIconChange = (e) => {
-    const newSvgString = e.target.value;
-    handlePanelChange('icon', { svgString: newSvgString });
+    onPanelChange({ ...config, [field]: updatedValue });
   };
 
-  return (
-    <div className="space-y-4 p-1">
-      <div>
-        <label className="block text-sm font-medium text-gray-300">Button Text (Panel):</label>
-        <input 
-          type="text" 
-          value={localPanelData.text || ''} 
-          onChange={(e) => handlePanelChange('text', e.target.value)} 
-          className="mt-1 block w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-white"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-300">Button Link (URL or path):</label>
-        <input 
-          type="text" 
-          value={localPanelData.link || ''} 
-          onChange={(e) => handlePanelChange('link', e.target.value)} 
-          className="mt-1 block w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-white"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-300">Button Style:</label>
-        <select 
-          value={localPanelData.style || 'primary'} 
-          onChange={(e) => handlePanelChange('style', e.target.value)} 
-          className="mt-1 block w-full pl-3 pr-10 py-2 text-base bg-gray-600 border-gray-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-white"
-        >
-          <option value="primary">Primary (Blue)</option>
-          <option value="secondary">Secondary (Gray)</option>
-          <option value="outline">Outline (Blue Border)</option>
-          <option value="custom">Custom Colors</option>
-        </select>
-      </div>
-      {localPanelData.style === 'custom' && (
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-300">Background Color:</label>
-            <input type="color" value={localPanelData.backgroundColor || '#000000'} onChange={(e) => handlePanelChange('backgroundColor', e.target.value)} className="mt-1 h-10 w-full border-gray-500 rounded-md"/>
-            <input type="text" placeholder="Or Tailwind class e.g. bg-red-500" value={localPanelData.backgroundColor || ''} onChange={(e) => handlePanelChange('backgroundColor', e.target.value)} className="mt-1 text-xs block w-full px-2 py-1 bg-gray-600 border-gray-500 rounded-md text-white"/>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-300">Text Color:</label>
-            <input type="color" value={localPanelData.textColor || '#FFFFFF'} onChange={(e) => handlePanelChange('textColor', e.target.value)} className="mt-1 h-10 w-full border-gray-500 rounded-md"/>
-            <input type="text" placeholder="Or Tailwind class e.g. text-yellow-300" value={localPanelData.textColor || ''} onChange={(e) => handlePanelChange('textColor', e.target.value)} className="mt-1 text-xs block w-full px-2 py-1 bg-gray-600 border-gray-500 rounded-md text-white"/>
-          </div>
+  const handleSvgIconChangeForPanel = (e) => {
+    const newSvgString = e.target.value;
+    onPanelChange({ ...config, icon: { svgString: newSvgString } });
+  };
+
+  return {
+    general: () => (
+      <div className="p-4 space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Button Link (URL or path):</label>
+          <input 
+            type="text" 
+            value={config.link || ''} 
+            onChange={(e) => handlePanelInputChange('link', e.target.value)} 
+            className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
         </div>
-      )}
-      <div>
-        <label className="block text-sm font-medium text-gray-300">Alignment:</label>
-        <select 
-          value={localPanelData.alignment || 'center'} 
-          onChange={(e) => handlePanelChange('alignment', e.target.value)} 
-          className="mt-1 block w-full pl-3 pr-10 py-2 text-base bg-gray-600 border-gray-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-white"
-        >
-          <option value="left">Left</option>
-          <option value="center">Center</option>
-          <option value="right">Right</option>
-        </select>
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-300">Icon (Paste SVG Code or leave empty):</label>
-        <textarea 
-            value={typeof localPanelData.icon === 'object' ? localPanelData.icon.svgString || '' : (typeof localPanelData.icon === 'string' ? localPanelData.icon : '')} 
-            onChange={handleSvgIconChange} 
-            rows="3"
-            placeholder="<svg>...</svg> or keep empty for no icon" 
-            className="mt-1 block w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-white placeholder-gray-400"
-        />
-        {localPanelData.icon && (
-          <div className="mt-2 p-2 bg-gray-700 rounded">
-            <p className="text-xs text-gray-400 mb-1">Current Icon Preview:</p>
-            <div className="w-8 h-8 text-white">
-              {renderIcon(localPanelData.icon, "w-full h-full", false)}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Icon (Paste SVG Code or leave empty):</label>
+          <textarea 
+              value={typeof config.icon === 'object' ? config.icon.svgString || '' : (typeof config.icon === 'string' ? config.icon : '')} 
+              onChange={handleSvgIconChangeForPanel} 
+              rows="3"
+              placeholder="<svg>...</svg> or keep empty for no icon" 
+              className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm placeholder-gray-400"
+          />
+          {config.icon && (
+            <div className="mt-2 p-2 bg-gray-100 rounded border border-gray-200">
+              <p className="text-xs text-gray-500 mb-1">Current Icon Preview:</p>
+              <div className="w-8 h-8 text-gray-700">
+                {renderIcon(config.icon, "w-full h-full", false)}
+              </div>
             </div>
-          </div>
+          )}
+        </div>
+        <div className="flex items-center">
+          <input 
+            type="checkbox" 
+            id={`openInNewTab-${config.text?.replace(/\s+/g, '') || 'actionbutton'}`} 
+            checked={config.openInNewTab || false} 
+            onChange={(e) => handlePanelInputChange('openInNewTab', e.target.checked)} 
+            className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+          />
+          <label htmlFor={`openInNewTab-${config.text?.replace(/\s+/g, '') || 'actionbutton'}`} className="ml-2 block text-sm font-medium text-gray-700">Open link in new tab</label>
+        </div>
+      </div>
+    ),
+    colors: () => (
+      <div className="p-4 space-y-4">
+        {(config.style === 'custom') && (
+          <>
+            <h3 className="text-lg font-semibold text-gray-700">Custom Button Colors</h3>
+            <ThemeColorPicker
+              label="Background Color:"
+              fieldName="backgroundColor"
+              currentColorValue={config.backgroundColor || '#007bff'} // Default custom blue
+              onColorChange={(name, value) => onPanelChange({ ...config, [name]: value })}
+              themeColors={themeColors}
+            />
+            <ThemeColorPicker
+              label="Text Color:"
+              fieldName="textColor"
+              currentColorValue={config.textColor || '#ffffff'} // Default custom white
+              onColorChange={(name, value) => onPanelChange({ ...config, [name]: value })}
+              themeColors={themeColors}
+            />
+          </>
+        )}
+        {(config.style !== 'custom') && (
+            <p className="text-sm text-gray-500">Custom color options are available when 'Custom Colors' style is selected in the Styling tab.</p>
         )}
       </div>
-      <div className="flex items-center">
-        <input 
-          type="checkbox" 
-          id={`openInNewTab-${currentConfig.text?.replace(/\s+/g, '') || 'actionbutton'}`} 
-          checked={localPanelData.openInNewTab || false} 
-          onChange={(e) => handlePanelChange('openInNewTab', e.target.checked)} 
-          className="h-4 w-4 text-indigo-600 border-gray-500 rounded focus:ring-indigo-500 bg-gray-600"
-        />
-        <label htmlFor={`openInNewTab-${currentConfig.text?.replace(/\s+/g, '') || 'actionbutton'}`} className="ml-2 block text-sm font-medium text-gray-300">Open link in new tab</label>
+    ),
+    styling: () => (
+      <div className="p-4 space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Button Style:</label>
+          <select 
+            value={config.style || 'primary'} 
+            onChange={(e) => handlePanelInputChange('style', e.target.value)} 
+            className="mt-1 block w-full pl-3 pr-10 py-2 text-base bg-white border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+          >
+            <option value="primary">Primary (Theme Blue)</option>
+            <option value="secondary">Secondary (Theme Gray)</option>
+            <option value="outline">Outline (Theme Blue Border)</option>
+            <option value="custom">Custom Colors</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Alignment:</label>
+          <select 
+            value={config.alignment || 'center'} 
+            onChange={(e) => handlePanelInputChange('alignment', e.target.value)} 
+            className="mt-1 block w-full pl-3 pr-10 py-2 text-base bg-white border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+          >
+            <option value="left">Left</option>
+            <option value="center">Center</option>
+            <option value="right">Right</option>
+          </select>
+        </div>
       </div>
-    </div>
-  );
-};
-
-CallToActionButtonBlock.EditorPanel.propTypes = {
-  currentConfig: PropTypes.object.isRequired,
-  onPanelConfigChange: PropTypes.func.isRequired,
+    ),
+  };
 };
 
 export default CallToActionButtonBlock; 

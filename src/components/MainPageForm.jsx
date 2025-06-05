@@ -10,9 +10,12 @@ import BookingBlock from "./MainPageBlocks/BookingBlock";
 import CombinedPageBlock from "./MainPageBlocks/CombinedPageBlock";
 import ServiceSliderBlock from "./MainPageBlocks/ServiceSliderBlock";
 import TestimonialBlock from "./MainPageBlocks/TestimonialBlock";
+import TopStickyEditPanel from "./TopStickyEditPanel";
+import ThemeColorPicker from "./common/ThemeColorPicker";
+import PanelStylingController from "./common/PanelStylingController";
+import PanelImagesController from "./common/PanelImagesController";
 import Navbar from "./Navbar";
 import IconSelectorModal from './common/IconSelectorModal';
-import TopStickyEditPanel from './TopStickyEditPanel';
 
 // Lazy load components to avoid circular dependencies if any, and for consistency
 const BasicMapBlockLazy = lazy(() => import("./MainPageBlocks/BasicMapBlock"));
@@ -61,12 +64,14 @@ function safeDeepClone(obj) {
  * MainPageForm is a presentational component for editing the main page.
  * It displays the UI and passes changes upward via setFormData.
  */
-const MainPageForm = ({ formData: formDataProp, setFormData: setFormDataProp, singleBlockMode = null, themeColors, sitePalette }) => {
+const MainPageForm = ({ formData: formDataProp, setFormData: setFormDataProp, navbarData: navbarDataProp, onNavbarChange, singleBlockMode = null, themeColors, sitePalette }) => {
+  const [formData, setFormData] = useState({ mainPageBlocks: [] });
+  const [navbarConfig, setNavbarConfig] = useState(null);
+  const [initialNavbarConfig, setInitialNavbarConfig] = useState(null);
   const [internalFormData, setInternalFormData] = useState(() => safeDeepClone(formDataProp) || {});
   const [activeEditBlock, setActiveEditBlock] = useState(null);
   const [activeBlockDataForPanel, setActiveBlockDataForPanel] = useState(null);
   const [previewNavbarAsScrolled, setPreviewNavbarAsScrolled] = useState(false);
-  const navbarEditFormRef = useRef();
   const [isIconModalOpen, setIsIconModalOpen] = useState(false);
   const [iconModalTargetField, setIconModalTargetField] = useState(null);
   const [currentIconForModal, setCurrentIconForModal] = useState(null);
@@ -260,10 +265,82 @@ const MainPageForm = ({ formData: formDataProp, setFormData: setFormDataProp, si
     });
   }, [setInternalFormData]);
   
-  const handleNavbarConfigChange = useCallback((newNavbarConfig) => {
-    console.log("MainPageForm: Navbar is committing changes to internalFormData.", newNavbarConfig);
-    setInternalFormData((prev) => ({ ...prev, navbar: newNavbarConfig }));
-  }, [setInternalFormData]);
+  // Helper function to prepare navbar data for parent component
+  const prepareNavbarDataForParent = useCallback((currentNavbarData) => {
+    if (!currentNavbarData) return null;
+    
+    const dataToSave = { ...currentNavbarData };
+    
+    // Handle images array - preserve original names for processing
+    if (dataToSave.images && dataToSave.images.length > 0) {
+      const logoImage = dataToSave.images[0];
+      let fileName = logoImage.name;
+      if (logoImage.file instanceof File) {
+        fileName = logoImage.file.name;
+      } else if (logoImage.originalUrl && !logoImage.originalUrl.startsWith('blob:')) {
+        fileName = logoImage.originalUrl.split('/').pop();
+      }
+      
+      if (!fileName || fileName === 'Logo') {
+        fileName = 'logo.png';
+      }
+      
+      dataToSave.logo = {
+        url: logoImage.url,
+        file: logoImage.file,
+        originalUrl: logoImage.originalUrl,
+        name: fileName,
+        id: logoImage.id
+      };
+    }
+    
+    // Handle whiteImages array
+    if (dataToSave.whiteImages && dataToSave.whiteImages.length > 0) {
+      const whiteLogoImage = dataToSave.whiteImages[0];
+      let fileName = whiteLogoImage.name;
+      if (whiteLogoImage.file instanceof File) {
+        fileName = whiteLogoImage.file.name;
+      } else if (whiteLogoImage.originalUrl && !whiteLogoImage.originalUrl.startsWith('blob:')) {
+        fileName = whiteLogoImage.originalUrl.split('/').pop();
+      }
+      
+      if (!fileName || fileName === 'White Logo') {
+        fileName = 'logo_white.png';
+      }
+      
+      dataToSave.whiteLogo = {
+        url: whiteLogoImage.url,
+        file: whiteLogoImage.file,
+        originalUrl: whiteLogoImage.originalUrl,
+        name: fileName,
+        id: whiteLogoImage.id
+      };
+    }
+    
+    return dataToSave;
+  }, []);
+
+  // Handle navbar configuration changes
+  const handleNavbarConfigChange = useCallback((changedFields) => {
+    console.log('[MainPageForm] Navbar config changed:', changedFields);
+    setNavbarConfig(prevConfig => {
+      const newConfig = { ...prevConfig, ...changedFields };
+      
+      // Use prop callback if available, otherwise use setFormDataProp
+      if (onNavbarChange && typeof onNavbarChange === 'function') {
+        onNavbarChange(newConfig);
+      } else if (setFormDataProp && typeof setFormDataProp === 'function') {
+        // Fallback to old behavior
+        const dataForParent = prepareNavbarDataForParent(newConfig);
+        setFormDataProp(prevFormData => ({
+          ...prevFormData,
+          navbar: dataForParent
+        }));
+      }
+      
+      return newConfig;
+    });
+  }, [onNavbarChange, prepareNavbarDataForParent, setFormDataProp]);
 
   const handleRichTextConfigChange = useCallback((newRichTextConfig) => {
     console.log("MainPageForm: RichText committing changes to internalFormData.", newRichTextConfig);
@@ -304,53 +381,18 @@ const MainPageForm = ({ formData: formDataProp, setFormData: setFormDataProp, si
     let newPanelData = null;
 
     if (activeEditBlock === 'navbar') {
-      const currentNavbarConfig = internalFormData.navbar || {};
-      
-      // Create tabsConfig for navbar similar to other blocks
-      const navbarTabsConfig = {
-        general: (props) => (
-          <NavbarGeneralControls
-            {...props}
-            currentData={currentNavbarConfig}
-            onControlsChange={handleNavbarConfigChange}
-          />
-        ),
-        images: (props) => (
-          <NavbarImagesControls
-            {...props}
-            currentData={currentNavbarConfig}
-            onControlsChange={handleNavbarConfigChange}
-            themeColors={themeColors}
-            onOpenIconModal={handleOpenIconModal}
-          />
-        ),
-        colors: (props) => (
-          <NavbarColorControls
-            {...props}
-            currentData={currentNavbarConfig}
-            onControlsChange={handleNavbarConfigChange}
-            themeColors={themeColors}
-          />
-        ),
-        styling: (props) => (
-          <NavbarStylingControls
-            {...props}
-            currentData={currentNavbarConfig}
-            onControlsChange={handleNavbarConfigChange}
-            previewNavbarAsScrolled={previewNavbarAsScrolled}
-            setPreviewNavbarAsScrolled={setPreviewNavbarAsScrolled}
-          />
-        ),
-      };
-      
-      newPanelData = {
-        blockName: 'Navbar',
-        config: currentNavbarConfig,
-        onPanelChange: handleNavbarConfigChange,
-        tabsConfig: navbarTabsConfig,
-        themeColors: themeColors,
-        sitePalette: sitePalette,
-      };
+      // Handle navbar editing with proper panel data
+      if (navbarConfig) {
+        newPanelData = {
+          blockName: 'Navbar',
+          EditorPanelComponent: null, // Use tabs instead
+          config: navbarConfig,
+          onPanelChange: handleNavbarConfigChange,
+          tabsConfig: navbarTabsConfig,
+          themeColors,
+          sitePalette,
+        };
+      }
     } else {
       const blockToEdit = internalFormData.mainPageBlocks?.find(b => b.uniqueKey === activeEditBlock);
       if (blockToEdit) {
@@ -430,9 +472,122 @@ const MainPageForm = ({ formData: formDataProp, setFormData: setFormDataProp, si
     activeBlockDataForPanel,
     previewNavbarAsScrolled,
     handleOpenIconModal,
+    navbarConfig,
   ]);
 
   const activeBlockForPanel = activeEditBlock ? internalFormData.mainPageBlocks?.find(b => b.uniqueKey === activeEditBlock) : null;
+
+  // Load navbar configuration from nav.json or props
+  useEffect(() => {
+    const loadNavbarConfig = async () => {
+      // Use prop data if available
+      if (navbarDataProp) {
+        console.log('[MainPageForm] Using navbar data from props:', navbarDataProp);
+        setNavbarConfig(navbarDataProp);
+        setInitialNavbarConfig(JSON.parse(JSON.stringify(navbarDataProp)));
+        return;
+      }
+
+      // Fallback to loading from nav.json
+      try {
+        const response = await fetch('/personal/old/jsons/nav.json');
+        if (response.ok) {
+          const navData = await response.json();
+          console.log('[MainPageForm] Loaded nav.json:', navData);
+          
+          // Initialize images array structure if it doesn't exist
+          let processedNavData = { ...navData };
+          
+          // Handle legacy logo structure - convert to images array
+          if (!processedNavData.images && processedNavData.logo) {
+            processedNavData.images = [{
+              id: 'navbar_logo_main',
+              url: typeof processedNavData.logo === 'string' ? processedNavData.logo : processedNavData.logo.url,
+              name: typeof processedNavData.logo === 'string' ? processedNavData.logo.split('/').pop() : processedNavData.logo.name,
+              originalUrl: typeof processedNavData.logo === 'string' ? processedNavData.logo : processedNavData.logo.originalUrl,
+              file: null
+            }];
+            delete processedNavData.logo;
+          }
+          
+          // Handle legacy whiteLogo structure - convert to whiteImages array
+          if (!processedNavData.whiteImages && processedNavData.whiteLogo) {
+            processedNavData.whiteImages = [{
+              id: 'navbar_logo_white',
+              url: typeof processedNavData.whiteLogo === 'string' ? processedNavData.whiteLogo : processedNavData.whiteLogo.url,
+              name: typeof processedNavData.whiteLogo === 'string' ? processedNavData.whiteLogo.split('/').pop() : processedNavData.whiteLogo.name,
+              originalUrl: typeof processedNavData.whiteLogo === 'string' ? processedNavData.whiteLogo : processedNavData.whiteLogo.originalUrl,
+              file: null
+            }];
+            delete processedNavData.whiteLogo;
+          }
+          
+          setNavbarConfig(processedNavData);
+          setInitialNavbarConfig(JSON.parse(JSON.stringify(processedNavData)));
+        } else {
+          console.warn('[MainPageForm] Failed to load nav.json, using fallback');
+          const fallbackNavbar = {
+            title: "COWBOYS-VAQUEROS",
+            subtitle: "CONSTRUCTION",
+            navLinks: [],
+            images: [],
+            whiteImages: []
+          };
+          setNavbarConfig(fallbackNavbar);
+          setInitialNavbarConfig(JSON.parse(JSON.stringify(fallbackNavbar)));
+        }
+      } catch (error) {
+        console.error('[MainPageForm] Error loading nav.json:', error);
+        const fallbackNavbar = {
+          title: "COWBOYS-VAQUEROS", 
+          subtitle: "CONSTRUCTION",
+          navLinks: [],
+          images: [],
+          whiteImages: []
+        };
+        setNavbarConfig(fallbackNavbar);
+        setInitialNavbarConfig(JSON.parse(JSON.stringify(fallbackNavbar)));
+      }
+    };
+    
+    loadNavbarConfig();
+  }, [navbarDataProp]);
+
+  // Define tabsConfig for navbar
+  const navbarTabsConfig = navbarConfig ? {
+    general: (props) => (
+      <NavbarGeneralControls 
+        {...props} 
+        currentData={navbarConfig}
+        onControlsChange={handleNavbarConfigChange}
+      />
+    ),
+    images: (props) => (
+      <NavbarImagesControls 
+        {...props} 
+        currentData={navbarConfig}
+        onControlsChange={handleNavbarConfigChange}
+        themeColors={themeColors}
+      />
+    ),
+    colors: (props) => (
+      <NavbarColorControls 
+        {...props} 
+        currentData={navbarConfig}
+        onControlsChange={handleNavbarConfigChange}
+        themeColors={themeColors} 
+      />
+    ),
+    styling: (props) => (
+      <NavbarStylingControls 
+        {...props} 
+        currentData={navbarConfig}
+        onControlsChange={handleNavbarConfigChange}
+        previewNavbarAsScrolled={previewNavbarAsScrolled}
+        setPreviewNavbarAsScrolled={setPreviewNavbarAsScrolled}
+      />
+    ),
+  } : null;
 
   if (singleBlockMode) {
     const blockDataContainer = internalFormData || {};
@@ -443,16 +598,40 @@ const MainPageForm = ({ formData: formDataProp, setFormData: setFormDataProp, si
       return (
         <div className="relative p-4 bg-gray-200">
           <h2 className="text-xl font-semibold mb-3">Navbar Editor</h2>
-          <NavbarEditForm 
-            ref={navbarEditFormRef} 
-            navbarConfig={blockDataContainer.navbar || {}} 
-            onConfigChange={handleNavbarConfigChange}
-            previewNavbarAsScrolled={previewNavbarAsScrolled} 
-            setPreviewNavbarAsScrolled={setPreviewNavbarAsScrolled} 
-            onOpenIconModal={(fieldId, currentIcon) => handleOpenIconModal(fieldId, currentIcon, 'navbar')}
-            sitePalette={sitePalette}
-          />
-          <button onClick={() => navbarEditFormRef.current?.commitChanges()} className="mt-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Save Navbar Changes</button>
+          <div className="bg-white border rounded-lg shadow-sm overflow-visible mb-4">
+            <div className="relative">
+              <Navbar 
+                config={navbarConfig || blockDataContainer.navbar || {}}
+                forceScrolledState={previewNavbarAsScrolled}
+                isPreview={true}
+              />
+            </div>
+            <div className="px-4 py-3 bg-gray-50 border-t">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-600">Preview:</span>
+                <button
+                  onClick={() => setPreviewNavbarAsScrolled(false)}
+                  className={`px-2 py-1 text-xs rounded ${
+                    !previewNavbarAsScrolled 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Unscrolled
+                </button>
+                <button
+                  onClick={() => setPreviewNavbarAsScrolled(true)}
+                  className={`px-2 py-1 text-xs rounded ${
+                    previewNavbarAsScrolled 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Scrolled
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       );
     }
@@ -505,33 +684,64 @@ const MainPageForm = ({ formData: formDataProp, setFormData: setFormDataProp, si
         />
       )}
 
-      {!singleBlockMode && Object.keys(currentNavbarData).length > 0 && (
-        <div className="bg-white shadow-md border rounded-lg">
-          <div className="flex justify-between items-center p-3 border-b">
-            <h2 className="text-xl font-semibold text-gray-700">Navbar</h2>
-            <button type="button" onClick={() => handleToggleEditState('navbar')} className={`${activeEditBlock === "navbar" ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-700 hover:bg-gray-600'} text-white rounded-full p-2 shadow-lg transition-colors`}>
-              {activeEditBlock === "navbar" ? CheckIcon : PencilIcon}
+      {/* Navbar Section - Now integrated with TopStickyEditPanel */}
+      {!singleBlockMode && navbarConfig && (
+        <div className="relative bg-white overflow-hidden border mb-4">
+          {/* Navbar Preview */}
+          <div className="relative">
+            <Navbar 
+              config={navbarConfig}
+              forceScrolledState={previewNavbarAsScrolled}
+              isPreview={true}
+              // Animation settings from config
+              naturalOffsetVh={navbarConfig?.animation?.naturalOffsetVh}
+              slideUpDistanceVh={navbarConfig?.animation?.slideUpDistanceVh}
+              logoSizeUnscrolled={navbarConfig?.animation?.logoSizeUnscrolled}
+              logoSizeScrolled={navbarConfig?.animation?.logoSizeScrolled}
+              // Text and layout settings
+              textSizes={navbarConfig?.textSizes}
+              logoTextDistance={navbarConfig?.logoTextDistance}
+              navbarHeight={navbarConfig?.navbarHeight}
+              invertLogoColor={navbarConfig?.invertLogoColor}
+            />
+          </div>
+          
+          {/* Edit Button */}
+          <div className="absolute top-4 right-4 z-50">
+            <button 
+              type="button" 
+              onClick={() => handleToggleEditState('navbar')} 
+              className={`${activeEditBlock === 'navbar' ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-700 hover:bg-gray-600'} text-white rounded-full p-2 shadow-lg transition-colors`}
+            >
+              {activeEditBlock === 'navbar' ? CheckIcon : PencilIcon}
             </button>
           </div>
-          <div className="navbar-preview-container overflow-visible">
-            <Suspense fallback={<div>Loading Navbar Preview...</div>}>
-              <Navbar
-                config={currentNavbarData}
-                forceScrolledState={previewNavbarAsScrolled}
-                isPreview={true}
-                isEditingPreview={activeEditBlock === 'navbar'}
-                onTitleChange={(newTitle) => setInternalFormData(prev => ({ ...prev, navbar: { ...(prev.navbar || {}), title: newTitle }}))}
-                onSubtitleChange={(newSubtitle) => setInternalFormData(prev => ({ ...prev, navbar: { ...(prev.navbar || {}), subtitle: newSubtitle }}))}
-                naturalOffsetVh={currentNavbarData?.animation?.naturalOffsetVh}
-                slideUpDistanceVh={currentNavbarData?.animation?.slideUpDistanceVh}
-                logoSizeUnscrolled={currentNavbarData?.animation?.logoSizeUnscrolled}
-                logoSizeScrolled={currentNavbarData?.animation?.logoSizeScrolled}
-                textSizes={currentNavbarData?.textSizes}
-                logoTextDistance={currentNavbarData?.logoTextDistance}
-                navbarHeight={currentNavbarData?.navbarHeight}
-                invertLogoColor={currentNavbarData?.invertLogoColor}
-              />
-            </Suspense>
+          
+          {/* Scroll Preview Controls */}
+          <div className="absolute bottom-4 left-4 z-50">
+            <div className="flex items-center space-x-2 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-lg">
+              <span className="text-xs text-gray-600">Preview:</span>
+              <button
+                onClick={() => setPreviewNavbarAsScrolled(false)}
+                className={`px-2 py-1 text-xs rounded ${
+                  !previewNavbarAsScrolled 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                Unscrolled
+              </button>
+              <button
+                onClick={() => setPreviewNavbarAsScrolled(true)}
+                className={`px-2 py-1 text-xs rounded ${
+                  previewNavbarAsScrolled 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                Scrolled
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -599,6 +809,8 @@ const MainPageForm = ({ formData: formDataProp, setFormData: setFormDataProp, si
 MainPageForm.propTypes = {
   formData: PropTypes.object, 
   setFormData: PropTypes.func.isRequired,
+  navbarData: PropTypes.object,
+  onNavbarChange: PropTypes.func,
   singleBlockMode: PropTypes.string,
   themeColors: PropTypes.object, 
   sitePalette: PropTypes.array,
@@ -619,7 +831,7 @@ export default MainPageForm;
    Following the standard pattern from BeforeAfterBlock
 =============================================== */
 
-// Navbar General Controls - Navigation Links
+// Navbar General Controls - Navigation Links and Basic Text
 const NavbarGeneralControls = ({ currentData, onControlsChange }) => {
   const handleNavLinkChange = (index, field, value) => {
     const updatedNavLinks = [...(currentData.navLinks || [])];
@@ -640,6 +852,10 @@ const NavbarGeneralControls = ({ currentData, onControlsChange }) => {
     onControlsChange({ ...currentData, navLinks: updatedNavLinks });
   };
 
+  const handleTextChange = (field, value) => {
+    onControlsChange({ ...currentData, [field]: value });
+  };
+
   // Simplified routes for the dropdown
   const predefinedRoutes = [
     { label: "Home Page", value: "/" },
@@ -654,189 +870,132 @@ const NavbarGeneralControls = ({ currentData, onControlsChange }) => {
   ];
 
   return (
-    <div className="p-4 space-y-4 bg-white rounded-md">
-      <h3 className="text-md font-medium text-gray-900 mb-2">Navigation Links:</h3>
-      {(currentData.navLinks || []).map((link, index) => (
-        <div key={index} className="p-2 border border-gray-200 rounded-md mb-2 bg-white shadow-sm">
-          <div className="flex items-center space-x-2">
-            <div className="flex-grow">
-              <label className="block text-xs font-medium text-gray-600">Display Name:</label>
-              <input 
-                type="text" 
-                value={link.name} 
-                onChange={(e) => handleNavLinkChange(index, 'name', e.target.value)} 
-                className="mt-0.5 block w-full px-2 py-1 bg-gray-50 border border-gray-300 rounded-md shadow-sm sm:text-sm"
-              />
-            </div>
-            <div className="flex-grow">
-              <label className="block text-xs font-medium text-gray-600">Target Route:</label>
-              <select 
-                value={predefinedRoutes.find(r => r.value === link.href) ? link.href : 'CUSTOM'} 
-                onChange={(e) => {
-                  const val = e.target.value;
-                  handleNavLinkChange(index, 'href', val === 'CUSTOM' ? '' : val);
-                }} 
-                className="mt-0.5 block w-full px-2 py-1 bg-gray-50 border border-gray-300 rounded-md shadow-sm sm:text-sm"
-              >
-                {predefinedRoutes.map(route => (
-                  <option key={route.value} value={route.value}>{route.label}</option>
-                ))}
-              </select>
-              {(link.href === 'CUSTOM' || !predefinedRoutes.find(r => r.value === link.href)) && (
-                <input 
-                  type="text" 
-                  value={link.href === 'CUSTOM' ? '' : link.href} 
-                  onChange={(e) => handleNavLinkChange(index, 'href', e.target.value)} 
-                  placeholder="Enter custom URL (e.g., /#contact)" 
-                  className="mt-1 block w-full px-2 py-1 bg-gray-50 border border-gray-300 rounded-md shadow-sm sm:text-sm"
-                />
-              )}
-            </div>
-            <button 
-              type="button" 
-              onClick={() => removeNavLink(index)} 
-              className="text-red-500 hover:text-red-700 text-xs font-semibold self-end pb-1"
-            >
-              Remove
-            </button>
+    <div className="p-4 space-y-6 bg-white rounded-md">
+      {/* Navbar Text Content */}
+      <div className="space-y-4">
+        <h3 className="text-md font-medium text-gray-900 mb-2">Navbar Text Content:</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Main Title:</label>
+            <input 
+              type="text" 
+              value={currentData.title || ''} 
+              onChange={(e) => handleTextChange('title', e.target.value)} 
+              placeholder="e.g., COWBOYS-VAQUEROS"
+              className="block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Subtitle:</label>
+            <input 
+              type="text" 
+              value={currentData.subtitle || ''} 
+              onChange={(e) => handleTextChange('subtitle', e.target.value)} 
+              placeholder="e.g., CONSTRUCTION"
+              className="block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
           </div>
         </div>
-      ))}
-      <button 
-        type="button" 
-        onClick={addNavLink} 
-        className="mt-2 px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
-      >
-        Add Nav Link
-      </button>
+      </div>
+
+      {/* Navigation Links */}
+      <div className="space-y-4">
+        <h3 className="text-md font-medium text-gray-900 mb-2">Navigation Links:</h3>
+        {(currentData.navLinks || []).map((link, index) => (
+          <div key={index} className="p-2 border border-gray-200 rounded-md mb-2 bg-white shadow-sm">
+            <div className="flex items-center space-x-2">
+              <div className="flex-grow">
+                <label className="block text-xs font-medium text-gray-600">Display Name:</label>
+                <input 
+                  type="text" 
+                  value={link.name} 
+                  onChange={(e) => handleNavLinkChange(index, 'name', e.target.value)} 
+                  className="mt-0.5 block w-full px-2 py-1 bg-gray-50 border border-gray-300 rounded-md shadow-sm sm:text-sm"
+                />
+              </div>
+              <div className="flex-grow">
+                <label className="block text-xs font-medium text-gray-600">Target Route:</label>
+                <select 
+                  value={predefinedRoutes.find(r => r.value === link.href) ? link.href : 'CUSTOM'} 
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    handleNavLinkChange(index, 'href', val === 'CUSTOM' ? '' : val);
+                  }} 
+                  className="mt-0.5 block w-full px-2 py-1 bg-gray-50 border border-gray-300 rounded-md shadow-sm sm:text-sm"
+                >
+                  {predefinedRoutes.map(route => (
+                    <option key={route.value} value={route.value}>{route.label}</option>
+                  ))}
+                </select>
+                {(link.href === 'CUSTOM' || !predefinedRoutes.find(r => r.value === link.href)) && (
+                  <input 
+                    type="text" 
+                    value={link.href === 'CUSTOM' ? '' : link.href} 
+                    onChange={(e) => handleNavLinkChange(index, 'href', e.target.value)} 
+                    placeholder="Enter custom URL (e.g., /#contact)" 
+                    className="mt-1 block w-full px-2 py-1 bg-gray-50 border border-gray-300 rounded-md shadow-sm sm:text-sm"
+                  />
+                )}
+              </div>
+              <button 
+                type="button" 
+                onClick={() => removeNavLink(index)} 
+                className="text-red-500 hover:text-red-700 text-xs font-semibold self-end pb-1"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        ))}
+        <button 
+          type="button" 
+          onClick={addNavLink} 
+          className="mt-2 px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+        >
+          Add Nav Link
+        </button>
+      </div>
     </div>
   );
 };
 
 // Navbar Images Controls - Logo and White Logo
-const NavbarImagesControls = ({ currentData, onControlsChange, themeColors, onOpenIconModal }) => {
-  const handleLogoFileChange = (field, file) => {
-    if (!file) return;
-    const currentLogoState = currentData[field] || {};
-    if (currentLogoState?.url?.startsWith('blob:')) {
-      URL.revokeObjectURL(currentLogoState.url);
-    }
-    const fileURL = URL.createObjectURL(file);
-    onControlsChange({ 
-      ...currentData,
-      [field]: { 
-        file, 
-        url: fileURL, 
-        name: file.name, 
-        originalUrl: currentLogoState?.originalUrl || (field === 'logo' ? "/assets/images/hero/clipped.png" : "")
-      } 
-    });
-  };
-
-  const handleLogoUrlChange = (field, urlValue) => {
-    const currentLogoState = currentData[field] || {};
-    if (currentLogoState?.url?.startsWith('blob:')) {
-      URL.revokeObjectURL(currentLogoState.url);
-    }
-    onControlsChange({ 
-      ...currentData,
-      [field]: { 
-        file: null, 
-        url: urlValue, 
-        name: urlValue.split('/').pop(),
-        originalUrl: urlValue
-      } 
-    });
-  };
-
-  const getDisplayUrl = (logoState) => {
-    if (!logoState) return '';
-    if (typeof logoState === 'string') return logoState;
-    if (logoState.file && logoState.url && logoState.url.startsWith('blob:')) return logoState.url;
-    return logoState.url || '';
+const NavbarImagesControls = ({ currentData, onControlsChange, themeColors }) => {
+  const handleControlsChange = (changedFields) => {
+    onControlsChange(changedFields);
   };
 
   return (
-    <div className="p-4 space-y-6 bg-white rounded-md">
-      {/* Main Logo */}
-      <div className="border p-3 rounded-md bg-white shadow-sm">
-        <label className="block text-sm font-medium text-gray-700">Logo:</label>
-        <input 
-          type="file" 
-          accept="image/*" 
-          onChange={(e) => handleLogoFileChange('logo', e.target.files?.[0])} 
-          className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100"
+    <div className="p-3 grid grid-cols-1 gap-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-200 mb-2">Main Logo:</label>
+        <PanelImagesController
+          currentData={currentData}
+          onControlsChange={handleControlsChange}
+          imageArrayFieldName="images"
+          maxImages={1}
+          imageLabels={["Main Logo"]}
         />
-        <input 
-          type="text" 
-          placeholder="Or paste image URL" 
-          value={getDisplayUrl(currentData.logo) === currentData.logo?.file?.name ? '' : getDisplayUrl(currentData.logo)} 
-          onChange={(e) => handleLogoUrlChange('logo', e.target.value)} 
-          className="mt-1 block w-full px-3 py-1.5 bg-white border border-gray-300 rounded-md shadow-sm sm:text-sm"
-        />
-        {getDisplayUrl(currentData.logo) && (
-          <img 
-            src={getDisplayUrl(currentData.logo)} 
-            alt="Logo Preview" 
-            className="mt-2 h-12 w-auto object-contain border p-1 bg-gray-100 rounded" 
-          />
-        )}
       </div>
-
-      {/* White Logo */}
-      <div className="border p-3 rounded-md bg-white shadow-sm">
-        <label className="block text-sm font-medium text-gray-700">White Logo (for dark unscrolled backgrounds):</label>
-        <div className="flex items-center space-x-2 mt-1">
-          <button 
-            type="button"
-            onClick={() => onOpenIconModal('whiteLogoIcon', currentData.whiteLogoIcon, 'navbar')}
-            className="px-3 py-1.5 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-md"
-          >
-            Select Icon
-          </button>
-          {!currentData.whiteLogoIcon && <span className="text-sm text-gray-600">OR Upload Image:</span>}
-        </div>
-
-        {currentData.whiteLogoIcon ? (
-          <div className="mt-2 p-2 bg-gray-100 rounded-md">
-            <p className="text-sm text-gray-700">
-              Selected Icon: <strong>{currentData.whiteLogoIcon.pack} - {currentData.whiteLogoIcon.name}</strong>
-              <button 
-                type="button" 
-                onClick={() => onControlsChange({ ...currentData, whiteLogoIcon: null })} 
-                className="text-red-500 hover:text-red-700 text-xs ml-2 font-semibold"
-              >
-                (Clear Icon & Use Image Instead)
-              </button>
-            </p>
-          </div>
-        ) : (
-          <>
-            <input 
-              type="file" 
-              accept="image/*" 
-              onChange={(e) => handleLogoFileChange('whiteLogo', e.target.files?.[0])} 
-              className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100"
-            />
-            <input 
-              type="text" 
-              placeholder="Or paste image URL" 
-              value={getDisplayUrl(currentData.whiteLogo) === currentData.whiteLogo?.file?.name ? '' : getDisplayUrl(currentData.whiteLogo)} 
-              onChange={(e) => handleLogoUrlChange('whiteLogo', e.target.value)} 
-              className="mt-1 block w-full px-3 py-1.5 bg-white border border-gray-300 rounded-md shadow-sm sm:text-sm"
-            />
-            {getDisplayUrl(currentData.whiteLogo) && (
-              <img 
-                src={getDisplayUrl(currentData.whiteLogo)} 
-                alt="White Logo Preview" 
-                className="mt-2 h-12 w-auto object-contain border p-1 bg-gray-700 rounded" 
-              />
-            )}
-          </>
-        )}
+      
+      <div>
+        <label className="block text-sm font-medium text-gray-200 mb-2">White Logo (for dark backgrounds):</label>
+        <PanelImagesController
+          currentData={currentData}
+          onControlsChange={handleControlsChange}
+          imageArrayFieldName="whiteImages"
+          maxImages={1}
+          imageLabels={["White Logo"]}
+        />
       </div>
     </div>
   );
+};
+
+NavbarImagesControls.propTypes = {
+  currentData: PropTypes.object.isRequired,
+  onControlsChange: PropTypes.func.isRequired,
+  themeColors: PropTypes.array.isRequired,
 };
 
 // Navbar Color Controls
@@ -901,17 +1060,104 @@ const NavbarStylingControls = ({ currentData, onControlsChange, previewNavbarAsS
     onControlsChange({ ...currentData, animation: updatedAnimation });
   };
 
-  const handleSizeConfigChange = (sizeType, breakpoint, property, value) => {
-    const currentSizes = currentData[sizeType] || {};
+  const handleTextSizeChange = (sizeType, breakpoint, property, value) => {
+    const currentSizes = currentData.textSizes || {};
     const currentBreakpoint = currentSizes[breakpoint] || {};
     const updatedSizes = {
       ...currentSizes,
       [breakpoint]: { ...currentBreakpoint, [property]: value }
     };
-    onControlsChange({ ...currentData, [sizeType]: updatedSizes });
+    onControlsChange({ ...currentData, textSizes: updatedSizes });
+  };
+
+  const handleNavbarHeightChange = (heightType, breakpoint, property, value) => {
+    const currentHeights = currentData.navbarHeight || {};
+    const currentBreakpoint = currentHeights[breakpoint] || {};
+    const updatedHeights = {
+      ...currentHeights,
+      [breakpoint]: { ...currentBreakpoint, [property]: value }
+    };
+    onControlsChange({ ...currentData, navbarHeight: updatedHeights });
   };
 
   const animation = currentData.animation || {};
+
+  // Text size options for different screen sizes
+  const textSizeOptions = {
+    unscrolled: {
+      base: [
+        { value: 'text-[4vw]', label: 'Extra Small (4vw)' },
+        { value: 'text-[5vw]', label: 'Small (5vw)' },
+        { value: 'text-[6vw]', label: 'Medium (6vw)' },
+        { value: 'text-[7vw]', label: 'Large (7vw)' },
+        { value: 'text-[8vw]', label: 'Extra Large (8vw)' },
+        { value: 'text-[9vw]', label: 'Huge (9vw)' },
+      ],
+      md: [
+        { value: 'text-[4vh]', label: 'Extra Small (4vh)' },
+        { value: 'text-[5vh]', label: 'Small (5vh)' },
+        { value: 'text-[6vh]', label: 'Medium (6vh)' },
+        { value: 'text-[7vh]', label: 'Large (7vh)' },
+        { value: 'text-[8vh]', label: 'Extra Large (8vh)' },
+        { value: 'text-[9vh]', label: 'Huge (9vh)' },
+      ],
+      lg: [
+        { value: 'text-[3vh]', label: 'Extra Small (3vh)' },
+        { value: 'text-[4vh]', label: 'Small (4vh)' },
+        { value: 'text-[5vh]', label: 'Medium (5vh)' },
+        { value: 'text-[6vh]', label: 'Large (6vh)' },
+        { value: 'text-[7vh]', label: 'Extra Large (7vh)' },
+      ]
+    },
+    scrolled: {
+      base: [
+        { value: 'text-[2vw]', label: 'Extra Small (2vw)' },
+        { value: 'text-[2.5vw]', label: 'Small (2.5vw)' },
+        { value: 'text-[3vw]', label: 'Medium (3vw)' },
+        { value: 'text-[3.5vw]', label: 'Large (3.5vw)' },
+        { value: 'text-[4vw]', label: 'Extra Large (4vw)' },
+      ],
+      md: [
+        { value: 'text-[3vh]', label: 'Extra Small (3vh)' },
+        { value: 'text-[4vh]', label: 'Small (4vh)' },
+        { value: 'text-[5vh]', label: 'Medium (5vh)' },
+        { value: 'text-[6vh]', label: 'Large (6vh)' },
+        { value: 'text-[7vh]', label: 'Extra Large (7vh)' },
+      ]
+    }
+  };
+
+  // Navbar height options
+  const navbarHeightOptions = {
+    unscrolled: {
+      base: [
+        { value: 'h-[12vh]', label: 'Small (12vh)' },
+        { value: 'h-[14vh]', label: 'Medium (14vh)' },
+        { value: 'h-[16vh]', label: 'Large (16vh)' },
+        { value: 'h-[18vh]', label: 'Extra Large (18vh)' },
+        { value: 'h-[20vh]', label: 'Huge (20vh)' },
+      ],
+      md: [
+        { value: 'h-[14vh]', label: 'Small (14vh)' },
+        { value: 'h-[16vh]', label: 'Medium (16vh)' },
+        { value: 'h-[18vh]', label: 'Large (18vh)' },
+        { value: 'h-[20vh]', label: 'Extra Large (20vh)' },
+        { value: 'h-[22vh]', label: 'Huge (22vh)' },
+      ]
+    },
+    scrolled: {
+      base: [
+        { value: 'h-[8vh]', label: 'Small (8vh)' },
+        { value: 'h-[10vh]', label: 'Medium (10vh)' },
+        { value: 'h-[12vh]', label: 'Large (12vh)' },
+      ],
+      md: [
+        { value: 'h-[8vh]', label: 'Small (8vh)' },
+        { value: 'h-[10vh]', label: 'Medium (10vh)' },
+        { value: 'h-[12vh]', label: 'Large (12vh)' },
+      ]
+    }
+  };
 
   return (
     <div className="p-4 space-y-6 bg-white rounded-md">
@@ -998,6 +1244,148 @@ const NavbarStylingControls = ({ currentData, onControlsChange, previewNavbarAsS
               onChange={(e) => handleAnimationChange('logoSizeScrolled', { ...animation.logoSizeScrolled, height: e.target.value })} 
               className="mt-1 block w-full px-2 py-1 bg-gray-50 border border-gray-300 rounded-md shadow-sm sm:text-sm"
             />
+          </div>
+        </div>
+      </div>
+
+      {/* Text Size Settings */}
+      <div className="space-y-4">
+        <h4 className="text-sm font-medium text-gray-700">Text Size Settings:</h4>
+        
+        <div className="border p-3 rounded-md bg-gray-50">
+          <h5 className="text-xs font-semibold text-gray-600 mb-2">Unscrolled Text Sizes:</h5>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-500">Mobile (base):</label>
+              <select 
+                value={currentData.textSizes?.unscrolled?.base || 'text-[7vw]'}
+                onChange={(e) => handleTextSizeChange('unscrolled', 'base', 'base', e.target.value)}
+                className="mt-1 block w-full px-2 py-1 bg-white border border-gray-300 rounded text-xs"
+              >
+                {textSizeOptions.unscrolled.base.map(option => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500">Tablet (md):</label>
+              <select 
+                value={currentData.textSizes?.unscrolled?.md || 'text-[8vh]'}
+                onChange={(e) => handleTextSizeChange('unscrolled', 'md', 'md', e.target.value)}
+                className="mt-1 block w-full px-2 py-1 bg-white border border-gray-300 rounded text-xs"
+              >
+                {textSizeOptions.unscrolled.md.map(option => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500">Desktop (lg):</label>
+              <select 
+                value={currentData.textSizes?.unscrolled?.lg || 'text-[5vh]'}
+                onChange={(e) => handleTextSizeChange('unscrolled', 'lg', 'lg', e.target.value)}
+                className="mt-1 block w-full px-2 py-1 bg-white border border-gray-300 rounded text-xs"
+              >
+                {textSizeOptions.unscrolled.lg.map(option => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="border p-3 rounded-md bg-gray-50">
+          <h5 className="text-xs font-semibold text-gray-600 mb-2">Scrolled Text Sizes:</h5>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-500">Mobile (base):</label>
+              <select 
+                value={currentData.textSizes?.scrolled?.base || 'text-[3vw]'}
+                onChange={(e) => handleTextSizeChange('scrolled', 'base', 'base', e.target.value)}
+                className="mt-1 block w-full px-2 py-1 bg-white border border-gray-300 rounded text-xs"
+              >
+                {textSizeOptions.scrolled.base.map(option => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500">Desktop (md):</label>
+              <select 
+                value={currentData.textSizes?.scrolled?.md || 'text-[5vh]'}
+                onChange={(e) => handleTextSizeChange('scrolled', 'md', 'md', e.target.value)}
+                className="mt-1 block w-full px-2 py-1 bg-white border border-gray-300 rounded text-xs"
+              >
+                {textSizeOptions.scrolled.md.map(option => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Navbar Height Settings */}
+      <div className="space-y-4">
+        <h4 className="text-sm font-medium text-gray-700">Navbar Height Settings:</h4>
+        
+        <div className="border p-3 rounded-md bg-gray-50">
+          <h5 className="text-xs font-semibold text-gray-600 mb-2">Unscrolled Heights:</h5>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-500">Mobile (base):</label>
+              <select 
+                value={currentData.navbarHeight?.unscrolled?.base || 'h-[16vh]'}
+                onChange={(e) => handleNavbarHeightChange('unscrolled', 'base', 'base', e.target.value)}
+                className="mt-1 block w-full px-2 py-1 bg-white border border-gray-300 rounded text-xs"
+              >
+                {navbarHeightOptions.unscrolled.base.map(option => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500">Desktop (md):</label>
+              <select 
+                value={currentData.navbarHeight?.unscrolled?.md || 'h-[16vh]'}
+                onChange={(e) => handleNavbarHeightChange('unscrolled', 'md', 'md', e.target.value)}
+                className="mt-1 block w-full px-2 py-1 bg-white border border-gray-300 rounded text-xs"
+              >
+                {navbarHeightOptions.unscrolled.md.map(option => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="border p-3 rounded-md bg-gray-50">
+          <h5 className="text-xs font-semibold text-gray-600 mb-2">Scrolled Heights:</h5>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-500">Mobile (base):</label>
+              <select 
+                value={currentData.navbarHeight?.scrolled?.base || 'h-[10vh]'}
+                onChange={(e) => handleNavbarHeightChange('scrolled', 'base', 'base', e.target.value)}
+                className="mt-1 block w-full px-2 py-1 bg-white border border-gray-300 rounded text-xs"
+              >
+                {navbarHeightOptions.scrolled.base.map(option => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500">Desktop (md):</label>
+              <select 
+                value={currentData.navbarHeight?.scrolled?.md || 'h-[10vh]'}
+                onChange={(e) => handleNavbarHeightChange('scrolled', 'md', 'md', e.target.value)}
+                className="mt-1 block w-full px-2 py-1 bg-white border border-gray-300 rounded text-xs"
+              >
+                {navbarHeightOptions.scrolled.md.map(option => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       </div>

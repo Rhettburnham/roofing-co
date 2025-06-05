@@ -1,0 +1,72 @@
+{
+  "title": "COWBOYS-VAQUEROS",
+  "subtitle": "CONSTRUCTION",
+  "navLinks": [
+    {
+      "name": "About",
+      "href": "/about"
+    },
+    {
+      "name": "Booking", 
+      "href": "/#book"
+    },
+    {
+      "name": "Services",
+      "href": "/#services"
+    },
+    {
+      "name": "Contact",
+      "href": "/#contact"
+    }
+  ],
+  "images": [
+    {
+      "id": "navbar_logo_main",
+      "url": "/personal/old/img/nav/logo.png",
+      "name": "logo.png",
+      "originalUrl": "/personal/old/img/nav/logo.png",
+      "file": null
+    }
+  ],
+  "whiteImages": [
+    {
+      "id": "navbar_logo_white",
+      "url": "/personal/old/img/nav/logo_white.png", 
+      "name": "logo_white.png",
+      "originalUrl": "/personal/old/img/nav/logo_white.png",
+      "file": null
+    }
+  ],
+  "whiteLogoIcon": null,
+  "animation": {
+    "naturalOffsetVh": 11,
+    "slideUpDistanceVh": 0,
+    "logoSizeUnscrolled": { "width": "18vh", "height": "18vh" },
+    "logoSizeScrolled": { "width": "14vh", "height": "14vh" }
+  },
+  "textSizes": {
+    "unscrolled": { 
+      "base": "text-[7vw]", 
+      "md": "text-[8vh]", 
+      "lg": "text-[5vh]" 
+    },
+    "scrolled": { 
+      "base": "text-[3vw]", 
+      "md": "text-[5vh]" 
+    }
+  },
+  "logoTextDistance": {
+    "unscrolled": { "base": "mr-2", "md": "mr-3" },
+    "scrolled": { "base": "mr-2", "md": "mr-2" }
+  },
+  "navbarHeight": {
+    "unscrolled": { "base": "h-[16vh]", "md": "h-[16vh]" },
+    "scrolled": { "base": "h-[10vh]", "md": "h-[10vh]" }
+  },
+  "scrolledBackgroundColor": "bg-banner",
+  "unscrolledBackgroundColor": "bg-transparent",
+  "dropdownBackgroundColor": "bg-white",
+  "dropdownTextColor": "text-black",
+  "useWhiteHamburger": false,
+  "invertLogoColor": false
+}

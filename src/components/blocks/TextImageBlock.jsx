@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
+import PanelImagesController from "../common/PanelImagesController";
+import ThemeColorPicker from "../common/ThemeColorPicker";
 
 /**
  * TextImageBlock
@@ -17,15 +19,15 @@ import PropTypes from "prop-types";
 const initializeImageState = (imageValue, defaultPath = '') => {
   let fileObject = null;
   let urlToDisplay = defaultPath;
-  let nameToStore = defaultPath.split('/').pop();
+  let nameToStore = defaultPath ? defaultPath.split('/').pop() : 'placeholder.jpg';
   let originalUrlToStore = defaultPath;
 
   if (imageValue && typeof imageValue === 'object') {
     urlToDisplay = imageValue.url || defaultPath;
-    nameToStore = imageValue.name || urlToDisplay.split('/').pop();
+    nameToStore = imageValue.name || (urlToDisplay ? urlToDisplay.split('/').pop() : 'image.jpg');
     fileObject = imageValue.file || null;
     originalUrlToStore = imageValue.originalUrl || (typeof imageValue.url === 'string' && !imageValue.url.startsWith('blob:') ? imageValue.url : defaultPath);
-  } else if (typeof imageValue === 'string') {
+  } else if (typeof imageValue === 'string' && imageValue) {
     urlToDisplay = imageValue;
     nameToStore = imageValue.split('/').pop();
     originalUrlToStore = imageValue;
@@ -34,24 +36,57 @@ const initializeImageState = (imageValue, defaultPath = '') => {
 };
 
 const getEffectiveDisplayUrl = (imageState, getDisplayUrlProp) => {
-  if (getDisplayUrlProp && imageState) return getDisplayUrlProp(imageState);
+  if (getDisplayUrlProp && typeof getDisplayUrlProp === 'function') {
+    const propUrl = getDisplayUrlProp(imageState);
+    if (propUrl) return propUrl;
+  }
   if (imageState && typeof imageState === 'object' && imageState.url) return imageState.url;
-  if (typeof imageState === 'string') {
+  if (typeof imageState === 'string' && imageState) {
     if (imageState.startsWith('/') || imageState.startsWith('blob:') || imageState.startsWith('data:')) return imageState;
     return `/${imageState.replace(/^\.\//, "")}`;
   }
   return '';
 };
 
-const TextImageBlock = ({
-  config = {},
-  readOnly = false,
-  onConfigChange,
-  getDisplayUrl, 
-}) => {
+// Reusable EditableField component (similar to other blocks)
+const EditableField = ({ value, onChange, placeholder, type = 'text', className = '', style = {}, rows = 1, isEditable = true }) => {
+  const [currentValue, setCurrentValue] = useState(value);
+  const inputRef = useRef(null);
+  useEffect(() => { setCurrentValue(value); }, [value]);
+
+  useEffect(() => {
+    if (!isEditable || !inputRef.current) return;
+    if (type === 'textarea') {
+      inputRef.current.style.height = 'auto';
+      inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
+    }
+  }, [currentValue, isEditable, type]);
+
+  const handleChange = (e) => { if (isEditable) setCurrentValue(e.target.value); };
+  const handleBlur = () => { if (isEditable && value !== currentValue) onChange(currentValue); };
+  const handleKeyDown = (e) => {
+    if (!isEditable) return;
+    if (type !== 'textarea' && e.key === 'Enter') { handleBlur(); e.preventDefault(); }
+    else if (e.key === 'Escape') { setCurrentValue(value); inputRef.current?.blur(); }
+  };
+
+  if (!isEditable) {
+    const Tag = type === 'textarea' ? 'div' : 'span';
+    const displayValue = value || <span className="text-gray-400/70 italic">({placeholder})</span>;
+    return <Tag className={`${className} ${type === 'textarea' ? 'whitespace-pre-line' : ''}`} style={style}>{displayValue}</Tag>;
+  }
+  const inputClasses = `bg-transparent border-b-2 border-dashed focus:border-gray-400/70 outline-none w-full ${className}`;
+  if (type === 'textarea') {
+    return <textarea ref={inputRef} value={currentValue || ''} onChange={handleChange} onBlur={handleBlur} onKeyDown={handleKeyDown} placeholder={placeholder} className={inputClasses} style={style} rows={rows} />;
+  }
+  return <input ref={inputRef} type={type} value={currentValue || ''} onChange={handleChange} onBlur={handleBlur} onKeyDown={handleKeyDown} placeholder={placeholder} className={inputClasses} style={style} />;
+};
+
+const TextImageBlock = ({ config = {}, readOnly = false, onConfigChange, getDisplayUrl: getDisplayUrlFromProp }) => {
+  // Consolidate local state management
   const [localConfig, setLocalConfig] = useState(() => {
     const defaultConfig = {
-      image: "", 
+      image: initializeImageState(null, "/assets/images/placeholder_rect_1.jpg"), 
       alt: "Descriptive image text",
       imagePosition: "left", 
       title: "Image with Wrapping Text",
@@ -63,52 +98,64 @@ const TextImageBlock = ({
       backgroundColor: "#FFFFFF",
       padding: "2rem"
     };
-    const initialImage = config?.image ? (getDisplayUrl ? getDisplayUrl(config.image) : config.image) : defaultConfig.image;
-    return { ...defaultConfig, ...config, image: initialImage };
+    const initialData = { ...defaultConfig, ...(config || {}) };
+    return {
+      ...initialData,
+      image: initializeImageState(initialData.image, defaultConfig.image.originalUrl),
+    };
   });
 
+  const prevReadOnlyRef = useRef(readOnly);
+
   useEffect(() => {
-    if (readOnly) {
-      const currentImage = config?.image ? (getDisplayUrl ? getDisplayUrl(config.image) : config.image) : localConfig.image;
-      setLocalConfig(prev => ({ ...prev, ...config, image: currentImage }));
-    } else {
-      // If in edit mode and a new file object is passed in config, update local state including file
-      if (config?.image && typeof config.image === "object" && config.image.file) {
-        setLocalConfig(prev => ({ ...prev, ...config })); // This will include the file object from config
-      }
+    if (config) {
+      setLocalConfig(prevLocal => {
+        const newImg = initializeImageState(config.image, prevLocal.image?.originalUrl);
+        if(prevLocal.image?.file && prevLocal.image.url?.startsWith('blob:') && prevLocal.image.url !== newImg.url) {
+            URL.revokeObjectURL(prevLocal.image.url);
+        }
+        // Preserve inline edits if not in readOnly mode and title/text matches (simple heuristic)
+        const preserveInline = !readOnly && config.title === prevLocal.title && config.text === prevLocal.text;
+        return {
+            ...prevLocal,
+            ...config,
+            image: newImg,
+            title: preserveInline ? prevLocal.title : (config.title || prevLocal.title || 'Title'),
+            text: preserveInline ? prevLocal.text : (config.text || prevLocal.text || 'Paragraph text...'),
+            alt: preserveInline ? prevLocal.alt : (config.alt || prevLocal.alt || 'Image alt text'),
+        };
+      });
     }
-  }, [config, readOnly, getDisplayUrl]); // Removed localConfig.image from deps
+  }, [config, readOnly]); // Removed localConfig.title/text from deps
 
-  // This effect is for when editing is finished (readOnly becomes true)
   useEffect(() => {
-    if (readOnly && typeof onConfigChange === "function") {
-      // Prevent calling onConfigChange if localConfig is the same as config to avoid loops
-      if (JSON.stringify(localConfig) !== JSON.stringify(config)) {
-        onConfigChange(localConfig);
-      }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [readOnly, localConfig, onConfigChange]); // config is intentionally omitted from deps here
-
-  const handleInputChange = (field, value) => {
-    if (!readOnly) {
-      setLocalConfig(prev => ({ ...prev, [field]: value }));
-    }
-  };
-
-  const handleImageFileChange = (file) => {
-    if (!readOnly && file) {
-      // Revoke old blob URL if it exists from a previous file
-      if (localConfig.image?.file && localConfig.image.url?.startsWith('blob:')) {
-        URL.revokeObjectURL(localConfig.image.url);
-      }
-      const newImageState = {
-        file: file,
-        url: URL.createObjectURL(file),
-        name: file.name,
-        originalUrl: localConfig.image?.originalUrl || (typeof localConfig.image === "string" ? localConfig.image : "") // Preserve original if exists
+    if (prevReadOnlyRef.current === false && readOnly === true && typeof onConfigChange === 'function') {
+      const dataToSave = {
+        ...localConfig,
+        image: localConfig.image?.file
+          ? { ...localConfig.image } // Send full object with file if present
+          : { url: localConfig.image?.originalUrl || localConfig.image?.url, name: localConfig.image?.name }, // Otherwise, send original URL
       };
-      setLocalConfig(prev => ({ ...prev, image: newImageState }));
+      if(dataToSave.image && !dataToSave.image.file) delete dataToSave.image.file; // Clean up file property if no file
+      onConfigChange(dataToSave);
+    }
+    prevReadOnlyRef.current = readOnly;
+  }, [readOnly, localConfig, onConfigChange]);
+
+  useEffect(() => {
+    const currentImg = localConfig.image;
+    return () => {
+      if (currentImg?.file && currentImg.url?.startsWith('blob:')) {
+        URL.revokeObjectURL(currentImg.url);
+      }
+    };
+  }, [localConfig.image]);
+
+  const handleInlineChange = (field, value) => {
+    if (!readOnly && typeof onConfigChange === 'function') {
+      const newConfig = { ...localConfig, [field]: value };
+      setLocalConfig(newConfig);
+      onConfigChange(newConfig); // Live update for inline changes
     }
   };
 
@@ -118,85 +165,60 @@ const TextImageBlock = ({
     backgroundColor, padding
   } = localConfig;
 
-  const imageUrl = getDisplayUrl ? getDisplayUrl(image) : image;
+  const imageUrl = getEffectiveDisplayUrl(image, getDisplayUrlFromProp);
 
   const containerStyle = {
     backgroundColor: backgroundColor || "transparent",
     padding: padding || "1rem"
   };
 
-  const flexOrderClass = imagePosition === "right" ? "flex-row-reverse" : "flex-row";
+  const flexOrderClass = imagePosition === "right" ? "md:flex-row-reverse" : "md:flex-row";
+  const imageContainerWidth = imageWidth?.includes('%') ? imageWidth : `${imageWidth}px`;
 
   return (
-    <div style={containerStyle} className="text-image-block">
-      <div className={`container mx-auto px-4 flex ${flexOrderClass} flex-wrap items-center`}>
-        <div className="image-container relative group" style={{ width: readOnly ? imageWidth : "auto", flexShrink: 0, padding: "0.5rem" }}>
-          {readOnly || !imageUrl ? (
-            imageUrl && <img
+    <div style={containerStyle} className={`text-image-block ${!readOnly ? 'bg-slate-50 border-2 border-blue-300/50' : ''}`}>
+      <div className={`container mx-auto px-4 flex flex-col ${flexOrderClass} flex-wrap items-center gap-4 md:gap-6`}>
+        <div className="image-container w-full md:flex-shrink-0" style={{ width: readOnly ? imageContainerWidth : 'auto', maxWidth: '100%' }}>
+          {imageUrl ? (
+            <img
               src={imageUrl}
-              alt={alt || title}
-              style={{ borderRadius: imageBorderRadius, width: "100%" }}
-              className="object-cover shadow-lg"
+              alt={alt || title || "Feature image"} 
+              style={{ borderRadius: imageBorderRadius, width: "100%", maxHeight: "400px" }}
+              className="object-cover shadow-lg mx-auto md:mx-0"
             />
           ) : (
-            <div className="relative group" style={{ width: imageWidth || "200px" }}>
-              <img
-                src={imageUrl}
-                alt={alt || title}
-                style={{ borderRadius: imageBorderRadius, width: "100%" }}
-                className="object-cover shadow-lg group-hover:opacity-75 transition-opacity"
-              />
-              <label className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 text-white cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity" style={{ borderRadius: imageBorderRadius }}>
-                <span>Change Image</span>
-                <input type="file" accept="image/*" className="sr-only" onChange={(e) => handleImageFileChange(e.target.files[0])} />
-              </label>
-            </div>
+             !readOnly && <div className="w-full h-48 bg-gray-200 flex items-center justify-center text-gray-400 text-sm rounded-lg" style={{borderRadius: imageBorderRadius}}>Image Missing - Add in Panel</div>
           )}
-          {!readOnly && !imageUrl && (
-            <label className="w-full h-48 mx-auto flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50" style={{ width: imageWidth || "200px", borderRadius: imageBorderRadius }}>
-              <div className="text-center">
-                <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-                  <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                <span className="mt-2 block text-sm font-medium text-gray-600">Upload Image</span>
-                <input type="file" accept="image/*" className="sr-only" onChange={(e) => handleImageFileChange(e.target.files[0])} />
-              </div>
-            </label>
+          {!readOnly && (
+            <EditableField 
+                value={alt || ""} 
+                onChange={(val) => handleInlineChange("alt", val)} 
+                placeholder="Image Alt Text (important for accessibility)" 
+                className="text-xs mt-1 text-center text-gray-500" 
+                isEditable={!readOnly} 
+            />
           )}
         </div>
 
-        <div className="text-content flex-1" style={{ padding: "0.5rem" }}>
-          {readOnly ? (
-            <h2 className="text-2xl md:text-3xl font-semibold mb-3" style={{ color: titleColor }}>{title}</h2>
-          ) : (
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => handleInputChange("title", e.target.value)}
-              className="text-2xl md:text-3xl font-semibold mb-3 bg-transparent border-b-2 border-dashed border-gray-400 focus:border-gray-600 outline-none w-full"
-              style={{ color: titleColor }}
-            />
-          )}
-          {readOnly ? (
-            <p className="text-base leading-relaxed" style={{ color: textColor }}>{text}</p>
-          ) : (
-            <textarea
-              value={text}
-              onChange={(e) => handleInputChange("text", e.target.value)}
-              className="text-base leading-relaxed bg-transparent border-b-2 border-dashed border-gray-400 focus:border-gray-600 outline-none w-full resize-none"
-              style={{ color: textColor }}
-              rows={Math.max(3, (text || "").split("\n").length + 1)}
-            />
-          )}
-          {!readOnly && (
-            <input
-              type="text"
-              value={alt || ""}
-              placeholder="Image Alt Text (required)"
-              onChange={(e) => handleInputChange("alt", e.target.value)}
-              className="text-sm mt-3 bg-transparent border-b border-dashed border-gray-300 focus:border-gray-500 outline-none w-full text-gray-500"
-            />
-          )}
+        <div className="text-content flex-1 min-w-0"> {/* Added min-w-0 for flexbox wrapping with long text */} 
+          <EditableField 
+            value={title} 
+            onChange={(val) => handleInlineChange("title", val)} 
+            placeholder="Section Title" 
+            className="text-2xl md:text-3xl font-semibold mb-2 md:mb-3" 
+            style={{ color: titleColor }} 
+            isEditable={!readOnly} 
+          />
+          <EditableField 
+            value={text} 
+            onChange={(val) => handleInlineChange("text", val)} 
+            placeholder="Paragraph text describing the image or feature..." 
+            className="text-base leading-relaxed whitespace-pre-line" 
+            style={{ color: textColor }} 
+            type="textarea" 
+            rows={Math.max(5, (text || "").split("\n").length + 1)} 
+            isEditable={!readOnly} 
+          />
         </div>
       </div>
     </div>
@@ -212,105 +234,128 @@ TextImageBlock.propTypes = {
     text: PropTypes.string,
     titleColor: PropTypes.string,
     textColor: PropTypes.string,
-    imageWidth: PropTypes.string,
+    imageWidth: PropTypes.string, // Can be % or px
     imageBorderRadius: PropTypes.string,
     backgroundColor: PropTypes.string,
     padding: PropTypes.string,
-  }).isRequired,
+  }),
   readOnly: PropTypes.bool,
   onConfigChange: PropTypes.func,
-  getDisplayUrl: PropTypes.func.isRequired,
+  getDisplayUrl: PropTypes.func,
 };
 
-TextImageBlock.EditorPanel = ({ currentConfig, onPanelConfigChange, onPanelFileChange, getDisplayUrl }) => {
-  const [panelData, setPanelData] = useState(currentConfig);
+TextImageBlock.tabsConfig = (currentConfig, onPanelChange, themeColors) => {
+  const {
+    altText = "Descriptive image text", // Fallback if config.alt is used by inline
+    paragraph = "Lorem ipsum...", // Fallback if config.text is used by inline
+    imagePosition = "left",
+    imageWidth = "40%",
+    backgroundColor = "#FFFFFF",
+    padding = "2rem",
+    titleColor = "#1A202C",
+    textColor = "#4A5568",
+    imageBorderRadius = "0.5rem",
+  } = currentConfig;
 
-  useEffect(() => {
-    setPanelData(currentConfig);
-  }, [currentConfig]);
+  // Use config.alt and config.text for panel if they exist (from previous save), else use defaults
+  const currentAltText = currentConfig.alt !== undefined ? currentConfig.alt : altText;
+  const currentParagraph = currentConfig.text !== undefined ? currentConfig.text : paragraph;
 
-  const handlePanelInputChange = (field, value) => {
-    setPanelData(prev => ({ ...prev, [field]: value }));
+  const handlePanelFieldChange = (field, value) => {
+    onPanelChange({ ...currentConfig, [field]: value });
   };
 
-  const commitChanges = () => {
-    onPanelConfigChange(panelData);
+  const imagesForController = currentConfig.image && typeof currentConfig.image === 'object' && currentConfig.image.url
+    ? [{ ...currentConfig.image, id: 'textImageUnique', name: currentConfig.image.name || 'Main Image' }]
+    : (typeof currentConfig.image === 'string' && currentConfig.image
+        ? [{ url: currentConfig.image, id: 'textImageUnique', name: currentConfig.image.split('/').pop() || 'Main Image', originalUrl: currentConfig.image }]
+        : []);
+
+  const onImageControllerChange = (updatedData) => {
+    const newImageArray = updatedData.images || [];
+    if (newImageArray.length > 0) {
+      onPanelChange({ ...currentConfig, image: newImageArray[0] });
+    } else {
+      onPanelChange({ ...currentConfig, image: initializeImageState(null) });
+    }
   };
+  
+  const colorPickerProps = (label, fieldName, defaultColor) => ({
+    label,
+    fieldName,
+    currentColorValue: currentConfig[fieldName] || defaultColor,
+    onColorChange: (name, value) => onPanelChange({ ...currentConfig, [name]: value }),
+    themeColors,
+  });
 
-  const handlePanelImageAction = (fileOrUrl) => {
-    onPanelFileChange("image", fileOrUrl);
+  return {
+    general: () => (
+      <div className="p-4 space-y-4">
+        <h3 className="text-lg font-semibold text-gray-700 mb-2 border-b pb-1">Content & Layout</h3>
+        <p className="text-xs text-gray-500">Title and main paragraph are editable directly on the block preview.</p>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Image Alt Text (for accessibility):</label>
+          <input
+            type="text"
+            value={currentAltText}
+            onChange={(e) => handlePanelFieldChange("alt", e.target.value)} // Ensure this updates 'alt'
+            className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm sm:text-sm"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Image Position:</label>
+          <select value={imagePosition} onChange={(e) => handlePanelFieldChange("imagePosition", e.target.value)} className="mt-1 panel-select-sm bg-white">
+            <option value="left">Left of Text</option>
+            <option value="right">Right of Text</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Image Width (e.g., 40%, 300px):</label>
+          <input type="text" value={imageWidth} onChange={(e) => handlePanelFieldChange("imageWidth", e.target.value)} className="mt-1 panel-input-sm bg-white" />
+        </div>
+         <div>
+          <label className="block text-sm font-medium text-gray-700">Overall Block Padding (e.g., 2rem, 10px):</label>
+          <input type="text" value={padding} onChange={(e) => handlePanelFieldChange("padding", e.target.value)} className="mt-1 panel-input-sm bg-white" />
+        </div>
+      </div>
+    ),
+    images: () => (
+      <PanelImagesController
+        currentData={{ images: imagesForController }}
+        onControlsChange={onImageControllerChange}
+        imageArrayFieldName="images"
+        getItemName={() => 'Block Image'}
+        maxImages={1}
+        allowAdd={imagesForController.length === 0}
+        allowRemove={imagesForController.length > 0}
+      />
+    ),
+    colors: () => (
+      <div className="p-4 space-y-3">
+        <h3 className="text-lg font-semibold text-gray-700 mb-3">Color Settings</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <ThemeColorPicker {...colorPickerProps("Overall Background Color", "backgroundColor", "#FFFFFF")} />
+            <ThemeColorPicker {...colorPickerProps("Title Color", "titleColor", "#1A202C")} />
+            <ThemeColorPicker {...colorPickerProps("Text Color", "textColor", "#4A5568")} />
+        </div>
+      </div>
+    ),
+    styling: () => (
+        <div className="p-4 space-y-4">
+            <h3 className="text-lg font-semibold text-gray-700 mb-3">Image Style</h3>
+            <div>
+                <label className="block text-sm font-medium text-gray-700">Image Corner Radius (e.g., 0.5rem, 8px):</label>
+                <input 
+                    type="text" 
+                    value={imageBorderRadius || '0.5rem'} 
+                    onChange={(e) => handlePanelFieldChange('imageBorderRadius', e.target.value)} 
+                    className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm sm:text-sm"
+                    placeholder="e.g., 0.5rem or 8px"
+                />
+            </div>
+        </div>
+    )
   };
-
-  const currentImageUrlDisplay = getDisplayUrl ? getDisplayUrl(panelData.image) : panelData.image;
-
-  return (
-    <div className="space-y-4 p-1">
-      <div>
-        <label className="block text-sm font-medium text-gray-300">Image:</label>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => handlePanelImageAction(e.target.files[0])}
-          className="mt-1 block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-500 file:text-white hover:file:bg-indigo-600 cursor-pointer"
-        />
-        {currentImageUrlDisplay && (
-          <div className="mt-2"><img src={currentImageUrlDisplay} alt="Preview" className="max-h-32 rounded object-contain" /></div>
-        )}
-        <label className="block text-sm font-medium text-gray-300 mt-2">Or Image URL:</label>
-        <input
-          type="text"
-          value={typeof panelData.image === "string" ? panelData.image : (panelData.image?.url || "")}
-          onChange={(e) => handlePanelImageAction(e.target.value)}
-          onBlur={commitChanges}
-          className="mt-1 block w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md text-white"
-          placeholder="e.g., /assets/images/image.jpg"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-300">Image Position:</label>
-        <select value={panelData.imagePosition || "left"} onChange={(e) => handlePanelInputChange("imagePosition", e.target.value)} onBlur={commitChanges} className="mt-1 block w-full pl-3 pr-10 py-2 bg-gray-600 border-gray-500 rounded-md text-white">
-          <option value="left">Left</option>
-          <option value="right">Right</option>
-        </select>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-300">Title Color:</label>
-          <input type="color" value={panelData.titleColor || "#1A202C"} onChange={(e) => handlePanelInputChange("titleColor", e.target.value)} onBlur={commitChanges} className="mt-1 h-10 w-full border-gray-500 rounded-md bg-gray-600" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300">Text Color:</label>
-          <input type="color" value={panelData.textColor || "#4A5568"} onChange={(e) => handlePanelInputChange("textColor", e.target.value)} onBlur={commitChanges} className="mt-1 h-10 w-full border-gray-500 rounded-md bg-gray-600" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300">Background Color:</label>
-          <input type="color" value={panelData.backgroundColor || "#FFFFFF"} onChange={(e) => handlePanelInputChange("backgroundColor", e.target.value)} onBlur={commitChanges} className="mt-1 h-10 w-full border-gray-500 rounded-md bg-gray-600" />
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-300">Image Width (e.g., 50%, 200px):</label>
-        <input type="text" value={panelData.imageWidth || "40%"} onChange={(e) => handlePanelInputChange("imageWidth", e.target.value)} onBlur={commitChanges} className="mt-1 block w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md text-white" />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-300">Image Corner Radius (e.g., 0.5rem):</label>
-        <input type="text" value={panelData.imageBorderRadius || "0.5rem"} onChange={(e) => handlePanelInputChange("imageBorderRadius", e.target.value)} onBlur={commitChanges} className="mt-1 block w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md text-white" />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-300">Overall Block Padding (e.g., 2rem):</label>
-        <input type="text" value={panelData.padding || "2rem"} onChange={(e) => handlePanelInputChange("padding", e.target.value)} onBlur={commitChanges} className="mt-1 block w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md text-white" />
-      </div>
-    </div>
-  );
-};
-
-TextImageBlock.EditorPanel.propTypes = {
-  currentConfig: PropTypes.object.isRequired,
-  onPanelConfigChange: PropTypes.func.isRequired,
-  onPanelFileChange: PropTypes.func.isRequired,
-  getDisplayUrl: PropTypes.func.isRequired,
 };
 
 export default TextImageBlock; 
