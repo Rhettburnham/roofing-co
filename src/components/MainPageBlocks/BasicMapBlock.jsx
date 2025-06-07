@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, memo } from "react";
+import React, { useRef, useState, useEffect, memo } from "react";
 import { MapContainer, TileLayer, Marker, Circle, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -6,7 +6,6 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import * as FaIcons from "react-icons/fa";
 import IconSelectorModal from "../common/IconSelectorModal";
-import ThemeColorPicker from "../common/ThemeColorPicker";
 import PropTypes from "prop-types";
 
 // Register ScrollTrigger plugin with GSAP
@@ -132,7 +131,6 @@ const StatsPanel = memo(function StatsPanel({
 }) {
   const displayStats = [...(stats || [])];
   while (displayStats.length < 4 && !readOnly) {
-    // Only add placeholders if not readOnly and less than 4, or always show 4 if readOnly and less than 4 initially
     displayStats.push({ value: "0", title: "New Stat", icon: "FaAward" });
   }
   const gridStats = displayStats.slice(0, 4);
@@ -140,30 +138,30 @@ const StatsPanel = memo(function StatsPanel({
 
   return (
     <div
-      className={`w-full h-full grid gap-1 md:gap-2 grid-cols-2 text-center p-1 md:p-2`}
+      className={`w-full h-full grid gap-2 md:gap-3 grid-cols-2 text-center p-2 md:p-3`}
     >
       {gridStats.map((stat, index) => {
         const IconComponent = FaIcons[stat.icon] || FaIcons.FaAward;
         return (
           <div
             key={stat.id || index}
-            className="flex flex-col items-center justify-center bg-white/30 rounded-lg p-1 shadow-md h-full"
+            className="flex flex-col items-center justify-center bg-white/30 rounded-lg p-2 md:p-3 shadow-md h-full"
           >
             <div
-              className={`p-1 rounded-full ${!readOnly ? "cursor-pointer hover:bg-white/20" : ""} transition-colors`}
+              className={`p-2 rounded-full ${!readOnly ? "cursor-pointer hover:bg-white/20" : ""} transition-colors`}
               onClick={() =>
                 !readOnly && onStatIconClick && onStatIconClick(index)
               }
               title={!readOnly ? "Click to change icon" : ""}
             >
               <IconComponent
-                className="w-8 h-8 md:w-6 md:h-6 md:mb-1"
+                className="w-6 h-6 md:w-8 md:h-8 mb-2"
                 style={{ color: currentStatsTextColor }}
               />
             </div>
             {readOnly ? (
               <div
-                className="text-lg md:text-lg font-bold"
+                className="text-xl md:text-2xl font-bold mb-1"
                 style={{ color: currentStatsTextColor }}
               >
                 {stat.value}
@@ -172,7 +170,7 @@ const StatsPanel = memo(function StatsPanel({
               <input
                 type="text"
                 style={{ color: currentStatsTextColor }}
-                className="text-lg md:text-lg font-bold text-white bg-transparent text-center w-full focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 placeholder-gray-300"
+                className="text-xl md:text-2xl font-bold text-white bg-transparent text-center w-full focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 placeholder-gray-300 mb-1"
                 value={stat.value || ""}
                 onChange={(e) =>
                   onStatTextChange &&
@@ -183,7 +181,7 @@ const StatsPanel = memo(function StatsPanel({
             )}
             {readOnly ? (
               <div
-                className="text-[3vw] md:text-sm font-medium line-clamp-1"
+                className="text-sm md:text-base font-medium line-clamp-1"
                 style={{ color: currentStatsTextColor }}
               >
                 {stat.title || stat.label}
@@ -192,7 +190,7 @@ const StatsPanel = memo(function StatsPanel({
               <input
                 type="text"
                 style={{ color: currentStatsTextColor }}
-                className="text-[3vw] md:text-sm text-white font-medium line-clamp-1 bg-transparent text-center w-full focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 placeholder-gray-300"
+                className="text-sm md:text-base text-white font-medium line-clamp-1 bg-transparent text-center w-full focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 placeholder-gray-300"
                 value={stat.title || stat.label || ""}
                 onChange={(e) =>
                   onStatTextChange &&
@@ -218,12 +216,15 @@ StatsPanel.propTypes = {
 };
 
 // Window strings component
-const WindowStrings = memo(function WindowStrings({ isVisible }) {
+const WindowStrings = memo(function WindowStrings({
+  isVisible,
+  isSmallScreen,
+}) {
   const leftRef = useRef(null);
   const rightRef = useRef(null);
 
   // Simple movement amount
-  const moveAmount = "5vh";
+  const moveAmount = isSmallScreen ? "3vh" : "5vh";
 
   useEffect(() => {
     // Simple toggle animation
@@ -248,67 +249,73 @@ const WindowStrings = memo(function WindowStrings({ isVisible }) {
         duration: 1,
         ease: "power2.inOut",
       });
-
       gsap.to(rightRef.current, {
         y: 0,
         duration: 1,
         ease: "power2.inOut",
       });
     }
-  }, [isVisible]);
+  }, [isVisible, moveAmount]);
 
   return (
-    <div className="absolute md:right-[3%] right-0 -top-[15vh] z-30 pointer-events-none h-full">
-      <div className="flex md:space-x-2 space-x-0">
-        {/* Left side */}
-        <div ref={leftRef} className="flex flex-col items-center">
-          <div className="w-[4px] h-[27vh] bg-gray-700"></div>
-          <div
-            className="w-[30px] h-[40px] bg-gray-800"
-            style={{
-              clipPath: "polygon(40% 0%, 60% 0%, 80% 100%, 20% 100%)",
-              borderRadius: "0px 0px 8px 8px",
-            }}
-          ></div>
-        </div>
+    <div className="absolute inset-0 z-30 pointer-events-none">
+      {/* Left side */}
+      <div ref={leftRef} className="flex flex-col items-center">
+        <div className="w-[4px] h-[27vh] bg-gray-700"></div>
+        <div
+          className="w-[30px] h-[40px] bg-gray-800"
+          style={{
+            clipPath: "polygon(40% 0%, 60% 0%, 80% 100%, 20% 100%)",
+            borderRadius: "0px 0px 8px 8px",
+          }}
+        ></div>
+      </div>
 
-        {/* Right side */}
-        <div ref={rightRef} className="flex flex-col items-center">
-          <div className="w-[4px] h-[27vh] bg-gray-700"></div>
-          <div
-            className="w-[30px] h-[40px] bg-gray-800"
-            style={{
-              clipPath: "polygon(40% 0%, 60% 0%, 80% 100%, 20% 100%)",
-              borderRadius: "0px 0px 8px 8px",
-            }}
-          ></div>
-        </div>
+      {/* Right side */}
+      <div ref={rightRef} className="flex flex-col items-center">
+        <div className="w-[4px] h-[27vh] bg-gray-700"></div>
+        <div
+          className="w-[30px] h-[40px] bg-gray-800"
+          style={{
+            clipPath: "polygon(40% 0%, 60% 0%, 80% 100%, 20% 100%)",
+            borderRadius: "0px 0px 8px 8px",
+          }}
+        ></div>
       </div>
     </div>
   );
 });
 
-WindowStrings.displayName = "WindowStrings";
 WindowStrings.propTypes = {
   isVisible: PropTypes.bool.isRequired,
+  isSmallScreen: PropTypes.bool.isRequired,
 };
 
 // Removed `max-h-[75vh] overflow-auto` to allow full height on smaller screens and avoid vertical scrolling.
 function BasicMapPreview({
   mapData,
   readOnly = true,
-  onInlineChange,
   onStatTextChange,
   onStatIconClick,
-  onServiceHourChange,
 }) {
   const [isServiceHoursVisible, setIsServiceHoursVisible] = useState(false);
   const [isSmallScreen, setIsSmallScreen] = useState(
     typeof window !== "undefined" ? window.innerWidth <= 768 : false
   );
   const [mapActive, setMapActive] = useState(false);
-  const titleRef = useRef(null);
-  const sectionRef = useRef(null);
+  const statsDivRef = useRef(null);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const smallScreen = window.innerWidth <= 768;
+      setIsSmallScreen(smallScreen);
+      if (!smallScreen) {
+        setIsServiceHoursVisible(false);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   if (!mapData) {
     return <p>No map data found.</p>;
@@ -322,182 +329,45 @@ function BasicMapPreview({
     telephone,
     serviceHours = [],
     stats = [],
-    markerIcon,
-    title,
-    statsBackgroundImage,
-    bannerTextColor,
-    bannerBackgroundColor,
-    statsTextColor,
-    showHoursButtonText,
-    hideHoursButtonText,
-    styling = { desktopHeightVH: 30, mobileHeightVW: 40 },
   } = mapData;
 
-  useEffect(() => {
-    const handleResize = () => {
-      const smallScreen = window.innerWidth <= 768;
-      setIsSmallScreen(smallScreen);
-      if (!smallScreen) {
-        setIsServiceHoursVisible(false);
-      }
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  // Title animation using ScrollTrigger
-  useEffect(() => {
-    if (!titleRef.current || !sectionRef.current) return;
-
-    // Clear any existing animations
-    ScrollTrigger.getAll().forEach((trigger) => {
-      if (trigger.vars.id === "titleAnimation") {
-        trigger.kill();
-      }
-    });
-
-    // Define different animations for small vs medium+ viewports
-    if (isSmallScreen) {
-      // Small viewport: Fade in
-      gsap.set(titleRef.current, {
-        opacity: 0,
-      });
-
-      gsap.to(titleRef.current, {
-        opacity: 1,
-        duration: 1,
-        ease: "power3.out",
-        scrollTrigger: {
-          id: "titleAnimation",
-          trigger: sectionRef.current,
-          start: "bottom 70%",
-          toggleActions: "play none none none",
-          once: true,
-        },
-      });
-    } else {
-      // Medium+ viewport: Fade in
-      gsap.set(titleRef.current, {
-        opacity: 0,
-      });
-
-      gsap.to(titleRef.current, {
-        opacity: 1,
-        duration: 1.2,
-        ease: "power2.inOut",
-        scrollTrigger: {
-          id: "titleAnimation",
-          trigger: sectionRef.current,
-          start: "top 40%",
-          toggleActions: "play none none none",
-          once: true,
-        },
-      });
-    }
-
-    return () => {
-      // Cleanup
-      ScrollTrigger.getAll().forEach((trigger) => {
-        if (trigger.vars.id === "titleAnimation") {
-          trigger.kill();
-        }
-      });
-    };
-  }, [isSmallScreen, titleRef, sectionRef]);
-
   const renderServiceHoursTable = () => (
-    <div className="w-full h-full flex flex-col p-0 overflow-y-auto">
-      <table className="w-full">
-        {/* No outer border, parent sliding div has it */}
-        <tbody className="text-gray-800">
-          {serviceHours.map((item, idx) => (
-            <tr
-              key={item.id || idx}
-              className={`${idx % 2 === 0 ? "bg-gray-50" : "bg-white"} border-b border-gray-300`}
-            >
-              <td className="w-1/2 py-[0.5vh] md:py-[.5vh] px-2 md:px-4 text-[2.8vw] md:text-sm font-medium text-left border-r border-gray-300">
-                {readOnly ? (
-                  item.day
-                ) : (
-                  <input
-                    type="text"
-                    value={item.day || ""}
-                    onChange={(e) =>
-                      onServiceHourChange &&
-                      onServiceHourChange(idx, "day", e.target.value)
-                    }
-                    className="bg-transparent w-full focus:outline-none focus:ring-1 focus:ring-blue-500 rounded p-0.5 placeholder-gray-400"
-                    placeholder="Day"
-                  />
-                )}
-              </td>
-              <td className="w-1/2 py-[0.5vh] md:py-[.5vh] px-2 md:px-4 text-[2.8vw] md:text-sm text-gray-800 text-left">
-                {readOnly ? (
-                  item.time
-                ) : (
-                  <input
-                    type="text"
-                    value={item.time || ""}
-                    onChange={(e) =>
-                      onServiceHourChange &&
-                      onServiceHourChange(idx, "time", e.target.value)
-                    }
-                    className="bg-transparent w-full focus:outline-none focus:ring-1 focus:ring-blue-500 rounded p-0.5 placeholder-gray-400"
-                    placeholder="Time"
-                  />
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <table
+      className={`w-full h-full rounded-xl border border-gray-300 bg-white text-center ${
+        isSmallScreen ? "text-xs" : "text-sm"
+      }`}
+    >
+      <tbody>
+        {serviceHours.map((item, idx) => (
+          <tr key={idx} className={idx % 2 === 0 ? "faint-color" : ""}>
+            <td className="py-2 px-2 border border-gray-300">{item.day}</td>
+            <td className="py-2 px-2 border border-gray-300">{item.time}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 
-  const currentBannerBgColor = bannerBackgroundColor || "#1f2937";
-  const currentBannerTextColor = bannerTextColor || "#FFFFFF";
-  const currentShowHoursText = showHoursButtonText || "Show Hours";
-  const currentHideHoursText = hideHoursButtonText || "Hide Hours";
-
-  // Calculate dynamic height based on styling
-  const dynamicMapHeight = isSmallScreen
-    ? `${styling.mobileHeightVW || 60}vw`
-    : `${styling.desktopHeightVH}vh`;
-
   return (
-    <section className="overflow-hidden" ref={sectionRef}>
-      <div className="py-4 px-2 md:px-[4vw]">
-        <div className="relative flex flex-col md:flex-row gap-2 md:gap-4 px-2 md:px-10 md:justify-between w-full">
+    <section className="overflow-hidden">
+      <div className="pb-4">
+        <div
+          className={`flex ${isSmallScreen ? "justify-center" : "justify-start pl-8 md:pl-12"}`}
+        >
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-normal text-black text-center font-serif">
+            Are we in your area?
+          </h1>
+        </div>
+        <div className="relative flex flex-col md:flex-row gap-6 px-6 md:px-8 lg:px-12 h-auto md:h-[45vh]">
           {/* Left: Map */}
-          <div className="flex flex-col w-full md:w-[55%] min-h-[200px]">
-            <div className="relative w-full aspect-[4/3] min-h-[200px] md:h-full z-10 pt-8 md:pt-0">
+          <div className="flex flex-col w-full md:w-[60%]">
+            <div className="relative h-[35vh] md:h-[45vh] w-full z-10">
               <div className="w-full h-full rounded-xl overflow-hidden shadow-lg border border-gray-300 relative">
-                {/* Title with animation - conditionally editable - MOVED HERE */}
-                {readOnly ? (
-                  <h1
-                    ref={titleRef}
-                    className="absolute top-2 left-1 text-[2.5vh] md:text-[2.5vh] font-normal text-white font-serif title-animation z-30 p-2 bg-banner bg-opacity-30 pl-6 -ml-4 rounded"
-                  >
-                    {title || "Are we in your area?"}
-                  </h1>
-                ) : (
-                  <input
-                    type="text"
-                    ref={titleRef}
-                    className="absolute top-2 left-1 text-[2.5vh] md:text-[3vh] font-normal text-white font-serif z-30 p-2 bg-banner bg-opacity-30 pl-6 -ml-4 focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded placeholder-gray-300"
-                    value={title || ""}
-                    onChange={(e) => onInlineChange("title", e.target.value)}
-                    placeholder="Section Title"
-                    style={{ mixBlendMode: "difference" }} // Helps with visibility over varied map parts
-                  />
-                )}
                 <MapContainer
                   center={center}
                   zoom={zoomLevel}
                   style={{ height: "100%", width: "100%" }}
                   scrollWheelZoom={mapActive}
-                  zoomControl={false} // Removed zoom controls
                   className="z-0"
                 >
                   <TileLayer
@@ -514,120 +384,80 @@ function BasicMapPreview({
                       fillOpacity: 0.2,
                     }}
                   />
-                  <DropMarker position={center} iconUrl={markerIcon} />
+                  <DropMarker position={center} />
                   <MapInteractionHandler mapActive={mapActive} />
                 </MapContainer>
                 {!mapActive && (
                   <div
-                    className="absolute flex flex-col inset-0 bg-black bg-opacity-30 flex flex-row items-start justify-center cursor-pointer "
+                    className="absolute inset-0 bg-black bg-opacity-20 flex flex-row items-start justify-center cursor-pointer pt-4"
                     onClick={() => setMapActive(true)}
                   >
-                    <p className="absolute left-1/2 -translate-x-1/2  mb-14  text-white text-base font-serif">
+                    <FaIcons.FaMapMarkerAlt
+                      className="text-white opacity-75"
+                      size={30}
+                    />
+                    <p className="mt-2 text-white text-sm font-serif">
                       Click to interact with the map
                     </p>
                   </div>
                 )}
-                {/* Bottom overlay: address + phone - conditionally editable */}
-                <div
-                  className="absolute bottom-0 w-full bg-banner text-white  z-10 py-2 px-3 flex justify-between items-center"
-                  style={{
-                    backgroundColor: currentBannerBgColor,
-                    color: currentBannerTextColor,
-                  }}
-                >
-                  {readOnly ? (
-                    <>
-                      <div className=" text-[2.5vw] md:text-[2.3vh] leading-tight text-left">
-                        {address}
-                      </div>
-                      <div className="text-[2.5vw] md:text-[2vh] text-white font-semibold leading-tight text-right">
-                        <a
-                          href={`tel:${telephone?.replace(/[^0-9]/g, "")}`}
-                          style={{ color: currentBannerTextColor }}
-                        >
-                          {telephone}
-                        </a>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <input
-                        type="text"
-                        className="bg-transparent font-semibold text-[2.5vw] md:text-[2vh] leading-tight text-left w-3/5 focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 text-white placeholder-gray-300"
-                        value={address || ""}
-                        onChange={(e) =>
-                          onInlineChange("address", e.target.value)
-                        }
-                        placeholder="Address"
-                      />
-                      <input
-                        type="text"
-                        className="bg-transparent text-[2.5vw] md:text-[2vh] text-white font-semibold leading-tight text-right w-2/5 focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 placeholder-gray-300"
-                        value={telephone || ""}
-                        onChange={(e) =>
-                          onInlineChange("telephone", e.target.value)
-                        }
-                        placeholder="Telephone"
-                      />
-                    </>
-                  )}
+                {/* Bottom overlay: address + phone */}
+                <div className="absolute bottom-0 w-full bg-banner text-center text-white font-semibold z-10">
+                  <div className="font-semibold text-[2.5vw] md:text-[2vh] leading-tight">
+                    {address}
+                  </div>
+                  <div className="text-[2.5vw] md:text-[2vh] text-white font-semibold leading-tight">
+                    <a href={`tel:${telephone?.replace(/[^0-9]/g, "")}`}>
+                      {telephone}
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-          {/* Right: Stats + Service Hours - Stats conditionally editable */}
-          <div className="flex flex-col w-full md:w-[43%] min-h-[300px] mt-4 md:mt-0">
+          {/* Right: Stats + Service Hours */}
+          <div className="flex flex-col w-full md:w-[40%]">
             <button
               type="button"
               onClick={() => setIsServiceHoursVisible(!isServiceHoursVisible)}
-              className="relative md:absolute dark_button bg-gray-700 rounded-t-xl py-1 md:py-2 px-4 flex justify-end items-center w-full text-white transition-all duration-300 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] font-serif z-30"
-              style={{ willChange: "transform" }}
+              className="dark_button bg-gray-700 rounded-t-xl py-2 md:py-3 items-center justify-center text-white text-base md:text-lg transition-all duration-300 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] font-serif z-20 relative"
             >
-              <span className="font-serif text-[2vh]">
-                {isServiceHoursVisible
-                  ? currentHideHoursText
-                  : currentShowHoursText}
-              </span>
+              {isServiceHoursVisible ? "Hide Hours" : "Show Hours"}
             </button>
             <div
-              className="relative h-full rounded-b-xl overflow-hidden min-h-[300px]" // Changed to full height
+              className="relative h-[35vh] md:h-[45vh] rounded-b-xl overflow-hidden"
+              ref={statsDivRef}
             >
-              <WindowStrings isVisible={isServiceHoursVisible} />
-              {/* Stats background and content - conditionally editable stats */}
+              <WindowStrings
+                isVisible={isServiceHoursVisible}
+                isSmallScreen={isSmallScreen}
+              />
               <div className="absolute inset-0 z-10">
                 <div className="absolute inset-0">
                   <img
-                    src={getDisplayUrl(
-                      statsBackgroundImage,
-                      "/assets/images/stats_background.jpg"
-                    )}
+                    src="/assets/images/stats_background.jpg"
                     alt="Stats BG"
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-black opacity-20"></div>
                 </div>
-                <div
-                  className={`relative w-full h-full flex items-center justify-center overflow-hidden ${readOnly ? "" : "p-1 md:p-2"}`}
-                >
+                <div className="relative w-full h-full flex items-center justify-center">
                   <StatsPanel
                     stats={stats}
                     readOnly={readOnly}
                     onStatTextChange={onStatTextChange}
                     onStatIconClick={onStatIconClick}
-                    statsTextColor={statsTextColor}
                   />
                 </div>
               </div>
-
-              {/* Service hours overlay - remains read-only in this preview, edited in BasicMapEditorPanel */}
               <div
                 className={`
                   absolute inset-0 z-20
-                  bg-white rounded-b-xl
+                  bg-white border-t border-gray-300
                   transition-transform duration-500 ease-in-out
-                  ${isServiceHoursVisible ? "translate-y-0" : "translate-y-[-101%]"}
+                  h-full
+                  ${isServiceHoursVisible ? "translate-y-0" : "translate-y-[-100%]"}
                 `}
-                style={{ willChange: "transform" }}
               >
                 {renderServiceHoursTable()}
               </div>
@@ -640,12 +470,18 @@ function BasicMapPreview({
 }
 
 BasicMapPreview.propTypes = {
-  mapData: PropTypes.object,
+  mapData: PropTypes.shape({
+    center: PropTypes.arrayOf(PropTypes.number),
+    zoomLevel: PropTypes.number,
+    circleRadius: PropTypes.number,
+    address: PropTypes.string,
+    telephone: PropTypes.string,
+    serviceHours: PropTypes.array,
+    stats: PropTypes.array,
+  }),
   readOnly: PropTypes.bool,
-  onInlineChange: PropTypes.func,
   onStatTextChange: PropTypes.func,
   onStatIconClick: PropTypes.func,
-  onServiceHourChange: PropTypes.func,
 };
 
 /* --------------------------------------------------
@@ -656,49 +492,44 @@ BasicMapPreview.propTypes = {
 // Control Components for Tabs
 // =============================================
 
-const BasicMapColorControls = ({
-  currentData,
-  onControlsChange,
-  themeColors,
-}) => {
-  const handleColorUpdate = (fieldName, colorValue) => {
-    onControlsChange({ ...currentData, [fieldName]: colorValue });
+const BasicMapColorControls = ({ currentData, onControlsChange }) => {
+  const handleColorChange = (field, value) => {
+    onControlsChange({
+      ...currentData,
+      [field]: value,
+    });
   };
 
   return (
-    <div className="p-3 space-y-4">
-      <ThemeColorPicker
-        label="Banner Text Color:"
-        currentColorValue={currentData.bannerTextColor || "#FFFFFF"}
-        themeColors={themeColors}
-        onColorChange={(fieldName, value) =>
-          handleColorUpdate("bannerTextColor", value)
-        }
-        fieldName="bannerTextColor"
-        className="text-xs"
-      />
-      <ThemeColorPicker
-        label="Banner Background:"
-        currentColorValue={currentData.bannerBackgroundColor || "#1f2937"}
-        themeColors={themeColors}
-        onColorChange={(fieldName, value) =>
-          handleColorUpdate("bannerBackgroundColor", value)
-        }
-        fieldName="bannerBackgroundColor"
-        className="text-xs"
-      />
-      <ThemeColorPicker
-        label="Stats Panel Text Color:"
-        currentColorValue={currentData.statsTextColor || "#FFFFFF"}
-        themeColors={themeColors}
-        onColorChange={(fieldName, value) =>
-          handleColorUpdate("statsTextColor", value)
-        }
-        fieldName="statsTextColor"
-        className="text-xs"
-      />
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm mb-1">Marker Color:</label>
+        <input
+          type="color"
+          value={currentData.markerColor || "#000000"}
+          onChange={(e) => handleColorChange("markerColor", e.target.value)}
+          className="w-full h-10 rounded cursor-pointer"
+        />
+      </div>
+      <div>
+        <label className="block text-sm mb-1">Circle Color:</label>
+        <input
+          type="color"
+          value={currentData.circleColor || "#000000"}
+          onChange={(e) => handleColorChange("circleColor", e.target.value)}
+          className="w-full h-10 rounded cursor-pointer"
+        />
+      </div>
     </div>
   );
+};
+
+BasicMapColorControls.propTypes = {
+  currentData: PropTypes.shape({
+    markerColor: PropTypes.string,
+    circleColor: PropTypes.string,
+  }).isRequired,
+  onControlsChange: PropTypes.func.isRequired,
 };
 
 const BasicMapStylingControls = ({ currentData, onControlsChange }) => {
@@ -709,185 +540,213 @@ const BasicMapStylingControls = ({ currentData, onControlsChange }) => {
     coordIndex = 0
   ) => {
     if (isCoordinate) {
-      const newCenter = [...(currentData.center || [0, 0])];
-      newCenter[coordIndex] = parseFloat(value) || 0;
+      const newCenter = [...currentData.center];
+      newCenter[coordIndex] = parseFloat(value);
       onControlsChange({ ...currentData, center: newCenter });
-    } else if (field === "zoomLevel" || field === "circleRadius") {
-      onControlsChange({ ...currentData, [field]: parseInt(value, 10) || 0 });
-    } else if (field === "styling") {
-      onControlsChange({
-        ...currentData,
-        styling: { ...currentData.styling, ...value },
-      });
     } else {
       onControlsChange({ ...currentData, [field]: value });
     }
   };
 
-  const currentStyling = currentData.styling || {
-    desktopHeightVH: 30,
-    mobileHeightVW: 40,
-  };
-
   return (
-    <div className="p-3 space-y-4">
+    <div className="space-y-4">
       <div>
-        <h3 className="text-base font-medium text-gray-700 mb-3">
-          Map Dimensions
-        </h3>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="block text-sm">
-            <span className="font-medium text-gray-600 block mb-1">
-              Desktop Height (vh):
-            </span>
-            <input
-              type="number"
-              min="20"
-              max="80"
-              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              value={currentStyling.desktopHeightVH || 30}
-              onChange={(e) =>
-                handleFieldChange("styling", {
-                  desktopHeightVH: parseInt(e.target.value) || 30,
-                })
-              }
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="font-medium text-gray-600 block mb-1">
-              Mobile Height (vw):
-            </span>
-            <input
-              type="number"
-              min="30"
-              max="80"
-              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              value={currentStyling.mobileHeightVW || 40}
-              onChange={(e) =>
-                handleFieldChange("styling", {
-                  mobileHeightVW: parseInt(e.target.value) || 40,
-                })
-              }
-            />
-          </label>
-        </div>
+        <label className="block text-sm mb-1">Center Latitude:</label>
+        <input
+          type="number"
+          value={currentData.center[0]}
+          onChange={(e) => handleFieldChange("center", e.target.value, true, 0)}
+          className="w-full bg-gray-700 px-2 py-1 rounded"
+        />
       </div>
-
       <div>
-        <h3 className="text-base font-medium text-gray-700 mb-3">
-          Map View Settings
-        </h3>
-        <div className="grid grid-cols-2 gap-x-3 gap-y-2">
-          <label className="block text-sm">
-            <span className="font-medium text-gray-600 block mb-1">
-              Latitude:
-            </span>
-            <input
-              type="number"
-              step="any"
-              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              value={currentData.center?.[0] || 0}
-              onChange={(e) =>
-                handleFieldChange("center", e.target.value, true, 0)
-              }
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="font-medium text-gray-600 block mb-1">
-              Longitude:
-            </span>
-            <input
-              type="number"
-              step="any"
-              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              value={currentData.center?.[1] || 0}
-              onChange={(e) =>
-                handleFieldChange("center", e.target.value, true, 1)
-              }
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="font-medium text-gray-600 block mb-1">
-              Zoom Level:
-            </span>
-            <input
-              type="number"
-              min="1"
-              max="20"
-              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              value={currentData.zoomLevel || 5}
-              onChange={(e) => handleFieldChange("zoomLevel", e.target.value)}
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="font-medium text-gray-600 block mb-1">
-              Circle Radius (m):
-            </span>
-            <input
-              type="number"
-              min="0"
-              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              value={currentData.circleRadius || 0}
-              onChange={(e) =>
-                handleFieldChange("circleRadius", e.target.value)
-              }
-            />
-          </label>
-        </div>
+        <label className="block text-sm mb-1">Center Longitude:</label>
+        <input
+          type="number"
+          value={currentData.center[1]}
+          onChange={(e) => handleFieldChange("center", e.target.value, true, 1)}
+          className="w-full bg-gray-700 px-2 py-1 rounded"
+        />
       </div>
-
       <div>
-        <h3 className="text-base font-medium text-gray-700 mb-3">
-          Button Text
-        </h3>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="block text-sm">
-            <span className="font-medium text-gray-600 block mb-1">
-              Show Hours Text:
-            </span>
-            <input
-              type="text"
-              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              placeholder="Show Hours"
-              value={currentData.showHoursButtonText || ""}
-              onChange={(e) =>
-                handleFieldChange("showHoursButtonText", e.target.value)
-              }
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="font-medium text-gray-600 block mb-1">
-              Hide Hours Text:
-            </span>
-            <input
-              type="text"
-              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              placeholder="Hide Hours"
-              value={currentData.hideHoursButtonText || ""}
-              onChange={(e) =>
-                handleFieldChange("hideHoursButtonText", e.target.value)
-              }
-            />
-          </label>
-        </div>
+        <label className="block text-sm mb-1">Zoom Level:</label>
+        <input
+          type="number"
+          value={currentData.zoomLevel}
+          onChange={(e) =>
+            handleFieldChange("zoomLevel", parseInt(e.target.value))
+          }
+          className="w-full bg-gray-700 px-2 py-1 rounded"
+        />
       </div>
-
       <div>
-        <h3 className="text-base font-medium text-gray-700 mb-3">
-          Stats Management
-        </h3>
-        <div className="space-y-2">
-          <p className="text-sm text-gray-600">
-            Stats can be edited directly in the preview. Maximum 4 stats
-            allowed.
-          </p>
-          <div className="text-sm text-gray-500">
-            Current stats: {(currentData.stats || []).length}/4
-          </div>
-        </div>
+        <label className="block text-sm mb-1">Circle Radius (meters):</label>
+        <input
+          type="number"
+          value={currentData.circleRadius}
+          onChange={(e) =>
+            handleFieldChange("circleRadius", parseInt(e.target.value))
+          }
+          className="w-full bg-gray-700 px-2 py-1 rounded"
+        />
+      </div>
+      <div>
+        <label className="block text-sm mb-1">Desktop Height (vh):</label>
+        <input
+          type="number"
+          value={currentData.styling.desktopHeightVH}
+          onChange={(e) =>
+            handleFieldChange("styling", {
+              ...currentData.styling,
+              desktopHeightVH: parseInt(e.target.value),
+            })
+          }
+          className="w-full bg-gray-700 px-2 py-1 rounded"
+        />
+      </div>
+      <div>
+        <label className="block text-sm mb-1">Mobile Height (vw):</label>
+        <input
+          type="number"
+          value={currentData.styling.mobileHeightVW}
+          onChange={(e) =>
+            handleFieldChange("styling", {
+              ...currentData.styling,
+              mobileHeightVW: parseInt(e.target.value),
+            })
+          }
+          className="w-full bg-gray-700 px-2 py-1 rounded"
+        />
       </div>
     </div>
   );
+};
+
+BasicMapStylingControls.propTypes = {
+  currentData: PropTypes.shape({
+    center: PropTypes.arrayOf(PropTypes.number).isRequired,
+    zoomLevel: PropTypes.number.isRequired,
+    circleRadius: PropTypes.number.isRequired,
+    styling: PropTypes.shape({
+      desktopHeightVH: PropTypes.number.isRequired,
+      mobileHeightVW: PropTypes.number.isRequired,
+    }).isRequired,
+  }).isRequired,
+  onControlsChange: PropTypes.func.isRequired,
+};
+
+const BasicMapImageControls = ({ currentData, onControlsChange }) => {
+  const handleImageFileChange = (field, file) => {
+    if (!file) return;
+    const currentImageState = currentData[field];
+
+    // Revoke old blob URL if one exists
+    if (
+      currentImageState &&
+      currentImageState.url &&
+      currentImageState.url.startsWith("blob:")
+    ) {
+      URL.revokeObjectURL(currentImageState.url);
+    }
+
+    const fileURL = URL.createObjectURL(file);
+    onControlsChange({
+      ...currentData,
+      [field]: {
+        file: file,
+        url: fileURL,
+        name: file.name,
+        originalUrl: currentImageState?.originalUrl || file.name,
+      },
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm mb-1">Marker Icon:</label>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) =>
+            handleImageFileChange("markerIcon", e.target.files[0])
+          }
+          className="w-full bg-gray-700 px-2 py-1 rounded"
+        />
+        {currentData.markerIcon?.url && (
+          <img
+            src={currentData.markerIcon.url}
+            alt="Marker Icon"
+            className="mt-2 h-8 w-auto"
+          />
+        )}
+      </div>
+      <div>
+        <label className="block text-sm mb-1">Background Image:</label>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) =>
+            handleImageFileChange("backgroundImage", e.target.files[0])
+          }
+          className="w-full bg-gray-700 px-2 py-1 rounded"
+        />
+        {currentData.backgroundImage?.url && (
+          <img
+            src={currentData.backgroundImage.url}
+            alt="Background"
+            className="mt-2 h-20 w-auto"
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
+const BasicMapControls = ({ currentData, onControlsChange }) => {
+  return (
+    <div className="space-y-6">
+      <BasicMapStylingControls
+        currentData={currentData}
+        onControlsChange={onControlsChange}
+      />
+      <BasicMapColorControls
+        currentData={currentData}
+        onControlsChange={onControlsChange}
+      />
+      <BasicMapImageControls
+        currentData={currentData}
+        onControlsChange={onControlsChange}
+      />
+    </div>
+  );
+};
+
+BasicMapControls.propTypes = {
+  currentData: PropTypes.shape({
+    center: PropTypes.arrayOf(PropTypes.number).isRequired,
+    zoomLevel: PropTypes.number.isRequired,
+    circleRadius: PropTypes.number.isRequired,
+    styling: PropTypes.shape({
+      desktopHeightVH: PropTypes.number.isRequired,
+      mobileHeightVW: PropTypes.number.isRequired,
+    }).isRequired,
+    markerColor: PropTypes.string,
+    circleColor: PropTypes.string,
+    markerIcon: PropTypes.shape({
+      file: PropTypes.object,
+      url: PropTypes.string,
+      name: PropTypes.string,
+      originalUrl: PropTypes.string,
+    }),
+    backgroundImage: PropTypes.shape({
+      file: PropTypes.object,
+      url: PropTypes.string,
+      name: PropTypes.string,
+      originalUrl: PropTypes.string,
+    }),
+  }).isRequired,
+  onControlsChange: PropTypes.func.isRequired,
 };
 
 /* --------------------------------------------------
@@ -1245,125 +1104,6 @@ BasicMapBlock.propTypes = {
   onConfigChange: PropTypes.func,
   themeColors: PropTypes.object,
 };
-// BasicMapImagesController for handling map images
-const BasicMapImagesController = ({ currentData, onControlsChange }) => {
-  const handleImageFileChange = (field, file) => {
-    if (!file) return;
-    const currentImageState = currentData[field];
-
-    // Revoke old blob URL if one exists
-    if (
-      currentImageState &&
-      currentImageState.url &&
-      currentImageState.url.startsWith("blob:")
-    ) {
-      URL.revokeObjectURL(currentImageState.url);
-    }
-
-    const fileURL = URL.createObjectURL(file);
-    onControlsChange({
-      ...currentData,
-      [field]: {
-        file: file,
-        url: fileURL,
-        name: file.name,
-        originalUrl: currentImageState?.originalUrl || file.name,
-      },
-    });
-  };
-
-  const handleImageUrlChange = (field, urlValue) => {
-    const currentImageState = currentData[field];
-    if (
-      currentImageState &&
-      currentImageState.url &&
-      currentImageState.url.startsWith("blob:")
-    ) {
-      URL.revokeObjectURL(currentImageState.url);
-    }
-    onControlsChange({
-      ...currentData,
-      [field]: {
-        file: null,
-        url: urlValue,
-        name: urlValue.split("/").pop(),
-        originalUrl: urlValue,
-      },
-    });
-  };
-
-  return (
-    <div className="p-3 space-y-4">
-      <div>
-        <h3 className="text-base font-medium text-gray-700 mb-3">
-          Marker Icon
-        </h3>
-        <label className="block text-sm mb-2">
-          <span className="font-medium text-gray-600 block mb-1">
-            Icon Image:
-          </span>
-          <input
-            type="file"
-            accept="image/*"
-            className="w-full bg-gray-100 text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700"
-            onChange={(e) =>
-              handleImageFileChange("markerIcon", e.target.files?.[0])
-            }
-          />
-        </label>
-        <input
-          type="text"
-          placeholder="Or paste image URL"
-          value={getDisplayUrl(currentData.markerIcon) || ""}
-          onChange={(e) => handleImageUrlChange("markerIcon", e.target.value)}
-          className="bg-gray-100 px-3 py-2 rounded w-full text-sm mt-2"
-        />
-        {getDisplayUrl(currentData.markerIcon) && (
-          <img
-            src={getDisplayUrl(currentData.markerIcon)}
-            alt="Marker Icon Preview"
-            className="mt-2 h-16 w-16 object-contain rounded bg-gray-200 p-1"
-          />
-        )}
-      </div>
-
-      <div>
-        <h3 className="text-base font-medium text-gray-700 mb-3">
-          Stats Panel Background
-        </h3>
-        <label className="block text-sm mb-2">
-          <span className="font-medium text-gray-600 block mb-1">
-            Background Image:
-          </span>
-          <input
-            type="file"
-            accept="image/*"
-            className="w-full bg-gray-100 text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700"
-            onChange={(e) =>
-              handleImageFileChange("statsBackgroundImage", e.target.files?.[0])
-            }
-          />
-        </label>
-        <input
-          type="text"
-          placeholder="Or paste image URL"
-          value={getDisplayUrl(currentData.statsBackgroundImage) || ""}
-          onChange={(e) =>
-            handleImageUrlChange("statsBackgroundImage", e.target.value)
-          }
-          className="bg-gray-100 px-3 py-2 rounded w-full text-sm mt-2"
-        />
-        {getDisplayUrl(currentData.statsBackgroundImage) && (
-          <img
-            src={getDisplayUrl(currentData.statsBackgroundImage)}
-            alt="Stats Background Preview"
-            className="mt-2 h-24 w-full object-cover rounded bg-gray-200 p-1"
-          />
-        )}
-      </div>
-    </div>
-  );
-};
 
 // Add tabsConfig to BasicMapBlock
 BasicMapBlock.tabsConfig = (localData, onControlsChange, themeColors) => {
@@ -1371,7 +1111,7 @@ BasicMapBlock.tabsConfig = (localData, onControlsChange, themeColors) => {
 
   // Images Tab
   tabs.images = (props) => (
-    <BasicMapImagesController
+    <BasicMapImageControls
       {...props}
       currentData={localData}
       onControlsChange={onControlsChange}

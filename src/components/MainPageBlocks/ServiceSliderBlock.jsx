@@ -1119,7 +1119,7 @@ export default function ServiceSliderBlock({
               )}
             </motion.button>
           </div>
-          <div className="absolute inset-0 flex items-center justify-center ">
+          <div className="absolute flex inset-0 w-1/2 origin-center top-[8vh] items-center justify-center left-1/4">
             <AnimatePresence mode="wait">
               <motion.div
                 key={

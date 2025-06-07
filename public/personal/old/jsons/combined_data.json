@@ -313,7 +313,7 @@
     {
       "blockName": "BeforeAfterBlock",
       "config": {
-        "sectionTitle": "PORTFOLIO",
+        "sectionTitle": "Gallery",
         "showNailAnimation": true,
         "items": [
           {
@@ -776,7 +776,7 @@
         },
         "styling": {
           "hasVariants": true,
-          "desktopHeightVH": 55,
+          "desktopHeightVH": 63,
           "mobileHeightVW": 75
         }
       }

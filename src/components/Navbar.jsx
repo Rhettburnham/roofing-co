@@ -41,37 +41,31 @@ const Navbar = ({
   onSubtitleChange, // New prop for live editing
   isEditingPreview, // Make sure this is destructured
   // Animation and sizing configuration props
-  naturalOffsetVh = config?.animation?.naturalOffsetVh || { base: 8, md: 11 },
+  naturalOffsetVh = config?.animation?.naturalOffsetVh || 11,
   slideUpDistanceVh = config?.animation?.slideUpDistanceVh || 0,
   slideLeftDistance = config?.animation?.slideLeftDistance || {
     base: "0vw",
     md: "30vw",
   },
   logoSizeUnscrolled = config?.animation?.logoSizeUnscrolled || {
-    base: { width: "12vh", height: "12vh" },
+    base: { width: "18vh", height: "18vh" },
     md: { width: "18vh", height: "18vh" },
   },
   logoSizeScrolled = config?.animation?.logoSizeScrolled || {
-    base: { width: "8vh", height: "8vh" },
+    base: { width: "14vh", height: "14vh" },
     md: { width: "14vh", height: "14vh" },
   },
-  // New configurable variables
-  textSizes = {
+  // Text and layout settings
+  textSizes = config?.textSizes || {
     unscrolled: { base: "text-[7vw]", md: "text-[8vh]", lg: "text-[5vh]" },
     scrolled: { base: "text-[3vw]", md: "text-[5vh]" },
   },
-  logoTitleDistance = config?.animation?.logoTitleDistance || {
-    unscrolled: {
-      base: "mr-1",
-      md: "mr-3",
-    },
-    scrolled: {
-      base: "mr-1",
-      md: "mr-2",
-    },
+  logoTitleDistance = config?.logoTextDistance || {
+    unscrolled: { base: "mr-2", md: "mr-3" },
+    scrolled: { base: "mr-2", md: "mr-2" },
   },
-  navbarHeight = {
-    unscrolled: { base: "h-[16vh]", md: "h-[18vh]" },
+  navbarHeight = config?.navbarHeight || {
+    unscrolled: { base: "h-[16vh]", md: "h-[16vh]" },
     scrolled: { base: "h-[10vh]", md: "h-[10vh]" },
   },
   invertLogoColor = false, // Whether to invert logo colors
@@ -201,28 +195,36 @@ const Navbar = ({
     ]);
 
     if (hasScrolled) {
-      // Slide up and left
-      tl.to([titleElement, logoElement], {
-        y: `-${slideUpDistanceVh}vh`,
-        x: `-${slideLeftDistance.md}`,
-        duration: 0.4,
-        ease: "power2.out",
+      // First adjust the container alignment
+      tl.to(titleContainerElement, {
+        alignItems: "center",
+        duration: 0.2,
+        ease: "power2.inOut",
       })
+        // Then slide up and left
+        .to(
+          [titleElement, logoElement],
+          {
+            y: `-${slideUpDistanceVh}vh`,
+            x: `-${slideLeftDistance.md}`,
+            duration: 0.4,
+            ease: "power2.inOut",
+          },
+          "<0.1"
+        )
+        // Finally fade out subtitle
         .to(
           subTitleElement,
           {
             opacity: 0,
-            duration: 0.4,
+            y: "-2vh",
+            duration: 0.3,
+            ease: "power2.inOut",
             onComplete: () => {
               if (subTitleElement) subTitleElement.style.display = "none";
             },
           },
-          "<"
-        )
-        .to(
-          titleContainerElement,
-          { alignItems: "center", duration: 0.2 },
-          "<"
+          "<0.1"
         );
     } else {
       // Reset to initial state
@@ -231,26 +233,33 @@ const Navbar = ({
         gsap.set(subTitleElement, { opacity: 0, y: "2vh" });
       }
 
-      tl.to([titleElement, logoElement], {
+      // First fade in subtitle
+      tl.to(subTitleElement, {
+        opacity: 1,
         y: "0",
-        x: "0",
-        duration: 0.4,
-        ease: "power2.out",
+        duration: 0.3,
+        ease: "power2.inOut",
       })
+        // Then slide back to original position
         .to(
-          subTitleElement,
+          [titleElement, logoElement],
           {
-            opacity: 1,
             y: "0",
-            duration: 0.3,
-            ease: "power2.out",
+            x: "0",
+            duration: 0.4,
+            ease: "power2.inOut",
           },
-          "<"
+          "<0.1"
         )
+        // Finally adjust container alignment
         .to(
           titleContainerElement,
-          { alignItems: "flex-start", duration: 0.3, ease: "power2.out" },
-          "<"
+          {
+            alignItems: "flex-start",
+            duration: 0.2,
+            ease: "power2.inOut",
+          },
+          "<0.1"
         );
     }
   }, [hasScrolled, slideUpDistanceVh, slideLeftDistance]);
@@ -367,7 +376,7 @@ const Navbar = ({
               className={`cursor-pointer transform-gpu ${marginClasses}`}
               onClick={handleLogoClick}
               style={{
-                marginTop: hasScrolled ? "0" : `${naturalOffsetVh.base}vh`,
+                marginTop: hasScrolled ? "0" : `${naturalOffsetVh}vh`,
                 width: hasScrolled
                   ? logoSizeScrolled.base.width
                   : logoSizeUnscrolled.base.width,
@@ -375,7 +384,7 @@ const Navbar = ({
                   ? logoSizeScrolled.base.height
                   : logoSizeUnscrolled.base.height,
                 [`@media (min-width: 768px)`]: {
-                  marginTop: hasScrolled ? "0" : `${naturalOffsetVh.md}vh`,
+                  marginTop: hasScrolled ? "0" : `${naturalOffsetVh}vh`,
                   width: hasScrolled
                     ? logoSizeScrolled.md.width
                     : logoSizeUnscrolled.md.width,
@@ -399,7 +408,7 @@ const Navbar = ({
               className={`cursor-pointer logo-fixed-size transform-gpu ${marginClasses}`}
               onClick={handleLogoClick}
               style={{
-                marginTop: hasScrolled ? "0" : `${naturalOffsetVh.base}vh`,
+                marginTop: hasScrolled ? "0" : `${naturalOffsetVh}vh`,
                 width: hasScrolled
                   ? logoSizeScrolled.base.width
                   : logoSizeUnscrolled.base.width,
@@ -407,7 +416,7 @@ const Navbar = ({
                   ? logoSizeScrolled.base.height
                   : logoSizeUnscrolled.base.height,
                 [`@media (min-width: 768px)`]: {
-                  marginTop: hasScrolled ? "0" : `${naturalOffsetVh.md}vh`,
+                  marginTop: hasScrolled ? "0" : `${naturalOffsetVh}vh`,
                   width: hasScrolled
                     ? logoSizeScrolled.md.width
                     : logoSizeUnscrolled.md.width,
@@ -428,7 +437,7 @@ const Navbar = ({
               className={`cursor-pointer logo-fixed-size transform-gpu ${marginClasses}`}
               onClick={handleLogoClick}
               style={{
-                marginTop: hasScrolled ? "0" : `${naturalOffsetVh.base}vh`,
+                marginTop: hasScrolled ? "0" : `${naturalOffsetVh}vh`,
                 width: hasScrolled
                   ? logoSizeScrolled.base.width
                   : logoSizeUnscrolled.base.width,
@@ -436,7 +445,7 @@ const Navbar = ({
                   ? logoSizeScrolled.base.height
                   : logoSizeUnscrolled.base.height,
                 [`@media (min-width: 768px)`]: {
-                  marginTop: hasScrolled ? "0" : `${naturalOffsetVh.md}vh`,
+                  marginTop: hasScrolled ? "0" : `${naturalOffsetVh}vh`,
                   width: hasScrolled
                     ? logoSizeScrolled.md.width
                     : logoSizeUnscrolled.md.width,
@@ -453,9 +462,9 @@ const Navbar = ({
             style={{
               alignItems: hasScrolled ? "center" : "flex-start",
               justifyContent: "center",
-              marginTop: hasScrolled ? "0" : `${naturalOffsetVh.base}vh`,
+              marginTop: hasScrolled ? "0" : `${naturalOffsetVh}vh`,
               [`@media (min-width: 768px)`]: {
-                marginTop: hasScrolled ? "0" : `${naturalOffsetVh.md}vh`,
+                marginTop: hasScrolled ? "0" : `${naturalOffsetVh}vh`,
               },
             }}
           >
@@ -632,10 +641,7 @@ Navbar.propTypes = {
       name: PropTypes.string,
     }),
     animation: PropTypes.shape({
-      naturalOffsetVh: PropTypes.shape({
-        base: PropTypes.number,
-        md: PropTypes.number,
-      }),
+      naturalOffsetVh: PropTypes.number,
       slideUpDistanceVh: PropTypes.number,
       slideLeftDistance: PropTypes.shape({
         base: PropTypes.string,
@@ -661,22 +667,22 @@ Navbar.propTypes = {
           height: PropTypes.string,
         }),
       }),
-      logoTitleDistance: PropTypes.shape({
-        unscrolled: PropTypes.shape({
-          base: PropTypes.string,
-          md: PropTypes.string,
-        }),
-        scrolled: PropTypes.shape({
-          base: PropTypes.string,
-          md: PropTypes.string,
-        }),
-      }),
     }),
     textSizes: PropTypes.shape({
       unscrolled: PropTypes.shape({
         base: PropTypes.string,
         md: PropTypes.string,
         lg: PropTypes.string,
+      }),
+      scrolled: PropTypes.shape({
+        base: PropTypes.string,
+        md: PropTypes.string,
+      }),
+    }),
+    logoTextDistance: PropTypes.shape({
+      unscrolled: PropTypes.shape({
+        base: PropTypes.string,
+        md: PropTypes.string,
       }),
       scrolled: PropTypes.shape({
         base: PropTypes.string,
@@ -705,10 +711,7 @@ Navbar.propTypes = {
   forceScrolledState: PropTypes.bool,
   isPreview: PropTypes.bool,
   isEditingPreview: PropTypes.bool,
-  naturalOffsetVh: PropTypes.shape({
-    base: PropTypes.number,
-    md: PropTypes.number,
-  }),
+  naturalOffsetVh: PropTypes.number,
   slideUpDistanceVh: PropTypes.number,
   slideLeftDistance: PropTypes.shape({
     base: PropTypes.string,
@@ -732,6 +735,16 @@ Navbar.propTypes = {
     md: PropTypes.shape({
       width: PropTypes.string,
       height: PropTypes.string,
+    }),
+  }),
+  logoTitleDistance: PropTypes.shape({
+    unscrolled: PropTypes.shape({
+      base: PropTypes.string,
+      md: PropTypes.string,
+    }),
+    scrolled: PropTypes.shape({
+      base: PropTypes.string,
+      md: PropTypes.string,
     }),
   }),
   textSizes: PropTypes.shape({

@@ -10,19 +10,23 @@ import PropTypes from "prop-types";
 const TEXT_STYLES = {
   testimonialName: {
     base: "text-[3vw] md:text-[1.8vh] font-semibold text-black font-sans truncate",
-    editable: "text-[3vw] md:text-[1.8vh] font-semibold text-black font-sans bg-transparent focus:bg-white/20 focus:ring-1 focus:ring-blue-500 rounded p-1 w-full outline-none",
-    readOnly: "text-[3vw] md:text-[1.8vh] font-semibold text-black font-sans truncate"
+    editable:
+      "text-[3vw] md:text-[1.8vh] font-semibold text-black font-sans bg-transparent focus:bg-white/20 focus:ring-1 focus:ring-blue-500 rounded p-1 w-full outline-none",
+    readOnly:
+      "text-[3vw] md:text-[1.8vh] font-semibold text-black font-sans truncate",
   },
   testimonialText: {
     base: "text-gray-800 indent-3",
-    editable: "text-gray-800 indent-3 bg-transparent focus:bg-white/20 focus:ring-1 focus:ring-blue-500 rounded p-2 w-full resize-none outline-none",
-    readOnly: "text-gray-800 indent-3"
+    editable:
+      "text-gray-800 indent-3 bg-transparent focus:bg-white/20 focus:ring-1 focus:ring-blue-500 rounded p-2 w-full resize-none outline-none",
+    readOnly: "text-gray-800 indent-3",
   },
   sectionTitle: {
     base: "text-[7.5vw] text-white md:text-[6vh] font-serif mt-3",
-    editable: "text-[7.5vw] text-white md:text-[6vh] font-serif mt-3 bg-transparent focus:bg-white/20 focus:ring-1 focus:ring-blue-500 rounded p-2 outline-none",
-    readOnly: "text-[7.5vw] text-white md:text-[6vh] font-serif mt-3"
-  }
+    editable:
+      "text-[7.5vw] text-white md:text-[6vh] font-serif mt-3 bg-transparent focus:bg-white/20 focus:ring-1 focus:ring-blue-500 rounded p-2 outline-none",
+    readOnly: "text-[7.5vw] text-white md:text-[6vh] font-serif mt-3",
+  },
 };
 
 // =============================================
@@ -30,42 +34,51 @@ const TEXT_STYLES = {
 // =============================================
 const getVariantClasses = (variant) => {
   switch (variant) {
-    case 'compact':
+    case "compact":
       return {
-        container: "flex gap-2 justify-center items-stretch", // Added items-stretch for equal height
+        container: "flex gap-2 justify-center items-center items-stretch", // Added items-stretch for equal height
         title: "text-4xl text-white mr-4 my-1 font-serif", // Smaller title
-        testimonialCard: "p-2 md:p-3 bg-white rounded-md custom-circle-shadow relative cursor-pointer group flex-1 min-w-0 max-w-xs overflow-hidden", // Added overflow-hidden
+        testimonialCard:
+          "p-2 md:p-3 bg-white rounded-md custom-circle-shadow relative cursor-pointer group flex-1 min-w-0 max-w-xs overflow-hidden", // Added overflow-hidden
         mobileContainer: "flex flex-col gap-2 px-4", // Flex column for mobile
-        mobileTitle: "text-[6vw] text-white md:text-[5vh] font-serif mt-2" // Smaller mobile title
+        mobileTitle: "text-[6vw] text-white md:text-[5vh] font-serif mt-2", // Smaller mobile title
       };
-    case 'feature':
+    case "feature":
       return {
         container: "flex gap-6 justify-center items-stretch", // Added items-stretch for equal height
         title: "text-6xl text-white mr-4 my-4 font-serif", // Larger title
-        testimonialCard: "p-4 md:p-6 bg-white rounded-xl custom-circle-shadow relative cursor-pointer group border-2 border-blue-100 flex-1 min-w-0 max-w-sm overflow-hidden", // Added overflow-hidden
+        testimonialCard:
+          "p-4 md:p-6 bg-white rounded-xl custom-circle-shadow relative cursor-pointer group border-2 border-blue-100 flex-1 min-w-0 max-w-sm overflow-hidden", // Added overflow-hidden
         mobileContainer: "flex flex-col gap-4 px-8", // More spacing on mobile
-        mobileTitle: "text-[8vw] text-white md:text-[7vh] font-serif mt-4" // Larger mobile title
+        mobileTitle: "text-[8vw] text-white md:text-[7vh] font-serif mt-4", // Larger mobile title
       };
     default: // 'default'
       return {
         container: "flex gap-4 justify-center items-stretch", // Added items-stretch for equal height
         title: "text-5xl text-white mr-4 my-2 font-serif", // Standard title
-        testimonialCard: "p-2 md:p-4 bg-white rounded-lg custom-circle-shadow relative cursor-pointer group flex-1 min-w-0 max-w-md overflow-hidden", // Added overflow-hidden
+        testimonialCard:
+          "p-2 md:p-4 bg-white rounded-lg custom-circle-shadow relative cursor-pointer group flex-1 min-w-0 max-w-md overflow-hidden", // Added overflow-hidden
         mobileContainer: "flex flex-col gap-3 px-6", // Standard mobile
-        mobileTitle: "text-[7.5vw] text-white md:text-[6vh] font-serif mt-3" // Standard mobile title
+        mobileTitle: "text-[7.5vw] text-white md:text-[6vh] font-serif mt-3", // Standard mobile title
       };
   }
 };
 
 const getVariantChunkSize = (variant, isSmallScreen) => {
   if (isSmallScreen) return 3; // Mobile always shows 3
-  
+
   // Desktop always shows exactly 3 items regardless of variant
   return 3;
 };
 
 // A SINGLE TESTIMONIAL ITEM COMPONENT
-const TestimonialItem = ({ testimonial, readOnly, onTestimonialChange, index, variant = 'default' }) => {
+const TestimonialItem = ({
+  testimonial,
+  readOnly,
+  onTestimonialChange,
+  index,
+  variant = "default",
+}) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const handleExpandClick = () => setIsExpanded(!isExpanded);
 
@@ -101,7 +114,7 @@ const TestimonialItem = ({ testimonial, readOnly, onTestimonialChange, index, va
             <img
               src={testimonial.logo}
               alt="Logo"
-              className={`${variant === 'feature' ? 'w-8 h-8 md:w-12 md:h-12' : variant === 'compact' ? 'w-4 h-4 md:w-6 md:h-6' : 'w-5 h-5 md:w-8 md:h-8'}`}
+              className={`${variant === "feature" ? "w-8 h-8 md:w-12 md:h-12" : variant === "compact" ? "w-4 h-4 md:w-6 md:h-6" : "w-5 h-5 md:w-8 md:h-8"}`}
             />
           </a>
         )}
@@ -112,23 +125,33 @@ const TestimonialItem = ({ testimonial, readOnly, onTestimonialChange, index, va
                 <input
                   type="text"
                   value={testimonial.name}
-                  onChange={(e) => handleFieldChange('name', e.target.value)}
-                  className={`${TEXT_STYLES.testimonialName.editable} ${variant === 'feature' ? 'text-lg md:text-xl' : variant === 'compact' ? 'text-sm md:text-base' : 'text-[2.5vw] md:text-[1.6vh]'} min-w-0 text-center leading-tight`}
+                  onChange={(e) => handleFieldChange("name", e.target.value)}
+                  className={`${TEXT_STYLES.testimonialName.editable} ${variant === "feature" ? "text-lg md:text-xl" : variant === "compact" ? "text-sm md:text-base" : "text-[2.5vw] md:text-[1.6vh]"} min-w-0 text-center leading-tight`}
                   onClick={(e) => e.stopPropagation()}
                 />
               ) : (
-                <p className={`${TEXT_STYLES.testimonialName.readOnly} ${variant === 'feature' ? 'text-lg md:text-xl' : variant === 'compact' ? 'text-sm md:text-base' : 'text-[2.5vw] md:text-[1.6vh]'} min-w-0 overflow-hidden text-center leading-tight`}>
+                <p
+                  className={`${TEXT_STYLES.testimonialName.readOnly} ${variant === "feature" ? "text-lg md:text-xl" : variant === "compact" ? "text-sm md:text-base" : "text-[2.5vw] md:text-[1.6vh]"} min-w-0 overflow-hidden text-center leading-tight`}
+                >
                   {testimonial.name}
                 </p>
               )}
               <div className="flex-shrink-0">
-                <StarRating 
-                  rating={testimonial.stars} 
-                  starSize={variant === 'feature' ? 'text-xl md:text-2xl' : variant === 'compact' ? 'text-sm md:text-base' : 'text-base md:text-lg'} 
+                <StarRating
+                  rating={testimonial.stars}
+                  starSize={
+                    variant === "feature"
+                      ? "text-xl md:text-2xl"
+                      : variant === "compact"
+                        ? "text-sm md:text-base"
+                        : "text-base md:text-lg"
+                  }
                 />
               </div>
             </div>
-            <p className={`text-gray-600 ${variant === 'feature' ? 'text-sm md:text-base' : variant === 'compact' ? 'text-xs md:text-sm' : 'text-[2.2vw] md:text-[1.2vh]'} text-left leading-tight -mt-1`}>
+            <p
+              className={`text-gray-600 ${variant === "feature" ? "text-sm md:text-base" : variant === "compact" ? "text-xs md:text-sm" : "text-[2.2vw] md:text-[1.2vh]"} text-left leading-tight -mt-1`}
+            >
               {testimonial.date}
             </p>
           </div>
@@ -138,19 +161,29 @@ const TestimonialItem = ({ testimonial, readOnly, onTestimonialChange, index, va
         {!readOnly ? (
           <textarea
             value={testimonial.text}
-            onChange={(e) => handleFieldChange('text', e.target.value)}
-            className={`${TEXT_STYLES.testimonialText.editable} ${variant === 'feature' ? 'text-base' : variant === 'compact' ? 'text-xs' : 'text-sm'} h-full min-h-0 w-full text-center leading-relaxed`}
+            onChange={(e) => handleFieldChange("text", e.target.value)}
+            className={`${TEXT_STYLES.testimonialText.editable} ${variant === "feature" ? "text-base" : variant === "compact" ? "text-xs" : "text-sm"} h-full min-h-0 w-full text-center leading-relaxed`}
             onClick={(e) => e.stopPropagation()}
-            rows={variant === 'feature' ? 6 : variant === 'compact' ? 3 : 4}
+            rows={variant === "feature" ? 6 : variant === "compact" ? 3 : 4}
           />
         ) : (
           <div className="w-full text-center">
-            <p className={`${TEXT_STYLES.testimonialText.readOnly} ${variant === 'feature' ? 'text-base' : variant === 'compact' ? 'text-xs' : ''} break-words text-center`}>
-              <span className={`${variant === 'feature' ? 'text-base md:text-lg' : variant === 'compact' ? 'text-xs md:text-sm' : 'text-[2.8vw] md:text-[2.0vh]'} block md:hidden break-words leading-snug`}>
+            <p
+              className={`${TEXT_STYLES.testimonialText.readOnly} ${variant === "feature" ? "text-base" : variant === "compact" ? "text-xs" : ""} break-words text-center`}
+            >
+              <span
+                className={`${variant === "feature" ? "text-base md:text-lg" : variant === "compact" ? "text-xs md:text-sm" : "text-[2.8vw] md:text-[2.0vh]"} block md:hidden break-words leading-snug`}
+              >
                 {isExpanded ? testimonial.text : truncated}
-                {showViewMore && <span className="text-blue-600 opacity-60 ml-1">view more</span>}
+                {showViewMore && (
+                  <span className="text-blue-600 opacity-60 ml-1">
+                    view more
+                  </span>
+                )}
               </span>
-              <span className={`${variant === 'feature' ? 'text-sm md:text-base' : variant === 'compact' ? 'text-xs' : 'text-xs'} hidden md:block font-serif break-words leading-relaxed`}>
+              <span
+                className={`${variant === "feature" ? "text-sm md:text-base" : variant === "compact" ? "text-xs" : "text-xs"} hidden md:block font-serif break-words leading-relaxed`}
+              >
                 {testimonial.text}
               </span>
             </p>
@@ -182,7 +215,7 @@ TestimonialItem.propTypes = {
   readOnly: PropTypes.bool,
   onTestimonialChange: PropTypes.func,
   index: PropTypes.number,
-  variant: PropTypes.string
+  variant: PropTypes.string,
 };
 
 // =============================================
@@ -190,15 +223,15 @@ TestimonialItem.propTypes = {
 // =============================================
 const deriveInitialLocalData = (testimonialsDataInput) => {
   const initial = testimonialsDataInput || {};
-  
+
   return {
     title: initial.title || "Testimonials",
     googleReviews: initial.googleReviews || [],
     reviewButtonText: initial.reviewButtonText || "Review us on Google",
     reviewButtonLink: initial.reviewButtonLink || "https://www.google.com/maps",
-    variant: initial.variant || 'default',
-    backgroundColor: initial.backgroundColor || '#000000',
-    arrowStyle: initial.arrowStyle || 'default'
+    variant: initial.variant || "default",
+    backgroundColor: initial.backgroundColor || "#000000",
+    arrowStyle: initial.arrowStyle || "default",
   };
 };
 
@@ -206,7 +239,11 @@ const deriveInitialLocalData = (testimonialsDataInput) => {
 // Tab Control Components
 // =============================================
 
-const TestimonialColorControls = ({ currentData, onControlsChange, themeColors }) => {
+const TestimonialColorControls = ({
+  currentData,
+  onControlsChange,
+  themeColors,
+}) => {
   const handleColorUpdate = (fieldName, colorValue) => {
     onControlsChange({ ...currentData, [fieldName]: colorValue });
   };
@@ -215,9 +252,11 @@ const TestimonialColorControls = ({ currentData, onControlsChange, themeColors }
     <div className="p-3">
       <ThemeColorPicker
         label="Background Color:"
-        currentColorValue={currentData.backgroundColor || '#000000'}
+        currentColorValue={currentData.backgroundColor || "#000000"}
         themeColors={themeColors}
-        onColorChange={(fieldName, value) => handleColorUpdate('backgroundColor', value)}
+        onColorChange={(fieldName, value) =>
+          handleColorUpdate("backgroundColor", value)
+        }
         fieldName="backgroundColor"
       />
       <div className="mt-4 p-3 bg-gray-50 rounded-md border">
@@ -240,38 +279,60 @@ const TestimonialStylingControls = ({ currentData, onControlsChange }) => {
   const handleVariantChange = (newVariant) => {
     onControlsChange({
       ...currentData,
-      variant: newVariant
+      variant: newVariant,
     });
   };
 
   const handleArrowStyleChange = (newArrowStyle) => {
     onControlsChange({
       ...currentData,
-      arrowStyle: newArrowStyle
+      arrowStyle: newArrowStyle,
     });
   };
 
-  const currentVariant = currentData.variant || 'default';
-  const currentArrowStyle = currentData.arrowStyle || 'default';
+  const currentVariant = currentData.variant || "default";
+  const currentArrowStyle = currentData.arrowStyle || "default";
 
   const variantOptions = [
-    { value: 'default', label: 'Default', description: 'Standard testimonial cards with balanced spacing' },
-    { value: 'compact', label: 'Compact', description: 'Smaller cards with tighter spacing' },
-    { value: 'feature', label: 'Feature', description: 'Larger cards with prominent borders' }
+    {
+      value: "default",
+      label: "Default",
+      description: "Standard testimonial cards with balanced spacing",
+    },
+    {
+      value: "compact",
+      label: "Compact",
+      description: "Smaller cards with tighter spacing",
+    },
+    {
+      value: "feature",
+      label: "Feature",
+      description: "Larger cards with prominent borders",
+    },
   ];
 
   const arrowStyleOptions = [
-    { value: 'default', label: 'Default Arrows', description: 'Standard navigation arrows' },
-    { value: 'circle', label: 'Circle Arrows', description: 'Rounded background arrows' },
-    { value: 'minimal', label: 'Minimal', description: 'Simple line arrows' }
+    {
+      value: "default",
+      label: "Default Arrows",
+      description: "Standard navigation arrows",
+    },
+    {
+      value: "circle",
+      label: "Circle Arrows",
+      description: "Rounded background arrows",
+    },
+    { value: "minimal", label: "Minimal", description: "Simple line arrows" },
   ];
 
   return (
     <div className="p-4 bg-gray-800 text-white rounded-lg space-y-6">
       {/* Variant Selector */}
       <div className="pb-6 border-b border-gray-600">
-        <h3 className="text-lg font-semibold mb-4 text-center">Testimonial Style</h3>
-        
+        <h3 className="text-lg font-semibold mb-4 text-center">
+          Testimonial Style
+        </h3>
+
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {variantOptions.map((option) => (
             <div key={option.value} className="relative">
@@ -284,36 +345,50 @@ const TestimonialStylingControls = ({ currentData, onControlsChange }) => {
                   onChange={() => handleVariantChange(option.value)}
                   className="sr-only"
                 />
-                
-                <div className={`relative mb-2 p-1 rounded-lg transition-all duration-200 ${
-                  currentVariant === option.value 
-                    ? 'ring-2 ring-green-500 ring-offset-2 ring-offset-gray-800' 
-                    : 'ring-1 ring-gray-600 group-hover:ring-gray-500'
-                }`}>
+
+                <div
+                  className={`relative mb-2 p-1 rounded-lg transition-all duration-200 ${
+                    currentVariant === option.value
+                      ? "ring-2 ring-green-500 ring-offset-2 ring-offset-gray-800"
+                      : "ring-1 ring-gray-600 group-hover:ring-gray-500"
+                  }`}
+                >
                   <div className="w-16 h-12 bg-white border border-gray-200 rounded-md overflow-hidden shadow-sm flex items-center justify-center">
-                    {option.value === 'compact' && (
-                      <div className="text-xs text-gray-600 text-center">Compact</div>
+                    {option.value === "compact" && (
+                      <div className="text-xs text-gray-600 text-center">
+                        Compact
+                      </div>
                     )}
-                    {option.value === 'feature' && (
-                      <div className="text-xs text-gray-600 text-center border border-blue-200 rounded p-1">Feature</div>
+                    {option.value === "feature" && (
+                      <div className="text-xs text-gray-600 text-center border border-blue-200 rounded p-1">
+                        Feature
+                      </div>
                     )}
-                    {option.value === 'default' && (
-                      <div className="text-xs text-gray-600 text-center">Standard</div>
+                    {option.value === "default" && (
+                      <div className="text-xs text-gray-600 text-center">
+                        Standard
+                      </div>
                     )}
                   </div>
-                  
+
                   {currentVariant === option.value && (
                     <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
                       <div className="w-2 h-2 bg-white rounded-full"></div>
                     </div>
                   )}
                 </div>
-                
-                <div className={`text-center transition-colors duration-200 ${
-                  currentVariant === option.value ? 'text-green-400' : 'text-gray-300 group-hover:text-white'
-                }`}>
+
+                <div
+                  className={`text-center transition-colors duration-200 ${
+                    currentVariant === option.value
+                      ? "text-green-400"
+                      : "text-gray-300 group-hover:text-white"
+                  }`}
+                >
                   <div className="font-medium text-sm">{option.label}</div>
-                  <div className="text-xs text-gray-400 mt-1 max-w-24 leading-tight">{option.description}</div>
+                  <div className="text-xs text-gray-400 mt-1 max-w-24 leading-tight">
+                    {option.description}
+                  </div>
                 </div>
               </label>
             </div>
@@ -324,7 +399,7 @@ const TestimonialStylingControls = ({ currentData, onControlsChange }) => {
       {/* Arrow Style Selector */}
       <div>
         <h3 className="text-lg font-semibold mb-4 text-center">Arrow Style</h3>
-        
+
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {arrowStyleOptions.map((option) => (
             <div key={option.value} className="relative">
@@ -337,40 +412,48 @@ const TestimonialStylingControls = ({ currentData, onControlsChange }) => {
                   onChange={() => handleArrowStyleChange(option.value)}
                   className="sr-only"
                 />
-                
-                <div className={`relative mb-2 p-1 rounded-lg transition-all duration-200 ${
-                  currentArrowStyle === option.value 
-                    ? 'ring-2 ring-green-500 ring-offset-2 ring-offset-gray-800' 
-                    : 'ring-1 ring-gray-600 group-hover:ring-gray-500'
-                }`}>
+
+                <div
+                  className={`relative mb-2 p-1 rounded-lg transition-all duration-200 ${
+                    currentArrowStyle === option.value
+                      ? "ring-2 ring-green-500 ring-offset-2 ring-offset-gray-800"
+                      : "ring-1 ring-gray-600 group-hover:ring-gray-500"
+                  }`}
+                >
                   <div className="w-16 h-12 bg-white border border-gray-200 rounded-md overflow-hidden shadow-sm flex items-center justify-center">
-                    {option.value === 'circle' && (
+                    {option.value === "circle" && (
                       <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
                         <div className="w-2 h-2 border-l-2 border-b-2 border-white transform rotate-45"></div>
                       </div>
                     )}
-                    {option.value === 'minimal' && (
+                    {option.value === "minimal" && (
                       <div className="w-4 h-4 border-l-2 border-b-2 border-gray-600 transform rotate-45"></div>
                     )}
-                    {option.value === 'default' && (
+                    {option.value === "default" && (
                       <div className="w-6 h-6 bg-gray-600 flex items-center justify-center">
                         <div className="w-2 h-2 border-l-2 border-b-2 border-white transform rotate-45"></div>
                       </div>
                     )}
                   </div>
-                  
+
                   {currentArrowStyle === option.value && (
                     <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
                       <div className="w-2 h-2 bg-white rounded-full"></div>
                     </div>
                   )}
                 </div>
-                
-                <div className={`text-center transition-colors duration-200 ${
-                  currentArrowStyle === option.value ? 'text-green-400' : 'text-gray-300 group-hover:text-white'
-                }`}>
+
+                <div
+                  className={`text-center transition-colors duration-200 ${
+                    currentArrowStyle === option.value
+                      ? "text-green-400"
+                      : "text-gray-300 group-hover:text-white"
+                  }`}
+                >
                   <div className="font-medium text-sm">{option.label}</div>
-                  <div className="text-xs text-gray-400 mt-1 max-w-24 leading-tight">{option.description}</div>
+                  <div className="text-xs text-gray-400 mt-1 max-w-24 leading-tight">
+                    {option.description}
+                  </div>
                 </div>
               </label>
             </div>
@@ -391,12 +474,12 @@ const TestimonialReviewsControls = ({ currentData, onControlsChange }) => {
   const [loading, setLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newTestimonial, setNewTestimonial] = useState({
-    name: '',
+    name: "",
     stars: 5,
-    date: new Date().getFullYear() + ' ago',
-    text: '',
+    date: new Date().getFullYear() + " ago",
+    text: "",
     logo: googleIcon,
-    link: 'https://www.google.com/maps'
+    link: "https://www.google.com/maps",
   });
   const currentReviews = currentData.googleReviews || [];
 
@@ -404,12 +487,17 @@ const TestimonialReviewsControls = ({ currentData, onControlsChange }) => {
     const fetchSentimentReviews = async () => {
       setLoading(true);
       try {
-        const response = await fetch('/personal/old/jsons/sentiment_reviews.json');
+        const response = await fetch(
+          "/personal/old/jsons/sentiment_reviews.json"
+        );
         if (response.ok) {
           const data = await response.json();
           // Get top 30 positive reviews, sorted by rating and polarity
           const positiveReviews = data
-            .filter(review => review.sentiment === 'positive' && review.review_text !== 'N/A')
+            .filter(
+              (review) =>
+                review.sentiment === "positive" && review.review_text !== "N/A"
+            )
             .sort((a, b) => {
               // Sort by rating first, then by polarity (sentiment strength)
               if (parseInt(b.rating) !== parseInt(a.rating)) {
@@ -421,7 +509,7 @@ const TestimonialReviewsControls = ({ currentData, onControlsChange }) => {
           setSentimentReviews(positiveReviews);
         }
       } catch (error) {
-        console.error('Error fetching sentiment reviews:', error);
+        console.error("Error fetching sentiment reviews:", error);
       } finally {
         setLoading(false);
       }
@@ -431,16 +519,20 @@ const TestimonialReviewsControls = ({ currentData, onControlsChange }) => {
   }, []);
 
   const handleRemoveReview = (indexToRemove) => {
-    const updatedReviews = currentReviews.filter((_, index) => index !== indexToRemove);
+    const updatedReviews = currentReviews.filter(
+      (_, index) => index !== indexToRemove
+    );
     onControlsChange({
       ...currentData,
-      googleReviews: updatedReviews
+      googleReviews: updatedReviews,
     });
   };
 
   const handleAddReview = (review) => {
     // Check if review is already added
-    const isAlreadyAdded = currentReviews.some(r => r.name === review.name && r.text === review.review_text);
+    const isAlreadyAdded = currentReviews.some(
+      (r) => r.name === review.name && r.text === review.review_text
+    );
     if (isAlreadyAdded) return;
 
     const newReview = {
@@ -449,31 +541,31 @@ const TestimonialReviewsControls = ({ currentData, onControlsChange }) => {
       date: review.date,
       text: review.review_text,
       logo: googleIcon,
-      link: "https://www.google.com/maps"
+      link: "https://www.google.com/maps",
     };
-    
+
     onControlsChange({
       ...currentData,
-      googleReviews: [...currentReviews, newReview]
+      googleReviews: [...currentReviews, newReview],
     });
   };
 
   const handleAddManualTestimonial = () => {
     if (!newTestimonial.name.trim() || !newTestimonial.text.trim()) return;
-    
+
     onControlsChange({
       ...currentData,
-      googleReviews: [...currentReviews, { ...newTestimonial }]
+      googleReviews: [...currentReviews, { ...newTestimonial }],
     });
-    
+
     // Reset form
     setNewTestimonial({
-      name: '',
+      name: "",
       stars: 5,
-      date: new Date().getFullYear() + ' ago',
-      text: '',
+      date: new Date().getFullYear() + " ago",
+      text: "",
       logo: googleIcon,
-      link: 'https://www.google.com/maps'
+      link: "https://www.google.com/maps",
     });
     setShowAddForm(false);
   };
@@ -487,16 +579,20 @@ const TestimonialReviewsControls = ({ currentData, onControlsChange }) => {
       {/* Left Column: Current Active Reviews */}
       <div className="flex-1 bg-gray-50 rounded-lg p-4">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold">Active Reviews ({currentReviews.length})</h3>
+          <h3 className="text-lg font-semibold">
+            Active Reviews ({currentReviews.length})
+          </h3>
           <div className="flex gap-2">
             <button
               onClick={() => setShowAddForm(!showAddForm)}
               className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
             >
-              {showAddForm ? 'Cancel' : 'Add Manual'}
+              {showAddForm ? "Cancel" : "Add Manual"}
             </button>
             <button
-              onClick={() => onControlsChange({ ...currentData, googleReviews: [] })}
+              onClick={() =>
+                onControlsChange({ ...currentData, googleReviews: [] })
+              }
               className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600"
               disabled={currentReviews.length === 0}
             >
@@ -504,7 +600,7 @@ const TestimonialReviewsControls = ({ currentData, onControlsChange }) => {
             </button>
           </div>
         </div>
-        
+
         {showAddForm && (
           <div className="mb-4 p-3 bg-white border rounded-lg">
             <h4 className="font-medium text-sm mb-2">Add Manual Testimonial</h4>
@@ -512,31 +608,47 @@ const TestimonialReviewsControls = ({ currentData, onControlsChange }) => {
               <input
                 type="text"
                 value={newTestimonial.name}
-                onChange={(e) => setNewTestimonial({...newTestimonial, name: e.target.value})}
+                onChange={(e) =>
+                  setNewTestimonial({ ...newTestimonial, name: e.target.value })
+                }
                 placeholder="Customer Name"
                 className="w-full px-2 py-1 text-xs border rounded"
               />
               <div className="flex gap-2">
                 <select
                   value={newTestimonial.stars}
-                  onChange={(e) => setNewTestimonial({...newTestimonial, stars: parseInt(e.target.value)})}
+                  onChange={(e) =>
+                    setNewTestimonial({
+                      ...newTestimonial,
+                      stars: parseInt(e.target.value),
+                    })
+                  }
                   className="px-2 py-1 text-xs border rounded"
                 >
-                  {[5,4,3,2,1].map(num => (
-                    <option key={num} value={num}>{num} stars</option>
+                  {[5, 4, 3, 2, 1].map((num) => (
+                    <option key={num} value={num}>
+                      {num} stars
+                    </option>
                   ))}
                 </select>
                 <input
                   type="text"
                   value={newTestimonial.date}
-                  onChange={(e) => setNewTestimonial({...newTestimonial, date: e.target.value})}
+                  onChange={(e) =>
+                    setNewTestimonial({
+                      ...newTestimonial,
+                      date: e.target.value,
+                    })
+                  }
                   placeholder="Date"
                   className="flex-1 px-2 py-1 text-xs border rounded"
                 />
               </div>
               <textarea
                 value={newTestimonial.text}
-                onChange={(e) => setNewTestimonial({...newTestimonial, text: e.target.value})}
+                onChange={(e) =>
+                  setNewTestimonial({ ...newTestimonial, text: e.target.value })
+                }
                 placeholder="Review text..."
                 className="w-full px-2 py-1 text-xs border rounded resize-none"
                 rows={3}
@@ -544,29 +656,32 @@ const TestimonialReviewsControls = ({ currentData, onControlsChange }) => {
               <button
                 onClick={handleAddManualTestimonial}
                 className="px-3 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600"
-                disabled={!newTestimonial.name.trim() || !newTestimonial.text.trim()}
+                disabled={
+                  !newTestimonial.name.trim() || !newTestimonial.text.trim()
+                }
               >
                 Add Testimonial
               </button>
             </div>
           </div>
         )}
-        
+
         <div className="max-h-80 overflow-y-auto space-y-2">
           {currentReviews.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">No active reviews. Add some from the right panel or manually.</p>
+            <p className="text-gray-500 text-center py-8">
+              No active reviews. Add some from the right panel or manually.
+            </p>
           ) : (
             currentReviews.map((review, index) => (
-              <div 
-                key={index} 
-                className="p-3 bg-white border rounded-lg"
-              >
+              <div key={index} className="p-3 bg-white border rounded-lg">
                 <div className="flex items-start justify-between">
                   <div className="flex-grow">
                     <div className="flex items-center gap-2 mb-1">
                       <h4 className="font-medium text-sm">{review.name}</h4>
                       <StarRating rating={review.stars} starSize="text-xs" />
-                      <span className="text-xs text-gray-500">{review.date}</span>
+                      <span className="text-xs text-gray-500">
+                        {review.date}
+                      </span>
                     </div>
                     <p className="text-xs text-gray-700 line-clamp-2">
                       {review.text}
@@ -592,18 +707,20 @@ const TestimonialReviewsControls = ({ currentData, onControlsChange }) => {
           <h3 className="text-lg font-semibold">Top 30 Sentiment Reviews</h3>
           <span className="text-sm text-gray-600">Click to add →</span>
         </div>
-        
+
         <div className="max-h-80 overflow-y-auto space-y-2">
           {sentimentReviews.map((review, index) => {
-            const isAlreadyAdded = currentReviews.some(r => r.name === review.name && r.text === review.review_text);
-            
+            const isAlreadyAdded = currentReviews.some(
+              (r) => r.name === review.name && r.text === review.review_text
+            );
+
             return (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                  isAlreadyAdded 
-                    ? 'bg-green-100 border-green-300 cursor-not-allowed' 
-                    : 'bg-white border-gray-200 hover:bg-blue-100 hover:border-blue-300'
+                  isAlreadyAdded
+                    ? "bg-green-100 border-green-300 cursor-not-allowed"
+                    : "bg-white border-gray-200 hover:bg-blue-100 hover:border-blue-300"
                 }`}
                 onClick={() => !isAlreadyAdded && handleAddReview(review)}
               >
@@ -611,8 +728,13 @@ const TestimonialReviewsControls = ({ currentData, onControlsChange }) => {
                   <div className="flex-grow">
                     <div className="flex items-center gap-2 mb-1">
                       <h4 className="font-medium text-sm">{review.name}</h4>
-                      <StarRating rating={parseInt(review.rating)} starSize="text-xs" />
-                      <span className="text-xs text-gray-500">{review.date}</span>
+                      <StarRating
+                        rating={parseInt(review.rating)}
+                        starSize="text-xs"
+                      />
+                      <span className="text-xs text-gray-500">
+                        {review.date}
+                      </span>
                       <span className="text-xs bg-blue-100 text-blue-800 px-1 rounded">
                         {(review.polarity * 100).toFixed(0)}%
                       </span>
@@ -622,7 +744,7 @@ const TestimonialReviewsControls = ({ currentData, onControlsChange }) => {
                     </p>
                   </div>
                   <div className="ml-2 text-lg">
-                    {isAlreadyAdded ? '✓' : '+'}
+                    {isAlreadyAdded ? "✓" : "+"}
                   </div>
                 </div>
               </div>
@@ -642,13 +764,15 @@ TestimonialReviewsControls.propTypes = {
 // =============================================
 // MAIN EXPORT: TestimonialBlock
 // =============================================
-export default function TestimonialBlock({ 
-  readOnly = false, 
-  config, 
+export default function TestimonialBlock({
+  readOnly = false,
+  config,
   onConfigChange,
-  themeColors 
+  themeColors,
 }) {
-  const [localData, setLocalData] = useState(() => deriveInitialLocalData(config));
+  const [localData, setLocalData] = useState(() =>
+    deriveInitialLocalData(config)
+  );
   const prevReadOnlyRef = useRef(readOnly);
 
   useEffect(() => {
@@ -660,7 +784,9 @@ export default function TestimonialBlock({
   useEffect(() => {
     if (prevReadOnlyRef.current === false && readOnly === true) {
       if (onConfigChange) {
-        console.log("TestimonialBlock: Editing finished. Calling onConfigChange.");
+        console.log(
+          "TestimonialBlock: Editing finished. Calling onConfigChange."
+        );
         onConfigChange(localData);
       }
     }
@@ -668,11 +794,12 @@ export default function TestimonialBlock({
   }, [readOnly, localData, onConfigChange]);
 
   const handleLocalDataChange = (updatedFieldsOrFunction) => {
-    setLocalData(prevLocalData => {
-      const newState = typeof updatedFieldsOrFunction === 'function' 
-        ? updatedFieldsOrFunction(prevLocalData) 
-        : { ...prevLocalData, ...updatedFieldsOrFunction };
-      
+    setLocalData((prevLocalData) => {
+      const newState =
+        typeof updatedFieldsOrFunction === "function"
+          ? updatedFieldsOrFunction(prevLocalData)
+          : { ...prevLocalData, ...updatedFieldsOrFunction };
+
       if (!readOnly && onConfigChange) {
         console.log("TestimonialBlock: Live update during editing");
         onConfigChange(newState);
@@ -681,18 +808,25 @@ export default function TestimonialBlock({
     });
   };
 
-  const handleTestimonialChange = (index, updatedTestimonial, isRemove = false) => {
-    handleLocalDataChange(prevData => {
+  const handleTestimonialChange = (
+    index,
+    updatedTestimonial,
+    isRemove = false
+  ) => {
+    handleLocalDataChange((prevData) => {
       const updatedReviews = [...(prevData.googleReviews || [])];
-      
+
       if (isRemove) {
         // Remove the testimonial at the specified index
         updatedReviews.splice(index, 1);
-        
+
         // Adjust currentIndex if necessary to prevent being on an empty page
-        const chunkSize = getVariantChunkSize(localData.variant || 'default', false);
+        const chunkSize = getVariantChunkSize(
+          localData.variant || "default",
+          false
+        );
         const newTotalReviews = updatedReviews.length;
-        
+
         if (newTotalReviews > 0) {
           const maxIndex = Math.max(0, newTotalReviews - chunkSize);
           if (currentIndex > maxIndex) {
@@ -705,7 +839,7 @@ export default function TestimonialBlock({
         // Update the testimonial at the specified index
         updatedReviews[index] = updatedTestimonial;
       }
-      
+
       return { ...prevData, googleReviews: updatedReviews };
     });
   };
@@ -717,9 +851,9 @@ export default function TestimonialBlock({
   // Render logic similar to current implementation but with inline editing
   const [currentIndex, setCurrentIndex] = useState(0);
   const googleReviews = localData.googleReviews || [];
-  
+
   // Use variant-specific chunk sizes
-  const currentVariant = localData.variant || 'default';
+  const currentVariant = localData.variant || "default";
   const variantClasses = getVariantClasses(currentVariant);
   const chunkSize = getVariantChunkSize(currentVariant, false);
   const smallScreenChunkSize = getVariantChunkSize(currentVariant, true);
@@ -729,7 +863,7 @@ export default function TestimonialBlock({
     const currentChunkSize = isSmallScreen ? smallScreenChunkSize : chunkSize;
     return googleReviews.slice(currentIndex, currentIndex + currentChunkSize);
   };
-  
+
   const handlePrev = (isSmallScreen) => {
     const currentChunkSize = isSmallScreen ? smallScreenChunkSize : chunkSize;
     if (currentIndex - currentChunkSize >= 0) {
@@ -745,12 +879,13 @@ export default function TestimonialBlock({
   };
 
   const getArrowClasses = () => {
-    const baseClasses = "flex items-center justify-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)] hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10 transition-all duration-200";
-    
+    const baseClasses =
+      "flex items-center justify-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)] hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10 transition-all duration-200";
+
     switch (localData.arrowStyle) {
-      case 'circle':
+      case "circle":
         return `${baseClasses} w-8 h-8 bg-blue-500 text-white rounded-full hover:bg-blue-600`;
-      case 'minimal':
+      case "minimal":
         return `${baseClasses} w-6 h-6 text-white hover:text-gray-200`;
       default:
         return `${baseClasses} w-8 h-8 bg-white text-gray-700 rounded-md hover:bg-gray-100 border border-gray-200`;
@@ -758,10 +893,10 @@ export default function TestimonialBlock({
   };
 
   return (
-    <div 
-      className="w-full pb-6 md:pt-5" 
-      style={{ 
-        backgroundColor: localData.backgroundColor
+    <div
+      className="w-full pb-6 md:pt-5"
+      style={{
+        backgroundColor: localData.backgroundColor,
       }}
     >
       {/* TESTIMONIALS (SMALL SCREEN) */}
@@ -771,13 +906,11 @@ export default function TestimonialBlock({
             <input
               type="text"
               value={localData.title}
-              onChange={(e) => handleFieldChange('title', e.target.value)}
+              onChange={(e) => handleFieldChange("title", e.target.value)}
               className={`${variantClasses.mobileTitle} bg-transparent focus:bg-white/20 focus:ring-1 focus:ring-blue-500 rounded p-2 outline-none text-center`}
             />
           ) : (
-            <h2 className={variantClasses.mobileTitle}>
-              {localData.title}
-            </h2>
+            <h2 className={variantClasses.mobileTitle}>{localData.title}</h2>
           )}
         </div>
         <div className="relative mt-3 pb-3">
@@ -786,16 +919,27 @@ export default function TestimonialBlock({
               onClick={() => handlePrev(true)}
               className={`absolute left-0 top-1/2 transform -translate-y-1/2 ml-1 ${getArrowClasses()}`}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth="2"
+                stroke="currentColor"
+                className="w-4 h-4"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15.75 19.5L8.25 12l7.5-7.5"
+                />
               </svg>
             </button>
           )}
           <div className={variantClasses.mobileContainer}>
             {getVisibleReviews(true).map((t, idx) => (
-              <TestimonialItem 
-                key={idx} 
-                testimonial={t} 
+              <TestimonialItem
+                key={idx}
+                testimonial={t}
                 readOnly={readOnly}
                 onTestimonialChange={handleTestimonialChange}
                 index={currentIndex + idx}
@@ -803,16 +947,28 @@ export default function TestimonialBlock({
               />
             ))}
           </div>
-          {totalReviews > smallScreenChunkSize && currentIndex + smallScreenChunkSize < totalReviews && (
-            <button
-              onClick={() => handleNext(true)}
-              className={`absolute right-0 top-1/2 transform -translate-y-1/2 mr-1 ${getArrowClasses()}`}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-              </svg>
-            </button>
-          )}
+          {totalReviews > smallScreenChunkSize &&
+            currentIndex + smallScreenChunkSize < totalReviews && (
+              <button
+                onClick={() => handleNext(true)}
+                className={`absolute right-0 top-1/2 transform -translate-y-1/2 mr-1 ${getArrowClasses()}`}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth="2"
+                  stroke="currentColor"
+                  className="w-4 h-4"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M8.25 4.5l7.5 7.5-7.5 7.5"
+                  />
+                </svg>
+              </button>
+            )}
         </div>
         <div className="text-center mt-3">
           <div className="flex justify-center space-x-4">
@@ -836,13 +992,11 @@ export default function TestimonialBlock({
             <input
               type="text"
               value={localData.title}
-              onChange={(e) => handleFieldChange('title', e.target.value)}
+              onChange={(e) => handleFieldChange("title", e.target.value)}
               className={`${variantClasses.title} bg-transparent focus:bg-white/20 focus:ring-1 focus:ring-blue-500 rounded p-2 outline-none text-center`}
             />
           ) : (
-            <h2 className={variantClasses.title}>
-              {localData.title}
-            </h2>
+            <h2 className={variantClasses.title}>{localData.title}</h2>
           )}
         </div>
         <div className="container mx-auto px-2 relative pb-3">
@@ -852,31 +1006,54 @@ export default function TestimonialBlock({
                 onClick={() => handlePrev(false)}
                 className={`absolute -left-10 top-1/2 transform -translate-y-1/2 ${getArrowClasses()}`}
               >
-                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                 </svg>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth="2"
+                  stroke="currentColor"
+                  className="w-5 h-5"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M15.75 19.5L8.25 12l7.5-7.5"
+                  />
+                </svg>
               </button>
             )}
             {getVisibleReviews(false).map((t, idx) => (
-              <TestimonialItem 
-                key={idx} 
-                testimonial={t} 
+              <TestimonialItem
+                key={idx}
+                testimonial={t}
                 readOnly={readOnly}
                 onTestimonialChange={handleTestimonialChange}
                 index={currentIndex + idx}
                 variant={localData.variant}
               />
             ))}
-            {totalReviews > chunkSize && currentIndex + chunkSize < totalReviews && (
-              <button
-                onClick={() => handleNext(false)}
-                className={`absolute -right-10 top-1/2 transform -translate-y-1/2 ${getArrowClasses()}`}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                </svg>
-              </button>
-            )}
+            {totalReviews > chunkSize &&
+              currentIndex + chunkSize < totalReviews && (
+                <button
+                  onClick={() => handleNext(false)}
+                  className={`absolute -right-10 top-1/2 transform -translate-y-1/2 ${getArrowClasses()}`}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth="2"
+                    stroke="currentColor"
+                    className="w-5 h-5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M8.25 4.5l7.5 7.5-7.5 7.5"
+                    />
+                  </svg>
+                </button>
+              )}
           </div>
         </div>
         <div className="py-1 text-center px-3">
@@ -905,7 +1082,12 @@ TestimonialBlock.propTypes = {
 };
 
 // Tab configuration for TopStickyEditPanel
-TestimonialBlock.tabsConfig = (currentData, onControlsChange, themeColors, sitePalette) => {
+TestimonialBlock.tabsConfig = (
+  currentData,
+  onControlsChange,
+  themeColors,
+  sitePalette
+) => {
   const tabs = {};
 
   // Images Tab (using reviews interface)
@@ -927,7 +1109,7 @@ TestimonialBlock.tabsConfig = (currentData, onControlsChange, themeColors, siteP
     />
   );
 
-  // Styling Tab  
+  // Styling Tab
   tabs.styling = (props) => (
     <TestimonialStylingControls
       {...props}
@@ -937,4 +1119,4 @@ TestimonialBlock.tabsConfig = (currentData, onControlsChange, themeColors, siteP
   );
 
   return tabs;
-}; 
+};

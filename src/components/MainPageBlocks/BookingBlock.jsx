@@ -523,15 +523,15 @@ const BookingPreview = memo(
 
           <div ref={contentRef} className="relative z-20">
             {/* Header Section: Logo, Text, Button - Centered and aligned */}
-            <div className="flex flex-col items-center justify-center w-full pt-4 pb-0 px-2 z-30">
-              <div className="flex flex-col items-center w-full space-y-2">
+            <div className="flex items-center justify-center w-full pt-4 pb-0 px-2 z-30">
+              <div className="flex flex-row items-center justify-center w-full gap-4">
                 <img
-                  src={getLogoDisplayUrl(logo)}
-                  alt="logo"
-                  className="w-16 h-16 mb-1 drop-shadow-[0_1.2px_1.2px_rgba(255,30,0,0.8)]"
-                  style={{ filter: "invert(1)" }}
-                />
-                <div className="flex flex-col items-center w-full">
+                    src={getLogoDisplayUrl(logo)}
+                    alt="logo"
+                    className="w-16 h-16 drop-shadow-[0_1.2px_1.2px_rgba(255,30,0,0.8)]"
+                    style={{ filter: "invert(1)" }}
+                  />
+                <div className="flex flex-col items-start">
                   {!readOnly ? (
                     <input
                       type="text"
@@ -539,13 +539,13 @@ const BookingPreview = memo(
                       onChange={(e) =>
                         handleVariantFieldChange("headerText", e.target.value)
                       }
-                      className="text-xl font-bold bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-400/50 rounded p-0 w-full text-center placeholder-gray-300"
+                      className="text-xl font-bold bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-400/50 rounded p-0 w-full text-left placeholder-gray-300"
                       placeholder="Header Text"
                       style={{ color: currentHeaderTextColor }}
                     />
                   ) : (
                     <h2
-                      className="text-xl font-bold text-center"
+                      className="text-xl font-bold text-left"
                       style={{ color: currentHeaderTextColor }}
                     >
                       {headerText}
@@ -558,19 +558,20 @@ const BookingPreview = memo(
                       onChange={(e) =>
                         handleFieldChange("phone", e.target.value)
                       }
-                      className="font-bold text-base bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-400/50 rounded p-0 w-full mt-1 text-center placeholder-gray-300"
+                      className="font-bold text-base bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-400/50 rounded p-0 w-full mt-1 text-left placeholder-gray-300"
                       placeholder="Phone Number"
                       style={{ color: currentHeaderTextColor }}
                     />
                   ) : (
                     <p
-                      className="font-bold text-base mt-1 text-center"
+                      className="font-bold text-base mt-1 text-left"
                       style={{ color: currentHeaderTextColor }}
                     >
                       {phone}
                     </p>
                   )}
                 </div>
+
                 {isMobile && (
                   <button
                     ref={toggleButtonRef}
