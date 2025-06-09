@@ -135,6 +135,86 @@ export default function ServiceSliderBlock({
         iconPack: s.iconPack || "fa",
       }));
 
+    // Default residential services with proper image paths
+    const defaultResidentialServices = [
+      {
+        id: "roof-installation",
+        title: "Roof Installation",
+        originalTitle: "Roof Installation",
+        icon: "FaTools",
+        iconPack: "fa",
+        image: "/personal/old/img/main_page_images/ServiceSliderBlock/service_1.jpeg",
+        subtitle: "Professional Installation"
+      },
+      {
+        id: "roof-repair",
+        title: "Roof Repair",
+        originalTitle: "Roof Repair",
+        icon: "FaHardHat",
+        iconPack: "fa",
+        image: "/personal/old/img/main_page_images/ServiceSliderBlock/service_2.jpeg",
+        subtitle: "Expert Repairs"
+      },
+      {
+        id: "maintenance",
+        title: "Maintenance",
+        originalTitle: "Maintenance",
+        icon: "FaBroom",
+        iconPack: "fa",
+        image: "/personal/old/img/main_page_images/ServiceSliderBlock/service_3.jpeg",
+        subtitle: "Regular Maintenance"
+      },
+      {
+        id: "inspection",
+        title: "Inspection",
+        originalTitle: "Inspection",
+        icon: "FaFan",
+        iconPack: "fa",
+        image: "/personal/old/img/main_page_images/ServiceSliderBlock/service_4.jpg",
+        subtitle: "Thorough Inspection"
+      }
+    ];
+
+    // Default commercial services with copy images
+    const defaultCommercialServices = [
+      {
+        id: "commercial-installation",
+        title: "Commercial Installation",
+        originalTitle: "Commercial Installation",
+        icon: "FaBuilding",
+        iconPack: "fa",
+        image: "/personal/old/img/main_page_images/ServiceSliderBlock/service_1 copy.jpeg",
+        subtitle: "Large Scale Installation"
+      },
+      {
+        id: "commercial-repair",
+        title: "Commercial Repair",
+        originalTitle: "Commercial Repair",
+        icon: "FaWarehouse",
+        iconPack: "fa",
+        image: "/personal/old/img/main_page_images/ServiceSliderBlock/service_2 copy.jpeg",
+        subtitle: "Industrial Repairs"
+      },
+      {
+        id: "commercial-maintenance",
+        title: "Commercial Maintenance",
+        originalTitle: "Commercial Maintenance",
+        icon: "FaSmog",
+        iconPack: "fa",
+        image: "/personal/old/img/main_page_images/ServiceSliderBlock/service_3 copy.jpeg",
+        subtitle: "Commercial Upkeep"
+      },
+      {
+        id: "commercial-inspection",
+        title: "Commercial Inspection",
+        originalTitle: "Commercial Inspection",
+        icon: "FaPaintRoller",
+        iconPack: "fa",
+        image: "/personal/old/img/main_page_images/ServiceSliderBlock/service_4 copy.jpg",
+        subtitle: "Professional Assessment"
+      }
+    ];
+
     return {
       ...initialConfig,
       title: initialConfig.title || "Services",
@@ -168,9 +248,15 @@ export default function ServiceSliderBlock({
       },
 
       residentialServices: ensureOriginalTitle(
-        initialConfig.residentialServices
+        initialConfig.residentialServices?.length > 0 
+          ? initialConfig.residentialServices 
+          : defaultResidentialServices
       ),
-      commercialServices: ensureOriginalTitle(initialConfig.commercialServices),
+      commercialServices: ensureOriginalTitle(
+        initialConfig.commercialServices?.length > 0 
+          ? initialConfig.commercialServices 
+          : defaultCommercialServices
+      ),
       largeResidentialImg: initializeImageState(
         initialConfig.largeResidentialImg,
         "/assets/images/main_image_expanded.jpg"
@@ -1380,7 +1466,7 @@ ServiceSliderBlock.tabsConfig = (
 /* ==============================================
    SERVICE SLIDER IMAGES CONTROLS
    ----------------------------------------------
-   Handles image uploads for service banners
+   Handles image uploads for service banners and individual service hover images
 =============================================== */
 const ServiceSliderImagesControls = ({
   currentData,
@@ -1425,6 +1511,48 @@ const ServiceSliderImagesControls = ({
     }
   };
 
+  // Handle changes for residential service hover images
+  const handleResidentialServiceImagesChange = (updatedData) => {
+    const images = updatedData.images || [];
+    const updatedServices = [...(currentData.residentialServices || [])];
+    
+    // Update each service with its corresponding image
+    images.forEach((image, index) => {
+      if (updatedServices[index]) {
+        updatedServices[index] = {
+          ...updatedServices[index],
+          image: image.url || image.originalUrl || updatedServices[index].image
+        };
+      }
+    });
+
+    onControlsChange({
+      ...currentData,
+      residentialServices: updatedServices,
+    });
+  };
+
+  // Handle changes for commercial service hover images
+  const handleCommercialServiceImagesChange = (updatedData) => {
+    const images = updatedData.images || [];
+    const updatedServices = [...(currentData.commercialServices || [])];
+    
+    // Update each service with its corresponding image
+    images.forEach((image, index) => {
+      if (updatedServices[index]) {
+        updatedServices[index] = {
+          ...updatedServices[index],
+          image: image.url || image.originalUrl || updatedServices[index].image
+        };
+      }
+    });
+
+    onControlsChange({
+      ...currentData,
+      commercialServices: updatedServices,
+    });
+  };
+
   // Convert single image objects to array format for PanelImagesController
   const residentialImageData = {
     images: currentData.largeResidentialImg
@@ -1438,9 +1566,46 @@ const ServiceSliderImagesControls = ({
       : [],
   };
 
+  // Convert service images to array format for PanelImagesController
+  const residentialServiceImagesData = {
+    images: (currentData.residentialServices || []).map((service, index) => {
+      // Use proper file extensions for default images
+      const getDefaultImagePath = (index) => {
+        const extensions = ['.jpeg', '.jpeg', '.jpeg', '.jpg']; // service_4 uses .jpg
+        return `/personal/old/img/main_page_images/ServiceSliderBlock/service_${index + 1}${extensions[index]}`;
+      };
+      
+      return {
+        url: service.image || getDefaultImagePath(index),
+        name: `${service.title} Hover Image`,
+        originalUrl: service.image || getDefaultImagePath(index),
+        file: null,
+        id: `res_service_${index}_${service.id || index}`
+      };
+    })
+  };
+
+  const commercialServiceImagesData = {
+    images: (currentData.commercialServices || []).map((service, index) => {
+      // Use proper file extensions for copy images
+      const getDefaultCopyImagePath = (index) => {
+        const extensions = ['.jpeg', '.jpeg', '.jpeg', '.jpg']; // service_4 copy uses .jpg
+        return `/personal/old/img/main_page_images/ServiceSliderBlock/service_${index + 1} copy${extensions[index]}`;
+      };
+      
+      return {
+        url: service.image || getDefaultCopyImagePath(index),
+        name: `${service.title} Hover Image`,
+        originalUrl: service.image || getDefaultCopyImagePath(index),
+        file: null,
+        id: `com_service_${index}_${service.id || index}`
+      };
+    })
+  };
+
   return (
     <div className="bg-white text-gray-800 p-3 rounded">
-      <h3 className="text-sm font-semibold mb-3">Banner Images</h3>
+      <h3 className="text-sm font-semibold mb-3">Service Images</h3>
 
       <div className="space-y-6">
         <div>
@@ -1468,24 +1633,48 @@ const ServiceSliderImagesControls = ({
             maxImages={1}
           />
         </div>
+
+        <div>
+          <div className="flex flex-row ">
+            <h4 className="text-sm font-medium text-gray-700 ">
+              Residential Service Hover Images
+            </h4>
+            <p className="text-xs text-gray-500 ">
+              These images appear when hovering over each residential service item.
+            </p>
+          </div>
+          <PanelImagesController
+            currentData={residentialServiceImagesData}
+            onControlsChange={handleResidentialServiceImagesChange}
+            imageArrayFieldName="images"
+            getItemName={(item, idx) => {
+              const serviceName = currentData.residentialServices?.[idx]?.title || `Service ${idx + 1}`;
+              return `${serviceName} Hover Image`;
+            }}
+            maxImages={8}
+          />
+        </div>
+
+        <div>
+          <h4 className="text-sm font-medium text-gray-700 mb-3">
+            Commercial Service Hover Images
+          </h4>
+          <p className="text-xs text-gray-500 mb-2">
+            These images appear when hovering over each commercial service item.
+          </p>
+          <PanelImagesController
+            currentData={commercialServiceImagesData}
+            onControlsChange={handleCommercialServiceImagesChange}
+            imageArrayFieldName="images"
+            getItemName={(item, idx) => {
+              const serviceName = currentData.commercialServices?.[idx]?.title || `Service ${idx + 1}`;
+              return `${serviceName} Hover Image`;
+            }}
+            maxImages={8}
+          />
+        </div>
       </div>
 
-      <div className="mt-4 p-3 bg-gray-50 rounded-md border">
-        <h4 className="text-sm font-medium text-gray-600 mb-2">
-          Image Guidelines:
-        </h4>
-        <ul className="text-xs text-gray-500 space-y-1">
-          <li>
-            • Banner images will be displayed as the background for each service
-            type
-          </li>
-          <li>• Recommended size: 1200x600px or similar aspect ratio</li>
-          <li>
-            • Images should have good contrast for text overlay readability
-          </li>
-          <li>• Use high-quality images that represent your services well</li>
-        </ul>
-      </div>
     </div>
   );
 };
