@@ -4,6 +4,7 @@ import * as Icons from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import PropTypes from "prop-types";
 import PanelImagesController from "../common/PanelImagesController";
+import PanelStylingController from "../common/PanelStylingController";
 
 // =============================================
 // STYLING CONSTANTS - Simplified single styles
@@ -97,54 +98,52 @@ const deriveInitialLocalData = (richTextDataInput) => {
   // Initialize images properly - convert string paths to image objects
   let initialImages = [];
   if (initial.images && Array.isArray(initial.images)) {
-    initialImages = initial.images.map((img, index) => {
-      if (typeof img === "string") {
-        return initializeImageState(img);
-      } else if (img && typeof img === "object") {
-        return initializeImageState(img);
-      }
-      return initializeImageState(
-        null,
-        `/personal/old/img/main_page_images/RichTextBlock/default_${index + 1}.jpg`
-      );
-    });
+    initialImages = initial.images
+      .map((img) => {
+        if (typeof img === "string" || (img && typeof img === "object")) {
+          return initializeImageState(img);
+        }
+        return null; // Return null for invalid entries
+      })
+      .filter(Boolean); // Filter out nulls
   }
 
   // Initialize overlay images - these are the card slate backgrounds
-  let overlayImages = initial.overlayImages || [];
-  if (overlayImages.length === 0) {
-    // Default overlay images - these should be in the img folder
-    overlayImages = [
-      "/personal/old/img/main_page_images/RichTextBlock/shake_img/1.png",
-      "/personal/old/img/main_page_images/RichTextBlock/shake_img/2.png",
-      "/personal/old/img/main_page_images/RichTextBlock/shake_img/3.png",
-      "/personal/old/img/main_page_images/RichTextBlock/shake_img/4.png",
-    ];
+  let overlayImages = [];
+  if (initial.overlayImages && Array.isArray(initial.overlayImages)) {
+    overlayImages = initial.overlayImages
+      .map((img) => {
+        if (typeof img === "string" || (img && typeof img === "object")) {
+          return initializeImageState(img);
+        }
+        return null; // Return null for invalid entries
+      })
+      .filter(Boolean); // Filter out nulls
   }
 
   return {
     // Core data
     images: initialImages,
     overlayImages: overlayImages,
-    backgroundColor: initial.backgroundColor || "#1e293b",
+    backgroundColor: initial.backgroundColor,
     variant: currentVariant,
 
     // Content - with defaults for editing
-    heroText: initial.heroText || "",
-    accredited: initial.accredited || false,
-    years_in_business: initial.years_in_business || "",
-    bus_description: initial.bus_description || "",
+    heroText: initial.heroText,
+    accredited: initial.accredited,
+    years_in_business: initial.years_in_business,
+    bus_description: initial.bus_description,
     cards: (initial.cards || []).map((c, index) => ({
       ...c,
       id: c.id || `card_${index}_${Date.now()}`,
-      icon: c.icon || "Star",
-      iconPack: c.iconPack || "lucide",
-      title: c.title || `Feature ${index + 1}`,
-      desc: c.desc || "Feature description",
+      icon: c.icon,
+      iconPack: c.iconPack,
+      title: c.title,
+      desc: c.desc,
     })),
 
     // Variant-specific layout configurations
-    layout: variantSpecificData.layout || "default",
+    layout: variantSpecificData.layout,
     showCards:
       variantSpecificData.showCards !== undefined
         ? variantSpecificData.showCards
@@ -306,7 +305,9 @@ const ClassicRichTextVariant = memo(
           <div
             className="absolute top-0 right-0 w-8 h-8 sm:w-12 sm:h-12 md:w-16 md:h-16 z-20 rounded-tr-lg"
             style={{
-              backgroundImage: `url(${overlayImages[index % overlayImages.length]})`,
+              backgroundImage: `url(${getDisplayUrl(
+                overlayImages[index % overlayImages.length]
+              )})`,
               backgroundPosition: "top right",
               backgroundRepeat: "no-repeat",
               backgroundSize: "auto",
@@ -326,7 +327,7 @@ const ClassicRichTextVariant = memo(
               {!readOnly ? (
                 <input
                   type="text"
-                  value={card.title}
+                  value={card.title || ""}
                   onChange={(e) =>
                     handleCardChange(index, "title", e.target.value)
                   }
@@ -340,7 +341,7 @@ const ClassicRichTextVariant = memo(
             <div className="relative w-full flex-grow" style={{ zIndex: 51 }}>
               {!readOnly ? (
                 <textarea
-                  value={card.desc}
+                  value={card.desc || ""}
                   onChange={(e) =>
                     handleCardChange(index, "desc", e.target.value)
                   }
@@ -360,9 +361,9 @@ const ClassicRichTextVariant = memo(
     FeatureCard.propTypes = {
       card: PropTypes.shape({
         id: PropTypes.string,
-        title: PropTypes.string.isRequired,
-        desc: PropTypes.string.isRequired,
-        icon: PropTypes.string.isRequired,
+        title: PropTypes.string,
+        desc: PropTypes.string,
+        icon: PropTypes.string,
       }).isRequired,
       index: PropTypes.number.isRequired,
     };
@@ -539,15 +540,12 @@ const ModernRichTextVariant = memo(
     readOnly,
     handleFieldChange,
     handleCardChange,
-    currentImageSlideshowIndex,
     displaySlideshowImages,
-    overlayImages,
   }) => {
     const {
       heroText,
       bus_description,
       cards = [],
-      images = [],
       styling = { desktopHeightVH: 45, mobileHeightVW: 75 },
     } = richTextData;
 
@@ -732,14 +730,13 @@ const ModernRichTextVariant = memo(
   }
 );
 
+ModernRichTextVariant.displayName = "ModernRichTextVariant";
 ModernRichTextVariant.propTypes = {
   richTextData: PropTypes.object.isRequired,
   readOnly: PropTypes.bool.isRequired,
   handleFieldChange: PropTypes.func.isRequired,
   handleCardChange: PropTypes.func.isRequired,
-  currentImageSlideshowIndex: PropTypes.number.isRequired,
   displaySlideshowImages: PropTypes.array.isRequired,
-  overlayImages: PropTypes.array.isRequired,
 };
 
 /* 
@@ -748,12 +745,18 @@ ModernRichTextVariant.propTypes = {
 =============================================
 */
 const GridRichTextVariant = memo(
-  ({ richTextData, readOnly, handleFieldChange, handleCardChange, currentImageSlideshowIndex, displaySlideshowImages }) => {
+  ({
+    richTextData,
+    readOnly,
+    handleFieldChange,
+    handleCardChange,
+    currentImageSlideshowIndex,
+    displaySlideshowImages,
+  }) => {
     const {
       heroText,
       bus_description,
       cards = [],
-      images = [],
       styling = { desktopHeightVH: 45, mobileHeightVW: 75 },
     } = richTextData;
 
@@ -949,6 +952,7 @@ const GridRichTextVariant = memo(
   }
 );
 
+GridRichTextVariant.displayName = "GridRichTextVariant";
 GridRichTextVariant.propTypes = {
   richTextData: PropTypes.object.isRequired,
   readOnly: PropTypes.bool.isRequired,
@@ -956,7 +960,6 @@ GridRichTextVariant.propTypes = {
   handleCardChange: PropTypes.func.isRequired,
   currentImageSlideshowIndex: PropTypes.number.isRequired,
   displaySlideshowImages: PropTypes.array.isRequired,
-  overlayImages: PropTypes.array.isRequired,
 };
 
 /* 
@@ -994,6 +997,14 @@ export default function RichTextBlock({
                 return img;
               } else {
                 // For existing images, just keep the URL
+                return img?.originalUrl || img?.url;
+              }
+            }) || [],
+          overlayImages:
+            updatedData.overlayImages?.map((img) => {
+              if (img?.file) {
+                return img;
+              } else {
                 return img?.originalUrl || img?.url;
               }
             }) || [],
@@ -1116,6 +1127,64 @@ RichTextBlock.tabsConfig = (localData, onControlsChange) => {
     );
   };
 
+  // Overlays Tab for card decoration images
+  tabs.overlays = () => {
+    const handleOverlayImagesChange = (data) => {
+      const newImages = data.overlayImages || [];
+      // Convert PanelImagesController format back to our format
+      const convertedImages = newImages.map((img) => {
+        if (img?.file) {
+          return {
+            file: img.file,
+            url: img.url,
+            name: img.name,
+            originalUrl: img.originalUrl,
+            id:
+              img.id ||
+              `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          };
+        } else {
+          return initializeImageState(img?.url || img);
+        }
+      });
+      onControlsChange({ ...localData, overlayImages: convertedImages });
+    };
+
+    return (
+      <div className="p-4 space-y-4">
+        <h3 className="text-lg font-semibold mb-4 text-gray-700">
+          Card Overlay Images
+        </h3>
+
+        <div className="bg-gray-50 p-3 rounded-md">
+          <PanelImagesController
+            currentData={{ overlayImages: localData.overlayImages || [] }}
+            onControlsChange={handleOverlayImagesChange}
+            imageArrayFieldName="overlayImages"
+            getItemName={(item, idx) =>
+              item?.name || `Overlay Image ${idx + 1}`
+            }
+            maxImages={4}
+          />
+        </div>
+
+        <div className="mt-4 p-3 bg-blue-50 rounded-md border">
+          <h4 className="text-sm font-medium text-blue-800 mb-2">💡 Tips:</h4>
+          <ul className="text-xs text-blue-700 space-y-1">
+            <li>
+              • These images are used as corner decorations on the feature
+              cards.
+            </li>
+            <li>
+              • Upload up to 4 images. They will be applied to the cards in
+              order.
+            </li>
+          </ul>
+        </div>
+      </div>
+    );
+  };
+
   // Styling Tab - Layout and Height Settings
   tabs.styling = () => (
     <div className="p-4 space-y-4">
@@ -1123,49 +1192,12 @@ RichTextBlock.tabsConfig = (localData, onControlsChange) => {
         Layout Settings
       </h3>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Desktop Height (vh):
-        </label>
-        <input
-          type="number"
-          min="20"
-          max="100"
-          value={localData.styling?.desktopHeightVH || 45}
-          onChange={(e) =>
-            onControlsChange({
-              ...localData,
-              styling: {
-                ...localData.styling,
-                desktopHeightVH: parseInt(e.target.value),
-              },
-            })
-          }
-          className="w-full px-3 py-2 border border-gray-300 rounded-md"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Mobile Height (vw):
-        </label>
-        <input
-          type="number"
-          min="30"
-          max="150"
-          value={localData.styling?.mobileHeightVW || 75}
-          onChange={(e) =>
-            onControlsChange({
-              ...localData,
-              styling: {
-                ...localData.styling,
-                mobileHeightVW: parseInt(e.target.value),
-              },
-            })
-          }
-          className="w-full px-3 py-2 border border-gray-300 rounded-md"
-        />
-      </div>
+      <PanelStylingController
+        currentData={localData}
+        onControlsChange={(newData) => onControlsChange(newData)}
+        blockType="RichTextBlock"
+        controlType="height"
+      />
     </div>
   );
 

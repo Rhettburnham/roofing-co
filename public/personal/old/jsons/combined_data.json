@@ -129,10 +129,12 @@
           }
         ],
         "images": [
-          "/personal/old/img/main_page_images/RichTextBlock/richtext_1.jpg",
-          "/personal/old/img/main_page_images/RichTextBlock/richtext_2.jpg",
-          "/personal/old/img/main_page_images/RichTextBlock/richtext_3.webp"
+          "/personal/old/img/main_page_images/RichTextBlock/shake_img/1.png",
+          "/personal/old/img/main_page_images/RichTextBlock/shake_img/2.png",
+          "/personal/old/img/main_page_images/RichTextBlock/shake_img/3.png",
+          "/personal/old/img/main_page_images/RichTextBlock/shake_img/4.png"
         ],
+        "overlayImages": [],
         "description for the images": [
           "a roofer working on a roof",
           "a group of workers inspecting a roof",

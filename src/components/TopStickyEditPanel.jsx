@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import PropTypes from "prop-types";
 import { X } from "lucide-react";
 
@@ -41,25 +41,29 @@ const TopStickyEditPanel = ({ isOpen, onClose, activeBlockData }) => {
     buttonSizeOptions, // For ButtonBlock button size options
   } = activeBlockData || {};
 
-  // Define the standard order of tabs
-  const standardTabOrder = ["general", "images", "colors", "styling"];
+  // Define the standard order of tabs. Others will be appended alphabetically.
+  const standardTabOrder = [
+    "general",
+    "images",
+    "overlays",
+    "colors",
+    "styling",
+  ];
 
-  const availableTabKeys = [
-    tabsConfig?.general && typeof tabsConfig.general === "function"
-      ? "general"
-      : null,
-    tabsConfig?.images && typeof tabsConfig.images === "function"
-      ? "images"
-      : null,
-    tabsConfig?.colors && typeof tabsConfig.colors === "function"
-      ? "colors"
-      : null,
-    tabsConfig?.styling && typeof tabsConfig.styling === "function"
-      ? "styling"
-      : null,
-  ].filter(Boolean);
-
-  const sortedTabKeys = [...availableTabKeys];
+  const sortedTabKeys = useMemo(() => {
+    if (!tabsConfig) return [];
+    const availableKeys = Object.keys(tabsConfig).filter(
+      (key) => typeof tabsConfig[key] === "function"
+    );
+    return availableKeys.sort((a, b) => {
+      const indexA = standardTabOrder.indexOf(a);
+      const indexB = standardTabOrder.indexOf(b);
+      if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+      if (indexA !== -1) return -1;
+      if (indexB !== -1) return 1;
+      return a.localeCompare(b);
+    });
+  }, [tabsConfig]);
 
   // DEBUG: Log available tabs and config
   useEffect(() => {
@@ -68,38 +72,27 @@ const TopStickyEditPanel = ({ isOpen, onClose, activeBlockData }) => {
         blockName: activeBlockData.blockName,
         hasTabsConfig: !!tabsConfig,
         tabsConfigKeys: tabsConfig ? Object.keys(tabsConfig) : [],
-        availableTabKeys,
+        availableTabKeys: sortedTabKeys,
         activeTab,
         configStyling: activeBlockData.config?.styling,
       });
     }
-  }, [isOpen, activeBlockData, tabsConfig, availableTabKeys, activeTab]);
+  }, [isOpen, activeBlockData, tabsConfig, sortedTabKeys, activeTab]);
 
   useEffect(() => {
     if (
       activeBlockData?.blockName !== prevBlockNameRef.current ||
-      !availableTabKeys.includes(activeTab)
+      !sortedTabKeys.includes(activeTab)
     ) {
-      // If block changes, or current activeTab is no longer available, set to the first available preferred tab or first available tab.
-      const firstAvailable = sortedTabKeys.find((key) =>
-        availableTabKeys.includes(key)
-      );
-      if (firstAvailable) {
-        setActiveTab(firstAvailable);
-      } else if (availableTabKeys.length > 0) {
-        setActiveTab(availableTabKeys[0]); // Fallback to the first available tab if no preferred ones are present
+      // If block changes, or current activeTab is no longer available, set to the first available tab.
+      if (sortedTabKeys.length > 0) {
+        setActiveTab(sortedTabKeys[0]);
       } else {
-        setActiveTab("general"); // Default if no tabs are available (should be rare)
+        setActiveTab("general"); // Fallback if no tabs are available
       }
     }
     prevBlockNameRef.current = activeBlockData?.blockName;
-  }, [
-    activeBlockData?.blockName,
-    activeBlockData?.tabsConfig,
-    activeTab,
-    sortedTabKeys,
-    availableTabKeys,
-  ]); // Added availableTabKeys and sortedTabKeys
+  }, [activeBlockData?.blockName, activeTab, sortedTabKeys]);
 
   if (!isOpen) {
     return (
@@ -465,11 +458,6 @@ const TopStickyEditPanel = ({ isOpen, onClose, activeBlockData }) => {
     );
   };
 
-  // Filter and sort tabs: Only show standard tabs if they are defined in tabsConfig
-  const availableAndSortedTabs = standardTabOrder.filter(
-    (key) => tabsConfig && typeof tabsConfig[key] === "function"
-  );
-
   return (
     <div
       style={{
@@ -499,7 +487,7 @@ const TopStickyEditPanel = ({ isOpen, onClose, activeBlockData }) => {
         </button>
         <div className="border-b border-black">
           <nav className="-mb-px flex -space-x-3 px-4" aria-label="Tabs">
-            {availableAndSortedTabs.map((tabName) => (
+            {sortedTabKeys.map((tabName) => (
               <button
                 key={tabName}
                 onClick={() => setActiveTab(tabName)}
