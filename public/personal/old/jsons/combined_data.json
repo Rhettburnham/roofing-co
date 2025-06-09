@@ -544,7 +544,9 @@
       "config": {
         "title": "Testimonials",
         "variant": "default",
-        "backgroundColor": "#000000",
+        "backgroundColor": "#fffffff",
+        "textcolor": "#fffff",
+        "testimonialbg": "#fffff", 
         "arrowStyle": "default",
         "googleReviews": [
           {

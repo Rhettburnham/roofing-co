@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import StarRating from "../StarRating";
 import googleIcon from "/assets/images/hero/googleimage.png";
 import ThemeColorPicker from "../common/ThemeColorPicker";
@@ -78,6 +78,8 @@ const TestimonialItem = ({
   onTestimonialChange,
   index,
   variant = "default",
+  backgroundColor,
+  textColor,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const handleExpandClick = () => setIsExpanded(!isExpanded);
@@ -100,6 +102,9 @@ const TestimonialItem = ({
   return (
     <div
       className={`${variantClasses.testimonialCard} flex flex-col h-full justify-between`}
+      style={{
+        backgroundColor: backgroundColor || "#ffffff",
+      }}
       onClick={!readOnly ? undefined : handleExpandClick}
     >
       <div className="flex items-start mb-2 flex-shrink-0">
@@ -128,10 +133,12 @@ const TestimonialItem = ({
                   onChange={(e) => handleFieldChange("name", e.target.value)}
                   className={`${TEXT_STYLES.testimonialName.editable} ${variant === "feature" ? "text-lg md:text-xl" : variant === "compact" ? "text-sm md:text-base" : "text-[2.5vw] md:text-[1.6vh]"} min-w-0 text-center leading-tight`}
                   onClick={(e) => e.stopPropagation()}
+                  style={{ color: textColor }}
                 />
               ) : (
                 <p
                   className={`${TEXT_STYLES.testimonialName.readOnly} ${variant === "feature" ? "text-lg md:text-xl" : variant === "compact" ? "text-sm md:text-base" : "text-[2.5vw] md:text-[1.6vh]"} min-w-0 overflow-hidden text-center leading-tight`}
+                  style={{ color: textColor }}
                 >
                   {testimonial.name}
                 </p>
@@ -165,11 +172,13 @@ const TestimonialItem = ({
             className={`${TEXT_STYLES.testimonialText.editable} ${variant === "feature" ? "text-base" : variant === "compact" ? "text-xs" : "text-sm"} h-full min-h-0 w-full text-center leading-relaxed`}
             onClick={(e) => e.stopPropagation()}
             rows={variant === "feature" ? 6 : variant === "compact" ? 3 : 4}
+            style={{ color: textColor }}
           />
         ) : (
           <div className="w-full text-center">
             <p
               className={`${TEXT_STYLES.testimonialText.readOnly} ${variant === "feature" ? "text-base" : variant === "compact" ? "text-xs" : ""} break-words text-center`}
+              style={{ color: textColor }}
             >
               <span
                 className={`${variant === "feature" ? "text-base md:text-lg" : variant === "compact" ? "text-xs md:text-sm" : "text-[2.8vw] md:text-[2.0vh]"} block md:hidden break-words leading-snug`}
@@ -216,6 +225,8 @@ TestimonialItem.propTypes = {
   onTestimonialChange: PropTypes.func,
   index: PropTypes.number,
   variant: PropTypes.string,
+  backgroundColor: PropTypes.string,
+  textColor: PropTypes.string,
 };
 
 // =============================================
@@ -259,12 +270,24 @@ const TestimonialColorControls = ({
         }
         fieldName="backgroundColor"
       />
-      <div className="mt-4 p-3 bg-gray-50 rounded-md border">
-        <h4 className="text-sm font-medium text-gray-600 mb-1">Note:</h4>
-        <p className="text-xs text-gray-500">
-          This color is used as the background for the testimonials section.
-        </p>
-      </div>
+      <ThemeColorPicker
+        label="Text Color:"
+        currentColorValue={currentData.textcolor || "#ffffff"}
+        themeColors={themeColors}
+        onColorChange={(fieldName, value) =>
+          handleColorUpdate("textcolor", value)
+        }
+        fieldName="textcolor"
+      />
+      <ThemeColorPicker
+        label="Testimonial Card Background:"
+        currentColorValue={currentData.testimonialbg || "#ffffff"}
+        themeColors={themeColors}
+        onColorChange={(fieldName, value) =>
+          handleColorUpdate("testimonialbg", value)
+        }
+        fieldName="testimonialbg"
+      />
     </div>
   );
 };
@@ -908,6 +931,7 @@ export default function TestimonialBlock({
               value={localData.title}
               onChange={(e) => handleFieldChange("title", e.target.value)}
               className={`${variantClasses.mobileTitle} bg-transparent focus:bg-white/20 focus:ring-1 focus:ring-blue-500 rounded p-2 outline-none text-center`}
+              style={{ color: localData.textcolor }}
             />
           ) : (
             <h2 className={variantClasses.mobileTitle}>{localData.title}</h2>
@@ -944,6 +968,8 @@ export default function TestimonialBlock({
                 onTestimonialChange={handleTestimonialChange}
                 index={currentIndex + idx}
                 variant={localData.variant}
+                backgroundColor={localData.testimonialbg}
+                textColor={localData.textcolor}
               />
             ))}
           </div>
@@ -971,12 +997,17 @@ export default function TestimonialBlock({
             )}
         </div>
         <div className="text-center mt-3">
-          <div className="flex justify-center space-x-4">
+          <div
+            className="flex justify-center space-x-4"
+            style={{
+              backgroundColor: localData.backgroundColor,
+            }}
+          >
             <a
               href={localData.reviewButtonLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center px-3 py-1 bg-white rounded-full custom-circle-shadow hover:bg-gray-100 transition duration-300 text-xs font-sans"
+              className="flex items-center px-3 py-1  rounded-full custom-circle-shadow hover:bg-gray-100 transition duration-300 text-xs font-sans"
             >
               <img src={googleIcon} alt="Google" className="w-4 h-4 mr-1" />
               <span>{localData.reviewButtonText}</span>
@@ -994,6 +1025,7 @@ export default function TestimonialBlock({
               value={localData.title}
               onChange={(e) => handleFieldChange("title", e.target.value)}
               className={`${variantClasses.title} bg-transparent focus:bg-white/20 focus:ring-1 focus:ring-blue-500 rounded p-2 outline-none text-center`}
+              style={{ color: localData.textcolor }}
             />
           ) : (
             <h2 className={variantClasses.title}>{localData.title}</h2>
@@ -1030,6 +1062,8 @@ export default function TestimonialBlock({
                 onTestimonialChange={handleTestimonialChange}
                 index={currentIndex + idx}
                 variant={localData.variant}
+                backgroundColor={localData.testimonialbg}
+                textColor={localData.textcolor}
               />
             ))}
             {totalReviews > chunkSize &&
@@ -1062,7 +1096,7 @@ export default function TestimonialBlock({
               href={localData.reviewButtonLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center px-4 py-1 bg-white rounded-full custom-circle-shadow hover:bg-gray-100 transition duration-300 text-sm md:text-lg font-sans"
+              className="flex items-center px-4 py-1 rounded-full custom-circle-shadow hover:bg-gray-100 transition duration-300 text-sm md:text-lg font-sans"
             >
               <img src={googleIcon} alt="Google" className="w-6 h-6 mr-2" />
               <span>{localData.reviewButtonText}</span>
@@ -1082,12 +1116,7 @@ TestimonialBlock.propTypes = {
 };
 
 // Tab configuration for TopStickyEditPanel
-TestimonialBlock.tabsConfig = (
-  currentData,
-  onControlsChange,
-  themeColors,
-  sitePalette
-) => {
+TestimonialBlock.tabsConfig = (currentData, onControlsChange, themeColors) => {
   const tabs = {};
 
   // Images Tab (using reviews interface)
