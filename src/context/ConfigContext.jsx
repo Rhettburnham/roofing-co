@@ -195,14 +195,14 @@ export const ConfigProvider = ({ children }) => {
 
             // 1. First try colors_output.json
             if (configData.colors) {
-              finalColors = configData.colors;
+              finalColors = normalizeColorKeys(configData.colors);
             }
 
             // 2. Then try combined_data.colors
             if (configData.combined_data?.colors) {
               finalColors = {
                 ...finalColors,
-                ...configData.combined_data.colors,
+                ...normalizeColorKeys(configData.combined_data.colors),
               };
             }
 
@@ -231,6 +231,35 @@ export const ConfigProvider = ({ children }) => {
             // 3. Set services if we have any
             if (finalServices) {
               setServices(finalServices);
+            }
+
+            // Handle about page data with fallback
+            let finalAboutPage = null;
+            
+            // 1. First try combined_data.about_page
+            if (configData.combined_data?.about_page) {
+              finalAboutPage = configData.combined_data.about_page;
+            }
+            
+            // 2. If no about page data in combined_data, try to load from old JSON
+            if (!finalAboutPage) {
+              try {
+                const aboutResponse = await fetch("/personal/old/jsons/about_page.json");
+                if (aboutResponse.ok) {
+                  finalAboutPage = await aboutResponse.json();
+                  console.log("Loaded about page data from fallback JSON");
+                }
+              } catch (error) {
+                console.warn("Failed to load fallback about page data:", error);
+              }
+            }
+
+            // 3. Update config with about page data if we have any
+            if (finalAboutPage) {
+              setConfig(prevConfig => ({
+                ...prevConfig,
+                about_page: finalAboutPage
+              }));
             }
 
             loadedRef.current = true;
@@ -291,14 +320,14 @@ export const ConfigProvider = ({ children }) => {
 
           // 1. First try colors_output.json
           if (configData.colors) {
-            finalColors = configData.colors;
+            finalColors = normalizeColorKeys(configData.colors);
           }
 
           // 2. Then try combined_data.colors
           if (configData.combined_data?.colors) {
             finalColors = {
               ...finalColors,
-              ...configData.combined_data.colors,
+              ...normalizeColorKeys(configData.combined_data.colors),
             };
           }
 
@@ -327,6 +356,35 @@ export const ConfigProvider = ({ children }) => {
           // 3. Set services if we have any
           if (finalServices) {
             setServices(finalServices);
+          }
+
+          // Handle about page data with fallback
+          let finalAboutPage = null;
+          
+          // 1. First try combined_data.about_page
+          if (configData.combined_data?.about_page) {
+            finalAboutPage = configData.combined_data.about_page;
+          }
+          
+          // 2. If no about page data in combined_data, try to load from old JSON
+          if (!finalAboutPage) {
+            try {
+              const aboutResponse = await fetch("/personal/old/jsons/about_page.json");
+              if (aboutResponse.ok) {
+                finalAboutPage = await aboutResponse.json();
+                console.log("Loaded about page data from fallback JSON");
+              }
+            } catch (error) {
+              console.warn("Failed to load fallback about page data:", error);
+            }
+          }
+
+          // 3. Update config with about page data if we have any
+          if (finalAboutPage) {
+            setConfig(prevConfig => ({
+              ...prevConfig,
+              about_page: finalAboutPage
+            }));
           }
 
           // Handle assets if present
