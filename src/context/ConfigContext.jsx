@@ -236,13 +236,18 @@ export const ConfigProvider = ({ children }) => {
             // Handle about page data with fallback
             let finalAboutPage = null;
             
-            // 1. First try combined_data.about_page
-            if (configData.combined_data?.about_page) {
+            // 1. First try about_page from config data
+            if (configData.about_page) {
+              finalAboutPage = configData.about_page;
+            }
+            
+            // 2. Then try combined_data.about_page
+            if (!finalAboutPage && configData.combined_data?.about_page) {
               finalAboutPage = configData.combined_data.about_page;
             }
             
-            // 2. If no about page data in combined_data, try to load from old JSON
-            if (!finalAboutPage) {
+            // 3. If still no about page data, try to load from old JSON (development only)
+            if (!finalAboutPage && isDevelopment) {
               try {
                 const aboutResponse = await fetch("/personal/old/jsons/about_page.json");
                 if (aboutResponse.ok) {
@@ -254,7 +259,7 @@ export const ConfigProvider = ({ children }) => {
               }
             }
 
-            // 3. Update config with about page data if we have any
+            // 4. Update config with about page data if we have any
             if (finalAboutPage) {
               setConfig(prevConfig => ({
                 ...prevConfig,
@@ -361,13 +366,18 @@ export const ConfigProvider = ({ children }) => {
           // Handle about page data with fallback
           let finalAboutPage = null;
           
-          // 1. First try combined_data.about_page
-          if (configData.combined_data?.about_page) {
+          // 1. First try about_page from config data
+          if (configData.about_page) {
+            finalAboutPage = configData.about_page;
+          }
+          
+          // 2. Then try combined_data.about_page
+          if (!finalAboutPage && configData.combined_data?.about_page) {
             finalAboutPage = configData.combined_data.about_page;
           }
           
-          // 2. If no about page data in combined_data, try to load from old JSON
-          if (!finalAboutPage) {
+          // 3. If still no about page data, try to load from old JSON (development only)
+          if (!finalAboutPage && isDevelopment) {
             try {
               const aboutResponse = await fetch("/personal/old/jsons/about_page.json");
               if (aboutResponse.ok) {
@@ -379,7 +389,7 @@ export const ConfigProvider = ({ children }) => {
             }
           }
 
-          // 3. Update config with about page data if we have any
+          // 4. Update config with about page data if we have any
           if (finalAboutPage) {
             setConfig(prevConfig => ({
               ...prevConfig,
