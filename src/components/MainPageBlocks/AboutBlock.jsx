@@ -636,7 +636,7 @@ export default function AboutBlock({
           file,
           url: fileURL,
           name: file.name,
-          originalUrl: currentPhoto?.originalUrl
+          originalUrl: currentPhoto?.originalUrl || `/assets/images/team/${file.name}`
         }
       };
       const updatedData = { ...localData, team: newTeam };
@@ -835,6 +835,16 @@ const getDisplayUrl = (imageValue, defaultPath = null) => {
     if (virtualFS && virtualFS[path]) {
       return virtualFS[path];
     }
+
+    // If we have an originalUrl, try that as well
+    if (imageValue.originalUrl) {
+      const originalPath = imageValue.originalUrl.startsWith('/') ? imageValue.originalUrl.substring(1) : imageValue.originalUrl;
+      if (virtualFS && virtualFS[originalPath]) {
+        return virtualFS[originalPath];
+      }
+      return imageValue.originalUrl;
+    }
+    
     return imageValue.url;
   }
   
