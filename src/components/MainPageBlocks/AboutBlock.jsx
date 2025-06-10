@@ -613,7 +613,7 @@ export default function AboutBlock({
           file,
           url: fileURL,
           name: file.name,
-          originalUrl: originalUrl
+          originalUrl: `/assets/images/about/${file.name}`
         }
       };
       setLocalData(updatedData);
@@ -636,7 +636,7 @@ export default function AboutBlock({
           file,
           url: fileURL,
           name: file.name,
-          originalUrl: currentPhoto?.originalUrl || `/assets/images/team/${file.name}`
+          originalUrl: `/assets/images/team/${file.name}`
         }
       };
       const updatedData = { ...localData, team: newTeam };
