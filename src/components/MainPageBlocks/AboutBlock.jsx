@@ -56,7 +56,7 @@ function AboutPreview({
               placeholder="Main Title"
             />
           )}
-          {readOnly ? (
+           {readOnly ? (
             <p className="text-lg text-gray-600">{subtitle}</p>
           ) : (
             <input 
@@ -572,7 +572,20 @@ export default function AboutBlock({
 
   const handleAddItem = (listName, newItemTemplate) => {
     setLocalData(prev => {
-      const newList = [...(prev[listName] || []), newItemTemplate];
+      const newList = [...(prev[listName] || [])];
+      // Ensure proper photo format for new team members
+      if (listName === 'team' && newItemTemplate.photo) {
+        newItemTemplate = {
+          ...newItemTemplate,
+          photo: {
+            file: null,
+            url: `/assets/images/team/${newItemTemplate.photo.name || 'default-profile.png'}`,
+            name: newItemTemplate.photo.name || 'default-profile.png',
+            originalUrl: `/assets/images/team/${newItemTemplate.photo.name || 'default-profile.png'}`
+          }
+        };
+      }
+      newList.push(newItemTemplate);
       const updatedData = { ...prev, [listName]: newList };
       if (!readOnly && onConfigChange) {
         onConfigChange(updatedData);
@@ -599,8 +612,7 @@ export default function AboutBlock({
     if (typeof fieldOrPath === 'string') {
       // Hero image
       const currentHeroImage = localData.heroImage;
-      let originalUrl = typeof currentHeroImage === 'string' ? currentHeroImage : currentHeroImage?.originalUrl;
-
+      
       // Clean up old blob URL if it exists
       if (currentHeroImage && typeof currentHeroImage === 'object' && currentHeroImage.url && currentHeroImage.url.startsWith('blob:')) {
         URL.revokeObjectURL(currentHeroImage.url);
@@ -611,7 +623,7 @@ export default function AboutBlock({
         ...localData,
         heroImage: {
           file,
-          url: fileURL,
+          url: `/assets/images/about/${file.name}`,
           name: file.name,
           originalUrl: `/assets/images/about/${file.name}`
         }
@@ -634,7 +646,7 @@ export default function AboutBlock({
         ...newTeam[teamIndex],
         photo: {
           file,
-          url: fileURL,
+          url: `/assets/images/team/${file.name}`,
           name: file.name,
           originalUrl: `/assets/images/team/${file.name}`
         }
@@ -784,14 +796,19 @@ const initializeImageState = (itemConfig, defaultPath = null) => {
 
   if (itemConfig && typeof itemConfig === 'object') {
     fileObject = itemConfig.file || null;
-    urlToDisplay = itemConfig.url || defaultPath;
+    // Don't use blob URLs for display, use the proper path instead
+    if (itemConfig.url && !itemConfig.url.startsWith('blob:')) {
+      urlToDisplay = itemConfig.url;
+    } else if (itemConfig.originalUrl) {
+      urlToDisplay = itemConfig.originalUrl;
+    }
     nameToStore = itemConfig.name || (urlToDisplay ? urlToDisplay.split('/').pop() : nameToStore);
     
     originalUrlToStore = itemConfig.originalUrl || 
                          (typeof itemConfig.url === 'string' && !itemConfig.url.startsWith('blob:') ? itemConfig.url : defaultPath);
 
-    // If we have a file but no blob URL, create one for preview
-    if (fileObject && !urlToDisplay.startsWith('blob:')) {
+    // Only create blob URL if we have a file and no valid URL
+    if (fileObject && !urlToDisplay) {
       urlToDisplay = URL.createObjectURL(fileObject);
     }
   } else if (typeof itemConfig === 'string') {
