@@ -441,7 +441,6 @@ AppRoutes.propTypes = {
  */
 const App = () => {
   const [navbarConfig, setNavbarConfig] = useState(null);
-  const [aboutPageData, setAboutPageData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { config } = useConfig();
@@ -453,20 +452,8 @@ const App = () => {
         if (config && config.navbar) {
           setNavbarConfig(config.navbar);
         } else {
-          console.warn(
-            "Navbar configuration not found in config, proceeding with no navbar config."
-          );
+          console.warn("Navbar configuration not found in config, proceeding with no navbar config.");
           setNavbarConfig(null);
-        }
-
-        // Use about page data from config context instead of fetching from old JSON
-        if (config && config.about_page) {
-          setAboutPageData(config.about_page);
-        } else {
-          console.warn(
-            "About page data not found in config, proceeding with no about page data."
-          );
-          setAboutPageData(null);
         }
       } catch (err) {
         console.error("Error fetching initial data:", err);
@@ -483,10 +470,10 @@ const App = () => {
 
   // Moved useMemo to be called unconditionally before conditional returns
   const memoizedRoutes = useMemo(() => {
-    // Ensure config and aboutPageData exist before trying to pass them down
-    if (!config || !aboutPageData) return null;
-    return <AppRoutes dedicatedAboutPageData={aboutPageData} />;
-  }, [config, aboutPageData]);
+    // Ensure config exists before trying to pass it down
+    if (!config) return null;
+    return <AppRoutes dedicatedAboutPageData={config.about_page} />;
+  }, [config]);
 
   if (loading) {
     return <LoadingScreen />;
@@ -501,11 +488,10 @@ const App = () => {
   }
 
   // Check for config after loading and error handling, but before using memoizedRoutes
-  if (!config || !aboutPageData) {
+  if (!config) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        Configuration data (including About page) is missing or failed to load
-        correctly.
+        Configuration data is missing or failed to load correctly.
       </div>
     );
   }

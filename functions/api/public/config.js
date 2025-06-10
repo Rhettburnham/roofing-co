@@ -66,13 +66,15 @@ export async function onRequest(context) {
     const configId = domainEntry.config_id;
     console.log('Config ID from domain entry:', configId);
 
-    // Fetch the config from R2
-    const configKey = `configs/${configId}/combined_data.json`;
-    console.log('Fetching config from R2:', configKey);
-    const configObject = await env.ROOFING_CONFIGS.get(configKey);
+    // Fetch both combined_data.json and colors_output.json from R2
+    console.log('Fetching configs from R2...');
+    const [combinedDataObject, colorsObject] = await Promise.all([
+      env.ROOFING_CONFIGS.get(`configs/${configId}/combined_data.json`),
+      env.ROOFING_CONFIGS.get(`configs/${configId}/colors_output.json`)
+    ]);
     
-    if (!configObject) {
-      console.log('No config found in R2');
+    if (!combinedDataObject) {
+      console.log('No combined_data.json found in R2');
       return new Response(JSON.stringify({ error: 'Configuration not found' }), {
         status: 404,
         headers: {
@@ -82,9 +84,26 @@ export async function onRequest(context) {
       });
     }
 
-    // Return the config
-    console.log('Successfully retrieved config from R2');
-    return new Response(configObject.body, {
+    // Parse the combined data
+    const combinedData = await combinedDataObject.json();
+    
+    // Parse colors if available
+    let colors = null;
+    if (colorsObject) {
+      try {
+        colors = await colorsObject.json();
+      } catch (error) {
+        console.error('Error parsing colors_output.json:', error);
+      }
+    }
+
+    // Return both configs
+    console.log('Successfully retrieved configs from R2');
+    return new Response(JSON.stringify({
+      success: true,
+      combined_data: combinedData,
+      colors: colors
+    }), {
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/json',
