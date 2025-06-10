@@ -825,12 +825,17 @@ const getDisplayUrl = (imageValue, defaultPath = null) => {
   
   // If it's an object with a url property
   if (typeof imageValue === 'object' && imageValue.url) {
-    // If it's a blob URL, return it directly
-    if (imageValue.url.startsWith('blob:')) {
-      return imageValue.url;
+    // First check if we have a valid file object
+    if (imageValue.file instanceof File) {
+      return URL.createObjectURL(imageValue.file);
     }
     
-    // If it's a path, check for override
+    // If it's a blob URL and we have a file, create a new blob URL
+    if (imageValue.url.startsWith('blob:') && imageValue.file) {
+      return URL.createObjectURL(imageValue.file);
+    }
+    
+    // If it's a path, check for override in virtualFS
     const path = imageValue.url.startsWith('/') ? imageValue.url.substring(1) : imageValue.url;
     if (virtualFS && virtualFS[path]) {
       return virtualFS[path];
@@ -845,7 +850,10 @@ const getDisplayUrl = (imageValue, defaultPath = null) => {
       return imageValue.originalUrl;
     }
     
-    return imageValue.url;
+    // If we have a non-blob URL, use it
+    if (!imageValue.url.startsWith('blob:')) {
+      return imageValue.url;
+    }
   }
   
   return defaultPath;
