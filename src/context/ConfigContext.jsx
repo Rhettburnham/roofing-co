@@ -8,6 +8,12 @@ import React, {
   useRef,
 } from "react";
 
+// Import default data files
+import defaultCombinedData from "../../public/personal/old/jsons/combined_data.json";
+import defaultColors from "../../public/personal/old/jsons/colors_output.json";
+import defaultServices from "../../public/personal/old/jsons/services.json";
+import defaultAboutPage from "../../public/personal/old/jsons/about_page.json";
+
 const ConfigContext = createContext();
 
 // Debug panel component
@@ -313,53 +319,35 @@ export const ConfigProvider = ({ children }) => {
               console.warn("Failed to load user config, falling back to default data");
               configData = {
                 success: true,
-                combined_data: { mainPageBlocks: [], navbar: {} },
-                colors: {},
-                services: { commercial: [], residential: [] },
-                about_page: {
-                  title: "About Us",
-                  subtitle: "Your Trusted Roofing Partner",
-                  description: "We are a team of experienced roofing professionals dedicated to providing the highest quality service to our customers.",
-                  team: [],
-                  images: []
-                }
+                combined_data: defaultCombinedData,
+                colors: defaultColors,
+                services: defaultServices,
+                about_page: defaultAboutPage
               };
             } else {
               configData = await configResponse.json();
               // If configData exists but has no data, set defaults
               if (!configData.combined_data) {
-                configData.combined_data = { mainPageBlocks: [], navbar: {} };
+                configData.combined_data = defaultCombinedData;
               }
               if (!configData.colors) {
-                configData.colors = {};
+                configData.colors = defaultColors;
               }
               if (!configData.services) {
-                configData.services = { commercial: [], residential: [] };
+                configData.services = defaultServices;
               }
               if (!configData.about_page) {
-                configData.about_page = {
-                  title: "About Us",
-                  subtitle: "Your Trusted Roofing Partner",
-                  description: "We are a team of experienced roofing professionals dedicated to providing the highest quality service to our customers.",
-                  team: [],
-                  images: []
-                };
+                configData.about_page = defaultAboutPage;
               }
             }
           } catch (error) {
             console.warn("Error loading config, falling back to default data:", error);
             configData = {
               success: true,
-              combined_data: { mainPageBlocks: [], navbar: {} },
-              colors: {},
-              services: { commercial: [], residential: [] },
-              about_page: {
-                title: "About Us",
-                subtitle: "Your Trusted Roofing Partner",
-                description: "We are a team of experienced roofing professionals dedicated to providing the highest quality service to our customers.",
-                team: [],
-                images: []
-              }
+              combined_data: defaultCombinedData,
+              colors: defaultColors,
+              services: defaultServices,
+              about_page: defaultAboutPage
             };
           }
         }
@@ -369,16 +357,10 @@ export const ConfigProvider = ({ children }) => {
           console.warn("Config data load was not successful, using default data");
           configData = {
             success: true,
-            combined_data: { mainPageBlocks: [], navbar: {} },
-            colors: {},
-            services: { commercial: [], residential: [] },
-            about_page: {
-              title: "About Us",
-              subtitle: "Your Trusted Roofing Partner",
-              description: "We are a team of experienced roofing professionals dedicated to providing the highest quality service to our customers.",
-              team: [],
-              images: []
-            }
+            combined_data: defaultCombinedData,
+            colors: defaultColors,
+            services: defaultServices,
+            about_page: defaultAboutPage
           };
         }
 
