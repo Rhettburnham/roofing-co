@@ -336,7 +336,14 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
           currentThemeColorsValue = configThemeColors;
         }
 
+        // If we have colors from config, use them
+        if (configThemeColors) {
+          console.log("[OneForm] Using colors from config context:", configThemeColors);
+          currentThemeColorsValue = configThemeColors;
+        }
+
         if (currentThemeColorsValue) {
+          console.log("[OneForm] Setting theme colors:", currentThemeColorsValue);
           setThemeColors(currentThemeColorsValue);
           // Initialize sitePalette from themeColors if sitePalette wasn't directly in initialData
           if (currentSitePaletteValue.length === 0) {

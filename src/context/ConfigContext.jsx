@@ -305,13 +305,44 @@ export const ConfigProvider = ({ children }) => {
           };
         } else {
           // For .dev domains, load user config if authenticated, otherwise load default
-          const configResponse = await fetch("/api/config/load", {
-            credentials: "include",
-          });
-          if (!configResponse.ok) {
-            throw new Error("Failed to load config");
+          try {
+            const configResponse = await fetch("/api/config/load", {
+              credentials: "include",
+            });
+            if (!configResponse.ok) {
+              console.warn("Failed to load user config, falling back to default data");
+              // Load default data from local files
+              const [combinedResponse, colorsResponse, servicesResponse] = await Promise.all([
+                fetch("/personal/old/jsons/combined_data.json"),
+                fetch("/personal/old/jsons/colors_output.json"),
+                fetch("/personal/old/jsons/services.json"),
+              ]);
+
+              configData = {
+                success: true,
+                combined_data: combinedResponse.ok ? await combinedResponse.json() : null,
+                colors: colorsResponse.ok ? await colorsResponse.json() : null,
+                services: servicesResponse.ok ? await servicesResponse.json() : null,
+              };
+            } else {
+              configData = await configResponse.json();
+            }
+          } catch (error) {
+            console.warn("Error loading config, falling back to default data:", error);
+            // Load default data from local files
+            const [combinedResponse, colorsResponse, servicesResponse] = await Promise.all([
+              fetch("/personal/old/jsons/combined_data.json"),
+              fetch("/personal/old/jsons/colors_output.json"),
+              fetch("/personal/old/jsons/services.json"),
+            ]);
+
+            configData = {
+              success: true,
+              combined_data: combinedResponse.ok ? await combinedResponse.json() : null,
+              colors: colorsResponse.ok ? await colorsResponse.json() : null,
+              services: servicesResponse.ok ? await servicesResponse.json() : null,
+            };
           }
-          configData = await configResponse.json();
         }
 
         if (configData.success) {
