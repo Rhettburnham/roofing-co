@@ -311,38 +311,75 @@ export const ConfigProvider = ({ children }) => {
             });
             if (!configResponse.ok) {
               console.warn("Failed to load user config, falling back to default data");
-              // Load default data from local files
-              const [combinedResponse, colorsResponse, servicesResponse] = await Promise.all([
-                fetch("/personal/old/jsons/combined_data.json"),
-                fetch("/personal/old/jsons/colors_output.json"),
-                fetch("/personal/old/jsons/services.json"),
-              ]);
-
               configData = {
                 success: true,
-                combined_data: combinedResponse.ok ? await combinedResponse.json() : null,
-                colors: colorsResponse.ok ? await colorsResponse.json() : null,
-                services: servicesResponse.ok ? await servicesResponse.json() : null,
+                combined_data: { mainPageBlocks: [], navbar: {} },
+                colors: {},
+                services: { commercial: [], residential: [] },
+                about_page: {
+                  title: "About Us",
+                  subtitle: "Your Trusted Roofing Partner",
+                  description: "We are a team of experienced roofing professionals dedicated to providing the highest quality service to our customers.",
+                  team: [],
+                  images: []
+                }
               };
             } else {
               configData = await configResponse.json();
+              // If configData exists but has no data, set defaults
+              if (!configData.combined_data) {
+                configData.combined_data = { mainPageBlocks: [], navbar: {} };
+              }
+              if (!configData.colors) {
+                configData.colors = {};
+              }
+              if (!configData.services) {
+                configData.services = { commercial: [], residential: [] };
+              }
+              if (!configData.about_page) {
+                configData.about_page = {
+                  title: "About Us",
+                  subtitle: "Your Trusted Roofing Partner",
+                  description: "We are a team of experienced roofing professionals dedicated to providing the highest quality service to our customers.",
+                  team: [],
+                  images: []
+                };
+              }
             }
           } catch (error) {
             console.warn("Error loading config, falling back to default data:", error);
-            // Load default data from local files
-            const [combinedResponse, colorsResponse, servicesResponse] = await Promise.all([
-              fetch("/personal/old/jsons/combined_data.json"),
-              fetch("/personal/old/jsons/colors_output.json"),
-              fetch("/personal/old/jsons/services.json"),
-            ]);
-
             configData = {
               success: true,
-              combined_data: combinedResponse.ok ? await combinedResponse.json() : null,
-              colors: colorsResponse.ok ? await colorsResponse.json() : null,
-              services: servicesResponse.ok ? await servicesResponse.json() : null,
+              combined_data: { mainPageBlocks: [], navbar: {} },
+              colors: {},
+              services: { commercial: [], residential: [] },
+              about_page: {
+                title: "About Us",
+                subtitle: "Your Trusted Roofing Partner",
+                description: "We are a team of experienced roofing professionals dedicated to providing the highest quality service to our customers.",
+                team: [],
+                images: []
+              }
             };
           }
+        }
+
+        // Ensure we have valid data even if configData.success is false
+        if (!configData.success) {
+          console.warn("Config data load was not successful, using default data");
+          configData = {
+            success: true,
+            combined_data: { mainPageBlocks: [], navbar: {} },
+            colors: {},
+            services: { commercial: [], residential: [] },
+            about_page: {
+              title: "About Us",
+              subtitle: "Your Trusted Roofing Partner",
+              description: "We are a team of experienced roofing professionals dedicated to providing the highest quality service to our customers.",
+              team: [],
+              images: []
+            }
+          };
         }
 
         if (configData.success) {
