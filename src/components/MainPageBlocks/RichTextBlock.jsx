@@ -7,6 +7,26 @@ import IconSelectorModal from "../common/IconSelectorModal";
 import ThemeColorPicker from "../common/ThemeColorPicker";
 import PanelImagesController from "../common/PanelImagesController";
 import PanelStylingController from "../common/PanelStylingController";
+import PanelFontController from "../common/PanelFontController";
+import DynamicIconRenderer from "../common/DynamicIconRenderer";
+import { slugify } from "../../utils/slugify";
+import { debounce } from 'lodash';
+
+// Helper to generate styles from text settings object
+const getTextStyles = (settings) => {
+  if (!settings || typeof settings !== 'object') {
+    return {};
+  }
+  const styles = {};
+  if (settings.fontFamily) styles.fontFamily = settings.fontFamily;
+  if (settings.fontSize) styles.fontSize = `${settings.fontSize}px`;
+  if (settings.fontWeight) styles.fontWeight = settings.fontWeight;
+  if (settings.lineHeight) styles.lineHeight = settings.lineHeight;
+  if (settings.letterSpacing) styles.letterSpacing = `${settings.letterSpacing}px`;
+  if (settings.textAlign) styles.textAlign = settings.textAlign;
+  if (settings.color) styles.color = settings.color;
+  return styles;
+};
 
 // =============================================
 // STYLING CONSTANTS - Keep consistent between edit and read-only modes
@@ -15,37 +35,37 @@ const TEXT_STYLES = {
   heroText: {
     base: "text-xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white whitespace-pre-line drop-shadow-md text-left",
     editable:
-      "text-xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white whitespace-pre-line drop-shadow-md text-left bg-transparent focus:bg-white/20 focus:ring-1 focus:ring-blue-500 rounded p-2 w-full resize-none",
+      "bg-transparent focus:bg-white/20 focus:ring-1 focus:ring-blue-500 rounded p-2 w-full resize-none whitespace-pre-line",
     readOnly:
-      "text-xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white whitespace-pre-line drop-shadow-md text-left",
+      "whitespace-pre-line",
   },
   busDescription: {
     base: "text-xs sm:text-sm md:text-base lg:text-[2.5vh] text-white font-normal indent-4 text-left leading-relaxed",
     editable:
-      "text-xs sm:text-sm md:text-base lg:text-[2.5vh] text-white font-normal indent-4 text-left leading-relaxed bg-transparent focus:bg-white/20 focus:ring-1 focus:ring-blue-500 rounded p-2 w-full resize-none",
+      "bg-transparent focus:bg-white/20 focus:ring-1 focus:ring-blue-500 rounded p-2 w-full resize-none",
     readOnly:
-      "text-xs sm:text-sm md:text-base lg:text-[2.5vh] text-white font-normal indent-4 text-left leading-relaxed",
+      "",
   },
   busDescriptionSecond: {
     base: "text-xs sm:text-sm md:text-base lg:text-[2.5vh] text-white font-normal leading-relaxed indent-4 mt-1 sm:mt-3 text-left",
     editable:
-      "text-xs sm:text-sm md:text-base lg:text-[2.5vh] text-white font-normal leading-relaxed indent-4 mt-1 sm:mt-3 text-left bg-transparent focus:bg-white/20 focus:ring-1 focus:ring-blue-500 rounded p-2 w-full resize-none",
+      "bg-transparent focus:bg-white/20 focus:ring-1 focus:ring-blue-500 rounded p-2 w-full resize-none",
     readOnly:
-      "text-xs sm:text-sm md:text-base lg:text-[2.5vh] text-white font-normal leading-relaxed indent-4 mt-1 sm:mt-3 text-left",
+      "",
   },
   cardTitle: {
     base: "ml-0.5 sm:ml-1 md:ml-0 mr-6 sm:mr-10 md:mr-12 leading-tight text-xs sm:text-sm md:text-base font-semibold text-gray-900 font-sans break-words",
     editable:
-      "ml-0.5 sm:ml-1 md:ml-0 mr-6 sm:mr-10 md:mr-12 leading-tight text-xs sm:text-sm md:text-base font-semibold text-gray-900 font-sans break-words bg-transparent focus:bg-white/50 focus:ring-1 focus:ring-blue-500 rounded px-1 w-full",
+      "bg-transparent focus:bg-white/50 focus:ring-1 focus:ring-blue-500 rounded px-1 w-full",
     readOnly:
-      "ml-0.5 sm:ml-1 md:ml-0 mr-6 sm:mr-10 md:mr-12 leading-tight text-xs sm:text-sm md:text-base font-semibold text-gray-900 font-sans break-words",
+      "",
   },
   cardDesc: {
     base: "ml-0.5 sm:ml-1 md:ml-0 text-xs sm:text-sm md:text-[0.9rem] text-gray-700 text-left font-serif leading-snug break-words",
     editable:
-      "ml-0.5 sm:ml-1 md:ml-0 text-xs sm:text-sm md:text-[0.9rem] text-gray-700 text-left font-serif leading-snug break-words bg-transparent focus:bg-white/50 focus:ring-1 focus:ring-blue-500 rounded px-1 w-full h-full resize-none",
+      "bg-transparent focus:bg-white/50 focus:ring-1 focus:ring-blue-500 rounded px-1 w-full h-full resize-none",
     readOnly:
-      "ml-0.5 sm:ml-1 md:ml-0 text-xs sm:text-sm md:text-[0.9rem] text-gray-700 text-left font-serif leading-snug break-words",
+      "",
   },
 };
 
@@ -217,6 +237,44 @@ const deriveInitialLocalData = (richTextDataInput, currentBannerColor) => {
     cardPosition: variantSpecificData.cardPosition || "top", // 'top', 'side', 'bottom'
     textAlignment: variantSpecificData.textAlignment || "center", // 'left', 'center', 'right'
 
+    // Text settings with defaults
+    heroTextSettings: initial.heroTextSettings || {
+      fontFamily: '"Playfair Display", serif',
+      fontSize: 42,
+      fontWeight: 700,
+      lineHeight: 1.3,
+      letterSpacing: 0.5,
+      textAlign: 'center',
+      color: '#FFFFFF'
+    },
+    descriptionTextSettings: initial.descriptionTextSettings || {
+      fontFamily: '"Lato", sans-serif',
+      fontSize: 18,
+      fontWeight: 400,
+      lineHeight: 1.6,
+      letterSpacing: 0.2,
+      textAlign: 'left',
+      color: '#FFFFFF'
+    },
+    cardTitleTextSettings: initial.cardTitleTextSettings || {
+      fontFamily: '"Montserrat", sans-serif',
+      fontSize: 16,
+      fontWeight: 600,
+      lineHeight: 1.4,
+      letterSpacing: 0.1,
+      textAlign: 'left',
+      color: '#1F2937'
+    },
+    cardDescTextSettings: initial.cardDescTextSettings || {
+      fontFamily: '"Lora", serif',
+      fontSize: 14,
+      fontWeight: 400,
+      lineHeight: 1.5,
+      letterSpacing: 0,
+      textAlign: 'left',
+      color: '#4B5563'
+    },
+    
     // Variant-specific colors
     variantColors: variantSpecificData.colors || {},
 
@@ -313,18 +371,6 @@ function RichTextPreview({
             playIntroAnimationForCards={playIntroAnimationForCards}
           />
         );
-      case "grid":
-        return (
-          <GridRichTextVariant
-            richTextData={richTextData}
-            readOnly={readOnly}
-            onRichTextDataChange={onRichTextDataChange}
-            openIconModalForCard={openIconModalForCard}
-            onAddCard={onAddCard}
-            onRemoveCard={onRemoveCard}
-            playIntroAnimationForCards={playIntroAnimationForCards}
-          />
-        );
       case "classic":
       default:
         return renderClassicVariant();
@@ -385,11 +431,6 @@ function RichTextPreview({
       onCardFieldChange,
       onRemoveCard,
     }) {
-      console.log(
-        `FeatureCard ${index} render - playIntroAnimation:`,
-        playIntroAnimation
-      );
-
       const IconToRender = Icons[IconName] || Icons.Star;
 
       const baseClasses =
@@ -487,9 +528,10 @@ function RichTextPreview({
                     onCardFieldChange(index, "title", e.target.value)
                   }
                   className={TEXT_STYLES.cardTitle.editable}
+                  style={getTextStyles(richTextData.cardTitleTextSettings)}
                 />
               ) : (
-                <h3 className={TEXT_STYLES.cardTitle.readOnly}>{title}</h3>
+                <h3 className={TEXT_STYLES.cardTitle.readOnly} style={getTextStyles(richTextData.cardTitleTextSettings)}>{title}</h3>
               )}
             </div>
 
@@ -501,10 +543,11 @@ function RichTextPreview({
                     onCardFieldChange(index, "desc", e.target.value)
                   }
                   className={TEXT_STYLES.cardDesc.editable}
+                  style={getTextStyles(richTextData.cardDescTextSettings)}
                   rows={2}
                 />
               ) : (
-                <p className={TEXT_STYLES.cardDesc.readOnly}>{desc}</p>
+                <p className={TEXT_STYLES.cardDesc.readOnly} style={getTextStyles(richTextData.cardDescTextSettings)}>{desc}</p>
               )}
             </div>
           </div>
@@ -539,11 +582,6 @@ function RichTextPreview({
     };
 
     const ImageSlideshow = () => {
-      console.log(
-        "ImageSlideshow render - current index:",
-        currentImageSlideshowIndex
-      );
-
       if (!displaySlideshowImages || displaySlideshowImages.length === 0)
         return null;
 
@@ -685,11 +723,12 @@ function RichTextPreview({
                         handleFieldChange("heroText", e.target.value)
                       }
                       className={TEXT_STYLES.heroText.editable}
+                      style={getTextStyles(richTextData.heroTextSettings)}
                       placeholder="Enter Hero Text..."
                       rows={2}
                     />
                   ) : (
-                    <h2 className={TEXT_STYLES.heroText.readOnly}>
+                    <h2 className={TEXT_STYLES.heroText.readOnly} style={getTextStyles(richTextData.heroTextSettings)}>
                       {heroText}
                     </h2>
                   )}
@@ -721,9 +760,9 @@ function RichTextPreview({
                                   )
                                 }
                                 className={`${TEXT_STYLES.busDescription.editable} w-full min-h-[4rem] sm:min-h-[6rem] md:min-h-[8rem] leading-loose`} // Increased line height with leading-loose
+                                style={getTextStyles(richTextData.descriptionTextSettings)}
                                 placeholder="Enter your business description... (Leave empty to hide this section)"
                                 rows={4} // Increased rows for better spacing
-                                style={{ lineHeight: "1.8" }} // Explicit line height for better spacing
                               />
                               {bus_description && (
                                 <button
@@ -740,10 +779,7 @@ function RichTextPreview({
                             <div className="w-full">
                               <p
                                 className={`${TEXT_STYLES.busDescription.readOnly} flex-1 overflow-hidden`}
-                                style={{
-                                  lineHeight: "1.8", // Better line spacing in read-only mode
-                                  wordSpacing: "0.1em", // Slight word spacing for readability
-                                }}
+                                style={getTextStyles(richTextData.descriptionTextSettings)}
                               >
                                 {bus_description}
                               </p>
@@ -836,6 +872,61 @@ RichTextColorControls.propTypes = {
   themeColors: PropTypes.object,
 };
 
+/* ==============================================
+   RICH TEXT FONTS CONTROLS
+   ----------------------------------------------
+   Handles font selection for RichTextBlock elements
+=============================================== */
+const RichTextFontsControls = ({ currentData, onControlsChange, themeColors }) => {
+  return (
+    <div className="bg-white text-gray-800 p-4 rounded-lg">
+      <h3 className="text-xl font-bold mb-6 text-center text-gray-800 border-b pb-3">Font Settings</h3>
+      
+      <div className="space-y-6">
+        <div className="bg-gray-50 p-4 rounded-md border">
+          <PanelFontController
+            label="Hero Text"
+            currentData={currentData}
+            onControlsChange={onControlsChange}
+            fieldPrefix="heroTextSettings"
+            themeColors={themeColors}
+          />
+        </div>
+        
+        <div className="bg-gray-50 p-4 rounded-md border">
+          <PanelFontController
+            label="Description Text"
+            currentData={currentData}
+            onControlsChange={onControlsChange}
+            fieldPrefix="descriptionTextSettings"
+            themeColors={themeColors}
+          />
+        </div>
+
+        <div className="bg-gray-50 p-4 rounded-md border">
+          <PanelFontController
+            label="Card Title"
+            currentData={currentData}
+            onControlsChange={onControlsChange}
+            fieldPrefix="cardTitleTextSettings"
+            themeColors={themeColors}
+          />
+        </div>
+
+        <div className="bg-gray-50 p-4 rounded-md border">
+          <PanelFontController
+            label="Card Description"
+            currentData={currentData}
+            onControlsChange={onControlsChange}
+            fieldPrefix="cardDescTextSettings"
+            themeColors={themeColors}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
 /* 
 =============================================
 3) MAIN EXPORT: RichTextBlock
@@ -872,16 +963,10 @@ export default function RichTextBlock({
 
   // Initialize animation state only once when component mounts
   useEffect(() => {
-    console.log(
-      "RichTextBlock mount effect - animationPlayedRef:",
-      animationPlayedRef.current
-    );
     if (!animationPlayedRef.current) {
-      console.log("Setting initial animation state to true");
       setPlayIntroAnimationForCards(true);
       // Set a timeout to turn off the animation after all cards have animated
       const timeout = setTimeout(() => {
-        console.log("Turning off animation state after initial animation");
         setPlayIntroAnimationForCards(false);
         animationPlayedRef.current = true;
       }, 2000); // Adjust this timeout based on your animation duration
@@ -891,19 +976,11 @@ export default function RichTextBlock({
 
   // Reset animation state when readOnly changes from true to false
   useEffect(() => {
-    console.log(
-      "ReadOnly changed - prev:",
-      prevReadOnlyRef.current,
-      "current:",
-      readOnly
-    );
     if (prevReadOnlyRef.current === true && readOnly === false) {
-      console.log("Resetting animation state due to readOnly change");
       animationPlayedRef.current = false;
       setPlayIntroAnimationForCards(true);
       // Set a timeout to turn off the animation after all cards have animated
       const timeout = setTimeout(() => {
-        console.log("Turning off animation state after readOnly change");
         setPlayIntroAnimationForCards(false);
         animationPlayedRef.current = true;
       }, 2000); // Adjust this timeout based on your animation duration
@@ -919,16 +996,11 @@ export default function RichTextBlock({
 
   // Handle slideshow separately from card animations
   useEffect(() => {
-    console.log(
-      "Slideshow effect triggered - current index:",
-      currentImageSlideshowIndex
-    );
     const slideshowImageSources = localData.images
       ?.map((img) => (img && typeof img === "object" && img.url ? img.url : ""))
       .filter((img) => img);
 
     if (slideshowImageSources?.length > 1) {
-      console.log("Setting up slideshow interval");
       slideshowIntervalRef.current = setInterval(() => {
         setCurrentImageSlideshowIndex(
           (prevIndex) => (prevIndex + 1) % slideshowImageSources.length
@@ -938,7 +1010,6 @@ export default function RichTextBlock({
 
     return () => {
       if (slideshowIntervalRef.current) {
-        console.log("Cleaning up slideshow interval");
         clearInterval(slideshowIntervalRef.current);
       }
     };
@@ -1094,35 +1165,19 @@ export default function RichTextBlock({
 
   // Render different variants based on the variant prop
   const renderVariant = () => {
-    // Use localData.variant if available, otherwise fall back to the variant prop
-    const activeVariant = localData?.variant || variant;
+    // Use richTextData.variant if available, otherwise fall back to the variant prop
+    const activeVariant = richTextData?.variant || variant;
 
     switch (activeVariant) {
       case "modern":
         return (
           <ModernRichTextVariant
-            richTextData={localData}
+            richTextData={richTextData}
             readOnly={readOnly}
-            onRichTextDataChange={handleLocalDataChange}
-            openIconModalForCard={
-              !readOnly ? openIconModalForCardCallback : undefined
-            }
-            onAddCard={!readOnly ? handleAddCard : undefined}
-            onRemoveCard={!readOnly ? handleRemoveCard : undefined}
-            playIntroAnimationForCards={playIntroAnimationForCards}
-          />
-        );
-      case "grid":
-        return (
-          <GridRichTextVariant
-            richTextData={localData}
-            readOnly={readOnly}
-            onRichTextDataChange={handleLocalDataChange}
-            openIconModalForCard={
-              !readOnly ? openIconModalForCardCallback : undefined
-            }
-            onAddCard={!readOnly ? handleAddCard : undefined}
-            onRemoveCard={!readOnly ? handleRemoveCard : undefined}
+            onRichTextDataChange={onRichTextDataChange}
+            openIconModalForCard={openIconModalForCard}
+            onAddCard={onAddCard}
+            onRemoveCard={onRemoveCard}
             playIntroAnimationForCards={playIntroAnimationForCards}
           />
         );
@@ -1176,7 +1231,7 @@ RichTextBlock.propTypes = {
   onConfigChange: PropTypes.func,
   bannerColor: PropTypes.string,
   themeColors: PropTypes.object,
-  variant: PropTypes.oneOf(["classic", "modern", "grid"]),
+  variant: PropTypes.oneOf(["classic", "modern"]),
 };
 
 RichTextBlock.tabsConfig = (localData, onControlsChange, themeColors) => {
@@ -1216,6 +1271,16 @@ RichTextBlock.tabsConfig = (localData, onControlsChange, themeColors) => {
   // Colors Tab
   tabs.colors = (props) => (
     <RichTextColorControls
+      {...props}
+      currentData={localData}
+      onControlsChange={onControlsChange}
+      themeColors={themeColors}
+    />
+  );
+
+  // Fonts Tab
+  tabs.fonts = (props) => (
+    <RichTextFontsControls
       {...props}
       currentData={localData}
       onControlsChange={onControlsChange}
@@ -1339,11 +1404,6 @@ const ModernRichTextVariant = memo(
       openIconModalForCard,
       playIntroAnimation,
     }) => {
-      console.log(
-        `FeatureCard ${index} render - playIntroAnimation:`,
-        playIntroAnimation
-      );
-
       const IconToRender = Icons[card.icon] || Icons.Star;
 
       return (
@@ -1355,7 +1415,7 @@ const ModernRichTextVariant = memo(
           transition={
             playIntroAnimation ? { delay: index * 0.1 } : { duration: 0 }
           }
-          className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 hover:bg-white/20 transition-all duration-300 group"
+          className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 hover:shadow-xl transition-all duration-300 hover:scale-105 group relative"
         >
           <div className="flex items-start space-x-3">
             <div
@@ -1383,13 +1443,11 @@ const ModernRichTextVariant = memo(
                   onChange={(e) =>
                     onCardFieldChange(index, "title", e.target.value)
                   }
-                  className="text-white font-semibold text-lg bg-transparent focus:bg-white/10 focus:ring-1 focus:ring-blue-400 rounded p-1 w-full outline-none"
+                  className="text-white font-semibold text-lg bg-transparent focus:bg-white/10 focus:ring-2 focus:ring-white/50 rounded p-2 w-full outline-none"
                   placeholder="Feature Title"
                 />
               ) : (
-                <h3 className="text-white font-semibold text-lg">
-                  {card.title}
-                </h3>
+                <h3 className="text-white font-semibold text-lg">{card.title}</h3>
               )}
 
               {!readOnly ? (
@@ -1398,7 +1456,7 @@ const ModernRichTextVariant = memo(
                   onChange={(e) =>
                     onCardFieldChange(index, "desc", e.target.value)
                   }
-                  className="text-white/80 text-sm mt-1 bg-transparent focus:bg-white/10 focus:ring-1 focus:ring-blue-400 rounded p-1 w-full outline-none resize-none"
+                  className="text-white/80 text-sm mt-1 bg-transparent focus:bg-white/10 focus:ring-2 focus:ring-white/50 rounded p-2 w-full outline-none resize-none"
                   placeholder="Feature description"
                   rows={2}
                 />
@@ -1425,11 +1483,6 @@ const ModernRichTextVariant = memo(
     };
 
     const ImageGallery = () => {
-      console.log(
-        "ImageSlideshow render - current index:",
-        currentImageSlideshowIndex
-      );
-
       if (!displaySlideshowImages || displaySlideshowImages.length === 0)
         return null;
 
@@ -1444,11 +1497,8 @@ const ModernRichTextVariant = memo(
                   : { opacity: 1, scale: 1 }
               }
               animate={{ opacity: 1, scale: 1 }}
-              transition={
-                playIntroAnimationForCards
-                  ? { delay: index * 0.1 }
-                  : { duration: 0 }
-              }
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.7 }}
               className={`relative overflow-hidden rounded-lg ${
                 index === 0 ? "col-span-2 row-span-2" : ""
               }`}
@@ -1485,7 +1535,7 @@ const ModernRichTextVariant = memo(
                       onChange={(e) =>
                         handleFieldChange("heroText", e.target.value)
                       }
-                      className="text-3xl lg:text-4xl font-light text-white bg-transparent focus:bg-white/10 focus:ring-2 focus:ring-blue-300 rounded-lg p-3 w-full placeholder-gray-300 outline-none leading-tight resize-none"
+                      className="text-3xl lg:text-4xl font-light text-white bg-transparent focus:bg-white/10 focus:ring-2 focus:ring-blue-300 rounded-lg p-3 w-full placeholder-gray-400 outline-none leading-tight resize-none text-center"
                       placeholder="Enter Hero Text..."
                       rows={2}
                     />
@@ -1506,12 +1556,15 @@ const ModernRichTextVariant = memo(
                         <textarea
                           value={bus_description}
                           onChange={(e) =>
-                            handleFieldChange("bus_description", e.target.value)
+                            handleFieldChange(
+                              "bus_description",
+                              e.target.value
+                            )
                           }
-                          className="text-base text-white/90 bg-transparent focus:bg-white/10 focus:ring-2 focus:ring-blue-300 rounded-lg p-3 w-full placeholder-gray-300 outline-none leading-relaxed resize-none"
+                          className="text-base text-white/90 bg-transparent focus:bg-white/10 focus:ring-2 focus:ring-blue-300 rounded-lg p-3 w-full placeholder-gray-400 outline-none leading-relaxed resize-none"
                           placeholder="Enter your business description... (Leave empty to hide this section)"
                           rows={4}
-                          style={{ lineHeight: "1.8" }}
+                          style={getTextStyles(richTextData.descriptionTextSettings)}
                         />
                         {bus_description && (
                           <button
@@ -1527,7 +1580,7 @@ const ModernRichTextVariant = memo(
                     ) : (
                       <p
                         className="text-base text-white/90 leading-relaxed"
-                        style={{ lineHeight: "1.8", wordSpacing: "0.1em" }}
+                        style={getTextStyles(richTextData.descriptionTextSettings)}
                       >
                         {bus_description}
                       </p>
@@ -1581,351 +1634,6 @@ const ModernRichTextVariant = memo(
 
 ModernRichTextVariant.displayName = "ModernRichTextVariant";
 ModernRichTextVariant.propTypes = {
-  richTextData: PropTypes.object.isRequired,
-  readOnly: PropTypes.bool,
-  onRichTextDataChange: PropTypes.func.isRequired,
-  openIconModalForCard: PropTypes.func,
-  onAddCard: PropTypes.func,
-  onRemoveCard: PropTypes.func,
-  playIntroAnimationForCards: PropTypes.bool,
-};
-
-/* ===============================================
-   GRID RICHTEXT VARIANT
-   -----------------------------------------------
-   Clean grid layout with cards in a structured grid
-   and clear content separation
-=============================================== */
-const GridRichTextVariant = memo(
-  ({
-    richTextData,
-    readOnly,
-    onRichTextDataChange,
-    openIconModalForCard,
-    onAddCard,
-    onRemoveCard,
-    playIntroAnimationForCards,
-  }) => {
-    const {
-      heroText = "",
-      bus_description = "",
-      cards = [],
-      images = [],
-      backgroundColor = "#1e293b",
-      styling = { desktopHeightVH: 45, mobileHeightVW: 75 },
-      variantColors = {},
-    } = richTextData || {};
-
-    // Add slideshow state management to this variant
-    const [currentImageSlideshowIndex, setCurrentImageSlideshowIndex] =
-      useState(0);
-
-    const handleFieldChange = (field, value) => {
-      onRichTextDataChange({ ...richTextData, [field]: value });
-    };
-
-    const handleCardChange = (cardIndex, field, value) => {
-      const updatedCards = richTextData.cards.map((card, idx) =>
-        idx === cardIndex ? { ...card, [field]: value } : card
-      );
-      onRichTextDataChange({ ...richTextData, cards: updatedCards });
-    };
-
-    const slideshowImageSources = images
-      .map((img) => {
-        if (img && typeof img === "object" && img.url) {
-          return img.url;
-        }
-        return "";
-      })
-      .filter((img) => img);
-
-    const displaySlideshowImages =
-      slideshowImageSources.length > 0
-        ? slideshowImageSources
-        : ["/assets/images/Richtext/roof_workers.jpg"];
-
-    // Separate useEffect for slideshow
-    useEffect(() => {
-      let slideshowInterval;
-      if (displaySlideshowImages.length > 1) {
-        slideshowInterval = setInterval(() => {
-          setCurrentImageSlideshowIndex(
-            (prevIndex) => (prevIndex + 1) % displaySlideshowImages.length
-          );
-        }, 5000);
-      }
-      return () => {
-        if (slideshowInterval) {
-          clearInterval(slideshowInterval);
-        }
-      };
-    }, [displaySlideshowImages.length]);
-
-    // Calculate dynamic height based on styling
-    const dynamicHeight =
-      window.innerWidth < 768
-        ? `${styling.mobileHeightVW}vw`
-        : `${styling.desktopHeightVH}vh`;
-
-    const GridFeatureCard = ({
-      card,
-      index,
-      readOnly,
-      onCardFieldChange,
-      onRemoveCard,
-      openIconModalForCard,
-      playIntroAnimation,
-    }) => {
-      console.log(
-        `FeatureCard ${index} render - playIntroAnimation:`,
-        playIntroAnimation
-      );
-
-      const IconToRender = Icons[card.icon] || Icons.Star;
-
-      // Color scheme for cards
-      const cardColors = [
-        "from-blue-500 to-blue-600",
-        "from-green-500 to-green-600",
-        "from-purple-500 to-purple-600",
-        "from-orange-500 to-orange-600",
-        "from-teal-500 to-teal-600",
-        "from-pink-500 to-pink-600",
-      ];
-
-      const cardColor = cardColors[index % cardColors.length];
-
-      return (
-        <motion.div
-          initial={
-            playIntroAnimation ? { opacity: 0, y: 30 } : { opacity: 1, y: 0 }
-          }
-          animate={{ opacity: 1, y: 0 }}
-          transition={
-            playIntroAnimation ? { delay: index * 0.1 } : { duration: 0 }
-          }
-          className={`bg-gradient-to-br ${cardColor} rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 group relative`}
-        >
-          {!readOnly && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onRemoveCard(index);
-              }}
-              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-white/80 hover:text-white transition-opacity p-1 rounded-full hover:bg-white/20"
-              title="Remove Card"
-            >
-              <Icons.X size={16} />
-            </button>
-          )}
-
-          <div className="flex flex-col items-center text-center space-y-4">
-            <div
-              className={`w-16 h-16 bg-white/20 rounded-full flex items-center justify-center ${
-                !readOnly && openIconModalForCard
-                  ? "cursor-pointer hover:bg-white/30"
-                  : ""
-              } transition-colors`}
-              onClick={(e) => {
-                if (!readOnly && openIconModalForCard) {
-                  e.stopPropagation();
-                  openIconModalForCard(index);
-                }
-              }}
-              title={!readOnly ? "Edit Icon" : ""}
-            >
-              <IconToRender className="w-8 h-8 text-white" />
-            </div>
-
-            <div className="space-y-2">
-              {!readOnly ? (
-                <input
-                  type="text"
-                  value={card.title}
-                  onChange={(e) =>
-                    onCardFieldChange(index, "title", e.target.value)
-                  }
-                  className="text-white font-bold text-lg bg-transparent focus:bg-white/20 focus:ring-2 focus:ring-white/50 rounded p-2 w-full outline-none text-center"
-                  placeholder="Feature Title"
-                />
-              ) : (
-                <h3 className="text-white font-bold text-lg">{card.title}</h3>
-              )}
-
-              {!readOnly ? (
-                <textarea
-                  value={card.desc}
-                  onChange={(e) =>
-                    onCardFieldChange(index, "desc", e.target.value)
-                  }
-                  className="text-white/90 text-sm bg-transparent focus:bg-white/20 focus:ring-2 focus:ring-white/50 rounded p-2 w-full outline-none resize-none text-center leading-relaxed"
-                  placeholder="Feature description"
-                  rows={3}
-                />
-              ) : (
-                <p className="text-white/90 text-sm leading-relaxed">
-                  {card.desc}
-                </p>
-              )}
-            </div>
-          </div>
-        </motion.div>
-      );
-    };
-
-    const ImageMosaic = () => {
-      console.log(
-        "ImageSlideshow render - current index:",
-        currentImageSlideshowIndex
-      );
-
-      if (!displaySlideshowImages || displaySlideshowImages.length === 0)
-        return null;
-
-      return (
-        <div className="relative w-full h-full mb-[3vh] md:mb-[9vh] lg:mb-[12vh] lg:h-80 rounded-2xl overflow-hidden shadow-xl">
-          <AnimatePresence initial={false} mode="wait">
-            <motion.img
-              key={currentImageSlideshowIndex}
-              src={displaySlideshowImages[currentImageSlideshowIndex]}
-              alt={`Slideshow image ${currentImageSlideshowIndex + 1}`}
-              initial={{ opacity: 0, scale: 1.1 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.7 }}
-              className="absolute inset-0 w-full h-full object-cover"
-              onError={(e) => {
-                e.target.style.display = "none";
-              }}
-              onAnimationComplete={() =>
-                console.log("Slideshow image transition completed")
-              }
-            />
-          </AnimatePresence>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20"></div>
-
-          {/* Image indicators */}
-          {displaySlideshowImages.length > 1 && (
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-              {displaySlideshowImages.map((_, index) => (
-                <div
-                  key={index}
-                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                    index === currentImageSlideshowIndex
-                      ? "bg-white"
-                      : "bg-white/50"
-                  }`}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      );
-    };
-
-    return (
-      <div className="w-full mx-auto " style={{ minHeight: dynamicHeight }}>
-        <div className="space-y-8 md:space-y-12 lg:space-y-16">
-          {/* Hero Section */}
-          {(heroText || !readOnly) && (
-            <div className="text-center space-y-6">
-              {!readOnly ? (
-                <textarea
-                  value={heroText}
-                  onChange={(e) =>
-                    handleFieldChange("heroText", e.target.value)
-                  }
-                  className="text-4xl lg:text-5xl font-bold text-gray-800 bg-transparent focus:bg-gray-100 focus:ring-2 focus:ring-blue-500 rounded-lg p-4 w-full placeholder-gray-400 outline-none leading-tight resize-none text-center"
-                  placeholder="Enter Hero Text..."
-                  rows={2}
-                />
-              ) : (
-                <h1 className="text-4xl lg:text-5xl font-bold text-gray-800 leading-tight">
-                  {heroText}
-                </h1>
-              )}
-            </div>
-          )}
-
-          {/* Image Showcase */}
-          <ImageMosaic />
-
-          {/* Description Section */}
-          {(bus_description || !readOnly) && (
-            <div className=" w-full mx-auto space-y-6 text-center">
-              {(bus_description || !readOnly) &&
-                (!readOnly ? (
-                  <div className="space-y-2">
-                    <textarea
-                      value={bus_description}
-                      onChange={(e) =>
-                        handleFieldChange("bus_description", e.target.value)
-                      }
-                      className="text-lg text-gray-700 bg-transparent focus:bg-gray-100 focus:ring-2 focus:ring-blue-500 rounded-lg p-4 w-full placeholder-gray-400 outline-none leading-relaxed resize-none text-center"
-                      placeholder="Enter your business description... (Leave empty to hide this section)"
-                      rows={4}
-                      style={{ lineHeight: "1.8" }}
-                    />
-                    {bus_description && (
-                      <button
-                        onClick={() => handleFieldChange("bus_description", "")}
-                        className="text-xs text-gray-600 hover:text-gray-800 underline"
-                      >
-                        Clear description
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <p
-                    className="text-lg text-gray-700 leading-relaxed"
-                    style={{ lineHeight: "1.8", wordSpacing: "0.1em" }}
-                  >
-                    {bus_description}
-                  </p>
-                ))}
-            </div>
-          )}
-
-          {/* Feature Cards Grid */}
-          {(cards.length > 0 || !readOnly) && (
-            <div className="space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {cards.map((card, idx) => (
-                  <GridFeatureCard
-                    key={card.id || idx}
-                    card={card}
-                    index={idx}
-                    readOnly={readOnly}
-                    onCardFieldChange={handleCardChange}
-                    onRemoveCard={onRemoveCard}
-                    openIconModalForCard={openIconModalForCard}
-                    playIntroAnimation={playIntroAnimationForCards}
-                  />
-                ))}
-              </div>
-
-              {!readOnly && (
-                <div className="text-center">
-                  <button
-                    onClick={onAddCard}
-                    className="inline-flex items-center space-x-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg transition-all duration-300 hover:scale-105"
-                  >
-                    <Icons.Plus size={20} />
-                    <span className="font-medium">Add Feature Card</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-);
-
-GridRichTextVariant.displayName = "GridRichTextVariant";
-GridRichTextVariant.propTypes = {
   richTextData: PropTypes.object.isRequired,
   readOnly: PropTypes.bool,
   onRichTextDataChange: PropTypes.func.isRequired,

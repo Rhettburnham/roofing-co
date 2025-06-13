@@ -66,14 +66,41 @@
         "bannerColor": "#1e293b",
         "topBannerColor": "#FFFFFF",
         "brightness": 75,
-        "textSettings": {
-          "fontFamily": "Inter",
-          "fontSize": 20,
-          "fontWeight": 600,
-          "lineHeight": 1.4,
-          "letterSpacing": 0.5,
-          "textAlign": "center",
-          "color": "#FFFFFF"
+        "mainTitleTextSettings": {
+          "desktop": {
+            "fontFamily": "Inter",
+            "fontSize": 20,
+            "fontWeight": 600,
+            "lineHeight": 1.4,
+            "letterSpacing": 0.5,
+            "color": "#FFFFFF"
+          },
+          "mobile": {
+            "fontFamily": "Inter",
+            "fontSize": 18,
+            "fontWeight": 600,
+            "lineHeight": 1.3,
+            "letterSpacing": 0.4,
+            "color": "#FFFFFF"
+          }
+        },
+        "subTitleTextSettings": {
+          "desktop": {
+            "fontFamily": "Inter",
+            "fontSize": 16,
+            "fontWeight": 400,
+            "lineHeight": 1.5,
+            "letterSpacing": 0.3,
+            "color": "#FFFFFF"
+          },
+          "mobile": {
+            "fontFamily": "Inter",
+            "fontSize": 14,
+            "fontWeight": 400,
+            "lineHeight": 1.4,
+            "letterSpacing": 0.2,
+            "color": "#FFFFFF"
+          }
         },
         "colors": [
           {
@@ -198,44 +225,48 @@
             "showSlideshow": true,
             "cardPosition": "side",
             "textAlignment": "left"
-          },
-          "grid": {
-            "id": "grid",
-            "heroText": "Stories of Excellence",
-            "bus_description": "Discover our journey through craftsmanship and innovation, where every project tells a unique story of transformation. Each roof we create is a masterpiece, reflecting our commitment to artistry and functional excellence.",
-            "cards": [
-              {
-                "title": "Artisan Craftsmanship",
-                "desc": "Each project is approached with an artist's eye and a craftsman's skill.",
-                "icon": "Palette"
-              },
-              {
-                "title": "Signature Style",
-                "desc": "Distinctive designs that enhance your home's architectural character.",
-                "icon": "Award"
-              },
-              {
-                "title": "Creative Solutions",
-                "desc": "Innovative approaches to challenging roofing problems and unique requirements.",
-                "icon": "Lightbulb"
-              },
-              {
-                "title": "Visual Impact",
-                "desc": "Roofing solutions that make a statement and increase your property's curb appeal.",
-                "icon": "Eye"
-              }
-            ],
-            "layout": "grid",
-            "showCards": true,
-            "showSlideshow": true,
-            "cardPosition": "floating",
-            "textAlignment": "left"
           }
         },
         "styling": {
           "hasVariants": true,
           "desktopHeightVH": 35,
           "mobileHeightVW": 35
+        },
+        "heroTextSettings": {
+          "fontFamily": "'Playfair Display', serif",
+          "fontSize": 42,
+          "fontWeight": 700,
+          "lineHeight": 1.3,
+          "letterSpacing": 0.5,
+          "textAlign": "center",
+          "color": "#FFFFFF"
+        },
+        "descriptionTextSettings": {
+          "fontFamily": "'Lato', sans-serif",
+          "fontSize": 18,
+          "fontWeight": 400,
+          "lineHeight": 1.6,
+          "letterSpacing": 0.2,
+          "textAlign": "left",
+          "color": "#FFFFFF"
+        },
+        "cardTitleTextSettings": {
+          "fontFamily": "'Montserrat', sans-serif",
+          "fontSize": 16,
+          "fontWeight": 600,
+          "lineHeight": 1.4,
+          "letterSpacing": 0.1,
+          "textAlign": "left",
+          "color": "#1F2937"
+        },
+        "cardDescTextSettings": {
+          "fontFamily": "'Lora', serif",
+          "fontSize": 14,
+          "fontWeight": 400,
+          "lineHeight": 1.5,
+          "letterSpacing": 0,
+          "textAlign": "left",
+          "color": "#4B5563"
         },
         "steps": [
           {
@@ -307,6 +338,15 @@
             "large": "Large - Prominent button for primary actions",
             "extra-large": "Extra Large - Maximum impact button for hero sections"
           }
+        },
+        "textSettings": {
+          "fontFamily": "Inter, sans-serif",
+          "fontSize": 24,
+          "fontWeight": 700,
+          "lineHeight": 1.2,
+          "letterSpacing": 0.5,
+          "textAlign": "center",
+          "color": "#FFFFFF"
         }
       }
     },
@@ -357,6 +397,33 @@
           "hasVariants": false,
           "desktopHeightVH": 30,
           "mobileHeightVW": 40
+        },
+        "sectionTitleTextSettings": {
+          "fontFamily": "'Merriweather', serif",
+          "fontSize": 48,
+          "fontWeight": 900,
+          "lineHeight": 1.2,
+          "letterSpacing": 1.5,
+          "textAlign": "center",
+          "color": "#111827"
+        },
+        "overlayShingleTextSettings": {
+          "fontFamily": "'Roboto Condensed', sans-serif",
+          "fontSize": 20,
+          "fontWeight": 700,
+          "lineHeight": 1.1,
+          "letterSpacing": 0.2,
+          "textAlign": "left",
+          "color": "#FFFFFF"
+        },
+        "overlaySqftTextSettings": {
+          "fontFamily": "'Roboto Condensed', sans-serif",
+          "fontSize": 18,
+          "fontWeight": 400,
+          "lineHeight": 1.1,
+          "letterSpacing": 0,
+          "textAlign": "left",
+          "color": "#FFFFFF"
         }
       }
     },
@@ -446,6 +513,51 @@
           "hasVariants": false,
           "desktopHeightVH": 35,
           "mobileHeightVW": 50
+        },
+        "titleTextSettings": {
+          "fontFamily": "'Georgia', serif",
+          "fontSize": 28,
+          "fontWeight": 400,
+          "lineHeight": 1.2,
+          "letterSpacing": 0.5,
+          "textAlign": "left",
+          "color": "#FFFFFF"
+        },
+        "bannerTextSettings": {
+          "fontFamily": "'Arial', sans-serif",
+          "fontSize": 14,
+          "fontWeight": 600,
+          "lineHeight": 1.3,
+          "letterSpacing": 0.2,
+          "textAlign": "left",
+          "color": "#FFFFFF"
+        },
+        "statsTextSettings": {
+          "fontFamily": "'Impact', sans-serif",
+          "fontSize": 18,
+          "fontWeight": 700,
+          "lineHeight": 1.1,
+          "letterSpacing": 0.1,
+          "textAlign": "center",
+          "color": "#FFFFFF"
+        },
+        "serviceHoursTextSettings": {
+          "fontFamily": "'Verdana', sans-serif",
+          "fontSize": 12,
+          "fontWeight": 400,
+          "lineHeight": 1.4,
+          "letterSpacing": 0,
+          "textAlign": "left",
+          "color": "#1f2937"
+        },
+        "buttonTextSettings": {
+          "fontFamily": "'Tahoma', sans-serif",
+          "fontSize": 14,
+          "fontWeight": 600,
+          "lineHeight": 1,
+          "letterSpacing": 0.3,
+          "textAlign": "center",
+          "color": "#FFFFFF"
         }
       }
     },
@@ -453,6 +565,7 @@
       "blockName": "ServiceSliderBlock",
       "config": {
         "title": "Services",
+        "variant": "split-image",
         "residentialButtonText": "Residential",
         "commercialButtonText": "Commercial",
         "residentialButtonIcon": { "pack": "lucide", "name": "Home" },
@@ -524,16 +637,53 @@
         "largeResidentialImg": "/personal/old/img/main_page_images/ServiceSliderBlock/residential.jpg",
         "largeCommercialImg": "/personal/old/img/main_page_images/ServiceSliderBlock/commercial.jpg",
         "styling": {
-          "hasVariants": false,
+          "hasVariants": true,
           "desktopHeightVH": 28,
           "mobileHeightVW": 45,
           "hasGradient": true,
           "shadowVariant": "medium",
+          "shadowColor": "#000000",
           "gradientConfig": {
             "startColor": "#D9534F",
             "endColor": "#FF6B6B",
             "direction": "to right"
           }
+        },
+        "titleTextSettings": {
+          "fontFamily": "'Oswald', sans-serif",
+          "fontSize": 56,
+          "fontWeight": 700,
+          "lineHeight": 1.1,
+          "letterSpacing": 2,
+          "textAlign": "center",
+          "color": "#FFFFFF"
+        },
+        "buttonTextSettings": {
+          "fontFamily": "'Montserrat', sans-serif",
+          "fontSize": 16,
+          "fontWeight": 600,
+          "lineHeight": 1.5,
+          "letterSpacing": 0.5,
+          "textAlign": "center",
+          "color": "#FFFFFF"
+        },
+        "serviceTitleTextSettings": {
+          "fontFamily": "'Lato', sans-serif",
+          "fontSize": 16,
+          "fontWeight": 700,
+          "lineHeight": 1.3,
+          "letterSpacing": 0.1,
+          "textAlign": "center",
+          "color": "#FFFFFF"
+        },
+        "serviceSubtitleTextSettings": {
+          "fontFamily": "'Lato', sans-serif",
+          "fontSize": 12,
+          "fontWeight": 400,
+          "lineHeight": 1.4,
+          "letterSpacing": 0.2,
+          "textAlign": "center",
+          "color": "#E5E7EB"
         }
       }
     },
@@ -542,9 +692,10 @@
       "config": {
         "title": "Testimonials",
         "variant": "default",
-        "backgroundColor": "#fffffff",
-        "textcolor": "#fffff",
-        "testimonialbg": "#fffff", 
+        "backgroundColor": "#ffffff",
+        "textcolor": "#000000",
+        "testimonialbg": "#ffffff",
+        "testimonialShadowColor": "#888888",
         "arrowStyle": "default",
         "googleReviews": [
           {
@@ -597,7 +748,52 @@
           }
         ],
         "reviewButtonText": "Review us on Google",
-        "reviewButtonLink": "https://www.google.com/maps"
+        "reviewButtonLink": "https://www.google.com/maps",
+        "sectionTitleTextSettings": {
+          "fontFamily": "'Merriweather', serif",
+          "fontSize": 48,
+          "fontWeight": 700,
+          "lineHeight": 1.2,
+          "letterSpacing": 1,
+          "textAlign": "center",
+          "color": "#000000"
+        },
+        "nameTextSettings": {
+          "fontFamily": "'Lato', sans-serif",
+          "fontSize": 16,
+          "fontWeight": 700,
+          "lineHeight": 1.3,
+          "letterSpacing": 0.1,
+          "textAlign": "left",
+          "color": "#000000"
+        },
+        "dateTextSettings": {
+          "fontFamily": "'Lato', sans-serif",
+          "fontSize": 12,
+          "fontWeight": 400,
+          "lineHeight": 1.4,
+          "letterSpacing": 0.2,
+          "textAlign": "left",
+          "color": "#6B7280"
+        },
+        "bodyTextSettings": {
+          "fontFamily": "'Lora', serif",
+          "fontSize": 14,
+          "fontWeight": 400,
+          "lineHeight": 1.6,
+          "letterSpacing": 0,
+          "textAlign": "left",
+          "color": "#374151"
+        },
+        "buttonTextSettings": {
+          "fontFamily": "'Inter', sans-serif",
+          "fontSize": 14,
+          "fontWeight": 500,
+          "lineHeight": 1,
+          "letterSpacing": 0.3,
+          "textAlign": "center",
+          "color": "#374151"
+        }
       }
     },
     {
@@ -611,6 +807,24 @@
           { "platform": "twitter", "url": "https://twitter.com" },
           { "platform": "facebook", "url": "https://facebook.com" }
         ],
+        "textSettings": {
+          "header": {
+            "desktop": { "fontFamily": "Anton, sans-serif", "fontSize": 36, "fontWeight": "700", "lineHeight": 1.1, "letterSpacing": 0.5, "color": "#FFFFFF" },
+            "mobile": { "fontFamily": "Anton, sans-serif", "fontSize": 28, "fontWeight": "700", "lineHeight": 1.1, "letterSpacing": 0.4, "color": "#FFFFFF" }
+          },
+          "subHeader": {
+            "desktop": { "fontFamily": "Inter, sans-serif", "fontSize": 18, "fontWeight": "500", "lineHeight": 1.4, "letterSpacing": 0.2, "color": "#E5E7EB" },
+            "mobile": { "fontFamily": "Inter, sans-serif", "fontSize": 16, "fontWeight": "500", "lineHeight": 1.3, "letterSpacing": 0.2, "color": "#E5E7EB" }
+          },
+          "formTitle": {
+            "desktop": { "fontFamily": "Inter, sans-serif", "fontSize": 24, "fontWeight": "600", "lineHeight": 1.2, "letterSpacing": 0.1, "color": "#111827" },
+            "mobile": { "fontFamily": "Inter, sans-serif", "fontSize": 20, "fontWeight": "600", "lineHeight": 1.2, "letterSpacing": 0.1, "color": "#111827" }
+          },
+          "button": {
+            "desktop": { "fontFamily": "Inter, sans-serif", "fontSize": 16, "fontWeight": "700", "lineHeight": 1, "letterSpacing": 0.3, "color": "#FFFFFF" },
+            "mobile": { "fontFamily": "Inter, sans-serif", "fontSize": 14, "fontWeight": "700", "lineHeight": 1, "letterSpacing": 0.3, "color": "#FFFFFF" }
+          }
+        },
         "colors": {
           "primaryBackground": "#1f2937",
           "secondaryBackground": "#FFFFFF",
@@ -780,6 +994,33 @@
           "hasVariants": true,
           "desktopHeightVH": 55,
           "mobileHeightVW": 75
+        },
+        "sectionTitleTextSettings": {
+          "fontFamily": "'Anton', sans-serif",
+          "fontSize": 36,
+          "fontWeight": 400,
+          "lineHeight": 1.1,
+          "letterSpacing": 1,
+          "textAlign": "center",
+          "color": "#000000"
+        },
+        "nameTextSettings": {
+          "fontFamily": "'Montserrat', sans-serif",
+          "fontSize": 16,
+          "fontWeight": 600,
+          "lineHeight": 1.3,
+          "letterSpacing": 0.1,
+          "textAlign": "center",
+          "color": "#000000"
+        },
+        "roleTextSettings": {
+          "fontFamily": "'Montserrat', sans-serif",
+          "fontSize": 14,
+          "fontWeight": 400,
+          "lineHeight": 1.4,
+          "letterSpacing": 0.2,
+          "textAlign": "center",
+          "color": "#000000"
         }
       }
     },
@@ -806,6 +1047,33 @@
           "hasVariants": false,
           "desktopHeightVH": 26,
           "mobileHeightVW": 38
+        },
+        "sectionTitleTextSettings": {
+          "fontFamily": "'Anton', sans-serif",
+          "fontSize": 36,
+          "fontWeight": 400,
+          "lineHeight": 1.1,
+          "letterSpacing": 1,
+          "textAlign": "center",
+          "color": "#000000"
+        },
+        "nameTextSettings": {
+          "fontFamily": "'Montserrat', sans-serif",
+          "fontSize": 16,
+          "fontWeight": 600,
+          "lineHeight": 1.3,
+          "letterSpacing": 0.1,
+          "textAlign": "center",
+          "color": "#000000"
+        },
+        "roleTextSettings": {
+          "fontFamily": "'Montserrat', sans-serif",
+          "fontSize": 14,
+          "fontWeight": 400,
+          "lineHeight": 1.4,
+          "letterSpacing": 0.2,
+          "textAlign": "center",
+          "color": "#000000"
         }
       }
     }

@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, forwardRef } from 'react';
 import PropTypes from 'prop-types';
 import { X } from 'lucide-react';
 
-const TopStickyEditPanel = ({ isOpen, onClose, activeBlockData }) => {
+const TopStickyEditPanel = forwardRef(({ isOpen, onClose, activeBlockData }, ref) => {
   // Log received props
   useEffect(() => {
     if (isOpen) {
@@ -33,10 +33,11 @@ const TopStickyEditPanel = ({ isOpen, onClose, activeBlockData }) => {
   } = activeBlockData || {};
 
   // Define the standard order of tabs
-  const standardTabOrder = ['general', 'images', 'colors', 'styling'];
+  const standardTabOrder = ['general', 'fonts', 'images', 'colors', 'styling'];
 
   const availableTabKeys = [
     tabsConfig?.general && typeof tabsConfig.general === 'function' ? 'general' : null,
+    tabsConfig?.fonts && typeof tabsConfig.fonts === 'function' ? 'fonts' : null,
     tabsConfig?.images && typeof tabsConfig.images === 'function' ? 'images' : null,
     tabsConfig?.colors && typeof tabsConfig.colors === 'function' ? 'colors' : null,
     tabsConfig?.styling && typeof tabsConfig.styling === 'function' ? 'styling' : null,
@@ -185,6 +186,7 @@ const TopStickyEditPanel = ({ isOpen, onClose, activeBlockData }) => {
 
   return (
     <div
+      ref={ref}
       style={{
         position: 'sticky',
         top: 0,
@@ -203,15 +205,8 @@ const TopStickyEditPanel = ({ isOpen, onClose, activeBlockData }) => {
     >
 
       <div className=" flex flex-row items-center justify-between bg-black border-gray-300 flex-shrink-0">
-        <button
-            type="button"
-            onClick={onClose}
-            className="text-white text-[3vh] md:text-[6vw] text-bold hover:text-white p-1 rounded-full hover:bg-gray-700"
-            aria-label="Close edit panel"
-          >
-            <X size={22} />
-        </button>
-        <div className="border-b border-black">
+        
+        <div className="border-b border-black flex-grow">
           <nav className="-mb-px flex -space-x-3 px-4" aria-label="Tabs">
             {availableAndSortedTabs.map((tabName) => (
               <button
@@ -230,13 +225,24 @@ const TopStickyEditPanel = ({ isOpen, onClose, activeBlockData }) => {
             ))}
           </nav>
         </div>
+        <button
+            type="button"
+            onClick={onClose}
+            className="text-white text-[3vh] md:text-[6vw] text-bold hover:text-white p-1 rounded-full hover:bg-gray-700"
+            aria-label="Close edit panel"
+          >
+            <X size={22} />
+        </button>
+
       </div>
       <div className="panel-content overflow-y-auto flex-grow bg-white">
         {renderTabContent()}
       </div>
     </div>
   );
-};
+});
+
+TopStickyEditPanel.displayName = 'TopStickyEditPanel';
 
 TopStickyEditPanel.propTypes = {
   isOpen: PropTypes.bool.isRequired,

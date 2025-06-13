@@ -5,6 +5,7 @@ import React, {
   Suspense,
   useRef,
   useCallback,
+  useMemo,
 } from "react";
 import PropTypes from "prop-types";
 import BasicMapBlock from "./MainPageBlocks/BasicMapBlock";
@@ -23,6 +24,7 @@ import PanelStylingController from "./common/PanelStylingController";
 import PanelImagesController from "./common/PanelImagesController";
 import Navbar from "./Navbar";
 import IconSelectorModal from "./common/IconSelectorModal";
+import { cloneConfigStripFiles } from '../utils/blockUtils';
 
 // Lazy load components to avoid circular dependencies if any, and for consistency
 const BasicMapBlockLazy = lazy(() => import("./MainPageBlocks/BasicMapBlock"));
@@ -58,23 +60,6 @@ const blockComponentMap = {
   // Add other main page blocks here if any
 };
 
-// Helper for safe deep cloning
-function safeDeepClone(obj) {
-  if (obj === null || typeof obj !== "object") {
-    return obj;
-  }
-  try {
-    // Ensure undefined is not stringified to "undefined" which breaks JSON.parse
-    const stringified = JSON.stringify(obj, (key, value) => {
-      return typeof value === "undefined" ? null : value;
-    });
-    return JSON.parse(stringified);
-  } catch (e) {
-    console.error("Error in safeDeepClone:", e, "Object was:", obj);
-    return Array.isArray(obj) ? [] : {}; // Fallback to empty object/array
-  }
-}
-
 /**
  * MainPageForm is a presentational component for editing the main page.
  * It displays the UI and passes changes upward via setFormData.
@@ -87,12 +72,13 @@ const MainPageForm = ({
   singleBlockMode = null,
   themeColors,
   sitePalette,
+  initialFormData = null,
 }) => {
   const [formData, setFormData] = useState({ mainPageBlocks: [] });
   const [navbarConfig, setNavbarConfig] = useState(null);
   const [initialNavbarConfig, setInitialNavbarConfig] = useState(null);
   const [internalFormData, setInternalFormData] = useState(
-    () => safeDeepClone(formDataProp) || {}
+    () => cloneConfigStripFiles(formDataProp) || {}
   );
   const [activeEditBlock, setActiveEditBlock] = useState(null);
   const [activeBlockDataForPanel, setActiveBlockDataForPanel] = useState(null);
@@ -101,6 +87,10 @@ const MainPageForm = ({
   const [iconModalTargetField, setIconModalTargetField] = useState(null);
   const [currentIconForModal, setCurrentIconForModal] = useState(null);
   const prevActiveEditBlockRef = useRef(null);
+  const blockRefs = useRef({});
+  const panelRef = useRef(null);
+  const [activeTab, setActiveTab] = useState("general");
+  const [lastSavedConfigs, setLastSavedConfigs] = useState({});
 
   const handleOpenIconModal = useCallback(
     (
@@ -222,7 +212,7 @@ const MainPageForm = ({
   // Effect 2: Synchronize from formDataProp down to internalFormData ONLY when not actively editing.
   useEffect(() => {
     if (activeEditBlock === null) {
-      const clonedFormDataProp = safeDeepClone(formDataProp);
+      const clonedFormDataProp = cloneConfigStripFiles(formDataProp);
       if (clonedFormDataProp && typeof clonedFormDataProp === "object") {
         if (
           clonedFormDataProp.mainPageBlocks &&
@@ -557,15 +547,46 @@ const MainPageForm = ({
   );
 
   const handleToggleEditState = useCallback(
-    (key) => {
-      const currentlyEditing = activeEditBlock === key;
-      if (currentlyEditing) {
-        setActiveEditBlock(null);
-      } else {
-        setActiveEditBlock(key);
-      }
+    (blockKey) => {
+      setActiveEditBlock((prev) => {
+        const isOpening = prev !== blockKey;
+        const newActiveBlock = isOpening ? blockKey : null;
+
+        if (isOpening) {
+          // Use setTimeout to wait for the panel to be rendered and have a height
+          setTimeout(() => {
+            const blockElement = blockRefs.current[blockKey]?.current;
+            const panelElement = panelRef.current;
+
+            if (blockElement && panelElement) {
+              const panelHeight = panelElement.offsetHeight;
+              const blockTop =
+                blockElement.getBoundingClientRect().top + window.scrollY;
+
+              window.scrollTo({
+                top: blockTop - panelHeight - 20, // 20px buffer
+                behavior: "auto", // Immediate scroll
+              });
+            }
+          }, 100);
+        } else {
+          // Closing the panel, scroll the block to the top of the viewport
+          const blockElement = blockRefs.current[blockKey]?.current;
+          if (blockElement) {
+            const blockTop =
+              blockElement.getBoundingClientRect().top + window.scrollY;
+            // The 80px offset accounts for the main sticky navigation in OneForm
+            window.scrollTo({
+              top: blockTop - 80,
+              behavior: "auto",
+            });
+          }
+        }
+
+        return newActiveBlock;
+      });
     },
-    [activeEditBlock]
+    [blockRefs, panelRef]
   );
 
   // Effect 3: Manage activeBlockDataForPanel based on activeEditBlock and internalFormData
@@ -747,7 +768,7 @@ const MainPageForm = ({
           navbarDataProp
         );
         setNavbarConfig(navbarDataProp);
-        setInitialNavbarConfig(JSON.parse(JSON.stringify(navbarDataProp)));
+        setInitialNavbarConfig(cloneConfigStripFiles(navbarDataProp));
         return;
       }
 
@@ -808,7 +829,7 @@ const MainPageForm = ({
           }
 
           setNavbarConfig(processedNavData);
-          setInitialNavbarConfig(JSON.parse(JSON.stringify(processedNavData)));
+          setInitialNavbarConfig(cloneConfigStripFiles(processedNavData));
         } else {
           console.warn(
             "[MainPageForm] Failed to load nav.json, using fallback"
@@ -821,7 +842,7 @@ const MainPageForm = ({
             whiteImages: [],
           };
           setNavbarConfig(fallbackNavbar);
-          setInitialNavbarConfig(JSON.parse(JSON.stringify(fallbackNavbar)));
+          setInitialNavbarConfig(cloneConfigStripFiles(fallbackNavbar));
         }
       } catch (error) {
         console.error("[MainPageForm] Error loading nav.json:", error);
@@ -833,7 +854,7 @@ const MainPageForm = ({
           whiteImages: [],
         };
         setNavbarConfig(fallbackNavbar);
-        setInitialNavbarConfig(JSON.parse(JSON.stringify(fallbackNavbar)));
+        setInitialNavbarConfig(cloneConfigStripFiles(fallbackNavbar));
       }
     };
 
@@ -880,104 +901,116 @@ const MainPageForm = ({
       }
     : null;
 
+  // Add Undo icon
+  const UndoIcon = (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+    </svg>
+  );
+
+  // Track last saved config for each block (always from /personal/old/)
+  const getLastSavedConfig = (blockKey) => {
+    // Use initialFormData, not formDataProp
+    const block = (initialFormData?.mainPageBlocks || []).find(b => b.uniqueKey === blockKey);
+    return block ? block.config : null;
+  };
+
+  // Undo handler: always revert to /personal/old/ config, stripping any File/blob
+  const handleUndoBlock = (blockKey) => {
+    const lastSaved = getLastSavedConfig(blockKey); // from initialFormData
+    if (!lastSaved) {
+      console.warn(`[MainPageForm.handleUndoBlock] No last saved config found for '${blockKey}'.`);
+      return;
+    }
+    const cleanConfig = cloneConfigStripFiles(lastSaved);
+    console.log(`[MainPageForm.handleUndoBlock] Reverting '${blockKey}' to last saved config:`, cleanConfig);
+
+    const updateState = (prev) => {
+      const newBlocks = (prev.mainPageBlocks || []).map((block) =>
+        block.uniqueKey === blockKey ? { ...block, config: cleanConfig } : block
+      );
+      return { ...prev, mainPageBlocks: newBlocks };
+    };
+
+    setInternalFormData(updateState);
+    
+    if (typeof setFormDataProp === 'function') {
+      setFormDataProp(updateState);
+    }
+  };
+
+  // Save handler (called on panel close)
+  const handleSaveBlock = (blockKey, newConfig) => {
+    setInternalFormData((prev) => {
+      const newBlocks = (prev.mainPageBlocks || []).map((block) =>
+        block.uniqueKey === blockKey ? { ...block, config: newConfig } : block
+      );
+      return { ...prev, mainPageBlocks: newBlocks };
+    });
+    // Also update parent state immediately
+    if (typeof setFormDataProp === 'function') {
+      setFormDataProp((prev) => {
+        const newBlocks = (prev.mainPageBlocks || []).map((block) =>
+          block.uniqueKey === blockKey ? { ...block, config: newConfig } : block
+        );
+        return { ...prev, mainPageBlocks: newBlocks };
+      });
+    }
+  };
+
   if (singleBlockMode) {
-    const blockDataContainer = internalFormData || {};
-    const blockConfig = blockDataContainer[singleBlockMode];
-    const Component = blockComponentMap[singleBlockMode];
-
-    if (singleBlockMode === "navbar") {
-      return (
-        <div className="relative p-4 bg-gray-200">
-          <h2 className="text-xl font-semibold mb-3">Navbar Editor</h2>
-          <div className="bg-white border rounded-lg shadow-sm overflow-visible mb-4">
-            <div className="relative">
-              <Navbar
-                config={navbarConfig || blockDataContainer.navbar || {}}
-                animationConfig={{
-                  ...(navbarConfig?.animation || {}),
-                  isScrolled: previewNavbarAsScrolled,
-                }}
-                isPreview={true}
-              />
-            </div>
-            <div className="px-4 py-3 bg-gray-50 border-t">
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-600">Preview:</span>
-                <button
-                  onClick={() => setPreviewNavbarAsScrolled(false)}
-                  className={`px-2 py-1 text-xs rounded ${
-                    !previewNavbarAsScrolled
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                  }`}
-                >
-                  Unscrolled
-                </button>
-                <button
-                  onClick={() => setPreviewNavbarAsScrolled(true)}
-                  className={`px-2 py-1 text-xs rounded ${
-                    previewNavbarAsScrolled
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                  }`}
-                >
-                  Scrolled
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
+    const singleBlock = formData.mainPageBlocks.find(
+      (b) => b.blockName === singleBlockMode
+    );
+    if (!singleBlock) {
+      return <div>Block '{singleBlockMode}' not found.</div>;
     }
+    const BlockComponent = blockComponentMap[singleBlockMode] || (
+      <div>Unknown Block Type</div>
+    );
+    const blockIndex = formData.mainPageBlocks.findIndex(
+      (b) => b.blockName === singleBlockMode
+    );
 
-    if (Component && blockConfig) {
-      const propName =
-        Object.keys(propsForBlocks[singleBlockMode] || { config: null })[0] ||
-        "config";
-      let props = {
-        readOnly: false,
-        [propName]: blockConfig,
-        onConfigChange: (newConfig) => {
-          console.log(
-            `Single block mode: ${singleBlockMode} committing changes to internalFormData.`
-          );
-          setInternalFormData((prev) => {
-            const newBlockData = { ...prev, [singleBlockMode]: newConfig };
-            if (
-              (prev.mainPageBlocks || []).some(
-                (b) => b.blockName === singleBlockMode
-              )
-            ) {
-              newBlockData.mainPageBlocks = (prev.mainPageBlocks || []).map(
-                (b) =>
-                  b.blockName === singleBlockMode
-                    ? { ...b, config: newConfig }
-                    : b
+    return (
+      <div className="p-4">
+        <div 
+          className="transition-all duration-300"
+          id={`block-content-${blockIndex}`}
+        >
+          <BlockComponent
+            readOnly={activeEditBlock !== singleBlock.uniqueKey}
+            config={singleBlock.config || {}}
+            onConfigChange={(newConfig) => {
+              console.log(
+                `Single block mode: ${singleBlockMode} committing changes to internalFormData.`
               );
-            }
-            return newBlockData;
-          });
-        },
-        themeColors: themeColors,
-        sitePalette: sitePalette,
-      };
-      if (singleBlockMode === "RichTextBlock") props.showControls = true;
-
-      return (
-        <div className="relative">
-          <Suspense fallback={<div>Loading {singleBlockMode}...</div>}>
-            <Component {...props} />
-          </Suspense>
+              setInternalFormData((prev) => {
+                const newBlockData = { ...prev, [singleBlockMode]: newConfig };
+                if (
+                  (prev.mainPageBlocks || []).some(
+                    (b) => b.blockName === singleBlockMode
+                  )
+                ) {
+                  newBlockData.mainPageBlocks = (prev.mainPageBlocks || []).map(
+                    (b) =>
+                      b.blockName === singleBlockMode
+                        ? { ...b, config: newConfig }
+                        : b
+                  );
+                }
+                return newBlockData;
+              });
+            }}
+            themeColors={themeColors}
+            sitePalette={sitePalette}
+            lastSavedConfig={getLastSavedConfig(singleBlock.uniqueKey)}
+            onUndoBlock={() => handleUndoBlock(singleBlock.uniqueKey)}
+            onSaveBlock={(newConfig) => handleSaveBlock(singleBlock.uniqueKey, newConfig)}
+          />
         </div>
-      );
-    } else {
-      return (
-        <div>
-          Unknown block type or missing config for single block:{" "}
-          {singleBlockMode} (Data: {JSON.stringify(blockConfig || "undefined")})
-        </div>
-      );
-    }
+      </div>
+    );
   }
 
   const currentInternalData = internalFormData || {};
@@ -991,44 +1024,56 @@ const MainPageForm = ({
   }
 
   return (
-    <div className="bg-gray-100 relative">
-      {!singleBlockMode && (
+    <div className={``}>
+      {activeEditBlock && activeBlockDataForPanel && (
         <TopStickyEditPanel
-          isOpen={activeEditBlock !== null}
+          ref={panelRef}
+          isOpen={!!activeEditBlock}
           onClose={() => handleToggleEditState(activeEditBlock)}
           activeBlockData={activeBlockDataForPanel}
         />
       )}
-
-      {/* Navbar Section - Now integrated with TopStickyEditPanel */}
-      {!singleBlockMode && navbarConfig && (
-        <div className="relative bg-white border mb-4">
-          {/* Navbar Preview */}
-          <div className="relative">
-            <Navbar
-              config={navbarConfig}
-              animationConfig={{
-                ...(navbarConfig?.animation || {}),
-                isScrolled: previewNavbarAsScrolled,
-              }}
-              isPreview={true}
-            />
-          </div>
-
-          {/* Edit Button */}
-          <div className="absolute top-4 right-4 z-50">
+      <div
+        ref={(el) => (blockRefs.current['navbar'] = { current: el })}
+        className="relative bg-white border"
+      >
+        <div className="absolute top-4 right-4 z-50 flex gap-2">
+          {activeEditBlock === 'navbar' && (
             <button
               type="button"
-              onClick={() => handleToggleEditState("navbar")}
-              className={`${activeEditBlock === "navbar" ? "bg-green-500 hover:bg-green-600" : "bg-gray-700 hover:bg-gray-600"} text-white rounded-full p-2 shadow-lg transition-colors`}
+              onClick={() => {
+                const initial = cloneConfigStripFiles(initialNavbarConfig);
+                setNavbarConfig(initial);
+                if (onNavbarChange) onNavbarChange(initial);
+              }}
+              className="bg-yellow-500 hover:bg-yellow-600 text-white rounded-full p-2 shadow-lg transition-colors"
+              title="Undo changes"
             >
-              {activeEditBlock === "navbar" ? CheckIcon : PencilIcon}
+              {UndoIcon}
             </button>
-          </div>
+          )}
+          <button
+            type="button"
+            onClick={() => handleToggleEditState('navbar')}
+            className={`${activeEditBlock === 'navbar' ? "bg-green-500 hover:bg-green-600" : "bg-gray-700 hover:bg-gray-600"} text-white rounded-full p-2 shadow-lg transition-colors`}
+          >
+            {activeEditBlock === 'navbar' ? CheckIcon : PencilIcon}
+          </button>
         </div>
-      )}
-
-      {currentMainPageBlocks.map((block) => {
+        <div id="block-content-navbar" className="transition-all duration-300">
+          <Suspense fallback={<div>Loading Navbar...</div>}>
+            <NavbarLazy
+              config={navbarConfig}
+              isPreview={true}
+              isEditingPreview={activeEditBlock === 'navbar'}
+              onTitleChange={(title) => handleNavbarConfigChange({ title })}
+              onSubtitleChange={(subtitle) => handleNavbarConfigChange({ subtitle })}
+              forceScrolledState={previewNavbarAsScrolled}
+            />
+          </Suspense>
+        </div>
+      </div>
+      {currentMainPageBlocks.map((block, index) => {
         const blockKey =
           block.uniqueKey || `${block.blockName}_fallbackKey_${Math.random()}`;
         const ComponentToRender = blockComponentMap[block.blockName];
@@ -1061,8 +1106,15 @@ const MainPageForm = ({
           [blockSpecificPropName]: block.config || {},
           themeColors: themeColors,
           sitePalette: sitePalette,
+          lastSavedConfig: getLastSavedConfig(blockKey),
+          onUndoBlock: () => handleUndoBlock(blockKey),
+          onSaveBlock: (newConfig) => handleSaveBlock(blockKey, newConfig),
         };
 
+        if (block.blockName === 'HeroBlock') {
+          console.log(`[MainPageForm] Rendering HeroBlock (${blockKey}). READONLY: ${!isEditingThisBlock}. CONFIG:`, block.config);
+        }
+        
         if (block.blockName === "HeroBlock") {
           componentProps.onConfigChange = (newConf) =>
             handleBlockConfigChange(blockKey, newConf);
@@ -1078,9 +1130,20 @@ const MainPageForm = ({
         return (
           <div
             key={blockKey}
-            className="relative bg-white overflow-hidden border"
+            ref={(el) => (blockRefs.current[blockKey] = { current: el })}
+            className="relative bg-white border"
           >
-            <div className="absolute top-4 right-4 z-50">
+            <div className="absolute top-4 right-4 z-[60] flex gap-2">
+              {isEditingThisBlock && (
+                <button
+                  type="button"
+                  onClick={() => handleUndoBlock(blockKey)}
+                  className="bg-yellow-500 hover:bg-yellow-600 text-white rounded-full p-2 shadow-lg transition-colors"
+                  title="Undo changes"
+                >
+                  {UndoIcon}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => handleToggleEditState(blockKey)}
@@ -1089,9 +1152,11 @@ const MainPageForm = ({
                 {isEditingThisBlock ? CheckIcon : PencilIcon}
               </button>
             </div>
-            <Suspense fallback={<div>Loading {block.blockName}...</div>}>
-              <ComponentToRender {...componentProps} />
-            </Suspense>
+            <div id={`block-content-${blockKey}`} className="transition-all duration-300">
+              <Suspense fallback={<div>Loading {block.blockName}...</div>}>
+                <ComponentToRender {...componentProps} />
+              </Suspense>
+            </div>
           </div>
         );
       })}
@@ -1099,7 +1164,7 @@ const MainPageForm = ({
         <IconSelectorModal
           isOpen={isIconModalOpen}
           onClose={() => setIsIconModalOpen(false)}
-          onSelectIcon={handleIconSelection}
+          onIconSelect={handleIconSelection}
           currentIconPack={currentIconForModal?.pack || "lucide"}
           currentIconName={currentIconForModal?.name}
         />
@@ -1116,6 +1181,7 @@ MainPageForm.propTypes = {
   singleBlockMode: PropTypes.string,
   themeColors: PropTypes.object,
   sitePalette: PropTypes.array,
+  initialFormData: PropTypes.object,
 };
 
 const propsForBlocks = {

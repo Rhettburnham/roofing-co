@@ -5,6 +5,7 @@ import React, {
   useMemo,
   useCallback,
   memo,
+  useLayoutEffect,
 } from "react";
 import { MapContainer, TileLayer, Marker, Circle, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -15,10 +16,28 @@ import * as FaIcons from "react-icons/fa";
 import IconSelectorModal from "../common/IconSelectorModal";
 import ThemeColorPicker from "../common/ThemeColorPicker";
 import PanelImagesController from "../common/PanelImagesController";
+import PanelFontController from "../common/PanelFontController";
+import PanelStylingController from "../common/PanelStylingController";
 import PropTypes from "prop-types";
 
 // Register ScrollTrigger plugin with GSAP
 gsap.registerPlugin(ScrollTrigger);
+
+// Helper to generate styles from text settings object
+const getTextStyles = (settings) => {
+  if (!settings || typeof settings !== 'object') {
+    return {};
+  }
+  const styles = {};
+  if (settings.fontFamily) styles.fontFamily = settings.fontFamily;
+  if (settings.fontSize) styles.fontSize = `${settings.fontSize}px`;
+  if (settings.fontWeight) styles.fontWeight = settings.fontWeight;
+  if (settings.lineHeight) styles.lineHeight = settings.lineHeight;
+  if (settings.letterSpacing) styles.letterSpacing = `${settings.letterSpacing}px`;
+  if (settings.textAlign) styles.textAlign = settings.textAlign;
+  if (settings.color) styles.color = settings.color;
+  return styles;
+};
 
 // Helper to get display URL from string path or {url, file} object
 const getDisplayUrl = (imageValue, defaultPath = null) => {
@@ -179,32 +198,33 @@ const StatItem = memo(({ iconName, title, value }) => {
   );
 });
 
-const StatsPanel = memo(({ stats, readOnly, onStatTextChange, onStatIconClick, statsTextColor }) => {
+const StatsPanel = memo(({ stats, readOnly, onStatTextChange, onStatIconClick, statsTextColor, statCardBackgroundColor, statsTextSettings }) => {
   const displayStats = [...(stats || [])];
   while (displayStats.length < 4 && !readOnly) { // Only add placeholders if not readOnly and less than 4, or always show 4 if readOnly and less than 4 initially
       displayStats.push({ value: '0', title: 'New Stat', icon: 'FaAward' });
   }
   const gridStats = displayStats.slice(0, 4);
   const currentStatsTextColor = statsTextColor || '#FFFFFF';
+  const statsStyle = getTextStyles(statsTextSettings);
 
   return (
-    <div className={`w-full h-full grid gap-1 md:gap-2 grid-cols-2 text-center p-1 md:p-2`}>
+    <div className={`w-full h-full grid gap-1 md:gap-2 grid-cols-2 grid-rows-2 text-center p-1 md:p-2`}>
       {gridStats.map((stat, index) => {
         const IconComponent = FaIcons[stat.icon] || FaIcons.FaAward;
         return (
-          <div key={stat.id || index} className="flex flex-col items-center justify-center bg-white/30 rounded-lg p-1 shadow-md h-full">
+          <div key={stat.id || index} className="flex flex-col items-center justify-center bg-white/30 rounded-lg p-1 shadow-md h-full w-full">
             <div className={`p-1 rounded-full ${!readOnly ? 'cursor-pointer hover:bg-white/20' : ''} transition-colors`} onClick={() => !readOnly && onStatIconClick && onStatIconClick(index)} title={!readOnly ? "Click to change icon" : ""}>
               <IconComponent className="w-8 h-8 md:w-6 md:h-6 md:mb-1" style={{color: currentStatsTextColor}} />
             </div>
             {readOnly ? (
-                <div className="text-lg md:text-lg font-bold" style={{color: currentStatsTextColor}}>{stat.value}</div>
+                <div className="text-lg md:text-lg font-bold" style={{...statsStyle, color: statsStyle.color || currentStatsTextColor}}>{stat.value}</div>
             ) : (
-                <input type="text" style={{color: currentStatsTextColor}} className="text-lg md:text-lg font-bold text-white bg-transparent text-center w-full focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 placeholder-gray-300" value={stat.value || ""} onChange={(e) => onStatTextChange && onStatTextChange(index, 'value', e.target.value)} placeholder="Value"/>
+                <input type="text" style={{...statsStyle, color: statsStyle.color || currentStatsTextColor}} className="text-lg md:text-lg font-bold bg-transparent text-center w-full focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 placeholder-gray-300" value={stat.value || ""} onChange={(e) => onStatTextChange && onStatTextChange(index, 'value', e.target.value)} placeholder="Value"/>
             )}
             {readOnly ? (
-                <div className="text-[3vw] md:text-sm font-medium line-clamp-1" style={{color: currentStatsTextColor}}>{stat.title || stat.label}</div>
+                <div className="text-[3vw] md:text-sm font-medium line-clamp-1" style={{...statsStyle, color: statsStyle.color || currentStatsTextColor}}>{stat.title || stat.label}</div>
             ) : (
-                <input type="text" style={{color: currentStatsTextColor}} className="text-[3vw] md:text-sm text-white font-medium line-clamp-1 bg-transparent text-center w-full focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 placeholder-gray-300" value={stat.title || stat.label || ""} onChange={(e) => onStatTextChange && onStatTextChange(index, 'title', e.target.value)} placeholder="Title"/>
+                <input type="text" style={{...statsStyle, color: statsStyle.color || currentStatsTextColor}} className="text-[3vw] md:text-sm font-medium line-clamp-1 bg-transparent text-center w-full focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 placeholder-gray-300" value={stat.title || stat.label || ""} onChange={(e) => onStatTextChange && onStatTextChange(index, 'title', e.target.value)} placeholder="Title"/>
             )}
           </div>
         );
@@ -214,7 +234,7 @@ const StatsPanel = memo(({ stats, readOnly, onStatTextChange, onStatIconClick, s
 });
 
 // Window strings component
-const WindowStrings = memo(({ isVisible }) => {
+const WindowStrings = memo(({ isVisible, color1, color2 }) => {
   const leftRef = useRef(null);
   const rightRef = useRef(null);
 
@@ -258,10 +278,11 @@ const WindowStrings = memo(({ isVisible }) => {
       <div className="flex md:space-x-2 space-x-0">
         {/* Left side */}
         <div ref={leftRef} className="flex flex-col items-center">
-          <div className="w-[4px] h-[27vh] bg-gray-700"></div>
+          <div className="w-[4px] h-[27vh]" style={{ backgroundColor: color1 || '#374151' }}></div>
           <div
-            className="w-[30px] h-[40px] bg-gray-800"
+            className="w-[30px] h-[40px]"
             style={{
+              backgroundColor: color2 || '#1f2937',
               clipPath: "polygon(40% 0%, 60% 0%, 80% 100%, 20% 100%)",
               borderRadius: "0px 0px 8px 8px",
             }}
@@ -270,10 +291,11 @@ const WindowStrings = memo(({ isVisible }) => {
 
         {/* Right side */}
         <div ref={rightRef} className="flex flex-col items-center">
-          <div className="w-[4px] h-[27vh] bg-gray-700"></div>
+          <div className="w-[4px] h-[27vh]" style={{ backgroundColor: color1 || '#374151' }}></div>
           <div
-            className="w-[30px] h-[40px] bg-gray-800"
+            className="w-[30px] h-[40px]"
             style={{
+              backgroundColor: color2 || '#1f2937',
               clipPath: "polygon(40% 0%, 60% 0%, 80% 100%, 20% 100%)",
               borderRadius: "0px 0px 8px 8px",
             }}
@@ -302,8 +324,10 @@ function BasicMapPreview({
     typeof window !== "undefined" ? window.innerWidth <= 768 : false
   );
   const [mapActive, setMapActive] = useState(false);
+  const [statsPanelHeight, setStatsPanelHeight] = useState(0);
   const titleRef = useRef(null);
   const sectionRef = useRef(null);
+  const statsPanelRef = useRef(null);
 
   const {
     center,
@@ -321,7 +345,18 @@ function BasicMapPreview({
     statsTextColor,
     showHoursButtonText,
     hideHoursButtonText,
-    styling = { desktopHeightVH: 30, mobileHeightVW: 40 }
+    styling = { desktopHeightVH: 30, mobileHeightVW: 40 },
+    statCardBackgroundColor,
+    serviceHoursEvenRowBg,
+    serviceHoursOddRowBg,
+    serviceHoursTextColor,
+    windowStringColor1,
+    windowStringColor2,
+    titleTextSettings,
+    bannerTextSettings,
+    statsTextSettings,
+    serviceHoursTextSettings,
+    buttonTextSettings,
   } = mapData;
 
   useEffect(() => {
@@ -336,6 +371,14 @@ function BasicMapPreview({
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  useLayoutEffect(() => {
+    if (isSmallScreen && statsPanelRef.current) {
+      setStatsPanelHeight(statsPanelRef.current.offsetHeight);
+    } else {
+      setStatsPanelHeight(0);
+    }
+  }, [isSmallScreen, mapData.stats, readOnly]);
 
   // Title animation using ScrollTrigger
   useEffect(() => {
@@ -398,41 +441,40 @@ function BasicMapPreview({
   }, [isSmallScreen, titleRef, sectionRef]);
 
   const renderServiceHoursTable = () => (
-    <div className="w-full h-full flex flex-col p-0 overflow-y-auto">
-      <table className="w-full">
-        {/* No outer border, parent sliding div has it */}
-        <tbody className="text-gray-800">
-          {serviceHours.map((item, idx) => (
-            <tr
-              key={item.id || idx}
-              className={`${idx % 2 === 0 ? "bg-gray-50" : "bg-white"} border-b border-gray-300`}
-            >
-              <td className="w-1/2 py-[0.5vh] md:py-[.5vh] px-2 md:px-4 text-[2.8vw] md:text-sm font-medium text-left border-r border-gray-300">
-                {readOnly ? item.day : (
-                  <input 
-                    type="text" 
-                    value={item.day || ''}
-                    onChange={(e) => onServiceHourChange && onServiceHourChange(idx, 'day', e.target.value)}
-                    className="bg-transparent w-full focus:outline-none focus:ring-1 focus:ring-blue-500 rounded p-0.5 placeholder-gray-400"
-                    placeholder="Day"
-                  />
-                )}
-              </td>
-              <td className="w-1/2 py-[0.5vh] md:py-[.5vh] px-2 md:px-4 text-[2.8vw] md:text-sm text-gray-800 text-left">
-                {readOnly ? item.time : (
-                  <input 
-                    type="text" 
-                    value={item.time || ''}
-                    onChange={(e) => onServiceHourChange && onServiceHourChange(idx, 'time', e.target.value)}
-                    className="bg-transparent w-full focus:outline-none focus:ring-1 focus:ring-blue-500 rounded p-0.5 placeholder-gray-400"
-                    placeholder="Time"
-                  />
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="w-full h-full flex flex-col" style={{ color: serviceHoursTextColor || '#1f2937' }}>
+      {/* Container for rows, using flex to distribute space */}
+      {serviceHours.map((item, idx) => (
+        <div
+          key={item.id || idx}
+          className="flex border-b border-gray-300 flex-grow" // Each row will grow to fill space
+          style={{ backgroundColor: idx % 2 === 0 ? (serviceHoursEvenRowBg || '#f9fafb') : (serviceHoursOddRowBg || '#ffffff') }}
+        >
+          <div className="w-1/2 py-2 px-2 md:px-4 text-[2.8vw] md:text-sm font-medium text-left border-r border-gray-300 flex items-center">
+            {readOnly ? <span style={getTextStyles(serviceHoursTextSettings)}>{item.day}</span> : (
+              <input 
+                type="text" 
+                value={item.day || ''}
+                onChange={(e) => onServiceHourChange && onServiceHourChange(idx, 'day', e.target.value)}
+                className="bg-transparent w-full focus:outline-none focus:ring-1 focus:ring-blue-500 rounded p-0.5 placeholder-gray-400"
+                placeholder="Day"
+                style={getTextStyles(serviceHoursTextSettings)}
+              />
+            )}
+          </div>
+          <div className="w-1/2 py-2 px-2 md:px-4 text-[2.8vw] md:text-sm text-left flex items-center">
+            {readOnly ? <span style={getTextStyles(serviceHoursTextSettings)}>{item.time}</span> : (
+              <input 
+                type="text" 
+                value={item.time || ''}
+                onChange={(e) => onServiceHourChange && onServiceHourChange(idx, 'time', e.target.value)}
+                className="bg-transparent w-full focus:outline-none focus:ring-1 focus:ring-blue-500 rounded p-0.5 placeholder-gray-400"
+                placeholder="Time"
+                style={getTextStyles(serviceHoursTextSettings)}
+              />
+            )}
+          </div>
+        </div>
+      ))}
     </div>
   );
 
@@ -443,22 +485,23 @@ function BasicMapPreview({
 
   // Calculate dynamic height based on styling
   const dynamicMapHeight = isSmallScreen 
-    ? `${styling.mobileHeightVW}vw` 
+    ? 'auto'
     : `${styling.desktopHeightVH}vh`;
 
   return (
-    <section className="overflow-hidden" ref={sectionRef}>
+    <section ref={sectionRef}>
       <div className="py-4 px-[4vw]">
-        <div className="relative flex flex-col md:flex-row gap-4 px-10 md:px-6 md:justify-between w-full" style={{ height: dynamicMapHeight }}> 
+        <div className="relative flex flex-col md:flex-row gap-4 px-10 md:px-6 md:justify-between w-full" style={!isSmallScreen ? { height: dynamicMapHeight } : {}}> 
           {/* Left: Map */}
-          <div className="flex flex-col w-full md:w-[55%]">
-            <div className="relative h-full w-full z-10"> {/* Changed to full height */}
+          <div className="flex flex-col w-full md:w-[55%]" style={isSmallScreen ? { height: dynamicMapHeight } : {}}>
+            <div className="relative h-full w-full z-10 aspect-video md:aspect-auto"> {/* Changed to full height */}
               <div className="w-full h-full rounded-xl overflow-hidden shadow-lg border border-gray-300 relative">
                 {/* Title with animation - conditionally editable - MOVED HERE */}
                 {readOnly ? (
                   <h1
                     ref={titleRef}
                     className="absolute top-2 left-1 text-[2.5vh] md:text-[2.5vh] font-normal text-white font-serif title-animation z-20 p-2 bg-banner bg-opacity-30 pl-6 -ml-4 rounded"
+                    style={getTextStyles(titleTextSettings)}
                   >
                     {title || "Are we in your area?"}
                   </h1>
@@ -466,11 +509,11 @@ function BasicMapPreview({
                   <input
                     type="text"
                     ref={titleRef}
-                    className="absolute top-2 left-1 text-[2.5vh] md:text-[3vh] font-normal text-white font-serif z-20 p-2 bg-banner bg-opacity-30 pl-6 -ml-4 focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded placeholder-gray-300"
+                    className="absolute top-2 left-1 text-[2.5vh] md:text-[2.5vh] font-normal text-white font-serif z-20 p-2 bg-transparent pl-6 -ml-4 focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded placeholder-gray-300"
                     value={title || ""}
                     onChange={(e) => onInlineChange('title', e.target.value)}
                     placeholder="Section Title"
-                    style={{mixBlendMode: 'difference'}} // Helps with visibility over varied map parts
+                    style={{...getTextStyles(titleTextSettings), mixBlendMode: 'difference'}} // Helps with visibility over varied map parts
                   />
                 )}
                 <MapContainer
@@ -512,31 +555,37 @@ function BasicMapPreview({
                 <div className="absolute bottom-0 w-full bg-banner text-white  z-10 py-2 px-3 flex justify-between items-center" style={{backgroundColor: currentBannerBgColor, color: currentBannerTextColor}}>
                   {readOnly ? (
                     <>
-                      <div className=" text-[2.5vw] md:text-[2.3vh] leading-tight text-left">
+                      <div className="font-semibold text-[2.5vw] md:text-[2.3vh] leading-tight text-left" style={getTextStyles(bannerTextSettings)}>
                         {address}
                       </div>
                       <div className="text-[2.5vw] md:text-[2vh] text-white font-semibold leading-tight text-right">
-                        <a href={`tel:${telephone?.replace(/[^0-9]/g, "")}`} style={{color: currentBannerTextColor}}>
+                        <a href={`tel:${telephone?.replace(/[^0-9]/g, "")}`} style={getTextStyles(bannerTextSettings)}>
                           {telephone}
                         </a>
                       </div>
                     </>
                   ) : (
                     <>
-                      <input 
-                        type="text"
-                        className="bg-transparent font-semibold text-[2.5vw] md:text-[2vh] leading-tight text-left w-3/5 focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 text-white placeholder-gray-300"
-                        value={address || ""}
-                        onChange={(e) => onInlineChange('address', e.target.value)}
-                        placeholder="Address"
-                      />
-                      <input 
-                        type="text"
-                        className="bg-transparent text-[2.5vw] md:text-[2vh] text-white font-semibold leading-tight text-right w-2/5 focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 placeholder-gray-300"
-                        value={telephone || ""}
-                        onChange={(e) => onInlineChange('telephone', e.target.value)}
-                        placeholder="Telephone"
-                      />
+                      <div className="font-semibold text-[2.5vw] md:text-[2.3vh] leading-tight text-left flex-grow">
+                        <input 
+                          type="text"
+                          className="bg-transparent w-full focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 placeholder-gray-300"
+                          value={address || ""}
+                          onChange={(e) => onInlineChange('address', e.target.value)}
+                          placeholder="Address"
+                          style={getTextStyles(bannerTextSettings)}
+                        />
+                      </div>
+                      <div className="text-[2.5vw] md:text-[2vh] text-white font-semibold leading-tight text-right ml-4">
+                        <input 
+                          type="text"
+                          className="bg-transparent w-full text-right focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 placeholder-gray-300"
+                          value={telephone || ""}
+                          onChange={(e) => onInlineChange('telephone', e.target.value)}
+                          placeholder="Telephone"
+                          style={getTextStyles(bannerTextSettings)}
+                        />
+                      </div>
                     </>
                   )}
                 </div>
@@ -551,15 +600,18 @@ function BasicMapPreview({
               className="absolute dark_button bg-gray-700 rounded-t-xl py-1 md:py-2 px-4 flex justify-end items-center w-full text-white transition-all duration-300 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] font-serif z-30 relative"
               style={{ willChange: "transform" }}
             >
-              <span className="font-serif text-[2vh]">
+              <span className="font-serif text-[2vh]" style={getTextStyles(buttonTextSettings)}>
                 {isServiceHoursVisible ? currentHideHoursText : currentShowHoursText}
               </span>
             </button>
             <div 
-              className="relative h-full rounded-b-xl overflow-hidden" // Changed to full height
+              className="relative rounded-b-xl overflow-hidden flex-grow" // Add flex-grow to allow this div to expand
+              style={isSmallScreen ? { minHeight: statsPanelHeight ? `${statsPanelHeight}px` : 'auto' } : {}}
             >
               <WindowStrings
                 isVisible={isServiceHoursVisible}
+                color1={windowStringColor1}
+                color2={windowStringColor2}
               />
               {/* Stats background and content - conditionally editable stats */}
               <div className="absolute inset-0 z-10">
@@ -571,8 +623,16 @@ function BasicMapPreview({
                   />
                   <div className="absolute inset-0 bg-black opacity-20"></div>
                 </div>
-                <div className={`relative w-full h-full flex items-center justify-center overflow-hidden ${readOnly ? '' : 'p-1 md:p-2'}`}> 
-                  <StatsPanel stats={stats} readOnly={readOnly} onStatTextChange={onStatTextChange} onStatIconClick={onStatIconClick} statsTextColor={statsTextColor} />
+                <div ref={statsPanelRef} className={`relative w-full h-full flex items-center justify-center overflow-hidden ${readOnly ? '' : 'p-1 md:p-2'}`}> 
+                  <StatsPanel 
+                    stats={stats} 
+                    readOnly={readOnly} 
+                    onStatTextChange={onStatTextChange} 
+                    onStatIconClick={onStatIconClick} 
+                    statsTextColor={statsTextColor} 
+                    statCardBackgroundColor={statCardBackgroundColor}
+                    statsTextSettings={statsTextSettings}
+                  />
                 </div>
               </div>
 
@@ -665,30 +725,80 @@ const BasicMapColorControls = ({ currentData, onControlsChange, themeColors }) =
 
   return (
     <div className="p-3 space-y-4">
-      <ThemeColorPicker
-        label="Banner Text Color:"
-        currentColorValue={currentData.bannerTextColor || '#FFFFFF'}
-        themeColors={themeColors}
-        onColorChange={(fieldName, value) => handleColorUpdate('bannerTextColor', value)}
-        fieldName="bannerTextColor"
-        className="text-xs"
-      />
-      <ThemeColorPicker
-        label="Banner Background:"
-        currentColorValue={currentData.bannerBackgroundColor || '#1f2937'}
-        themeColors={themeColors}
-        onColorChange={(fieldName, value) => handleColorUpdate('bannerBackgroundColor', value)}
-        fieldName="bannerBackgroundColor"
-        className="text-xs"
-      />
-      <ThemeColorPicker
-        label="Stats Panel Text Color:"
-        currentColorValue={currentData.statsTextColor || '#FFFFFF'}
-        themeColors={themeColors}
-        onColorChange={(fieldName, value) => handleColorUpdate('statsTextColor', value)}
-        fieldName="statsTextColor"
-        className="text-xs"
-      />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <ThemeColorPicker
+          label="Banner Text Color:"
+          currentColorValue={currentData.bannerTextColor || '#FFFFFF'}
+          themeColors={themeColors}
+          onColorChange={(fieldName, value) => handleColorUpdate('bannerTextColor', value)}
+          fieldName="bannerTextColor"
+          className="text-xs"
+        />
+        <ThemeColorPicker
+          label="Banner Background:"
+          currentColorValue={currentData.bannerBackgroundColor || '#1f2937'}
+          themeColors={themeColors}
+          onColorChange={(fieldName, value) => handleColorUpdate('bannerBackgroundColor', value)}
+          fieldName="bannerBackgroundColor"
+          className="text-xs"
+        />
+        <ThemeColorPicker
+          label="Stats Panel Text Color:"
+          currentColorValue={currentData.statsTextColor || '#FFFFFF'}
+          themeColors={themeColors}
+          onColorChange={(fieldName, value) => handleColorUpdate('statsTextColor', value)}
+          fieldName="statsTextColor"
+          className="text-xs"
+        />
+        <ThemeColorPicker
+          label="Stat Card Background:"
+          currentColorValue={currentData.statCardBackgroundColor || 'rgba(255, 255, 255, 0.3)'}
+          themeColors={themeColors}
+          onColorChange={(fieldName, value) => handleColorUpdate('statCardBackgroundColor', value)}
+          fieldName="statCardBackgroundColor"
+          className="text-xs"
+        />
+        <ThemeColorPicker
+          label="Service Hours - Text:"
+          currentColorValue={currentData.serviceHoursTextColor || '#1f2937'}
+          themeColors={themeColors}
+          onColorChange={(fieldName, value) => handleColorUpdate('serviceHoursTextColor', value)}
+          fieldName="serviceHoursTextColor"
+          className="text-xs"
+        />
+        <ThemeColorPicker
+          label="Service Hours - Even Row:"
+          currentColorValue={currentData.serviceHoursEvenRowBg || '#f9fafb'}
+          themeColors={themeColors}
+          onColorChange={(fieldName, value) => handleColorUpdate('serviceHoursEvenRowBg', value)}
+          fieldName="serviceHoursEvenRowBg"
+          className="text-xs"
+        />
+        <ThemeColorPicker
+          label="Service Hours - Odd Row:"
+          currentColorValue={currentData.serviceHoursOddRowBg || '#ffffff'}
+          themeColors={themeColors}
+          onColorChange={(fieldName, value) => handleColorUpdate('serviceHoursOddRowBg', value)}
+          fieldName="serviceHoursOddRowBg"
+          className="text-xs"
+        />
+        <ThemeColorPicker
+          label="Window String 1:"
+          currentColorValue={currentData.windowStringColor1 || '#374151'}
+          themeColors={themeColors}
+          onColorChange={(fieldName, value) => handleColorUpdate('windowStringColor1', value)}
+          fieldName="windowStringColor1"
+          className="text-xs"
+        />
+        <ThemeColorPicker
+          label="Window String 2:"
+          currentColorValue={currentData.windowStringColor2 || '#1f2937'}
+          themeColors={themeColors}
+          onColorChange={(fieldName, value) => handleColorUpdate('windowStringColor2', value)}
+          fieldName="windowStringColor2"
+          className="text-xs"
+        />
+      </div>
     </div>
   );
 };
@@ -708,39 +818,20 @@ const BasicMapStylingControls = ({ currentData, onControlsChange }) => {
     }
   };
 
-  const currentStyling = currentData.styling || { desktopHeightVH: 30, mobileHeightVW: 40 };
-
   return (
-    <div className="p-3 space-y-4">
+    <div className="space-y-6">
+      {/* Height Controls using PanelStylingController */}
       <div>
-        <h3 className="text-base font-medium text-gray-700 mb-3">Map Dimensions</h3>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="block text-sm">
-            <span className="font-medium text-gray-600 block mb-1">Desktop Height (vh):</span>
-            <input 
-              type="number" 
-              min="20" 
-              max="80" 
-              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm" 
-              value={currentStyling.desktopHeightVH || 30} 
-              onChange={(e) => handleFieldChange('styling', { desktopHeightVH: parseInt(e.target.value) || 30 })}
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="font-medium text-gray-600 block mb-1">Mobile Height (vw):</span>
-            <input 
-              type="number" 
-              min="30" 
-              max="80" 
-              className="bg-gray-100 px-3 py-2 rounded w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 text-sm" 
-              value={currentStyling.mobileHeightVW || 40} 
-              onChange={(e) => handleFieldChange('styling', { mobileHeightVW: parseInt(e.target.value) || 40 })}
-            />
-          </label>
-        </div>
+        <PanelStylingController
+          currentData={currentData}
+          onControlsChange={onControlsChange}
+          blockType="BasicMapBlock"
+          controlType="height"
+        />
       </div>
 
-      <div>
+      {/* Map-specific settings */}
+      <div className="bg-white p-4 rounded-lg">
         <h3 className="text-base font-medium text-gray-700 mb-3">Map View Settings</h3>
         <div className="grid grid-cols-2 gap-x-3 gap-y-2">
           <label className="block text-sm">
@@ -787,7 +878,7 @@ const BasicMapStylingControls = ({ currentData, onControlsChange }) => {
         </div>
       </div>
 
-      <div>
+      <div className="bg-white p-4 rounded-lg">
         <h3 className="text-base font-medium text-gray-700 mb-3">Button Text</h3>
         <div className="grid grid-cols-2 gap-3">
           <label className="block text-sm">
@@ -813,7 +904,7 @@ const BasicMapStylingControls = ({ currentData, onControlsChange }) => {
         </div>
       </div>
 
-      <div>
+      <div className="bg-white p-4 rounded-lg">
         <h3 className="text-base font-medium text-gray-700 mb-3">Stats Management</h3>
         <div className="space-y-2">
           <p className="text-sm text-gray-600">Stats can be edited directly in the preview. Maximum 4 stats allowed.</p>
@@ -821,6 +912,51 @@ const BasicMapStylingControls = ({ currentData, onControlsChange }) => {
             Current stats: {(currentData.stats || []).length}/4
           </div>
         </div>
+      </div>
+    </div>
+  );
+};
+
+/* ==============================================
+   BASIC MAP FONTS CONTROLS
+   ----------------------------------------------
+   Handles font selection for BasicMap text elements
+=============================================== */
+const BasicMapFontsControls = ({ currentData, onControlsChange, themeColors }) => {
+  const handleSettingsChange = (fieldPrefix, newSettings) => {
+    onControlsChange({
+      ...currentData,
+      [fieldPrefix]: {
+        ...currentData[fieldPrefix],
+        ...newSettings
+      }
+    });
+  };
+
+  const fontFields = [
+    { prefix: 'titleTextSettings', label: 'Title Text' },
+    { prefix: 'bannerTextSettings', label: 'Banner Text (Address/Phone)' },
+    { prefix: 'statsTextSettings', label: 'Stats Text' },
+    { prefix: 'serviceHoursTextSettings', label: 'Service Hours Text' },
+    { prefix: 'buttonTextSettings', label: 'Hours Button Text' },
+  ];
+
+  return (
+    <div className="bg-white text-gray-800 p-4 rounded">
+      <h3 className="text-lg font-semibold mb-4">Font Settings</h3>
+      <div className="space-y-6">
+        {fontFields.map(({ prefix, label }) => (
+          <div key={prefix} className="border-t pt-4">
+            <h4 className="text-sm font-medium text-gray-700 mb-3">{label}</h4>
+            <PanelFontController
+              label={`${label} Font`}
+              currentData={currentData}
+              onControlsChange={onControlsChange}
+              fieldPrefix={prefix}
+              themeColors={themeColors}
+            />
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -867,7 +1003,18 @@ function BasicMapBlock({
       statsTextColor: initialConfig.statsTextColor || '#FFFFFF',
       showHoursButtonText: initialConfig.showHoursButtonText || "Show Hours",
       hideHoursButtonText: initialConfig.hideHoursButtonText || "Hide Hours",
-      styling: initialConfig.styling || { desktopHeightVH: 30, mobileHeightVW: 40 }
+      styling: initialConfig.styling || { desktopHeightVH: 30, mobileHeightVW: 40 },
+      statCardBackgroundColor: initialConfig.statCardBackgroundColor || 'rgba(255, 255, 255, 0.3)',
+      serviceHoursEvenRowBg: initialConfig.serviceHoursEvenRowBg || '#f9fafb',
+      serviceHoursOddRowBg: initialConfig.serviceHoursOddRowBg || '#ffffff',
+      serviceHoursTextColor: initialConfig.serviceHoursTextColor || '#1f2937',
+      windowStringColor1: initialConfig.windowStringColor1 || '#374151',
+      windowStringColor2: initialConfig.windowStringColor2 || '#1f2937',
+      titleTextSettings: initialConfig.titleTextSettings || {},
+      bannerTextSettings: initialConfig.bannerTextSettings || {},
+      statsTextSettings: initialConfig.statsTextSettings || {},
+      serviceHoursTextSettings: initialConfig.serviceHoursTextSettings || {},
+      buttonTextSettings: initialConfig.buttonTextSettings || {},
     };
   });
 
@@ -944,7 +1091,18 @@ function BasicMapBlock({
           statsTextColor: incomingData.statsTextColor !== undefined ? incomingData.statsTextColor : prevLocal.statsTextColor,
           showHoursButtonText: incomingData.showHoursButtonText !== undefined ? incomingData.showHoursButtonText : prevLocal.showHoursButtonText,
           hideHoursButtonText: incomingData.hideHoursButtonText !== undefined ? incomingData.hideHoursButtonText : prevLocal.hideHoursButtonText,
-          styling: incomingData.styling || prevLocal.styling
+          styling: incomingData.styling || prevLocal.styling,
+          statCardBackgroundColor: incomingData.statCardBackgroundColor !== undefined ? incomingData.statCardBackgroundColor : prevLocal.statCardBackgroundColor,
+          serviceHoursEvenRowBg: incomingData.serviceHoursEvenRowBg !== undefined ? incomingData.serviceHoursEvenRowBg : prevLocal.serviceHoursEvenRowBg,
+          serviceHoursOddRowBg: incomingData.serviceHoursOddRowBg !== undefined ? incomingData.serviceHoursOddRowBg : prevLocal.serviceHoursOddRowBg,
+          serviceHoursTextColor: incomingData.serviceHoursTextColor !== undefined ? incomingData.serviceHoursTextColor : prevLocal.serviceHoursTextColor,
+          windowStringColor1: incomingData.windowStringColor1 !== undefined ? incomingData.windowStringColor1 : prevLocal.windowStringColor1,
+          windowStringColor2: incomingData.windowStringColor2 !== undefined ? incomingData.windowStringColor2 : prevLocal.windowStringColor2,
+          titleTextSettings: incomingData.titleTextSettings || prevLocal.titleTextSettings,
+          bannerTextSettings: incomingData.bannerTextSettings || prevLocal.bannerTextSettings,
+          statsTextSettings: incomingData.statsTextSettings || prevLocal.statsTextSettings,
+          serviceHoursTextSettings: incomingData.serviceHoursTextSettings || prevLocal.serviceHoursTextSettings,
+          buttonTextSettings: incomingData.buttonTextSettings || prevLocal.buttonTextSettings,
         };
       });
     }
@@ -1187,6 +1345,16 @@ BasicMapBlock.tabsConfig = (localData, onControlsChange, themeColors) => {
       {...props} 
       currentData={localData} 
       onControlsChange={onControlsChange}
+    />
+  );
+
+  // Fonts Tab
+  tabs.fonts = (props) => (
+    <BasicMapFontsControls 
+      {...props} 
+      currentData={localData} 
+      onControlsChange={onControlsChange}
+      themeColors={themeColors}
     />
   );
 

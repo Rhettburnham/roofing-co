@@ -1,8 +1,9 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import PropTypes from "prop-types";
 import TopStickyEditPanel from "./TopStickyEditPanel";
 // import JSZip from "jszip"; // No longer needed for zipping here
 // import { useConfig } from "../context/ConfigContext"; // No longer needed for services
+import { cloneConfigStripFiles } from "../utils/blockUtils"; // Import the shared utility
 
 // Import preview components for blocks
 import HeroBlock from "./blocks/HeroBlock";
@@ -89,7 +90,7 @@ It loads data from services.json and allows editing of all
 service page content with TopStickyEditPanel integration.
 =============================================
 */
-const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange, themeColors }) => {
+const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange, themeColors, sitePalette, initialServicesData = null }) => {
   // Removed local states: servicesData, loading, error, initialServicesDataForOldExport
   // const { services: configServices } = useConfig(); // Removed
 
@@ -98,7 +99,74 @@ const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange
   const [currentPage, setCurrentPage] = useState(null);
   const [selectedBlockType, setSelectedBlockType] = useState(Object.keys(blockMap)[0]);
   const [activeEditBlockIndex, setActiveEditBlockIndex] = useState(null);
-  const [isEditPanelOpen, setIsEditPanelOpen] = useState(false);
+  const panelRef = useRef(null);
+  const prevActiveEditBlockIndexRef = useRef(null);
+  const blockRefs = useRef({});
+
+  const handleToggleEditState = useCallback(
+    (blockIndex) => {
+      setActiveEditBlockIndex((prev) => {
+        const isOpening = prev !== blockIndex;
+        const newActiveBlock = isOpening ? blockIndex : null;
+
+        if (isOpening) {
+          // Use setTimeout to wait for the panel to be rendered and have a height
+          setTimeout(() => {
+            const blockElement = blockRefs.current[blockIndex]?.current;
+            const panelElement = panelRef.current;
+
+            if (blockElement && panelElement) {
+              const panelHeight = panelElement.offsetHeight;
+              const blockTop =
+                blockElement.getBoundingClientRect().top + window.scrollY;
+
+              window.scrollTo({
+                top: blockTop - panelHeight - 20, // 20px buffer
+                behavior: "auto", // Immediate scroll
+              });
+            }
+          }, 100);
+        } else {
+          // Closing the panel, scroll the block to the top of the viewport
+          const blockElement = blockRefs.current[blockIndex]?.current;
+          if (blockElement) {
+            const blockTop =
+              blockElement.getBoundingClientRect().top + window.scrollY;
+            // The 80px offset accounts for the main sticky navigation in OneForm
+            window.scrollTo({
+              top: blockTop - 80,
+              behavior: "auto",
+            });
+          }
+        }
+
+        return newActiveBlock;
+      });
+    },
+    [blockRefs, panelRef]
+  );
+
+  useEffect(() => {
+    prevActiveEditBlockIndexRef.current = activeEditBlockIndex;
+  });
+
+  useEffect(() => {
+    if (activeEditBlockIndex !== null && panelRef.current) {
+        const panelHeight = panelRef.current.offsetHeight;
+        const blockContentElement = document.getElementById(`service-block-content-${activeEditBlockIndex}`);
+        if (blockContentElement) {
+            blockContentElement.style.paddingTop = `${panelHeight}px`;
+        }
+    }
+
+    const previousIndex = prevActiveEditBlockIndexRef.current;
+    if (previousIndex !== null && previousIndex !== activeEditBlockIndex) {
+        const oldBlockContentElement = document.getElementById(`service-block-content-${previousIndex}`);
+        if (oldBlockContentElement) {
+            oldBlockContentElement.style.paddingTop = '0';
+        }
+    }
+  }, [activeEditBlockIndex]);
 
   // Derive currentPage from props
   useEffect(() => {
@@ -121,7 +189,6 @@ const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange
   // Close panel when changing blocks or pages
   useEffect(() => {
     setActiveEditBlockIndex(null);
-    setIsEditPanelOpen(false);
   }, [selectedCategory, selectedPageId]);
 
   // Helper to get display URL (can be enhanced for file objects later)
@@ -443,7 +510,7 @@ const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange
   const renderPageButtons = () => {
     if (!servicesDataFromProps) return <p>No service data provided.</p>;
     return (
-      <div className="mb-0 bg-gray-50 border-b border-gray-300 overflow-hidden">
+      <div className="flex flex-row justify-between w-full mb-0 bg-gray-50 border-b border-gray-300 overflow-hidden">
         {/* Category Tabs Section */}
         <div className="bg-black border-b border-gray-300">
           <div className="px-4 py-2">
@@ -521,7 +588,7 @@ const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange
       viewBox="0 0 24 24"
       strokeWidth="1.5"
       stroke="currentColor"
-      className="w-5 h-5"
+      className="w-6 h-6"
     >
       <path
         strokeLinecap="round"
@@ -531,32 +598,71 @@ const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange
     </svg>
   );
 
-  // Get active block data for TopStickyEditPanel
-  const getActiveBlockData = () => {
-    if (activeEditBlockIndex === null || !currentPage) return null;
-    
-    const block = currentPage.blocks[activeEditBlockIndex];
-    if (!block) return null;
-    
-    const Component = blockMap[block.blockName];
-    if (!Component) return null;
+  const CheckIcon = (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth="1.5"
+      stroke="currentColor"
+      className="w-6 h-6"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M4.5 12.75l6 6 9-13.5"
+      />
+    </svg>
+  );
 
-    return {
-      blockName: block.blockName,
-      config: block.config,
-      themeColors,
-      onPanelChange: (newConfig) => handleBlockConfigUpdate(activeEditBlockIndex, newConfig),
-      onFileChange: (fieldKey, fileOrFileObject) => handleFileChangeForBlock(activeEditBlockIndex, fieldKey, fileOrFileObject),
-      getDisplayUrl: getDisplayUrlHelper,
-      tabsConfig: Component.tabsConfig ? Component.tabsConfig(
-        block.config,
-        (newConfig) => handleBlockConfigUpdate(activeEditBlockIndex, newConfig),
-        themeColors,
-        { /* sitePalette - could be populated if needed */ }
-      ) : null,
-      // Legacy support for blocks without tabsConfig
-      EditorPanelComponent: Component.EditorPanel,
-    };
+  const UndoIcon = (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+    </svg>
+  );
+
+  // Track last saved config for each block (always from /personal/old/)
+  const getLastSavedConfig = (blockIndex) => {
+    if (!currentPage || !currentPage.blocks) return null;
+    // Use initialServicesData for the original config
+    const origPage = (initialServicesData?.[selectedCategory] || []).find(p => p.id === Number(selectedPageId));
+    if (!origPage || !origPage.blocks) return null;
+    const block = origPage.blocks[blockIndex];
+    return block ? block.config : null;
+  };
+
+  // Undo handler: always revert to /personal/old/ config
+  const handleUndoBlock = (blockIndex) => {
+    console.log(`[ServiceEditPage] Undoing changes for block index: ${blockIndex}`);
+    const originalBlockConfig = getLastSavedConfig(blockIndex);
+
+    if (originalBlockConfig) {
+      // Use the shared utility to deep clone and strip file references
+      const cleanedConfig = cloneConfigStripFiles(originalBlockConfig);
+      
+      handleBlockConfigUpdate(blockIndex, cleanedConfig);
+      // Immediately close the edit panel on undo
+      setActiveEditBlockIndex(null);
+    } else {
+      console.warn(`[ServiceEditPage] No saved config found for block index: ${blockIndex}`);
+    }
+  };
+
+  // Save handler (called on panel close)
+  const handleSaveBlock = (blockIndex, newConfig) => {
+    setCurrentPage((prev) => {
+      const newBlocks = prev.blocks.map((block, idx) =>
+        idx === blockIndex ? { ...block, config: newConfig } : block
+      );
+      return { ...prev, blocks: newBlocks };
+    });
+    // Propagate to parent
+    if (onServicesChange) {
+      const updatedBlocks = currentPage.blocks.map((block, idx) =>
+        idx === blockIndex ? { ...block, config: newConfig } : block
+      );
+      onServicesChange({ ...currentPage, blocks: updatedBlocks }, selectedCategory, selectedPageId);
+    }
   };
 
   /* 
@@ -569,8 +675,7 @@ const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange
   const renderBlockEditor = (block, blockIndex) => {
     if (!currentPage) return null;
     const Component = blockMap[block.blockName];
-    const isActiveBlock = activeEditBlockIndex === blockIndex;
-    
+    const isEditingThisBlock = activeEditBlockIndex === blockIndex;
     if (!Component) {
       return (
         <div key={`unknown-${blockIndex}`} className="bg-red-100 p-4 mb-0">
@@ -578,44 +683,45 @@ const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange
         </div>
       );
     }
-
     const blockConfig = block.config || {};
-    
+    let componentProps = {
+      readOnly: !isEditingThisBlock,
+      config: blockConfig,
+      themeColors: themeColors,
+      lastSavedConfig: getLastSavedConfig(blockIndex),
+      onUndoBlock: () => handleUndoBlock(blockIndex),
+      onSaveBlock: (newConfig) => handleSaveBlock(blockIndex, newConfig),
+      onConfigChange: (newConfig) => handleBlockConfigUpdate(blockIndex, newConfig),
+    };
     return (
-      <div 
-        key={block.uniqueKey || blockIndex} 
-        className={`relative border-t border-b border-gray-300 mb-0 bg-white overflow-hidden group ${isActiveBlock ? 'ring-2 ring-blue-500 ring-inset' : ''}`}
+      <div
+        key={block.uniqueKey || blockIndex}
+        ref={(el) => (blockRefs.current[blockIndex] = { current: el })}
+        className="relative border-t border-b border-gray-300 mb-0 bg-white overflow-hidden group"
       >
-        {/* Block Selection/Edit Button */}
-        <div className="absolute top-2 right-2 z-30">
-          <button 
-            type="button" 
-            onClick={() => {
-              if (isActiveBlock) {
-                setActiveEditBlockIndex(null);
-                setIsEditPanelOpen(false);
-              } else {
-                setActiveEditBlockIndex(blockIndex);
-                setIsEditPanelOpen(true);
-              }
-            }}
-            className={`${isActiveBlock ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'} text-white rounded-full p-2 shadow-lg transition-colors opacity-70 group-hover:opacity-100`}
-            title={isActiveBlock ? "Close Editor" : "Edit Block"}
+        <div className="absolute top-4 right-4 z-[60] flex gap-2">
+          {isEditingThisBlock && (
+            <button
+              type="button"
+              onClick={() => handleUndoBlock(blockIndex)}
+              className="bg-yellow-500 hover:bg-yellow-600 text-white rounded-full p-2 shadow-lg transition-colors"
+              title="Undo changes"
+            >
+              <UndoIcon />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => handleToggleEditState(blockIndex)}
+            className={`${isEditingThisBlock ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-700 hover:bg-gray-600'} text-white rounded-full p-2 shadow-lg transition-colors`}
+            title={isEditingThisBlock ? "Finish Editing" : "Edit Block"}
           >
-            {PencilIcon}
+            {isEditingThisBlock ? CheckIcon : PencilIcon}
           </button>
         </div>
-
-        {/* Render Block with Inline Editing Support */}
-        <Component 
-          config={blockConfig} 
-          readOnly={!isActiveBlock} // Enable inline editing when block is active
-          onConfigChange={isActiveBlock ? (newConfig) => handleBlockConfigUpdate(blockIndex, newConfig) : undefined}
-          onFileChange={isActiveBlock ? (fieldKey, fileOrFileObject) => handleFileChangeForBlock(blockIndex, fieldKey, fileOrFileObject) : undefined}
-          getDisplayUrl={getDisplayUrlHelper}
-          themeColors={themeColors}
-          onToggleEditor={isActiveBlock ? () => setIsEditPanelOpen(!isEditPanelOpen) : undefined}
-        />
+        <div id={`service-block-content-${blockIndex}`} className="transition-all duration-300">
+          <Component {...componentProps} />
+        </div>
       </div>
     );
   };
@@ -667,7 +773,6 @@ const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange
       updatedBlocks.splice(insertIndex, 0, newBlock);
       updatePageAndPropagate({ ...currentPage, blocks: updatedBlocks });
       setActiveEditBlockIndex(insertIndex);
-      setIsEditPanelOpen(true);
     };
 
     return (
@@ -743,6 +848,57 @@ const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange
     return defaults[blockType] || {};
   };
 
+  const getActiveBlockData = () => {
+    if (activeEditBlockIndex === null || !currentPage || !currentPage.blocks[activeEditBlockIndex]) {
+      return null;
+    }
+
+    const block = currentPage.blocks[activeEditBlockIndex];
+    const { blockName, config } = block;
+    const Component = blockMap[blockName];
+
+    if (!Component) {
+      console.error(`[ServiceEditPage] Component for block ${blockName} not found in blockMap.`);
+      return null;
+    }
+
+    const onPanelChange = (newConfig) => {
+      handleBlockConfigUpdate(activeEditBlockIndex, newConfig);
+    };
+
+    const blockData = {
+      blockName,
+      config,
+      onPanelChange,
+      themeColors,
+      sitePalette,
+      getDisplayUrl,
+      onFileChange: (key, file) => handleFileChangeForBlock(activeEditBlockIndex, key, file),
+    };
+
+    // New `tabsConfig` integration
+    if (typeof Component.tabsConfig === 'function') {
+      blockData.tabsConfig = Component.tabsConfig(config, onPanelChange, themeColors, sitePalette);
+    } else if (Component.EditorPanel) { // Legacy `EditorPanel`
+      blockData.EditorPanelComponent = Component.EditorPanel;
+    }
+
+    // Pass any other specific props needed by certain panels
+    // Example for a hypothetical ButtonBlock's panel
+    if (Component.animationDurationOptions) {
+      blockData.animationDurationOptions = Component.animationDurationOptions;
+    }
+    if (Component.buttonSizeOptions) {
+      blockData.buttonSizeOptions = Component.buttonSizeOptions;
+    }
+     // Example for RichTextBlock that has a different update mechanism
+    if (blockName === 'RichTextBlock') {
+      blockData.onDataChange = (data) => handleBlockConfigUpdate(activeEditBlockIndex, { ...config, content: data });
+    }
+
+    return blockData;
+  };
+
   if (!currentPage && !servicesDataFromProps) {
     return <div className="min-h-screen flex items-center justify-center"><p>Loading service editor...</p></div>;
   }
@@ -762,9 +918,9 @@ const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange
     <div className="relative">
       {/* Top Sticky Edit Panel */}
       <TopStickyEditPanel
-        isOpen={isEditPanelOpen}
+        ref={panelRef}
+        isOpen={activeEditBlockIndex !== null}
         onClose={() => {
-          setIsEditPanelOpen(false);
           setActiveEditBlockIndex(null);
         }}
         activeBlockData={getActiveBlockData()}
@@ -786,6 +942,7 @@ ServiceEditPage.propTypes = {
   servicesData: PropTypes.object,
   onServicesChange: PropTypes.func.isRequired,
   themeColors: PropTypes.object,
+  initialServicesData: PropTypes.object,
 };
 
 export default ServiceEditPage;

@@ -5,12 +5,29 @@ import gsap from "gsap";
 import { useNavigate } from "react-router-dom";
 import ThemeColorPicker from "../common/ThemeColorPicker";
 import PanelImagesController from "../common/PanelImagesController";
+import PanelFontController from "../common/PanelFontController";
 import PanelStylingController from "../common/PanelStylingController";
 
 // Add ticker registration to keep animations running during scrolling
 gsap.registerPlugin();
 // Force GSAP to use requestAnimationFrame which is more reliable during scrolling
 gsap.ticker.lagSmoothing(0);
+
+// Helper to generate styles from text settings object
+const getTextStyles = (settings) => {
+  if (!settings || typeof settings !== 'object') {
+    return {};
+  }
+  const styles = {};
+  if (settings.fontFamily) styles.fontFamily = settings.fontFamily;
+  if (settings.fontSize) styles.fontSize = `${settings.fontSize}px`;
+  if (settings.fontWeight) styles.fontWeight = settings.fontWeight;
+  if (settings.lineHeight) styles.lineHeight = settings.lineHeight;
+  if (settings.letterSpacing) styles.letterSpacing = `${settings.letterSpacing}px`;
+  if (settings.textAlign) styles.textAlign = settings.textAlign;
+  if (settings.color) styles.color = settings.color;
+  return styles;
+};
 
 // Helper function to derive local state from props
 const deriveInitialLocalData = (buttonDataInput) => {
@@ -95,6 +112,15 @@ const deriveInitialLocalData = (buttonDataInput) => {
         initial.animationSpeed || initial.styling?.animationSpeed || "normal",
       animationType:
         initial.animationType || initial.styling?.animationType || "slide",
+    },
+    textSettings: initial.textSettings || {
+      fontFamily: "Inter, sans-serif",
+      fontSize: 24,
+      fontWeight: 700,
+      lineHeight: 1.2,
+      letterSpacing: 0.5,
+      textAlign: "center",
+      color: "#FFFFFF",
     },
   };
 };
@@ -318,9 +344,10 @@ function ButtonPreview({ buttonData, readOnly, onButtonDataChange }) {
     return <p className="text-center p-4">No button configuration found.</p>;
   }
 
-  const { text = "About Us", buttonLink = "/about", styling = {} } = buttonData;
+  const { text = "About Us", buttonLink = "/about", styling = {}, textSettings = {} } = buttonData;
   const buttonSize = styling.buttonSize || "medium";
   const buttonSizeClasses = getButtonSizeClasses(buttonSize);
+  const textStyles = getTextStyles(textSettings);
 
   // Calculate dynamic height based on styling
   const dynamicHeight =
@@ -339,8 +366,9 @@ function ButtonPreview({ buttonData, readOnly, onButtonDataChange }) {
                   type="text"
                   value={text}
                   onChange={(e) => handleFieldChange("text", e.target.value)}
-                  className={`text-white hover:text-black hover:bg-white font-sans font-bold ${buttonSizeClasses.text} ${buttonSizeClasses.padding} ${buttonSizeClasses.roundedness} shadow-lg bg-accent border-2 border-white/30 focus:border-white focus:outline-none text-center`}
+                  className={`hover:text-black hover:bg-white ${buttonSizeClasses.padding} ${buttonSizeClasses.roundedness} shadow-lg bg-accent border-2 border-white/30 focus:border-white focus:outline-none text-center`}
                   placeholder="Button Text"
+                  style={textStyles}
                 />
                 <input
                   type="text"
@@ -358,7 +386,7 @@ function ButtonPreview({ buttonData, readOnly, onButtonDataChange }) {
               </div>
             ) : (
               <button
-                className={`text-white hover:text-black hover:bg-white font-sans font-bold ${buttonSizeClasses.text} ${buttonSizeClasses.padding} ${buttonSizeClasses.roundedness} shadow-lg dark_button bg-accent transition-all duration-200`}
+                className={`hover:text-black hover:bg-white ${buttonSizeClasses.padding} ${buttonSizeClasses.roundedness} shadow-lg dark_button bg-accent transition-all duration-200`}
                 onClick={handleClick}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.boxShadow =
@@ -368,6 +396,7 @@ function ButtonPreview({ buttonData, readOnly, onButtonDataChange }) {
                   e.currentTarget.style.boxShadow =
                     "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
                 }}
+                style={textStyles}
               >
                 <div>{text}</div>
               </button>
@@ -656,6 +685,30 @@ ButtonStylingControls.propTypes = {
   buttonSizeOptions: PropTypes.array,
 };
 
+/* ==============================================
+   BUTTON FONTS CONTROLS
+   ----------------------------------------------
+   Handles font selection for Button text elements
+=============================================== */
+const ButtonFontsControls = ({ currentData, onControlsChange, themeColors }) => {
+  return (
+    <div className="bg-white text-gray-800 p-4 rounded-lg">
+      <h3 className="text-xl font-bold mb-6 text-center text-gray-800 border-b pb-3">Font Settings</h3>
+      <div className="space-y-6 mt-4">
+        <div className="bg-gray-50 p-4 rounded-md border">
+          <PanelFontController
+            label="Button Text Style"
+            currentData={currentData}
+            onControlsChange={onControlsChange}
+            fieldPrefix="textSettings"
+            themeColors={themeColors}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
 /* ======================================================
    MAIN COMPONENT: ButtonBlock
    ------------------------------------------------------
@@ -813,6 +866,10 @@ export default function ButtonBlock({
                   ? buttonconfig.styling.animationType
                   : prevLocal.styling?.animationType,
           },
+          textSettings:
+            buttonconfig.textSettings !== undefined
+              ? buttonconfig.textSettings
+              : prevLocal.textSettings,
         };
         console.log(
           "[ButtonBlock] Updated localData from prop sync. New merged images:",
@@ -974,6 +1031,16 @@ ButtonBlock.tabsConfig = (localData, onControlsChange, themeColors) => {
       onControlsChange={onControlsChange}
       animationDurationOptions={animationDurationOptions}
       buttonSizeOptions={buttonSizeOptions}
+    />
+  );
+
+  // Fonts Tab
+  tabs.fonts = (props) => (
+    <ButtonFontsControls
+      {...props}
+      currentData={localData}
+      onControlsChange={onControlsChange}
+      themeColors={themeColors}
     />
   );
 

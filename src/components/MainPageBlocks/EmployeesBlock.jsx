@@ -4,10 +4,27 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import ThemeColorPicker from "../common/ThemeColorPicker";
 import PanelImagesController from "../common/PanelImagesController";
+import PanelFontController from "../common/PanelFontController";
 import PanelStylingController from "../common/PanelStylingController";
 
 // Register GSAP's ScrollTrigger plugin
 gsap.registerPlugin(ScrollTrigger);
+
+// Helper to generate styles from text settings object
+const getTextStyles = (settings) => {
+  if (!settings || typeof settings !== 'object') {
+    return {};
+  }
+  const styles = {};
+  if (settings.fontFamily) styles.fontFamily = settings.fontFamily;
+  if (settings.fontSize) styles.fontSize = `${settings.fontSize}px`;
+  if (settings.fontWeight) styles.fontWeight = settings.fontWeight;
+  if (settings.lineHeight) styles.lineHeight = settings.lineHeight;
+  if (settings.letterSpacing) styles.letterSpacing = `${settings.letterSpacing}px`;
+  if (settings.textAlign) styles.textAlign = settings.textAlign;
+  if (settings.color) styles.color = settings.color;
+  return styles;
+};
 
 // Helper to initialize image state: handles string path or {file, url, name} object
 const initializeEmployeeImageState = (
@@ -82,14 +99,16 @@ function EmployeesPreview({
     return <p>No Employee data found.</p>;
   }
 
-  const employeesListOriginal = employeesData?.employee || [];
-  const sectionTitle = employeesData?.sectionTitle || "OUR TEAM";
-  const showNailAnimation =
-    employeesData?.showNailAnimation !== undefined
-      ? employeesData.showNailAnimation
-      : true;
-  const cardBackgroundColor = employeesData?.cardBackgroundColor || "#FFFFFF"; // Default to white
-  const cardTextColor = employeesData?.cardTextColor || "#000000"; // Default to black
+  const {
+    sectionTitle = "OUR TEAM",
+    employee: employeesListOriginal = [],
+    showNailAnimation = true,
+    cardBackgroundColor = "#FFFFFF",
+    cardTextColor = "#000000",
+    sectionTitleTextSettings,
+    nameTextSettings,
+    roleTextSettings,
+  } = employeesData || {};
   console.log(
     `[EmployeesPreview] Instance created/re-rendered. Initial showNailAnimation prop from employeesData: ${showNailAnimation}`
   );
@@ -228,13 +247,13 @@ function EmployeesPreview({
             <>
               <p
                 className="whitespace-nowrap text-[1.5vw] md:text-[1.6vh] font-semibold text-center"
-                style={{ color: cardTextColor }}
+                style={{ ...getTextStyles(nameTextSettings), color: cardTextColor }}
               >
                 {employee.name}
               </p>
               <p
                 className="whitespace-nowrap text-[1.5vw] md:text-[1.6vh] font-semibold mt-1 md:mt-[0.5vh] text-center"
-                style={{ color: cardTextColor }}
+                style={{ ...getTextStyles(roleTextSettings), color: cardTextColor }}
               >
                 {employee.role}
               </p>{" "}
@@ -249,7 +268,7 @@ function EmployeesPreview({
                   onEmployeeDetailChange(index, "name", e.target.value)
                 }
                 className="whitespace-nowrap text-[1.5vw] md:text-[1.6vh] font-semibold text-center bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 w-full"
-                style={{ color: cardTextColor }}
+                style={{ ...getTextStyles(nameTextSettings), color: cardTextColor }}
                 placeholder="Name"
               />
               <input
@@ -259,7 +278,7 @@ function EmployeesPreview({
                   onEmployeeDetailChange(index, "role", e.target.value)
                 }
                 className="whitespace-nowrap text-[1.5vw] md:text-[1.6vh] font-semibold mt-1 md:mt-[0.5vh] text-center bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 w-full"
-                style={{ color: cardTextColor }}
+                style={{ ...getTextStyles(roleTextSettings), color: cardTextColor }}
                 placeholder="Role"
               />{" "}
               {/* Added margin for role */}
@@ -297,7 +316,7 @@ function EmployeesPreview({
         </div>
         <div ref={textRef} className="absolute left-1/2 z-30 w-auto">
           {readOnly ? (
-            <h2 className="text-[6vw] md:text-[4vh] text-black font-normal font-ultra-condensed font-serif pt-3 whitespace-nowrap">
+            <h2 className="text-[6vw] md:text-[4vh] text-black font-normal font-ultra-condensed font-serif pt-3 whitespace-nowrap" style={getTextStyles(sectionTitleTextSettings)}>
               {sectionTitle}
             </h2>
           ) : (
@@ -309,6 +328,7 @@ function EmployeesPreview({
               }
               className="text-[6vw] md:text-[4vh] text-black font-normal font-ultra-condensed font-serif pt-3 bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 rounded p-1 text-center whitespace-nowrap min-w-[300px] md:min-w-[400px]"
               placeholder="Section Title"
+              style={getTextStyles(sectionTitleTextSettings)}
             />
           )}
         </div>
@@ -380,6 +400,9 @@ export default function EmployeesBlock({
         id: emp.id || `emp_init_${index}_${Date.now()}`,
         image: initializeEmployeeImageState(emp.image),
       })),
+      sectionTitleTextSettings: initialConfig.sectionTitleTextSettings || {},
+      nameTextSettings: initialConfig.nameTextSettings || {},
+      roleTextSettings: initialConfig.roleTextSettings || {},
     };
   });
 
@@ -470,6 +493,9 @@ export default function EmployeesBlock({
               : prevLocalData.cardTextColor !== undefined
                 ? prevLocalData.cardTextColor
                 : "#000000",
+          sectionTitleTextSettings: employeesData.sectionTitleTextSettings || prevLocalData.sectionTitleTextSettings,
+          nameTextSettings: employeesData.nameTextSettings || prevLocalData.nameTextSettings,
+          roleTextSettings: employeesData.roleTextSettings || prevLocalData.roleTextSettings,
         };
       });
     }
@@ -534,6 +560,9 @@ export default function EmployeesBlock({
           showNailAnimation: localData.showNailAnimation,
           cardBackgroundColor: localData.cardBackgroundColor,
           cardTextColor: localData.cardTextColor,
+          sectionTitleTextSettings: localData.sectionTitleTextSettings,
+          nameTextSettings: localData.nameTextSettings,
+          roleTextSettings: localData.roleTextSettings,
         };
         console.log(
           "[EmployeesBlock onConfigChange Effect] dataToSave:",
@@ -602,6 +631,12 @@ export default function EmployeesBlock({
               image: imageForSave,
             };
           }),
+          showNailAnimation: newState.showNailAnimation,
+          cardBackgroundColor: newState.cardBackgroundColor,
+          cardTextColor: newState.cardTextColor,
+          sectionTitleTextSettings: newState.sectionTitleTextSettings,
+          nameTextSettings: newState.nameTextSettings,
+          roleTextSettings: newState.roleTextSettings,
         };
         onConfigChange(dataToSave);
       }
@@ -641,6 +676,39 @@ export default function EmployeesBlock({
   );
 }
 
+/* ==============================================
+   EMPLOYEES FONTS CONTROLS
+   ----------------------------------------------
+   Handles font selection for Employees text elements
+=============================================== */
+const EmployeesFontsControls = ({ currentData, onControlsChange, themeColors }) => {
+  const fontFields = [
+    { prefix: 'sectionTitleTextSettings', label: 'Section Title' },
+    { prefix: 'nameTextSettings', label: 'Employee Name' },
+    { prefix: 'roleTextSettings', label: 'Employee Role' },
+  ];
+
+  return (
+    <div className="bg-white text-gray-800 p-4 rounded">
+      <h3 className="text-lg font-semibold mb-4">Font Settings</h3>
+      <div className="space-y-6">
+        {fontFields.map(({ prefix, label }) => (
+          <div key={prefix} className="border-t pt-4">
+            <h4 className="text-sm font-medium text-gray-700 mb-3">{label}</h4>
+            <PanelFontController
+              label={`${label} Font`}
+              currentData={currentData}
+              onControlsChange={onControlsChange}
+              fieldPrefix={prefix}
+              themeColors={themeColors}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 // Expose tabsConfig for TopStickyEditPanel
 EmployeesBlock.tabsConfig = (
   blockCurrentData,
@@ -648,6 +716,14 @@ EmployeesBlock.tabsConfig = (
   themeColors
 ) => {
   return {
+    fonts: (props) => (
+      <EmployeesFontsControls
+        {...props}
+        currentData={blockCurrentData}
+        onControlsChange={onControlsChange}
+        themeColors={themeColors}
+      />
+    ),
     images: (props) => (
       <EmployeesImagesControls
         {...props}

@@ -4,59 +4,47 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import ThemeColorPicker from "../common/ThemeColorPicker";
 import PanelImagesController from "../common/PanelImagesController";
+import PanelFontController from "../common/PanelFontController";
 import PanelStylingController from "../common/PanelStylingController";
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+import { GripVertical } from 'lucide-react';
+import { initializeImageState } from '../../utils/imageUtils';
+import { useConfig } from "../../context/ConfigContext";
 
 // Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger);
 
-// Helper to get display URL from string path or {url, file} object
-const getDisplayUrl = (imageValue, defaultPath = null) => {
-  if (imageValue && typeof imageValue === 'object' && imageValue.url) {
-    return imageValue.url;
+// Helper to generate styles from text settings object
+const getTextStyles = (settings) => {
+  if (!settings || typeof settings !== 'object') {
+    return {};
   }
-  if (typeof imageValue === 'string') {
-    if (imageValue.startsWith('/') || imageValue.startsWith('blob:') || imageValue.startsWith('data:')) {
-      return imageValue;
-    }
-    return `/${imageValue.replace(/^\.\//, "")}`;
-  }
-  return defaultPath;
+  const styles = {};
+  if (settings.fontFamily) styles.fontFamily = settings.fontFamily;
+  if (settings.fontSize) styles.fontSize = `${settings.fontSize}px`;
+  if (settings.fontWeight) styles.fontWeight = settings.fontWeight;
+  if (settings.lineHeight) styles.lineHeight = settings.lineHeight;
+  if (settings.letterSpacing) styles.letterSpacing = `${settings.letterSpacing}px`;
+  if (settings.textAlign) styles.textAlign = settings.textAlign;
+  if (settings.color) styles.color = settings.color;
+  return styles;
 };
 
-// Helper to initialize image state: handles string path or {file, url, name} object
-const initializeImageState = (imageConfig, defaultPath) => {
-  console.log("[initializeImageState] Called with:", 
-    {
-      imageConfig: typeof imageConfig === 'object' && imageConfig?.file instanceof File ? { ...imageConfig, file: '[File Object]' } : imageConfig,
-      defaultPath
+// Helper to get display URL from string path or {url, file} object
+const getDisplayUrl = (imageValue, defaultPath = null) => {
+    if (imageValue && typeof imageValue === 'object' && imageValue.url) {
+        return imageValue.url;
     }
-  );
-
-  let originalUrlToStore = defaultPath;
-  let nameToStore = defaultPath?.split('/').pop() || 'default.jpg';
-  let urlToDisplay = defaultPath;
-  let fileObject = null;
-
-  if (imageConfig && typeof imageConfig === 'object') {
-    // If imageConfig is an object, it might be from a previous state or a new upload
-    urlToDisplay = imageConfig.url || defaultPath;
-    nameToStore = imageConfig.name || urlToDisplay?.split('/').pop() || 'default.jpg';
-    fileObject = imageConfig.file || null; // Preserve file object if it exists
-    // Crucially, preserve originalUrl if it already exists in imageConfig, otherwise use the determined urlToDisplay or defaultPath
-    originalUrlToStore = imageConfig.originalUrl || (typeof imageConfig.url === 'string' && !imageConfig.url.startsWith('blob:') ? imageConfig.url : defaultPath) ;
-  } else if (typeof imageConfig === 'string') {
-    // If imageConfig is a string, it's an initial path
-    urlToDisplay = imageConfig;
-    nameToStore = imageConfig.split('/').pop() || 'default.jpg';
-    originalUrlToStore = imageConfig; // This path is the original
-  }
-  
-  return { 
-    file: fileObject, 
-    url: urlToDisplay, // This could be a path or a blob URL for preview
-    name: nameToStore,
-    originalUrl: originalUrlToStore // The persistent original path
-  }; 
+    if (typeof imageValue === 'string') {
+        if (imageValue.startsWith('/') || imageValue.startsWith('blob:') || imageValue.startsWith('data:')) {
+            return imageValue;
+        }
+        // Ensure it doesn't add a double slash if the path is like 'assets/...'
+        const path = imageValue.replace(/^\//, '');
+        return `/${path.replace(/^\.\//, "")}`;
+    }
+    return defaultPath;
 };
 
 /* ==============================================
@@ -71,6 +59,7 @@ const initializeImageState = (imageConfig, defaultPath) => {
    }
 =============================================== */
 function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleChange, onItemTextChange }) {
+  const { virtualFS } = useConfig() || {};
   const boxesRef = useRef([]);
   const headerRef = useRef(null);
   const nailRef = useRef(null);
@@ -79,8 +68,16 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
   // Local states for modal and card flipping
   const [selectedImages, setSelectedImages] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   // Initialize viewStates as an object to hold state for each card
   const [viewStates, setViewStates] = useState({});
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // Safely destructure data and ensure paths are properly formatted
   const { 
@@ -90,7 +87,11 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
     toggleButtonBgColor = "#1e293b",
     toggleButtonTextColor = "#FFFFFF",
     toggleButtonHoverBgColor = "#FFFFFF",
-    toggleButtonHoverTextColor = "#000000"
+    toggleButtonHoverTextColor = "#000000",
+    sectionTitleTextSettings,
+    overlayShingleTextSettings,
+    overlaySqftTextSettings,
+    styling = {},
   } = beforeAfterData || {};
   const showNailAnimation = beforeAfterData?.showNailAnimation !== undefined ? beforeAfterData.showNailAnimation : true; // Default to true
   console.log(`[BeforeAfterPreview] Instance created/re-rendered. Initial showNailAnimation prop from beforeAfterData: ${showNailAnimation}`);
@@ -201,74 +202,61 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
   useEffect(() => {
     if (!formattedItems.length) return;
 
-    console.log(`[BeforeAfterPreview Box Animations Effect] Running. items count: ${formattedItems.length}`);
+    console.log(`[BeforeAfterPreview Box Animations Effect] Running. items count: ${formattedItems.length}, readOnly: ${readOnly}`);
 
-    // Box animations
     const boxEls = boxesRef.current.filter((box) => box !== null);
     if (!boxEls.length) return;
 
-    // Decide how many columns you want - now 3 for md+
-    const numCols = 3;
+    // Kill any existing scroll triggers and tweens on these boxes before creating new ones
+    ScrollTrigger.getAll().forEach(st => { 
+        if(boxEls.includes(st.trigger)) st.kill(); 
+    });
+    gsap.killTweensOf(boxEls);
+    gsap.killTweensOf(boxEls.map(b => b?.querySelector?.(".overlay-text")).filter(Boolean));
 
-    const calculateOrder = (index, cols) => {
-      const row = Math.floor(index / cols);
-      const col = index % cols;
-      // Example approach to create a "reverse" wave for the box animations
-      return cols - col + row;
-    };
+    if (readOnly) {
+      // Box animations for live site
+      const numCols = 3; // Decide how many columns you want
 
-    const sortedBoxes = boxEls
-      .map((box, index) => ({
-        element: box,
-        order: calculateOrder(index, numCols),
-        index,
-      }))
-      .sort((a, b) => b.order - a.order);
+      const calculateOrder = (index, cols) => {
+        const row = Math.floor(index / cols);
+        const col = index % cols;
+        return cols - col + row;
+      };
 
-    // Initialize box states
-    sortedBoxes.forEach(({ element }) => {
-      gsap.set(element, {
-        x: window.innerWidth,
-        opacity: 0,
+      const sortedBoxes = boxEls
+        .map((box, index) => ({ element: box, order: calculateOrder(index, numCols), index }))
+        .sort((a, b) => b.order - a.order);
+
+      // Initialize box states for animation
+      sortedBoxes.forEach(({ element }) => {
+        gsap.set(element, { x: window.innerWidth, opacity: 0 });
+        gsap.set(element.querySelector(".overlay-text"), { opacity: 0 });
       });
-      gsap.set(element.querySelector(".overlay-text"), {
-        opacity: 0,
+
+      const boxesTimeline = gsap.timeline({
+        scrollTrigger: {
+          trigger: boxEls[0],
+          start: "top 80%",
+          toggleActions: "play none none none",
+        },
       });
-    });
 
-    const boxesTimeline = gsap.timeline({
-      scrollTrigger: {
-        trigger: boxEls[0],
-        start: "top 80%",
-        toggleActions: "play none none none",
-      },
-    });
+      sortedBoxes.forEach(({ element }) => {
+        const overlayText = element.querySelector(".overlay-text");
+        boxesTimeline
+          .to(element, { x: 0, opacity: 1, duration: 0.4, ease: "power2.out" }, ">-0.5")
+          .to(overlayText, { opacity: 1, duration: 0.2, ease: "power2.out" }, "<+=0.3");
+      });
+    } else {
+      // In editor mode (not readOnly), just make the boxes visible without animation
+      boxEls.forEach(box => {
+          gsap.set(box, { x: 0, opacity: 1 });
+          gsap.set(box.querySelector(".overlay-text"), { opacity: 1 });
+      });
+    }
 
-    sortedBoxes.forEach(({ element }) => {
-      const overlayText = element.querySelector(".overlay-text");
-      boxesTimeline
-        .to(
-          element,
-          {
-            x: 0,
-            opacity: 1,
-            duration: 0.4,
-            ease: "power2.out",
-          },
-          `>-0.5`
-        )
-        .to(
-          overlayText,
-          {
-            opacity: 1,
-            duration: 0.2,
-            ease: "power2.out",
-          },
-          "<+=0.3"
-        );
-    });
-
-    // Initial setup for cards (without scroll trigger)
+    // Initial setup for cards (applies to both modes)
     boxEls.forEach((box) => {
       if (!box) return;
       const cardElement = box.querySelector(".card");
@@ -283,36 +271,21 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
         perspective: 1000,
         transformStyle: "preserve-3d",
       });
-
       gsap.set([beforeImage, afterImage], {
         backfaceVisibility: "hidden",
         position: "absolute",
         width: "100%",
         height: "100%",
       });
-
-      // Initial positions
-      gsap.set(beforeImage, {
-        rotationY: 0,
-        zIndex: 2,
-      });
-      gsap.set(afterImage, {
-        rotationY: 180,
-        zIndex: 1,
-      });
+      gsap.set(beforeImage, { rotationY: 0, zIndex: 2 });
+      gsap.set(afterImage, { rotationY: 180, zIndex: 1 });
     });
 
-    // Cleanup for box animations
+    // Cleanup logic is handled by killing tweens/triggers at the start of the effect
     return () => {
-      console.log(`[BeforeAfterPreview Box Animations Effect] Cleanup.`);
-      // Kill box-related scroll triggers
-      ScrollTrigger.getAll().forEach(st => { 
-        if(boxEls.includes(st.trigger)) st.kill(); 
-      });
-      gsap.killTweensOf(boxEls.map(b => b?.querySelector?.(".overlay-text")).filter(Boolean));
-      gsap.killTweensOf(boxEls);
+      console.log(`[BeforeAfterPreview Box Animations Effect] Cleanup on unmount/re-render.`);
     };
-  }, [formattedItems.length]); // Only depend on items count
+  }, [formattedItems.length, readOnly]); // Dependency array now includes readOnly
 
   // Handle view state changes for card flipping - memoized
   useEffect(() => {
@@ -356,7 +329,12 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
 
   return (
     <>
-      <section className="relative w-full overflow-hidden h-full">
+      <section className="relative w-full overflow-hidden h-full"
+      style={{
+          minHeight: isMobile
+            ? `${styling.mobileHeightVW || 150}vw`
+            : `${styling.desktopHeightVH || 100}vh`,
+        }}>
         {/* Header / Title */}
         <div
           ref={headerRef}
@@ -364,7 +342,7 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
         >
           <div
             ref={nailRef}
-            className="absolute left-[25%] md:left-[17%] w-[30%] h-[15vh] md:h-[5vh] flex items-center z-50"
+            className="absolute left-[25%] md:left-[17%] w-[30%] h-[5vh] flex items-center z-50"
           >
             <div
               className="w-full h-full dynamic-shadow"
@@ -384,7 +362,7 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
             className="absolute left-1/2 z-10 flex flex-row items-center"
           >
             {readOnly ? (
-              <h2 className="text-[6vw] md:text-[4vh] text-black font-normal font-condensed font-serif items-center py-3 z-30 text-center">
+              <h2 className="text-[6vw] md:text-[4vh] text-black font-normal font-condensed font-serif items-center py-3 z-30 text-center" style={getTextStyles(sectionTitleTextSettings)}>
                 {sectionTitle}
               </h2>
             ) : (
@@ -394,6 +372,7 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
                 onChange={(e) => onSectionTitleChange && onSectionTitleChange(e.target.value)}
                 className="text-[6vw] md:text-[4vh] text-black font-normal font-condensed font-serif items-center py-3 z-30 text-center bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-2 min-w-[300px] md:min-w-[400px]"
                 placeholder="Section Title"
+                style={getTextStyles(sectionTitleTextSettings)}
               />
             )}
           </div>
@@ -401,19 +380,19 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
 
         {/* Gallery Grid - Now 3 columns on md+ */}
         <div className="w-full flex items-center justify-center">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:space-x-4 px-2 md:px-5 md:pb-5">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 px-2 md:px-5 md:pb-5">
             {formattedItems.map((item, index) => (
               <div
                 key={item.id}
                 ref={(el) => (boxesRef.current[index] = el)}
-                className="relative flex flex-col md:flex-row items-center justify-between w-full"
+                className="relative w-full"
               >
                 <div
-                  className="relative cursor-pointer"
+                  className="relative cursor-pointer w-full"
                   onClick={() => handleBoxClick(item)}
                 >
                   <div
-                    className="card w-[80vw] h-[50vw] md:w-[27vw] md:h-[15vw]"
+                    className="card w-full aspect-[4/3] relative"
                   >
                     <img
                       src={item.beforeDisplayUrl}
@@ -448,13 +427,13 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
                         <>
                           <span 
                             className="font-bold text-[5vw] md:text-xl whitespace-nowrap drop-shadow-[0_2px_2px_rgba(0,0,0,0.9)] mb-0"
-                            style={{ color: overlayTextColor }}
+                            style={{ ...getTextStyles(overlayShingleTextSettings), color: overlayTextColor }}
                           >
                             {item.shingle}
                           </span>
                           <span 
                             className="font-semibold text-[5vw] md:text-lg drop-shadow-[0_2px_2px_rgba(0,0,0,0.9)]"
-                            style={{ color: overlayTextColor }}
+                            style={{ ...getTextStyles(overlaySqftTextSettings), color: overlayTextColor }}
                           >
                             {item.sqft}
                           </span>
@@ -468,7 +447,7 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
                             className="font-bold text-[5vw] md:text-xl whitespace-nowrap bg-transparent focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 mb-0 w-full placeholder-gray-300 drop-shadow-[0_2px_2px_rgba(0,0,0,0.9)]"
                             placeholder="Shingle Type"
                             onClick={(e) => e.stopPropagation()}
-                            style={{ color: overlayTextColor }}
+                            style={{ ...getTextStyles(overlayShingleTextSettings), color: overlayTextColor }}
                           />
                           <input
                             type="text"
@@ -477,7 +456,7 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
                             className="font-semibold text-[5vw] md:text-lg bg-transparent focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 w-full placeholder-gray-300 drop-shadow-[0_2px_2px_rgba(0,0,0,0.9)]"
                             placeholder="Sqft"
                             onClick={(e) => e.stopPropagation()}
-                            style={{ color: overlayTextColor }}
+                            style={{ ...getTextStyles(overlaySqftTextSettings), color: overlayTextColor }}
                           />
                         </>
                       )}
@@ -518,7 +497,6 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
                     src={selectedImages.before}
                     alt="Before"
                     className="max-w-full max-h-full object-contain rounded-lg"
-                    style={{ maxHeight: '60vh' }}
                   />
                 </div>
               </div>
@@ -531,7 +509,6 @@ function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleCh
                     src={selectedImages.after}
                     alt="After"
                     className="max-w-full max-h-full object-contain rounded-lg"
-                    style={{ maxHeight: '60vh' }}
                   />
                 </div>
               </div>
@@ -586,6 +563,37 @@ export default function BeforeAfterBlock({
         before: initializeImageState(item.before, "/assets/images/beforeafter/default_before.jpg"),
         after: initializeImageState(item.after, "/assets/images/beforeafter/default_after.jpg"),
       })),
+      sectionTitleTextSettings: initialConfig.sectionTitleTextSettings || {
+        fontFamily: "'Merriweather', serif",
+        fontSize: 48,
+        fontWeight: 900,
+        lineHeight: 1.2,
+        letterSpacing: 1.5,
+        textAlign: "center",
+        color: "#111827"
+      },
+      overlayShingleTextSettings: initialConfig.overlayShingleTextSettings || {
+        fontFamily: "'Roboto Condensed', sans-serif",
+        fontSize: 20,
+        fontWeight: 700,
+        lineHeight: 1.1,
+        letterSpacing: 0.2,
+        textAlign: "left",
+        color: "#FFFFFF"
+      },
+      overlaySqftTextSettings: initialConfig.overlaySqftTextSettings || {
+        fontFamily: "'Roboto Condensed', sans-serif",
+        fontSize: 18,
+        fontWeight: 400,
+        lineHeight: 1.1,
+        letterSpacing: 0,
+        textAlign: "left",
+        color: "#FFFFFF"
+      },
+      styling: { 
+        desktopHeightVH: initialConfig.styling?.desktopHeightVH || 100,
+        mobileHeightVW: initialConfig.styling?.mobileHeightVW || 150,
+      },
     };
   });
 
@@ -593,6 +601,7 @@ export default function BeforeAfterBlock({
 
   useEffect(() => {
     if (beforeAfterData) {
+      console.log("[BeforeAfterBlock Data Prop Check]", JSON.stringify(beforeAfterData, null, 2));
       setLocalData(prevLocalData => {
         const defaultTitle = "GALLERY";
         const defaultShingle = "";
@@ -616,7 +625,9 @@ export default function BeforeAfterBlock({
 
           // --- Refined image state merging ---
           let newBeforeImg;
-          if (oldItemFromLocal.before?.file && oldItemFromLocal.before.url?.startsWith('blob:')) {
+          if (typeof newItemFromProp.before === 'string') {
+            newBeforeImg = initializeImageState(newItemFromProp.before, oldItemFromLocal.before?.originalUrl);
+          } else if (oldItemFromLocal.before?.file && oldItemFromLocal.before.url?.startsWith('blob:')) {
             // If local state has a File/blob, and prop doesn't specify a *different* file or a non-blob URL, keep local.
             if (newItemFromProp.before?.file || (typeof newItemFromProp.before?.url === 'string' && !newItemFromProp.before.url.startsWith('blob:'))) {
               // Prop has a new file or a persistent URL, so use that. Revoke old local blob if different.
@@ -636,7 +647,9 @@ export default function BeforeAfterBlock({
           }
 
           let newAfterImg;
-          if (oldItemFromLocal.after?.file && oldItemFromLocal.after.url?.startsWith('blob:')) {
+          if (typeof newItemFromProp.after === 'string') {
+            newAfterImg = initializeImageState(newItemFromProp.after, oldItemFromLocal.after?.originalUrl);
+          } else if (oldItemFromLocal.after?.file && oldItemFromLocal.after.url?.startsWith('blob:')) {
             if (newItemFromProp.after?.file || (typeof newItemFromProp.after?.url === 'string' && !newItemFromProp.after.url.startsWith('blob:'))) {
               if (oldItemFromLocal.after.url !== newItemFromProp.after.url) {
                 URL.revokeObjectURL(oldItemFromLocal.after.url);
@@ -692,6 +705,10 @@ export default function BeforeAfterBlock({
           toggleButtonTextColor: resolvedToggleButtonTextColor,
           toggleButtonHoverBgColor: resolvedToggleButtonHoverBgColor,
           toggleButtonHoverTextColor: resolvedToggleButtonHoverTextColor,
+          styling: { 
+            desktopHeightVH: beforeAfterData.styling?.desktopHeightVH || prevLocalData.styling.desktopHeightVH,
+            mobileHeightVW: beforeAfterData.styling?.mobileHeightVW || prevLocalData.styling.mobileHeightVW,
+          },
         };
       });
     }
@@ -819,6 +836,12 @@ BeforeAfterBlock.tabsConfig = (blockCurrentData, onControlsChange, themeColors) 
         {...props}
         currentData={blockCurrentData}
         onControlsChange={onControlsChange}
+      />
+    ),
+    fonts: (props) => (
+      <BeforeAfterFontsControls
+        {...props}
+        themeColors={themeColors}
       />
     ),
   };
@@ -1026,11 +1049,73 @@ const BeforeAfterColorControls = ({ currentData, onControlsChange, themeColors }
 =============================================== */
 const BeforeAfterStylingControls = ({ currentData, onControlsChange }) => {
   return (
-    <PanelStylingController
-      currentData={currentData}
-      onControlsChange={onControlsChange}
-      blockType="BeforeAfterBlock"
-      controlType="animations"
-    />
+    <div className="space-y-6 p-4">
+      <PanelStylingController
+        currentData={currentData}
+        onControlsChange={onControlsChange}
+        blockType="BeforeAfterBlock"
+        controlType="animations"
+      />
+      <PanelStylingController
+        currentData={currentData}
+        onControlsChange={onControlsChange}
+        blockType="BeforeAfterBlock"
+        controlType="sizing"
+      />
+    </div>
+  );
+};
+
+/* ==============================================
+   BEFORE-AFTER FONTS CONTROLS
+   ----------------------------------------------
+   Handles font selection for Before/After text elements
+=============================================== */
+const BeforeAfterFontsControls = ({ currentData, onControlsChange, themeColors }) => {
+  return (
+    <div className="bg-white text-gray-800 p-4 rounded">
+      <h3 className="text-lg font-semibold mb-4">Font Settings</h3>
+      
+      <div className="space-y-6">
+        <div>
+          <h4 className="text-sm font-medium text-gray-700 mb-3">
+            Section Title Font
+          </h4>
+          <PanelFontController
+            label="Title Font"
+            currentData={currentData}
+            onControlsChange={onControlsChange}
+            fieldPrefix="sectionTitleTextSettings"
+            themeColors={themeColors}
+          />
+        </div>
+        
+        <div className="border-t pt-4">
+          <h4 className="text-sm font-medium text-gray-700 mb-3">
+            Overlay Shingle Text Font
+          </h4>
+          <PanelFontController
+            label="Shingle Font"
+            currentData={currentData}
+            onControlsChange={onControlsChange}
+            fieldPrefix="overlayShingleTextSettings"
+            themeColors={themeColors}
+          />
+        </div>
+
+        <div className="border-t pt-4">
+          <h4 className="text-sm font-medium text-gray-700 mb-3">
+            Overlay Sqft Text Font
+          </h4>
+          <PanelFontController
+            label="Sqft Font"
+            currentData={currentData}
+            onControlsChange={onControlsChange}
+            fieldPrefix="overlaySqftTextSettings"
+            themeColors={themeColors}
+          />
+        </div>
+      </div>
+    </div>
   );
 };

@@ -37,6 +37,9 @@ export default defineConfig({
       },
     },
   },
+  optimizeDeps: {
+    include: ['lucide-react/dynamic'],
+  },
   // Add performance prefetch for dynamic imports
   server: {
     host: '0.0.0.0',  // This allows external access

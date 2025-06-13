@@ -2,7 +2,26 @@ import React, { useState, useEffect, useRef } from "react";
 import StarRating from "../StarRating";
 import googleIcon from "/assets/images/hero/googleimage.png";
 import ThemeColorPicker from "../common/ThemeColorPicker";
+import PanelImagesController from "../common/PanelImagesController";
+import PanelFontController from "../common/PanelFontController";
+import PanelStylingController from "../common/PanelStylingController";
 import PropTypes from "prop-types";
+
+// Helper to generate styles from text settings object
+const getTextStyles = (settings) => {
+  if (!settings || typeof settings !== 'object') {
+    return {};
+  }
+  const styles = {};
+  if (settings.fontFamily) styles.fontFamily = settings.fontFamily;
+  if (settings.fontSize) styles.fontSize = `${settings.fontSize}px`;
+  if (settings.fontWeight) styles.fontWeight = settings.fontWeight;
+  if (settings.lineHeight) styles.lineHeight = settings.lineHeight;
+  if (settings.letterSpacing) styles.letterSpacing = `${settings.letterSpacing}px`;
+  if (settings.textAlign) styles.textAlign = settings.textAlign;
+  if (settings.color) styles.color = settings.color;
+  return styles;
+};
 
 // =============================================
 // STYLING CONSTANTS - Keep consistent between edit and read-only modes
@@ -34,7 +53,7 @@ const getVariantClasses = (variant) => {
       return {
         container: "flex gap-2 justify-center items-stretch", // Added items-stretch for equal height
         title: "text-4xl text-white mr-4 my-1 font-serif", // Smaller title
-        testimonialCard: "p-2 md:p-3 bg-white rounded-md custom-circle-shadow relative cursor-pointer group flex-1 min-w-0 max-w-xs overflow-hidden", // Added overflow-hidden
+        testimonialCard: "p-2 md:p-3 bg-white rounded-md relative cursor-pointer group flex-1 min-w-0 max-w-xs overflow-hidden", // Added overflow-hidden
         mobileContainer: "flex flex-col gap-2 px-4", // Flex column for mobile
         mobileTitle: "text-[6vw] text-white md:text-[5vh] font-serif mt-2" // Smaller mobile title
       };
@@ -42,7 +61,7 @@ const getVariantClasses = (variant) => {
       return {
         container: "flex gap-6 justify-center items-stretch", // Added items-stretch for equal height
         title: "text-6xl text-white mr-4 my-4 font-serif", // Larger title
-        testimonialCard: "p-4 md:p-6 bg-white rounded-xl custom-circle-shadow relative cursor-pointer group border-2 border-blue-100 flex-1 min-w-0 max-w-sm overflow-hidden", // Added overflow-hidden
+        testimonialCard: "p-4 md:p-6 bg-white rounded-xl relative cursor-pointer group border-2 border-blue-100 flex-1 min-w-0 max-w-sm overflow-hidden", // Added overflow-hidden
         mobileContainer: "flex flex-col gap-4 px-8", // More spacing on mobile
         mobileTitle: "text-[8vw] text-white md:text-[7vh] font-serif mt-4" // Larger mobile title
       };
@@ -50,7 +69,7 @@ const getVariantClasses = (variant) => {
       return {
         container: "flex gap-4 justify-center items-stretch", // Added items-stretch for equal height
         title: "text-5xl text-white mr-4 my-2 font-serif", // Standard title
-        testimonialCard: "p-2 md:p-4 bg-white rounded-lg custom-circle-shadow relative cursor-pointer group flex-1 min-w-0 max-w-md overflow-hidden", // Added overflow-hidden
+        testimonialCard: "p-2 md:p-4 bg-white rounded-lg relative cursor-pointer group flex-1 min-w-0 max-w-md overflow-hidden", // Added overflow-hidden
         mobileContainer: "flex flex-col gap-3 px-6", // Standard mobile
         mobileTitle: "text-[7.5vw] text-white md:text-[6vh] font-serif mt-3" // Standard mobile title
       };
@@ -64,8 +83,29 @@ const getVariantChunkSize = (variant, isSmallScreen) => {
   return 3;
 };
 
+const getArrowStyles = (style, data) => {
+  const baseStyles = {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 10,
+      transition: 'all 0.2s ease-in-out',
+      color: data.arrowColor || '#000000',
+      backgroundColor: data.arrowBgColor || '#ffffff',
+  };
+
+  switch (style) {
+      case 'vintage':
+          return { ...baseStyles, width: '2rem', height: '2rem', borderRadius: '9999px' };
+      case 'modern':
+          return { ...baseStyles, width: '1.5rem', height: '1.5rem', color: data.textcolor, backgroundColor: 'transparent', filter: 'none' };
+      default: // 'classic'
+          return { ...baseStyles, width: '2rem', height: '2rem', borderRadius: '0.375rem', borderWidth: '1px', borderColor: '#E5E7EB' };
+  }
+};
+
 // A SINGLE TESTIMONIAL ITEM COMPONENT
-const TestimonialItem = ({ testimonial, readOnly, onTestimonialChange, index, variant = 'default', backgroundColor, textColor }) => {
+const TestimonialItem = ({ testimonial, readOnly, onTestimonialChange, index, variant = 'default', backgroundColor, textColor, shadowColor, shadowVariant, nameTextSettings, dateTextSettings, bodyTextSettings }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const handleExpandClick = () => setIsExpanded(!isExpanded);
 
@@ -73,6 +113,33 @@ const TestimonialItem = ({ testimonial, readOnly, onTestimonialChange, index, va
     if (onTestimonialChange) {
       const updatedTestimonial = { ...testimonial, [field]: value };
       onTestimonialChange(index, updatedTestimonial);
+    }
+  };
+
+  const hexToRgba = (hex, alpha) => {
+    if (!hex) return `rgba(0,0,0,${alpha})`;
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+
+    if (isNaN(r) || isNaN(g) || isNaN(b)) {
+      return `rgba(0,0,0,${alpha})`;
+    }
+
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  };
+
+  const getShadowStyles = (variant, color, hexToRgbaFunc) => {
+    const rgbaColor = (alpha) => hexToRgbaFunc(color, alpha);
+    switch (variant) {
+        case 'soft':
+            return `0 4px 6px -1px ${rgbaColor(0.05)}, 0 2px 4px -2px ${rgbaColor(0.05)}`;
+        case 'medium':
+            return `0 10px 15px -3px ${rgbaColor(0.1)}, 0 4px 6px -4px ${rgbaColor(0.1)}`;
+        case 'strong':
+            return `0 20px 25px -5px ${rgbaColor(0.1)}, 0 8px 10px -6px ${rgbaColor(0.1)}`;
+        default:
+            return `0 4px 6px -1px ${rgbaColor(0.1)}, 0 2px 4px -2px ${rgbaColor(0.1)}`;
     }
   };
 
@@ -84,11 +151,19 @@ const TestimonialItem = ({ testimonial, readOnly, onTestimonialChange, index, va
   const showViewMore = testimonial.text.length > 100 && !isExpanded;
   const variantClasses = getVariantClasses(variant);
 
+  const nameStyle = getTextStyles(nameTextSettings);
+  const dateStyle = getTextStyles(dateTextSettings);
+  const bodyStyle = getTextStyles(bodyTextSettings);
+
+  const shadowStyle = { boxShadow: getShadowStyles(shadowVariant, shadowColor, hexToRgba) };
+  const cardClasses = `${variantClasses.testimonialCard} flex flex-col h-full justify-center`;
+
   return (
     <div
-      className={`${variantClasses.testimonialCard} flex flex-col h-full justify-between`}
+      className={cardClasses}
       style={{ 
-        backgroundColor: backgroundColor || '#ffffff'
+        backgroundColor: backgroundColor || '#ffffff',
+        ...shadowStyle
       }}
       onClick={!readOnly ? undefined : handleExpandClick}
     >
@@ -116,14 +191,14 @@ const TestimonialItem = ({ testimonial, readOnly, onTestimonialChange, index, va
                   type="text"
                   value={testimonial.name}
                   onChange={(e) => handleFieldChange('name', e.target.value)}
-                  className={`${TEXT_STYLES.testimonialName.editable} ${variant === 'feature' ? 'text-lg md:text-xl' : variant === 'compact' ? 'text-sm md:text-base' : 'text-[2.5vw] md:text-[1.6vh]'} min-w-0 text-left leading-tight`}
-                  style={{ color: textColor || '#000000' }}
+                  className={`font-sans bg-transparent focus:bg-white/20 focus:ring-1 focus:ring-blue-500 rounded p-1 w-full outline-none ${variant === 'feature' ? 'text-lg md:text-xl' : variant === 'compact' ? 'text-sm md:text-base' : 'text-[2.5vw] md:text-[1.6vh]'} min-w-0 text-left leading-tight`}
+                  style={{...nameStyle, color: nameStyle.color || textColor || '#000000'}}
                   onClick={(e) => e.stopPropagation()}
                 />
               ) : (
                 <p 
-                  className={`${TEXT_STYLES.testimonialName.readOnly} ${variant === 'feature' ? 'text-lg md:text-xl' : variant === 'compact' ? 'text-sm md:text-base' : 'text-[2.5vw] md:text-[1.6vh]'} min-w-0 overflow-hidden text-center leading-tight`}
-                  style={{ color: textColor || '#000000' }}
+                  className={`font-sans truncate ${variant === 'feature' ? 'text-lg md:text-xl' : variant === 'compact' ? 'text-sm md:text-base' : 'text-[2.5vw] md:text-[1.6vh]'} min-w-0 overflow-hidden text-center leading-tight`}
+                  style={{...nameStyle, color: nameStyle.color || textColor || '#000000' }}
                 >
                   {testimonial.name}
                 </p>
@@ -137,36 +212,36 @@ const TestimonialItem = ({ testimonial, readOnly, onTestimonialChange, index, va
             </div>
             <p 
               className={`text-gray-600 ${variant === 'feature' ? 'text-sm md:text-base' : variant === 'compact' ? 'text-xs md:text-sm' : 'text-[2.2vw] md:text-[1.2vh]'} text-left leading-tight -mt-1`}
-              style={{ color: textColor ? `${textColor}CC` : '#6B7280' }} // Slightly transparent version of textColor
+              style={{...dateStyle, color: dateStyle.color || (textColor ? `${textColor}CC` : '#6B7280')}} // Slightly transparent version of textColor
             >
               {testimonial.date}
             </p>
           </div>
         </div>
       </div>
-      <div className="flex-grow min-h-0 flex items-center justify-center">
+      <div className="min-h-0 flex items-center justify-center">
         {!readOnly ? (
           <textarea
             value={testimonial.text}
             onChange={(e) => handleFieldChange('text', e.target.value)}
-            className={`${TEXT_STYLES.testimonialText.editable} ${variant === 'feature' ? 'text-base' : variant === 'compact' ? 'text-xs' : 'text-sm'} h-full min-h-0 w-full text-center leading-relaxed`}
-            style={{ color: textColor || '#000000' }}
+            className={`indent-3 bg-transparent focus:bg-white/20 focus:ring-1 focus:ring-blue-500 rounded p-2 w-full resize-none outline-none ${variant === 'feature' ? 'text-base' : variant === 'compact' ? 'text-xs' : 'text-sm'} h-full min-h-0 w-full text-center leading-relaxed`}
+            style={{...bodyStyle, color: bodyStyle.color || textColor || '#000000' }}
             onClick={(e) => e.stopPropagation()}
             rows={variant === 'feature' ? 6 : variant === 'compact' ? 3 : 4}
           />
         ) : (
           <div className="w-full text-center">
-            <p className={`${TEXT_STYLES.testimonialText.readOnly} ${variant === 'feature' ? 'text-base' : variant === 'compact' ? 'text-xs' : ''} break-words text-center`}>
+            <p className={`indent-3 ${variant === 'feature' ? 'text-base' : variant === 'compact' ? 'text-xs' : ''} break-words text-center`}>
               <span 
                 className={`${variant === 'feature' ? 'text-base md:text-lg' : variant === 'compact' ? 'text-xs md:text-sm' : 'text-[2.8vw] md:text-[2.0vh]'} block md:hidden break-words leading-snug`}
-                style={{ color: textColor || '#374151' }}
+                style={{...bodyStyle, color: bodyStyle.color || textColor || '#374151' }}
               >
                 {isExpanded ? testimonial.text : truncated}
                 {showViewMore && <span className="text-blue-600 opacity-60 ml-1">view more</span>}
               </span>
               <span 
                 className={`${variant === 'feature' ? 'text-sm md:text-base' : variant === 'compact' ? 'text-xs' : 'text-xs'} hidden md:block font-serif break-words leading-relaxed`}
-                style={{ color: textColor || '#374151' }}
+                style={{...bodyStyle, color: bodyStyle.color || textColor || '#374151' }}
               >
                 {testimonial.text}
               </span>
@@ -202,6 +277,11 @@ TestimonialItem.propTypes = {
   variant: PropTypes.string,
   backgroundColor: PropTypes.string,
   textColor: PropTypes.string,
+  shadowColor: PropTypes.string,
+  shadowVariant: PropTypes.string,
+  nameTextSettings: PropTypes.object,
+  dateTextSettings: PropTypes.object,
+  bodyTextSettings: PropTypes.object,
 };
 
 // =============================================
@@ -219,7 +299,16 @@ const deriveInitialLocalData = (testimonialsDataInput) => {
     backgroundColor: initial.backgroundColor || '#000000',
     textcolor: initial.textcolor || '#ffffff',
     testimonialbg: initial.testimonialbg || '#ffffff',
-    arrowStyle: initial.arrowStyle || 'default'
+    testimonialShadowColor: initial.testimonialShadowColor || '#000000',
+    arrowStyle: initial.arrowStyle || 'default',
+    arrowColor: initial.arrowColor || '#000000',
+    arrowBgColor: initial.arrowBgColor || '#ffffff',
+    styling: initial.styling || { shadowVariant: 'soft' },
+    sectionTitleTextSettings: initial.sectionTitleTextSettings || {},
+    nameTextSettings: initial.nameTextSettings || {},
+    dateTextSettings: initial.dateTextSettings || {},
+    bodyTextSettings: initial.bodyTextSettings || {},
+    buttonTextSettings: initial.buttonTextSettings || {},
   };
 };
 
@@ -255,6 +344,27 @@ const TestimonialColorControls = ({ currentData, onControlsChange, themeColors }
         onColorChange={(fieldName, value) => handleColorUpdate('testimonialbg', value)}
         fieldName="testimonialbg"
       />
+      <ThemeColorPicker
+        label="Testimonial Shadow Color:"
+        currentColorValue={currentData.testimonialShadowColor || '#000000'}
+        themeColors={themeColors}
+        onColorChange={(fieldName, value) => handleColorUpdate('testimonialShadowColor', value)}
+        fieldName="testimonialShadowColor"
+      />
+      <ThemeColorPicker
+        label="Arrow Color:"
+        currentColorValue={currentData.arrowColor || '#000000'}
+        themeColors={themeColors}
+        onColorChange={(fieldName, value) => handleColorUpdate('arrowColor', value)}
+        fieldName="arrowColor"
+      />
+      <ThemeColorPicker
+        label="Arrow Background Color:"
+        currentColorValue={currentData.arrowBgColor || '#ffffff'}
+        themeColors={themeColors}
+        onColorChange={(fieldName, value) => handleColorUpdate('arrowBgColor', value)}
+        fieldName="arrowBgColor"
+      />
     </div>
   );
 };
@@ -266,143 +376,38 @@ TestimonialColorControls.propTypes = {
 };
 
 const TestimonialStylingControls = ({ currentData, onControlsChange }) => {
-  const handleVariantChange = (newVariant) => {
-    onControlsChange({
-      ...currentData,
-      variant: newVariant
-    });
-  };
-
-  const handleArrowStyleChange = (newArrowStyle) => {
-    onControlsChange({
-      ...currentData,
-      arrowStyle: newArrowStyle
-    });
-  };
-
-  const currentVariant = currentData.variant || 'default';
-  const currentArrowStyle = currentData.arrowStyle || 'default';
-
-  const variantOptions = [
-    { value: 'default', label: 'Default', description: 'Standard testimonial cards with balanced spacing' },
-    { value: 'compact', label: 'Compact', description: 'Smaller cards with tighter spacing' },
-    { value: 'feature', label: 'Feature', description: 'Larger cards with prominent borders' }
-  ];
-
-  const arrowStyleOptions = [
-    { value: 'default', label: 'Default Arrows', description: 'Standard navigation arrows' },
-    { value: 'circle', label: 'Circle Arrows', description: 'Rounded background arrows' },
-    { value: 'minimal', label: 'Minimal', description: 'Simple line arrows' }
-  ];
-
   return (
-    <div className="p-4 bg-gray-800 text-white rounded-lg space-y-6">
-      {/* Variant Selector */}
-      <div className="pb-6 border-b border-gray-600">
-        <h3 className="text-lg font-semibold mb-4 text-center">Testimonial Style</h3>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {variantOptions.map((option) => (
-            <div key={option.value} className="relative">
-              <label className="flex flex-col items-center cursor-pointer group">
-                <input
-                  type="radio"
-                  name="variant"
-                  value={option.value}
-                  checked={currentVariant === option.value}
-                  onChange={() => handleVariantChange(option.value)}
-                  className="sr-only"
-                />
-                
-                <div className={`relative mb-2 p-1 rounded-lg transition-all duration-200 ${
-                  currentVariant === option.value 
-                    ? 'ring-2 ring-green-500 ring-offset-2 ring-offset-gray-800' 
-                    : 'ring-1 ring-gray-600 group-hover:ring-gray-500'
-                }`}>
-                  <div className="w-16 h-12 bg-white border border-gray-200 rounded-md overflow-hidden shadow-sm flex items-center justify-center">
-                    {option.value === 'compact' && (
-                      <div className="text-xs text-gray-600 text-center">Compact</div>
-                    )}
-                    {option.value === 'feature' && (
-                      <div className="text-xs text-gray-600 text-center border border-blue-200 rounded p-1">Feature</div>
-                    )}
-                    {option.value === 'default' && (
-                      <div className="text-xs text-gray-600 text-center">Standard</div>
-                    )}
-                  </div>
-                  
-                  {currentVariant === option.value && (
-                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                      <div className="w-2 h-2 bg-white rounded-full"></div>
-                    </div>
-                  )}
-                </div>
-                
-                <div className={`text-center transition-colors duration-200 ${
-                  currentVariant === option.value ? 'text-green-400' : 'text-gray-300 group-hover:text-white'
-                }`}>
-                  <div className="font-medium text-sm">{option.label}</div>
-                  <div className="text-xs text-gray-400 mt-1 max-w-24 leading-tight">{option.description}</div>
-                </div>
-              </label>
-            </div>
-          ))}
-        </div>
-      </div>
+    <div className="space-y-6">
+      <PanelStylingController
+        currentData={currentData}
+        onControlsChange={onControlsChange}
+        blockType="TestimonialBlock"
+      />
 
-      {/* Arrow Style Selector */}
-      <div>
-        <h3 className="text-lg font-semibold mb-4 text-center">Arrow Style</h3>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {arrowStyleOptions.map((option) => (
-            <div key={option.value} className="relative">
-              <label className="flex flex-col items-center cursor-pointer group">
-                <input
-                  type="radio"
-                  name="arrowStyle"
-                  value={option.value}
-                  checked={currentArrowStyle === option.value}
-                  onChange={() => handleArrowStyleChange(option.value)}
-                  className="sr-only"
-                />
-                
-                <div className={`relative mb-2 p-1 rounded-lg transition-all duration-200 ${
-                  currentArrowStyle === option.value 
-                    ? 'ring-2 ring-green-500 ring-offset-2 ring-offset-gray-800' 
-                    : 'ring-1 ring-gray-600 group-hover:ring-gray-500'
-                }`}>
-                  <div className="w-16 h-12 bg-white border border-gray-200 rounded-md overflow-hidden shadow-sm flex items-center justify-center">
-                    {option.value === 'circle' && (
-                      <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                        <div className="w-2 h-2 border-l-2 border-b-2 border-white transform rotate-45"></div>
-                      </div>
-                    )}
-                    {option.value === 'minimal' && (
-                      <div className="w-4 h-4 border-l-2 border-b-2 border-gray-600 transform rotate-45"></div>
-                    )}
-                    {option.value === 'default' && (
-                      <div className="w-6 h-6 bg-gray-600 flex items-center justify-center">
-                        <div className="w-2 h-2 border-l-2 border-b-2 border-white transform rotate-45"></div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {currentArrowStyle === option.value && (
-                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                      <div className="w-2 h-2 bg-white rounded-full"></div>
-                    </div>
-                  )}
-                </div>
-                
-                <div className={`text-center transition-colors duration-200 ${
-                  currentArrowStyle === option.value ? 'text-green-400' : 'text-gray-300 group-hover:text-white'
-                }`}>
-                  <div className="font-medium text-sm">{option.label}</div>
-                  <div className="text-xs text-gray-400 mt-1 max-w-24 leading-tight">{option.description}</div>
-                </div>
-              </label>
-            </div>
+      {/* Custom Arrow Style Control */}
+      <div className="bg-white p-4 rounded-lg">
+        <h3 className="text-lg font-semibold mb-4">Arrow Style</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {['classic', 'modern', 'vintage'].map((style) => (
+            <button
+              key={style}
+              onClick={() => onControlsChange({ ...currentData, arrowStyle: style })}
+              className={`p-3 text-center rounded-md border transition-all ${
+                (currentData.arrowStyle || 'classic') === style
+                  ? "border-blue-500 bg-blue-50 text-blue-700"
+                  : "border-gray-200 bg-white hover:border-gray-300"
+              }`}
+            >
+              <div
+                className="mx-auto"
+                style={getArrowStyles(style, currentData)}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                </svg>
+              </div>
+              <div className="font-medium text-sm capitalize mt-2">{style}</div>
+            </button>
           ))}
         </div>
       </div>
@@ -668,6 +673,41 @@ TestimonialReviewsControls.propTypes = {
   onControlsChange: PropTypes.func.isRequired,
 };
 
+/* ==============================================
+   TESTIMONIAL FONTS CONTROLS
+   ----------------------------------------------
+   Handles font selection for Testimonial text elements
+=============================================== */
+const TestimonialFontsControls = ({ currentData, onControlsChange, themeColors }) => {
+  const fontFields = [
+    { prefix: 'sectionTitleTextSettings', label: 'Section Title' },
+    { prefix: 'nameTextSettings', label: 'Testimonial Name' },
+    { prefix: 'dateTextSettings', label: 'Testimonial Date' },
+    { prefix: 'bodyTextSettings', label: 'Testimonial Body' },
+    { prefix: 'buttonTextSettings', label: 'Google Review Button' },
+  ];
+
+  return (
+    <div className="bg-white text-gray-800 p-4 rounded">
+      <h3 className="text-lg font-semibold mb-4">Font Settings</h3>
+      <div className="space-y-6">
+        {fontFields.map(({ prefix, label }) => (
+          <div key={prefix} className="border-t pt-4">
+            <h4 className="text-sm font-medium text-gray-700 mb-3">{label}</h4>
+            <PanelFontController
+              label={`${label} Font`}
+              currentData={currentData}
+              onControlsChange={onControlsChange}
+              fieldPrefix={prefix}
+              themeColors={themeColors}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 // =============================================
 // MAIN EXPORT: TestimonialBlock
 // =============================================
@@ -773,19 +813,6 @@ export default function TestimonialBlock({
     }
   };
 
-  const getArrowClasses = () => {
-    const baseClasses = "flex items-center justify-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,1.8)] hover:drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,1.8)] z-10 transition-all duration-200";
-    
-    switch (localData.arrowStyle) {
-      case 'circle':
-        return `${baseClasses} w-8 h-8 bg-blue-500 text-white rounded-full hover:bg-blue-600`;
-      case 'minimal':
-        return `${baseClasses} w-6 h-6 text-white hover:text-gray-200`;
-      default:
-        return `${baseClasses} w-8 h-8 bg-white text-gray-700 rounded-md hover:bg-gray-100 border border-gray-200`;
-    }
-  };
-
   return (
     <div 
       className="w-full pb-6 md:pt-5" 
@@ -802,10 +829,10 @@ export default function TestimonialBlock({
               value={localData.title}
               onChange={(e) => handleFieldChange('title', e.target.value)}
               className={`${variantClasses.mobileTitle} bg-transparent focus:bg-white/20 focus:ring-1 focus:ring-blue-500 rounded p-2 outline-none text-center`}
-              style={{ color: localData.textcolor }}
+              style={getTextStyles(localData.sectionTitleTextSettings)}
             />
           ) : (
-            <h2 className={variantClasses.mobileTitle} style={{ color: localData.textcolor }}>
+            <h2 className={variantClasses.mobileTitle} style={getTextStyles(localData.sectionTitleTextSettings)}>
               {localData.title}
             </h2>
           )}
@@ -814,7 +841,8 @@ export default function TestimonialBlock({
           {totalReviews > smallScreenChunkSize && currentIndex > 0 && (
             <button
               onClick={() => handlePrev(true)}
-              className={`absolute left-0 top-1/2 transform -translate-y-1/2 ml-1 ${getArrowClasses()}`}
+              className="absolute left-0 top-1/2 transform -translate-y-1/2 ml-1"
+              style={getArrowStyles(localData.arrowStyle, localData)}
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
@@ -832,13 +860,19 @@ export default function TestimonialBlock({
                 variant={localData.variant}
                 backgroundColor={localData.testimonialbg}
                 textColor={localData.textcolor}
+                shadowColor={localData.testimonialShadowColor}
+                shadowVariant={localData.styling?.shadowVariant}
+                nameTextSettings={localData.nameTextSettings}
+                dateTextSettings={localData.dateTextSettings}
+                bodyTextSettings={localData.bodyTextSettings}
               />
             ))}
           </div>
           {totalReviews > smallScreenChunkSize && currentIndex + smallScreenChunkSize < totalReviews && (
             <button
               onClick={() => handleNext(true)}
-              className={`absolute right-0 top-1/2 transform -translate-y-1/2 mr-1 ${getArrowClasses()}`}
+              className="absolute right-0 top-1/2 transform -translate-y-1/2 mr-1"
+              style={getArrowStyles(localData.arrowStyle, localData)}
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
@@ -858,7 +892,7 @@ export default function TestimonialBlock({
               className="flex items-center px-3 py-1  rounded-full custom-circle-shadow hover:bg-gray-100 transition duration-300 text-xs font-sans"
             >
               <img src={googleIcon} alt="Google" className="w-4 h-4 mr-1" />
-              <span>{localData.reviewButtonText}</span>
+              <span style={getTextStyles(localData.buttonTextSettings)}>{localData.reviewButtonText}</span>
             </a>
           </div>
         </div>
@@ -873,10 +907,10 @@ export default function TestimonialBlock({
               value={localData.title}
               onChange={(e) => handleFieldChange('title', e.target.value)}
               className={`${variantClasses.title} bg-transparent focus:bg-white/20 focus:ring-1 focus:ring-blue-500 rounded p-2 outline-none text-center`}
-              style={{ color: localData.textcolor }}
+              style={getTextStyles(localData.sectionTitleTextSettings)}
             />
           ) : (
-            <h2 className={variantClasses.title} style={{ color: localData.textcolor }}>
+            <h2 className={variantClasses.title} style={getTextStyles(localData.sectionTitleTextSettings)}>
               {localData.title}
             </h2>
           )}
@@ -886,7 +920,8 @@ export default function TestimonialBlock({
             {totalReviews > chunkSize && currentIndex > 0 && (
               <button
                 onClick={() => handlePrev(false)}
-                className={`absolute -left-10 top-1/2 transform -translate-y-1/2 ${getArrowClasses()}`}
+                className="absolute -left-10 top-1/2 transform -translate-y-1/2"
+                style={getArrowStyles(localData.arrowStyle, localData)}
               >
                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
@@ -903,12 +938,18 @@ export default function TestimonialBlock({
                 variant={localData.variant}
                 backgroundColor={localData.testimonialbg}
                 textColor={localData.textcolor}
+                shadowColor={localData.testimonialShadowColor}
+                shadowVariant={localData.styling?.shadowVariant}
+                nameTextSettings={localData.nameTextSettings}
+                dateTextSettings={localData.dateTextSettings}
+                bodyTextSettings={localData.bodyTextSettings}
               />
             ))}
             {totalReviews > chunkSize && currentIndex + chunkSize < totalReviews && (
               <button
                 onClick={() => handleNext(false)}
-                className={`absolute -right-10 top-1/2 transform -translate-y-1/2 ${getArrowClasses()}`}
+                className="absolute -right-10 top-1/2 transform -translate-y-1/2"
+                style={getArrowStyles(localData.arrowStyle, localData)}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
@@ -926,7 +967,7 @@ export default function TestimonialBlock({
               className="flex items-center px-4 py-1 rounded-full custom-circle-shadow hover:bg-gray-100 transition duration-300 text-sm md:text-lg font-sans"
             >
               <img src={googleIcon} alt="Google" className="w-6 h-6 mr-2" />
-              <span>{localData.reviewButtonText}</span>
+              <span style={getTextStyles(localData.buttonTextSettings)}>{localData.reviewButtonText}</span>
             </a>
           </div>
         </div>
@@ -971,6 +1012,16 @@ TestimonialBlock.tabsConfig = (currentData, onControlsChange, themeColors, siteP
       {...props}
       currentData={currentData}
       onControlsChange={onControlsChange}
+    />
+  );
+
+  // Fonts Tab
+  tabs.fonts = (props) => (
+    <TestimonialFontsControls
+      {...props}
+      currentData={currentData}
+      onControlsChange={onControlsChange}
+      themeColors={themeColors}
     />
   );
 

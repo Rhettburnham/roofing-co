@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 import { FaUsers, FaHistory, FaAward, FaHandshake } from "react-icons/fa";
 import ThemeColorPicker from "../common/ThemeColorPicker";
+import PanelImagesController from "../common/PanelImagesController";
+import PanelStylingController from "../common/PanelStylingController";
 import { useConfig } from "../../context/ConfigContext";
 
 /* ======================================================
@@ -32,7 +34,14 @@ function AboutPreview({
     team = [{name: "Carl Craft", position: "Owner", photo: "/assets/images/team/roofer.png"}],
     stats = [{title: "Years", value: 9, icon: "FaHistory"}],
     heroImage = "/assets/images/about/about-hero.jpg",
-    steps = [{title: "Book", videoSrc: "/assets/videos/our_process_videos/booking.mp4", href: "/#booking", scale: 0.8 }]
+    steps = [{title: "Book", videoSrc: "/assets/videos/our_process_videos/booking.mp4", href: "/#booking", scale: 0.8 }],
+    // color properties
+    sectionBackgroundColor = '#F9FAFB',
+    textColor = '#374151',
+    subtitleColor = '#4B5563',
+    accentColor = '#2B4C7E',
+    cardBackgroundColor = '#FFFFFF',
+    cardTextColor = '#4B5563'
   } = aboutData;
 
   const heroImageDisplayUrl = getDisplayUrl(heroImage, "/assets/images/about/default-hero.jpg");
@@ -40,7 +49,7 @@ function AboutPreview({
   const commonInputClass = "bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1";
 
   return (
-    <section className="py-12 md:py-16 bg-gray-50 text-gray-800">
+    <section className="py-12 md:py-16" style={{ backgroundColor: sectionBackgroundColor, color: textColor }}>
       <div className="container mx-auto px-4 space-y-12">
         
         {/* Main Title and Subtitle */}
@@ -54,17 +63,19 @@ function AboutPreview({
               onChange={(e) => onFieldChange && onFieldChange('title', e.target.value)} 
               className={`text-4xl md:text-5xl font-bold mb-2 text-center w-full ${commonInputClass}`}
               placeholder="Main Title"
+              style={{ color: textColor }}
             />
           )}
           {readOnly ? (
-            <p className="text-lg text-gray-600">{subtitle}</p>
+            <p className="text-lg" style={{ color: subtitleColor }}>{subtitle}</p>
           ) : (
             <input 
               type="text" 
               value={subtitle} 
               onChange={(e) => onFieldChange && onFieldChange('subtitle', e.target.value)} 
-              className={`text-lg text-gray-600 text-center w-full ${commonInputClass} mt-1`}
+              className={`text-lg text-center w-full ${commonInputClass} mt-1`}
               placeholder="Subtitle"
+              style={{ color: subtitleColor }}
             />
           )}
         </div>
@@ -84,13 +95,14 @@ function AboutPreview({
         <div>
           <h2 className="text-2xl md:text-3xl font-semibold mb-3">Our History</h2>
           {readOnly ? (
-            <p className="text-gray-700 leading-relaxed">{history}</p>
+            <p className="leading-relaxed" style={{ color: textColor }}>{history}</p>
           ) : (
             <textarea 
               value={history} 
               onChange={(e) => onFieldChange && onFieldChange('history', e.target.value)} 
-              className={`${commonInputClass} w-full h-24 resize-none text-gray-700 leading-relaxed`}
+              className={`${commonInputClass} w-full h-24 resize-none leading-relaxed`}
               placeholder="Company History"
+              style={{ color: textColor }}
             />
           )}
         </div>
@@ -99,13 +111,14 @@ function AboutPreview({
         <div>
           <h2 className="text-2xl md:text-3xl font-semibold mb-3">Our Mission</h2>
           {readOnly ? (
-            <p className="text-gray-700 leading-relaxed">{mission}</p>
+            <p className="leading-relaxed" style={{ color: textColor }}>{mission}</p>
           ) : (
             <textarea 
               value={mission} 
               onChange={(e) => onFieldChange && onFieldChange('mission', e.target.value)} 
-              className={`${commonInputClass} w-full h-24 resize-none text-gray-700 leading-relaxed`}
+              className={`${commonInputClass} w-full h-24 resize-none leading-relaxed`}
               placeholder="Company Mission"
+              style={{ color: textColor }}
             />
           )}
         </div>
@@ -115,26 +128,28 @@ function AboutPreview({
           <h2 className="text-2xl md:text-3xl font-semibold mb-4">Our Values</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {(values || []).map((valueItem, index) => (
-              <div key={index} className="p-4 rounded-lg shadow bg-white">
+              <div key={index} className="p-4 rounded-lg shadow" style={{ backgroundColor: cardBackgroundColor }}>
                 {readOnly ? (
-                  <h3 className="text-xl font-semibold text-accent mb-1">{valueItem.title}</h3>
+                  <h3 className="text-xl font-semibold mb-1" style={{ color: accentColor }}>{valueItem.title}</h3>
                 ) : (
                   <input 
                     type="text" 
                     value={valueItem.title} 
                     onChange={(e) => onNestedChange && onNestedChange('values', index, 'title', e.target.value)} 
-                    className={`text-xl font-semibold text-accent mb-1 w-full ${commonInputClass}`}
+                    className={`text-xl font-semibold mb-1 w-full ${commonInputClass}`}
                     placeholder="Value Title"
+                    style={{ color: accentColor }}
                   />
                 )}
                 {readOnly ? (
-                  <p className="text-gray-600">{valueItem.description}</p>
+                  <p style={{ color: cardTextColor }}>{valueItem.description}</p>
                 ) : (
                   <textarea 
                     value={valueItem.description} 
                     onChange={(e) => onNestedChange && onNestedChange('values', index, 'description', e.target.value)} 
-                    className={`text-gray-600 w-full h-20 resize-none ${commonInputClass} mt-1`}
+                    className={`w-full h-20 resize-none ${commonInputClass} mt-1`}
                     placeholder="Value Description"
+                    style={{ color: cardTextColor }}
                   />
                 )}
                 {!readOnly && (
@@ -165,14 +180,14 @@ function AboutPreview({
             {(team || []).map((member, index) => {
               const photoDisplayUrl = getDisplayUrl(member.photo, "/assets/images/team/default-profile.png");
               return (
-                <div key={index} className="text-center p-4 rounded-lg shadow bg-white">
+                <div key={index} className="text-center p-4 rounded-lg shadow" style={{ backgroundColor: cardBackgroundColor }}>
                   <img 
                     src={photoDisplayUrl} 
                     alt={member.name} 
                     className="w-32 h-32 rounded-full mx-auto mb-3 object-cover" 
                   />
                   {readOnly ? (
-                    <h3 className="text-lg font-medium">{member.name}</h3>
+                    <h3 className="text-lg font-medium" style={{ color: cardTextColor }}>{member.name}</h3>
                   ) : (
                     <input 
                       type="text" 
@@ -180,17 +195,19 @@ function AboutPreview({
                       onChange={(e) => onNestedChange && onNestedChange('team', index, 'name', e.target.value)} 
                       className={`text-lg font-medium text-center w-full ${commonInputClass}`}
                       placeholder="Team Member Name"
+                      style={{ color: cardTextColor }}
                     />
                   )}
                   {readOnly ? (
-                    <p className="text-gray-500 text-sm">{member.position}</p>
+                    <p className="text-sm" style={{ color: cardTextColor }}>{member.position}</p>
                   ) : (
                     <input 
                       type="text" 
                       value={member.position} 
                       onChange={(e) => onNestedChange && onNestedChange('team', index, 'position', e.target.value)} 
-                      className={`text-gray-500 text-sm text-center w-full ${commonInputClass} mt-1`}
+                      className={`text-sm text-center w-full ${commonInputClass} mt-1`}
                       placeholder="Position"
+                      style={{ color: cardTextColor }}
                     />
                   )}
                   {!readOnly && (
@@ -222,27 +239,29 @@ function AboutPreview({
           <h2 className="text-2xl md:text-3xl font-semibold mb-6 text-center">Our Achievements</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {(stats || []).map((statItem, index) => (
-              <div key={index} className="text-center p-3 rounded-lg shadow bg-white">
+              <div key={index} className="text-center p-3 rounded-lg shadow" style={{ backgroundColor: cardBackgroundColor }}>
                 {readOnly ? (
-                  <p className="text-3xl font-bold text-accent">{statItem.value}</p>
+                  <p className="text-3xl font-bold" style={{ color: accentColor }}>{statItem.value}</p>
                 ) : (
                   <input 
                     type="text" 
                     value={statItem.value} 
                     onChange={(e) => onNestedChange && onNestedChange('stats', index, 'value', e.target.value)} 
-                    className={`text-3xl font-bold text-accent text-center w-full ${commonInputClass}`}
+                    className={`text-3xl font-bold text-center w-full ${commonInputClass}`}
                     placeholder="Value"
+                    style={{ color: accentColor }}
                   />
                 )}
                 {readOnly ? (
-                  <p className="text-sm text-gray-600 mt-1">{statItem.title}</p>
+                  <p className="text-sm mt-1" style={{ color: cardTextColor }}>{statItem.title}</p>
                 ) : (
                   <input 
                     type="text" 
                     value={statItem.title} 
                     onChange={(e) => onNestedChange && onNestedChange('stats', index, 'title', e.target.value)} 
-                    className={`text-sm text-gray-600 mt-1 text-center w-full ${commonInputClass}`}
+                    className={`text-sm mt-1 text-center w-full ${commonInputClass}`}
                     placeholder="Title"
+                    style={{ color: cardTextColor }}
                   />
                 )}
                 {!readOnly && (
@@ -275,7 +294,7 @@ function AboutPreview({
             {(steps || []).map((step, index) => {
                 const videoDisplayUrl = getDisplayUrl(step.videoSrc, "");
                 return (
-                <div key={index} className="flex flex-col items-center text-center p-3 rounded-lg shadow bg-white">
+                <div key={index} className="flex flex-col items-center text-center p-3 rounded-lg shadow" style={{ backgroundColor: cardBackgroundColor }}>
                         {videoDisplayUrl && (
                              <div className="w-full h-32 bg-black rounded-md overflow-hidden mb-3 flex items-center justify-center">
                                 <video 
@@ -290,7 +309,7 @@ function AboutPreview({
                             </div>
                         )}
                         {readOnly ? (
-                            <h3 className="text-lg font-medium">{step.title}</h3>
+                            <h3 className="text-lg font-medium" style={{ color: cardTextColor }}>{step.title}</h3>
                         ) : (
                     <input 
                       type="text" 
@@ -298,10 +317,11 @@ function AboutPreview({
                       onChange={(e) => onNestedChange && onNestedChange('steps', index, 'title', e.target.value)} 
                       className={`text-lg font-medium text-center w-full ${commonInputClass} mb-1`}
                       placeholder="Step Title"
+                      style={{ color: cardTextColor }}
                     />
                         )}
                         {readOnly ? (
-                            step.href && <a href={step.href} className="text-blue-600 hover:text-blue-800 text-sm mt-1">Learn More</a>
+                            step.href && <a href={step.href} className="text-blue-600 hover:text-blue-800 text-sm mt-1" style={{ color: cardTextColor }}>Learn More</a>
                         ) : (
                     <input 
                       type="text" 
@@ -309,18 +329,20 @@ function AboutPreview({
                       onChange={(e) => onNestedChange && onNestedChange('steps', index, 'href', e.target.value)} 
                       className={`text-blue-600 text-sm text-center w-full ${commonInputClass} mt-1`}
                       placeholder="Link URL (e.g., /#contact)"
+                      style={{ color: cardTextColor }}
                     />
                         )}
                         {!readOnly && (
                     <>
                              <div className="w-full mt-2">
-                                <label className="block text-xs font-medium text-gray-600">Scale (e.g., 1.0):</label>
+                                <label className="block text-xs font-medium text-gray-600" style={{ color: cardTextColor }}>Scale (e.g., 1.0):</label>
                         <input 
                           type="number" 
                           step="0.01" 
                           value={step.scale || 1.0} 
                           onChange={(e) => onNestedChange && onNestedChange('steps', index, 'scale', parseFloat(e.target.value))} 
                           className={`text-sm text-center w-20 mx-auto ${commonInputClass}`}
+                          style={{ color: cardTextColor }}
                         />
                              </div>
                       <button 
@@ -353,132 +375,173 @@ function AboutPreview({
 }
 
 /* ======================================================
-   ABOUT EDITOR PANEL (Image uploads and controls)
+   ABOUT IMAGES CONTROLS
    ------------------------------------------------------
-   Similar to BeforeAfterEditorPanel, handles complex controls
+   Handles image uploads using PanelImagesController
 ========================================================= */
-function AboutEditorPanel({ localData, onPanelChange, onFileChange, themeColors }) {
-  const { team = [], steps = [] } = localData;
+const AboutImagesControls = ({ currentData, onControlsChange, themeColors }) => {
+  const { team = [], steps = [] } = currentData;
 
-  const handleHeroImageChange = (file) => {
-    if (onFileChange) {
-      onFileChange('heroImage', file);
-    }
+  // Convert team photos to images array format for PanelImagesController
+  const teamImagesArray = team.map((member, index) => ({
+    id: `team_${index}`,
+    url: getDisplayUrl(member.photo, "/assets/images/team/default-profile.png"),
+    file: member.photo?.file || null,
+    name: `${member.name || `Team Member ${index + 1}`} Photo`,
+    originalUrl: member.photo?.originalUrl || "/assets/images/team/default-profile.png",
+    memberIndex: index,
+    type: 'team'
+  }));
+
+  // Handle hero image with PanelImagesController
+  const heroImagesArray = currentData.heroImage ? [{
+    id: 'hero_image',
+    url: getDisplayUrl(currentData.heroImage, "/assets/images/about/default-hero.jpg"),
+    file: currentData.heroImage?.file || null,
+    name: 'Hero Image',
+    originalUrl: currentData.heroImage?.originalUrl || "/assets/images/about/default-hero.jpg",
+    type: 'hero'
+  }] : [];
+
+  const handleHeroImageChange = (newImagesArray) => {
+    const heroImage = newImagesArray.length > 0 ? {
+      file: newImagesArray[0].file,
+      url: newImagesArray[0].url,
+      name: newImagesArray[0].name,
+      originalUrl: newImagesArray[0].originalUrl
+    } : null;
+    onControlsChange({ heroImage });
   };
 
-  const handleTeamPhotoChange = (index, file) => {
-    if (onFileChange) {
-      onFileChange({ field: 'photo', teamIndex: index }, file);
-    }
-  };
-
-  const handleStepVideoChange = (index, file) => {
-    if (onFileChange) {
-      onFileChange({ field: 'videoSrc', stepIndex: index }, file);
-    }
+  const handleTeamImagesChange = (newImagesArray) => {
+    const updatedTeam = [...team];
+    newImagesArray.forEach(img => {
+      const memberIndex = img.memberIndex || 0;
+      if (updatedTeam[memberIndex]) {
+        updatedTeam[memberIndex] = {
+          ...updatedTeam[memberIndex],
+          photo: {
+            file: img.file,
+            url: img.url,
+            name: img.name,
+            originalUrl: img.originalUrl
+          }
+        };
+      }
+    });
+    onControlsChange({ team: updatedTeam });
   };
 
   return (
-    <div className="bg-white text-gray-800 p-4 rounded border-t border-gray-200">
-      <h2 className="text-lg font-semibold mb-4">About Page Settings</h2>
+    <div className="bg-white text-gray-800 p-3 rounded">
+      <h3 className="text-sm font-semibold mb-3">About Page Images</h3>
       
       <div className="space-y-6">
-        {/* Hero Image Upload */}
+        {/* Hero Image */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Hero Image:</label>
-          <input 
-            type="file" 
-            accept="image/*" 
-            onChange={(e) => handleHeroImageChange(e.target.files?.[0])} 
-            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+          <h4 className="text-sm font-medium text-gray-700 mb-3">Hero Image</h4>
+          <PanelImagesController
+            currentData={{ images: heroImagesArray }}
+            onControlsChange={(data) => handleHeroImageChange(data.images || [])}
+            imageArrayFieldName="images"
+            maxImages={1}
           />
-          {getDisplayUrl(localData.heroImage) && (
-            <img 
-              src={getDisplayUrl(localData.heroImage)} 
-              alt="Hero Preview" 
-              className="mt-2 h-20 w-auto object-contain rounded bg-gray-100 p-1"
-            />
-          )}
         </div>
 
         {/* Team Photos */}
         {team.length > 0 && (
           <div>
-            <h3 className="text-md font-medium text-gray-700 mb-2">Team Photos:</h3>
-            <div className="space-y-2">
-              {team.map((member, index) => (
-                <div key={index} className="flex items-center space-x-3 p-2 bg-gray-50 rounded">
-                  <span className="text-sm font-medium min-w-0 flex-1">{member.name || `Member ${index + 1}`}</span>
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    onChange={(e) => handleTeamPhotoChange(index, e.target.files?.[0])} 
-                    className="text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-blue-500 file:text-white hover:file:bg-blue-600"
-                  />
-                  {getDisplayUrl(member.photo) && (
-                    <img 
-                      src={getDisplayUrl(member.photo)} 
-                      alt={member.name} 
-                      className="h-8 w-8 rounded-full object-cover"
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Process Step Videos */}
-        {steps.length > 0 && (
-          <div>
-            <h3 className="text-md font-medium text-gray-700 mb-2">Process Step Videos:</h3>
-            <div className="space-y-2">
-              {steps.map((step, index) => (
-                <div key={index} className="flex items-center space-x-3 p-2 bg-gray-50 rounded">
-                  <span className="text-sm font-medium min-w-0 flex-1">{step.title || `Step ${index + 1}`}</span>
-                  <input 
-                    type="file" 
-                    accept="video/*" 
-                    onChange={(e) => handleStepVideoChange(index, e.target.files?.[0])} 
-                    className="text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-blue-500 file:text-white hover:file:bg-blue-600"
-                  />
-                  {getDisplayUrl(step.videoSrc) && (
-                    <div className="h-8 w-12 bg-black rounded overflow-hidden">
-                      <video 
-                        src={getDisplayUrl(step.videoSrc)} 
-                        className="w-full h-full object-cover"
-                        muted
-                      />
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Theme Colors */}
-        {themeColors && (
-          <div>
-            <h3 className="text-md font-medium text-gray-700 mb-2">Theme Colors:</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <ThemeColorPicker
-                label="Accent Color"
-                currentColorValue={themeColors.accent || '#2B4C7E'}
-                themeColors={themeColors}
-                onColorChange={(fieldName, value) => {
-                  // This would need to be handled by parent component
-                  console.log('Color change:', fieldName, value);
-                }}
-                fieldName="accent"
-              />
-            </div>
+            <h4 className="text-sm font-medium text-gray-700 mb-3">Team Photos</h4>
+            <PanelImagesController
+              currentData={{ images: teamImagesArray }}
+              onControlsChange={(data) => handleTeamImagesChange(data.images || [])}
+              imageArrayFieldName="images"
+              getItemName={(item, idx) => item.name || `Team Photo ${idx + 1}`}
+              maxImages={team.length}
+            />
           </div>
         )}
       </div>
     </div>
   );
-}
+};
+
+/* ======================================================
+   ABOUT COLOR CONTROLS
+   ------------------------------------------------------
+   Handles color customization using ThemeColorPicker
+========================================================= */
+const AboutColorControls = ({ currentData, onControlsChange, themeColors }) => {
+  const handleColorChange = (fieldName, value) => {
+    onControlsChange({ [fieldName]: value });
+  };
+
+  return (
+    <div className="bg-white text-gray-800 p-3 rounded">
+      <h3 className="text-sm font-semibold mb-3">About Page Colors</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <ThemeColorPicker
+          label="Section Background:"
+          currentColorValue={currentData.sectionBackgroundColor || '#F9FAFB'}
+          themeColors={themeColors}
+          onColorChange={handleColorChange}
+          fieldName="sectionBackgroundColor"
+        />
+        <ThemeColorPicker
+          label="Main Text Color:"
+          currentColorValue={currentData.textColor || '#374151'}
+          themeColors={themeColors}
+          onColorChange={handleColorChange}
+          fieldName="textColor"
+        />
+        <ThemeColorPicker
+          label="Subtitle Color:"
+          currentColorValue={currentData.subtitleColor || '#4B5563'}
+          themeColors={themeColors}
+          onColorChange={handleColorChange}
+          fieldName="subtitleColor"
+        />
+        <ThemeColorPicker
+          label="Accent Color:"
+          currentColorValue={currentData.accentColor || '#2B4C7E'}
+          themeColors={themeColors}
+          onColorChange={handleColorChange}
+          fieldName="accentColor"
+        />
+        <ThemeColorPicker
+          label="Card Background:"
+          currentColorValue={currentData.cardBackgroundColor || '#FFFFFF'}
+          themeColors={themeColors}
+          onColorChange={handleColorChange}
+          fieldName="cardBackgroundColor"
+        />
+        <ThemeColorPicker
+          label="Card Text Color:"
+          currentColorValue={currentData.cardTextColor || '#4B5563'}
+          themeColors={themeColors}
+          onColorChange={handleColorChange}
+          fieldName="cardTextColor"
+        />
+      </div>
+    </div>
+  );
+};
+
+/* ======================================================
+   ABOUT STYLING CONTROLS
+   ------------------------------------------------------
+   Handles styling options using PanelStylingController
+========================================================= */
+const AboutStylingControls = ({ currentData, onControlsChange }) => {
+  return (
+    <PanelStylingController
+      currentData={currentData}
+      onControlsChange={onControlsChange}
+      blockType="AboutBlock"
+      controlType="height"
+    />
+  );
+};
 
 /* ======================================================
    MAIN COMPONENT: AboutBlock
@@ -504,6 +567,14 @@ export default function AboutBlock({
       stats: (initial.stats || []).map(s => ({ ...s })),
       heroImage: initializeImageState(initial.heroImage),
       steps: (initial.steps || []).map(st => ({ ...st, videoSrc: initializeImageState(st.videoSrc) })),
+      // Add default styling colors
+      sectionBackgroundColor: initial.sectionBackgroundColor || '#F9FAFB',
+      textColor: initial.textColor || '#374151',
+      accentColor: initial.accentColor || '#2B4C7E',
+      cardBackgroundColor: initial.cardBackgroundColor || '#FFFFFF',
+      subtitleColor: initial.subtitleColor || '#4B5563',
+      cardTextColor: initial.cardTextColor || '#4B5563',
+      styling: initial.styling || { desktopHeightVH: 35, mobileHeightVW: 60 }
     };
   });
 
@@ -521,6 +592,13 @@ export default function AboutBlock({
           stats: (aboutData.stats || []).map(s => ({ ...s })),
           heroImage: initializeImageState(aboutData.heroImage),
           steps: (aboutData.steps || []).map(st => ({ ...st, videoSrc: initializeImageState(st.videoSrc) })),
+          sectionBackgroundColor: aboutData.sectionBackgroundColor || prev.sectionBackgroundColor,
+          textColor: aboutData.textColor || prev.textColor,
+          accentColor: aboutData.accentColor || prev.accentColor,
+          cardBackgroundColor: aboutData.cardBackgroundColor || prev.cardBackgroundColor,
+          subtitleColor: aboutData.subtitleColor || prev.subtitleColor,
+          cardTextColor: aboutData.cardTextColor || prev.cardTextColor,
+          styling: aboutData.styling || prev.styling
         };
         return newData;
       });
@@ -723,12 +801,22 @@ export default function AboutBlock({
         onRemoveItem={!readOnly ? handleRemoveItem : undefined}
       />
       {!readOnly && (
-        <AboutEditorPanel
-          localData={localData}
-          onPanelChange={handleLocalDataUpdate}
-          onFileChange={handleFileChange}
-          themeColors={themeColors}
-        />
+        <>
+          <AboutImagesControls
+            currentData={localData}
+            onControlsChange={handleLocalDataUpdate}
+            themeColors={themeColors}
+          />
+          <AboutColorControls
+            currentData={localData}
+            onControlsChange={handleLocalDataUpdate}
+            themeColors={themeColors}
+          />
+          <AboutStylingControls
+            currentData={localData}
+            onControlsChange={handleLocalDataUpdate}
+          />
+        </>
       )}
     </>
   );
@@ -877,4 +965,33 @@ const handleUrlChangeHelper = (urlValue, currentValue) => {
 };
 
 // Export EditorPanel for potential external usage (matching BeforeAfterBlock pattern)
-AboutBlock.EditorPanel = AboutEditorPanel;
+AboutBlock.EditorPanel = AboutPreview;
+
+// Expose tabsConfig for TopStickyEditPanel
+AboutBlock.tabsConfig = (blockCurrentData, onControlsChange, themeColors) => {
+  return {
+    images: (props) => (
+      <AboutImagesControls 
+        {...props} 
+        currentData={blockCurrentData}
+        onControlsChange={onControlsChange}
+        themeColors={themeColors}
+      />
+    ),
+    colors: (props) => (
+      <AboutColorControls 
+        {...props} 
+        currentData={blockCurrentData}
+        onControlsChange={onControlsChange}
+        themeColors={themeColors} 
+      />
+    ),
+    styling: (props) => (
+      <AboutStylingControls
+        {...props}
+        currentData={blockCurrentData}
+        onControlsChange={onControlsChange}
+      />
+    ),
+  };
+};
