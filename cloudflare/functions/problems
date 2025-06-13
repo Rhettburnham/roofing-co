@@ -22,30 +22,40 @@ TODAY:
     switch url testing to db call<>
 
 
-finish merge:
-  edit oneform if needed to load combined_data.json and test on live site<>
-    fix services.json error<>
-      fix color loading error<>
+
+  
       
+currently testing:
+
+  about page:
+    videos
+  main and /about not properly defaulting
+  
+  cowboy-vaqueros doesnt load correctyl
+  
+  hella problems with main page
+  iamges not saving to correct paths
+  check if actual worker saves with json and images, 
+  
+  add code so that all images can be pulled from db
 
 
-  then edit oneform to also pull the other jsons(manually add them)
-    possibles: not editing the bookingblock wierd method of getting services, not editing the zipp method in oneform
-  dont reload oneform data on every tab press <>
-
-  add or adjust the save changes button to add the jsons aswell<committed but delayed>
-
-  adjust again to add images(the whole folder??) <!>
-  upload and check all functionality
+  
+  forgot password thing, or make their passwrods viewable to us and send a forgot passwrod email
+  have a worker block double subscriptions and dont let them see that page
+  
+  must know ehne the subscription expires to stop peoples websites
+  connect stripe payment/subscription with database
 
 
   fix booking, currently cant click into any boxes, test submit again
   pages fix for admin stuff
 
-  folder of jsons, services.json, aboutpage.json, legalagreement.json
+
+
+
   workers can update/set the domain, test util/domains
-    add api for adding domains
-  move oneformloading logic to app.jsx(replace???)
+  
 
   ui bugs on admin page(double clicking, no green upload, no modal popup etc)
 
@@ -53,8 +63,6 @@ admin/employee acounts can edit any custom( a load config button)
   page, not if the user has signed up
   let the user revert to a baseline
 
-
-Make it testable on localhost, at least ui is
 
 flow: employee gens something, manual edit, download, set config name, save,
   if they want to redit, add a download from db button and setcurrent files button
