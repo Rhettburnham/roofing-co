@@ -5,6 +5,7 @@ export default function AdminPage() {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentFolder, setCurrentFolder] = useState(null);
+  const [currentPath, setCurrentPath] = useState([]);
   const [topLevelFolders, setTopLevelFolders] = useState([]);
   const [currentFolderContents, setCurrentFolderContents] = useState({ folders: [], files: [] });
   const [newFolderName, setNewFolderName] = useState('');
@@ -13,6 +14,7 @@ export default function AdminPage() {
   const [pendingUpload, setPendingUpload] = useState(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [uploadMessage, setUploadMessage] = useState('');
+  const [showNewFolderForm, setShowNewFolderForm] = useState(false);
 
   useEffect(() => {
     checkAdminAccess();
@@ -48,6 +50,19 @@ export default function AdminPage() {
 
   const handleFolderClick = (folder) => {
     setCurrentFolder(folder);
+    setCurrentPath([...currentPath, folder]);
+    setCurrentFolderContents({ folders: [], files: [] });
+  };
+
+  const handleBackClick = () => {
+    if (currentPath.length === 1) {
+      setCurrentFolder(null);
+      setCurrentPath([]);
+    } else {
+      const newPath = currentPath.slice(0, -1);
+      setCurrentPath(newPath);
+      setCurrentFolder(newPath[newPath.length - 1]);
+    }
     setCurrentFolderContents({ folders: [], files: [] });
   };
 
@@ -56,15 +71,17 @@ export default function AdminPage() {
       // Clear current folder contents before loading new ones
       setCurrentFolderContents({ folders: [], files: [] });
       
+      const prefix = currentPath.length > 0 
+        ? `configs/${currentPath.join('/')}/` 
+        : 'configs/';
+
       const response = await fetch('/api/admin/list-configs', {
         method: 'POST',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          prefix: currentFolder ? `configs/${currentFolder}/` : 'configs/',
-        }),
+        body: JSON.stringify({ prefix }),
       });
 
       if (!response.ok) {
@@ -78,7 +95,7 @@ export default function AdminPage() {
 
       const data = await response.json();
       
-      if (currentFolder) {
+      if (currentPath.length > 0) {
         // If we're in a specific folder, update current folder contents
         setCurrentFolderContents({
           folders: data.folders,
@@ -105,12 +122,17 @@ export default function AdminPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ folder: newFolderName }),
+        body: JSON.stringify({ 
+          folder: currentPath.length > 0 
+            ? `${currentPath.join('/')}/${newFolderName}`
+            : newFolderName 
+        }),
       });
 
       if (!response.ok) throw new Error('Failed to create folder');
 
       setNewFolderName('');
+      setShowNewFolderForm(false);
       loadConfigs();
     } catch (error) {
       console.error('Error creating folder:', error);
@@ -194,7 +216,7 @@ export default function AdminPage() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            folder: currentFolder,
+            folder: currentPath.length > 0 ? currentPath.join('/') : null,
             file: pendingUpload.data,
             fileName: pendingUpload.name,
             fileType: pendingUpload.fileType
@@ -212,7 +234,7 @@ export default function AdminPage() {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              folder: currentFolder,
+              folder: currentPath.length > 0 ? currentPath.join('/') : null,
               file: file.data,
               fileName: file.name,
               fileType: 'folder'
@@ -307,24 +329,35 @@ export default function AdminPage() {
           </motion.div>
         )}
 
-        {/* Create new folder form */}
-        <form onSubmit={handleCreateFolder} className="mb-8">
-          <div className="flex gap-4">
-            <input
-              type="text"
-              value={newFolderName}
-              onChange={(e) => setNewFolderName(e.target.value)}
-              placeholder="New code name"
-              className="flex-1 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-            />
-            <button
-              type="submit"
-              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-            >
-              Create Folder
-            </button>
-          </div>
-        </form>
+        {/* Create new folder button and form */}
+        <div className="mb-8">
+          <button
+            onClick={() => setShowNewFolderForm(!showNewFolderForm)}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors mb-4"
+          >
+            {showNewFolderForm ? 'Cancel' : 'New Code'}
+          </button>
+
+          {showNewFolderForm && (
+            <form onSubmit={handleCreateFolder} className="mt-4">
+              <div className="flex gap-4">
+                <input
+                  type="text"
+                  value={newFolderName}
+                  onChange={(e) => setNewFolderName(e.target.value)}
+                  placeholder="New code name"
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                />
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                >
+                  Create Folder
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
 
         {/* File upload */}
         {currentFolder && (
@@ -442,12 +475,12 @@ export default function AdminPage() {
         )}
 
         {/* Back button */}
-        {currentFolder && (
+        {currentPath.length > 0 && (
           <button
-            onClick={() => setCurrentFolder(null)}
+            onClick={handleBackClick}
             className="mt-8 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
           >
-            Back to Folders
+            Back to {currentPath.length === 1 ? 'Folders' : currentPath[currentPath.length - 2]}
           </button>
         )}
       </motion.div>
