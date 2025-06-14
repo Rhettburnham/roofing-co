@@ -89,7 +89,7 @@ export async function onRequest(context) {
     // Parse request body
     const { folder, file, fileName, fileType } = await request.json();
     
-    if (!file || !fileName) {
+    if (!fileName) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
         status: 400,
         headers: { ...cors, 'Content-Type': 'application/json' },
@@ -102,7 +102,23 @@ export async function onRequest(context) {
 
     // Handle different file types
     let uploadData;
-    if (fileType.startsWith('image/')) {
+    if (fileType === 'folder') {
+      // For new folders, create a .placeholder file
+      const placeholderPath = `${fullPath}/.placeholder`;
+      await env.ROOFING_CONFIGS.put(placeholderPath, JSON.stringify({}), {
+        httpMetadata: {
+          contentType: 'application/json'
+        }
+      });
+      return new Response(JSON.stringify({ 
+        success: true,
+        message: 'Folder created successfully',
+        path: fullPath
+      }), {
+        status: 200,
+        headers: { ...cors, 'Content-Type': 'application/json' },
+      });
+    } else if (fileType.startsWith('image/')) {
       // For images, the file data is already base64
       const base64Data = file.split(',')[1]; // Remove data URL prefix if present
       uploadData = Buffer.from(base64Data, 'base64');

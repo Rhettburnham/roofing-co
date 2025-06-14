@@ -49,21 +49,31 @@ export default function AdminPage() {
   };
 
   const handleFolderClick = (folder) => {
-    setCurrentFolder(folder);
-    setCurrentPath([...currentPath, folder]);
+    // If we're at root level, start a new path
+    if (currentPath.length === 0) {
+      setCurrentFolder(folder);
+      setCurrentPath([folder]);
+    } else {
+      // If we're in a folder, navigate to the clicked folder within current path
+      setCurrentFolder(folder);
+      setCurrentPath([...currentPath, folder]);
+    }
     setCurrentFolderContents({ folders: [], files: [] });
   };
 
   const handleBackClick = () => {
     if (currentPath.length === 1) {
+      // If we're in a top-level folder, go back to root
       setCurrentFolder(null);
       setCurrentPath([]);
+      setCurrentFolderContents({ folders: [], files: [] });
     } else {
+      // If we're in a nested folder, go up one level
       const newPath = currentPath.slice(0, -1);
       setCurrentPath(newPath);
       setCurrentFolder(newPath[newPath.length - 1]);
+      setCurrentFolderContents({ folders: [], files: [] });
     }
-    setCurrentFolderContents({ folders: [], files: [] });
   };
 
   const loadConfigs = async () => {
@@ -359,84 +369,90 @@ export default function AdminPage() {
           )}
         </div>
 
-        {/* File upload */}
-        {currentFolder && (
-          <div className="mb-8 space-y-4">
+        {/* Main content area */}
+        <div className="space-y-8">
+          {/* Show either config folders or current folder contents */}
+          {currentPath.length === 0 ? (
+            // Show all config folders
             <div>
-              <label className="block text-gray-700 mb-2">Upload Single File</label>
-              <input
-                type="file"
-                accept=".json,image/*"
-                onChange={(e) => handleFileUpload(e.target.files[0])}
-                className="block w-full text-sm text-gray-500
-                  file:mr-4 file:py-2 file:px-4
-                  file:rounded file:border-0
-                  file:text-sm file:font-semibold
-                  file:bg-blue-50 file:text-blue-700
-                  hover:file:bg-blue-100"
-              />
-            </div>
-
-            <div>
-              <label className="block text-gray-700 mb-2">Upload Folder</label>
-              <input
-                type="file"
-                webkitdirectory="true"
-                directory="true"
-                onChange={handleFolderUpload}
-                className="block w-full text-sm text-gray-500
-                  file:mr-4 file:py-2 file:px-4
-                  file:rounded file:border-0
-                  file:text-sm file:font-semibold
-                  file:bg-green-50 file:text-green-700
-                  hover:file:bg-green-100"
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Folders list */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">Config Folders</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {topLevelFolders.map((folder) => (
-              <button
-                key={folder}
-                onClick={() => handleFolderClick(folder)}
-                className={`p-4 rounded-lg border ${
-                  currentFolder === folder
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:border-blue-300'
-                }`}
-              >
-                {folder}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Files and subfolders list */}
-        {currentFolder && (
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Contents of {currentFolder}</h2>
-            {currentFolderContents.files.length === 0 && currentFolderContents.folders.length === 0 ? (
-              <p className="text-gray-500">Empty folder</p>
-            ) : (
+              <h2 className="text-xl font-semibold mb-4">Config Folders</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {/* Show subfolders first */}
-                {currentFolderContents.folders.map((folder) => {
-                  // Find the most recent file in this folder
-                  const folderFiles = currentFolderContents.files.filter(file => 
-                    file.name.startsWith(folder + '/')
-                  );
-                  const mostRecentDate = folderFiles.length > 0 
-                    ? new Date(Math.max(...folderFiles.map(f => new Date(f.uploaded))))
-                    : null;
+                {topLevelFolders.map((folder) => (
+                  <button
+                    key={folder}
+                    onClick={() => handleFolderClick(folder)}
+                    className="p-4 rounded-lg border border-gray-200 hover:border-blue-300 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                      </svg>
+                      <span className="font-medium">{folder}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            // Show current folder contents
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold">
+                  Contents of {currentPath.join('/')}
+                </h2>
+                <button
+                  onClick={handleBackClick}
+                  className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+                >
+                  Back to {currentPath.length === 1 ? 'Folders' : currentPath[currentPath.length - 2]}
+                </button>
+              </div>
 
-                  return (
-                    <div
-                      key={`${currentFolder}-${folder}`}
-                      className="p-4 border border-gray-200 rounded-lg bg-gray-50"
+              {/* File upload section */}
+              <div className="mb-8 space-y-4">
+                <div>
+                  <label className="block text-gray-700 mb-2">Upload Single File</label>
+                  <input
+                    type="file"
+                    accept=".json,image/*"
+                    onChange={(e) => handleFileUpload(e.target.files[0])}
+                    className="block w-full text-sm text-gray-500
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-blue-50 file:text-blue-700
+                      hover:file:bg-blue-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-700 mb-2">Upload Folder</label>
+                  <input
+                    type="file"
+                    webkitdirectory="true"
+                    directory="true"
+                    onChange={handleFolderUpload}
+                    className="block w-full text-sm text-gray-500
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-green-50 file:text-green-700
+                      hover:file:bg-green-100"
+                  />
+                </div>
+              </div>
+
+              {/* Contents grid */}
+              {currentFolderContents.files.length === 0 && currentFolderContents.folders.length === 0 ? (
+                <p className="text-gray-500">Empty folder</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* Show subfolders first */}
+                  {currentFolderContents.folders.map((folder) => (
+                    <button
+                      key={folder}
+                      onClick={() => handleFolderClick(folder)}
+                      className="p-4 rounded-lg border border-gray-200 hover:border-blue-300 transition-colors"
                     >
                       <div className="flex items-center gap-2">
                         <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -444,45 +460,30 @@ export default function AdminPage() {
                         </svg>
                         <span className="font-medium">{folder}</span>
                       </div>
-                      {mostRecentDate && (
-                        <div className="mt-2 text-sm text-gray-500">
-                          Last modified: {mostRecentDate.toLocaleDateString()}
-                        </div>
-                      )}
+                    </button>
+                  ))}
+                  {/* Then show files */}
+                  {currentFolderContents.files.map((file) => (
+                    <div
+                      key={file.name}
+                      className="p-4 border border-gray-200 rounded-lg"
+                    >
+                      <div className="flex items-center gap-2">
+                        <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span className="font-medium">{file.name}</span>
+                      </div>
+                      <div className="mt-2 text-sm text-gray-500">
+                        {new Date(file.uploaded).toLocaleDateString()}
+                      </div>
                     </div>
-                  );
-                })}
-                {/* Then show files */}
-                {currentFolderContents.files.map((file) => (
-                  <div
-                    key={`${currentFolder}-${file.name}`}
-                    className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors"
-                  >
-                    <div className="flex items-center gap-2">
-                      <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      <span className="font-medium">{file.name}</span>
-                    </div>
-                    <div className="mt-2 text-sm text-gray-500">
-                      {new Date(file.uploaded).toLocaleDateString()}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Back button */}
-        {currentPath.length > 0 && (
-          <button
-            onClick={handleBackClick}
-            className="mt-8 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
-          >
-            Back to {currentPath.length === 1 ? 'Folders' : currentPath[currentPath.length - 2]}
-          </button>
-        )}
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </motion.div>
     </div>
   );
