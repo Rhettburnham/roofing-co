@@ -72,10 +72,10 @@ export async function onRequestPost(context) {
       });
     }
 
-    // Get prefix from request body
+    // Get prefix and worker_email from request body
     const body = await context.request.json();
-    const prefix = body.prefix;
-    console.log('Using prefix:', prefix);
+    const { prefix, worker_email } = body;
+    console.log('Request body:', { prefix, worker_email });
     
     // List with configs prefix without delimiter first to get all objects
     console.log('\nListing all objects with configs prefix...');
@@ -143,8 +143,26 @@ export async function onRequestPost(context) {
       }
     }
 
+    // If worker_email is provided, filter folders to only those with matching email file
+    let finalFolders = Array.from(folders);
+    if (worker_email) {
+      console.log('\nFiltering folders by worker email:', worker_email);
+      const emailPlaceholder = `.${worker_email}`;
+      console.log('Looking for placeholder file:', emailPlaceholder);
+      
+      finalFolders = finalFolders.filter(folder => {
+        const hasEmailFile = files.some(file => 
+          file.name === emailPlaceholder && 
+          file.folder === folder
+        );
+        console.log(`Folder ${folder} has email file:`, hasEmailFile);
+        return hasEmailFile;
+      });
+      console.log('Filtered folders:', finalFolders);
+    }
+
     const response = {
-      folders: Array.from(folders),
+      folders: finalFolders,
       files,
     };
     console.log('Final response:', {
