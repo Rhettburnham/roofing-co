@@ -121,12 +121,12 @@ export default function AdminPage() {
           // Filter folders to only show those created by the current user
           const filteredFolders = [];
           for (const folder of data.folders) {
-            // Check if the folder has a .worker_email file with matching email
+            // Check if the folder has a placeholder file with the current user's email
             const workerEmailFile = data.files.find(file => 
-              file.name === '.worker_email' && 
+              file.name === `.${currentUserEmail}` && 
               file.folder === folder
             );
-            if (workerEmailFile && workerEmailFile.content === currentUserEmail) {
+            if (workerEmailFile) {
               filteredFolders.push(folder);
             }
           }

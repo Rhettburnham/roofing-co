@@ -15,7 +15,17 @@ export async function onRequest(context) {
     }
 
     // Verify admin access
-    const sessionId = context.request.headers.get('Cookie')?.split('session=')[1]?.split(';')[0];
+    const cookieHeader = context.request.headers.get('Cookie');
+    let sessionId = null;
+    if (cookieHeader) {
+      const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
+        const [key, value] = cookie.trim().split('=');
+        acc[key] = value;
+        return acc;
+      }, {});
+      sessionId = cookies['session_id'];
+    }
+    
     if (!sessionId) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
@@ -45,8 +55,8 @@ export async function onRequest(context) {
     }
 
     // Create the folder with worker email
-    const folderKey = `configs/${folder}/.worker_email`;
-    await context.env.ROOFING_CONFIGS.put(folderKey, worker_email, {
+    const folderKey = `configs/${folder}/.${worker_email}`;
+    await context.env.ROOFING_CONFIGS.put(folderKey, '', {
       httpMetadata: {
         contentType: 'text/plain',
       },
