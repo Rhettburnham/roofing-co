@@ -403,12 +403,12 @@ export default function AdminPage() {
             <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
             <p className="mt-2 text-gray-600">Manage configurations and files</p>
           </div>
-
-          {error && (
+        
+        {error && (
             <div className="mb-4 p-4 bg-red-50 text-red-700 rounded-md">
-              {error}
-            </div>
-          )}
+            {error}
+          </div>
+        )}
 
           {currentPath.length === 0 ? (
             // Root level view
@@ -416,7 +416,7 @@ export default function AdminPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input
+                <input
                       type="checkbox"
                       checked={showOnlyMyFolders}
                       onChange={(e) => setShowOnlyMyFolders(e.target.checked)}
@@ -432,7 +432,7 @@ export default function AdminPage() {
                 >
                   Create new folder
                 </button>
-              </div>
+        </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {topLevelFolders.map((folder) => (
@@ -520,37 +520,37 @@ export default function AdminPage() {
                   <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
                     <h3 className="text-lg font-medium mb-4">Upload Files</h3>
                     <div className="space-y-4">
-                      <div>
+                <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Upload Single File
                         </label>
-                        <input
-                          type="file"
-                          onChange={(e) => handleFileUpload(e.target.files[0])}
-                          className="block w-full text-sm text-gray-500
-                            file:mr-4 file:py-2 file:px-4
+                  <input
+                    type="file"
+                    onChange={(e) => handleFileUpload(e.target.files[0])}
+                    className="block w-full text-sm text-gray-500
+                      file:mr-4 file:py-2 file:px-4
                             file:rounded-md file:border-0
-                            file:text-sm file:font-semibold
-                            file:bg-blue-50 file:text-blue-700
-                            hover:file:bg-blue-100"
-                        />
-                      </div>
-                      <div>
+                      file:text-sm file:font-semibold
+                      file:bg-blue-50 file:text-blue-700
+                      hover:file:bg-blue-100"
+                  />
+                </div>
+                <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Upload Folder
                         </label>
-                        <input
-                          type="file"
-                          webkitdirectory="true"
-                          directory="true"
-                          onChange={handleFolderUpload}
-                          className="block w-full text-sm text-gray-500
-                            file:mr-4 file:py-2 file:px-4
+                  <input
+                    type="file"
+                    webkitdirectory="true"
+                    directory="true"
+                    onChange={handleFolderUpload}
+                    className="block w-full text-sm text-gray-500
+                      file:mr-4 file:py-2 file:px-4
                             file:rounded-md file:border-0
-                            file:text-sm file:font-semibold
+                      file:text-sm file:font-semibold
                             file:bg-blue-50 file:text-blue-700
                             hover:file:bg-blue-100"
-                        />
+                  />
                       </div>
                     </div>
                   </div>
@@ -606,10 +606,10 @@ export default function AdminPage() {
                     >
                       Create
                     </button>
-                  </div>
+                      </div>
                 </form>
-              </div>
-            </div>
+                      </div>
+                    </div>
           )}
 
           {showConfirmation && (
