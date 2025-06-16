@@ -9,12 +9,15 @@ export default function AdminPage() {
   const [topLevelFolders, setTopLevelFolders] = useState([]);
   const [currentFolderContents, setCurrentFolderContents] = useState({ folders: [], files: [] });
   const [newFolderName, setNewFolderName] = useState('');
+  const [workerEmail, setWorkerEmail] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [error, setError] = useState('');
   const [pendingUpload, setPendingUpload] = useState(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [uploadMessage, setUploadMessage] = useState('');
   const [showNewFolderForm, setShowNewFolderForm] = useState(false);
+  const [showOnlyMyFolders, setShowOnlyMyFolders] = useState(false);
+  const [currentUserEmail, setCurrentUserEmail] = useState('');
 
   useEffect(() => {
     checkAdminAccess();
@@ -24,7 +27,7 @@ export default function AdminPage() {
     if (isAuthorized) {
       loadConfigs();
     }
-  }, [isAuthorized, currentFolder]);
+  }, [isAuthorized, currentFolder, showOnlyMyFolders]);
 
   const checkAdminAccess = async () => {
     try {
@@ -40,6 +43,7 @@ export default function AdminPage() {
       }
       
       setIsAuthorized(true);
+      setCurrentUserEmail(data.email);
     } catch (error) {
       console.error('Error checking admin access:', error);
       window.location.href = '/';
@@ -113,7 +117,23 @@ export default function AdminPage() {
         });
       } else {
         // If we're at root, update top-level folders
-        setTopLevelFolders(data.folders);
+        if (showOnlyMyFolders && currentUserEmail) {
+          // Filter folders to only show those created by the current user
+          const filteredFolders = [];
+          for (const folder of data.folders) {
+            // Check if the folder has a .worker_email file with matching email
+            const workerEmailFile = data.files.find(file => 
+              file.name === '.worker_email' && 
+              file.folder === folder
+            );
+            if (workerEmailFile && workerEmailFile.content === currentUserEmail) {
+              filteredFolders.push(folder);
+            }
+          }
+          setTopLevelFolders(filteredFolders);
+        } else {
+          setTopLevelFolders(data.folders);
+        }
       }
     } catch (error) {
       console.error('Error loading configs:', error);
@@ -123,7 +143,7 @@ export default function AdminPage() {
 
   const handleCreateFolder = async (e) => {
     e.preventDefault();
-    if (!newFolderName) return;
+    if (!newFolderName || !workerEmail) return;
 
     try {
       const response = await fetch('/api/admin/create-folder', {
@@ -135,13 +155,15 @@ export default function AdminPage() {
         body: JSON.stringify({ 
           folder: currentPath.length > 0 
             ? `${currentPath.join('/')}/${newFolderName}`
-            : newFolderName 
+            : newFolderName,
+          worker_email: workerEmail
         }),
       });
 
       if (!response.ok) throw new Error('Failed to create folder');
 
       setNewFolderName('');
+      setWorkerEmail('');
       setShowNewFolderForm(false);
       loadConfigs();
     } catch (error) {
@@ -339,35 +361,54 @@ export default function AdminPage() {
           </motion.div>
         )}
 
-        {/* Create new folder button and form */}
-        <div className="mb-8">
+        {/* Add toggle switch before the Create new folder button */}
+        <div className="mb-8 flex items-center justify-between">
+          <div className="flex items-center">
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showOnlyMyFolders}
+                onChange={(e) => setShowOnlyMyFolders(e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              <span className="ml-3 text-sm font-medium text-gray-900">Show only my folders</span>
+            </label>
+          </div>
           <button
             onClick={() => setShowNewFolderForm(!showNewFolderForm)}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors mb-4"
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
           >
             {showNewFolderForm ? 'Cancel' : 'New Code'}
           </button>
-
-          {showNewFolderForm && (
-            <form onSubmit={handleCreateFolder} className="mt-4">
-              <div className="flex gap-4">
-                <input
-                  type="text"
-                  value={newFolderName}
-                  onChange={(e) => setNewFolderName(e.target.value)}
-                  placeholder="New code name"
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                />
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-                >
-                  Create Folder
-                </button>
-              </div>
-            </form>
-          )}
         </div>
+
+        {showNewFolderForm && (
+          <form onSubmit={handleCreateFolder} className="mt-4">
+            <div className="flex flex-col gap-4">
+              <input
+                type="text"
+                value={newFolderName}
+                onChange={(e) => setNewFolderName(e.target.value)}
+                placeholder="New code name"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+              />
+              <input
+                type="email"
+                value={workerEmail}
+                onChange={(e) => setWorkerEmail(e.target.value)}
+                placeholder="Worker email"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+              />
+              <button
+                type="submit"
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+              >
+                Create Folder
+              </button>
+            </div>
+          </form>
+        )}
 
         {/* Main content area */}
         <div className="space-y-8">

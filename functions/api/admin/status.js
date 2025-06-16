@@ -88,8 +88,6 @@ export async function onRequestPost(context) {
     switch (action) {
       case 'upload-config':
         return handleUploadConfig(context);
-      case 'create-folder':
-        return handleCreateFolder(context);
       default:
         console.log('Unknown admin action:', action);
         return new Response(JSON.stringify({ error: 'Not found' }), {
@@ -158,54 +156,6 @@ async function handleUploadConfig(context) {
   } catch (error) {
     console.error('Upload config error:', error);
     return new Response(JSON.stringify({ error: 'Failed to upload config' }), {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Cookie',
-        'Access-Control-Allow-Credentials': 'true',
-      },
-    });
-  }
-}
-
-async function handleCreateFolder(context) {
-  try {
-    const { folderName } = await context.request.json();
-    
-    if (!folderName) {
-      return new Response(JSON.stringify({ error: 'Missing folder name' }), {
-        status: 400,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Cookie',
-          'Access-Control-Allow-Credentials': 'true',
-        },
-      });
-    }
-
-    const folderKey = `configs/${folderName}/.placeholder`;
-    await context.env.ROOFING_CONFIGS.put(folderKey, '', {
-      httpMetadata: {
-        contentType: 'text/plain',
-      },
-    });
-
-    return new Response(JSON.stringify({ success: true }), {
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Cookie',
-        'Access-Control-Allow-Credentials': 'true',
-      },
-    });
-  } catch (error) {
-    console.error('Create folder error:', error);
-    return new Response(JSON.stringify({ error: 'Failed to create folder' }), {
       status: 500,
       headers: {
         'Content-Type': 'application/json',
