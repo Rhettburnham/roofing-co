@@ -33,8 +33,19 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (isAuthorized && currentPath.length === 0) {
-      console.log('Toggle changed, reloading configs with worker email:', showOnlyMyFolders ? currentUserEmail : null);
-      loadConfigs();
+      console.log('Toggle changed, filtering folders with worker email:', showOnlyMyFolders ? currentUserEmail : null);
+      if (showOnlyMyFolders && currentUserEmail) {
+        const emailPlaceholder = `.${currentUserEmail}`;
+        const filteredFolders = topLevelFolders.filter(folder => 
+          currentFolderContents.files.some(file => 
+            file.name === emailPlaceholder && 
+            file.folder === folder
+          )
+        );
+        setTopLevelFolders(filteredFolders);
+      } else {
+        loadConfigs();
+      }
     }
   }, [showOnlyMyFolders]);
 
@@ -98,19 +109,13 @@ export default function AdminPage() {
         ? `configs/${currentPath.join('/')}/` 
         : 'configs/';
 
-      const requestBody = { 
-        prefix,
-        worker_email: showOnlyMyFolders ? currentUserEmail : null 
-      };
-      console.log('Sending request to list-configs with body:', requestBody);
-
       const response = await fetch('/api/admin/list-configs', {
         method: 'POST',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify({ prefix }),
       });
 
       if (!response.ok) {
@@ -132,8 +137,12 @@ export default function AdminPage() {
           files: data.files
         });
       } else {
-        // If we're at root, update top-level folders
+        // If we're at root, update top-level folders and files
         setTopLevelFolders(data.folders);
+        setCurrentFolderContents({
+          folders: data.folders,
+          files: data.files
+        });
       }
     } catch (error) {
       console.error('Error loading configs:', error);
