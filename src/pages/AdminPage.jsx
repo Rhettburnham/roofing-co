@@ -22,6 +22,14 @@ export default function AdminPage() {
   const [allFolders, setAllFolders] = useState([]);
   const [allFiles, setAllFiles] = useState([]);
 
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
   useEffect(() => {
     checkAdminAccess();
   }, []);
@@ -60,25 +68,47 @@ export default function AdminPage() {
         logs.push('\nTop level folders:');
         logs.push(JSON.stringify(topLevelFolders, null, 2));
         
-        const filteredFolders = topLevelFolders.filter(folder => {
-          const hasFile = currentFolderContents.files.some(file => {
-            const matches = file.name === emailPlaceholder && file.folder === folder;
-            logs.push(`\nChecking file: ${file.name} in folder: ${file.folder} against: ${folder}`);
-            logs.push(`Matches: ${matches}`);
-            return matches;
+        // Check each folder for the worker email file
+        const checkFolderForEmail = async (folder) => {
+          try {
+            const response = await fetch('/api/admin/list-configs', {
+              method: 'POST',
+              credentials: 'include',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ prefix: `configs/${folder}/` }),
+            });
+            
+            if (!response.ok) {
+              logs.push(`\nError checking folder ${folder}: ${response.status}`);
+              return false;
+            }
+            
+            const data = await response.json();
+            const hasEmailFile = data.files.some(file => file.name === emailPlaceholder);
+            logs.push(`\nFolder ${folder} has email file: ${hasEmailFile}`);
+            return hasEmailFile;
+          } catch (error) {
+            logs.push(`\nError checking folder ${folder}: ${error.message}`);
+            return false;
+          }
+        };
+
+        // Check all folders in parallel
+        Promise.all(topLevelFolders.map(checkFolderForEmail))
+          .then(results => {
+            const filteredFolders = topLevelFolders.filter((_, index) => results[index]);
+            logs.push('\nFiltered folders:');
+            logs.push(JSON.stringify(filteredFolders, null, 2));
+            setTopLevelFolders(filteredFolders);
+            saveLogsToFile(logs.join('\n'));
           });
-          logs.push(`\nFolder ${folder} has file: ${hasFile}`);
-          return hasFile;
-        });
-        logs.push('\nFiltered folders:');
-        logs.push(JSON.stringify(filteredFolders, null, 2));
-        setTopLevelFolders(filteredFolders);
       } else {
         logs.push('\nReloading all configs');
         loadConfigs();
+        saveLogsToFile(logs.join('\n'));
       }
-      
-      saveLogsToFile(logs.join('\n'));
     }
   }, [showOnlyMyFolders]);
 
