@@ -18,6 +18,7 @@ export default function AdminPage() {
   const [showNewFolderForm, setShowNewFolderForm] = useState(false);
   const [showOnlyMyFolders, setShowOnlyMyFolders] = useState(false);
   const [currentUserEmail, setCurrentUserEmail] = useState('');
+  const [allFolders, setAllFolders] = useState([]);
 
   useEffect(() => {
     checkAdminAccess();
@@ -27,7 +28,7 @@ export default function AdminPage() {
     if (isAuthorized) {
       loadConfigs();
     }
-  }, [isAuthorized, currentFolder, showOnlyMyFolders]);
+  }, [isAuthorized, currentFolder]);
 
   const checkAdminAccess = async () => {
     try {
@@ -116,30 +117,38 @@ export default function AdminPage() {
           files: data.files
         });
       } else {
-        // If we're at root, update top-level folders
-        if (showOnlyMyFolders && currentUserEmail) {
-          // Filter folders to only show those created by the current user
-          const filteredFolders = [];
-          for (const folder of data.folders) {
-            // Check if the folder has a placeholder file with the current user's email
-            const workerEmailFile = data.files.find(file => 
-              file.name === `.${currentUserEmail}` && 
-              file.folder === folder
-            );
-            if (workerEmailFile) {
-              filteredFolders.push(folder);
-            }
-          }
-          setTopLevelFolders(filteredFolders);
-        } else {
-          setTopLevelFolders(data.folders);
-        }
+        // If we're at root, store all folders and update display based on toggle
+        setAllFolders(data.folders);
+        updateFolderDisplay(data.folders, data.files);
       }
     } catch (error) {
       console.error('Error loading configs:', error);
       setError('Failed to load configurations');
     }
   };
+
+  const updateFolderDisplay = (folders, files) => {
+    if (showOnlyMyFolders && currentUserEmail) {
+      // Filter folders to only show those created by the current user
+      const filteredFolders = folders.filter(folder => {
+        const workerEmailFile = files.find(file => 
+          file.name === `.${currentUserEmail}` && 
+          file.folder === folder
+        );
+        return workerEmailFile;
+      });
+      setTopLevelFolders(filteredFolders);
+    } else {
+      setTopLevelFolders(folders);
+    }
+  };
+
+  // Add effect to handle toggle changes
+  useEffect(() => {
+    if (allFolders.length > 0) {
+      updateFolderDisplay(allFolders, currentFolderContents.files);
+    }
+  }, [showOnlyMyFolders, currentUserEmail]);
 
   const handleCreateFolder = async (e) => {
     e.preventDefault();
