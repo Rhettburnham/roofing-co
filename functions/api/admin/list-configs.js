@@ -149,7 +149,7 @@ export async function onRequestPost(context) {
       const emailPlaceholder = `.${worker_email}`;
       console.log('Looking for file named:', emailPlaceholder);
       
-      const filteredFolders = [];
+      var filteredFolders = [];
       for (const folder of folders) {
         console.log('Checking folder:', folder);
         const folderFiles = await context.env.ROOFING_CONFIGS.list({ prefix: `configs/${folder}/` });
