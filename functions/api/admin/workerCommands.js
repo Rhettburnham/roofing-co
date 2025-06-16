@@ -41,7 +41,10 @@ export async function onRequest(context) {
     }
 
     // Verify admin access
-    const sessionId = request.cookies.get('session_id')?.value;
+    const cookieHeader = request.headers.get('Cookie');
+    const sessionId = cookieHeader?.split(';')
+      .find(c => c.trim().startsWith('session_id='))
+      ?.split('=')[1];
     console.log('Session ID from cookies:', sessionId ? 'Present' : 'Missing');
     
     if (!sessionId) {

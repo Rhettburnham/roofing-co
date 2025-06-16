@@ -60,9 +60,14 @@ export default function WorkerCommands({ currentFolder }) {
       className="p-4 bg-white rounded-lg shadow-md"
     >
       <h2 className="text-xl font-semibold mb-4">Worker Commands</h2>
-      <p className="text-sm text-gray-600 mb-4">
-        Current folder: <span className="font-medium">{currentFolder}</span>
-      </p>
+      <div className="mb-4 space-y-2">
+        <p className="text-sm text-gray-600">
+          Current folder: <span className="font-medium">{currentFolder}</span>
+        </p>
+        <p className="text-sm text-gray-600">
+          Config ID: <span className="font-medium bg-gray-100 px-2 py-1 rounded">{currentFolder}</span>
+        </p>
+      </div>
 
       <form onSubmit={handleAddDomain} className="space-y-4">
         <div>
