@@ -66,7 +66,7 @@ export async function onRequest(context) {
     // Look up session
     console.log('Preparing database query...');
     const query = env.DB.prepare(
-      `SELECT s.*, u.config_id
+      `SELECT s.*, u.config_id, u.email
        FROM sessions s
        JOIN users u ON s.user_id = u.id
        WHERE s.session_id = ? AND s.expires_at > datetime("now")`
@@ -91,6 +91,7 @@ export async function onRequest(context) {
     return new Response(JSON.stringify({
       isAuthenticated: true,
       configId: session.config_id || 'default',
+      email: session.email
     }), {
       status: 200,
       headers: { ...cors, 'Content-Type': 'application/json' },

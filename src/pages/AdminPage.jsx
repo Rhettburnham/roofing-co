@@ -29,7 +29,14 @@ export default function AdminPage() {
     if (isAuthorized) {
       loadConfigs();
     }
-  }, [isAuthorized, currentFolder, showOnlyMyFolders]);
+  }, [isAuthorized, currentFolder]);
+
+  useEffect(() => {
+    if (isAuthorized && currentPath.length === 0) {
+      console.log('Toggle changed, reloading configs with worker email:', showOnlyMyFolders ? currentUserEmail : null);
+      loadConfigs();
+    }
+  }, [showOnlyMyFolders]);
 
   const checkAdminAccess = async () => {
     try {
@@ -91,16 +98,19 @@ export default function AdminPage() {
         ? `configs/${currentPath.join('/')}/` 
         : 'configs/';
 
+      const requestBody = { 
+        prefix,
+        worker_email: showOnlyMyFolders ? currentUserEmail : null 
+      };
+      console.log('Sending request to list-configs with body:', requestBody);
+
       const response = await fetch('/api/admin/list-configs', {
         method: 'POST',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          prefix,
-          worker_email: showOnlyMyFolders ? currentUserEmail : null 
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
