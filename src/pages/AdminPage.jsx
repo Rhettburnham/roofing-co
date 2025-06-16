@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import WorkerCommands from '../components/WorkerCommands';
 
 export default function AdminPage() {
   const [isAuthorized, setIsAuthorized] = useState(false);
@@ -31,21 +32,53 @@ export default function AdminPage() {
     }
   }, [isAuthorized, currentFolder]);
 
+  const saveLogsToFile = (logs) => {
+    const blob = new Blob([logs], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `admin-logs-${new Date().toISOString()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   useEffect(() => {
     if (isAuthorized && currentPath.length === 0) {
-      console.log('Toggle changed, filtering folders with worker email:', showOnlyMyFolders ? currentUserEmail : null);
+      const logs = [];
+      logs.push('=== Toggle State Change ===');
+      logs.push(`Time: ${new Date().toISOString()}`);
+      logs.push(`Show only my folders: ${showOnlyMyFolders}`);
+      logs.push(`Current user email: ${currentUserEmail}`);
+      
       if (showOnlyMyFolders && currentUserEmail) {
         const emailPlaceholder = `.${currentUserEmail}`;
-        const filteredFolders = topLevelFolders.filter(folder => 
-          currentFolderContents.files.some(file => 
-            file.name === emailPlaceholder && 
-            file.folder === folder
-          )
-        );
+        logs.push(`\nLooking for file: ${emailPlaceholder}`);
+        logs.push('\nCurrent folder contents:');
+        logs.push(JSON.stringify(currentFolderContents, null, 2));
+        logs.push('\nTop level folders:');
+        logs.push(JSON.stringify(topLevelFolders, null, 2));
+        
+        const filteredFolders = topLevelFolders.filter(folder => {
+          const hasFile = currentFolderContents.files.some(file => {
+            const matches = file.name === emailPlaceholder && file.folder === folder;
+            logs.push(`\nChecking file: ${file.name} in folder: ${file.folder} against: ${folder}`);
+            logs.push(`Matches: ${matches}`);
+            return matches;
+          });
+          logs.push(`\nFolder ${folder} has file: ${hasFile}`);
+          return hasFile;
+        });
+        logs.push('\nFiltered folders:');
+        logs.push(JSON.stringify(filteredFolders, null, 2));
         setTopLevelFolders(filteredFolders);
       } else {
+        logs.push('\nReloading all configs');
         loadConfigs();
       }
+      
+      saveLogsToFile(logs.join('\n'));
     }
   }, [showOnlyMyFolders]);
 
@@ -325,216 +358,254 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8"
-      >
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">Admin Panel</h1>
-        
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
+    <div className="min-h-screen bg-gray-50 p-4">
+      {loading ? (
+        <div className="flex items-center justify-center h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        </div>
+      ) : !isAuthorized ? (
+        <div className="text-center">
+          <p>Unauthorized access</p>
+        </div>
+      ) : (
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+            <p className="mt-2 text-gray-600">Manage configurations and files</p>
           </div>
-        )}
 
-        {showConfirmation && pendingUpload && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
-          >
-            <div className="bg-white rounded-lg p-6 max-w-md w-full">
-              <h3 className="text-lg font-semibold mb-4">Confirm Upload</h3>
-              <p className="mb-4">
-                {pendingUpload.type === 'file' 
-                  ? `Ready to upload "${pendingUpload.name}" to Cloudflare?`
-                  : `Ready to upload ${pendingUpload.files.length} files to Cloudflare?`}
-              </p>
-              <div className="flex justify-end gap-4">
+          {error && (
+            <div className="mb-4 p-4 bg-red-50 text-red-700 rounded-md">
+              {error}
+            </div>
+          )}
+
+          {currentPath.length === 0 ? (
+            // Root level view
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={showOnlyMyFolders}
+                      onChange={(e) => setShowOnlyMyFolders(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <span className="ml-3 text-sm font-medium text-gray-900">Show only my folders</span>
+                  </label>
+                </div>
                 <button
-                  onClick={handleCancelUpload}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  onClick={() => setShowNewFolderForm(true)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleConfirmUpload}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                >
-                  Upload to Cloudflare
+                  Create new folder
                 </button>
               </div>
-            </div>
-          </motion.div>
-        )}
 
-        {/* Add toggle switch before the Create new folder button */}
-        <div className="mb-8 flex items-center justify-between">
-          <div className="flex items-center">
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={showOnlyMyFolders}
-                onChange={(e) => setShowOnlyMyFolders(e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-              <span className="ml-3 text-sm font-medium text-gray-900">Show only my folders</span>
-            </label>
-          </div>
-          <button
-            onClick={() => setShowNewFolderForm(!showNewFolderForm)}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-          >
-            {showNewFolderForm ? 'Cancel' : 'New Code'}
-          </button>
-        </div>
-
-        {showNewFolderForm && (
-          <form onSubmit={handleCreateFolder} className="mt-4">
-            <div className="flex flex-col gap-4">
-              <input
-                type="text"
-                value={newFolderName}
-                onChange={(e) => setNewFolderName(e.target.value)}
-                placeholder="New code name"
-                className="flex-1 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-              />
-              <input
-                type="email"
-                value={workerEmail}
-                onChange={(e) => setWorkerEmail(e.target.value)}
-                placeholder="Worker email"
-                className="flex-1 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-              />
-              <button
-                type="submit"
-                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-              >
-                Create Folder
-              </button>
-            </div>
-          </form>
-        )}
-
-        {/* Main content area */}
-        <div className="space-y-8">
-          {/* Show either config folders or current folder contents */}
-          {currentPath.length === 0 ? (
-            // Show all config folders
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Config Folders</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {topLevelFolders.map((folder) => (
-                  <button
+                  <motion.div
                     key={folder}
+                    whileHover={{ scale: 1.02 }}
+                    className="p-4 bg-white rounded-lg shadow-sm border border-gray-200 cursor-pointer"
                     onClick={() => handleFolderClick(folder)}
-                    className="p-4 rounded-lg border border-gray-200 hover:border-blue-300 transition-colors"
                   >
-                    <div className="flex items-center gap-2">
-                      <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex items-center">
+                      <svg className="w-6 h-6 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                       </svg>
                       <span className="font-medium">{folder}</span>
                     </div>
-                  </button>
+                  </motion.div>
                 ))}
               </div>
             </div>
           ) : (
-            // Show current folder contents
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold">
-                  Contents of {currentPath.join('/')}
-                </h2>
+            // Inside a folder
+            <div className="space-y-6">
+              <div className="flex items-center space-x-4">
                 <button
                   onClick={handleBackClick}
-                  className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+                  className="flex items-center text-gray-600 hover:text-gray-900"
                 >
-                  Back to {currentPath.length === 1 ? 'Folders' : currentPath[currentPath.length - 2]}
+                  <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  Back
                 </button>
+                <h2 className="text-xl font-semibold">
+                  {currentPath.join(' / ')}
+                </h2>
               </div>
 
-              {/* File upload section */}
-              <div className="mb-8 space-y-4">
-                <div>
-                  <label className="block text-gray-700 mb-2">Upload Single File</label>
-                  <input
-                    type="file"
-                    accept=".json,image/*"
-                    onChange={(e) => handleFileUpload(e.target.files[0])}
-                    className="block w-full text-sm text-gray-500
-                      file:mr-4 file:py-2 file:px-4
-                      file:rounded file:border-0
-                      file:text-sm file:font-semibold
-                      file:bg-blue-50 file:text-blue-700
-                      hover:file:bg-blue-100"
-                  />
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                    <h3 className="text-lg font-medium mb-4">Files and Folders</h3>
+                    {currentFolderContents.folders.length === 0 && currentFolderContents.files.length === 0 ? (
+                      <p className="text-gray-500">This folder is empty</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {currentFolderContents.folders.map((folder) => (
+                          <motion.div
+                            key={folder}
+                            whileHover={{ scale: 1.02 }}
+                            className="p-3 bg-gray-50 rounded-md cursor-pointer"
+                            onClick={() => handleFolderClick(folder)}
+                          >
+                            <div className="flex items-center">
+                              <svg className="w-5 h-5 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                              </svg>
+                              <span>{folder}</span>
+                            </div>
+                          </motion.div>
+                        ))}
+                        {currentFolderContents.files.map((file) => (
+                          <div
+                            key={file.name}
+                            className="p-3 bg-gray-50 rounded-md"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center">
+                                <svg className="w-5 h-5 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                </svg>
+                                <span>{file.name}</span>
+                              </div>
+                              <span className="text-sm text-gray-500">
+                                {formatFileSize(file.size)}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-gray-700 mb-2">Upload Folder</label>
-                  <input
-                    type="file"
-                    webkitdirectory="true"
-                    directory="true"
-                    onChange={handleFolderUpload}
-                    className="block w-full text-sm text-gray-500
-                      file:mr-4 file:py-2 file:px-4
-                      file:rounded file:border-0
-                      file:text-sm file:font-semibold
-                      file:bg-green-50 file:text-green-700
-                      hover:file:bg-green-100"
-                  />
-                </div>
-              </div>
-
-              {/* Contents grid */}
-              {currentFolderContents.files.length === 0 && currentFolderContents.folders.length === 0 ? (
-                <p className="text-gray-500">Empty folder</p>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {/* Show subfolders first */}
-                  {currentFolderContents.folders.map((folder) => (
-                    <button
-                      key={folder}
-                      onClick={() => handleFolderClick(folder)}
-                      className="p-4 rounded-lg border border-gray-200 hover:border-blue-300 transition-colors"
-                    >
-                      <div className="flex items-center gap-2">
-                        <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                        </svg>
-                        <span className="font-medium">{folder}</span>
+                <div className="space-y-6">
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                    <h3 className="text-lg font-medium mb-4">Upload Files</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Upload Single File
+                        </label>
+                        <input
+                          type="file"
+                          onChange={(e) => handleFileUpload(e.target.files[0])}
+                          className="block w-full text-sm text-gray-500
+                            file:mr-4 file:py-2 file:px-4
+                            file:rounded-md file:border-0
+                            file:text-sm file:font-semibold
+                            file:bg-blue-50 file:text-blue-700
+                            hover:file:bg-blue-100"
+                        />
                       </div>
-                    </button>
-                  ))}
-                  {/* Then show files */}
-                  {currentFolderContents.files.map((file) => (
-                    <div
-                      key={file.name}
-                      className="p-4 border border-gray-200 rounded-lg"
-                    >
-                      <div className="flex items-center gap-2">
-                        <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <span className="font-medium">{file.name}</span>
-                      </div>
-                      <div className="mt-2 text-sm text-gray-500">
-                        {new Date(file.uploaded).toLocaleDateString()}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Upload Folder
+                        </label>
+                        <input
+                          type="file"
+                          webkitdirectory="true"
+                          directory="true"
+                          onChange={handleFolderUpload}
+                          className="block w-full text-sm text-gray-500
+                            file:mr-4 file:py-2 file:px-4
+                            file:rounded-md file:border-0
+                            file:text-sm file:font-semibold
+                            file:bg-blue-50 file:text-blue-700
+                            hover:file:bg-blue-100"
+                        />
                       </div>
                     </div>
-                  ))}
+                  </div>
+
+                  <WorkerCommands currentFolder={currentFolder} />
                 </div>
-              )}
+              </div>
+            </div>
+          )}
+
+          {showNewFolderForm && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+              <div className="bg-white rounded-lg p-6 max-w-md w-full">
+                <h2 className="text-xl font-semibold mb-4">Create New Folder</h2>
+                <form onSubmit={handleCreateFolder} className="space-y-4">
+                  <div>
+                    <label htmlFor="folderName" className="block text-sm font-medium text-gray-700 mb-1">
+                      Folder Name
+                    </label>
+                    <input
+                      type="text"
+                      id="folderName"
+                      value={newFolderName}
+                      onChange={(e) => setNewFolderName(e.target.value)}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="workerEmail" className="block text-sm font-medium text-gray-700 mb-1">
+                      Worker Email
+                    </label>
+                    <input
+                      type="email"
+                      id="workerEmail"
+                      value={workerEmail}
+                      onChange={(e) => setWorkerEmail(e.target.value)}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div className="flex justify-end space-x-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowNewFolderForm(false)}
+                      className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    >
+                      Create
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {showConfirmation && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+              <div className="bg-white rounded-lg p-6 max-w-md w-full">
+                <h2 className="text-xl font-semibold mb-4">Confirm Upload</h2>
+                <p className="text-gray-600 mb-4">{uploadMessage}</p>
+                <div className="flex justify-end space-x-3">
+                  <button
+                    onClick={handleCancelUpload}
+                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleConfirmUpload}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  >
+                    Confirm
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
-      </motion.div>
+      )}
     </div>
   );
 } 
