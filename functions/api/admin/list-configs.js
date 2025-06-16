@@ -1,61 +1,57 @@
-import { createHash } from 'node:crypto';
-
-// Shared CORS helper
-function getCorsHeaders(origin) {
-  const allowed = [
-    'https://roofing-www.pages.dev',
-    'https://roofing-co.pages.dev',
-    'https://roofing-co-with-workers.pages.dev',
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
-  ];
-  const acao = allowed.includes(origin) ? origin : allowed[2];
-  return {
-    'Access-Control-Allow-Origin': acao,
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Cookie',
-    'Access-Control-Allow-Credentials': 'true',
-    'Access-Control-Expose-Headers': 'Set-Cookie',
-  };
-}
-
-export async function onRequest(context) {
-  console.log("=== List Configs Handler ===");
-  
+export async function onRequestPost(context) {
   try {
-    const { request, env } = context;
-    console.log('Context received:', { 
-      hasRequest: !!request,
-      hasEnv: !!env,
-      hasDB: !!env?.DB,
-      hasROOFING_CONFIGS: !!env?.ROOFING_CONFIGS
+    console.log("=== List Configs Handler ===");
+    console.log('Request details:', {
+      method: context.request.method,
+      url: context.request.url,
+      headers: Object.fromEntries(context.request.headers.entries()),
+      hasDB: !!context.env?.DB,
+      hasROOFING_CONFIGS: !!context.env?.ROOFING_CONFIGS
     });
+    
+    // CORS headers
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Cookie',
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Expose-Headers': 'Set-Cookie',
+    };
 
-    const origin = request.headers.get('Origin') || '';
-    console.log('Request origin:', origin);
-    const cors = getCorsHeaders(origin);
-
-    // Preflight
-    if (request.method === 'OPTIONS') {
-      return new Response(null, { headers: cors });
+    // Handle preflight requests
+    if (context.request.method === 'OPTIONS') {
+      console.log('Handling OPTIONS request');
+      return new Response(null, { headers: corsHeaders });
     }
 
-    // Verify admin access
-    const sessionId = request.cookies.get('session_id')?.value;
-    console.log('Session ID from cookies:', sessionId ? 'Present' : 'Missing');
+    // Read session_id from cookie
+    const cookieHeader = context.request.headers.get('Cookie');
+    console.log('Cookie header:', cookieHeader);
+    
+    let sessionId = null;
+    if (cookieHeader) {
+      const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
+        const [key, value] = cookie.trim().split('=');
+        acc[key] = value;
+        return acc;
+      }, {});
+      sessionId = cookies['session_id'];
+    }
+    
+    console.log('Session ID from cookie:', sessionId ? 'present' : 'missing');
     
     if (!sessionId) {
       console.log('No session ID found');
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: {
-          ...cors,
+          ...corsHeaders,
           'Content-Type': 'application/json',
         },
       });
     }
 
-    const session = await env.DB.prepare(
+    const session = await context.env.DB.prepare(
       'SELECT s.*, u.config_id FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.session_id = ? AND s.expires_at > datetime("now")'
     ).bind(sessionId).first();
 
@@ -66,113 +62,138 @@ export async function onRequest(context) {
     } : 'No session found');
 
     if (!session || session.config_id !== 'admin') {
-      console.log('Unauthorized access attempt');
+      console.log('Invalid session or not admin');
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: {
-          ...cors,
+          ...corsHeaders,
           'Content-Type': 'application/json',
         },
       });
     }
 
-    // Parse request body
-    const { prefix } = await request.json();
-    console.log('Request prefix:', prefix);
-
-    // List all objects with the given prefix
-    console.log('Listing objects with prefix:', prefix);
-    const listResult = await env.ROOFING_CONFIGS.list({ prefix });
-    console.log('List result:', {
-      truncated: listResult.truncated,
-      cursor: listResult.cursor,
-      objectCount: listResult.objects.length
+    // Get prefix and worker_email from request body
+    const body = await context.request.json();
+    const { prefix, worker_email } = body;
+    console.log('Request body:', { prefix, worker_email });
+    
+    // List with configs prefix without delimiter first to get all objects
+    console.log('\nListing all objects with configs prefix...');
+    const allObjects = await context.env.ROOFING_CONFIGS.list({
+      prefix: 'configs/'
     });
+    console.log('All objects found:', allObjects.objects?.length || 0);
 
-    // Process the results
+    // Now list with delimiter to get folder structure
+    console.log('\nListing with delimiter for folder structure...');
+    const listOptions = {
+      prefix: prefix || 'configs/',
+      delimiter: '/',
+    };
+    console.log('List options:', listOptions);
+
+    const listed = await context.env.ROOFING_CONFIGS.list(listOptions);
+    console.log('Listed objects:', listed.objects?.length || 0);
+    console.log('Common prefixes:', listed.commonPrefixes?.length || 0);
+    
+    // Process the results to get folders and files
     const folders = new Set();
     const files = [];
 
-    for (const object of listResult.objects) {
-      const key = object.key;
-      console.log('Processing object:', key);
-
-      // Remove the prefix from the key
-      const relativePath = key.slice(prefix.length);
-      console.log('Relative path:', relativePath);
-
-      // Skip if it's the current directory
-      if (!relativePath) {
-        console.log('Skipping current directory');
-        continue;
-      }
-
-      // Split the path into parts
-      const parts = relativePath.split('/');
-      console.log('Path parts:', parts);
-
-      // If it's a file in the current directory
-      if (parts.length === 1) {
-        console.log('Found file in current directory:', parts[0]);
-        files.push({
-          name: parts[0],
-          size: object.size,
-          uploaded: object.uploaded,
-          folder: ''
-        });
-      }
-      // If it's in a subdirectory
-      else if (parts.length > 1) {
-        const folder = parts[0];
-        console.log('Found item in subdirectory:', folder);
-        folders.add(folder);
-
-        // If it's a file (not a directory)
-        if (parts[1]) {
-          console.log('Found file in subdirectory:', parts[1]);
-          files.push({
-            name: parts[1],
-            size: object.size,
-            uploaded: object.uploaded,
-            folder
-          });
+    // First, add any common prefixes (folders)
+    if (listed.commonPrefixes) {
+      for (const prefix of listed.commonPrefixes) {
+        const parts = prefix.split('/');
+        const folder = parts[parts.length - 2];
+        if (folder) {
+          folders.add(folder);
+          console.log('Added folder from prefix:', folder);
         }
       }
     }
 
+    // Then process all objects to ensure we get everything
+    for (const object of allObjects.objects) {
+      const path = object.key;
+      const parts = path.split('/');
+      
+      if (parts.length > 2) {
+        const folder = parts[1];
+        
+        if (prefix && path.startsWith(prefix)) {
+          const relativePath = path.slice(prefix.length);
+          const relativeParts = relativePath.split('/');
+          
+          if (relativeParts.length === 1) {
+            files.push({
+              name: relativeParts[0],
+              folder,
+              size: object.size,
+              uploaded: object.uploaded,
+            });
+            console.log('Added file:', relativeParts[0], 'to folder:', folder);
+          } else if (relativeParts.length > 1) {
+            const subfolder = relativeParts[0];
+            if (subfolder) {
+              folders.add(subfolder);
+              console.log('Added subfolder:', subfolder);
+            }
+          }
+        }
+      }
+    }
+
+    // If worker_email is provided, filter folders to only those with matching email file
+    let finalFolders = Array.from(folders);
+    if (worker_email) {
+      console.log('\nFiltering folders by worker email:', worker_email);
+      const emailPlaceholder = `.${worker_email}`;
+      console.log('Looking for placeholder file:', emailPlaceholder);
+      
+      finalFolders = finalFolders.filter(folder => {
+        const hasEmailFile = files.some(file => 
+          file.name === emailPlaceholder && 
+          file.folder === folder
+        );
+        console.log(`Folder ${folder} has email file:`, hasEmailFile);
+        return hasEmailFile;
+      });
+      console.log('Filtered folders:', finalFolders);
+    }
+
     const response = {
-      folders: Array.from(folders),
+      folders: finalFolders,
       files,
     };
-
-    console.log('Sending response:', {
-      folderCount: response.folders.length,
+    console.log('Final response:', {
+      folders: response.folders,
       fileCount: response.files.length
     });
 
     return new Response(JSON.stringify(response), {
       headers: {
-        ...cors,
         'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Cookie',
+        'Access-Control-Allow-Credentials': 'true',
       },
     });
-
-  } catch (err) {
-    console.error('List configs error details:', {
-      message: err.message,
-      stack: err.stack,
-      name: err.name,
-      type: err.constructor.name
-    });
-    
+  } catch (error) {
+    console.error('List configs error:', error);
+    console.error('Error stack:', error.stack);
     return new Response(JSON.stringify({ 
       error: 'Failed to list configs',
-      details: err.message
+      details: error.message,
+      stack: error.stack
     }), {
       status: 500,
-      headers: { 
-        ...getCorsHeaders('*'),
-        'Content-Type': 'application/json'
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Cookie',
+        'Access-Control-Allow-Credentials': 'true',
       },
     });
   }
