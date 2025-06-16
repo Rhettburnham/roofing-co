@@ -143,26 +143,30 @@ export async function onRequestPost(context) {
       }
     }
 
-    // If worker_email is provided, filter folders to only those with matching email file
-    let finalFolders = Array.from(folders);
+    // If worker_email is provided, filter folders to only those with a matching .{worker_email} file
     if (worker_email) {
-      console.log('\nFiltering folders by worker email:', worker_email);
+      console.log('Filtering folders by worker email:', worker_email);
       const emailPlaceholder = `.${worker_email}`;
-      console.log('Looking for placeholder file:', emailPlaceholder);
+      console.log('Looking for file named:', emailPlaceholder);
       
-      finalFolders = finalFolders.filter(folder => {
-        const hasEmailFile = files.some(file => 
-          file.name === emailPlaceholder && 
-          file.folder === folder
-        );
-        console.log(`Folder ${folder} has email file:`, hasEmailFile);
-        return hasEmailFile;
-      });
-      console.log('Filtered folders:', finalFolders);
+      const filteredFolders = [];
+      for (const folder of folders) {
+        console.log('Checking folder:', folder);
+        const folderFiles = await context.env.ROOFING_CONFIGS.list({ prefix: `configs/${folder}/` });
+        console.log('Files in folder:', folderFiles.objects.map(f => f.key));
+        
+        const hasEmailFile = folderFiles.objects.some(file => file.key === `configs/${folder}/${emailPlaceholder}`);
+        console.log('Folder', folder, 'has email file:', hasEmailFile);
+        
+        if (hasEmailFile) {
+          filteredFolders.push(folder);
+        }
+      }
+      folders = filteredFolders;
     }
 
     const response = {
-      folders: finalFolders,
+      folders: Array.from(folders),
       files,
     };
     console.log('Final response:', {
