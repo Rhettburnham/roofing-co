@@ -38,7 +38,6 @@ export default function WorkerCommands({ currentFolder }) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: '',  // Empty email to just check config status
           configId: currentFolder
         }),
       });
@@ -49,10 +48,8 @@ export default function WorkerCommands({ currentFolder }) {
       }
 
       setConfigStatus(data);
-      // If config has domain, immediately check domain status with the associated email
-      if (data.configHasDomain && data.email) {
-        setEmail(data.email); // Set the email state with the associated email
-        checkDomainStatus(data.email); // Pass the email to check domain status
+      if (data.exists) {
+        setDomainStatus(data);
       }
     } catch (error) {
       setError(error.message);
@@ -177,23 +174,27 @@ export default function WorkerCommands({ currentFolder }) {
             <h3 className="font-medium text-gray-900">Domain Status</h3>
             <div className="space-y-1">
               <p className="text-sm">
+                <span className="text-gray-600">Email:</span>{' '}
+                <span className="font-medium">{domainStatus.email}</span>
+              </p>
+              <p className="text-sm">
                 <span className="text-gray-600">Domain:</span>{' '}
                 <span className="font-medium">{domainStatus.domain}</span>
               </p>
               <p className="text-sm">
                 <span className="text-gray-600">Payment Status:</span>{' '}
-                <span className={`font-medium ${domainStatus.isPaid ? 'text-green-600' : 'text-red-600'}`}>
-                  {domainStatus.isPaid ? 'Paid' : 'Unpaid'}
+                <span className={`font-medium ${domainStatus.is_paid === 1 ? 'text-green-600' : 'text-red-600'}`}>
+                  {domainStatus.is_paid === 1 ? 'Paid' : 'Unpaid'}
                 </span>
               </p>
               <p className="text-sm">
                 <span className="text-gray-600">Domain Purchase:</span>{' '}
-                <span className={`font-medium ${domainStatus.domainPurchased ? 'text-green-600' : 'text-red-600'}`}>
-                  {domainStatus.domainPurchased ? 'Purchased' : 'Not Purchased'}
+                <span className={`font-medium ${domainStatus.domain_purchased === 1 ? 'text-green-600' : 'text-red-600'}`}>
+                  {domainStatus.domain_purchased === 1 ? 'Purchased' : 'Not Purchased'}
                 </span>
               </p>
               <p className="text-sm text-gray-500">
-                Created: {new Date(domainStatus.createdAt).toLocaleDateString()}
+                Created: {new Date(domainStatus.created_at).toLocaleDateString()}
               </p>
             </div>
           </div>

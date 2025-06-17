@@ -73,42 +73,29 @@ export async function onRequest(context) {
     const { email, configId } = await request.json();
     console.log('Request body:', { email, configId });
 
-    // Check domain status
-    const domainEntry = await env.DB.prepare(`
-      SELECT d.*, u.email as user_email 
-      FROM domains d 
-      JOIN users u ON d.email = u.email 
-      WHERE d.email = ? AND d.config_id = ?
-    `).bind(email, configId).first();
-
-    // Check if any domain exists for this config ID
-    const configDomainCount = await env.DB.prepare(`
-      SELECT COUNT(*) as count
-      FROM domains
+    // Check if config has any domain entries
+    const configCheck = await env.DB.prepare(`
+      SELECT COUNT(*) as count 
+      FROM domains 
       WHERE config_id = ?
     `).bind(configId).first();
 
-    if (!domainEntry) {
-      return new Response(JSON.stringify({ 
-        exists: false,
-        message: 'No domain entry found',
-        configHasDomain: configDomainCount.count > 0
-      }), {
-        headers: {
-          ...cors,
-          'Content-Type': 'application/json',
-        },
-      });
+    const configHasDomain = configCheck.count > 0;
+
+    // If config has domain, get the domain details
+    let domainDetails = null;
+    if (configHasDomain) {
+      domainDetails = await env.DB.prepare(`
+        SELECT email, config_id, is_paid, domain_purchased, domain, created_at
+        FROM domains 
+        WHERE config_id = ?
+      `).bind(configId).first();
     }
 
-    return new Response(JSON.stringify({ 
-      exists: true,
-      domain: domainEntry.domain,
-      isPaid: domainEntry.is_paid === 1,
-      domainPurchased: domainEntry.domain_purchased === 1,
-      createdAt: domainEntry.created_at,
-      userEmail: domainEntry.user_email,
-      configHasDomain: configDomainCount.count > 0
+    return new Response(JSON.stringify({
+      configHasDomain,
+      ...(domainDetails || {}),
+      exists: !!domainDetails
     }), {
       headers: {
         ...cors,
