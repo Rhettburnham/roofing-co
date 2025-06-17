@@ -49,9 +49,10 @@ export default function WorkerCommands({ currentFolder }) {
       }
 
       setConfigStatus(data);
-      // If config has domain, immediately check domain status
-      if (data.configHasDomain) {
-        checkDomainStatus();
+      // If config has domain, immediately check domain status with the associated email
+      if (data.configHasDomain && data.email) {
+        setEmail(data.email); // Set the email state with the associated email
+        checkDomainStatus(data.email); // Pass the email to check domain status
       }
     } catch (error) {
       setError(error.message);
@@ -61,7 +62,7 @@ export default function WorkerCommands({ currentFolder }) {
     }
   };
 
-  const checkDomainStatus = async () => {
+  const checkDomainStatus = async (emailToUse = email) => {
     setCheckingStatus(true);
     setError('');
     try {
@@ -72,7 +73,7 @@ export default function WorkerCommands({ currentFolder }) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: email || '',  // Use empty string if no email provided
+          email: emailToUse || '',  // Use provided email or state email
           configId: currentFolder
         }),
       });
