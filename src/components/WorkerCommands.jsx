@@ -10,6 +10,7 @@ export default function WorkerCommands({ currentFolder }) {
   const [domainStatus, setDomainStatus] = useState(null);
   const [checkingStatus, setCheckingStatus] = useState(false);
   const [configStatus, setConfigStatus] = useState(null);
+  const [isCollapsed, setIsCollapsed] = useState(true); // Initialize as collapsed
 
   // Check config status when folder changes
   useEffect(() => {
@@ -133,7 +134,7 @@ export default function WorkerCommands({ currentFolder }) {
   if (!currentFolder) {
     return (
       <div className="p-4 bg-gray-100 rounded-lg">
-        <p className="text-gray-600">Navigate into a folder to access worker commands</p>
+        <p className="text-gray-600">Navigate into a folder to access domain connection</p>
       </div>
     );
   }
@@ -144,123 +145,149 @@ export default function WorkerCommands({ currentFolder }) {
       animate={{ opacity: 1, y: 0 }}
       className="p-4 bg-white rounded-lg shadow-md"
     >
-      <h2 className="text-xl font-semibold mb-4">Worker Commands</h2>
-      <div className="mb-4 space-y-2">
-        <p className="text-sm text-gray-600">
-          Current folder: <span className="font-medium">{currentFolder}</span>
-        </p>
-        <p className="text-sm text-gray-600">
-          Config ID: <span className="font-medium bg-gray-100 px-2 py-1 rounded">{currentFolder}</span>
-        </p>
-        {configStatus?.configHasDomain && (
-          <div className="mt-2 p-3 bg-yellow-50 text-yellow-700 rounded-md text-sm">
-            <p className="font-medium">Note:</p>
-            <p>This config already has a domain assigned. You can only have one domain per config.</p>
-          </div>
-        )}
-        {!configStatus?.configHasDomain && (
-          <div className="mt-2 p-3 bg-blue-50 text-blue-700 rounded-md text-sm">
-            <p className="font-medium">Note:</p>
-            <p>The email used must be registered in the system first. If you get a foreign key error, please ensure the user has signed up with this email address.</p>
-          </div>
-        )}
+      <div 
+        className="flex items-center justify-between cursor-pointer"
+        onClick={() => setIsCollapsed(!isCollapsed)}
+      >
+        <h2 className="text-xl font-semibold">Connect Domain to User</h2>
+        <motion.svg
+          animate={{ rotate: isCollapsed ? 0 : 180 }}
+          transition={{ duration: 0.2 }}
+          className="w-5 h-5 text-gray-500"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </motion.svg>
       </div>
 
-      <div className="space-y-4">
-        {checkingStatus ? (
-          <div className="text-sm text-gray-600">Checking status...</div>
-        ) : domainStatus?.exists ? (
-          <div className="p-4 bg-gray-50 rounded-md space-y-2">
-            <h3 className="font-medium text-gray-900">Domain Status</h3>
-            <div className="space-y-1">
-              <p className="text-sm">
-                <span className="text-gray-600">Email:</span>{' '}
-                <span className="font-medium">{domainStatus.email}</span>
-              </p>
-              <p className="text-sm">
-                <span className="text-gray-600">Domain:</span>{' '}
-                <span className="font-medium">{domainStatus.domain}</span>
-              </p>
-              <p className="text-sm">
-                <span className="text-gray-600">Payment Status:</span>{' '}
-                <span className={`font-medium ${domainStatus.is_paid === 1 ? 'text-green-600' : 'text-red-600'}`}>
-                  {domainStatus.is_paid === 1 ? 'Paid' : 'Unpaid'}
-                </span>
-              </p>
-              <p className="text-sm">
-                <span className="text-gray-600">Domain Purchase:</span>{' '}
-                <span className={`font-medium ${domainStatus.domain_purchased === 1 ? 'text-green-600' : 'text-red-600'}`}>
-                  {domainStatus.domain_purchased === 1 ? 'Purchased' : 'Not Purchased'}
-                </span>
-              </p>
-              <p className="text-sm text-gray-500">
-                Created: {new Date(domainStatus.created_at).toLocaleDateString()}
-              </p>
+      <motion.div
+        initial={false}
+        animate={{ 
+          height: isCollapsed ? 0 : 'auto',
+          opacity: isCollapsed ? 0 : 1 
+        }}
+        transition={{ duration: 0.3 }}
+        style={{ overflow: 'hidden' }}
+      >
+        <div className="mt-4 space-y-2">
+          <p className="text-sm text-gray-600">
+            Current folder: <span className="font-medium">{currentFolder}</span>
+          </p>
+          <p className="text-sm text-gray-600">
+            Config ID: <span className="font-medium bg-gray-100 px-2 py-1 rounded">{currentFolder}</span>
+          </p>
+          {configStatus?.configHasDomain && (
+            <div className="mt-2 p-3 bg-yellow-50 text-yellow-700 rounded-md text-sm">
+              <p className="font-medium">Note:</p>
+              <p>This config already has a domain assigned. You can only have one domain per config.</p>
             </div>
-          </div>
-        ) : !configStatus?.configHasDomain ? (
-          <>
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
-              <input
-                type="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="user@example.com"
-              />
+          )}
+          {!configStatus?.configHasDomain && (
+            <div className="mt-2 p-3 bg-blue-50 text-blue-700 rounded-md text-sm">
+              <p className="font-medium">Note:</p>
+              <p>The email used must be registered in the system first. If you get a foreign key error, please ensure the user has signed up with this email address.</p>
             </div>
+          )}
+        </div>
 
-            <div>
-              <label htmlFor="domain" className="block text-sm font-medium text-gray-700 mb-1">
-                Domain
-              </label>
-              <input
-                type="text"
-                id="domain"
-                value={domain}
-                onChange={(e) => setDomain(e.target.value)}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="example.com"
-              />
-            </div>
-
-            {error && (
-              <div className="p-3 bg-red-50 text-red-700 rounded-md text-sm">
-                {error}
+        <div className="mt-4 space-y-4">
+          {checkingStatus ? (
+            <div className="text-sm text-gray-600">Checking status...</div>
+          ) : domainStatus?.exists ? (
+            <div className="p-4 bg-gray-50 rounded-md space-y-2">
+              <h3 className="font-medium text-gray-900">Domain Status</h3>
+              <div className="space-y-1">
+                <p className="text-sm">
+                  <span className="text-gray-600">Email:</span>{' '}
+                  <span className="font-medium">{domainStatus.email}</span>
+                </p>
+                <p className="text-sm">
+                  <span className="text-gray-600">Domain:</span>{' '}
+                  <span className="font-medium">{domainStatus.domain}</span>
+                </p>
+                <p className="text-sm">
+                  <span className="text-gray-600">Payment Status:</span>{' '}
+                  <span className={`font-medium ${domainStatus.is_paid === 1 ? 'text-green-600' : 'text-red-600'}`}>
+                    {domainStatus.is_paid === 1 ? 'Paid' : 'Unpaid'}
+                  </span>
+                </p>
+                <p className="text-sm">
+                  <span className="text-gray-600">Domain Purchase:</span>{' '}
+                  <span className={`font-medium ${domainStatus.domain_purchased === 1 ? 'text-green-600' : 'text-red-600'}`}>
+                    {domainStatus.domain_purchased === 1 ? 'Purchased' : 'Not Purchased'}
+                  </span>
+                </p>
+                <p className="text-sm text-gray-500">
+                  Created: {new Date(domainStatus.created_at).toLocaleDateString()}
+                </p>
               </div>
-            )}
-
-            {success && (
-              <div className="p-3 bg-green-50 text-green-700 rounded-md text-sm">
-                {success}
+            </div>
+          ) : !configStatus?.configHasDomain ? (
+            <>
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="user@example.com"
+                />
               </div>
-            )}
 
-            <button
-              type="button"
-              onClick={handleAddDomain}
-              disabled={loading}
-              className={`w-full py-2 px-4 rounded-md text-white font-medium ${
-                loading
-                  ? 'bg-blue-400 cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-700'
-              }`}
-            >
-              {loading ? 'Adding...' : 'Add Domain Entry'}
-            </button>
-          </>
-        ) : (
-          <div className="p-4 bg-gray-50 rounded-md">
-            <p className="text-sm text-gray-600">This config already has a domain assigned. Please use a different config folder.</p>
-          </div>
-        )}
-      </div>
+              <div>
+                <label htmlFor="domain" className="block text-sm font-medium text-gray-700 mb-1">
+                  Domain
+                </label>
+                <input
+                  type="text"
+                  id="domain"
+                  value={domain}
+                  onChange={(e) => setDomain(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="example.com"
+                />
+              </div>
+
+              {error && (
+                <div className="p-3 bg-red-50 text-red-700 rounded-md text-sm">
+                  {error}
+                </div>
+              )}
+
+              {success && (
+                <div className="p-3 bg-green-50 text-green-700 rounded-md text-sm">
+                  {success}
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={handleAddDomain}
+                disabled={loading}
+                className={`w-full py-2 px-4 rounded-md text-white font-medium ${
+                  loading
+                    ? 'bg-blue-400 cursor-not-allowed'
+                    : 'bg-blue-600 hover:bg-blue-700'
+                }`}
+              >
+                {loading ? 'Adding...' : 'Add Domain Entry'}
+              </button>
+            </>
+          ) : (
+            <div className="p-4 bg-gray-50 rounded-md">
+              <p className="text-sm text-gray-600">This config already has a domain assigned. Please use a different config folder.</p>
+            </div>
+          )}
+        </div>
+      </motion.div>
     </motion.div>
   );
 } 

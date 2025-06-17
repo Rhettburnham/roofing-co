@@ -79,11 +79,15 @@ export async function onRequest(context) {
       });
     }
 
-    // Parse request body
-    const { command, email, domain, currentFolder } = await request.json();
-    console.log('Request body:', { command, email, domain, currentFolder });
+    // Parse request body ONCE
+    const body = await request.json();
+    console.log('Request body:', body);
+
+    const { command } = body;
 
     if (command === 'addDomain') {
+      const { email, domain, currentFolder } = body;
+      
       // Verify we're in a folder
       if (!currentFolder) {
         return new Response(JSON.stringify({ 
@@ -159,7 +163,7 @@ export async function onRequest(context) {
         google_reviews_link,
         notes,
         timer
-      } = await request.json();
+      } = body;
 
       if (!id) {
         return new Response(JSON.stringify({

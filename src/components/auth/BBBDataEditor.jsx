@@ -193,7 +193,8 @@ export default function BBBDataEditor({ currentFolder, currentUserEmail }) {
             name="worker"
             value={formData.worker}
             onChange={handleInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+            readOnly
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100 text-gray-600 cursor-not-allowed"
             placeholder="worker@example.com"
             title="Auto-filled with current user email"
           />
@@ -209,7 +210,8 @@ export default function BBBDataEditor({ currentFolder, currentUserEmail }) {
             name="config_id"
             value={formData.config_id}
             onChange={handleInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+            readOnly
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100 text-gray-600 cursor-not-allowed"
             placeholder="Config ID"
             title="Auto-filled with current folder"
           />

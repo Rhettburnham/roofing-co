@@ -556,12 +556,12 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  <WorkerCommands currentFolder={currentFolder} />
-                  
                   <BBBDataEditor 
                     currentFolder={currentFolder} 
                     currentUserEmail={currentUserEmail} 
                   />
+
+                  <WorkerCommands currentFolder={currentFolder} />
                 </div>
               </div>
             </div>
