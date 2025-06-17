@@ -81,10 +81,18 @@ export async function onRequest(context) {
       WHERE d.email = ? AND d.config_id = ?
     `).bind(email, configId).first();
 
+    // Check if any domain exists for this config ID
+    const configDomainCount = await env.DB.prepare(`
+      SELECT COUNT(*) as count
+      FROM domains
+      WHERE config_id = ?
+    `).bind(configId).first();
+
     if (!domainEntry) {
       return new Response(JSON.stringify({ 
         exists: false,
-        message: 'No domain entry found'
+        message: 'No domain entry found',
+        configHasDomain: configDomainCount.count > 0
       }), {
         headers: {
           ...cors,
@@ -99,7 +107,8 @@ export async function onRequest(context) {
       isPaid: domainEntry.is_paid === 1,
       domainPurchased: domainEntry.domain_purchased === 1,
       createdAt: domainEntry.created_at,
-      userEmail: domainEntry.user_email
+      userEmail: domainEntry.user_email,
+      configHasDomain: configDomainCount.count > 0
     }), {
       headers: {
         ...cors,

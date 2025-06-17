@@ -9,12 +9,51 @@ export default function WorkerCommands({ currentFolder }) {
   const [loading, setLoading] = useState(false);
   const [domainStatus, setDomainStatus] = useState(null);
   const [checkingStatus, setCheckingStatus] = useState(false);
+  const [configStatus, setConfigStatus] = useState(null);
 
+  // Check config status when folder changes
   useEffect(() => {
-    if (email && currentFolder) {
+    if (currentFolder) {
+      checkConfigStatus();
+    }
+  }, [currentFolder]);
+
+  // Check domain status when email changes or when config has domain
+  useEffect(() => {
+    if ((email && currentFolder) || (configStatus?.configHasDomain && currentFolder)) {
       checkDomainStatus();
     }
-  }, [email, currentFolder]);
+  }, [email, currentFolder, configStatus?.configHasDomain]);
+
+  const checkConfigStatus = async () => {
+    setCheckingStatus(true);
+    setError('');
+    try {
+      const response = await fetch('/api/admin/check-domain', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: '',  // Empty email to just check config status
+          configId: currentFolder
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.details || data.error || 'Failed to check config status');
+      }
+
+      setConfigStatus(data);
+    } catch (error) {
+      setError(error.message);
+      setConfigStatus(null);
+    } finally {
+      setCheckingStatus(false);
+    }
+  };
 
   const checkDomainStatus = async () => {
     setCheckingStatus(true);
@@ -27,7 +66,7 @@ export default function WorkerCommands({ currentFolder }) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email,
+          email: email || '',  // Use empty string if no email provided
           configId: currentFolder
         }),
       });
@@ -77,6 +116,7 @@ export default function WorkerCommands({ currentFolder }) {
       setEmail('');
       setDomain('');
       setDomainStatus(null);
+      checkConfigStatus(); // Refresh config status after adding
     } catch (error) {
       setError(error.message);
     } finally {
@@ -106,30 +146,23 @@ export default function WorkerCommands({ currentFolder }) {
         <p className="text-sm text-gray-600">
           Config ID: <span className="font-medium bg-gray-100 px-2 py-1 rounded">{currentFolder}</span>
         </p>
-        <div className="mt-2 p-3 bg-blue-50 text-blue-700 rounded-md text-sm">
-          <p className="font-medium">Note:</p>
-          <p>The email must be registered in the system first. If you get a foreign key error, please ensure the user has signed up with this email address.</p>
-        </div>
+        {configStatus?.configHasDomain && (
+          <div className="mt-2 p-3 bg-yellow-50 text-yellow-700 rounded-md text-sm">
+            <p className="font-medium">Note:</p>
+            <p>This config already has a domain assigned. You can only have one domain per config.</p>
+          </div>
+        )}
+        {!configStatus?.configHasDomain && (
+          <div className="mt-2 p-3 bg-blue-50 text-blue-700 rounded-md text-sm">
+            <p className="font-medium">Note:</p>
+            <p>The email used must be registered in the system first. If you get a foreign key error, please ensure the user has signed up with this email address.</p>
+          </div>
+        )}
       </div>
 
       <div className="space-y-4">
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-            Email
-          </label>
-          <input
-            type="email"
-            id="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="user@example.com"
-          />
-        </div>
-
         {checkingStatus ? (
-          <div className="text-sm text-gray-600">Checking domain status...</div>
+          <div className="text-sm text-gray-600">Checking status...</div>
         ) : domainStatus?.exists ? (
           <div className="p-4 bg-gray-50 rounded-md space-y-2">
             <h3 className="font-medium text-gray-900">Domain Status</h3>
@@ -155,8 +188,23 @@ export default function WorkerCommands({ currentFolder }) {
               </p>
             </div>
           </div>
-        ) : (
+        ) : !configStatus?.configHasDomain ? (
           <>
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                Email
+              </label>
+              <input
+                type="email"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="user@example.com"
+              />
+            </div>
+
             <div>
               <label htmlFor="domain" className="block text-sm font-medium text-gray-700 mb-1">
                 Domain
@@ -197,6 +245,10 @@ export default function WorkerCommands({ currentFolder }) {
               {loading ? 'Adding...' : 'Add Domain Entry'}
             </button>
           </>
+        ) : (
+          <div className="p-4 bg-gray-50 rounded-md">
+            <p className="text-sm text-gray-600">This config already has a domain assigned. Please use a different config folder.</p>
+          </div>
         )}
       </div>
     </motion.div>
