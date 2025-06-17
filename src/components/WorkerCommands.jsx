@@ -20,8 +20,10 @@ export default function WorkerCommands({ currentFolder }) {
 
   // Check domain status when email changes or when config has domain
   useEffect(() => {
-    if ((email && currentFolder) || (configStatus?.configHasDomain && currentFolder)) {
-      checkDomainStatus();
+    if (currentFolder) {
+      if (email || configStatus?.configHasDomain) {
+        checkDomainStatus();
+      }
     }
   }, [email, currentFolder, configStatus?.configHasDomain]);
 
@@ -47,6 +49,10 @@ export default function WorkerCommands({ currentFolder }) {
       }
 
       setConfigStatus(data);
+      // If config has domain, immediately check domain status
+      if (data.configHasDomain) {
+        checkDomainStatus();
+      }
     } catch (error) {
       setError(error.message);
       setConfigStatus(null);
@@ -76,8 +82,10 @@ export default function WorkerCommands({ currentFolder }) {
         throw new Error(data.details || data.error || 'Failed to check domain status');
       }
 
+      console.log('Domain status response:', data); // Add debug logging
       setDomainStatus(data);
     } catch (error) {
+      console.error('Error checking domain status:', error); // Add debug logging
       setError(error.message);
       setDomainStatus(null);
     } finally {
