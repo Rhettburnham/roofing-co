@@ -140,6 +140,162 @@ export async function onRequest(context) {
       });
     }
 
+    if (command === 'editBBBData') {
+      const {
+        id,
+        business_name,
+        contact_status,
+        email: bbbEmail,
+        worker,
+        config_id,
+        rating,
+        number_of_reviews,
+        category,
+        address,
+        state,
+        phone,
+        operational_hours,
+        website,
+        google_reviews_link,
+        notes,
+        timer
+      } = await request.json();
+
+      if (!id) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Missing required field: id'
+        }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      try {
+        // Build dynamic update query based on provided fields
+        const updateFields = [];
+        const updateValues = [];
+
+        if (business_name !== undefined) {
+          updateFields.push('business_name = ?');
+          updateValues.push(business_name);
+        }
+        if (contact_status !== undefined) {
+          updateFields.push('contact_status = ?');
+          updateValues.push(contact_status);
+        }
+        if (bbbEmail !== undefined) {
+          updateFields.push('email = ?');
+          updateValues.push(bbbEmail);
+        }
+        if (worker !== undefined) {
+          updateFields.push('worker = ?');
+          updateValues.push(worker);
+        }
+        if (config_id !== undefined) {
+          updateFields.push('config_id = ?');
+          updateValues.push(config_id);
+        }
+        if (rating !== undefined) {
+          updateFields.push('rating = ?');
+          updateValues.push(rating);
+        }
+        if (number_of_reviews !== undefined) {
+          updateFields.push('number_of_reviews = ?');
+          updateValues.push(number_of_reviews);
+        }
+        if (category !== undefined) {
+          updateFields.push('category = ?');
+          updateValues.push(category);
+        }
+        if (address !== undefined) {
+          updateFields.push('address = ?');
+          updateValues.push(address);
+        }
+        if (state !== undefined) {
+          updateFields.push('state = ?');
+          updateValues.push(state);
+        }
+        if (phone !== undefined) {
+          updateFields.push('phone = ?');
+          updateValues.push(phone);
+        }
+        if (operational_hours !== undefined) {
+          updateFields.push('operational_hours = ?');
+          updateValues.push(operational_hours);
+        }
+        if (website !== undefined) {
+          updateFields.push('website = ?');
+          updateValues.push(website);
+        }
+        if (google_reviews_link !== undefined) {
+          updateFields.push('google_reviews_link = ?');
+          updateValues.push(google_reviews_link);
+        }
+        if (notes !== undefined) {
+          updateFields.push('notes = ?');
+          updateValues.push(notes);
+        }
+        if (timer !== undefined) {
+          updateFields.push('timer = ?');
+          updateValues.push(timer);
+        }
+
+        if (updateFields.length === 0) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'No fields provided to update'
+          }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+
+        // Add the id to the end of values array for WHERE clause
+        updateValues.push(id);
+
+        const updateQuery = `
+          UPDATE bbb_data 
+          SET ${updateFields.join(', ')} 
+          WHERE id = ?
+        `;
+
+        console.log('Update query:', updateQuery);
+        console.log('Update values:', updateValues);
+
+        const result = await env.DB.prepare(updateQuery).bind(...updateValues).run();
+
+        if (result.changes === 0) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'No record found with the provided ID or no changes made'
+          }), {
+            status: 404,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+
+        return new Response(JSON.stringify({
+          success: true,
+          message: 'BBB data entry updated successfully',
+          updatedFields: updateFields.length,
+          recordId: id
+        }), {
+          headers: { 'Content-Type': 'application/json' }
+        });
+      } catch (error) {
+        console.error('Error updating BBB data:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to update BBB data entry',
+          details: error.message
+        }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+    }
+
     return new Response(JSON.stringify({ error: 'Unknown command' }), {
       status: 400,
       headers: {

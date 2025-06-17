@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import WorkerCommands from '../components/WorkerCommands';
+import BBBDataEditor from '../components/auth/BBBDataEditor';
 
 export default function AdminPage() {
   const [isAuthorized, setIsAuthorized] = useState(false);
@@ -556,6 +557,11 @@ export default function AdminPage() {
                   </div>
 
                   <WorkerCommands currentFolder={currentFolder} />
+                  
+                  <BBBDataEditor 
+                    currentFolder={currentFolder} 
+                    currentUserEmail={currentUserEmail} 
+                  />
                 </div>
               </div>
             </div>
