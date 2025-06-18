@@ -649,13 +649,7 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* Test BBB Link Button */}
-          <button
-            className="mb-4 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
-            onClick={testBBBLink}
-          >
-            Test BBB Link
-          </button>
+       
 
           {/* Show WorkerBBBLeads for both admin and worker */}
           {isAuthorized && currentUserEmail && (configId === 'admin' || configId === 'worker') && (
