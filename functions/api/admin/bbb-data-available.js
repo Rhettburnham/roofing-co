@@ -55,6 +55,19 @@ export async function onRequest(context) {
       });
     }
 
+    // Check for workerEmail query param
+    const url = new URL(request.url);
+    const workerEmail = url.searchParams.get('workerEmail');
+    if (workerEmail) {
+      // Return all bbb_data rows for this worker
+      const rows = await env.DB.prepare(
+        'SELECT id, business_name, contact_status, config_id, google_reviews_link FROM bbb_data WHERE LOWER(worker) = LOWER(?) ORDER BY id ASC'
+      ).bind(workerEmail).all();
+      return new Response(JSON.stringify({ leads: rows.results }), {
+        headers: { ...cors, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Query all rows from bbb_data
     const allRows = await env.DB.prepare('SELECT id, worker FROM bbb_data ORDER BY id ASC').all();
     const rows = allRows.results;

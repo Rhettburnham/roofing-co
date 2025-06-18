@@ -121,18 +121,15 @@ export default function AdminPage() {
         credentials: 'include',
       });
       const data = await response.json();
-      
-      if (data.configId !== 'admin') {
-        // Redirect unauthorized users
+      // Allow both admin and worker
+      if (data.configId !== 'admin' && data.configId !== 'worker') {
         window.location.href = '/';
         return;
       }
-      
       setIsAuthorized(true);
       setCurrentUserEmail(data.email);
       setConfigId(data.configId);
     } catch (error) {
-      console.error('Error checking admin access:', error);
       window.location.href = '/';
     } finally {
       setLoading(false);
