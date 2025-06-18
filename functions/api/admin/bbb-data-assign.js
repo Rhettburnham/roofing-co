@@ -63,6 +63,18 @@ export async function onRequest(context) {
         headers: { ...cors, 'Content-Type': 'application/json' },
       });
     }
+
+    // Check if workerEmail exists in users table and has config_id 'worker' or 'admin'
+    const user = await env.DB.prepare(
+      'SELECT * FROM users WHERE email = ? AND (config_id = "worker" OR config_id = "admin")'
+    ).bind(workerEmail).first();
+    if (!user) {
+      return new Response(JSON.stringify({ error: 'Worker email not found or not authorized (must be worker or admin)' }), {
+        status: 400,
+        headers: { ...cors, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Update all rows in range where worker is empty
     const update = await env.DB.prepare(
       `UPDATE bbb_data SET worker = ? WHERE id >= ? AND id <= ? AND (worker IS NULL OR worker = '')`
