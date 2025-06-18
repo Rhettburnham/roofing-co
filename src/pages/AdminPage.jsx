@@ -367,6 +367,26 @@ export default function AdminPage() {
     setShowConfirmation(false);
   };
 
+  const testBBBLink = async () => {
+    const bbbName = prompt('Enter BBB Name to test:');
+    if (!bbbName) return;
+    try {
+      const res = await fetch('/api/admin/bbb-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bbbName }),
+      });
+      const data = await res.json();
+      if (data.link) {
+        alert(`Link: ${data.link}`);
+      } else {
+        alert('No link found for that BBB name.');
+      }
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -413,6 +433,14 @@ export default function AdminPage() {
             {error}
           </div>
         )}
+
+          {/* Test BBB Link Button */}
+          <button
+            className="mb-4 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+            onClick={testBBBLink}
+          >
+            Test BBB Link
+          </button>
 
           {currentPath.length === 0 ? (
             // Root level view
