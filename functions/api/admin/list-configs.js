@@ -61,7 +61,7 @@ export async function onRequestPost(context) {
       expiresAt: session.expires_at
     } : 'No session found');
 
-    if (!session || session.config_id !== 'admin') {
+    if (!session || (session.config_id !== 'admin' && session.config_id !== 'worker')) {
       console.log('Invalid session or not admin');
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,

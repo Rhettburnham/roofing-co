@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import BBBDataEditor from './BBBDataEditor';
 
-export default function WorkerBBBLeads({ currentUserEmail, onSelectEntry }) {
+export default function WorkerBBBLeads({ currentUserEmail, onSelectEntry, showEditor = true }) {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selected, setSelected] = useState(null);
-  const [timer, setTimer] = useState(60);
+  const [timer, setTimer] = useState(0);
   const [timerActive, setTimerActive] = useState(false);
 
   useEffect(() => {
@@ -25,24 +25,22 @@ export default function WorkerBBBLeads({ currentUserEmail, onSelectEntry }) {
 
   useEffect(() => {
     let interval;
-    if (timerActive && timer > 0) {
-      interval = setInterval(() => setTimer(t => t - 1), 1000);
-    } else if (timer === 0) {
-      setTimerActive(false);
+    if (timerActive) {
+      interval = setInterval(() => setTimer(t => t + 1), 1000);
     }
     return () => clearInterval(interval);
-  }, [timerActive, timer]);
+  }, [timerActive]);
 
   const handleSelect = (entry) => {
     setSelected(entry);
-    setTimer(entry.timer || 60);
+    setTimer(0);
     setTimerActive(true);
     if (onSelectEntry) onSelectEntry(entry);
   };
 
   const handleRelease = () => {
     setSelected(null);
-    setTimer(60);
+    setTimer(0);
     setTimerActive(false);
     if (onSelectEntry) onSelectEntry(null);
   };
@@ -97,28 +95,31 @@ export default function WorkerBBBLeads({ currentUserEmail, onSelectEntry }) {
     );
   }
 
-  // Only show the selected entry and timer
+  // Show only the selected entry and timer, and BBBDataEditor if showEditor is true
   return (
     <div className="p-4 bg-green-50 rounded-lg mb-6">
-      <h2 className="text-lg font-bold mb-2">Editing BBB Lead</h2>
+      <h2 className="text-lg font-bold mb-2">Selected BBB Lead</h2>
       <div className="mb-2 flex items-center gap-4">
         <span className="font-semibold">ID:</span> <span>{selected.id}</span>
         <span className="font-semibold">Business:</span> <span>{selected.business_name}</span>
         <span className="font-semibold">Contact Status:</span> <span>{selected.contact_status}</span>
         <span className="font-semibold">Config ID:</span> <span>{selected.config_id}</span>
-        <span className="font-semibold">Timer:</span> <span className="text-lg text-red-600">{timer}s</span>
+        <span className="font-semibold">Timer:</span> <span className="text-lg text-blue-600">{timer}s</span>
         <button className="ml-4 px-3 py-1 bg-gray-300 rounded hover:bg-gray-400" onClick={handleRelease}>Release</button>
       </div>
-      {/* Pass selected entry to BBBDataEditor, autofill fields except id (read-only) */}
-      <BBBDataEditor
-        currentFolder={selected.config_id}
-        currentUserEmail={currentUserEmail}
-        autofillData={{
-          ...selected,
-          id: selected.id,
-        }}
-        idReadOnly={true}
-      />
+      {/* The selected entry's data is available here for passing to BBBDataEditor when needed */}
+      {showEditor && (
+        <BBBDataEditor
+          currentFolder={selected.config_id}
+          currentUserEmail={currentUserEmail}
+          autofillData={{
+            ...selected,
+            id: selected.id,
+            timer: timer,
+          }}
+          idReadOnly={true}
+        />
+      )}
     </div>
   );
 } 

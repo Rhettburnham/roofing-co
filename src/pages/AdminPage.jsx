@@ -122,11 +122,10 @@ export default function AdminPage() {
         credentials: 'include',
       });
       const data = await response.json();
-      // For testing: do not boot any users
-      // if (!['admin', 'worker'].includes((data.configId || '').toLowerCase())) {
-      //   window.location.href = '/';
-      //   return;
-      // }
+      if (!['admin', 'worker'].includes((data.configId || '').toLowerCase())) {
+        window.location.href = '/';
+        return;
+      }
       setIsAuthorized(true);
       setCurrentUserEmail(data.email);
       setConfigId(data.configId);
@@ -392,10 +391,7 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
-      {/* Display current configId for testing */}
-      <div className="mb-2 p-2 bg-gray-100 rounded text-sm text-gray-700">
-        <strong>Current configId:</strong> {configId || 'unknown'}
-      </div>
+      
       {loading ? (
         <div className="flex items-center justify-center h-screen">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
