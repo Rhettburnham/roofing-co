@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import WorkerCommands from '../components/WorkerCommands';
 import BBBDataEditor from '../components/auth/BBBDataEditor';
+import AssignBBBData from '../components/auth/AssignBBBData';
 
 export default function AdminPage() {
   const [isAuthorized, setIsAuthorized] = useState(false);
@@ -22,6 +23,7 @@ export default function AdminPage() {
   const [currentUserEmail, setCurrentUserEmail] = useState('');
   const [allFolders, setAllFolders] = useState([]);
   const [allFiles, setAllFiles] = useState([]);
+  const [configId, setConfigId] = useState('');
 
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
@@ -128,6 +130,7 @@ export default function AdminPage() {
       
       setIsAuthorized(true);
       setCurrentUserEmail(data.email);
+      setConfigId(data.configId);
     } catch (error) {
       console.error('Error checking admin access:', error);
       window.location.href = '/';
@@ -639,6 +642,11 @@ export default function AdminPage() {
                 </div>
               </div>
             </div>
+          )}
+
+          {/* Assign BBB Data UI for admin */}
+          {isAuthorized && currentUserEmail && configId === 'admin' && (
+            <AssignBBBData currentUserEmail={currentUserEmail} />
           )}
         </div>
       )}

@@ -38,7 +38,7 @@ def main():
         about_page_output = os.path.join(output_dir, "about_page.json")
         
         # Check if combined_data.json exists to extract company data
-        combined_data_path = os.path.join(raw_data_dir, "step_4", "combined_data.json")
+        #combined_data_path = os.path.join(raw_data_dir, "step_4", "combined_data.json")
         bbb_profile_path = os.path.join(raw_data_dir, "step_1", "bbb_profile_data.json")
         
         # Variables to populate
@@ -48,36 +48,36 @@ def main():
         city = "Atlanta"
         
         # Try to load data from combined_data.json if it exists
-        if os.path.exists(combined_data_path):
-            logger.info(f"Loading data from {combined_data_path}")
-            with open(combined_data_path, 'r') as file:
-                combined_data = json.load(file)
+        # if os.path.exists(combined_data_path):
+        #     logger.info(f"Loading data from {combined_data_path}")
+        #     with open(combined_data_path, 'r') as file:
+        #         combined_data = json.load(file)
             
-            # Extract company name
-            if 'hero' in combined_data and 'mainTitle' in combined_data['hero']:
-                company_name = combined_data['hero']['mainTitle']
-                if 'subTitle' in combined_data['hero'] and combined_data['hero']['subTitle']:
-                    company_name += " " + combined_data['hero']['subTitle']
+        #     # Extract company name
+        #     if 'hero' in combined_data and 'mainTitle' in combined_data['hero']:
+        #         company_name = combined_data['hero']['mainTitle']
+        #         if 'subTitle' in combined_data['hero'] and combined_data['hero']['subTitle']:
+        #             company_name += " " + combined_data['hero']['subTitle']
             
-            # Extract years in business
-            if 'richText' in combined_data and 'years_in_business' in combined_data['richText']:
-                years_text = combined_data['richText']['years_in_business']
-                try:
-                    years_in_business = int(years_text.split()[0])
-                    year_established = datetime.now().year - years_in_business
-                except:
-                    logger.warning(f"Could not parse years from '{years_text}', using default")
+        #     # Extract years in business
+        #     if 'richText' in combined_data and 'years_in_business' in combined_data['richText']:
+        #         years_text = combined_data['richText']['years_in_business']
+        #         try:
+        #             years_in_business = int(years_text.split()[0])
+        #             year_established = datetime.now().year - years_in_business
+        #         except:
+        #             logger.warning(f"Could not parse years from '{years_text}', using default")
             
-            # Extract city
-            if 'map' in combined_data and 'address' in combined_data['map']:
-                address = combined_data['map']['address']
-                # Simple city extraction - find text between commas
-                parts = address.split(',')
-                if len(parts) >= 2:
-                    city = parts[-2].strip()
+        #     # Extract city
+        #     if 'map' in combined_data and 'address' in combined_data['map']:
+        #         address = combined_data['map']['address']
+        #         # Simple city extraction - find text between commas
+        #         parts = address.split(',')
+        #         if len(parts) >= 2:
+        #             city = parts[-2].strip()
         
         # Try to load data from BBB profile if combined_data.json doesn't exist or is missing info
-        elif os.path.exists(bbb_profile_path):
+        if os.path.exists(bbb_profile_path):
             logger.info(f"Loading data from {bbb_profile_path}")
             with open(bbb_profile_path, 'r') as file:
                 bbb_data = json.load(file)
