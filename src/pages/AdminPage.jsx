@@ -25,6 +25,8 @@ export default function AdminPage() {
   const [allFolders, setAllFolders] = useState([]);
   const [allFiles, setAllFiles] = useState([]);
   const [configId, setConfigId] = useState('');
+  const [selectedLead, setSelectedLead] = useState(null);
+  const [selectedLeadTimer, setSelectedLeadTimer] = useState(0);
 
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
@@ -563,6 +565,7 @@ export default function AdminPage() {
                   <BBBDataEditor 
                     currentFolder={currentFolder} 
                     currentUserEmail={currentUserEmail} 
+                    autofillData={selectedLead && selectedLead.config_id === currentFolder ? { ...selectedLead, timer: selectedLeadTimer } : undefined}
                   />
 
                   <WorkerCommands currentFolder={currentFolder} />
@@ -649,7 +652,13 @@ export default function AdminPage() {
 
           {/* Show WorkerBBBLeads for both admin and worker */}
           {isAuthorized && currentUserEmail && (configId === 'admin' || configId === 'worker') && (
-            <WorkerBBBLeads currentUserEmail={currentUserEmail} />
+            <WorkerBBBLeads 
+              currentUserEmail={currentUserEmail} 
+              onSelectEntry={entry => {
+                setSelectedLead(entry);
+                setSelectedLeadTimer(0);
+              }}
+            />
           )}
 
           {/* Assign BBB Data UI for admin */}

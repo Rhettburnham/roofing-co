@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import BBBDataEditor from './BBBDataEditor';
 
 export default function WorkerBBBLeads({ currentUserEmail, onSelectEntry, showEditor = true }) {
   const [leads, setLeads] = useState([]);
@@ -95,7 +94,7 @@ export default function WorkerBBBLeads({ currentUserEmail, onSelectEntry, showEd
     );
   }
 
-  // Show only the selected entry and timer, and BBBDataEditor if showEditor is true
+  // Show only the selected entry and timer, but do not render BBBDataEditor here
   return (
     <div className="p-4 bg-green-50 rounded-lg mb-6">
       <h2 className="text-lg font-bold mb-2">Selected BBB Lead</h2>
@@ -107,19 +106,7 @@ export default function WorkerBBBLeads({ currentUserEmail, onSelectEntry, showEd
         <span className="font-semibold">Timer:</span> <span className="text-lg text-blue-600">{timer}s</span>
         <button className="ml-4 px-3 py-1 bg-gray-300 rounded hover:bg-gray-400" onClick={handleRelease}>Release</button>
       </div>
-      {/* The selected entry's data is available here for passing to BBBDataEditor when needed */}
-      {showEditor && (
-        <BBBDataEditor
-          currentFolder={selected.config_id}
-          currentUserEmail={currentUserEmail}
-          autofillData={{
-            ...selected,
-            id: selected.id,
-            timer: timer,
-          }}
-          idReadOnly={true}
-        />
-      )}
+      {/* The selected entry's data is available here for passing to the folder detail page via onSelectEntry */}
     </div>
   );
 } 

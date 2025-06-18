@@ -50,7 +50,7 @@ export async function onRequest(context) {
     }
     console.log('Session ID from cookie:', sessionId ? 'present' : 'missing');
 
-    let configId = 'default'; // Default config ID for non-authenticated users
+    let configId = 'default';
 
     if (sessionId) {
       // Verify the session and get config ID
@@ -66,7 +66,29 @@ export async function onRequest(context) {
         console.log('No valid session found, using default config');
       }
     } else {
-      console.log('No session ID found, using default config');
+      // No session, try to get configId from domain
+      const host = request.headers.get('host');
+      let domain;
+      try {
+        const url = new URL(`https://${host}`);
+        domain = url.hostname.replace(/^www\./, '');
+      } catch (error) {
+        domain = host;
+      }
+      if (env.DB && domain) {
+        try {
+          const { getDomainByDomain } = await import('../../utils/domains.js');
+          const domainEntry = await getDomainByDomain(env.DB, domain);
+          if (domainEntry && domainEntry.config_id) {
+            configId = domainEntry.config_id;
+            console.log('Config ID from domain:', configId);
+          } else {
+            console.log('No domain mapping found, using default config');
+          }
+        } catch (e) {
+          console.error('Error looking up domain for config:', e);
+        }
+      }
     }
 
     // Load all configs from R2
