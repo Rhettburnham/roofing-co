@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import WorkerCommands from '../components/WorkerCommands';
 import BBBDataEditor from '../components/auth/BBBDataEditor';
 import AssignBBBData from '../components/auth/AssignBBBData';
+import WorkerBBBLeads from '../components/auth/WorkerBBBLeads';
 
 export default function AdminPage() {
   const [isAuthorized, setIsAuthorized] = useState(false);
@@ -121,11 +122,11 @@ export default function AdminPage() {
         credentials: 'include',
       });
       const data = await response.json();
-      // Allow both admin and worker
-      if (data.configId !== 'admin' && data.configId !== 'worker') {
-        window.location.href = '/';
-        return;
-      }
+      // For testing: do not boot any users
+      // if (!['admin', 'worker'].includes((data.configId || '').toLowerCase())) {
+      //   window.location.href = '/';
+      //   return;
+      // }
       setIsAuthorized(true);
       setCurrentUserEmail(data.email);
       setConfigId(data.configId);
@@ -391,6 +392,10 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
+      {/* Display current configId for testing */}
+      <div className="mb-2 p-2 bg-gray-100 rounded text-sm text-gray-700">
+        <strong>Current configId:</strong> {configId || 'unknown'}
+      </div>
       {loading ? (
         <div className="flex items-center justify-center h-screen">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -642,6 +647,19 @@ export default function AdminPage() {
                 </div>
               </div>
             </div>
+          )}
+
+          {/* Test BBB Link Button */}
+          <button
+            className="mb-4 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+            onClick={testBBBLink}
+          >
+            Test BBB Link
+          </button>
+
+          {/* Show WorkerBBBLeads for both admin and worker */}
+          {isAuthorized && currentUserEmail && (configId === 'admin' || configId === 'worker') && (
+            <WorkerBBBLeads currentUserEmail={currentUserEmail} />
           )}
 
           {/* Assign BBB Data UI for admin */}
