@@ -566,6 +566,7 @@ export default function AdminPage() {
                     currentFolder={currentFolder} 
                     currentUserEmail={currentUserEmail} 
                     autofillData={selectedLead && selectedLead.config_id === currentFolder ? { ...selectedLead, timer: selectedLeadTimer } : undefined}
+                    idReadOnly={selectedLead && selectedLead.config_id === currentFolder}
                   />
 
                   <WorkerCommands currentFolder={currentFolder} />

@@ -1,17 +1,17 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 
-export default function BBBDataEditor({ currentFolder, currentUserEmail }) {
+export default function BBBDataEditor({ currentFolder, currentUserEmail, autofillData, idReadOnly }) {
   const [formData, setFormData] = useState({
-    id: '',
-    website: '',
-    address: '',
-    contact_status: '',
-    email: '',
+    id: autofillData?.id || '',
+    website: autofillData?.website || '',
+    address: autofillData?.address || '',
+    contact_status: autofillData?.contact_status || '',
+    email: autofillData?.email || '',
     worker: currentUserEmail || '',
     config_id: currentFolder || '',
-    notes: '',
-    timer: 60
+    notes: autofillData?.notes || '',
+    timer: autofillData?.timer || 60
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -111,10 +111,12 @@ export default function BBBDataEditor({ currentFolder, currentUserEmail }) {
             id="id"
             name="id"
             value={formData.id}
-            onChange={handleInputChange}
+            onChange={idReadOnly || autofillData?.id ? undefined : handleInputChange}
+            readOnly={idReadOnly || !!autofillData?.id}
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${idReadOnly || autofillData?.id ? 'bg-gray-100 text-gray-600 cursor-not-allowed' : ''}`}
             placeholder="Enter BBB data entry ID"
+            title={idReadOnly || autofillData?.id ? "ID is auto-filled from selected lead" : ""}
           />
         </div>
 

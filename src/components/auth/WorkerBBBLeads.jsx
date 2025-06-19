@@ -7,6 +7,8 @@ export default function WorkerBBBLeads({ currentUserEmail, onSelectEntry, showEd
   const [selected, setSelected] = useState(null);
   const [timer, setTimer] = useState(0);
   const [timerActive, setTimerActive] = useState(false);
+  const [contactStatusFilter, setContactStatusFilter] = useState('');
+  const [sortBy, setSortBy] = useState('default'); // 'default', 'name_asc', 'name_desc'
 
   useEffect(() => {
     if (!currentUserEmail) return;
@@ -30,6 +32,27 @@ export default function WorkerBBBLeads({ currentUserEmail, onSelectEntry, showEd
     return () => clearInterval(interval);
   }, [timerActive]);
 
+  // Filter and sort leads
+  const filteredAndSortedLeads = React.useMemo(() => {
+    let filtered = leads;
+    
+    // Filter by contact status
+    if (contactStatusFilter) {
+      filtered = filtered.filter(lead => lead.contact_status === contactStatusFilter);
+    }
+    
+    // Sort leads
+    let sorted = [...filtered];
+    if (sortBy === 'name_asc') {
+      sorted.sort((a, b) => (a.business_name || '').localeCompare(b.business_name || ''));
+    } else if (sortBy === 'name_desc') {
+      sorted.sort((a, b) => (b.business_name || '').localeCompare(a.business_name || ''));
+    }
+    // Default sorting is by ID (already implemented in the original data)
+    
+    return sorted;
+  }, [leads, contactStatusFilter, sortBy]);
+
   const handleSelect = (entry) => {
     setSelected(entry);
     setTimer(0);
@@ -44,6 +67,16 @@ export default function WorkerBBBLeads({ currentUserEmail, onSelectEntry, showEd
     if (onSelectEntry) onSelectEntry(null);
   };
 
+  const handleSortToggle = () => {
+    if (sortBy === 'default') {
+      setSortBy('name_asc');
+    } else if (sortBy === 'name_asc') {
+      setSortBy('name_desc');
+    } else {
+      setSortBy('default');
+    }
+  };
+
   if (loading) return <div className="p-4">Loading leads...</div>;
   if (error) return <div className="p-4 text-red-600">{error}</div>;
 
@@ -51,6 +84,32 @@ export default function WorkerBBBLeads({ currentUserEmail, onSelectEntry, showEd
     return (
       <div className="p-4 bg-yellow-50 rounded-lg mb-6">
         <h2 className="text-lg font-bold mb-2">Your Assigned BBB Leads</h2>
+        
+        {/* Filters */}
+        <div className="mb-4 flex gap-4 items-center">
+          <div>
+            <label htmlFor="contactStatusFilter" className="block text-sm font-medium text-gray-700 mb-1">
+              Filter by Contact Status:
+            </label>
+            <select
+              id="contactStatusFilter"
+              value={contactStatusFilter}
+              onChange={(e) => setContactStatusFilter(e.target.value)}
+              className="px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Statuses</option>
+              <option value="not_contacted">Not Contacted</option>
+              <option value="contacted">Contacted</option>
+              <option value="in_progress">In Progress</option>
+              <option value="completed">Completed</option>
+              <option value="no_response">No Response</option>
+            </select>
+          </div>
+          <div className="text-sm text-gray-600">
+            Showing {filteredAndSortedLeads.length} of {leads.length} leads
+          </div>
+        </div>
+        
         {leads.length === 0 ? (
           <div>No leads assigned to your email.</div>
         ) : (
@@ -58,7 +117,26 @@ export default function WorkerBBBLeads({ currentUserEmail, onSelectEntry, showEd
             <thead>
               <tr className="bg-gray-100">
                 <th className="p-2 border">ID</th>
-                <th className="p-2 border">Business Name</th>
+                <th className="p-2 border">
+                  <button
+                    onClick={handleSortToggle}
+                    className="flex items-center gap-1 w-full justify-center hover:bg-gray-200 rounded px-1"
+                    title="Click to sort by business name"
+                  >
+                    Business Name
+                    <svg
+                      className={`w-4 h-4 transition-transform ${
+                        sortBy === 'name_desc' ? 'rotate-180' : 
+                        sortBy === 'name_asc' ? 'rotate-0' : 'opacity-50'
+                      }`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                    </svg>
+                  </button>
+                </th>
                 <th className="p-2 border">Contact Status</th>
                 <th className="p-2 border">Config ID</th>
                 <th className="p-2 border">Google Reviews</th>
@@ -66,7 +144,7 @@ export default function WorkerBBBLeads({ currentUserEmail, onSelectEntry, showEd
               </tr>
             </thead>
             <tbody>
-              {leads.map(entry => (
+              {filteredAndSortedLeads.map(entry => (
                 <tr key={entry.id} className="border-b">
                   <td className="p-2 border">{entry.id}</td>
                   <td className="p-2 border">{entry.business_name}</td>
