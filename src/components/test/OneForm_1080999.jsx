@@ -12,12 +12,11 @@
  * for local editing of content without direct database access. The downloaded
  * ZIP file can be sent to the developer for permanent integration into the site.
  */
-import { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import PropTypes from "prop-types";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { useNavigate } from "react-router-dom";
-import { createPortal } from "react-dom";
 import OneFormAuthButton from "./auth/OneFormAuthButton";
 import ServiceEditPage, {
   blockMap as importedServiceBlockMap,
@@ -30,184 +29,6 @@ import Navbar from "./Navbar"; // Import Navbar for preview
 import ColorEditor from "./ColorEditor"; // Import the new ColorEditor component
 import { defaultColorDefinitions } from "./ColorEditor"; // Import defaultColorDefinitions
 import ServicePage from "./ServicePage"; // For rendering all blocks
-
-// Create Viewport Context
-const ViewportContext = createContext({
-  width: window.innerWidth,
-  height: window.innerHeight,
-  isMobile: false,
-  isForced: false,
-});
-
-// Custom hook to use viewport
-export const useViewport = () => {
-  const context = useContext(ViewportContext);
-  if (!context) {
-    // Fallback to actual window dimensions if no context
-    return {
-      width: window.innerWidth,
-      height: window.innerHeight,
-      isMobile: window.innerWidth < 768,
-      isForced: false,
-    };
-  }
-  return context;
-};
-
-// IframePreview Component for true mobile viewport isolation
-const IframePreview = ({ children, width = 390, height = 700, deviceViewport }) => {
-  const iframeRef = useRef(null);
-  const [iframeReady, setIframeReady] = useState(false);
-
-  useEffect(() => {
-    const iframe = iframeRef.current;
-    if (!iframe) return;
-
-    const handleLoad = () => {
-      try {
-        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-        
-        // Copy all stylesheets from parent to iframe
-        const parentStylesheets = document.querySelectorAll('link[rel="stylesheet"], style');
-        parentStylesheets.forEach(stylesheet => {
-          if (stylesheet.tagName === 'LINK') {
-            const link = iframeDoc.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = stylesheet.href;
-            iframeDoc.head.appendChild(link);
-          } else if (stylesheet.tagName === 'STYLE') {
-            const style = iframeDoc.createElement('style');
-            style.textContent = stylesheet.textContent;
-            iframeDoc.head.appendChild(style);
-          }
-        });
-
-        // Set up basic HTML structure
-        iframeDoc.body.innerHTML = '<div id="iframe-root"></div>';
-        iframeDoc.body.style.margin = '0';
-        iframeDoc.body.style.padding = '0';
-        iframeDoc.body.style.overflow = 'auto';
-        
-        // Add viewport meta tag for proper mobile rendering
-        const viewport = iframeDoc.createElement('meta');
-        viewport.name = 'viewport';
-        viewport.content = `width=${width}, initial-scale=1`;
-        iframeDoc.head.appendChild(viewport);
-
-        setIframeReady(true);
-      } catch (error) {
-        console.error('Error setting up iframe:', error);
-      }
-    };
-
-    iframe.addEventListener('load', handleLoad);
-    
-    // Trigger load if already loaded
-    if (iframe.contentDocument && iframe.contentDocument.readyState === 'complete') {
-      handleLoad();
-    }
-
-    return () => {
-      iframe.removeEventListener('load', handleLoad);
-    };
-  }, [width]);
-
-  // Render children into iframe when ready
-  useEffect(() => {
-    if (!iframeReady || !iframeRef.current) return;
-
-    const iframe = iframeRef.current;
-    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-    const iframeRoot = iframeDoc.getElementById('iframe-root');
-    
-    if (iframeRoot && children) {
-      // Use React's createPortal to render into iframe
-      const portalContent = (
-        <ViewportContext.Provider value={{
-          width,
-          height,
-          isMobile: width < 768,
-          isForced: true,
-        }}>
-          {children}
-        </ViewportContext.Provider>
-      );
-      
-      // The portal will be created in the render method
-      setPortalTarget(iframeRoot);
-    }
-  }, [iframeReady, children, width, height]);
-
-  const [portalTarget, setPortalTarget] = useState(null);
-
-  return (
-    <>
-      <iframe
-        ref={iframeRef}
-        width={width}
-        height={height}
-        style={{
-          border: 'none',
-          borderRadius: '2rem',
-          backgroundColor: 'white',
-          display: 'block',
-        }}
-        title="Mobile Preview"
-      />
-      {portalTarget && createPortal(
-        <ViewportContext.Provider value={{
-          width,
-          height,
-          isMobile: width < 768,
-          isForced: true,
-        }}>
-          {children}
-        </ViewportContext.Provider>,
-        portalTarget
-      )}
-    </>
-  );
-};
-
-// Viewport Provider Component (simplified since iframe handles isolation)
-const ViewportProvider = ({ children, forcedWidth, forcedHeight, deviceViewport }) => {
-  const [actualWidth, setActualWidth] = useState(window.innerWidth);
-  const [actualHeight, setActualHeight] = useState(window.innerHeight);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setActualWidth(window.innerWidth);
-      setActualHeight(window.innerHeight);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const contextValue = useMemo(() => {
-    if (deviceViewport === 'mobile' && forcedWidth && forcedHeight) {
-      return {
-        width: forcedWidth,
-        height: forcedHeight,
-        isMobile: true,
-        isForced: true,
-      };
-    }
-    
-    return {
-      width: actualWidth,
-      height: actualHeight,
-      isMobile: actualWidth < 768,
-      isForced: false,
-    };
-  }, [actualWidth, actualHeight, deviceViewport, forcedWidth, forcedHeight]);
-
-  return (
-    <ViewportContext.Provider value={contextValue}>
-      {children}
-    </ViewportContext.Provider>
-  );
-};
 
 // Helper function to check if a URL is a local asset to be processed
 function isProcessableAssetUrl(url) {
@@ -522,20 +343,8 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   const fetchingRef = useRef(false);
   const dataLoadedRef = useRef(false);
 
-  // Add device viewport state and forced preview states
-  const [deviceViewport, setDeviceViewport] = useState('desktop'); // 'desktop' or 'mobile'
-  const [forcedPreviewStates, setForcedPreviewStates] = useState({});
-
   useEffect(() => {
     setServiceBlockMap(importedServiceBlockMap);
-  }, []);
-
-  // Handle preview state changes
-  const handlePreviewStateChange = useCallback((blockType, newState) => {
-    setForcedPreviewStates(prev => ({
-      ...prev,
-      [blockType]: newState
-    }));
   }, []);
 
   // Memoize default theme colors to prevent recreation
@@ -1567,6 +1376,7 @@ This package contains website content updates separated into two distinct folder
     initialAboutPageJsonData,
     initialAllServiceBlocksData,
     initialSentimentReviewsData,
+    sentimentReviewsData,
     defaultColorDefinitions
   ]);
 
@@ -1966,7 +1776,6 @@ This package contains website content updates separated into two distinct folder
         </div>
         <div className="p-4">
           <MainPageForm
-            key={`mainpage-${deviceViewport}`}
             formData={{
               [blockName]: singleBlockData,
               navbar: navbarDataForSingleBlock,
@@ -2014,33 +1823,6 @@ This package contains website content updates separated into two distinct folder
               ))}
             </div>
             <div className="flex items-center gap-4">
-              {/* Device Viewport Control */}
-              {activeTab === "mainPage" && (
-                <div className="flex items-center gap-2 bg-white rounded-lg p-1 border border-gray-300">
-                  <span className="text-sm font-medium text-gray-600 px-2">Preview:</span>
-                  <button
-                    onClick={() => setDeviceViewport('desktop')}
-                    className={`px-3 py-1 text-sm font-medium rounded-md transition-all duration-200 ${
-                      deviceViewport === 'desktop' 
-                        ? 'bg-blue-600 text-white shadow-sm' 
-                        : 'text-gray-600 hover:bg-gray-100'
-                    }`}
-                  >
-                    🖥️ Desktop
-                  </button>
-                  <button
-                    onClick={() => setDeviceViewport('mobile')}
-                    className={`px-3 py-1 text-sm font-medium rounded-md transition-all duration-200 ${
-                      deviceViewport === 'mobile' 
-                        ? 'bg-blue-600 text-white shadow-sm' 
-                        : 'text-gray-600 hover:bg-gray-100'
-                    }`}
-                  >
-                    📱 Mobile
-                  </button>
-                </div>
-              )}
-
               {!isCustomDomain && (
                 <OneFormAuthButton
                   formData={mainPageFormData}
@@ -2068,69 +1850,15 @@ This package contains website content updates separated into two distinct folder
 
           <div className="tab-content">
             {activeTab === "mainPage" && (
-              <div className={`transition-all duration-500 ease-in-out ${
-                deviceViewport === 'mobile' 
-                  ? 'mx-auto bg-black rounded-[3rem] shadow-2xl flex flex-col items-center' 
-                  : ''
-              }`} style={
-                deviceViewport === 'mobile' 
-                  ? {
-                      width: '400px',
-                      height: '720px',
-                      background: 'linear-gradient(145deg, #1a1a1a, #2d2d2d)',
-                      boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-                      border: '2px solid #333',
-                      padding: '30px',
-                    }
-                  : {}
-              }>
-                {deviceViewport === 'mobile' && (
-                  <div className="flex justify-center mb-4">
-                    <div className="w-32 h-1 bg-gray-600 rounded-full"></div>
-                  </div>
-                )}
-                {deviceViewport === 'mobile' ? (
-                  <IframePreview 
-                    width={370} 
-                    height={650} 
-                    deviceViewport={deviceViewport}
-                  >
-                    <MainPageForm
-                      key={`mainpage-${deviceViewport}`}
-                      formData={mainPageFormData}
-                      setFormData={handleMainPageFormChange}
-                      navbarData={navbarData}
-                      onNavbarChange={handleNavbarConfigChange}
-                      themeColors={themeColors}
-                      sitePalette={sitePalette}
-                      initialFormData={initialFormDataForOldExport}
-                      forcedPreviewStates={forcedPreviewStates}
-                      onPreviewStateChange={handlePreviewStateChange}
-                      deviceViewport={deviceViewport}
-                    />
-                  </IframePreview>
-                ) : (
-                  <ViewportProvider 
-                    forcedWidth={390} 
-                    forcedHeight={700} 
-                    deviceViewport={deviceViewport}
-                  >
-                    <MainPageForm
-                      key={`mainpage-${deviceViewport}`}
-                      formData={mainPageFormData}
-                      setFormData={handleMainPageFormChange}
-                      navbarData={navbarData}
-                      onNavbarChange={handleNavbarConfigChange}
-                      themeColors={themeColors}
-                      sitePalette={sitePalette}
-                      initialFormData={initialFormDataForOldExport}
-                      forcedPreviewStates={forcedPreviewStates}
-                      onPreviewStateChange={handlePreviewStateChange}
-                      deviceViewport={deviceViewport}
-                    />
-                  </ViewportProvider>
-                )}
-              </div>
+              <MainPageForm
+                formData={mainPageFormData}
+                setFormData={handleMainPageFormChange}
+                navbarData={navbarData}
+                onNavbarChange={handleNavbarConfigChange}
+                themeColors={themeColors}
+                sitePalette={sitePalette}
+                initialFormData={initialFormDataForOldExport}
+              />
             )}
             {activeTab === "services" && (
               <ServiceEditPage

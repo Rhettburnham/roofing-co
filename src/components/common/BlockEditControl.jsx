@@ -8,7 +8,7 @@ const PencilIcon = () => (
     viewBox="0 0 24 24"
     strokeWidth="1.5"
     stroke="currentColor"
-    className="w-12 h-6"
+    className="w-6 h-6"
   >
     <path
       strokeLinecap="round"
@@ -25,7 +25,7 @@ const CheckIcon = () => (
     viewBox="0 0 24 24"
     strokeWidth="1.5"
     stroke="currentColor"
-    className="w-12 h-6"
+    className="w-6 h-6"
   >
     <path
       strokeLinecap="round"
@@ -43,7 +43,7 @@ const UndoIcon = () => (
 
 const BlockEditControl = ({ isEditing, onToggleEdit, onUndo, showUndo, zIndex = 'z-50' }) => {
   return (
-    <div className={`absolute -top-2 left-4 ${zIndex} flex gap-2`}>
+    <div className={`absolute top-4 right-4 ${zIndex} flex gap-2`}>
       {isEditing && showUndo && (
         <button
           type="button"
@@ -57,7 +57,7 @@ const BlockEditControl = ({ isEditing, onToggleEdit, onUndo, showUndo, zIndex = 
       <button
         type="button"
         onClick={onToggleEdit}
-        className={`${isEditing ? 'bg-green-500 hover:bg-white text-black' : 'bg-banner'} text-white rounded-full p-2 shadow-lg transition-colors`}
+        className={`${isEditing ? 'bg-green-500 hover:bg-gray' : 'bg-banner'} text-white rounded-full p-2 shadow-lg transition-colors`}
         title={isEditing ? "Finish Editing" : "Edit Block"}
       >
         {isEditing ? <CheckIcon /> : <PencilIcon />}

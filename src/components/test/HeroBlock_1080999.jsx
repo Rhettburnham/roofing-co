@@ -47,19 +47,8 @@ function HeroPreview({ heroconfig = {}, onHeightChange, isPreviewReadOnly = true
   } = heroconfig;
 
   const [activeSection, setActiveSection] = useState("neutral");
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   
   const { desktopHeightVH = 30, mobileHeightVW = 75 } = styling;
-
-  // Handle window resize for responsive font changes
-  useEffect(() => {
-    const handleResize = () => {
-      setWindowWidth(window.innerWidth);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   const heroImageToDisplay = (images && images.length > 0) 
   ? getDisplayPath(images[0])
@@ -130,15 +119,34 @@ function HeroPreview({ heroconfig = {}, onHeightChange, isPreviewReadOnly = true
     const serviceSectionIconBaseClass = 'cursor-pointer transition-all duration-300 ease-in-out';
     const subServiceTextBaseClass = 'font-semibold transition-colors duration-200';
 
-    // Create responsive font styles that work across both desktop and mobile
-    const getResponsiveTextStyles = (desktopSettings, mobileSettings) => ({
-      fontFamily: desktopSettings.fontFamily || 'Inter',
-      fontSize: windowWidth < 768 ? `${mobileSettings.fontSize || 14}px` : `${desktopSettings.fontSize || 16}px`,
-      fontWeight: windowWidth < 768 ? (mobileSettings.fontWeight || 400) : (desktopSettings.fontWeight || 400),
-      letterSpacing: windowWidth < 768 ? `${mobileSettings.letterSpacing || 0.2}px` : `${desktopSettings.letterSpacing || 0.3}px`,
-      lineHeight: windowWidth < 768 ? (mobileSettings.lineHeight || 1.4) : (desktopSettings.lineHeight || 1.5),
-      color: windowWidth < 768 ? (mobileSettings.color || '#FFFFFF') : (desktopSettings.color || '#FFFFFF'),
+    const getDynamicTextStyles = (textSettings) => ({
+      fontFamily: textSettings.fontFamily || 'Inter',
+      fontSize: `${textSettings.fontSize || 16}px`,
+      fontWeight: textSettings.fontWeight || 400,
+      letterSpacing: `${textSettings.letterSpacing || 0.5}px`,
+      lineHeight: textSettings.lineHeight || 1.4,
+      color: textSettings.color || '#FFFFFF',
     });
+    
+    // Add CSS variables for responsive font styles
+    const mainTitleStyleVars = {
+      '--main-title-font-family': mainTitleDesktop.fontFamily,
+      '--main-title-font-size-desktop': `${mainTitleDesktop.fontSize}px`,
+      '--main-title-font-weight-desktop': mainTitleDesktop.fontWeight,
+      '--main-title-color-desktop': mainTitleDesktop.color,
+      '--main-title-font-size-mobile': `${mainTitleMobile.fontSize}px`,
+      '--main-title-font-weight-mobile': mainTitleMobile.fontWeight,
+      '--main-title-color-mobile': mainTitleMobile.color,
+    };
+    const subTitleStyleVars = {
+      '--sub-title-font-family': subTitleDesktop.fontFamily,
+      '--sub-title-font-size-desktop': `${subTitleDesktop.fontSize}px`,
+      '--sub-title-font-weight-desktop': subTitleDesktop.fontWeight,
+      '--sub-title-color-desktop': subTitleDesktop.color,
+      '--sub-title-font-size-mobile': `${subTitleMobile.fontSize}px`,
+      '--sub-title-font-weight-mobile': subTitleMobile.fontWeight,
+      '--sub-title-color-mobile': subTitleMobile.color,
+    };
     
     const handleIconClick = () => {
       // Prevent interactions in readOnly mode
@@ -165,8 +173,10 @@ function HeroPreview({ heroconfig = {}, onHeightChange, isPreviewReadOnly = true
           <motion.div
             className={`${serviceSectionIconBaseClass}`}
             style={{
-              width: isActive ? (windowWidth < 768 ? '10vw' : '4vw') : (windowWidth < 768 ? '25vw' : '10vw'),
-              height: isActive ? (windowWidth < 768 ? '10vw' : '4vw') : (windowWidth < 768 ? '25vw' : '10vw'),
+              ...mainTitleStyleVars,
+              ...subTitleStyleVars,
+              width: isActive ? (window.innerWidth < 768 ? '10vw' : '4vw') : (window.innerWidth < 768 ? '25vw' : '10vw'),
+              height: isActive ? (window.innerWidth < 768 ? '10vw' : '4vw') : (window.innerWidth < 768 ? '25vw' : '10vw'),
               color: mainTitleDesktop.color,
             }}
             onClick={(e) => {
@@ -185,8 +195,7 @@ function HeroPreview({ heroconfig = {}, onHeightChange, isPreviewReadOnly = true
           <AnimatePresence mode="wait">
             {(isNeutral || !isActive) && (
               <motion.div
-                className={`${serviceSectionTextBaseClass}`}
-                style={getResponsiveTextStyles(mainTitleDesktop, mainTitleMobile)}
+                className={`${serviceSectionTextBaseClass} hero-main-title`}
                 variants={textLabelAnimationVariants}
                 initial="exit"
                 animate="enter"
@@ -211,8 +220,7 @@ function HeroPreview({ heroconfig = {}, onHeightChange, isPreviewReadOnly = true
                   <motion.div key={service.id} variants={subServiceItemVariants} className="relative group">
                     <Link
                       to={service.route}
-                      className={`${subServiceTextBaseClass} px-3 py-1.5 rounded-md transition-colors duration-200 hover:bg-black/20`}
-                      style={getResponsiveTextStyles(subTitleDesktop, subTitleMobile)}
+                      className={`${subServiceTextBaseClass} hero-sub-title px-3 py-1.5 rounded-md transition-colors duration-200 hover:bg-black/20`}
                       onClick={(e) => {
                         // If in edit mode, stop propagation to prevent navigation
                         if (!isPreviewReadOnly) e.preventDefault();
@@ -266,7 +274,7 @@ function HeroPreview({ heroconfig = {}, onHeightChange, isPreviewReadOnly = true
       <div 
         className="relative w-full overflow-hidden" 
         style={{ 
-          height: windowWidth < 768 ? `${mobileHeightVW}vw` : `${desktopHeightVH}vh`
+          height: window.innerWidth < 768 ? `${mobileHeightVW}vw` : `${desktopHeightVH}vh`
         }}
       >
         {heroImageToDisplay && (
@@ -653,29 +661,9 @@ export default function HeroBlock({
   onConfigChange = () => {},
   themeColors = [],
 }) {
-  // Default configuration object (replaces defaultProps)
-  const defaultHeroConfig = {
-    residential: { subServices: [], icon: 'Home', iconPack: 'lucide' },
-    commercial: { subServices: [], icon: 'Building2', iconPack: 'lucide' },
-    images: [],
-    bannerColor: "#1e293b",
-    topBannerColor: "#FFFFFF",
-    brightness: 75,
-    mainTitleTextSettings: {
-      desktop: { fontFamily: "Inter", fontSize: 20, fontWeight: 600, lineHeight: 1.4, letterSpacing: 0.5, color: "#FFFFFF" },
-      mobile: { fontFamily: "Inter", fontSize: 18, fontWeight: 600, lineHeight: 1.3, letterSpacing: 0.4, color: "#FFFFFF" },
-    },
-    subTitleTextSettings: {
-      desktop: { fontFamily: "Inter", fontSize: 16, fontWeight: 400, lineHeight: 1.5, letterSpacing: 0.3, color: "#FFFFFF" },
-      mobile: { fontFamily: "Inter", fontSize: 14, fontWeight: 400, lineHeight: 1.4, letterSpacing: 0.2, color: "#FFFFFF" },
-    },
-    colors: [],
-    styling: { desktopHeightVH: 30, mobileHeightVW: 75 },
-  };
-
   const getInitializedData = (heroconfigProp) => {
-    // Use local default config instead of defaultProps
-    const defaults = defaultHeroConfig;
+    // Start with a deep copy of the default values from HeroBlock.defaultProps
+    const defaults = HeroBlock.defaultProps.heroconfig;
 
     const mergedData = {
       ...defaults,
@@ -1065,6 +1053,31 @@ HeroBlock.propTypes = {
   onConfigChange: PropTypes.func,
   themeColors: PropTypes.oneOfType([PropTypes.array, PropTypes.object]),
 };
+
+HeroBlock.defaultProps = {
+  heroconfig: {
+    residential: { subServices: [], icon: 'Home', iconPack: 'lucide' },
+    commercial: { subServices: [], icon: 'Building2', iconPack: 'lucide' },
+    images: [],
+    bannerColor: "#1e293b",
+    topBannerColor: "#FFFFFF",
+    brightness: 75,
+    mainTitleTextSettings: {
+      desktop: { fontFamily: "Inter", fontSize: 20, fontWeight: 600, lineHeight: 1.4, letterSpacing: 0.5, color: "#FFFFFF" },
+      mobile: { fontFamily: "Inter", fontSize: 18, fontWeight: 600, lineHeight: 1.3, letterSpacing: 0.4, color: "#FFFFFF" },
+    },
+    subTitleTextSettings: {
+      desktop: { fontFamily: "Inter", fontSize: 16, fontWeight: 400, lineHeight: 1.5, letterSpacing: 0.3, color: "#FFFFFF" },
+      mobile: { fontFamily: "Inter", fontSize: 14, fontWeight: 400, lineHeight: 1.4, letterSpacing: 0.2, color: "#FFFFFF" },
+    },
+    colors: [],
+    styling: { desktopHeightVH: 30, mobileHeightVW: 75 },
+  },
+  readOnly: false,
+  onConfigChange: () => {},
+  themeColors: [],
+};
+
 
 // Expose tabsConfig for TopStickyEditPanel, using PanelImagesController for images
 HeroBlock.tabsConfig = (blockCurrentData, onControlsChange, themeColors) => {

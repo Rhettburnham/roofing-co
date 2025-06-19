@@ -36,4 +36,17 @@ export const initializeImageState = (imageConfig, defaultPath) => {
     file: initialFile,
     originalUrl: originalUrl,
   };
+};
+
+/**
+ * Helper to get display path for image previews
+ * @param {string|File|Object} pathOrFile - The path or file object
+ * @returns {string} The display URL for the image
+ */
+export const getDisplayPath = (pathOrFile) => {
+  if (!pathOrFile) return '';
+  if (typeof pathOrFile === 'string') return pathOrFile; // URL or path
+  if (pathOrFile instanceof File) return URL.createObjectURL(pathOrFile); // File object
+  if (pathOrFile && typeof pathOrFile === 'object' && pathOrFile.url) return pathOrFile.url; // Object with url property
+  return '';
 }; 

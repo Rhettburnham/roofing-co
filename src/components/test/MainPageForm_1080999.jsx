@@ -8,7 +8,7 @@ import React, {
   useMemo,
 } from "react";
 import PropTypes from "prop-types";
-import BottomStickyEditPanel from "./BottomStickyEditPanel";
+import TopStickyEditPanel from "./TopStickyEditPanel";
 import { cloneConfigStripFiles } from '../utils/blockUtils';
 
 // Lazy load components to avoid circular dependencies if any, and for consistency
@@ -30,16 +30,9 @@ const TestimonialBlockLazy = lazy(
   () => import("./MainPageBlocks/TestimonialBlock")
 );
 const NavbarLazy = lazy(() => import("./Navbar")); // For Navbar preview
-
-// Import actual components for tabsConfig access
-import HeroBlock from "./MainPageBlocks/HeroBlock";
-import RichTextBlock from "./MainPageBlocks/RichTextBlock";
-import ButtonBlock from "./MainPageBlocks/ButtonBlock";
-
 import IconSelectorModal from "./common/IconSelectorModal";
 import ThemeColorPicker from './common/ThemeColorPicker';
 import PanelImagesController from './common/PanelImagesController';
-import BlockEditControl from './common/BlockEditControl';
 
 // Icons for edit buttons
 const PencilIcon = (
@@ -109,9 +102,6 @@ const MainPageForm = ({
   themeColors,
   sitePalette,
   initialFormData = null,
-  forcedPreviewStates = {},
-  onPreviewStateChange,
-  deviceViewport = 'desktop',
 }) => {
   const [internalFormData, setInternalFormData] = useState(formData);
   const [navbarConfig, setNavbarConfig] = useState(null);
@@ -133,18 +123,17 @@ const MainPageForm = ({
 
   // When a block's config changes, update our internal state, then bubble up to OneForm
   const handleBlockConfigChange = (blockKey, newConfig) => {
-    // Extract the index from the simplified blockKey format: "block_0", "block_1", etc.
-    const blockIndex = parseInt(blockKey.split('_').pop());
-    
     setInternalFormData((prevData) => {
-      const newBlocks = [...(prevData.mainPageBlocks || [])];
-      if (newBlocks[blockIndex]) {
-        // If the block is a HeroBlock, we need to pass the icon change handler
-        if (newBlocks[blockIndex].blockName === "HeroBlock") {
-          newConfig.onOpenIconModal = (fieldType) => handleOpenIconModal(fieldType, { pack: newConfig[fieldType]?.iconPack, name: newConfig[fieldType]?.icon }, 'hero');
+      const newBlocks = (prevData.mainPageBlocks || []).map((b) => {
+        if (b.uniqueKey === blockKey) {
+          // If the block is a HeroBlock, we need to pass the icon change handler
+          if (b.blockName === "HeroBlock") {
+            newConfig.onOpenIconModal = (fieldType) => handleOpenIconModal(fieldType, { pack: newConfig[fieldType]?.iconPack, name: newConfig[fieldType]?.icon }, 'hero');
+          }
+          return { ...b, config: newConfig };
         }
-        newBlocks[blockIndex] = { ...newBlocks[blockIndex], config: newConfig };
-      }
+        return b;
+      });
 
       const updatedData = { ...prevData, mainPageBlocks: newBlocks };
       setFormData(updatedData); // Bubble up
@@ -192,10 +181,7 @@ const MainPageForm = ({
   
   // Undo changes for a specific block
   const handleUndoBlock = (blockKey) => {
-    // Extract the index from the simplified blockKey format: "block_0", "block_1", etc.
-    const blockIndex = parseInt(blockKey.split('_').pop());
-    const originalBlock = initialFormData?.mainPageBlocks?.[blockIndex];
-    
+    const originalBlock = initialFormData.mainPageBlocks.find(b => b.uniqueKey === blockKey);
     if (originalBlock) {
       handleBlockConfigChange(blockKey, originalBlock.config);
       // Close the edit panel on undo
@@ -257,15 +243,9 @@ const MainPageForm = ({
 
   // Function to toggle edit state for a block
   const handleToggleEditState = (blockIdentifier) => {
-    console.log('[MainPageForm] handleToggleEditState called with:', blockIdentifier);
-    console.log('[MainPageForm] Current activeEditBlock:', activeEditBlock);
-    
     setActiveEditBlock((prev) => {
-      console.log('[MainPageForm] setActiveEditBlock - prev:', prev, 'new:', blockIdentifier);
-      
       if (prev === blockIdentifier) {
         // If clicking the same block's button, close the panel
-        console.log('[MainPageForm] Closing panel for same block');
         return null;
       }
 
@@ -284,15 +264,12 @@ const MainPageForm = ({
         }
       }, 100);
       
-      console.log('[MainPageForm] Opening panel for block:', blockIdentifier);
       return blockIdentifier;
     });
   };
 
   // Memoized function to get the configuration for the active block panel
   const getActiveBlockDataForPanel = useMemo(() => {
-    console.log('[MainPageForm] getActiveBlockDataForPanel called with activeEditBlock:', activeEditBlock);
-    
     if (!activeEditBlock) return null;
 
     if (activeEditBlock === 'navbar') {
@@ -310,55 +287,36 @@ const MainPageForm = ({
       };
     }
 
-    // SIMPLIFIED: Use array index as the stable key instead of complex fallback system
-    // This is simpler and more predictable than unique keys
-    const blockIndex = parseInt(activeEditBlock.split('_').pop());
-    const block = internalFormData.mainPageBlocks?.[blockIndex];
-
-    console.log('[MainPageForm] Found block for activeEditBlock:', block);
+    // Find the block in the form data
+    const block = internalFormData.mainPageBlocks?.find(
+      (b) => b.uniqueKey === activeEditBlock
+    );
 
     if (!block) return null;
 
-    // Add onOpenIconModal to the HeroBlock config here
-    let finalConfig = { ...block.config };
-    if (block.blockName === "HeroBlock") {
-        finalConfig.onOpenIconModal = (fieldType) => handleOpenIconModal(fieldType, { pack: finalConfig[fieldType]?.iconPack, name: finalConfig[fieldType]?.icon }, 'hero');
-    } else if (block.blockName === "RichTextBlock") {
-        finalConfig.onOpenIconModalForCard = (cardIndex) => {
-            const card = finalConfig.cards[cardIndex];
-            handleOpenIconModal(`card-${cardIndex}`, { pack: card.iconPack, name: card.icon }, 'block', activeEditBlock, cardIndex);
-        };
-    }
-
     // Use a mapping to get the correct tabs config for the block
     const blockTabsMap = {
-      HeroBlock: HeroBlock.tabsConfig ? 
-        HeroBlock.tabsConfig(finalConfig, (newConfig) => handleBlockConfigChange(activeEditBlock, newConfig), themeColors) :
-        {
-          general: (props) => <HeroGeneralControls {...props} />,
-          colors: (props) => <HeroColorControls {...props} />,
-          fonts: (props) => <HeroFontsControls {...props} />,
-        },
-      RichTextBlock: RichTextBlock.tabsConfig ? 
-        RichTextBlock.tabsConfig(finalConfig, (newConfig) => handleBlockConfigChange(activeEditBlock, newConfig), themeColors) :
-        {
-          general: (props) => <RichTextGeneralControls {...props} />,
-          colors: (props) => <RichTextColorControls {...props} />,
-          fonts: (props) => <RichTextFontsControls {...props} />,
-        },
+      HeroBlock: {
+        general: (props) => <HeroGeneralControls {...props} />,
+        colors: (props) => <HeroColorControls {...props} />,
+        fonts: (props) => <HeroFontsControls {...props} />,
+      },
+      RichTextBlock: {
+        general: (props) => <RichTextGeneralControls {...props} />,
+        colors: (props) => <RichTextColorControls {...props} />,
+        fonts: (props) => <RichTextFontsControls {...props} />,
+      },
       BeforeAfterBlock: {
         images: (props) => <BeforeAfterImagesControls {...props} />,
         colors: (props) => <BeforeAfterColorControls {...props} />,
         styling: (props) => <BeforeAfterStylingControls {...props} />,
         fonts: (props) => <BeforeAfterFontsControls {...props} />,
       },
-      ButtonBlock: ButtonBlock.tabsConfig ? 
-        ButtonBlock.tabsConfig(finalConfig, (newConfig) => handleBlockConfigChange(activeEditBlock, newConfig), themeColors) :
-        {
-          images: (props) => <ButtonImagesControls {...props} />,
-          styling: (props) => <ButtonStylingControls {...props} />,
-          fonts: (props) => <ButtonFontsControls {...props} />,
-        },
+      ButtonBlock: {
+        images: (props) => <ButtonImagesControls {...props} />,
+        styling: (props) => <ButtonStylingControls {...props} />,
+        fonts: (props) => <ButtonFontsControls {...props} />,
+      },
       BookingBlock: {
         general: (props) => <BookingGeneralControls {...props} />,
         colors: (props) => <BookingColorControls {...props} />,
@@ -381,6 +339,17 @@ const MainPageForm = ({
       // ... other blocks
     };
     
+    // Add onOpenIconModal to the HeroBlock config here
+    let finalConfig = { ...block.config };
+    if (block.blockName === "HeroBlock") {
+        finalConfig.onOpenIconModal = (fieldType) => handleOpenIconModal(fieldType, { pack: finalConfig[fieldType]?.iconPack, name: finalConfig[fieldType]?.icon }, 'hero');
+    } else if (block.blockName === "RichTextBlock") {
+        finalConfig.onOpenIconModalForCard = (cardIndex) => {
+            const card = finalConfig.cards[cardIndex];
+            handleOpenIconModal(`card-${cardIndex}`, { pack: card.iconPack, name: card.icon }, 'block', block.uniqueKey, cardIndex);
+        };
+    }
+
     return {
       blockName: block.blockName,
       config: finalConfig,
@@ -391,9 +360,7 @@ const MainPageForm = ({
 
   const getLastSavedConfig = (blockKey) => {
     if (!initialFormData || !initialFormData.mainPageBlocks) return null;
-    // Extract the index from the simplified blockKey format: "block_0", "block_1", etc.
-    const blockIndex = parseInt(blockKey.split('_').pop());
-    const block = initialFormData.mainPageBlocks[blockIndex];
+    const block = initialFormData.mainPageBlocks.find(b => b.uniqueKey === blockKey);
     return block ? block.config : null;
   };
   
@@ -425,30 +392,23 @@ const MainPageForm = ({
 
     return (
       <div className="p-4">
-        <BottomStickyEditPanel
+        <TopStickyEditPanel
           isOpen={!!activeEditBlock}
           onClose={() => handleToggleEditState(singleBlock.uniqueKey)}
           activeBlockData={getActiveBlockDataForPanel}
           onUndo={() => handleUndoBlock(singleBlock.uniqueKey)}
           onConfirm={() => handleSaveBlock(singleBlock.uniqueKey, singleBlock.config)}
-          forcedPreviewStates={forcedPreviewStates}
-          onPreviewStateChange={onPreviewStateChange}
         />
-        <div 
-          ref={(el) => (blockRefs.current[singleBlock.uniqueKey] = { current: el })} 
-          className={`relative transition-all duration-300 overflow-hidden ${
-            activeEditBlock === singleBlock.uniqueKey 
-              ? 'ring-4 ring-blue-500/50 shadow-2xl shadow-blue-500/25 animate-pulse-glow' 
-              : ''
-          }`}
-        >
-          <BlockEditControl
-            isEditing={activeEditBlock === singleBlock.uniqueKey}
-            onToggleEdit={() => handleToggleEditState(singleBlock.uniqueKey)}
-            onUndo={() => handleUndoBlock(singleBlock.uniqueKey)}
-            showUndo={activeEditBlock === singleBlock.uniqueKey}
-            zIndex="z-50"
-          />
+        <div ref={(el) => (blockRefs.current[singleBlock.uniqueKey] = { current: el })} className="relative">
+           <div className="absolute top-4 right-4 z-50 flex gap-2">
+            <button
+              type="button"
+              onClick={() => handleToggleEditState(singleBlock.uniqueKey)}
+              className={`${activeEditBlock === singleBlock.uniqueKey ? "bg-green-500 hover:bg-green-600" : "bg-gray-700 hover:bg-gray-600"} text-white rounded-full p-2 shadow-lg transition-colors`}
+            >
+              {activeEditBlock === singleBlock.uniqueKey ? CheckIcon : PencilIcon}
+            </button>
+          </div>
           <ComponentToRender
             {...{
               [blockSpecificPropName]: singleBlock.config,
@@ -456,8 +416,6 @@ const MainPageForm = ({
               onConfigChange: (newConfig) => handleBlockConfigChange(singleBlock.uniqueKey, newConfig),
               themeColors,
               sitePalette,
-              forcedPreviewState: forcedPreviewStates[singleBlock.blockName],
-              forcedDeviceViewport: deviceViewport,
             }}
             onUndoBlock={() => handleUndoBlock(singleBlock.uniqueKey)}
             onSaveBlock={(newConfig) => handleSaveBlock(singleBlock.uniqueKey, newConfig)}
@@ -480,34 +438,40 @@ const MainPageForm = ({
   return (
     <div className={``}>
       {activeEditBlock && getActiveBlockDataForPanel && (
-        <BottomStickyEditPanel
+        <TopStickyEditPanel
           ref={panelRef}
           isOpen={!!activeEditBlock}
           onClose={() => handleToggleEditState(activeEditBlock)}
           activeBlockData={getActiveBlockDataForPanel}
-          forcedPreviewStates={forcedPreviewStates}
-          onPreviewStateChange={onPreviewStateChange}
         />
       )}
       <div
         ref={(el) => (blockRefs.current['navbar'] = { current: el })}
-        className={`relative bg-white border transition-all duration-300 overflow-hidden ${
-          activeEditBlock === 'navbar' 
-            ? 'ring-4 ring-blue-500/50 shadow-lg shadow-blue-500/25 animate-pulse-glow' 
-            : ''
-        }`}
+        className="relative bg-white border"
       >
-        <BlockEditControl
-          isEditing={activeEditBlock === 'navbar'}
-          onToggleEdit={() => handleToggleEditState('navbar')}
-          onUndo={() => {
-            const initial = cloneConfigStripFiles(initialNavbarConfig);
-            setNavbarConfig(initial);
-            if (onNavbarChange) onNavbarChange(initial);
-          }}
-          showUndo={activeEditBlock === 'navbar'}
-          zIndex="z-[60]"
-        />
+        <div className="absolute top-4 right-4 z-50 flex gap-2">
+          {activeEditBlock === 'navbar' && (
+            <button
+              type="button"
+              onClick={() => {
+                const initial = cloneConfigStripFiles(initialNavbarConfig);
+                setNavbarConfig(initial);
+                if (onNavbarChange) onNavbarChange(initial);
+              }}
+              className="bg-yellow-500 hover:bg-yellow-600 text-white rounded-full p-2 shadow-lg transition-colors"
+              title="Undo changes"
+            >
+              {UndoIcon}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => handleToggleEditState('navbar')}
+            className={`${activeEditBlock === 'navbar' ? "bg-green-500 hover:bg-green-600" : "bg-gray-700 hover:bg-gray-600"} text-white rounded-full p-2 shadow-lg transition-colors`}
+          >
+            {activeEditBlock === 'navbar' ? CheckIcon : PencilIcon}
+          </button>
+        </div>
         <div id="block-content-navbar" className="transition-all duration-300">
           <Suspense fallback={<div>Loading Navbar...</div>}>
             <NavbarLazy
@@ -516,16 +480,14 @@ const MainPageForm = ({
               isEditingPreview={activeEditBlock === 'navbar'}
               onTitleChange={(title) => handleNavbarConfigChange({ title })}
               onSubtitleChange={(subtitle) => handleNavbarConfigChange({ subtitle })}
-              forceScrolledState={forcedPreviewStates.Navbar === 'scrolled'}
-              forcedDeviceViewport={deviceViewport}
+              forceScrolledState={previewNavbarAsScrolled}
             />
           </Suspense>
         </div>
       </div>
       {currentMainPageBlocks.map((block, index) => {
-        // SIMPLIFIED: Use simple index-based keys instead of complex fallback system
-        // This makes the system more predictable and easier to debug
-        const blockKey = `block_${index}`;
+        const blockKey =
+          block.uniqueKey || `${block.blockName}_fallbackKey_${Math.random()}`;
         const ComponentToRender = blockComponentMap[block.blockName];
         const isEditingThisBlock = activeEditBlock === blockKey;
 
@@ -581,26 +543,30 @@ const MainPageForm = ({
           <div
             key={blockKey}
             ref={(el) => (blockRefs.current[blockKey] = { current: el })}
-            className={`relative bg-white border transition-all duration-300 overflow-hidden ${
-              isEditingThisBlock 
-                ? 'ring-4 ring-blue-500/50 shadow-lg shadow-blue-500/25 animate-pulse-glow' 
-                : ''
-            }`}
+            className="relative bg-white border"
           >
-            <BlockEditControl
-              isEditing={isEditingThisBlock}
-              onToggleEdit={() => handleToggleEditState(blockKey)}
-              onUndo={() => handleUndoBlock(blockKey)}
-              showUndo={isEditingThisBlock}
-              zIndex="z-[60]"
-            />
+            <div className="absolute top-4 right-4 z-[60] flex gap-2">
+              {isEditingThisBlock && (
+                <button
+                  type="button"
+                  onClick={() => handleUndoBlock(blockKey)}
+                  className="bg-yellow-500 hover:bg-yellow-600 text-white rounded-full p-2 shadow-lg transition-colors"
+                  title="Undo changes"
+                >
+                  {UndoIcon}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => handleToggleEditState(blockKey)}
+                className={`${isEditingThisBlock ? "bg-green-500 hover:bg-green-600" : "bg-gray-700 hover:bg-gray-600"} text-white rounded-full p-2 shadow-lg transition-colors`}
+              >
+                {isEditingThisBlock ? CheckIcon : PencilIcon}
+              </button>
+            </div>
             <div id={`block-content-${blockKey}`} className="transition-all duration-300">
               <Suspense fallback={<div>Loading {block.blockName}...</div>}>
-                <ComponentToRender 
-                  {...componentProps} 
-                  forcedPreviewState={forcedPreviewStates[block.blockName]}
-                  forcedDeviceViewport={deviceViewport}
-                />
+                <ComponentToRender {...componentProps} />
               </Suspense>
             </div>
           </div>
@@ -628,9 +594,6 @@ MainPageForm.propTypes = {
   themeColors: PropTypes.object,
   sitePalette: PropTypes.array,
   initialFormData: PropTypes.object,
-  forcedPreviewStates: PropTypes.object,
-  onPreviewStateChange: PropTypes.func,
-  deviceViewport: PropTypes.string,
 };
 
 const propsForBlocks = {

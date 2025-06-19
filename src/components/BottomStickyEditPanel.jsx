@@ -45,7 +45,7 @@ const BottomStickyEditPanel = forwardRef(({
   onClose, 
   activeBlockData, 
   onConfirm, 
-  forcedPreviewStates,
+  forcedPreviewStates = {},
   onPreviewStateChange,
 }, ref) => {
   const [activeTab, setActiveTab] = useState('general');
@@ -60,7 +60,7 @@ const BottomStickyEditPanel = forwardRef(({
   
   const getPreviewOptions = () => {
     if (!activeBlockData || !activeBlockData.blockName) return null;
-
+    
     switch (activeBlockData.blockName) {
       case 'Navbar':
         return {
@@ -70,7 +70,7 @@ const BottomStickyEditPanel = forwardRef(({
             { label: 'Scrolled', value: 'scrolled' },
           ],
           value: forcedPreviewStates.Navbar || 'unscrolled',
-          onChange: (value) => onPreviewStateChange('Navbar', value),
+          onChange: (value) => onPreviewStateChange && onPreviewStateChange('Navbar', value),
         };
       case 'HeroBlock':
         return {
@@ -81,7 +81,7 @@ const BottomStickyEditPanel = forwardRef(({
             { label: 'Commercial', value: 'commercial' },
           ],
           value: forcedPreviewStates.HeroBlock || 'neutral',
-          onChange: (value) => onPreviewStateChange('HeroBlock', value),
+          onChange: (value) => onPreviewStateChange && onPreviewStateChange('HeroBlock', value),
         };
       default:
         return null;
@@ -140,7 +140,7 @@ const BottomStickyEditPanel = forwardRef(({
         if(activeTab !== firstTab) setActiveTab(firstTab);
         return memoizedGetTabContent(firstTab);
       }
-      return <GeneralPanel config={activeBlockData.config} onPanelChange={activeBlockData.onPanelChange} blockName={blockName} />;
+      return <GeneralPanel config={activeBlockData?.config} onPanelChange={activeBlockData?.onPanelChange} blockName={blockName} />;
     }
     return memoizedGetTabContent(activeTab);
   };
@@ -168,8 +168,7 @@ const BottomStickyEditPanel = forwardRef(({
       }}
       className="bottom-sticky-edit-panel"
     >
-
-      <div className=" flex flex-row items-center justify-between bg-black border-gray-300 flex-shrink-0 px-4">
+      <div className="flex flex-row items-center justify-between bg-black border-gray-300 flex-shrink-0 px-4">
         
         <div className="flex items-center gap-4">
             {previewOptions && (
@@ -181,7 +180,7 @@ const BottomStickyEditPanel = forwardRef(({
               />
             )}
         </div>
-
+        
         <div className="flex items-center">
           <div className="border-b border-black flex-grow">
             <nav className="-mb-px flex -space-x-3" aria-label="Tabs">
@@ -202,6 +201,7 @@ const BottomStickyEditPanel = forwardRef(({
               ))}
             </nav>
           </div>
+          
           <div className="flex items-center gap-2 ml-4">
             {onUndo && (
               <button
@@ -223,11 +223,18 @@ const BottomStickyEditPanel = forwardRef(({
                 <CheckIcon />
               </button>
             )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-white text-[3vh] md:text-[6vw] text-bold hover:text-white p-1 rounded-full hover:bg-gray-700"
+              aria-label="Close edit panel"
+            >
+              <X size={22} />
+            </button>
           </div>
         </div>
-
-
       </div>
+      
       <div className="panel-content overflow-y-auto flex-grow bg-white">
         {renderTabContent()}
       </div>
