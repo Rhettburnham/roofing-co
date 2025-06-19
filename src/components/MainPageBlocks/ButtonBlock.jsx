@@ -47,7 +47,6 @@ const deriveInitialLocalData = (buttonDataInput) => {
     Array.isArray(initial.images) &&
     initial.images.length > 0
   ) {
-    console.log("[ButtonBlock] Using existing images array from prop");
     initialImages = initial.images.map((img, index) => {
       if (typeof img === "string") {
         return {
@@ -87,7 +86,6 @@ const deriveInitialLocalData = (buttonDataInput) => {
     });
   } else {
     // Initialize from default images - create proper image objects for all defaults
-    console.log("[ButtonBlock] Initializing with default images");
     initialImages = defaultImages.map((imgPath, index) => ({
       file: null,
       url: imgPath,
@@ -357,7 +355,7 @@ function ButtonPreview({ buttonData, readOnly, onButtonDataChange }) {
 
   return (
     <div className="flex flex-col relative w-full mt-0 pt-0">
-      <div className="z-40">
+      <div className="">
         <div className="relative overflow-hidden z-30">
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-auto z-10">
             {!readOnly ? (
@@ -451,10 +449,6 @@ const ButtonImagesControls = ({
   onControlsChange,
   themeColors,
 }) => {
-  console.log(
-    "[ButtonImagesControls] currentData.images for PanelImagesController:",
-    currentData.images
-  ); // DEBUG LOG
   return (
     <div className="p-4">
       <PanelImagesController
@@ -728,321 +722,126 @@ export default function ButtonBlock({
   const [localData, setLocalData] = useState(() =>
     deriveInitialLocalData(buttonconfig)
   );
-  const prevReadOnlyRef = useRef(readOnly);
+  const prevButtonConfigRef = useRef();
 
   useEffect(() => {
-    if (buttonconfig) {
-      console.log(
-        "[ButtonBlock] useEffect for buttonconfig sync. Incoming buttonconfig.images:",
-        buttonconfig.images
-      );
+    // Deep compare to avoid unnecessary re-renders
+    const newConfigString = JSON.stringify(buttonconfig);
+    const oldConfigString = JSON.stringify(prevButtonConfigRef.current);
+
+    if (newConfigString !== oldConfigString) {
+      prevButtonConfigRef.current = buttonconfig; // Update ref
+
       setLocalData((prevLocal) => {
-        console.log(
-          "[ButtonBlock] Inside setLocalData for prop sync. Prev prevLocal.images:",
-          prevLocal.images
+        const incomingImages = buttonconfig?.images || [];
+        const localImages = prevLocal.images || [];
+
+        // Check if incoming images are just an array of strings
+        const areIncomingImagesStrings = incomingImages.every(
+          (img) => typeof img === "string"
         );
 
-        // Image update logic from prop - robust handling like HeroBlock
-        let newImagesState = [...(prevLocal.images || [])];
-        const defaultImagesLocal = [
-          "/assets/images/roof_slideshow/i4.jpeg",
-          "/assets/images/roof_slideshow/i8.webp",
-          "/assets/images/roof_slideshow/i5.jpeg",
-        ];
-
-        // Check if incoming prop has images array
-        if (
-          buttonconfig.images &&
-          Array.isArray(buttonconfig.images) &&
-          buttonconfig.images.length > 0
-        ) {
-          console.log("[ButtonBlock] Syncing from prop images array");
-          // Clean up existing blob URLs if they're different
-          const currentLocalImages = prevLocal.images || [];
-          currentLocalImages.forEach((localImg) => {
-            if (localImg.url && localImg.url.startsWith("blob:")) {
-              const foundIncoming = buttonconfig.images.find(
-                (propImg) => propImg.url === localImg.url
-              );
-              if (!foundIncoming) {
-                URL.revokeObjectURL(localImg.url);
+        if (areIncomingImagesStrings) {
+          // Sync from a simple array of URLs
+          const mergedImages = localImages
+            .map((localImg) => {
+              if (incomingImages.includes(localImg.originalUrl)) {
+                return localImg; // Keep local object if URL matches
               }
-            }
-          });
+              return null;
+            })
+            .filter(Boolean);
 
-          newImagesState = buttonconfig.images.map((propImg, index) => {
-            if (typeof propImg === "string") {
-              return {
-                id: `img_sync_string_${index}_${Date.now()}`,
-                url: propImg,
+          incomingImages.forEach((url) => {
+            if (!mergedImages.some((img) => img.originalUrl === url)) {
+              mergedImages.push({
                 file: null,
-                name: propImg.split("/").pop() || `Image ${index + 1}`,
-                originalUrl: propImg,
-              };
+                url: url,
+                name: url.split("/").pop(),
+                originalUrl: url,
+                id: `new_img_${Date.now()}_${Math.random()}`,
+              });
             }
-            return {
-              id: propImg.id || `img_sync_${index}_${Date.now()}`,
-              url:
-                propImg.url ||
-                defaultImagesLocal[index] ||
-                defaultImagesLocal[0],
-              file: propImg.file instanceof File ? propImg.file : null,
-              name:
-                propImg.name ||
-                propImg.url?.split("/").pop() ||
-                `Image ${index + 1}`,
-              originalUrl:
-                propImg.originalUrl ||
-                (typeof propImg.url === "string" &&
-                !propImg.url.startsWith("blob:")
-                  ? propImg.url
-                  : defaultImagesLocal[index] || defaultImagesLocal[0]),
-            };
           });
-        } else if (!buttonconfig.hasOwnProperty("images")) {
-          // No images property provided, keep existing state
-          newImagesState = prevLocal.images || [];
-        } else {
-          // Empty images array provided, or images is null - initialize with defaults
-          console.log(
-            "[ButtonBlock] Empty images provided, initializing with defaults"
-          );
-          newImagesState = defaultImagesLocal.map((imgPath, index) => ({
-            id: `img_default_sync_${Date.now()}_${index}`,
-            url: imgPath,
-            file: null,
-            name: imgPath.split("/").pop() || `Carousel Image ${index + 1}`,
-            originalUrl: imgPath,
-          }));
-        }
 
-        const newMergedData = {
-          ...prevLocal,
-          text:
-            buttonconfig.text !== undefined
-              ? buttonconfig.text
-              : prevLocal.text,
-          buttonLink:
-            buttonconfig.buttonLink !== undefined
-              ? buttonconfig.buttonLink
-              : prevLocal.buttonLink,
-          slideDuration:
-            buttonconfig.slideDuration !== undefined
-              ? buttonconfig.slideDuration
-              : prevLocal.slideDuration,
-          images: newImagesState,
-          styling: {
-            ...prevLocal.styling,
-            desktopHeightVH:
-              buttonconfig.styling?.desktopHeightVH !== undefined
-                ? buttonconfig.styling.desktopHeightVH
-                : prevLocal.styling?.desktopHeightVH,
-            mobileHeightVW:
-              buttonconfig.styling?.mobileHeightVW !== undefined
-                ? buttonconfig.styling.mobileHeightVW
-                : prevLocal.styling?.mobileHeightVW,
-            slideDuration:
-              buttonconfig.slideDuration !== undefined
-                ? buttonconfig.slideDuration
-                : buttonconfig.styling?.slideDuration !== undefined
-                  ? buttonconfig.styling.slideDuration
-                  : prevLocal.styling?.slideDuration,
-            buttonSize:
-              buttonconfig.buttonSize !== undefined
-                ? buttonconfig.buttonSize
-                : buttonconfig.styling?.buttonSize !== undefined
-                  ? buttonconfig.styling.buttonSize
-                  : prevLocal.styling?.buttonSize,
-            animationSpeed:
-              buttonconfig.animationSpeed !== undefined
-                ? buttonconfig.animationSpeed
-                : buttonconfig.styling?.animationSpeed !== undefined
-                  ? buttonconfig.styling.animationSpeed
-                  : prevLocal.styling?.animationSpeed,
-            animationType:
-              buttonconfig.animationType !== undefined
-                ? buttonconfig.animationType
-                : buttonconfig.styling?.animationType !== undefined
-                  ? buttonconfig.styling.animationType
-                  : prevLocal.styling?.animationType,
-          },
-          textSettings:
-            buttonconfig.textSettings !== undefined
-              ? buttonconfig.textSettings
-              : prevLocal.textSettings,
-        };
-        console.log(
-          "[ButtonBlock] Updated localData from prop sync. New merged images:",
-          newMergedData.images
-        );
-        return newMergedData;
+          return { ...deriveInitialLocalData(buttonconfig), images: mergedImages };
+        } else {
+          // Sync from an array of image objects (the new standard)
+          return deriveInitialLocalData(buttonconfig);
+        }
       });
     }
   }, [buttonconfig]);
 
-  useEffect(() => {
-    return () => {
-      localData.images.forEach((img) => {
-        if (
-          img &&
-          typeof img === "object" &&
-          img.url &&
-          img.url.startsWith("blob:")
-        ) {
-          URL.revokeObjectURL(img.url);
-        }
-      });
-    };
-  }, [localData.images]);
+  const handleButtonDataChange = (newData) => {
+    setLocalData(newData);
+    onConfigChange(newData);
+  };
 
-  useEffect(() => {
-    if (prevReadOnlyRef.current === false && readOnly === true) {
-      if (onConfigChange) {
-        const dataToSave = {
-          ...localData,
-          images: localData.images
-            .map((imgData) => {
-              if (imgData && typeof imgData === "object") {
-                if (imgData.file instanceof File) {
-                  return {
-                    file: imgData.file,
-                    url: imgData.url,
-                    name: imgData.name,
-                    originalUrl: imgData.originalUrl,
-                  };
-                } else if (imgData.originalUrl) {
-                  return {
-                    url: imgData.originalUrl,
-                    name: imgData.name,
-                    originalUrl: imgData.originalUrl,
-                  };
-                } else if (imgData.url && !imgData.url.startsWith("blob:")) {
-                  return {
-                    url: imgData.url,
-                    name: imgData.name,
-                    originalUrl: imgData.url,
-                  };
-                }
-              }
-              return null;
-            })
-            .filter((img) => img !== null),
-        };
-        onConfigChange(dataToSave);
-      }
-    }
-    prevReadOnlyRef.current = readOnly;
-  }, [readOnly, localData, onConfigChange]);
-
-  const handleLocalDataChange = useCallback(
-    (updatedFieldsOrFunction) => {
-      setLocalData((prevState) => {
-        const newState =
-          typeof updatedFieldsOrFunction === "function"
-            ? updatedFieldsOrFunction(prevState)
-            : { ...prevState, ...updatedFieldsOrFunction };
-
-        if (!readOnly && onConfigChange) {
-          const liveDataToPropagate = {
-            ...newState,
-            images: newState.images.map((imgData) => ({
-              file: imgData.file,
-              url: imgData.url,
-              name: imgData.name,
-              originalUrl: imgData.originalUrl,
-              id: imgData.id,
-            })),
-          };
-          onConfigChange(liveDataToPropagate);
-        }
-
-        return newState;
-      });
-    },
-    [readOnly, onConfigChange]
+  const MemoizedButtonPreview = useCallback(
+    () => (
+      <ButtonPreview
+        buttonData={localData}
+        readOnly={readOnly}
+        onButtonDataChange={handleButtonDataChange}
+      />
+    ),
+    [localData, readOnly, handleButtonDataChange]
   );
 
+  if (readOnly) {
+    return <MemoizedButtonPreview />;
+  }
+
   return (
-    <ButtonPreview
-      buttonData={localData}
-      readOnly={readOnly}
-      onButtonDataChange={handleLocalDataChange}
-    />
+    <div>
+      <MemoizedButtonPreview />
+    </div>
   );
 }
 
 ButtonBlock.propTypes = {
   readOnly: PropTypes.bool,
-  buttonconfig: PropTypes.object,
+  buttonconfig: PropTypes.shape({
+    text: PropTypes.string,
+    buttonLink: PropTypes.string,
+    slideDuration: PropTypes.number,
+    images: PropTypes.array, // Can be strings or objects
+    styling: PropTypes.object,
+    textSettings: PropTypes.object,
+  }),
   onConfigChange: PropTypes.func,
   themeColors: PropTypes.object,
 };
 
-// Tab configuration for TopStickyEditPanel
-ButtonBlock.tabsConfig = (localData, onControlsChange, themeColors) => {
-  const tabs = {};
-
-  // Define animation duration options for ButtonBlock
-  const animationDurationOptions = {
-    min: 10,
-    max: 200,
-    default: 40,
-  };
-
-  // Define button size options for ButtonBlock
-  const buttonSizeOptions = [
-    {
-      value: "small",
-      label: "Small",
-      description: "Compact button for subtle call-to-action",
-    },
-    {
-      value: "medium",
-      label: "Medium",
-      description: "Standard button size for most use cases",
-    },
-    {
-      value: "large",
-      label: "Large",
-      description: "Prominent button for primary actions",
-    },
-    {
-      value: "extra-large",
-      label: "Extra Large",
-      description: "Maximum impact button for hero sections",
-    },
-  ];
-
-  // Images Tab (using PanelImagesController)
-  tabs.images = (props) => (
+// Tab configuration for BottomStickyEditPanel
+ButtonBlock.tabsConfig = (blockData, onUpdate, themeColors, animationDurationOptions, buttonSizeOptions) => ({
+  general: (props) => (
+    <ButtonGeneralControls {...props} onUpdate={onUpdate} />
+  ),
+  images: (props) => (
     <ButtonImagesControls
       {...props}
-      currentData={localData}
-      onControlsChange={onControlsChange}
+      currentData={blockData}
+      onControlsChange={onUpdate}
       themeColors={themeColors}
     />
-  );
-
-  // Styling Tab
-  tabs.styling = (props) => (
+  ),
+  styling: (props) => (
     <ButtonStylingControls
       {...props}
-      currentData={localData}
-      onControlsChange={onControlsChange}
+      currentData={blockData}
+      onControlsChange={onUpdate}
       animationDurationOptions={animationDurationOptions}
       buttonSizeOptions={buttonSizeOptions}
     />
-  );
-
-  // Fonts Tab
-  tabs.fonts = (props) => (
+  ),
+  fonts: (props) => (
     <ButtonFontsControls
       {...props}
-      currentData={localData}
-      onControlsChange={onControlsChange}
+      currentData={blockData}
+      onControlsChange={onUpdate}
       themeColors={themeColors}
     />
-  );
-
-  return tabs;
-};
+  ),
+});

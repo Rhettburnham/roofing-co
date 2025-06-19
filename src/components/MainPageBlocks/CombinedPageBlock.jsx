@@ -771,31 +771,59 @@ export default function CombinedPageBlock({ readOnly = false, config = {}, onCon
   );
 }
 
-// Expose tabsConfig for TopStickyEditPanel
-CombinedPageBlock.tabsConfig = (blockCurrentData, onControlsChange, themeColors) => {
-  return {
-    images: (props) => (
-      <CombinedPageImagesControls 
-        {...props} 
-        currentData={blockCurrentData}
-        onControlsChange={onControlsChange}
-        themeColors={themeColors}
-      />
-    ),
-    colors: (props) => (
-      <CombinedPageColorControls 
-        {...props} 
-        currentData={blockCurrentData}
-        onControlsChange={onControlsChange}
-        themeColors={themeColors} 
-      />
-    ),
-    styling: (props) => (
-      <CombinedPageStylingControls
-        {...props}
-        currentData={blockCurrentData}
-        onControlsChange={onControlsChange}
-      />
-    ),
-  };
-};
+// Expose tabsConfig for BottomStickyEditPanel
+CombinedPageBlock.tabsConfig = (blockData, onUpdate, themeColors) => ({
+  images: (props) => (
+    <CombinedPageImagesControls 
+      {...props} 
+      currentData={blockData}
+      onControlsChange={onUpdate}
+      themeColors={themeColors}
+    />
+  ),
+  colors: (props) => (
+    <CombinedPageColorControls 
+      {...props} 
+      currentData={blockData}
+      onControlsChange={onUpdate}
+      themeColors={themeColors} 
+    />
+  ),
+  styling: (props) => (
+    <CombinedPageStylingControls
+      {...props}
+      currentData={blockData}
+      onControlsChange={onUpdate}
+    />
+  ),
+  general: (props) => (
+    <div className="p-4 space-y-4">
+      <div><label className="block text-sm font-medium">Main Title (for Service Slider part):</label><input type="text" value={props.currentData.title || ""} onChange={(e) => props.onControlsChange({ title: e.target.value })} className="w-full bg-gray-700 p-1.5 rounded text-sm"/></div>
+      <div><label className="block text-sm font-medium">Residential Button Text:</label><input type="text" value={props.currentData.residentialButtonText || ""} onChange={(e) => props.onControlsChange({ residentialButtonText: e.target.value })} className="w-full bg-gray-700 p-1.5 rounded text-sm"/></div>
+      <div><label className="block text-sm font-medium">Commercial Button Text:</label><input type="text" value={props.currentData.commercialButtonText || ""} onChange={(e) => props.onControlsChange({ commercialButtonText: e.target.value })} className="w-full bg-gray-700 p-1.5 rounded text-sm"/></div>
+      <div><label className="block text-sm font-medium">Default Service View:</label><select value={props.currentData.isCommercial ? 'commercial' : 'residential'} onChange={(e) => props.onControlsChange({ isCommercial: e.target.value === 'commercial' })} className="w-full bg-gray-700 p-1.5 rounded text-sm"><option value="residential">Residential</option><option value="commercial">Commercial</option></select></div>
+      
+      {[ 'residential', 'commercial'].map(serviceType => (
+          <div key={serviceType} className="pt-2 mt-2 border-t border-gray-600">
+              <div className="flex justify-between items-center mb-1.5">
+                  <h4 className="text-md font-medium">{serviceType.charAt(0).toUpperCase() + serviceType.slice(1)} Services</h4>
+                  <button onClick={() => props.onControlsChange({ [serviceType]: [...(props.currentData[serviceType] || []), { id: Math.random().toString(36).substr(2,9), icon: 'FaTools', iconPack: 'fa', title: `New ${serviceType} Service`, link: "#" }] })} className="bg-blue-500 hover:bg-blue-600 px-2 py-0.5 rounded text-white text-xs">+ Add</button>
+              </div>
+              {(props.currentData[serviceType] || []).map((service, index) => (
+                  <div key={service.id || index} className="bg-gray-700 p-1.5 rounded mb-1.5 text-xs">
+                      <div className="flex justify-between items-center mb-1">
+                          <span className="font-medium truncate w-1/2">{service.title || `Service ${index+1}`}</span>
+                          <button onClick={() => props.onControlsChange({ [serviceType]: props.currentData[serviceType].filter((_, i) => i !== index) })} className="bg-red-500 text-white px-1.5 py-0.5 rounded text-[10px]">X</button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-1.5">
+                          <div><label>Title:</label><input type="text" value={service.title || ""} onChange={(e) => props.onControlsChange({ [serviceType]: props.currentData[serviceType].map((s, i) => i === index ? { ...s, title: e.target.value } : s) })} className="w-full bg-gray-600 p-1 rounded"/></div>
+                          <div><label>Link URL:</label><input type="text" value={service.link || ""} onChange={(e) => props.onControlsChange({ [serviceType]: props.currentData[serviceType].map((s, i) => i === index ? { ...s, link: e.target.value } : s) })} className="w-full bg-gray-600 p-1 rounded"/></div>
+                      </div>
+                      <button onClick={() => props.onControlsChange({ [serviceType]: props.currentData[serviceType].map((s, i) => i === index ? { ...s, icon: 'FaTools', iconPack: 'fa' } : s) })} className="mt-1 text-xs bg-gray-600 hover:bg-gray-500 p-1 rounded w-full text-left">Icon: {service.iconPack}/{service.icon || 'N/A'}</button>
+                  </div>
+              ))}
+          </div>
+      ))}
+    </div>
+  ),
+});

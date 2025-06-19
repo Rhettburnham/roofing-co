@@ -107,7 +107,7 @@ const EditableText = ({ value, onChange, onBlur, tag: Tag = 'p', className = '',
   );
 };
 
-const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplayUrl, onFileChange, themeColors, onToggleEditor }) => {
+const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplayUrl, onFileChange, themeColors }) => {
   const {
     sectionTitle: rawSectionTitle,
     title: rawTitle,
@@ -117,7 +117,6 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
 
   const displayTitle = rawSectionTitle || rawTitle || "Service List";
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [isEditing, setIsEditing] = useState(false);
 
   const currentGetDisplayUrl = typeof getDisplayUrl === 'function' ? getDisplayUrl : getDisplayUrlHelper;
   const hasStructuredItems = items.length > 0 && typeof items[0] === "object" && items[0] !== null && !Array.isArray(items[0]);
@@ -202,10 +201,6 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
   const commonSectionWrapperClasses = "my-6 container mx-auto px-4 md:px-16 relative group";
   const commonCardClasses = "bg-white rounded-lg shadow-lg p-6 mx-auto max-w-4xl"; // Centered card with max-width
   const editModeBorderClass = "border-2 border-blue-400/50";
-
-  const handleToggleEdit = () => {
-    setIsEditing(prev => !prev);
-  };
 
   // --- READ-ONLY RENDERING --- 
   if (readOnly) {
@@ -309,20 +304,7 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
   const activeItemForEdit = items[selectedIndex] || {};
 
     return (
-    <section className={`${commonSectionWrapperClasses} ${!readOnly && isEditing ? 'py-8' : ''} ${!readOnly ? 'pb-12' : ''}`}>
-      {!readOnly && (
-        <button
-          onClick={handleToggleEdit}
-          className={`absolute top-4 right-4 z-50 ${isEditing ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-700 hover:bg-gray-600'} text-white rounded-full p-2 shadow-lg transition-colors`}
-          title={isEditing ? "Finish Editing" : "Edit List"}
-        >
-          {isEditing ? (
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487a2.032 2.032 0 112.872 2.872L7.5 21.613H4v-3.5L16.862 4.487z"/></svg>
-          )}
-        </button>
-      )}
+    <section className={`${commonSectionWrapperClasses} ${!readOnly ? 'py-8 pb-12' : ''}`}>
       <div className="text-center mb-4">
         <EditableText
             value={displayTitle}
@@ -331,7 +313,7 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
           className="text-2xl md:text-3xl font-semibold text-gray-800 inline-block"
           inputClassName="text-2xl md:text-3xl font-semibold text-gray-800 text-center w-auto"
           placeholder="Section Title"
-          readOnly={readOnly || !isEditing}
+          readOnly={readOnly}
         />
       </div>
 
@@ -352,10 +334,10 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
                   className={`font-semibold ${selectedIndex === index ? "text-white" : "text-black"}`} // Match button text color
                   inputClassName={`font-semibold w-auto ${selectedIndex === index ? "text-white bg-second-accent/80" : "text-black bg-accent/80"}`}
                   placeholder="Item Name"
-                  readOnly={readOnly || !isEditing}
+                  readOnly={readOnly}
                 />
               </button>
-              {!readOnly && isEditing && (
+              {!readOnly && (
                 <button 
                   onClick={() => removeItem(index)} 
                   className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full shadow-md opacity-0 group-hover/itembtn:opacity-100 hover:bg-red-600 transition-opacity duration-150 z-10"
@@ -369,8 +351,8 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
         </div>
       )}
 
-      <div className={`${commonCardClasses} ${!readOnly && isEditing ? editModeBorderClass : ''} relative`}> 
-        {!readOnly && isEditing && (
+      <div className={`${commonCardClasses} ${!readOnly ? editModeBorderClass : ''} relative`}> 
+        {!readOnly && (
           <div className="absolute top-2 right-2 flex space-x-1 z-10">
             <button 
               onClick={addItem} 
@@ -382,7 +364,7 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
           </div>
         )}
         
-        {!hasStructuredItems && !readOnly && isEditing && (
+        {!hasStructuredItems && !readOnly && (
           <div className="absolute top-2 left-2 flex space-x-1 z-10 items-center">
             <span className="text-xs text-gray-500 mr-1">Style:</span>
             <select 
@@ -414,9 +396,9 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
                   inputClassName="text-gray-700 text-lg w-full"
                   isTextarea={String(item).length > 70 || String(item).includes('\n')}
                   placeholder="List item content"
-                  readOnly={readOnly || !isEditing}
+                  readOnly={readOnly}
                 />
-                {!readOnly && isEditing && (
+                {!readOnly && (
                   <button 
                     onClick={() => removeItem(index)} 
                     className="ml-2 p-1 text-red-500 hover:text-red-600 opacity-0 group-hover/simpleitem:opacity-100 transition-opacity duration-150"
@@ -430,7 +412,7 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
             {items.length === 0 && 
               <div className="text-gray-500 text-center py-10">
                 <p className="mb-2">No items yet.</p>
-                {!readOnly && isEditing && (
+                {!readOnly && (
                   <button 
                     onClick={addItem} 
                     className="px-3 py-1.5 bg-blue-500 text-white rounded-md shadow-md hover:bg-blue-600 transition-colors text-sm"
@@ -447,7 +429,7 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
           items.length === 0 ? (
              <div className="text-gray-500 text-center py-10">
                 <p className="mb-2">No items yet. Add a structured item to begin.</p>
-                {!readOnly && isEditing && (
+                {!readOnly && (
                   <button 
                     onClick={addItem} 
                     className="px-3 py-1.5 bg-blue-500 text-white rounded-md shadow-md hover:bg-blue-600 transition-colors text-sm"
@@ -470,11 +452,11 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
                     inputClassName="text-gray-700 text-sm sm:text-base md:text-lg w-full"
                     isTextarea
                     placeholder="Item description..."
-                    readOnly={readOnly || !isEditing}
+                    readOnly={readOnly}
                   />
                 </div>
 
-                { (activeItemForEdit.advantages && activeItemForEdit.advantages.length > 0) || (!readOnly && isEditing) ? (
+                { (activeItemForEdit.advantages && activeItemForEdit.advantages.length > 0) || !readOnly ? (
                     <div className="mb-3">
                         <h4 className="text-lg sm:text-xl font-semibold mb-1 text-gray-700">Advantages</h4>
                         <ul className="grid grid-cols-1 @[600px]:grid-cols-2 gap-x-4 gap-y-0.5 text-gray-600 pl-1">
@@ -488,9 +470,9 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
                             className="text-gray-600 text-sm md:text-base flex-grow"
                             inputClassName="text-gray-600 text-sm md:text-base w-full"
                             placeholder="Advantage"
-                            readOnly={readOnly || !isEditing}
+                            readOnly={readOnly}
                             />
-                            {!readOnly && isEditing && (
+                            {!readOnly && (
                               <button 
                                 onClick={() => removeAdvantage(selectedIndex, advIndex)}
                                 className="ml-1 p-0.5 text-red-500 hover:text-red-600 opacity-0 group-hover/advantage:opacity-100 transition-opacity duration-150"
@@ -503,7 +485,7 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
                         ))}
                         </ul>
                         {/* Add Advantage Button */}
-                        {!readOnly && isEditing && (
+                        {!readOnly && (
                             <button 
                                 onClick={() => addAdvantage(selectedIndex)} 
                                 className="mt-1.5 text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded-md shadow"
@@ -511,11 +493,11 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
                                 <FaPlus size={10} className="inline mr-1" /> Add Advantage
                             </button>
                         )}
-                        {(activeItemForEdit.advantages || []).length === 0 && !readOnly && isEditing && <p className="text-xs text-gray-400 ml-2 italic mt-1">No advantages listed. Click 'Add Advantage' to add one.</p>}
+                        {(activeItemForEdit.advantages || []).length === 0 && !readOnly && <p className="text-xs text-gray-400 ml-2 italic mt-1">No advantages listed. Click 'Add Advantage' to add one.</p>}
                     </div>
                 ) : null}
                 
-                {(activeItemForEdit.pictures && activeItemForEdit.pictures.length > 0) || (!readOnly && isEditing) ? (
+                {(activeItemForEdit.pictures && activeItemForEdit.pictures.length > 0) || !readOnly ? (
                     <div className="mb-4">
                         <h4 className="text-lg sm:text-xl font-semibold mb-2 text-gray-700">Gallery</h4>
                         {(activeItemForEdit.pictures && activeItemForEdit.pictures.length > 0) ? (
@@ -524,11 +506,11 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
                                 <div key={picIdx} className="aspect-square overflow-hidden rounded-lg shadow-md"><img src={currentGetDisplayUrl(pic)} alt={`Preview ${picIdx}`} className="w-full h-full object-cover"/></div>
                                 ))}
                             </div>
-                        ) : (!readOnly && isEditing && <p className="text-xs text-gray-400 italic mt-1">No pictures. Add pictures using the editor panel.</p>)}
+                        ) : (!readOnly && <p className="text-xs text-gray-400 italic mt-1">No pictures. Add pictures using the editor panel.</p>)}
                     </div>
                 ) : null}
 
-                { (activeItemForEdit.colorPossibilities || activeItemForEdit.installationTime || (!readOnly && isEditing)) ? (
+                { (activeItemForEdit.colorPossibilities || activeItemForEdit.installationTime || !readOnly) ? (
                     <div className="text-sm text-gray-600 space-y-1">
                         <div>
                         <strong className="text-gray-700">Color Options: </strong>
@@ -539,7 +521,7 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
                             className="text-gray-600 text-sm"
                             inputClassName="text-gray-600 text-sm w-auto inline-block"
                             placeholder="e.g., Various colors"
-                            readOnly={readOnly || !isEditing}
+                            readOnly={readOnly}
                         />
                         </div>
                         <div>
@@ -551,7 +533,7 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
                             className="text-gray-600 text-sm"
                             inputClassName="text-gray-600 text-sm w-auto inline-block"
                             placeholder="e.g., 2-3 days"
-                            readOnly={readOnly || !isEditing}
+                            readOnly={readOnly}
                         />
                         </div>
                     </div>
@@ -564,49 +546,44 @@ const GeneralList = ({ config = {}, readOnly = false, onConfigChange, getDisplay
   );
 };
 
-// Static method for TopStickyEditPanel integration
-GeneralList.tabsConfig = (config, onControlsChange, themeColors, sitePalette) => {
+// Static method for BottomStickyEditPanel integration
+GeneralList.tabsConfig = (config, onUpdate, themeColors) => {
   const hasStructuredItems = config?.items?.length > 0 && typeof config.items[0] === "object" && config.items[0] !== null && !Array.isArray(config.items[0]);
 
   return {
-    general: () => {
-      // Determine which control type to use based on the current items structure
-      const controlType = hasStructuredItems ? 'items' : 'simpleItems';
-      
-      return (
-        <PanelTextSectionController
-          currentData={config}
-          onControlsChange={onControlsChange}
-          controlType={controlType}
-          blockType="GeneralList"
-          sectionConfig={hasStructuredItems ? {
-            label: 'Service Items',
-            itemLabel: 'Service',
-            arrayFieldName: 'items',
-            itemTemplate: {
-              id: Date.now(),
-              name: "New Service",
-              description: "Service description",
-              advantages: ["Advantage 1"],
-              colorPossibilities: "Various",
-              installationTime: "1-2 days",
-              pictures: []
-            },
-            showIcons: false,
-            showDescriptions: true,
-            isStructured: true
-          } : {
-            label: 'List Items',
-            itemLabel: 'Item',
-            arrayFieldName: 'items',
-            itemTemplate: "New List Item",
-            showIcons: false,
-            showDescriptions: false,
-            isSimple: true
-          }}
-        />
-      );
-    },
+    general: (props) => (
+      <PanelTextSectionController
+        currentData={config}
+        onControlsChange={props.onControlsChange}
+        controlType={hasStructuredItems ? 'items' : 'simpleItems'}
+        blockType="GeneralList"
+        sectionConfig={hasStructuredItems ? {
+          label: 'Service Items',
+          itemLabel: 'Service',
+          arrayFieldName: 'items',
+          itemTemplate: {
+            id: Date.now(),
+            name: "New Service",
+            description: "Service description",
+            advantages: ["Advantage 1"],
+            colorPossibilities: "Various",
+            installationTime: "1-2 days",
+            pictures: []
+          },
+          showIcons: false,
+          showDescriptions: true,
+          isStructured: true
+        } : {
+          label: 'List Items',
+          itemLabel: 'Item',
+          arrayFieldName: 'items',
+          itemTemplate: "New List Item",
+          showIcons: false,
+          showDescriptions: false,
+          isSimple: true
+        }}
+      />
+    ),
     
     images: () => hasStructuredItems ? (
       <PanelImagesController
@@ -636,7 +613,7 @@ GeneralList.tabsConfig = (config, onControlsChange, themeColors, sitePalette) =>
               newItems[img.itemIndex].pictures[img.picIndex] = img;
             }
           });
-          onControlsChange({ ...config, items: newItems });
+          onUpdate({ ...config, items: newItems });
         }}
         imageArrayFieldName="images"
         getItemName={(img) => img?.name || 'List Item Image'}
@@ -656,7 +633,7 @@ GeneralList.tabsConfig = (config, onControlsChange, themeColors, sitePalette) =>
           label="Text Color"
           fieldName="textColor"
           currentColorValue={config?.textColor || themeColors?.text || '#374151'}
-          onColorChange={(fieldName, value) => onControlsChange({ ...config, [fieldName]: value })}
+          onColorChange={(fieldName, value) => onUpdate({ ...config, [fieldName]: value })}
           themeColors={themeColors}
         />
         
@@ -664,7 +641,7 @@ GeneralList.tabsConfig = (config, onControlsChange, themeColors, sitePalette) =>
           label="Background Color"
           fieldName="backgroundColor"
           currentColorValue={config?.backgroundColor || themeColors?.background || '#FFFFFF'}
-          onColorChange={(fieldName, value) => onControlsChange({ ...config, [fieldName]: value })}
+          onColorChange={(fieldName, value) => onUpdate({ ...config, [fieldName]: value })}
           themeColors={themeColors}
         />
         
@@ -672,7 +649,7 @@ GeneralList.tabsConfig = (config, onControlsChange, themeColors, sitePalette) =>
           label="Accent Color (Selected Item)"
           fieldName="accentColor"
           currentColorValue={config?.accentColor || themeColors?.accent || '#3B82F6'}
-          onColorChange={(fieldName, value) => onControlsChange({ ...config, [fieldName]: value })}
+          onColorChange={(fieldName, value) => onUpdate({ ...config, [fieldName]: value })}
           themeColors={themeColors}
         />
       </div>
@@ -689,7 +666,7 @@ GeneralList.tabsConfig = (config, onControlsChange, themeColors, sitePalette) =>
             </label>
             <select
               value={config?.listStyle || 'none'}
-              onChange={(e) => onControlsChange({ ...config, listStyle: e.target.value })}
+              onChange={(e) => onUpdate({ ...config, listStyle: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="none">No Bullets/Numbers</option>
@@ -708,7 +685,7 @@ GeneralList.tabsConfig = (config, onControlsChange, themeColors, sitePalette) =>
           </label>
           <select
             value={config?.cardStyle || 'default'}
-            onChange={(e) => onControlsChange({ ...config, cardStyle: e.target.value })}
+            onChange={(e) => onUpdate({ ...config, cardStyle: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="default">Default Cards</option>
@@ -725,7 +702,7 @@ GeneralList.tabsConfig = (config, onControlsChange, themeColors, sitePalette) =>
             </label>
             <select
               value={config?.galleryColumns || 'auto'}
-              onChange={(e) => onControlsChange({ ...config, galleryColumns: e.target.value })}
+              onChange={(e) => onUpdate({ ...config, galleryColumns: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="auto">Auto (Responsive)</option>

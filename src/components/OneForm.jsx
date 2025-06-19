@@ -13,6 +13,7 @@
  * ZIP file can be sent to the developer for permanent integration into the site.
  */
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import ReactDOM from "react-dom";
 import PropTypes from "prop-types";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
@@ -21,10 +22,12 @@ import OneFormAuthButton from "./auth/OneFormAuthButton";
 import ServiceEditPage, {
   blockMap as importedServiceBlockMap,
 } from "./ServiceEditPage";
-import MainPageForm from "./MainPageForm";
+import { MainPageForm } from "./MainPageForm";
 import AboutBlock from "./MainPageBlocks/AboutBlock";
 import { useConfig } from "../context/ConfigContext";
-import AllServiceBlocksTab from "./AllServiceBlocksTab"; // Import the new component
+import BottomStickyEditPanel from "./BottomStickyEditPanel";
+import PreviewStateController from "./common/PreviewStateController";
+import BlockEditControl from './common/BlockEditControl'; // Import BlockEditControl
 
 import Navbar from "./Navbar"; // Import Navbar for preview
 import ColorEditor from "./ColorEditor"; // Import the new ColorEditor component
@@ -223,6 +226,57 @@ TabButton.propTypes = {
   onClick: PropTypes.func.isRequired,
 };
 
+// Iframe component for true mobile preview
+const IframePreview = ({ children }) => {
+  const iframeRef = useRef(null);
+  const [mountNode, setMountNode] = useState(null);
+
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (iframe) {
+      const doc = iframe.contentDocument || iframe.contentWindow.document;
+      
+      // Basic HTML structure with a root div
+      doc.open();
+      doc.write('<!DOCTYPE html><html><head></head><body><div id="root"></div></body></html>');
+      doc.close();
+
+      // Copy all styles from parent to iframe
+      Array.from(document.styleSheets).forEach(styleSheet => {
+        try {
+          if (styleSheet.cssRules) {
+            const styleEl = doc.createElement('style');
+            styleEl.textContent = Array.from(styleSheet.cssRules).map(rule => rule.cssText).join(' ');
+            doc.head.appendChild(styleEl);
+          } else if (styleSheet.href) {
+            const linkEl = doc.createElement('link');
+            linkEl.rel = 'stylesheet';
+            linkEl.href = styleSheet.href;
+            doc.head.appendChild(linkEl);
+          }
+        } catch (e) {
+          console.warn('Could not copy stylesheet to iframe: ', e);
+        }
+      });
+      
+      setMountNode(doc.getElementById('root'));
+    }
+  }, []);
+
+  return (
+    <iframe
+      ref={iframeRef}
+      title="Mobile Preview"
+      style={{ width: '100%', height: '100%', border: 'none', backgroundColor: '#fff' }}
+    >
+      {mountNode && ReactDOM.createPortal(children, mountNode)}
+    </iframe>
+  );
+};
+IframePreview.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
 const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   const {
     config,
@@ -248,27 +302,47 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   const [aboutPageJsonData, setAboutPageJsonData] = useState(null);
   const [initialAboutPageJsonData, setInitialAboutPageJsonData] =
     useState(null);
-  const [allServiceBlocksData, setAllServiceBlocksData] = useState(null);
-  const [initialAllServiceBlocksData, setInitialAllServiceBlocksData] =
-    useState(null);
   const [sentimentReviewsData, setSentimentReviewsData] = useState(null);
   const [initialSentimentReviewsData, setInitialSentimentReviewsData] = useState(null);
-  const [loadingAllServiceBlocks, setLoadingAllServiceBlocks] = useState(false);
-  const [activeEditShowcaseBlockIndex, setActiveEditShowcaseBlockIndex] =
-    useState(null);
   const [isCustomDomain, setIsCustomDomain] = useState(false);
   const [initialServicesData, setInitialServicesData] = useState(null);
   const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
   const navigate = useNavigate();
 
+  const [previewViewport, setPreviewViewport] = useState('desktop');
+  const [forcedPreviewStates, setForcedPreviewStates] = useState({});
+
   const isDevelopment = import.meta.env.DEV;
 
   const [serviceBlockMap, setServiceBlockMap] = useState({});
-  const [activeTab, setActiveTab] = useState("mainPage");
+  const [activeTab, setActiveTab] = useState("main");
 
   // Ref to prevent duplicate fetches
   const fetchingRef = useRef(false);
   const dataLoadedRef = useRef(false);
+
+  const [editingTarget, setEditingTarget] = useState(null);
+
+  const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (editingTarget?.blockName) {
+      // Initialize block state if it doesn't exist
+      setForcedPreviewStates(prev => {
+        if (!prev[editingTarget.blockName]) {
+          const newStates = { ...prev };
+          if (editingTarget.blockName === 'Navbar') {
+            newStates.Navbar = 'unscrolled';
+          } else if (editingTarget.blockName === 'HeroBlock') {
+            newStates.HeroBlock = 'neutral';
+          }
+          // Add other block initial states here if needed
+          return newStates;
+        }
+        return prev;
+      });
+    }
+  }, [editingTarget]);
 
   useEffect(() => {
     setServiceBlockMap(importedServiceBlockMap);
@@ -293,12 +367,6 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
     fetchingRef.current = true;
 
     const fetchAllData = async () => {
-      console.log(
-        "[OneForm] fetchAllData initiated. InitialData provided:",
-        !!initialData,
-        "BlockName:",
-        blockName
-      );
       setIsLoading(true);
       setError(null);
 
@@ -307,13 +375,11 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
       let currentAboutData = null;
       let currentNavbarData = null;
       let currentThemeColorsValue = null;
-      let currentAllServiceBlocks = null;
       let currentSentimentReviewsData = null;
       let currentSitePaletteValue = []; // Initialize for sitePalette
 
       try {
         if (initialData) {
-          console.log("[OneForm] Using initialData prop as primary source.");
           currentMainPageData = initialData.mainPageBlocks
             ? { mainPageBlocks: initialData.mainPageBlocks }
             : null;
@@ -322,19 +388,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
           currentNavbarData = initialData.navbarData || null;
           currentThemeColorsValue = initialData.themeColors || null;
           currentSitePaletteValue = initialData.sitePalette || []; // Get sitePalette from initialData if available
-          currentAllServiceBlocks = initialData.allServiceBlocksData || null;
           currentSentimentReviewsData = initialData.sentimentReviewsData || null;
-          if (
-            blockName &&
-            !currentMainPageData &&
-            !rawServicesSource &&
-            !currentAboutData &&
-            !currentNavbarData
-          ) {
-            console.log(
-              `[OneForm] initialData likely for a single block ('${blockName}'), not full structure.`
-            );
-          }
         }
 
         // Use config theme colors if not provided in initialData
@@ -381,14 +435,9 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
 
         // Handle navbar data
         if (currentNavbarData) {
-          console.log(
-            "[OneForm] Navbar data sourced from initialData.",
-            currentNavbarData
-          );
           setNavbarData(currentNavbarData);
           setInitialNavbarData(deepCloneWithFiles(currentNavbarData));
         } else if (!blockName) {
-          console.log("[OneForm] Fetching navbar data (nav.json)...");
           try {
             const navResponse = await fetch("/personal/old/jsons/nav.json");
             if (navResponse.ok) {
@@ -397,9 +446,6 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
                 initializeMediaFieldsRecursive(navDataFetched);
               setNavbarData(initializedNavData);
               setInitialNavbarData(deepCloneWithFiles(navDataFetched));
-              console.log(
-                "[OneForm] Successfully fetched /personal/old/jsons/nav.json."
-              );
             } else {
               console.error(
                 "[OneForm] Failed to fetch /personal/old/jsons/nav.json. Status:",
@@ -433,30 +479,21 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         }
 
         if (currentMainPageData) {
-          console.log("[OneForm] Main page data sourced.", currentMainPageData);
           setMainPageFormData(currentMainPageData);
           setInitialFormDataForOldExport(
             deepCloneWithFiles(currentMainPageData)
           );
-        } else if (!blockName) {
-          console.log(
-            "[OneForm] Fetching main page data (combined_data.json)..."
-          );
         }
 
         if (currentAboutData) {
-          console.log("[OneForm] About page data sourced.", currentAboutData);
           setAboutPageJsonData(currentAboutData);
           setInitialAboutPageJsonData(
             deepCloneWithFiles(currentAboutData)
           );
         } else if (!blockName) {
-          console.log(
-            "[OneForm] Fetching about page data (/personal/new/jsons/about_page.json)..."
-          );
           try {
             const aboutResponse = await fetch(
-              "/personal/new/jsons/about_page.json"
+              "/personal/old/jsons/about_page.json"
             );
             if (aboutResponse.ok) {
               const aboutDataFetched = await aboutResponse.json();
@@ -464,16 +501,12 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
               setInitialAboutPageJsonData(
                 deepCloneWithFiles(aboutDataFetched)
               );
-              console.log(
-                "[OneForm] Successfully fetched /personal/new/jsons/about_page.json."
-              );
             } else {
               console.error(
-                "[OneForm] Failed to fetch /personal/new/jsons/about_page.json. Status:",
+                "[OneForm] Failed to fetch /personal/old/jsons/about_page.json. Status:",
                 aboutResponse.status
               );
-              // Fallback to the alternative data source
-              try {
+               try {
                 const aboutJsonResponse = await fetch(
                   "/data/raw_data/step_3/about_page.json"
                 );
@@ -482,10 +515,6 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
                   setAboutPageJsonData(aboutJson);
                   setInitialAboutPageJsonData(
                     deepCloneWithFiles(aboutJson)
-                  );
-                  console.log(
-                    "OneForm: Loaded about_page.json data from fallback source:",
-                    aboutJson
                   );
                 } else {
                   console.warn(
@@ -505,10 +534,9 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
             }
           } catch (fetchError) {
             console.error(
-              "[OneForm] Error fetching /personal/new/jsons/about_page.json:",
+              "[OneForm] Error fetching /personal/old/jsons/about_page.json:",
               fetchError
             );
-            // Fallback to the alternative data source
             try {
               const aboutJsonResponse = await fetch(
                 "/data/raw_data/step_3/about_page.json"
@@ -518,10 +546,6 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
                 setAboutPageJsonData(aboutJson);
                 setInitialAboutPageJsonData(
                   deepCloneWithFiles(aboutJson)
-                );
-                console.log(
-                  "OneForm: Loaded about_page.json data from fallback source after error:",
-                  aboutJson
                 );
               } else {
                 console.warn(
@@ -542,26 +566,22 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         }
 
         if (!rawServicesSource && !blockName) {
-          console.log("[OneForm] Fetching services.json...");
           try {
             const servicesResponse = await fetch(
-              "/personal/new/jsons/services.json"
+              "/personal/old/jsons/services.json"
             );
             if (servicesResponse.ok) {
               rawServicesSource = await servicesResponse.json();
-              console.log(
-                "[OneForm] Successfully fetched /personal/new/jsons/services.json."
-              );
             } else {
               console.error(
-                "[OneForm] Failed to fetch /personal/new/jsons/services.json. Status:",
+                "[OneForm] Failed to fetch /personal/old/jsons/services.json. Status:",
                 servicesResponse.status
               );
               rawServicesSource = { commercial: [], residential: [] };
             }
           } catch (fetchError) {
             console.error(
-              "[OneForm] Error fetching /personal/new/jsons/services.json:",
+              "[OneForm] Error fetching /personal/old/jsons/services.json:",
               fetchError
             );
             rawServicesSource = { commercial: [], residential: [] };
@@ -575,7 +595,6 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
           const initializedServices =
             initializeMediaFieldsRecursive(rawServicesSource);
           setManagedServicesData(initializedServices);
-          console.log("[OneForm] Managed services data initialized and set.");
         } else {
           console.warn(
             "[OneForm] No raw service data available. ManagedServicesData will be null or default."
@@ -584,73 +603,29 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
           setManagedServicesData({ commercial: [], residential: [] });
         }
 
-        if (currentAllServiceBlocks) {
-          console.log(
-            "[OneForm] AllServiceBlocks data sourced from initialData."
-          );
-          setAllServiceBlocksData(currentAllServiceBlocks);
-          setInitialAllServiceBlocksData(
-            deepCloneWithFiles(currentAllServiceBlocks)
-          );
-        } else if (!blockName) {
-          console.log("[OneForm] Fetching all_blocks_showcase.json...");
-          try {
-            const showcaseResponse = await fetch(
-              "/personal/new/jsons/all_blocks_showcase.json"
-            );
-            if (showcaseResponse.ok) {
-              const showcaseData = await showcaseResponse.json();
-              setAllServiceBlocksData(showcaseData);
-              setInitialAllServiceBlocksData(
-                deepCloneWithFiles(showcaseData)
-              );
-              console.log(
-                "[OneForm] Successfully fetched /personal/new/jsons/all_blocks_showcase.json."
-              );
-            } else {
-              console.error(
-                "[OneForm] Failed to fetch /personal/new/jsons/all_blocks_showcase.json. Status:",
-                showcaseResponse.status
-              );
-              setAllServiceBlocksData({ blocks: [] });
-              setInitialAllServiceBlocksData({ blocks: [] });
-            }
-          } catch (fetchError) {
-            console.error(
-              "[OneForm] Error fetching /personal/new/jsons/all_blocks_showcase.json:",
-              fetchError
-            );
-            setAllServiceBlocksData({ blocks: [] });
-            setInitialAllServiceBlocksData({ blocks: [] });
-          }
-        }
-
         if (currentSentimentReviewsData) {
             setSentimentReviewsData(currentSentimentReviewsData);
             setInitialSentimentReviewsData(deepCloneWithFiles(currentSentimentReviewsData));
         } else if (!blockName) {
-            console.log("[OneForm] Fetching sentiment_reviews.json...");
             try {
-                const sentimentResponse = await fetch("/personal/new/jsons/sentiment_reviews.json");
+                const sentimentResponse = await fetch("/personal/old/jsons/sentiment_reviews.json");
                 if (sentimentResponse.ok) {
                     const sentimentData = await sentimentResponse.json();
                     setSentimentReviewsData(sentimentData);
                     setInitialSentimentReviewsData(deepCloneWithFiles(sentimentData));
-                    console.log("[OneForm] Successfully fetched /personal/new/jsons/sentiment_reviews.json.");
                 } else {
-                    console.error("[OneForm] Failed to fetch /personal/new/jsons/sentiment_reviews.json. Status:", sentimentResponse.status);
+                    console.error("[OneForm] Failed to fetch /personal/old/jsons/sentiment_reviews.json. Status:", sentimentResponse.status);
                     setSentimentReviewsData([]);
                     setInitialSentimentReviewsData([]);
                 }
             } catch (fetchError) {
-                console.error("[OneForm] Error fetching /personal/new/jsons/sentiment_reviews.json:", fetchError);
+                console.error("[OneForm] Error fetching /personal/old/jsons/sentiment_reviews.json:", fetchError);
                 setSentimentReviewsData([]);
                 setInitialSentimentReviewsData([]);
             }
         }
 
         if (!currentMainPageData && !blockName) {
-          console.log("[OneForm] Fetching combined_data.json as a fallback...");
           try {
             // Check if we're on a custom domain
             const customDomain =
@@ -660,23 +635,12 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
             setIsCustomDomain(customDomain);
 
             if (customDomain) {
-              console.log(
-                "[OneForm] On custom domain:",
-                window.location.hostname
-              );
               try {
                 // Fetch the domain-specific config
                 const domainConfigResponse = await fetch("/api/public/config");
-                console.log(
-                  "[OneForm] Domain config response status:",
-                  domainConfigResponse.status
-                );
 
                 if (domainConfigResponse.ok) {
                   const domainData = await domainConfigResponse.json();
-                  console.log(
-                    "[OneForm] Successfully loaded domain config data"
-                  );
                   setMainPageFormData(domainData);
                   setInitialFormDataForOldExport(
                     deepCloneWithFiles(domainData)
@@ -700,42 +664,21 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
 
             // If not on custom domain or domain config failed, check authentication
             if (!isDevelopment) {
-              console.log("[OneForm] Checking authentication status...");
               const authResponse = await fetch("/api/auth/status", {
                 credentials: "include",
               });
-              console.log(
-                "[OneForm] Auth response status:",
-                authResponse.status
-              );
 
               const authData = await authResponse.json();
-              console.log("[OneForm] Auth data received:", authData);
 
               if (authData.isAuthenticated) {
-                console.log(
-                  "[OneForm] User is authenticated. Config ID:",
-                  authData.configId
-                );
                 try {
                   // Fetch the user's custom config
-                  console.log(
-                    "[OneForm] Fetching custom config from:",
-                    `/api/config/load`
-                  );
                   const customConfigResponse = await fetch(`/api/config/load`, {
                     credentials: "include",
                   });
-                  console.log(
-                    "[OneForm] Custom config response status:",
-                    customConfigResponse.status
-                  );
 
                   if (customConfigResponse.ok) {
                     const configData = await customConfigResponse.json();
-                    console.log(
-                      "[OneForm] Successfully loaded custom config data"
-                    );
                     if (configData.combined_data) {
                       setMainPageFormData(configData.combined_data);
                       setInitialFormDataForOldExport(
@@ -746,12 +689,6 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
                       setAboutPageJsonData(configData.about_page);
                       setInitialAboutPageJsonData(
                         deepCloneWithFiles(configData.about_page)
-                      );
-                    }
-                    if (configData.all_blocks_showcase) {
-                      setAllServiceBlocksData(configData.all_blocks_showcase);
-                      setInitialAllServiceBlocksData(
-                        deepCloneWithFiles(configData.all_blocks_showcase)
                       );
                     }
                     return;
@@ -769,8 +706,6 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
                     customConfigError
                   );
                 }
-              } else {
-                console.log("[OneForm] User is not authenticated");
               }
             }
 
@@ -781,7 +716,6 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
             if (combinedResponse.ok) {
               const fetchedMainData = await combinedResponse.json();
               setMainPageFormData(fetchedMainData);
-              console.log("[OneForm] Fallback: loaded combined_data.json", fetchedMainData);
             } else {
               console.error(
                 "[OneForm] Fallback: Failed to load combined_data.json"
@@ -807,13 +741,11 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         setSitePalette([...defaultColorDefinitions]); // Fallback for sitePalette
         setManagedServicesData({ commercial: [], residential: [] });
         setServicesDataForOldExport({ commercial: [], residential: [] });
-        setAllServiceBlocksData({ blocks: [] });
         setSentimentReviewsData([]);
       } finally {
         setIsLoading(false);
         setIsInitialLoadComplete(true);
         fetchingRef.current = false;
-        console.log("[OneForm] fetchAllData finished.");
       }
     };
 
@@ -1063,7 +995,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
               const category = serviceData.category || "general";
               const serviceId = serviceData.id || "unknown";
               const serviceSlug = `${category}_${serviceId}`;
-              const assetType = (finalFileName.toLowerCase().includes("video") || finalFileName.toLowerCase().includes(".mp4") || finalFileName.toLowerCase().includes(".webm")) ? 'videos' : 'images';
+              const assetType = (finalFileName.toLowerCase().includes("video") || finalFileName.toLowerCase().includes(".mp4") || finalFileName.includes(".webm")) ? 'videos' : 'images';
               subPath = `img/services/${serviceSlug}/assets/${assetType}/${finalFileName}`;
             } else {
               const serviceFolder = blockName || "general";
@@ -1095,7 +1027,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
               return imageItem;
             }
 
-            const currentPrefix = isNewFile ? 'personal/new' : pathPrefix;
+            const currentPrefix = pathPrefix;
             
             const originalFileName = imageItem.name || imageItem.originalUrl?.split('/').pop() || `image_${imageIndex}`;
             const imagePath = generateAssetPath(originalFileName, parentBlockName, contentType, serviceContext, imageItem.originalUrl, currentPrefix);
@@ -1135,7 +1067,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
           return originalDataNode;
         }
 
-        const currentPrefix = isNewFile ? 'personal/new' : pathPrefix;
+        const currentPrefix = pathPrefix;
         const originalFileName = originalDataNode.name || originalDataNode.file?.name || 'image';
         const imagePath = generateAssetPath(originalFileName, parentBlockName, contentType, serviceContext, originalDataNode.originalUrl, currentPrefix);
 
@@ -1227,30 +1159,16 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         return;
       }
 
-      console.log("[OneForm] Starting download process with new/old structure.");
-
       const zip = new JSZip();
-      const oldRootPath = 'personal/old';
-      const newRootPath = 'personal/new';
-      
-      const oldJsonsFolder = zip.folder(`${oldRootPath}/jsons`);
-      const newJsonsFolder = zip.folder(`${newRootPath}/jsons`);
+      const rootPath = 'personal/old';
+      const jsonsFolder = zip.folder(`${rootPath}/jsons`);
+      const allAssets = [];
 
-      const initialClonedData = {
-        combined_data: deepCloneWithFiles(initialFormDataForOldExport),
-        nav: deepCloneWithFiles(initialNavbarData),
-        services: deepCloneWithFiles(servicesDataForOldExport),
-        about_page: deepCloneWithFiles(initialAboutPageJsonData),
-        all_blocks_showcase: deepCloneWithFiles(initialAllServiceBlocksData),
-        sentiment_reviews: deepCloneWithFiles(initialSentimentReviewsData),
-      };
-
-      const currentClonedData = {
+      const currentData = {
         combined_data: deepCloneWithFiles(mainPageFormData),
         nav: deepCloneWithFiles(navbarData),
         services: deepCloneWithFiles(managedServicesData),
         about_page: deepCloneWithFiles(aboutPageJsonData),
-        all_blocks_showcase: deepCloneWithFiles(allServiceBlocksData),
         sentiment_reviews: deepCloneWithFiles(sentimentReviewsData),
       };
       
@@ -1259,64 +1177,29 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         nav: 'navbar',
         services: 'services',
         about_page: 'about',
-        all_blocks_showcase: 'showcase',
         sentiment_reviews: 'reviews',
       };
 
-      // --- Process OLD data (Initial State Snapshot) ---
-      const oldAssets = [];
-      const oldJsons = {};
-      console.log("[OneForm] Processing OLD data snapshot...");
-      for(const [name, data] of Object.entries(initialClonedData)) {
+      // --- Process all current data ---
+      for(const [name, data] of Object.entries(currentData)) {
         if (data) {
           const contentType = contentTypes[name] || 'main';
-          const cleanedJson = processDataForJson(data, oldAssets, name, false, contentType, null, { pathPrefix: oldRootPath, collectNewOnly: false });
-          oldJsons[name] = cleanedJson;
-          oldJsonsFolder.file(`${name}.json`, JSON.stringify(cleanedJson, null, 2));
-        }
-      }
-
-      // --- Process NEW data (The Diff) ---
-      const newAssets = [];
-      const newJsons = {};
-      console.log("[OneForm] Processing NEW data (diff)...");
-      for(const [name, data] of Object.entries(currentClonedData)) {
-        if (data) {
-           const contentType = contentTypes[name] || 'main';
-           const cleanedJson = processDataForJson(data, newAssets, name, false, contentType, null, { pathPrefix: oldRootPath, collectNewOnly: true });
-
-           // Always write the current state to the 'new' folder
-           console.log(`[OneForm] Writing ${name}.json to NEW folder.`);
-           newJsonsFolder.file(`${name}.json`, JSON.stringify(cleanedJson, null, 2));
+          const cleanedJson = processDataForJson(data, allAssets, name, false, contentType, null, { pathPrefix: rootPath, collectNewOnly: false });
+          jsonsFolder.file(`${name}.json`, JSON.stringify(cleanedJson, null, 2));
         }
       }
       
       // Add colors if changed
-      const initialColorsJson = JSON.stringify(defaultColorDefinitions.reduce((obj, item) => {
-        const snakeCaseKey = item.name.replace(/-/g, "_");
-        obj[snakeCaseKey] = item.value;
-        return obj;
-      }, {}), null, 2);
-      
       const currentColorsForJson = {};
       Object.entries(themeColors).forEach(([key, value]) => {
         const snakeCaseKey = key.replace(/-/g, "_");
         currentColorsForJson[snakeCaseKey] = value;
       });
       const currentColorsJson = JSON.stringify(currentColorsForJson, null, 2);
-
-      // Add old colors to old folder
-      oldJsonsFolder.file("colors_output.json", initialColorsJson);
-
-      // Always write current colors to 'new' folder
-      console.log("[OneForm] Writing colors_output.json to NEW folder.");
-      newJsonsFolder.file("colors_output.json", currentColorsJson);
+      jsonsFolder.file("colors_output.json", currentColorsJson);
       
       // --- Package all assets into the ZIP ---
-      const allCollectedAssets = [...oldAssets, ...newAssets];
-      console.log(`[OneForm] Processing ${allCollectedAssets.length} collected assets.`);
-
-      for (const asset of allCollectedAssets) {
+      for (const asset of allAssets) {
         try {
           let assetData;
           if (asset.type === "file" && asset.file instanceof File) {
@@ -1342,42 +1225,33 @@ Generated: ${new Date().toISOString()}
 
 ## Structure
 
-This package contains website content updates separated into two distinct folders: 'personal/old' and 'personal/new'.
+This package contains a complete snapshot of the website's updated content.
 
 \`\`\`
 /
 ├── personal/
-│   ├── old/
-│   │   ├── jsons/         # COMPLETE set of original JSON files
-│   │   └── img/           # COMPLETE set of original image and video assets
-│   │
-│   └── new/
-│       ├── jsons/         # ONLY JSON files that have been changed
-│       └── img/           # ONLY new or updated image and video assets
-│
+│   │   ├── old/
+│   │   │   ├── jsons/         # Complete set of updated JSON files
+│   │   │   └── img/           # All image and video assets (new and existing)
+│   │   │
 └── README.md              # These instructions
 \`\`\`
 
 ## Integration Instructions
 
-1.  **Backup Existing Directories**: Before proceeding, create a backup of your project's existing \`/public/personal/old\` and \`/public/personal/new\` directories.
+1.  **Backup Existing Directory**: Before proceeding, create a backup of your project's existing \`/public/personal/old\` directory.
 
-2.  **Apply OLD Folder (Reference)**: The \`personal/old\` folder in this ZIP is a complete snapshot of the content *before* this editing session. It can be used as a reference or to restore the original state if needed. For a standard update, you typically **do not** need to copy this folder over.
+2.  **Replace Directory**:
+    *   Delete the existing \`/public/personal/old\` directory from your project.
+    *   Copy the \`personal/old\` folder from this ZIP into your project's \`/public/personal\` directory.
 
-3.  **Apply NEW Folder (The Changes)**: This is the critical step.
-    *   **Merge the contents** of the \`personal/new\` folder from this ZIP into your project's existing \`/public/personal/new\` directory.
-    *   This will add any new JSON files and any new images to your project.
-    *   Since the directory structure is mirrored, files will be placed in their correct locations.
-
-4.  **Verification**: After merging the \`new\` folder:
+3.  **Verification**: After replacing the directory:
     *   Clear your browser cache and review the live site.
     *   Verify that all text and image changes appear correctly.
-    *   Check that both new images and existing (old) images are loading properly.
 
 ## How It Works
 
--   **\`personal/old\`**: A static snapshot of the content at the beginning of the editing session.
--   **\`personal/new\`**: A sparse 'diff' containing only the files that were modified. The updated JSON files in \`new/jsons\` contain paths that correctly reference assets from both \`new/img\` (for new files) and \`old/img\` (for unchanged files).
+This package provides a self-contained, up-to-date version of all necessary content. The JSON files have been updated with your edits, and all required assets are included in their correct locations within the \`img\` folder.
 `;
 
       zip.file("README.md", readmeContent);
@@ -1392,7 +1266,6 @@ This package contains website content updates separated into two distinct folder
         : `website_content_${dateStr}_${timeStr}.zip`;
 
       saveAs(content, zipFileName);
-      console.log("ZIP file generation complete:", zipFileName);
     } catch (error) {
       console.error("Error creating ZIP file:", error);
       alert("Error creating ZIP file. See console for details.");
@@ -1402,14 +1275,12 @@ This package contains website content updates separated into two distinct folder
     navbarData,
     managedServicesData,
     aboutPageJsonData,
-    allServiceBlocksData,
     themeColors,
     blockName,
     initialFormDataForOldExport,
     initialNavbarData,
     servicesDataForOldExport,
     initialAboutPageJsonData,
-    initialAllServiceBlocksData,
     initialSentimentReviewsData,
     sentimentReviewsData,
     defaultColorDefinitions
@@ -1424,25 +1295,31 @@ This package contains website content updates separated into two distinct folder
         navbar: newMainPageFormData.navbar || prev.navbar,
         hero: newMainPageFormData.hero || prev.hero,
       };
-      console.log("Updated main page form data:", updatedData);
-
+      
       return updatedData;
     });
   };
 
   const handleAboutConfigChange = (newAboutConfig) => {
-    console.log("[OneForm] About page config changed:", newAboutConfig);
-    // Combined approach: preserve URLs and update both current and initial data
     const preservedConfig = preserveImageUrls(newAboutConfig);
     setAboutPageJsonData(preservedConfig);
-    // Deep clone to ensure fresh copy and update initial data
-    const clonedConfig = deepCloneWithFiles(preservedConfig);
-    setInitialAboutPageJsonData(clonedConfig);
+    setEditingTarget(prev => {
+      if (prev && prev.key === 'about-block') {
+          return { ...prev, config: preservedConfig };
+      }
+      return prev;
+    });
   };
 
   const handleNavbarConfigChange = (newNavbarConfig) => {
-    console.log("[OneForm] Navbar config changed:", newNavbarConfig);
-    setNavbarData(preserveImageUrls(newNavbarConfig));
+    const preservedConfig = preserveImageUrls(newNavbarConfig);
+    setNavbarData(preservedConfig);
+    setEditingTarget(prev => {
+        if (prev && prev.key === 'navbar') {
+            return { ...prev, config: preservedConfig };
+        }
+        return prev;
+    });
   };
 
   const handleManagedServicesChange = (
@@ -1450,10 +1327,6 @@ This package contains website content updates separated into two distinct folder
     serviceCategory,
     servicePageId
   ) => {
-    console.log(
-      `[OneForm] handleManagedServicesChange called for category '${serviceCategory}', page ID '${servicePageId}':`,
-      updatedServicePageData
-    );
     setManagedServicesData((prevServicesData) => {
       if (!prevServicesData || !prevServicesData[serviceCategory]) {
         console.error(
@@ -1466,10 +1339,6 @@ This package contains website content updates separated into two distinct folder
           if (page.id === servicePageId) {
             // Deep clone the updated data to preserve file objects
             const preservedData = deepCloneWithFiles(updatedServicePageData);
-            console.log(
-              "[OneForm] Preserved service data with files:",
-              preservedData
-            );
             return preservedData;
           }
           return page;
@@ -1499,271 +1368,105 @@ This package contains website content updates separated into two distinct folder
     });
   };
 
-  const fetchShowcaseData = async () => {
-    if (
-      allServiceBlocksData &&
-      allServiceBlocksData.blocks &&
-      allServiceBlocksData.blocks.length > 0
-    ) {
-      console.log(
-        "fetchShowcaseData: Data already exists for showcase, skipping fetch."
-      );
-      return;
-    }
-    if (loadingAllServiceBlocks) return;
-
-    setLoadingAllServiceBlocks(true);
-    try {
-      const response = await fetch(
-        "/personal/new/jsons/all_blocks_showcase.json"
-      );
-      if (!response.ok) {
-        throw new Error("Failed to fetch all_blocks_showcase.json");
-      }
-      const data = await response.json();
-      setAllServiceBlocksData(data);
-    } catch (error) {
-      console.error("Error loading all_blocks_showcase.json:", error);
-    } finally {
-      setLoadingAllServiceBlocks(false);
-    }
-  };
-
-  const handleShowcaseBlockConfigUpdate = (blockIndex, newConfig) => {
-    setAllServiceBlocksData((prevData) => {
-      if (!prevData || !prevData.blocks) return prevData;
-      const updatedBlocks = prevData.blocks.map((block, index) => {
-        if (index === blockIndex) {
-          return { ...block, config: preserveImageUrls(newConfig) };
-        }
-        return block;
-      });
-      const updatedData = { ...prevData, blocks: updatedBlocks };
-
-      return updatedData;
-    });
-  };
-
-  const handleShowcaseFileChangeForBlock = (
-    blockIndex,
-    configKeyOrPathData,
-    fileOrFileObject
-  ) => {
-    if (!fileOrFileObject) return;
-
-    let newMediaConfig;
-    const currentBlock = allServiceBlocksData.blocks[blockIndex];
-    let existingMediaConfig;
-
-    let isNestedPath =
-      typeof configKeyOrPathData === "object" && configKeyOrPathData !== null;
-    let fieldToUpdate = isNestedPath
-      ? configKeyOrPathData.field
-      : configKeyOrPathData;
-
-    if (isNestedPath) {
-      if (
-        configKeyOrPathData.field === "pictures" &&
-        currentBlock.config.items &&
-        currentBlock.config.items[configKeyOrPathData.blockItemIndex]
-      ) {
-        existingMediaConfig =
-          currentBlock.config.items[configKeyOrPathData.blockItemIndex]
-            .pictures?.[configKeyOrPathData.pictureIndex];
-      } else if (
-        currentBlock.config.items &&
-        currentBlock.config.items[configKeyOrPathData.blockItemIndex]
-      ) {
-        existingMediaConfig =
-          currentBlock.config.items[configKeyOrPathData.blockItemIndex][
-            fieldToUpdate
-          ];
-      } else {
-        existingMediaConfig = currentBlock.config[fieldToUpdate];
-      }
-    } else {
-      existingMediaConfig = currentBlock?.config?.[fieldToUpdate];
-    }
-
-    if (fileOrFileObject instanceof File) {
-      if (
-        existingMediaConfig &&
-        typeof existingMediaConfig === "object" &&
-        existingMediaConfig.url &&
-        existingMediaConfig.url.startsWith("blob:")
-      ) {
-        URL.revokeObjectURL(existingMediaConfig.url);
-      }
-      const fileURL = URL.createObjectURL(fileOrFileObject);
-      newMediaConfig = {
-        file: fileOrFileObject,
-        url: fileURL,
-        name: fileOrFileObject.name,
-        originalUrl:
-          (typeof existingMediaConfig === "object"
-            ? existingMediaConfig.originalUrl
-            : typeof existingMediaConfig === "string"
-              ? existingMediaConfig
-              : null) ||
-          `assets/showcase_uploads/generated/${fileOrFileObject.name}`,
-      };
-    } else if (
-      typeof fileOrFileObject === "object" &&
-      fileOrFileObject.url !== undefined
-    ) {
-      if (
-        existingMediaConfig &&
-        typeof existingMediaConfig === "object" &&
-        existingMediaConfig.file &&
-        existingMediaConfig.url &&
-        existingMediaConfig.url.startsWith("blob:")
-      ) {
-        if (existingMediaConfig.url !== fileOrFileObject.url) {
-          URL.revokeObjectURL(existingMediaConfig.url);
-        }
-      }
-      newMediaConfig = fileOrFileObject;
-    } else if (typeof fileOrFileObject === "string") {
-      if (
-        existingMediaConfig &&
-        typeof existingMediaConfig === "object" &&
-        existingMediaConfig.file &&
-        existingMediaConfig.url &&
-        existingMediaConfig.url.startsWith("blob:")
-      ) {
-        URL.revokeObjectURL(existingMediaConfig.url);
-      }
-      newMediaConfig = {
-        file: null,
-        url: fileOrFileObject,
-        name: fileOrFileObject.split("/").pop(),
-        originalUrl: fileOrFileObject,
-      };
-    } else {
-      console.warn(
-        "Unsupported file/URL type in handleShowcaseFileChangeForBlock",
-        fileOrFileObject
-      );
-      return;
-    }
-
-    setAllServiceBlocksData((prevData) => {
-      const updatedBlocks = prevData.blocks.map((block, index) => {
-        if (index === blockIndex) {
-          let newBlockConfig = { ...block.config };
-          if (isNestedPath) {
-            if (!newBlockConfig.items) newBlockConfig.items = [];
-            while (
-              newBlockConfig.items.length <= configKeyOrPathData.blockItemIndex
-            ) {
-              newBlockConfig.items.push({ pictures: [] });
-            }
-            if (configKeyOrPathData.field === "pictures") {
-              if (
-                !newBlockConfig.items[configKeyOrPathData.blockItemIndex]
-                  .pictures
-              ) {
-                newBlockConfig.items[
-                  configKeyOrPathData.blockItemIndex
-                ].pictures = [];
-              }
-              while (
-                newBlockConfig.items[configKeyOrPathData.blockItemIndex]
-                  .pictures.length <= configKeyOrPathData.pictureIndex
-              ) {
-                newBlockConfig.items[
-                  configKeyOrPathData.blockItemIndex
-                ].pictures.push(null);
-              }
-              newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures[
-                configKeyOrPathData.pictureIndex
-              ] = newMediaConfig;
-            } else {
-              newBlockConfig.items[configKeyOrPathData.blockItemIndex] = {
-                ...newBlockConfig.items[configKeyOrPathData.blockItemIndex],
-                [fieldToUpdate]: newMediaConfig,
-              };
-            }
-          } else {
-            newBlockConfig[fieldToUpdate] = newMediaConfig;
-          }
-          return { ...block, config: newBlockConfig };
-        }
-        return block;
-      });
-
-      const updatedData = { ...prevData, blocks: updatedBlocks };
-
-      return updatedData;
-    });
-  };
-
-  const getShowcaseDisplayUrl = (value) => {
-    if (!value) return null;
-    if (typeof value === "string") return value;
-    if (typeof value === "object" && value.url) return value.url;
-    return null;
-  };
-
   const handleTabChange = (tabId) => {
-    console.log(`[TabSwitch] Switching from ${activeTab} to ${tabId}`);
-
     if (activeTab !== tabId) {
       // Preserve all data before switching tabs
       setMainPageFormData((prev) => {
-        console.log("[TabSwitch] Preserving main page data:", prev);
         const preserved = deepCloneWithFiles(prev);
-        console.log(
-          "[TabSwitch] Preserved main page data with files:",
-          preserved
-        );
         return preserved;
       });
 
       // For about page, ensure we're using the current state
       if (aboutPageJsonData) {
-        console.log("[TabSwitch] Current about page data:", aboutPageJsonData);
         const preserved = deepCloneWithFiles(aboutPageJsonData);
-        console.log(
-          "[TabSwitch] Preserved about page data with files:",
-          preserved
-        );
         setAboutPageJsonData(preserved);
         setInitialAboutPageJsonData(preserved);
       }
 
-      setAllServiceBlocksData((prev) => {
-        console.log("[TabSwitch] Preserving showcase data:", prev);
-        const preserved = deepCloneWithFiles(prev);
-        console.log(
-          "[TabSwitch] Preserved showcase data with files:",
-          preserved
-        );
-        return preserved;
-      });
-
       // Also preserve services data
       setManagedServicesData((prev) => {
-        console.log("[TabSwitch] Preserving services data:", prev);
         const preserved = deepCloneWithFiles(prev);
-        console.log(
-          "[TabSwitch] Preserved services data with files:",
-          preserved
-        );
         return preserved;
       });
-
-      console.log("[TabSwitch] Preserved all data during tab switch");
     }
 
     setActiveTab(tabId);
-    if (
-      tabId === "allServiceBlocks" &&
-      !allServiceBlocksData &&
-      !loadingAllServiceBlocks
-    ) {
-      fetchShowcaseData();
+  };
+
+  const handleStartEditing = (target) => {
+    console.log("[OneForm] Setting editing target:", target);
+    if (editingTarget && target && editingTarget.key !== target.key) {
+      // Logic to confirm discarding changes can be added here.
+      // For now, we just switch.
+      console.log(`[OneForm] Switching edit from ${editingTarget.key} to ${target.key}`);
     }
+    setEditingTarget(target);
+  };
+
+  const handleStopEditing = () => {
+    if (editingTarget?.onSave) {
+      editingTarget.onSave(); // Persist changes before closing
+    }
+    setEditingTarget(null);
+  };
+
+  const handlePreviewStateChange = (blockName, state) => {
+    setForcedPreviewStates(prev => ({ ...prev, [blockName]: state }));
+  };
+
+  // Centralized block manipulation functions
+  const handleBlockConfigChange = (blockKey, newConfig, pageType = 'main', serviceContext = null) => {
+    if (pageType === 'main') {
+      setMainPageFormData(prevData => {
+        const newBlocks = prevData.mainPageBlocks.map(block => 
+          block.uniqueKey === blockKey ? { ...block, config: newConfig } : block
+        );
+        return { ...prevData, mainPageBlocks: newBlocks };
+      });
+    } else if (pageType === 'service' && serviceContext) {
+      handleManagedServicesChange(
+        {
+          ...serviceContext.page,
+          blocks: serviceContext.page.blocks.map(block => 
+            block.uniqueKey === blockKey ? { ...block, config: newConfig } : block
+          )
+        },
+        serviceContext.category,
+        serviceContext.page.id
+      );
+    }
+    
+    // Also update the editing target if it's the one being changed
+    setEditingTarget(prev => {
+      if (prev && prev.key === blockKey) {
+        return { ...prev, config: newConfig };
+      }
+      return prev;
+    });
+  };
+
+  const handleUndoBlock = (blockKey, pageType = 'main', serviceContext = null) => {
+    if (pageType === 'main') {
+      const originalBlock = initialFormDataForOldExport.mainPageBlocks.find(b => b.uniqueKey === blockKey);
+      if (originalBlock) {
+        handleBlockConfigChange(blockKey, originalBlock.config, 'main');
+      }
+    } else if (pageType === 'service' && serviceContext) {
+      const originalServicePage = initialServicesData.find(s => s.id === serviceContext.page.id && s.category === serviceContext.category);
+      const originalBlock = originalServicePage?.blocks.find(b => b.uniqueKey === blockKey);
+      if (originalBlock) {
+        handleBlockConfigChange(blockKey, originalBlock.config, 'service', serviceContext);
+      }
+    }
+    // TODO: Add logic for 'about' page
+  };
+
+  const handleSaveBlock = (blockKey, newConfig, pageType = 'main') => {
+    // In our new model, changes are applied live via handleBlockConfigChange.
+    // The "save" action at the block level is primarily for updating the 'last saved' state
+    // which happens implicitly. We can add more explicit 'save' logic here if needed,
+    // e.g., for optimistic UI updates. For now, this can be a no-op or just log.
+    console.log(`[OneForm] Block ${blockKey} saved.`);
   };
 
   if (isLoading) {
@@ -1785,12 +1488,8 @@ This package contains website content updates separated into two distinct folder
     );
   }
 
+
   if (blockName && title) {
-    console.log(
-      `OneForm: Editing specific block: ${blockName}`,
-      mainPageFormData
-    );
-    const singleBlockData = mainPageFormData[blockName] || {};
     const navbarDataForSingleBlock = mainPageFormData.navbar || {
       navLinks: [],
       logo: "",
@@ -1812,8 +1511,10 @@ This package contains website content updates separated into two distinct folder
         <div className="p-4">
           <MainPageForm
             formData={{
-              [blockName]: singleBlockData,
+              mainPageBlocks: mainPageFormData.mainPageBlocks.filter(b => b.blockName === blockName),
               navbar: navbarDataForSingleBlock,
+              previewViewport,
+              forcedPreviewStates,
             }}
             setFormData={setMainPageFormData}
             singleBlockMode={blockName}
@@ -1826,7 +1527,6 @@ This package contains website content updates separated into two distinct folder
     );
   }
 
-  console.log("Rendering OneForm full editor with data:", mainPageFormData);
   const oneFormNavbarConfig = mainPageFormData.navbar || {
     navLinks: [],
     logo: "",
@@ -1838,24 +1538,127 @@ This package contains website content updates separated into two distinct folder
     { id: "services", label: "Services" },
     { id: "about", label: "About" },
     { id: "colors", label: "Color Palette" },
-    { id: "allServiceBlocks", label: "dev" },
   ];
 
+  const onStartEditingAbout = () => {
+    handleStartEditing({
+        type: 'about',
+        key: 'about-block',
+        blockName: 'AboutPage',
+        config: aboutPageJsonData,
+        onPanelChange: handleAboutConfigChange,
+        onUndo: () => handleAboutConfigChange(initialAboutPageJsonData),
+        onSave: () => {}, // No-op, changes are live
+        tabsConfig: AboutBlock.tabsConfig(aboutPageJsonData, handleAboutConfigChange, themeColors, sitePalette),
+        themeColors,
+        sitePalette,
+    });
+  };
+
+  const renderActiveTabContent = () => {
+    switch (activeTab) {
+      case "mainPage":
+        return (
+          <MainPageForm
+            formData={{
+              ...mainPageFormData,
+              previewViewport,
+              forcedPreviewStates,
+            }}
+            setFormData={handleMainPageFormChange}
+            navbarData={navbarData}
+            onNavbarChange={handleNavbarConfigChange}
+            themeColors={themeColors}
+            sitePalette={sitePalette}
+            initialFormData={initialFormDataForOldExport}
+            editingTarget={editingTarget}
+            onStartEditing={handleStartEditing}
+            onBlockConfigChange={handleBlockConfigChange}
+            onUndoBlock={handleUndoBlock}
+            onSaveBlock={handleSaveBlock}
+            previewViewport={previewViewport}
+            forcedPreviewStates={forcedPreviewStates}
+          />
+        );
+      case "services":
+        return (
+          <ServiceEditPage
+            servicesData={managedServicesData}
+            onServicesChange={handleManagedServicesChange}
+            themeColors={themeColors}
+            sitePalette={sitePalette}
+            initialServicesData={initialServicesData}
+            editingTarget={editingTarget}
+            onStartEditing={handleStartEditing}
+            onBlockConfigChange={handleBlockConfigChange}
+            onUndoBlock={handleUndoBlock}
+            onSaveBlock={handleSaveBlock}
+            previewViewport={previewViewport}
+            forcedPreviewStates={forcedPreviewStates}
+          />
+        );
+      case "about":
+        if (aboutPageJsonData) {
+          const isEditing = editingTarget?.key === 'about-block';
+          return (
+              <div className="relative bg-white overflow-hidden p-4">
+                   <div className={`relative border ${isEditing ? 'ring-2 ring-blue-500 shadow-lg' : ''}`}>
+                      {!isEditing && (
+                          <BlockEditControl onToggleEdit={onStartEditingAbout} isEditing={false} />
+                      )}
+                      <AboutBlock
+                          readOnly={false}
+                          aboutData={aboutPageJsonData}
+                          onConfigChange={handleAboutConfigChange}
+                          themeColors={themeColors}
+                          sitePalette={sitePalette}
+                          isEditing={isEditing}
+                      />
+                   </div>
+              </div>
+          );
+        }
+        return null;
+      case "colors":
+        return (
+          <ColorEditor
+            initialColors={themeColors}
+            onColorChange={handleThemeColorChange}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-sky-100 text-black flex flex-col">
+    <div className="min-h-screen  text-black flex flex-col">
       <div className="flex flex-col">
         <div className="flex-grow">
           <div className="bg-slate-100 px-4 py-2 flex justify-between items-center shadow-md">
-            <div className="flex">
-              {tabs.map((tabInfo) => (
-                <TabButton
-                  key={tabInfo.id}
-                  id={tabInfo.id}
-                  label={tabInfo.label}
-                  isActive={activeTab === tabInfo.id}
-                  onClick={() => handleTabChange(tabInfo.id)}
+            <div className="flex items-center">
+              <div className="flex">
+                {tabs.map((tabInfo) => (
+                  <TabButton
+                    key={tabInfo.id}
+                    id={tabInfo.id}
+                    label={tabInfo.label}
+                    isActive={activeTab === tabInfo.id}
+                    onClick={() => handleTabChange(tabInfo.id)}
+                  />
+                ))}
+              </div>
+              <div className="ml-6">
+                <PreviewStateController
+                  label="Viewport"
+                  options={[
+                    { label: "Desktop", value: "desktop" },
+                    { label: "Mobile", value: "mobile" },
+                  ]}
+                  value={previewViewport}
+                  onChange={setPreviewViewport}
                 />
-              ))}
+              </div>
             </div>
             <div className="flex items-center gap-4">
               {!isCustomDomain && (
@@ -1864,12 +1667,12 @@ This package contains website content updates separated into two distinct folder
                   themeColors={themeColors}
                   servicesData={servicesDataForOldExport}
                   aboutPageData={aboutPageJsonData}
-                  showcaseData={allServiceBlocksData}
                   initialFormDataForOldExport={initialFormDataForOldExport}
                   initialServicesData={initialServicesData}
                   initialAboutPageJsonData={initialAboutPageJsonData}
-                  initialAllServiceBlocksData={initialAllServiceBlocksData}
                   initialThemeColors={themeColors}
+                  sentimentReviewsData={sentimentReviewsData}
+                  initialSentimentReviewsData={initialSentimentReviewsData}
                 />
               )}
 
@@ -1884,66 +1687,35 @@ This package contains website content updates separated into two distinct folder
           </div>
 
           <div className="tab-content">
-            {activeTab === "mainPage" && (
-              <MainPageForm
-                formData={mainPageFormData}
-                setFormData={handleMainPageFormChange}
-                navbarData={navbarData}
-                onNavbarChange={handleNavbarConfigChange}
-                themeColors={themeColors}
-                sitePalette={sitePalette}
-                initialFormData={initialFormDataForOldExport}
-              />
-            )}
-            {activeTab === "services" && (
-              <ServiceEditPage
-                themeColors={themeColors}
-                sitePalette={sitePalette}
-                servicesData={managedServicesData}
-                onServicesChange={handleManagedServicesChange}
-                initialServicesData={initialServicesData}
-              />
-            )}
-            {activeTab === "about" && aboutPageJsonData && (
-              <div className="relative bg-white overflow-hidden">
-                <AboutBlock
-                  readOnly={false}
-                  aboutData={aboutPageJsonData}
-                  onConfigChange={handleAboutConfigChange}
-                  themeColors={themeColors}
-                  sitePalette={sitePalette}
-                />
+            {previewViewport === 'mobile' ? (
+              <div className="bg-gray-800 py-12 flex justify-center items-center">
+                <div className="relative mx-auto border-gray-800 dark:border-gray-800 bg-gray-800 border-[14px] rounded-[2.5rem] h-[864px] w-[410px] shadow-xl">
+                  <div className="w-[148px] h-[18px] bg-gray-800 top-0 rounded-b-[1rem] left-1/2 -translate-x-1/2 absolute"></div>
+                  <div className="h-[46px] w-[3px] bg-gray-800 absolute -start-[17px] top-[124px] rounded-s-lg"></div>
+                  <div className="h-[46px] w-[3px] bg-gray-800 absolute -start-[17px] top-[178px] rounded-s-lg"></div>
+                  <div className="h-[64px] w-[3px] bg-gray-800 absolute -end-[17px] top-[142px] rounded-e-lg"></div>
+                  <div className="rounded-[2rem] overflow-hidden w-[382px] h-[836px] bg-white dark:bg-gray-800">
+                    <IframePreview>
+                      {renderActiveTabContent()}
+                    </IframePreview>
+                  </div>
+                </div>
               </div>
-            )}
-            {activeTab === "colors" && (
-              <ColorEditor
-                initialColors={themeColors}
-                onColorChange={handleThemeColorChange}
-              />
-            )}
-            {activeTab === "allServiceBlocks" && (
-              <AllServiceBlocksTab
-                allServiceBlocksData={allServiceBlocksData}
-                loadingAllServiceBlocks={loadingAllServiceBlocks}
-                activeEditShowcaseBlockIndex={activeEditShowcaseBlockIndex}
-                setActiveEditShowcaseBlockIndex={
-                  setActiveEditShowcaseBlockIndex
-                }
-                serviceBlockMap={serviceBlockMap}
-                handleShowcaseBlockConfigUpdate={
-                  handleShowcaseBlockConfigUpdate
-                }
-                getShowcaseDisplayUrl={getShowcaseDisplayUrl}
-                handleShowcaseFileChangeForBlock={
-                  handleShowcaseFileChangeForBlock
-                }
-                themeColors={themeColors}
-                sitePalette={sitePalette}
-              />
+            ) : (
+              renderActiveTabContent()
             )}
           </div>
         </div>
       </div>
+
+      <BottomStickyEditPanel
+        isOpen={!!editingTarget}
+        onClose={handleStopEditing}
+        onConfirm={handleStopEditing}
+        activeBlockData={editingTarget}
+        forcedPreviewStates={forcedPreviewStates}
+        onPreviewStateChange={handlePreviewStateChange}
+      />
     </div>
   );
 };

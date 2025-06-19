@@ -164,7 +164,6 @@ export const ConfigProvider = ({ children }) => {
         setIsCustomDomain(customDomain);
 
         if (isDevelopment) {
-          console.log("Development mode: Loading local config data");
           try {
             // Load local config files
             const [combinedResponse, colorsResponse, servicesResponse] =

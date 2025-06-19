@@ -1,618 +1,820 @@
-// src/components/MainPageBlocks/RichTextBlock.jsx
 import React, { useState, useEffect, useRef } from "react";
-import * as Icons from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Home as DefaultHomeIcon, Building2 as DefaultWarehouseIcon } from "lucide-react";
+import { Link } from "react-router-dom";
+import { FaWarehouse } from "react-icons/fa";
+import * as LucideIcons from "lucide-react";
+import * as FaIcons from "react-icons/fa";
+import IconSelectorModal from "../common/IconSelectorModal";
+
+const iconPacks = {
+  lucide: LucideIcons,
+  fa: FaIcons,
+};
+
+// Robust dynamic icon renderer
+const renderDynamicIcon = (packName, iconName, defaultIconComponent, props = { className: "w-full h-full" }) => {
+  const pack = iconPacks[packName?.toLowerCase()];
+  if (pack) {
+    const IconComponent = pack[iconName];
+    if (IconComponent && typeof IconComponent === 'function') {
+      return <IconComponent {...props} />;
+    }
+  }
+  const DefaultIcon = defaultIconComponent || LucideIcons.HelpCircle; 
+  return <DefaultIcon {...props} />;
+};
+
+// Helper to get display path for image previews
+const getDisplayPath = (pathOrFile) => {
+  if (!pathOrFile) return '';
+  if (typeof pathOrFile === 'string') return pathOrFile; // URL or path
+  if (pathOrFile instanceof File) return URL.createObjectURL(pathOrFile); // File object
+  return '';
+};
 
 /* 
-=============================================
-1) RICH-TEXT PREVIEW (Read-Only)
----------------------------------------------
-Displays heroText, descriptions, "falling" 
-cards, and a simple slideshow. All data is passed via 
-props.richTextData.
-
-This component is part of the website's content management system
-that allows for local editing and saving of JSON data. The edited
-content can be downloaded and sent to the developer for permanent
-integration into the site.
-=============================================
+====================================================
+ 1) HERO PREVIEW (Displays actual hero content)
+----------------------------------------------------
+- Does NOT display mainTitle, subTitle, or logo.
+- Shows heroImage background and interactive service sections.
+- Takes `heroconfig` prop. This will be `localData` from HeroBlock 
+  when HeroBlock is in edit mode, or original `heroconfig` 
+  from MainPageForm when HeroBlock is read-only.
+====================================================
 */
-function RichTextPreview({ richTextData }) {
-  const [currentImage, setCurrentImage] = useState(0);
-  const {
-    heroText = "",
-    bus_description = "",
-    bus_description_second = "",
-    cards = [],
-    images = [],
-  } = richTextData || {};
-
-  if (!richTextData) {
-    return <p className="text-center py-4">No RichText data found.</p>;
+function HeroPreview({ heroconfig }) { 
+  if (!heroconfig) {
+    return <p>No data found for HeroPreview.</p>;
   }
 
-  // Default slideshow images if none provided in the JSON data
-  const slideshowImages = images.length
-    ? images
-    : [
-        "/assets/images/Richtext/roof_workers.jpg",
-        "/assets/images/Richtext/roof_workers2.jpg",
-        "/assets/images/Richtext/roof_workers3.webp",
-      ];
+  const bannerStyles = {
+    "--banner-color": heroconfig.bannerColor || "#1e293b",
+    "--top-banner-color": heroconfig.topBannerColor || "#FFFFFF",
+  };
 
-  // Split cards into left/right groups (for md+ view)
-  // This creates a balanced two-column layout for medium and larger screens
-  const half = Math.ceil(cards.length / 2);
-  const leftCards = cards.slice(0, half);
-  const rightCards = cards.slice(half);
+  const [residentialServices, setResidentialServices] = useState([]);
+  const [commercialServices, setCommercialServices] = useState([]);
 
-  // Overlay images used for card backgrounds and visual effects
-  const overlayImages = [
-    "/assets/images/shake_img/1.png",
-    "/assets/images/shake_img/2.png",
-    "/assets/images/shake_img/3.png",
-    "/assets/images/shake_img/4.png",
-  ];
+  const {
+    residential = { subServices: [], icon: 'Home', iconPack: 'lucide' },
+    commercial = { subServices: [], icon: 'Building2', iconPack: 'lucide' },
+    heroImage, 
+    bannerColor,
+    topBannerColor,
+  } = heroconfig;
 
-  /* 
-  =============================================
-  AnimatedFeatureCard Component
-  ---------------------------------------------
-  Displays a feature card with:
-  - Title on the left
-  - Icon in the clipped triangle on the right
-  - Description text below
-  - Animation effect when scrolled into view
-  
-  The card maintains a square aspect ratio and supports
-  different variants for responsive design.
-  =============================================
-  */
-  function AnimatedFeatureCard({
-    icon: Icon,
-    title,
-    desc,
-    index,
-    variant = "default",
-  }) {
-    const cardRef = useRef(null);
-    const overlayRef = useRef(null);
-    const hasAnimated = useRef(false);
-
-    // Intersection Observer for scroll-based animations
-    // Cards will "fall" into place when they come into view
-    useEffect(() => {
-      const observer = new IntersectionObserver(
-        ([entry]) => {
-          if (entry.isIntersecting && !hasAnimated.current) {
-            hasAnimated.current = true;
-            const delay = index * 0.2;
-            entry.target.style.setProperty("--delay", `${delay}s`);
-            entry.target.classList.add("animate-card-fall");
-            if (overlayRef.current) {
-              overlayRef.current.style.setProperty(
-                "--overlay-delay",
-                `${delay + 0.8}s`
-              );
-            }
-            observer.unobserve(entry.target);
-          }
-        },
-        { threshold: 0.2 }
-      );
-
-      // Handle animation completion to trigger overlay fade-out
-      const handleAnimationEnd = (e) => {
-        if (e.animationName === "cardFall") {
-          overlayRef.current?.classList.add("fade-overlay-out");
-        }
-      };
-
-      if (cardRef.current) {
-        observer.observe(cardRef.current);
-        cardRef.current.addEventListener("animationend", handleAnimationEnd);
+  useEffect(() => {
+    const processedResidentialServices = (residential.subServices || []).map(
+      (service) => {
+        // Ensure service.title is used for display, and a stable original identifier for routes
+        const originalIdentifier = service.originalTitle || service.title; // Fallback if originalTitle isn't there yet
+        const actualServiceName = originalIdentifier.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, '');
+        return {
+          label: service.title, // This is the editable display title
+          route: `/service/residential/${actualServiceName}`,
+          id: service.id // Ensure id is carried over
+        };
       }
+    );
+    const processedCommercialServices = (commercial.subServices || []).map(
+      (service) => {
+        const originalIdentifier = service.originalTitle || service.title;
+        const urlTitle = originalIdentifier.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, '');
+        return { 
+          label: service.title, // This is the editable display title
+          route: `/service/commercial/${urlTitle}`,
+          id: service.id // Ensure id is carried over
+        };
+      }
+    );
+    setResidentialServices(processedResidentialServices);
+    setCommercialServices(processedCommercialServices);
+  }, [residential.subServices, commercial.subServices]);
 
-      return () => {
-        if (cardRef.current) {
-          observer.unobserve(cardRef.current);
-          cardRef.current.removeEventListener(
-            "animationend",
-            handleAnimationEnd
-          );
-        }
-      };
-    }, [index]);
+  const [activeSection, setActiveSection] = useState("neutral");
 
-    // Base styling for all card variants
-    const baseClasses =
-      "relative bg-white p-2 rounded-lg shadow-lg flex flex-col items-center justify-center opacity-0";
+  // Props for inline editing, only relevant if HeroBlock's readOnly is false
+  const { onServiceNameChange, onRemoveService, readOnly: isPreviewReadOnly, onEditServiceIcon } = heroconfig;
 
-    // Add animation classes if not mobile or md variant
-    const animationClasses =
-      variant === "default" ? "transform-gpu -translate-x-full -rotate-90" : "";
+  const iconWrapperBaseClass = "text-gray-50 w-[6.5vw] h-[6.5vw] md:w-[60px] md:h-[60px] flex items-center justify-center drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,0.7)]";
+  const serviceSectionTextBaseClass = "text-lg md:text-xl font-semibold text-gray-50 drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)] ml-2 md:ml-3";
+
+  // Animation Variants
+  const iconAnimationVariants = {
+    neutral: { x: 0, y: 0, scale: 1, opacity: 1, transition: { duration: 0.3, ease: "easeInOut" } },
+    active: { // Icon shifts up slightly when active, and sub-services appear below it
+      y: -10, // Example: shift icon up a bit
+      x: 0,     // Icon does not slide left in this revised columnar approach
+      scale: 1.1,
+      opacity: 1,
+      transition: { duration: 0.3, ease: "easeInOut" }
+    },
+    inactive: { x: 0, scale: 0.85, opacity: 0.6, y: 0, transition: { duration: 0.3, ease: "easeInOut" } },
+  };
+
+  const textLabelAnimationVariants = {
+    exit: { opacity: 0, x: 0, transition: { duration: 0.2, ease: "easeOut" } }, // Label fades out in place or slides subtly
+    enter: { opacity: 1, x: 0, transition: { duration: 0.3, ease: "easeIn" } },
+  };
+
+  // Variants for the sub-service column container
+  const subServiceColumnVariants = {
+    hidden: { opacity: 0, height: 0, y: -10, transition: { duration: 0.3, ease: "easeInOut", when: "afterChildren" } },
+    visible: { 
+      opacity: 1, 
+      height: 'auto', // Animate to auto height
+      y: 0, 
+      transition: { duration: 0.4, delay: 0.1, ease: "easeInOut", when: "beforeChildren", staggerChildren: 0.07 } 
+    }
+  };
+
+  const subServiceItemVariants = {
+    hidden: { opacity: 0, x: -10 }, // Items slide in from left slightly
+    visible: { opacity: 1, x: 0, transition: { duration: 0.2, ease: "easeOut" } }
+  };
+
+  const renderServiceSection = (type, services, iconDetails) => {
+    const isActive = activeSection === type;
+    const isNeutral = activeSection === "neutral";
+    let iconState = "neutral";
+    if (isActive) iconState = "active";
+    else if (!isNeutral) iconState = "inactive";
+
+    const sectionLabel = type.charAt(0).toUpperCase() + type.slice(1);
+
+    const handleIconClick = () => {
+      if (!isPreviewReadOnly && onEditServiceIcon) {
+        onEditServiceIcon(type);
+      } else {
+        setActiveSection(prev => prev === type ? "neutral" : type);
+      }
+    };
+
+    const handleSectionAreaClick = () => {
+      setActiveSection(prev => prev === type ? "neutral" : type);
+    };
 
     return (
       <div
-        ref={cardRef}
-        className={`${baseClasses} ${animationClasses}  w-[40vw] h-[25vw] md:w-[18vw] md:h-[18vw]`}
+        className="w-1/2 h-full flex flex-col items-center justify-start pt-2 md:pt-4 cursor-pointer"
+        onClick={handleSectionAreaClick}
       >
-        {/* Clipped triangle in top-right corner with icon */}
-        <div
-          className="absolute top-0 right-0 w-14 h-14 md:w-16 md:h-16 z-20 rounded-tr-lg"
-          style={{
-            backgroundImage: `url(${overlayImages[index % overlayImages.length]})`,
-            backgroundPosition: "top right",
-            backgroundRepeat: "no-repeat",
-            backgroundSize: "auto",
-            clipPath: "polygon(0 0, 100% 0, 100% 100%)",
-          }}
-        >
-          {Icon && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Icon className="w-8 h-8 md:w-8 md:h-8 text-white drop-shadow-lg" />
-            </div>
+        {/* Icon and Main Label (Horizontal when neutral) */}
+        <div className="flex items-center justify-center mb-2 md:mb-3 min-h-[40px] md:min-h-[50px]">
+          <motion.div
+            className={`${iconWrapperBaseClass} ${!isPreviewReadOnly ? 'hover:bg-white/10 rounded-md' : ''}`}
+            variants={iconAnimationVariants}
+            animate={iconState}
+            layout
+            onClick={(e) => {
+              e.stopPropagation();
+              handleIconClick();
+            }}
+          >
+            {renderDynamicIcon(iconDetails.iconPack, iconDetails.icon, type === 'residential' ? DefaultHomeIcon : DefaultWarehouseIcon)}
+          </motion.div>
+          {/* Main Label - only shown when its section is NOT active OR if neutral */}
+          <AnimatePresence mode="wait">
+            {(isNeutral || !isActive) && (
+              <motion.p
+                key={`${type}-text-label-main`}
+                className={serviceSectionTextBaseClass} // Restored class with ml for spacing
+                variants={textLabelAnimationVariants}
+                initial="exit" // Start from exit to animate in if becoming visible
+                animate="enter"
+                exit="exit"
+              >
+                {sectionLabel}
+              </motion.p>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Sub-Services Column - Appears below the icon/label area when active */}
+        <AnimatePresence>
+          {isActive && (
+            <motion.div
+              className={`relative w-[90%] md:w-[85%] mt-1 rounded-lg shadow-xl overflow-hidden 
+                          ${isPreviewReadOnly ? 'bg-transparent' : 'bg-second-accent/30'} // Subtle bg in edit mode for container
+                        `}
+              variants={subServiceColumnVariants}
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+              style={{ pointerEvents: isActive ? 'auto' : 'none' }} 
+            >
+              <motion.ul className="flex flex-col items-center text-center p-2 space-y-1 md:space-y-1.5 text-sm md:text-base font-normal">
+                {services.map((service, idx) => (
+                  <motion.li
+                    key={service.id || idx}
+                    variants={subServiceItemVariants}
+                    className={`whitespace-nowrap flex items-center justify-center group w-full py-0.5 md:py-1 rounded-md 
+                                ${!isPreviewReadOnly ? 'hover:bg-white/10' : ''} // Hover effect for inputs
+                              `}
+                  >
+                    {!isPreviewReadOnly ? (
+                      <input
+                        type="text"
+                        value={service.label}
+                        onChange={(e) => onServiceNameChange(type, service.id, e.target.value)}
+                        className="py-1 px-2 bg-transparent text-white focus:bg-white/20 outline-none text-center w-auto max-w-[80%] text-sm md:text-base rounded-sm"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    ) : (
+                      <Link 
+                        to={service.route} 
+                        onClick={(e) => e.stopPropagation()} 
+                        className="block py-0.5 text-white hover:underline"
+                      >
+                        {service.label}
+                      </Link>
+                    )}
+                    {!isPreviewReadOnly && ( // Critical: Only show remove button if not in previewReadOnly mode
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onRemoveService(type, service.id); }}
+                        className="ml-2 text-red-400 hover:text-red-300 opacity-50 group-hover:opacity-100 transition-opacity"
+                        title="Remove Service"
+                      >
+                        <LucideIcons.MinusCircle size={14} />
+                      </button>
+                    )}
+                  </motion.li>
+                ))}
+                {services.length === 0 && isActive && (
+                  <motion.p
+                    variants={subServiceItemVariants}
+                    className="text-xs text-gray-400 italic py-1"
+                  >
+                    No services listed.
+                  </motion.p>
+                )}
+              </motion.ul>
+            </motion.div>
           )}
-        </div>
-        {/* Gradient overlay for visual effect */}
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-900/20 to-transparent z-30 rounded-lg" />
-        {/* Background image overlay that fades out after animation */}
-        <div
-          ref={overlayRef}
-          className="absolute inset-0 bg-center bg-cover z-50 rounded-lg"
-          style={{
-            backgroundImage: `url(${overlayImages[index % overlayImages.length]})`,
-          }}
-        />
-        {/* Title container */}
-        <div className="flex items-start justify-center w-full px-3 md:px-8">
-          <h3 className="md:whitespace-nowrap z-40 text-[2.2vw] md:text-[2.2vh] font-semibold text-gray-900">
-            {title}
-          </h3>
-        </div>
-        {/* Description text */}
-        <p className="z-40 text-[2vw] md:text-[1.2vh] text-gray-700 text-center px-1 md:px-8 md:mt-2">
-          {desc}
-        </p>
+        </AnimatePresence>
       </div>
     );
-  }
-
-  const animationStyles = `
-    @keyframes cardFall {
-      0% { transform: translateX(-100%) rotate3d(0,0,1,-90deg); opacity: 0; }
-      100% { transform: translateX(0) rotate3d(0,0,1,0deg); opacity: 1; }
-    }
-    .animate-card-fall { animation: cardFall 0.8s ease-out forwards var(--delay, 0s); }
-    @keyframes overlayFadeOut {
-      0% { opacity: 1; }
-      100% { opacity: 0; pointer-events: none; }
-    }
-    .fade-overlay-out { animation: overlayFadeOut 0.8s ease-out forwards var(--overlay-delay, 0s); }
-  `;
+  };
 
   return (
-    <section className="relative bg-white w-full pb-8">
-      <style>{animationStyles}</style>
-
-      {/* Medium and larger screens */}
-      <div className="hidden md:flex w-full h-[45vh] mb-8">
-        {/* Left Column: Two cards stacked vertically */}
-        <div className="w-1/5 aspect-square flex p-4 flex-col justify-between">
-          {leftCards.map((card, idx) => {
-            const IconComp = Icons[card.icon] || Icons.Star;
-            return (
-              <div key={idx} className="flex-1 mb-2 last:mb-0">
-                <AnimatedFeatureCard
-                  variant="md"
-                  icon={IconComp}
-                  title={card.title}
-                  desc={card.desc}
-                  index={idx}
-                />
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Center Column: Text on top, image below (each taking 50% height) */}
-        <div className="relative flex-col">
-          <h2 className="relative  text-[4vh] text-center font-bold z-60 font-serif">
-            {heroText}
-          </h2>
-          <div className="w-full flex flex-row">
-            {/* Image Set: 2/3 width */}
-            <div className="w-2/3 relative rounded-2xl shadow-md">
-              <img
-                src={slideshowImages[currentImage]}
-                alt="Slideshow"
-                className="w-full h-[35vh] object-cover rounded-lg"
-              />
-              <div className="absolute bottom-2 rounded-lg left-1/2 transform -translate-x-1/2 flex gap-2 z-10">
-                {slideshowImages.map((_, sIdx) => (
-                  <button
-                    key={sIdx}
-                    onClick={() => setCurrentImage(sIdx)}
-                    className={`w-3 h-3 rounded-full ${
-                      currentImage === sIdx
-                        ? "bg-white scale-110"
-                        : "bg-white/50"
-                    }`}
-                    aria-label={`Go to image ${sIdx + 1}`}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Bus Descriptions: 1/3 width */}
-            <div className="w-1/3 flex items-center justify-center">
-              <div className="px-1">
-                <p className="text-xs text-gray-700 pl-3">{bus_description}</p>
-                <p className="text-xs text-gray-700 pl-3">
-                  {bus_description_second}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column: Two cards stacked vertically */}
-        <div className="w-1/5 aspect-square flex p-4 flex-col justify-between">
-          {rightCards.map((card, idx) => {
-            const i = idx + half;
-            const IconComp = Icons[card.icon] || Icons.Star;
-            return (
-              <div key={i} className="flex-1 mb-2 last:mb-0">
-                <AnimatedFeatureCard
-                  variant="md"
-                  icon={IconComp}
-                  title={card.title}
-                  desc={card.desc}
-                  index={i}
-                />
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Smaller than medium screens */}
-      <div className="relative md:hidden flex flex-col px-[3vw] mb-8 mt-0">
-        {/* Text Section */}
-        <div className="mt-0 pt-0">
-          <h2 className="whitespace-nowrap relative text-[3.2vw] text-center font-bold z-60 mb-1 px-[3vw] overflow-visible font-serif">
-            {heroText}
-          </h2>
-        </div>
-        {/* Image Section */}
-        <div className="relative w-full rounded-lg shadow-md">
-          <img
-            src={slideshowImages[currentImage]}
-            alt="Slideshow"
-            className="w-full h-[40vw] object-cover rounded-lg"
+    <section className="relative overflow-y-hidden" style={bannerStyles}>
+      <div 
+        className={`absolute top-[0vh] left-0 right-0 from-0% to-transparent pointer-events-none ${activeSection === "neutral" ? "h-[18vh] md:h-[18vh]" : "h-[10vh] md:h-[10vh]"}`} 
+        style={{ 
+          backgroundImage: `linear-gradient(to bottom, var(--top-banner-color) 0%, rgba(255,255,255,0) 100%)`,
+          transition: "height 0.3s ease-out 0.4s", 
+          zIndex: 1 
+        }}
+      />
+      <div className="relative w-full h-[50vw] md:h-[45vh] overflow-hidden">
+        {heroImage && (
+          <motion.div
+            className="absolute inset-0 h-full"
+            style={{
+              width: "130vw",
+              left: "-15vw",
+              backgroundImage: `url('${getDisplayPath(heroImage)}')`,
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "center center",
+              backgroundSize: "cover",
+            }}
+            initial={{ x: "0%", scale: 1, transformOrigin: "center center" }}
+            animate={{
+              x: activeSection === "residential" ? "7.5%" : activeSection === "commercial" ? "-7.5%" : "0%",
+              scale: activeSection !== "neutral" ? 1.15 : 1,
+              transformOrigin: activeSection === "residential" ? "25% center" : activeSection === "commercial" ? "75% center" : "center center"
+            }}
+            transition={{ duration: 0.6, ease: "easeInOut" }}
           />
-          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-2 z-10">
-            {slideshowImages.map((_, sIdx) => (
-              <button
-                key={sIdx}
-                onClick={() => setCurrentImage(sIdx)}
-                className={`w-3 h-3 rounded-full ${currentImage === sIdx ? "bg-white scale-110" : "bg-white/50"}`}
-                aria-label={`Go to image ${sIdx + 1}`}
-              />
-            ))}
-          </div>
+        )}
+        <div className="relative w-full h-full flex pt-[6vh] md:pt-[8vh] z-10"> {/* Adjusted top padding slightly */}
+          {/* Residential Section */}
+          {renderServiceSection('residential', residentialServices, residential)}
+          {/* Commercial Section */}
+          {renderServiceSection('commercial', commercialServices, commercial)}
         </div>
-        <div>
-          <p className="text-sm text-gray-700 my-2">{bus_description}</p>
-          <p className="text-sm text-gray-700 my-2">{bus_description_second}</p>
-        </div>
-        {/* Cards in a 2x2 (or more) grid */}
-        <div className="grid grid-cols-2 gap-2 px-[3vw]">
-          {cards.map((card, idx) => {
-            const IconComp = Icons[card.icon] || Icons.Star;
-            return (
-              <div key={idx}>
-                <AnimatedFeatureCard
-                  variant="mobile"
-                  icon={IconComp}
-                  title={card.title}
-                  desc={card.desc}
-                  index={idx}
-                />
-              </div>
-            );
-          })}
-        </div>
+        <div 
+          className={`absolute bottom-0 left-0 right-0 pointer-events-none to-transparent ${activeSection === "neutral" ? "h-[15vh] md:h-[18vh]" : "h-[9vh] md:h-[10vh]"}`} 
+          style={{ 
+            backgroundImage: `linear-gradient(to top, ${bannerColor || '#1e293b'} 10%, rgba(0,0,0,0) 100%)`, 
+            transition: "height 0.3s ease-out 0.4s", 
+            zIndex: 1 
+          }}
+        />
       </div>
     </section>
   );
 }
 
 /* 
-=============================================
-2) RICH-TEXT EDITOR PANEL (Editing Mode)
----------------------------------------------
-Allows editing of:
-- heroText
-- bus_description
-- years_in_business
-- cards[] (title, desc, icon)
-- images[] (slideshow images via file upload)
-Bubbles changes up via onSave()
-
-This editor is part of the website's content management system
-that allows for local editing and saving of JSON data. The edited
-content can be downloaded and sent to the developer for permanent
-integration into the site.
-=============================================
+====================================================
+ 2) HERO CONTROLS PANEL (For Hero Image & Services Only)
+----------------------------------------------------
+ - Provides controls for hero background image and service selection.
+ - Logo, mainTitle, subTitle are NOT handled here.
+ - All changes call `onControlsChange` to update parent's localData.
+====================================================
 */
-function RichTextEditorPanel({ localData, setLocalData, onSave }) {
+function HeroControlsPanel({ currentData, onControlsChange }) { 
   const {
-    heroText = "",
-    bus_description = "",
-    years_in_business = "",
-    cards = [],
-    images = [],
-  } = localData;
+    residential = { subServices: [], icon: 'Home', iconPack: 'lucide' },
+    commercial = { subServices: [], icon: 'Building2', iconPack: 'lucide' },
+    heroImage, 
+    bannerColor,
+    topBannerColor,
+  } = currentData;
 
-  // Add a new card with default values
-  const handleAddCard = () => {
-    setLocalData((prev) => ({
-      ...prev,
-      cards: [
-        ...prev.cards,
-        { title: "New Title", desc: "New Desc", icon: "Star" },
-      ],
-    }));
-  };
+  const [isIconModalOpen, setIsIconModalOpen] = useState(false);
+  const [editingIconContext, setEditingIconContext] = useState({ type: null, currentPack: 'lucide', currentName: null });
 
-  // Remove a card at the specified index
-  const handleRemoveCard = (index) => {
-    const updated = [...cards];
-    updated.splice(index, 1);
-    setLocalData((prev) => ({ ...prev, cards: updated }));
-  };
+  const [allResidentialServices, setAllResidentialServices] = useState([]);
+  const [allCommercialServices, setAllCommercialServices] = useState([]);
+  const [isServicesLoading, setIsServicesLoading] = useState(true);
 
-  // Update a specific field of a card at the specified index
-  const handleChangeCard = (index, field, value) => {
-    const updated = [...cards];
-    updated[index] = { ...updated[index], [field]: value };
-    setLocalData((prev) => ({ ...prev, cards: updated }));
-  };
+  useEffect(() => {
+    setIsServicesLoading(true);
+    // Assuming combined_data.json is in public/data/raw_data/step_4/
+    // Adjust path if necessary or use a more robust way to fetch if it's dynamic
+    fetch("/data/raw_data/step_4/combined_data.json") 
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        if (data.hero?.residential?.subServices) {
+          setAllResidentialServices(data.hero.residential.subServices.map((s, i) => ({ 
+            id: s.slug || `res-${i}`, // Use slug as ID if available, otherwise generate
+            title: s.title,
+            originalTitle: s.title // Keep track of original title from data
+          })));
+        }
+        if (data.hero?.commercial?.subServices) {
+          setAllCommercialServices(data.hero.commercial.subServices.map((s, i) => ({ 
+            id: s.slug || `com-${i}`, // Use slug as ID
+            title: s.title,
+            originalTitle: s.title
+          })));
+        }
+        setIsServicesLoading(false);
+      })
+      .catch(error => {
+        console.error("HeroControlsPanel: Error fetching services data:", error);
+        setIsServicesLoading(false);
+        // Optionally set empty arrays or some error state for services
+        setAllResidentialServices([]);
+        setAllCommercialServices([]);
+      });
+  }, []);
 
-  // Add a new empty image entry to the slideshow
-  const handleAddImage = () => {
-    setLocalData((prev) => ({
-      ...prev,
-      images: [...prev.images, ""],
-    }));
-  };
-
-  // Remove an image at the specified index
-  const handleRemoveImage = (index) => {
-    const updated = [...images];
-    updated.splice(index, 1);
-    setLocalData((prev) => ({ ...prev, images: updated }));
-  };
-
-  // Update an image at the specified index with a new file
-  // Uses URL.createObjectURL to create a local URL for the image
-  const handleChangeImage = (index, file) => {
+  const handleHeroImageUpload = (file) => {
     if (file) {
-      const fileURL = URL.createObjectURL(file);
-      const updated = [...images];
-      updated[index] = fileURL;
-      setLocalData((prev) => ({ ...prev, images: updated }));
+      // Revoke old blob URL if current heroImage is a blob
+      if (currentData.heroImage && typeof currentData.heroImage === 'string' && currentData.heroImage.startsWith('blob:')) {
+        URL.revokeObjectURL(currentData.heroImage);
+      }
+      const newImageSrc = URL.createObjectURL(file);
+      onControlsChange({ heroImage: newImageSrc, heroImageFile: file });
     }
+  };
+  
+  const handleBannerColorChange = (color) => {
+    onControlsChange({ bannerColor: color });
+  };
+
+  const handleTopBannerColorChange = (color) => {
+    onControlsChange({ topBannerColor: color });
+  };
+
+  const handleServiceToggle = (serviceType, serviceItem) => {
+    const currentBlockSubServices = currentData[serviceType]?.subServices || [];
+    const serviceIndex = currentBlockSubServices.findIndex(s => s.id === serviceItem.id);
+    let newSubServices;
+
+    if (serviceIndex > -1) { // Service is selected, so unselect it
+      newSubServices = currentBlockSubServices.filter(s => s.id !== serviceItem.id);
+    } else { // Service is not selected, so select it
+      newSubServices = [
+        ...currentBlockSubServices, 
+        { 
+          id: serviceItem.id, 
+          title: serviceItem.originalTitle, // Add with original title initially
+          originalTitle: serviceItem.originalTitle 
+        }
+      ];
+    }
+    onControlsChange({ 
+      [serviceType]: { 
+        ...(currentData[serviceType] || {}), // Preserve other properties like icon/iconPack
+        icon: currentData[serviceType]?.icon || (serviceType === 'residential' ? 'Home' : 'Building2'),
+        iconPack: currentData[serviceType]?.iconPack || 'lucide',
+        subServices: newSubServices 
+      } 
+    });
+  };
+
+  const handleServiceTitleChange = (serviceType, serviceId, newTitle) => {
+    const currentBlockSubServices = currentData[serviceType]?.subServices || [];
+    const newSubServices = currentBlockSubServices.map(s => 
+      s.id === serviceId ? { ...s, title: newTitle } : s
+    );
+    onControlsChange({ 
+      [serviceType]: { 
+        ...(currentData[serviceType] || {}),
+        icon: currentData[serviceType]?.icon || (serviceType === 'residential' ? 'Home' : 'Building2'),
+        iconPack: currentData[serviceType]?.iconPack || 'lucide',
+        subServices: newSubServices 
+      } 
+    });
+  };
+  
+  const getSelectedService = (serviceType, serviceId) => {
+    return currentData[serviceType]?.subServices?.find(s => s.id === serviceId);
+  };
+
+  const isServiceSelected = (serviceType, serviceItem) => 
+    currentData[serviceType]?.subServices?.some(s => s.id === serviceItem.id) || false;
+
+  const fileInputStyle = "w-full bg-gray-700 text-sm rounded-md border border-gray-600 p-2 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer";
+
+  const handleAddService = (serviceType) => {
+    const newService = {
+      id: `new-${serviceType}-${Date.now()}`, // Simple unique ID
+      title: "New Service",
+      originalTitle: "New Service"
+    };
+    const currentSubServices = currentData[serviceType]?.subServices || [];
+    onControlsChange({
+      [serviceType]: {
+        ...(currentData[serviceType] || {}),
+        icon: currentData[serviceType]?.icon || (serviceType === 'residential' ? 'Home' : 'Building2'),
+        iconPack: currentData[serviceType]?.iconPack || 'lucide',
+        subServices: [...currentSubServices, newService]
+      }
+    });
   };
 
   return (
-    <div className="bg-black text-white p-4 rounded max-h-[75vh] overflow-auto">
-      {/* Top row: Editor title + Save button */}
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl md:text-2xl font-semibold">RichText Editor</h1>
-        <button
-          type="button"
-          onClick={onSave}
-          className="bg-green-600 hover:bg-green-500 px-4 py-2 rounded text-white font-semibold"
-        >
-          Save
-        </button>
+    <div className="bg-gray-800 text-white p-3 rounded-lg mt-4 shadow-lg">
+      <h3 className="text-lg font-semibold mb-3 text-center border-b border-gray-600 pb-2 text-gray-100">Edit Hero Background & Services</h3>
+      
+      <div className="mb-4">
+        <label className="block text-xs mb-1 font-medium text-gray-200">Hero Background Image:</label>
+        <input type="file" accept="image/*" onChange={(e) => handleHeroImageUpload(e.target.files?.[0])} className={fileInputStyle} />
+        {getDisplayPath(heroImage) && <img src={getDisplayPath(heroImage)} alt="Hero Background Preview" className="mt-2 h-20 w-full object-cover rounded bg-gray-700 p-1" />}
       </div>
 
-      {/* Hero Text */}
-      <div className="mb-4">
-        <label className="block text-sm mb-1">Hero Text:</label>
-        <input
-          type="text"
-          className="w-full bg-gray-700 px-2 py-1 rounded"
-          value={heroText}
-          onChange={(e) =>
-            setLocalData((prev) => ({ ...prev, heroText: e.target.value }))
-          }
-        />
-      </div>
-
-      {/* Business Description */}
-      <div className="mb-4">
-        <label className="block text-sm mb-1">Business Description:</label>
-        <textarea
-          className="w-full bg-gray-700 px-2 py-1 rounded"
-          rows={3}
-          value={bus_description}
-          onChange={(e) =>
-            setLocalData((prev) => ({
-              ...prev,
-              bus_description: e.target.value,
-            }))
-          }
-        />
-      </div>
-
-      {/* Years in Business */}
-      <div className="mb-4">
-        <label className="block text-sm mb-1">Years in Business:</label>
-        <input
-          type="text"
-          className="w-full bg-gray-700 px-2 py-1 rounded"
-          value={years_in_business}
-          onChange={(e) =>
-            setLocalData((prev) => ({
-              ...prev,
-              years_in_business: e.target.value,
-            }))
-          }
-        />
-      </div>
-
-      {/* Feature Cards */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-lg font-semibold">Feature Cards</h2>
-          <button
-            onClick={handleAddCard}
-            className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-2 py-1 rounded"
-          >
-            + Add Card
-          </button>
+      <div className="flex flex-col md:flex-row gap-3 mb-4">
+        <div className="flex-1">
+          <label className="block text-xs mb-1 font-medium text-gray-200">Top Banner Gradient Color:</label>
+          <input 
+            type="color" 
+            value={topBannerColor || "#FFFFFF"} 
+            onChange={(e) => handleTopBannerColorChange(e.target.value)}
+            className="w-full h-8 p-1 bg-gray-700 border border-gray-600 rounded-md cursor-pointer"
+          />
         </div>
-        {cards.map((card, idx) => (
-          <div key={idx} className="bg-gray-800 p-3 rounded mb-2 relative">
-            <button
-              onClick={() => handleRemoveCard(idx)}
-              className="bg-red-600 text-white text-xs px-2 py-1 rounded absolute top-2 right-2"
-            >
-              Remove
+        <div className="flex-1">
+          <label className="block text-xs mb-1 font-medium text-gray-200">Bottom Banner Gradient Color:</label>
+          <input 
+            type="color" 
+            value={bannerColor || "#1e293b"} 
+            onChange={(e) => handleBannerColorChange(e.target.value)}
+            className="w-full h-8 p-1 bg-gray-700 border border-gray-600 rounded-md cursor-pointer"
+          />
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <div className="flex justify-between items-center mb-1">
+            <h4 className="text-sm font-semibold text-amber-400">Residential Services</h4>
+            <button onClick={() => handleAddService('residential')} className="text-xs bg-blue-600 hover:bg-blue-500 text-white px-2 py-1 rounded_md_focus_outline_none_focus_ring_2_focus_ring_blue_400">
+              + Add
             </button>
-            <label className="block text-sm mb-1">
-              Title:
-              <input
-                type="text"
-                className="w-full bg-gray-700 px-2 py-1 rounded mt-1"
-                value={card.title || ""}
-                onChange={(e) => handleChangeCard(idx, "title", e.target.value)}
-              />
-            </label>
-            <label className="block text-sm mb-1">
-              Description:
-              <textarea
-                className="w-full bg-gray-700 px-2 py-1 rounded mt-1"
-                rows={2}
-                value={card.desc || ""}
-                onChange={(e) => handleChangeCard(idx, "desc", e.target.value)}
-              />
-            </label>
-            <label className="block text-sm mb-1">
-              Icon (lucide-react):
-              <input
-                type="text"
-                className="w-full bg-gray-700 px-2 py-1 rounded mt-1"
-                value={card.icon || ""}
-                onChange={(e) => handleChangeCard(idx, "icon", e.target.value)}
-              />
-            </label>
           </div>
-        ))}
+          {isServicesLoading ? <p className="text-gray-300 text-xs">Loading...</p> : (
+            <div className="space-y-1 max-h-32 overflow-y-auto pr-1 border border-gray-600 rounded-md p-2 bg-gray-700/50">
+              {allResidentialServices.map(serviceItem => {
+                const selectedService = getSelectedService("residential", serviceItem.id);
+                const isSelected = !!selectedService;
+                return (
+                  <div key={serviceItem.id} className={`p-2 rounded-md flex items-center justify-between ${isSelected ? "bg-blue-700" : "bg-gray-700 hover:bg-gray-600"}`}>
+                    <div className="flex-grow flex items-center">
+                      <input 
+                        type="checkbox" 
+                        checked={isSelected} 
+                        onChange={() => handleServiceToggle("residential", serviceItem)}
+                        className="form-checkbox h-4 w-4 text-blue-500 bg-gray-600 border-gray-500 rounded focus:ring-0 cursor-pointer mr-3" 
+                      />
+                      {isSelected ? (
+                        <input 
+                          type="text"
+                          value={selectedService.title}
+                          onChange={(e) => handleServiceTitleChange("residential", serviceItem.id, e.target.value)}
+                          className="text-sm bg-transparent border-b border-gray-500 focus:border-blue-400 outline-none w-full"
+                        />
+                      ) : (
+                        <span className="text-sm cursor-pointer" onClick={() => handleServiceToggle("residential", serviceItem)}>
+                          {serviceItem.title}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+        <div>
+          <div className="flex justify-between items-center mb-1">
+            <h4 className="text-sm font-semibold text-amber-400">Commercial Services</h4>
+            <button onClick={() => handleAddService('commercial')} className="text-xs bg-blue-600 hover:bg-blue-500 text-white px-2 py-1 rounded_md_focus_outline_none_focus_ring_2_focus_ring_blue_400">
+              + Add
+            </button>
+          </div>
+          {isServicesLoading ? <p className="text-gray-300 text-xs">Loading...</p> : (
+            <div className="space-y-1 max-h-32 overflow-y-auto pr-1 border border-gray-600 rounded-md p-2 bg-gray-700/50">
+              {allCommercialServices.map(serviceItem => {
+                const selectedService = getSelectedService("commercial", serviceItem.id);
+                const isSelected = !!selectedService;
+                return (
+                  <div key={serviceItem.id} className={`p-2 rounded-md flex items-center justify-between ${isSelected ? "bg-blue-700" : "bg-gray-700 hover:bg-gray-600"}`}>
+                    <div className="flex-grow flex items-center">
+                      <input 
+                        type="checkbox" 
+                        checked={isSelected} 
+                        onChange={() => handleServiceToggle("commercial", serviceItem)}
+                        className="form-checkbox h-4 w-4 text-blue-500 bg-gray-600 border-gray-500 rounded focus:ring-0 cursor-pointer mr-3"
+                      />
+                      {isSelected ? (
+                        <input 
+                          type="text"
+                          value={selectedService.title}
+                          onChange={(e) => handleServiceTitleChange("commercial", serviceItem.id, e.target.value)}
+                          className="text-sm bg-transparent border-b border-gray-500 focus:border-blue-400 outline-none w-full"
+                        />
+                      ) : (
+                        <span className="text-sm cursor-pointer" onClick={() => handleServiceToggle("commercial", serviceItem)}>
+                          {serviceItem.title}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Slideshow Images */}
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-lg font-semibold">Slideshow Images</h2>
-          <button
-            onClick={handleAddImage}
-            className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-2 py-1 rounded"
-          >
-            + Add Image
-          </button>
-        </div>
-        {images.map((img, idx) => (
-          <div key={idx} className="bg-gray-800 p-3 rounded mb-2 relative">
-            <button
-              onClick={() => handleRemoveImage(idx)}
-              className="bg-red-600 text-white text-xs px-2 py-1 rounded absolute top-2 right-2"
-            >
-              Remove
-            </button>
-            <label className="block text-sm mb-1">
-              Upload Image:
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    handleChangeImage(idx, file);
-                  }
-                }}
-                className="w-full bg-gray-700 px-2 py-1 rounded mt-1"
-              />
-            </label>
-            {img && (
-              <img
-                src={img}
-                alt={`Slideshow ${idx + 1}`}
-                className="mt-2 h-24 rounded shadow"
-              />
-            )}
-          </div>
-        ))}
-      </div>
+      {/* {isIconModalOpen && ( // REMOVE IconSelectorModal instance from HeroControlsPanel
+        <IconSelectorModal
+          isOpen={isIconModalOpen}
+          onClose={() => setIsIconModalOpen(false)}
+          onIconSelect={handleIconSelection}
+          currentIconPack={editingIconContext.currentPack}
+          currentIconName={editingIconContext.currentName}
+        />
+      )} */}
     </div>
   );
 }
 
 /* 
-=============================================
-3) MAIN EXPORT: RichTextBlock
----------------------------------------------
-- If readOnly=true, shows RichTextPreview
-- If false, shows RichTextEditorPanel
-- onConfigChange(updatedData) bubbles changes up.
-
-This component is part of the website's content management system
-that allows for local editing and saving of JSON data. The edited
-content can be downloaded and sent to the developer for permanent
-integration into the site.
-=============================================
+====================================================
+ 3) MAIN EXPORT: HERO BLOCK
+----------------------------------------------------
+ - If readOnly is true, renders HeroPreview with original heroconfig.
+ - If readOnly is false, renders HeroPreview (with localData for live background updates) 
+   AND HeroControlsPanel (for heroImage & services).
+ - All changes are auto-saved via onConfigChange.
+ - mainTitle, subTitle, logo are NO LONGER part of this block's data/editing.
+====================================================
 */
-export default function RichTextBlock({
+export default function HeroBlock({
+  heroconfig, 
   readOnly = false,
-  richTextData,
   onConfigChange,
 }) {
-  // Initialize local state with the provided data or defaults
   const [localData, setLocalData] = useState(() => {
-    if (!richTextData) {
-      return {
-        heroText: "",
-        bus_description: "",
-        years_in_business: "",
-        cards: [],
-        images: [],
-      };
-    }
+    const initialConfig = heroconfig || {}; // heroconfig is prop, could be undefined initially
     return {
-      ...richTextData,
-      cards: richTextData.cards?.map((c) => ({ ...c })) || [],
-      images: [...(richTextData.images || [])],
+      residential: initialConfig.residential || { subServices: [], icon: 'Home', iconPack: 'lucide' },
+      commercial: initialConfig.commercial || { subServices: [], icon: 'Building2', iconPack: 'lucide' },
+      heroImage: initialConfig.heroImage || "/assets/images/hero/hero_split_background.jpg",
+      heroImageFile: initialConfig.heroImageFile || null,
+      bannerColor: initialConfig.bannerColor || "#1e293b",
+      topBannerColor: initialConfig.topBannerColor || "#FFFFFF",
     };
   });
 
-  // Save changes back to the parent component
-  const handleSave = () => {
-    onConfigChange?.(localData);
+  // State for IconSelectorModal, now managed by HeroBlock
+  const [isIconModalOpen, setIsIconModalOpen] = useState(false);
+  const [editingIconServiceType, setEditingIconServiceType] = useState(null); // 'residential' or 'commercial'
+
+  useEffect(() => {
+    if (heroconfig) {
+      setLocalData(prevLocalData => {
+        const isNewImage = heroconfig.heroImage !== prevLocalData.heroImage;
+        if (isNewImage && typeof prevLocalData.heroImage === 'string' && prevLocalData.heroImage.startsWith('blob:')) {
+          URL.revokeObjectURL(prevLocalData.heroImage);
+        }
+
+        let changed = false;
+
+        const newHeroImage = heroconfig.heroImage || prevLocalData.heroImage || "/assets/images/hero/hero_split_background.jpg";
+        if (newHeroImage !== prevLocalData.heroImage) changed = true;
+
+        // For File objects, direct comparison might not be robust if new instances are created with same content.
+        // However, heroImageFile is typically null or a File object from an input.
+        // If it's a new File object instance, it will be different. This is usually desired.
+        const newHeroImageFile = heroconfig.heroImageFile !== undefined ? heroconfig.heroImageFile : prevLocalData.heroImageFile;
+        if (newHeroImageFile !== prevLocalData.heroImageFile) changed = true;
+
+        const newBannerColor = heroconfig.bannerColor !== undefined ? heroconfig.bannerColor : (prevLocalData.bannerColor || "#1e293b");
+        if (newBannerColor !== prevLocalData.bannerColor) changed = true;
+        
+        const newTopBannerColor = heroconfig.topBannerColor !== undefined ? heroconfig.topBannerColor : (prevLocalData.topBannerColor || "#FFFFFF");
+        if (newTopBannerColor !== prevLocalData.topBannerColor) changed = true;
+
+
+        // Residential update
+        const resConfig = heroconfig.residential;
+        const prevRes = prevLocalData.residential;
+        // Use incoming subServices if available, otherwise keep previous. Ensure IDs and originalTitles.
+        const nextResSubServicesSource = resConfig?.subServices || prevRes?.subServices;
+        const nextResSubServices = (nextResSubServicesSource || []).map(s => ({
+            id: s.id || s.slug, // Ensure id
+            title: s.title,
+            originalTitle: s.originalTitle || s.title, // Ensure originalTitle
+        }));
+        const nextResIcon = resConfig?.icon || prevRes?.icon || 'Home';
+        const nextResIconPack = resConfig?.iconPack || prevRes?.iconPack || 'lucide';
+
+        if (JSON.stringify(nextResSubServices) !== JSON.stringify(prevRes?.subServices || []) ||
+            nextResIcon !== (prevRes?.icon) || // Compare with potentially undefined prevRes.icon
+            nextResIconPack !== (prevRes?.iconPack)) { // Compare with potentially undefined prevRes.iconPack
+          changed = true;
+        }
+        
+        // Commercial update
+        const comConfig = heroconfig.commercial;
+        const prevCom = prevLocalData.commercial;
+        const nextComSubServicesSource = comConfig?.subServices || prevCom?.subServices;
+        const nextComSubServices = (nextComSubServicesSource || []).map(s => ({
+            id: s.id || s.slug,
+            title: s.title,
+            originalTitle: s.originalTitle || s.title,
+        }));
+        const nextComIcon = comConfig?.icon || prevCom?.icon || 'Building2';
+        const nextComIconPack = comConfig?.iconPack || prevCom?.iconPack || 'lucide';
+
+        if (JSON.stringify(nextComSubServices) !== JSON.stringify(prevCom?.subServices || []) ||
+            nextComIcon !== (prevCom?.icon) ||
+            nextComIconPack !== (prevCom?.iconPack)) {
+          changed = true;
+        }
+
+        if (!changed) {
+          return prevLocalData;
+        }
+
+        return {
+          ...prevLocalData,
+          residential: { subServices: nextResSubServices, icon: nextResIcon, iconPack: nextResIconPack },
+          commercial: { subServices: nextComSubServices, icon: nextComIcon, iconPack: nextComIconPack },
+          heroImage: newHeroImage,
+          heroImageFile: newHeroImageFile,
+          bannerColor: newBannerColor,
+          topBannerColor: newTopBannerColor,
+        };
+      });
+    }
+  }, [heroconfig]);
+
+  const handleControlsChange = (changedFields) => {
+    setLocalData(prevLocalData => {
+      let newHeroImage = prevLocalData.heroImage;
+      let newHeroImageFile = prevLocalData.heroImageFile;
+
+      if (changedFields.heroImageFile && changedFields.heroImage) { // heroImage here is the new blob URL
+        // If there was an old blob URL (from previous file upload in this session), revoke it
+        if (typeof prevLocalData.heroImage === 'string' && prevLocalData.heroImage.startsWith('blob:')) {
+          URL.revokeObjectURL(prevLocalData.heroImage);
+        }
+        newHeroImage = changedFields.heroImage; // This is already a blob URL from HeroControlsPanel
+        newHeroImageFile = changedFields.heroImageFile; // This is the File object
+      } else if (changedFields.hasOwnProperty('heroImage') && !changedFields.heroImageFile) {
+        // This case handles if heroImage is set to a path directly (e.g. reset to default)
+        if (typeof prevLocalData.heroImage === 'string' && prevLocalData.heroImage.startsWith('blob:')) {
+          URL.revokeObjectURL(prevLocalData.heroImage);
+        }
+        newHeroImage = changedFields.heroImage;
+        newHeroImageFile = null; // If image is set to a path, there's no corresponding file object
+      }
+
+
+      const updatedData = {
+        ...prevLocalData,
+        ...changedFields, 
+        heroImage: newHeroImage,
+        heroImageFile: newHeroImageFile,
+      };
+      
+      // Ensure subServices always exist as arrays, even if changedFields tries to remove them
+      if (!updatedData.residential || !Array.isArray(updatedData.residential.subServices)) {
+        updatedData.residential = { ...(updatedData.residential || {}), subServices: [] };
+      }
+      if (!updatedData.commercial || !Array.isArray(updatedData.commercial.subServices)) {
+        updatedData.commercial = { ...(updatedData.commercial || {}), subServices: [] };
+      }
+
+
+      if (onConfigChange) {
+        // Prepare data for onConfigChange: send path if image is path, or keep blob for preview but send file for saving
+        const dataForConfigChange = { ...updatedData };
+        if (updatedData.heroImageFile) { // If a file was uploaded
+          // For config change, we might want to signal that there's a new file to be uploaded.
+          // The actual file object `heroImageFile` is already in `updatedData`.
+          // `heroImage` (the blob URL) is fine for `localData` for preview.
+        }
+        onConfigChange(dataForConfigChange);
+      }
+      return updatedData;
+    });
   };
 
-  // Render the appropriate component based on mode
+  const handleOpenIconModalForService = (serviceType) => { // serviceType is 'residential' or 'commercial'
+    const currentServiceSettings = localData[serviceType] || {};
+    setEditingIconServiceType(serviceType); // Store which service's icon is being edited
+    // Note: The modal in IconSelectorModal.jsx needs currentIconPack and currentIconName.
+    // These will be derived from localData[serviceType].icon and localData[serviceType].iconPack
+    setIsIconModalOpen(true);
+  };
+
+  const handleIconSelectionConfirm = (selectedPack, selectedIconName) => {
+    if (editingIconServiceType) {
+      handleControlsChange({
+        [editingIconServiceType]: {
+          ...(localData[editingIconServiceType] || {}), // Preserve other props like subServices
+          icon: selectedIconName,
+          iconPack: selectedPack,
+        },
+      });
+    }
+    setIsIconModalOpen(false);
+    setEditingIconServiceType(null); // Reset
+  };
+
   if (readOnly) {
-    return <RichTextPreview richTextData={richTextData} />;
+    // Pass the original heroconfig, which might include a path or a blob URL if it came from an edited state
+    return <HeroPreview heroconfig={heroconfig} />; 
   }
 
+  const previewHandlers = {
+    onServiceNameChange: (serviceType, serviceId, newTitle) => {
+      handleControlsChange({
+        [serviceType]: {
+          ...(localData[serviceType] || {}),
+          subServices: (localData[serviceType]?.subServices || []).map(s =>
+            s.id === serviceId ? { ...s, title: newTitle } : s
+          ),
+        },
+      });
+    },
+    onRemoveService: (serviceType, serviceId) => {
+      handleControlsChange({
+        [serviceType]: {
+          ...(localData[serviceType] || {}),
+          subServices: (localData[serviceType]?.subServices || []).filter(s => s.id !== serviceId),
+        },
+      });
+    },
+    readOnly: false, // Explicitly pass false for HeroPreview when HeroBlock is editable
+    onEditServiceIcon: handleOpenIconModalForService, // Pass the handler to HeroPreview
+  };
+
   return (
-    <RichTextEditorPanel
-      localData={localData}
-      setLocalData={setLocalData}
-      onSave={handleSave}
-    />
+    <>
+      <HeroPreview heroconfig={{ ...localData, ...previewHandlers }} />
+      <HeroControlsPanel 
+        currentData={localData} 
+        onControlsChange={handleControlsChange} 
+      />
+      {isIconModalOpen && editingIconServiceType && (
+        <IconSelectorModal
+          isOpen={isIconModalOpen}
+          onClose={() => {
+            setIsIconModalOpen(false);
+            setEditingIconServiceType(null);
+          }}
+          onIconSelect={handleIconSelectionConfirm}
+          currentIconPack={localData[editingIconServiceType]?.iconPack || 'lucide'}
+          currentIconName={localData[editingIconServiceType]?.icon}
+        />
+      )}
+    </>
   );
 }

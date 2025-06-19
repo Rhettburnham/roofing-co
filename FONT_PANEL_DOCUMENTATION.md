@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Font Panel system provides a comprehensive way to manage fonts across all blocks in the TopStickyEditPanel. It features a dropdown menu with categorized fonts, live preview with "ABC abc" display, and seamless integration with existing block configurations.
+The Font Panel system provides a comprehensive way to manage fonts across all blocks in the BottomStickyEditPanel. It features a dropdown menu with categorized fonts, live preview with "ABC abc" display, and seamless integration with existing block configurations.
 
 ## Components
 
@@ -141,9 +141,11 @@ BlockName.tabsConfig = (blockCurrentData, onControlsChange, themeColors) => {
 };
 ```
 
-## TopStickyEditPanel Integration
+## `BottomStickyEditPanel` Integration
 
-The fonts tab is automatically included in the standard tab order: `['general', 'fonts', 'images', 'colors', 'styling']`. The TopStickyEditPanel will automatically display the fonts tab if a block has a `fonts` function in its tabsConfig.
+The fonts tab is automatically included in the standard tab order: `['general', 'fonts', 'images', 'colors', 'styling']`. The BottomStickyEditPanel will automatically display the fonts tab if a block has a `fonts` function in its `tabsConfig`.
+
+To enable the fonts tab for a block, simply define the `fonts` key in its `tabsConfig` object.
 
 ## Example Implementations
 
@@ -219,5 +221,6 @@ The fonts tab is automatically included in the standard tab order: `['general', 
 
 ### Tab not showing
 - Confirm the block has a `fonts` function in its tabsConfig
-- Check TopStickyEditPanel includes 'fonts' in standardTabOrder
-- Verify the fonts control component is imported correctly 
+- Check BottomStickyEditPanel includes 'fonts' in `standardTabOrder`
+- Ensure block passes a valid `onControlsChange` function
+- Confirm `themeColors` are being passed down correctly for the color pickers in the font panel 

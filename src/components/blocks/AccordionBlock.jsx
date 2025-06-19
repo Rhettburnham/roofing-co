@@ -268,7 +268,7 @@ AccordionBlock.propTypes = {
     iconColor: PropTypes.string,
     titleColor: PropTypes.string,
     sectionBackgroundColor: PropTypes.string,
-  }), // Removed .isRequired as TopStickyEditPanel might pass partial/empty initially
+  }), // Removed .isRequired as BottomStickyEditPanel might pass partial/empty initially
   readOnly: PropTypes.bool,
   onConfigChange: PropTypes.func,
 };

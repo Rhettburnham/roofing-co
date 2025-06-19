@@ -121,7 +121,9 @@
         "styling": {
           "hasVariants": false,
           "desktopHeightVH": 30,
-          "mobileHeightVW": 40
+          "mobileHeightVW": 40,
+          "iconDesktopSize": 60,
+          "iconMobileSize": 6.5
         }
       }
     },
@@ -164,6 +166,12 @@
           "a roofer working on a roof",
           "a group of workers inspecting a roof",
           "a roofer climbing a ladder to inspect a roof"
+        ],
+        "overlayImages": [
+          "/assets/images/shake_img/1.png",
+          "/assets/images/shake_img/2.png",
+          "/assets/images/shake_img/3.png",
+          "/assets/images/shake_img/4.png"
         ],
         "backgroundColor": "#1e293b",
         "variants": {
@@ -230,7 +238,9 @@
         "styling": {
           "hasVariants": true,
           "desktopHeightVH": 35,
-          "mobileHeightVW": 35
+          "mobileHeightVW": 35,
+          "paddingTop": 4,
+          "paddingBottom": 4
         },
         "heroTextSettings": {
           "fontFamily": "'Playfair Display', serif",

@@ -185,25 +185,25 @@ const HeroBlock = ({ config = {}, readOnly = false, onConfigChange, themeColors 
   );
 };
 
-// Static method for TopStickyEditPanel integration
-HeroBlock.tabsConfig = (config, onControlsChange, themeColors, sitePalette) => {
-  return {
-    images: () => (
+// Static method for BottomStickyEditPanel integration
+HeroBlock.tabsConfig = (config, onUpdate, themeColors) => ({
+  general: (props) => (
+    <div className="p-4 space-y-6 bg-gray-50 rounded-lg">
+      <h3 className="text-lg font-semibold mb-4 text-gray-700">General Settings</h3>
+      
       <PanelImagesController
         currentData={{ 
           images: config?.images || (config?.backgroundImage ? [config.backgroundImage] : [])
         }}
         onControlsChange={(updatedData) => {
           const images = updatedData.images || [];
-          onControlsChange({ ...config, images });
+          onUpdate({ ...config, images });
         }}
         imageArrayFieldName="images"
         getItemName={() => 'Hero Background Image'}
         maxImages={1}
       />
-    ),
-    
-    colors: () => (
+      
       <div className="p-4 space-y-4">
         <h3 className="text-lg font-semibold mb-4 text-gray-700">Color Settings</h3>
         
@@ -211,7 +211,7 @@ HeroBlock.tabsConfig = (config, onControlsChange, themeColors, sitePalette) => {
           label="Title Text Color"
           fieldName="titleTextColor"
           currentColorValue={config?.titleTextColor || '#FFFFFF'}
-          onColorChange={(fieldName, value) => onControlsChange({ ...config, [fieldName]: value })}
+          onColorChange={(fieldName, value) => onUpdate({ ...config, [fieldName]: value })}
           themeColors={themeColors}
         />
         
@@ -219,13 +219,11 @@ HeroBlock.tabsConfig = (config, onControlsChange, themeColors, sitePalette) => {
           label="Fallback Background Color"
           fieldName="fallbackBackgroundColor"
           currentColorValue={config?.fallbackBackgroundColor || '#333333'}
-          onColorChange={(fieldName, value) => onControlsChange({ ...config, [fieldName]: value })}
+          onColorChange={(fieldName, value) => onUpdate({ ...config, [fieldName]: value })}
           themeColors={themeColors}
         />
       </div>
-    ),
-    
-    styling: () => (
+      
       <div className="p-4 space-y-6">
         <h3 className="text-lg font-semibold mb-4 text-gray-700">Size & Animation Settings</h3>
         
@@ -234,7 +232,7 @@ HeroBlock.tabsConfig = (config, onControlsChange, themeColors, sitePalette) => {
           <h4 className="text-sm font-medium text-gray-700 mb-3">Block Height</h4>
           <PanelStylingController 
             currentData={config} 
-            onControlsChange={onControlsChange} 
+            onControlsChange={onUpdate} 
             blockType="HeroBlock"
             controlType="height"
           />
@@ -245,7 +243,7 @@ HeroBlock.tabsConfig = (config, onControlsChange, themeColors, sitePalette) => {
           <h4 className="text-sm font-medium text-gray-700 mb-3">Animation Settings</h4>
           <PanelStylingController 
             currentData={config} 
-            onControlsChange={onControlsChange} 
+            onControlsChange={onUpdate} 
             blockType="HeroBlock"
             controlType="animations"
           />
@@ -265,7 +263,7 @@ HeroBlock.tabsConfig = (config, onControlsChange, themeColors, sitePalette) => {
                 max="5000"
                 step="100"
                 value={config?.shrinkAfterMs || 1000}
-                onChange={(e) => onControlsChange({ ...config, shrinkAfterMs: parseInt(e.target.value) })}
+                onChange={(e) => onUpdate({ ...config, shrinkAfterMs: parseInt(e.target.value) })}
                 className="w-full"
               />
               <div className="flex justify-between text-xs text-gray-500">
@@ -277,8 +275,96 @@ HeroBlock.tabsConfig = (config, onControlsChange, themeColors, sitePalette) => {
           </div>
         )}
       </div>
-    )
-  };
-};
+    </div>
+  ),
+  images: () => (
+    <PanelImagesController
+      currentData={{ 
+        images: config?.images || (config?.backgroundImage ? [config.backgroundImage] : [])
+      }}
+      onControlsChange={(updatedData) => {
+        const images = updatedData.images || [];
+        onUpdate({ ...config, images });
+      }}
+      imageArrayFieldName="images"
+      getItemName={() => 'Hero Background Image'}
+      maxImages={1}
+    />
+  ),
+  colors: () => (
+    <div className="p-4 space-y-4">
+      <h3 className="text-lg font-semibold mb-4 text-gray-700">Color Settings</h3>
+      
+      <ThemeColorPicker
+        label="Title Text Color"
+        fieldName="titleTextColor"
+        currentColorValue={config?.titleTextColor || '#FFFFFF'}
+        onColorChange={(fieldName, value) => onUpdate({ ...config, [fieldName]: value })}
+        themeColors={themeColors}
+      />
+      
+      <ThemeColorPicker
+        label="Fallback Background Color"
+        fieldName="fallbackBackgroundColor"
+        currentColorValue={config?.fallbackBackgroundColor || '#333333'}
+        onColorChange={(fieldName, value) => onUpdate({ ...config, [fieldName]: value })}
+        themeColors={themeColors}
+      />
+    </div>
+  ),
+  styling: () => (
+    <div className="p-4 space-y-6">
+      <h3 className="text-lg font-semibold mb-4 text-gray-700">Size & Animation Settings</h3>
+      
+      {/* Height Controls */}
+      <div>
+        <h4 className="text-sm font-medium text-gray-700 mb-3">Block Height</h4>
+        <PanelStylingController 
+          currentData={config} 
+          onControlsChange={onUpdate} 
+          blockType="HeroBlock"
+          controlType="height"
+        />
+      </div>
+
+      {/* Animation Settings */}
+      <div>
+        <h4 className="text-sm font-medium text-gray-700 mb-3">Animation Settings</h4>
+        <PanelStylingController 
+          currentData={config} 
+          onControlsChange={onUpdate} 
+          blockType="HeroBlock"
+          controlType="animations"
+        />
+      </div>
+
+      {/* Shrink Animation Specific Settings */}
+      {config?.animations?.shrink && (
+        <div className="border-t border-gray-200 pt-4">
+          <h4 className="text-sm font-medium text-gray-700 mb-3">Shrink Animation Settings</h4>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Shrink Delay: {config?.shrinkAfterMs || 1000}ms
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="5000"
+              step="100"
+              value={config?.shrinkAfterMs || 1000}
+              onChange={(e) => onUpdate({ ...config, shrinkAfterMs: parseInt(e.target.value) })}
+              className="w-full"
+            />
+            <div className="flex justify-between text-xs text-gray-500">
+              <span>Instant</span>
+              <span>5 seconds</span>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Time before hero section shrinks</p>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+});
 
 export default HeroBlock;

@@ -205,12 +205,12 @@ const ThemeColorPicker = ({
             className={`${baseClasses} rounded-md flex items-center justify-center text-xs font-medium leading-none`}
             style={{ 
               color: currentColorValue,
-              backgroundColor: isColorDark(currentColorValue) ? '#f5f5f5' : '#1a1a1a'
+              backgroundColor: 'transparent'
             }}
             title="Click to open color picker"
           >
-            <span className="text-center">
-              ABC<br />abc
+            <span className="text-center text-lg font-bold">
+              ABC
             </span>
           </button>
         );
@@ -241,23 +241,24 @@ const ThemeColorPicker = ({
           {/* Render the appropriate display variant */}
           {renderDisplayVariant()}
           
-          {/* Hex input in the middle */}
-          <input
+          {/* Hex input in the middle - REMOVED */}
+          {/* <input
             type="text"
             value={hexInputValue}
             onChange={handleHexInputChange}
             onBlur={handleHexInputBlur}
             className="flex-1 px-3 py-2 text-sm bg-gray-700 border border-gray-600 rounded-l-md text-white focus:outline-none focus:border-blue-500"
             placeholder="#000000"
-          />
+          /> */}
           
           {/* More obvious dropdown button on the right */}
           <button
             type="button"
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="px-3 py-2 bg-blue-600 hover:bg-blue-700 border border-blue-600 border-l-0 rounded-r-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+            className="w-full px-3 py-2 bg-gray-700 hover:bg-gray-600 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors flex items-center justify-between"
             title="Choose from palette"
           >
+            <span className="text-sm font-mono">{currentColorValue}</span>
             <svg 
               className={`w-4 h-4 transform transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} 
               xmlns="http://www.w3.org/2000/svg" 
@@ -272,7 +273,7 @@ const ThemeColorPicker = ({
         {/* Dropdown menu with 4 columns */}
         {isDropdownOpen && paletteColors.length > 0 && (
           <div className="absolute z-50 mt-1 w-full bg-gray-800 border border-gray-600 rounded-md shadow-lg max-h-48 overflow-y-auto">
-            <div className="grid grid-cols-6 gap-2 p-3">
+            <div className="grid grid-cols-4 gap-2 p-3">
               {paletteColors.map((color) => (
                 <button
                   key={color.id || color.name}
@@ -289,7 +290,7 @@ const ThemeColorPicker = ({
                     style={{ backgroundColor: color.value }}
                   />
                   <span className="text-xs text-gray-300 mt-1 text-center truncate w-full">
-                    {color.value}
+                    {color.label}
                   </span>
                 </button>
               ))}

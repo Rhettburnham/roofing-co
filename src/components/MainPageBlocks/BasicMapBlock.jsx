@@ -90,9 +90,6 @@ const CustomMarkerIcon = (iconUrl) =>
 const DropMarker = memo(({ position, iconUrl }) => {
   const markerRef = useRef(null);
 
-  // Debug log for icon URL
-  console.log("Using marker icon:", iconUrl);
-
   useEffect(() => {
     if (markerRef.current) {
       gsap.from(markerRef.current.getElement(), {
@@ -973,163 +970,71 @@ function BasicMapBlock({
   onConfigChange,
   themeColors,
 }) {
-  // Add console log to debug incoming mapData
-  console.log("BasicMapBlock received mapData:", mapData);
-
-  const [localMapData, setLocalMapData] = useState(() => {
-    const initialConfig = mapData || {};
-    let centerArray = [34.0522, -118.2437]; // Default center
-    if (initialConfig.center) {
-      if (Array.isArray(initialConfig.center) && initialConfig.center.length === 2) {
-        centerArray = initialConfig.center;
-      } else if (typeof initialConfig.center === 'object' && initialConfig.center.lat !== undefined && initialConfig.center.lng !== undefined) {
-        centerArray = [initialConfig.center.lat, initialConfig.center.lng];
+  const [localData, setLocalData] = useState(
+    () =>
+      mapData || {
+        title: "",
+        center: { lat: 33.35, lng: -84.78 },
+        zoomLevel: 11,
+        circleRadius: 5047,
+        address: "",
+        mapHeightVH: 60,
+        mapHeightVW: 100,
+        markerIcon: initializeImageState(null, "/assets/images/hero/clipped.png"),
+        stats: [],
+        serviceHours: [],
+        styling: {
+          titleColor: "#000000",
+          addressColor: "#555555",
+          circleColor: "#ff0000",
+          statsTextColor: "#FFFFFF",
+          statCardBackgroundColor: "rgba(0, 0, 0, 0.5)",
+          serviceHoursBackgroundColor: "rgba(255, 255, 255, 0.8)",
+          serviceHoursTextColor: "#000000",
+          serviceHoursHighlightColor: "#ffc107",
+        },
+        textSettings: {
+          title: {},
+          address: {},
+          stats: {},
+          serviceHours: {},
+        },
       }
-    }
-
-    return {
-      title: initialConfig.title || "Are we in your area?",
-      center: centerArray,
-      zoomLevel: initialConfig.zoomLevel || 10,
-      circleRadius: initialConfig.circleRadius || 5000,
-      address: initialConfig.address || "123 Main St, Anytown, USA",
-      telephone: initialConfig.telephone || "(555) 123-4567",
-      serviceHours: (initialConfig.serviceHours || []).map(sh => ({ ...sh, id: sh.id || `sh_${Math.random().toString(36).substr(2, 5)}` })),
-      stats: (initialConfig.stats || []).map((st, idx) => ({ ...st, id: st.id || `stat_${idx}_${Date.now()}`, icon: st.icon || 'FaAward' })).slice(0,4),
-      markerIcon: initializeImageState(initialConfig.markerIcon, "/assets/images/hero/clipped.png"),
-      statsBackgroundImage: initializeImageState(initialConfig.statsBackgroundImage, "/assets/images/stats_background.jpg"),
-      bannerTextColor: initialConfig.bannerTextColor || '#FFFFFF',
-      bannerBackgroundColor: initialConfig.bannerBackgroundColor || '#1f2937',
-      statsTextColor: initialConfig.statsTextColor || '#FFFFFF',
-      showHoursButtonText: initialConfig.showHoursButtonText || "Show Hours",
-      hideHoursButtonText: initialConfig.hideHoursButtonText || "Hide Hours",
-      styling: initialConfig.styling || { desktopHeightVH: 30, mobileHeightVW: 40 },
-      statCardBackgroundColor: initialConfig.statCardBackgroundColor || 'rgba(255, 255, 255, 0.3)',
-      serviceHoursEvenRowBg: initialConfig.serviceHoursEvenRowBg || '#f9fafb',
-      serviceHoursOddRowBg: initialConfig.serviceHoursOddRowBg || '#ffffff',
-      serviceHoursTextColor: initialConfig.serviceHoursTextColor || '#1f2937',
-      windowStringColor1: initialConfig.windowStringColor1 || '#374151',
-      windowStringColor2: initialConfig.windowStringColor2 || '#1f2937',
-      titleTextSettings: initialConfig.titleTextSettings || {},
-      bannerTextSettings: initialConfig.bannerTextSettings || {},
-      statsTextSettings: initialConfig.statsTextSettings || {},
-      serviceHoursTextSettings: initialConfig.serviceHoursTextSettings || {},
-      buttonTextSettings: initialConfig.buttonTextSettings || {},
-    };
-  });
-
-  const prevReadOnlyRef = useRef(readOnly);
+  );
+  const [activeStatIndex, setActiveStatIndex] = useState(null);
   const [isIconModalOpen, setIsIconModalOpen] = useState(false);
-  const [editingStatIndexForIcon, setEditingStatIndexForIcon] = useState(null);
+  const prevMapDataRef = useRef();
+  const prevReadOnlyRef = useRef(readOnly);
 
   useEffect(() => {
-    if (mapData) {
-      setLocalMapData(prevLocal => {
-        const incomingData = { ...mapData }; // Clone mapData to safely modify
-
-        // Transform center if it's an object in incomingData and not an array
-        if (incomingData.center && typeof incomingData.center === 'object' && !Array.isArray(incomingData.center)) {
-            if (incomingData.center.lat !== undefined && incomingData.center.lng !== undefined) {
-                incomingData.center = [incomingData.center.lat, incomingData.center.lng];
-            } else {
-                // Malformed or incomplete center object, retain previous or default by deleting from incoming
-                // so prevLocal.center (which is an array) is used.
-                delete incomingData.center; 
-            }
-        } else if (Array.isArray(incomingData.center) && incomingData.center.length !== 2) {
-            // If it is an array but not a valid coordinate pair, remove it to use prevLocal.center
-             delete incomingData.center;
+    const newConfigString = JSON.stringify(mapData);
+    const oldConfigString = JSON.stringify(prevMapDataRef.current);
+  
+    if (newConfigString !== oldConfigString) {
+      prevMapDataRef.current = mapData;
+  
+      setLocalData((prevLocal) => {
+        const newLocal = { ...prevLocal, ...mapData };
+        if (mapData.markerIcon) {
+          newLocal.markerIcon = initializeImageState(mapData.markerIcon, "/assets/images/hero/clipped.png");
         }
-
-
-        const newMarkerIcon = initializeImageState(
-            incomingData.markerIcon, 
-            prevLocal.markerIcon?.originalUrl || "/assets/images/hero/clipped.png" // Use existing originalUrl or static default
-        );
-        const newStatsBg = initializeImageState(
-            incomingData.statsBackgroundImage, 
-            prevLocal.statsBackgroundImage?.originalUrl || "/assets/images/stats_background.jpg" // Use existing originalUrl or static default
-        );
-        
-        if (prevLocal.markerIcon?.file && prevLocal.markerIcon.url?.startsWith('blob:') && prevLocal.markerIcon.url !== newMarkerIcon.url) {
-            URL.revokeObjectURL(prevLocal.markerIcon.url);
-        }
-        if (prevLocal.statsBackgroundImage?.file && prevLocal.statsBackgroundImage.url?.startsWith('blob:') && prevLocal.statsBackgroundImage.url !== newStatsBg.url) {
-            URL.revokeObjectURL(prevLocal.statsBackgroundImage.url);
-        }
-
-        const newStatsList = (incomingData.stats || prevLocal.stats || []).map((statFromProp, index) => {
-          const localStat = prevLocal.stats?.find(s => s.id === statFromProp.id) || prevLocal.stats?.[index] || {};
-          const mergedStat = {
-            ...localStat,
-            ...statFromProp,
-            id: statFromProp.id || localStat.id || `stat_update_${index}_${Date.now()}`,
-            icon: statFromProp.icon || localStat.icon || 'FaAward',
-          };
-          // Prioritize local unsaved changes for value and title if they differ from incoming prop and are not empty
-          if (localStat.value !== statFromProp.value && localStat.value !== (statFromProp.value || "")) mergedStat.value = localStat.value;
-          else mergedStat.value = statFromProp.value || ""; // Default to prop or empty
-          
-          if (localStat.title !== statFromProp.title && localStat.title !== (statFromProp.title || "")) mergedStat.title = localStat.title;
-          else mergedStat.title = statFromProp.title || ""; // Default to prop or empty
-          return mergedStat;
-        }).slice(0,4);
-
-        return {
-          ...prevLocal, // Start with previous local state
-          ...incomingData, // Spread potentially modified incomingData (center is now an array or deleted)
-          // Explicitly set fields that need careful merging or transformation
-          title: (prevLocal.title !== incomingData.title && prevLocal.title !== (incomingData.title || "Are we in your area?")) ? prevLocal.title : incomingData.title || "Are we in your area?",
-          address: (prevLocal.address !== incomingData.address && prevLocal.address !== (incomingData.address || "")) ? prevLocal.address : incomingData.address || "",
-          telephone: (prevLocal.telephone !== incomingData.telephone && prevLocal.telephone !== (incomingData.telephone || "")) ? prevLocal.telephone : incomingData.telephone || "",
-          stats: newStatsList,
-          serviceHours: (incomingData.serviceHours || prevLocal.serviceHours || []).map(sh => ({ ...sh, id: sh.id || `sh_${Math.random().toString(36).substr(2, 5)}` })),
-          markerIcon: newMarkerIcon,
-          statsBackgroundImage: newStatsBg,
-          bannerTextColor: incomingData.bannerTextColor !== undefined ? incomingData.bannerTextColor : prevLocal.bannerTextColor,
-          bannerBackgroundColor: incomingData.bannerBackgroundColor !== undefined ? incomingData.bannerBackgroundColor : prevLocal.bannerBackgroundColor,
-          statsTextColor: incomingData.statsTextColor !== undefined ? incomingData.statsTextColor : prevLocal.statsTextColor,
-          showHoursButtonText: incomingData.showHoursButtonText !== undefined ? incomingData.showHoursButtonText : prevLocal.showHoursButtonText,
-          hideHoursButtonText: incomingData.hideHoursButtonText !== undefined ? incomingData.hideHoursButtonText : prevLocal.hideHoursButtonText,
-          styling: incomingData.styling || prevLocal.styling,
-          statCardBackgroundColor: incomingData.statCardBackgroundColor !== undefined ? incomingData.statCardBackgroundColor : prevLocal.statCardBackgroundColor,
-          serviceHoursEvenRowBg: incomingData.serviceHoursEvenRowBg !== undefined ? incomingData.serviceHoursEvenRowBg : prevLocal.serviceHoursEvenRowBg,
-          serviceHoursOddRowBg: incomingData.serviceHoursOddRowBg !== undefined ? incomingData.serviceHoursOddRowBg : prevLocal.serviceHoursOddRowBg,
-          serviceHoursTextColor: incomingData.serviceHoursTextColor !== undefined ? incomingData.serviceHoursTextColor : prevLocal.serviceHoursTextColor,
-          windowStringColor1: incomingData.windowStringColor1 !== undefined ? incomingData.windowStringColor1 : prevLocal.windowStringColor1,
-          windowStringColor2: incomingData.windowStringColor2 !== undefined ? incomingData.windowStringColor2 : prevLocal.windowStringColor2,
-          titleTextSettings: incomingData.titleTextSettings || prevLocal.titleTextSettings,
-          bannerTextSettings: incomingData.bannerTextSettings || prevLocal.bannerTextSettings,
-          statsTextSettings: incomingData.statsTextSettings || prevLocal.statsTextSettings,
-          serviceHoursTextSettings: incomingData.serviceHoursTextSettings || prevLocal.serviceHoursTextSettings,
-          buttonTextSettings: incomingData.buttonTextSettings || prevLocal.buttonTextSettings,
-        };
+        return newLocal;
       });
     }
   }, [mapData]);
 
   useEffect(() => {
-    return () => {
-      // No file objects directly in localMapData for these anymore, so revocation logic for markerIcon/statsBg is not needed here.
-      // If initializeImageState was changed to ONLY store URLs, this is fine.
-      // If it CAN still store blobs (e.g. from an old config load), we might need to check localMapData.markerIcon.file etc.
-      // For now, assuming initializeImageState in the main component will handle blobs if they come from 'mapData' prop only briefly.
-    };
-  }, []); // Removed dependencies localMapData.markerIcon, localMapData.statsBackgroundImage as they are now string URLs
-
-  useEffect(() => {
     if (prevReadOnlyRef.current === false && readOnly === true) {
       if (onConfigChange) {
         console.log("BasicMapBlock: Editing finished. Calling onConfigChange.");
-        // No need to check for .file for markerIcon/statsBackgroundImage as they are expected to be URLs/names
-        onConfigChange(localMapData);
+        onConfigChange(localData);
       }
     }
     prevReadOnlyRef.current = readOnly;
-  }, [readOnly, localMapData, onConfigChange]);
+  }, [readOnly, localData, onConfigChange]);
 
   const handleLocalDataChange = (updater) => {
-    setLocalMapData(prevState => {
+    setLocalData(prevState => {
       const newState = typeof updater === 'function' ? updater(prevState) : { ...prevState, ...updater };
       if (newState.stats && newState.stats.length > 4) newState.stats = newState.stats.slice(0, 4);
       
@@ -1143,22 +1048,22 @@ function BasicMapBlock({
 
   const handleStatIconEditClick = (statIndex) => {
     if (readOnly) return;
-    setEditingStatIndexForIcon(statIndex);
+    setActiveStatIndex(statIndex);
     setIsIconModalOpen(true);
   };
 
   const handleIconSelectionForStat = (pack, iconName) => {
-    if (editingStatIndexForIcon !== null) {
+    if (activeStatIndex !== null) {
         handleLocalDataChange(prev => {
             const newStats = [...(prev.stats || [])];
-            if (newStats[editingStatIndexForIcon]) {
-                newStats[editingStatIndexForIcon] = { ...newStats[editingStatIndexForIcon], icon: iconName };
+            if (newStats[activeStatIndex]) {
+                newStats[activeStatIndex] = { ...newStats[activeStatIndex], icon: iconName };
             }
             return { ...prev, stats: newStats };
         });
     }
     setIsIconModalOpen(false);
-    setEditingStatIndexForIcon(null);
+    setActiveStatIndex(null);
   };
 
   const handleInlineChange = (field, value) => {
@@ -1178,23 +1083,19 @@ function BasicMapBlock({
   };
 
   const handleStatTextChange = (index, field, value) => {
-    handleLocalDataChange(prev => {
-      const currentStats = prev.stats || [];
-      const newStats = [...currentStats];
-      while(newStats.length <= index && index < 4) newStats.push({ id: `stat_new_${newStats.length}`, icon: 'FaAward', value: '', title: '' });
-      if (newStats[index]) newStats[index] = { ...newStats[index], [field]: value };
-      return { ...prev, stats: newStats.slice(0,4) }; 
-    });
+    const updatedStats = [...localData.stats];
+    updatedStats[index] = { ...updatedStats[index], [field]: value };
+    handleLocalDataChange({ stats: updatedStats });
   };
   
   if (readOnly) {
-    return <BasicMapPreview mapData={localMapData} readOnly={true} />;
+    return <BasicMapPreview mapData={localData} readOnly={true} />;
   }
   
   return (
     <>
       <BasicMapPreview 
-        mapData={localMapData} 
+        mapData={localData} 
         readOnly={false}
         onInlineChange={handleInlineChange}
         onStatTextChange={handleStatTextChange}
@@ -1204,9 +1105,12 @@ function BasicMapBlock({
       <IconSelectorModal
         isOpen={isIconModalOpen}
         onClose={() => setIsIconModalOpen(false)}
-        onIconSelect={handleIconSelectionForStat}
-        currentIconPack="fa" 
-        currentIconName={editingStatIndexForIcon !== null && localMapData.stats && localMapData.stats[editingStatIndexForIcon] ? localMapData.stats[editingStatIndexForIcon].icon : null}
+        onSelectIcon={handleIconSelectionForStat}
+        currentIcon={
+          activeStatIndex !== null && localData.stats[activeStatIndex]
+            ? localData.stats[activeStatIndex].icon
+            : "FaAward"
+        }
       />
     </>
   );
@@ -1218,6 +1122,7 @@ BasicMapBlock.propTypes = {
   onConfigChange: PropTypes.func,
   themeColors: PropTypes.object,
 };
+
 // BasicMapImagesController for handling map images
 const BasicMapImagesController = ({ currentData, onControlsChange }) => {
   const handleImageFileChange = (field, file) => {
@@ -1359,4 +1264,6 @@ BasicMapBlock.tabsConfig = (localData, onControlsChange, themeColors) => {
   );
 
   return tabs;
-}; export default BasicMapBlock;
+};
+
+export default BasicMapBlock;

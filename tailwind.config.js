@@ -58,6 +58,25 @@ module.exports = {
           200: "#afafaf",
           300: "#42424570",
         },
+        "custom-blue": "#007BFF",
+        "custom-gray": "#F8F9FA",
+        "brand-charcoal": "#333333",
+        "brand-red": "#FF0000",
+      },
+      animation: {
+        'pulse-glow': 'pulseGlow 2.5s ease-in-out infinite',
+      },
+      keyframes: {
+        pulseGlow: {
+          '0%, 100%': {
+            boxShadow: '0 0 10px 2px rgba(59, 130, 246, 0.5)',
+            opacity: 0.8,
+          },
+          '50%': {
+            boxShadow: '0 0 20px 8px rgba(59, 130, 246, 0.8)',
+            opacity: 1,
+          },
+        },
       },
     },
   },

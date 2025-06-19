@@ -109,9 +109,6 @@ function EmployeesPreview({
     nameTextSettings,
     roleTextSettings,
   } = employeesData || {};
-  console.log(
-    `[EmployeesPreview] Instance created/re-rendered. Initial showNailAnimation prop from employeesData: ${showNailAnimation}`
-  );
 
   const formattedEmployees = employeesListOriginal.map((emp) => ({
     ...emp,
@@ -156,10 +153,6 @@ function EmployeesPreview({
     const text = textRef.current;
     const header = headerRef.current;
 
-    console.log(
-      `[EmployeesPreview GSAP Effect] Running. showNailAnimation: ${showNailAnimation}`
-    );
-
     ScrollTrigger.getAll().forEach((st) => {
       if (
         st.trigger === header &&
@@ -187,21 +180,12 @@ function EmployeesPreview({
         .to(nail, { x: "10vw", duration: 0.8, ease: "power2.out" })
         .to(nail, { x: "1vw", duration: 0.6, ease: "power2.inOut" }, "+=0.5")
         .to(text, { x: "-50%", duration: 0.6, ease: "power2.inOut" }, "<");
-      console.log(
-        "[EmployeesPreview GSAP Effect] Applied nail animation timeline."
-      );
     } else {
       gsap.set(nail, { opacity: 0 });
       gsap.set(text, { x: "-50%", opacity: 1 });
-      console.log(
-        "[EmployeesPreview GSAP Effect] Set nail opacity to 0 and text position because showNailAnimation is false."
-      );
     }
 
     return () => {
-      console.log(
-        `[EmployeesPreview GSAP Effect] Cleanup. showNailAnimation was: ${showNailAnimation}`
-      );
       ScrollTrigger.getAll().forEach((st) => {
         if (
           st.trigger === header &&
@@ -383,119 +367,54 @@ export default function EmployeesBlock({
 }) {
   const [localData, setLocalData] = useState(() => {
     const initialConfig = employeesData || {};
-    const initialShowNailAnimation =
-      initialConfig.showNailAnimation !== undefined
-        ? initialConfig.showNailAnimation
-        : true;
-    console.log(
-      `[EmployeesBlock useState init] initialConfig.showNailAnimation: ${initialConfig.showNailAnimation}, Resolved to: ${initialShowNailAnimation}`
-    );
+    const initialShowNailAnimation = initialConfig.showNailAnimation !== undefined ? initialConfig.showNailAnimation : true;
     return {
       sectionTitle: initialConfig.sectionTitle || "OUR TEAM",
       showNailAnimation: initialShowNailAnimation,
-      cardBackgroundColor: initialConfig.cardBackgroundColor || "#FFFFFF",
-      cardTextColor: initialConfig.cardTextColor || "#000000",
       employee: (initialConfig.employee || []).map((emp, index) => ({
         ...emp,
-        id: emp.id || `emp_init_${index}_${Date.now()}`,
+        id: emp.id || `emp_${index}_${Date.now()}`,
         image: initializeEmployeeImageState(emp.image),
       })),
-      sectionTitleTextSettings: initialConfig.sectionTitleTextSettings || {},
-      nameTextSettings: initialConfig.nameTextSettings || {},
-      roleTextSettings: initialConfig.roleTextSettings || {},
+      cardBackgroundColor: initialConfig.cardBackgroundColor || '#FFFFFF',
+      cardTextColor: initialConfig.cardTextColor || '#000000',
+      sectionTitleTextSettings: initialConfig.sectionTitleTextSettings,
+      nameTextSettings: initialConfig.nameTextSettings,
+      roleTextSettings: initialConfig.roleTextSettings,
+      styling: {
+        desktopHeightVH: initialConfig.styling?.desktopHeightVH || 40,
+        mobileHeightVW: initialConfig.styling?.mobileHeightVW || 60,
+      },
     };
   });
-
+  const prevEmployeesDataRef = useRef();
   const prevReadOnlyRef = useRef(readOnly);
 
   useEffect(() => {
-    if (employeesData) {
-      setLocalData((prevLocalData) => {
-        const defaultTitle = "OUR TEAM";
-
-        const resolvedSectionTitle =
-          prevLocalData.sectionTitle !== undefined &&
-          prevLocalData.sectionTitle !==
-            (employeesData.sectionTitle || defaultTitle) &&
-          prevLocalData.sectionTitle !== defaultTitle
-            ? prevLocalData.sectionTitle
-            : employeesData.sectionTitle || defaultTitle;
-
-        const newEmployeeList = (employeesData.employee || []).map(
-          (newEmpFromProp, index) => {
-            const oldEmpFromLocal = prevLocalData.employee?.find(
-              (pe) => pe.id === newEmpFromProp.id
-            ) ||
-              prevLocalData.employee?.[index] || {
-                name: "",
-                role: "",
-                image: initializeEmployeeImageState(null),
-                id: `emp_fallback_${index}_${Date.now()}`,
-              };
-
-            const newImageState = initializeEmployeeImageState(
-              newEmpFromProp.image,
-              oldEmpFromLocal.image?.originalUrl || oldEmpFromLocal.image?.url
-            );
-
-            if (
-              oldEmpFromLocal.image?.file &&
-              oldEmpFromLocal.image.url?.startsWith("blob:") &&
-              (oldEmpFromLocal.image.url !== newImageState.url ||
-                (newImageState.url && !newImageState.url.startsWith("blob:")))
-            ) {
-              URL.revokeObjectURL(oldEmpFromLocal.image.url);
-            }
-
-            const resolvedName =
-              oldEmpFromLocal.name !== undefined &&
-              oldEmpFromLocal.name !== (newEmpFromProp.name || "") &&
-              oldEmpFromLocal.name !== ""
-                ? oldEmpFromLocal.name
-                : newEmpFromProp.name || "";
-
-            const resolvedRole =
-              oldEmpFromLocal.role !== undefined &&
-              oldEmpFromLocal.role !== (newEmpFromProp.role || "") &&
-              oldEmpFromLocal.role !== ""
-                ? oldEmpFromLocal.role
-                : newEmpFromProp.role || "";
-
-            return {
-              ...newEmpFromProp,
-              id: newEmpFromProp.id || oldEmpFromLocal.id,
-              image: newImageState,
-              name: resolvedName,
-              role: resolvedRole,
-            };
+    const newConfigString = JSON.stringify(employeesData);
+    const oldConfigString = JSON.stringify(prevEmployeesDataRef.current);
+    if (newConfigString !== oldConfigString) {
+      prevEmployeesDataRef.current = employeesData;
+      setLocalData(prevLocal => {
+        const updatedShowNail = employeesData.showNailAnimation !== undefined ? employeesData.showNailAnimation : prevLocal.showNailAnimation;
+        const updatedItems = (employeesData.employee || []).map((propItem, index) => {
+          const localItem = prevLocal.employee.find(li => li.id === propItem.id) || prevLocal.employee[index] || {};
+          const newImageState = initializeEmployeeImageState(propItem.image, localItem.image?.originalUrl);
+          if (localItem.image?.file && localItem.image.url?.startsWith('blob:') && newImageState.url !== localItem.image.url) {
+            URL.revokeObjectURL(localItem.image.url);
           }
-        );
-
-        const resolvedShowNailAnimation =
-          employeesData.showNailAnimation !== undefined
-            ? employeesData.showNailAnimation
-            : prevLocalData.showNailAnimation !== undefined
-              ? prevLocalData.showNailAnimation
-              : true;
+          return {
+            ...localItem,
+            ...propItem,
+            id: propItem.id || localItem.id || `emp_sync_${index}_${Date.now()}`,
+            image: newImageState,
+          };
+        });
         return {
-          sectionTitle: resolvedSectionTitle,
-          employee: newEmployeeList,
-          showNailAnimation: resolvedShowNailAnimation,
-          cardBackgroundColor:
-            employeesData.cardBackgroundColor !== undefined
-              ? employeesData.cardBackgroundColor
-              : prevLocalData.cardBackgroundColor !== undefined
-                ? prevLocalData.cardBackgroundColor
-                : "#FFFFFF",
-          cardTextColor:
-            employeesData.cardTextColor !== undefined
-              ? employeesData.cardTextColor
-              : prevLocalData.cardTextColor !== undefined
-                ? prevLocalData.cardTextColor
-                : "#000000",
-          sectionTitleTextSettings: employeesData.sectionTitleTextSettings || prevLocalData.sectionTitleTextSettings,
-          nameTextSettings: employeesData.nameTextSettings || prevLocalData.nameTextSettings,
-          roleTextSettings: employeesData.roleTextSettings || prevLocalData.roleTextSettings,
+          ...prevLocal,
+          ...employeesData,
+          showNailAnimation: updatedShowNail,
+          employee: updatedItems,
         };
       });
     }
@@ -503,8 +422,8 @@ export default function EmployeesBlock({
 
   useEffect(() => {
     return () => {
-      localData.employee?.forEach((emp) => {
-        if (emp.image?.file && emp.image.url?.startsWith("blob:")) {
+      localData.employee.forEach((emp) => {
+        if (emp.image && emp.image.url && emp.image.url.startsWith("blob:")) {
           URL.revokeObjectURL(emp.image.url);
         }
       });
@@ -514,66 +433,15 @@ export default function EmployeesBlock({
   useEffect(() => {
     if (prevReadOnlyRef.current === false && readOnly === true) {
       if (onConfigChange) {
-        console.log(
-          "[EmployeesBlock onConfigChange Effect] Editing finished. Calling onConfigChange."
-        );
         const dataToSave = {
           ...localData,
-          employee: localData.employee.map((emp) => {
-            const imageState = emp.image;
-            let imageForSave = {};
-            if (imageState?.file instanceof File) {
-              // If a new file is uploaded, include the file and its originalUrl (which should be its intended final path)
-              imageForSave = {
-                file: imageState.file,
-                url: imageState.url, // blob url for preview, not directly used in final JSON usually
-                name: imageState.name,
-                originalUrl: imageState.originalUrl, // This should be the target path
-              };
-            } else if (imageState?.originalUrl) {
-              // If no new file, but originalUrl exists (meaning it was an existing image)
-              imageForSave = {
-                url: imageState.originalUrl,
-                name: imageState.name,
-                originalUrl: imageState.originalUrl,
-              };
-            } else if (imageState?.url && !imageState.url.startsWith("blob:")) {
-              // Fallback if originalUrl is missing but url is a valid path
-              imageForSave = {
-                url: imageState.url,
-                name: imageState.name,
-                originalUrl: imageState.url,
-              };
-            } else {
-              // Fallback for placeholder or error
-              imageForSave = {
-                url: "/assets/images/team/roofer.png",
-                name: "roofer.png",
-                originalUrl: "/assets/images/team/roofer.png",
-              };
-            }
-            return {
-              ...emp,
-              image: imageForSave,
-            };
-          }),
-          showNailAnimation: localData.showNailAnimation,
-          cardBackgroundColor: localData.cardBackgroundColor,
-          cardTextColor: localData.cardTextColor,
-          sectionTitleTextSettings: localData.sectionTitleTextSettings,
-          nameTextSettings: localData.nameTextSettings,
-          roleTextSettings: localData.roleTextSettings,
+          employee: localData.employee.map(emp => ({
+            ...emp,
+            image: emp.image.file
+              ? { file: emp.image.file, url: emp.image.url, name: emp.image.name, originalUrl: emp.image.originalUrl }
+              : { url: emp.image.originalUrl || emp.image.url, name: emp.image.name, originalUrl: emp.image.originalUrl },
+          })),
         };
-        console.log(
-          "[EmployeesBlock onConfigChange Effect] dataToSave:",
-          JSON.parse(
-            JSON.stringify(dataToSave, (k, v) =>
-              v instanceof File
-                ? { name: v.name, type: v.type, size: v.size }
-                : v
-            )
-          )
-        );
         onConfigChange(dataToSave);
       }
     }
@@ -586,67 +454,16 @@ export default function EmployeesBlock({
         typeof updater === "function"
           ? updater(prevState)
           : { ...prevState, ...updater };
-      console.log(
-        "[EmployeesBlock handleLocalDataChange] prevState.showNailAnimation:",
-        prevState.showNailAnimation,
-        "newState.showNailAnimation:",
-        newState.showNailAnimation
-      );
-
-      // Live update for non-readOnly mode
-      if (!readOnly && typeof onConfigChange === "function") {
-        const dataToSave = {
-          ...newState,
-          employee: newState.employee.map((emp) => {
-            const imageState = emp.image;
-            let imageForSave = {};
-            if (imageState?.file instanceof File) {
-              imageForSave = {
-                file: imageState.file,
-                url: imageState.url,
-                name: imageState.name,
-                originalUrl: imageState.originalUrl,
-              };
-            } else if (imageState?.originalUrl) {
-              imageForSave = {
-                url: imageState.originalUrl,
-                name: imageState.name,
-                originalUrl: imageState.originalUrl,
-              };
-            } else if (imageState?.url && !imageState.url.startsWith("blob:")) {
-              imageForSave = {
-                url: imageState.url,
-                name: imageState.name,
-                originalUrl: imageState.url,
-              };
-            } else {
-              imageForSave = {
-                url: "/assets/images/team/roofer.png",
-                name: "roofer.png",
-                originalUrl: "/assets/images/team/roofer.png",
-              };
-            }
-            return {
-              ...emp,
-              image: imageForSave,
-            };
-          }),
-          showNailAnimation: newState.showNailAnimation,
-          cardBackgroundColor: newState.cardBackgroundColor,
-          cardTextColor: newState.cardTextColor,
-          sectionTitleTextSettings: newState.sectionTitleTextSettings,
-          nameTextSettings: newState.nameTextSettings,
-          roleTextSettings: newState.roleTextSettings,
-        };
-        onConfigChange(dataToSave);
-      }
-
       return newState;
     });
   };
 
+  const handleImagesChange = (newEmployeeArray) => {
+    handleLocalDataChange((prev) => ({ ...prev, employee: newEmployeeArray }));
+  };
+
   const handleSectionTitleChange = (newTitle) => {
-    handleLocalDataChange((prev) => ({ ...prev, sectionTitle: newTitle }));
+    handleLocalDataChange({ sectionTitle: newTitle });
   };
 
   const handleEmployeeDetailChange = (index, field, value) => {
@@ -660,6 +477,10 @@ export default function EmployeesBlock({
       }
       return { ...prev, employee: updatedEmployees };
     });
+  };
+
+  const handleStylingChange = (newStyling) => {
+    handleLocalDataChange({ styling: { ...localData.styling, ...newStyling } });
   };
 
   if (readOnly) {
@@ -709,46 +530,59 @@ const EmployeesFontsControls = ({ currentData, onControlsChange, themeColors }) 
   );
 };
 
-// Expose tabsConfig for TopStickyEditPanel
-EmployeesBlock.tabsConfig = (
-  blockCurrentData,
-  onControlsChange,
-  themeColors
-) => {
-  return {
-    fonts: (props) => (
+// Expose tabsConfig for BottomStickyEditPanel
+EmployeesBlock.tabsConfig = (blockData, onUpdate, themeColors) => ({
+  general: (props) => (
+    <div className="p-4 space-y-4">
       <EmployeesFontsControls
         {...props}
-        currentData={blockCurrentData}
-        onControlsChange={onControlsChange}
+        currentData={blockData}
+        onControlsChange={onUpdate}
         themeColors={themeColors}
       />
-    ),
-    images: (props) => (
       <EmployeesImagesControls
         {...props}
-        currentData={blockCurrentData}
-        onControlsChange={onControlsChange}
+        currentData={blockData}
+        onControlsChange={onUpdate}
         themeColors={themeColors}
       />
-    ),
-    colors: (props) => (
       <EmployeesColorControls
         {...props}
-        currentData={blockCurrentData}
-        onControlsChange={onControlsChange}
+        currentData={blockData}
+        onControlsChange={onUpdate}
         themeColors={themeColors}
       />
-    ),
-    styling: (props) => (
       <EmployeesStylingControls
         {...props}
-        currentData={blockCurrentData}
-        onControlsChange={onControlsChange}
+        currentData={blockData}
+        onControlsChange={onUpdate}
       />
-    ),
-  };
-};
+    </div>
+  ),
+  images: (props) => (
+    <EmployeesImagesControls
+      {...props}
+      currentData={blockData}
+      onControlsChange={onUpdate}
+      themeColors={themeColors}
+    />
+  ),
+  colors: (props) => (
+    <EmployeesColorControls
+      {...props}
+      currentData={blockData}
+      onControlsChange={onUpdate}
+      themeColors={themeColors}
+    />
+  ),
+  styling: (props) => (
+    <EmployeesStylingControls
+      {...props}
+      currentData={blockData}
+      onControlsChange={onUpdate}
+    />
+  ),
+});
 
 /* ==============================================
    EMPLOYEES IMAGES CONTROLS

@@ -967,31 +967,50 @@ const handleUrlChangeHelper = (urlValue, currentValue) => {
 // Export EditorPanel for potential external usage (matching BeforeAfterBlock pattern)
 AboutBlock.EditorPanel = AboutPreview;
 
-// Expose tabsConfig for TopStickyEditPanel
-AboutBlock.tabsConfig = (blockCurrentData, onControlsChange, themeColors) => {
-  return {
-    images: (props) => (
-      <AboutImagesControls 
-        {...props} 
-        currentData={blockCurrentData}
-        onControlsChange={onControlsChange}
+// Expose tabsConfig for BottomStickyEditPanel
+AboutBlock.tabsConfig = (blockData, onUpdate, themeColors) => ({
+  general: (props) => (
+    <div className="p-4 space-y-4">
+      <AboutImagesControls
+        {...props}
+        currentData={blockData}
+        onControlsChange={onUpdate}
         themeColors={themeColors}
       />
-    ),
-    colors: (props) => (
-      <AboutColorControls 
-        {...props} 
-        currentData={blockCurrentData}
-        onControlsChange={onControlsChange}
-        themeColors={themeColors} 
+      <AboutColorControls
+        {...props}
+        currentData={blockData}
+        onControlsChange={onUpdate}
+        themeColors={themeColors}
       />
-    ),
-    styling: (props) => (
       <AboutStylingControls
         {...props}
-        currentData={blockCurrentData}
-        onControlsChange={onControlsChange}
+        currentData={blockData}
+        onControlsChange={onUpdate}
       />
-    ),
-  };
-};
+    </div>
+  ),
+  images: (props) => (
+    <AboutImagesControls 
+      {...props} 
+      currentData={blockData}
+      onControlsChange={onUpdate}
+      themeColors={themeColors}
+    />
+  ),
+  colors: (props) => (
+    <AboutColorControls 
+      {...props} 
+      currentData={blockData}
+      onControlsChange={onUpdate}
+      themeColors={themeColors} 
+    />
+  ),
+  styling: (props) => (
+    <AboutStylingControls
+      {...props}
+      currentData={blockData}
+      onControlsChange={onUpdate}
+    />
+  ),
+});

@@ -983,7 +983,7 @@ TestimonialBlock.propTypes = {
   themeColors: PropTypes.object,
 };
 
-// Tab configuration for TopStickyEditPanel
+// Tab configuration for BottomStickyEditPanel
 TestimonialBlock.tabsConfig = (currentData, onControlsChange, themeColors, sitePalette) => {
   const tabs = {};
 

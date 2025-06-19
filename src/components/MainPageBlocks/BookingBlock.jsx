@@ -2646,83 +2646,30 @@ BookingBlock.propTypes = {
   variant: PropTypes.oneOf(["nail", "modern", "creative"]),
 };
 
-// Tab configuration for TopStickyEditPanel
-BookingBlock.tabsConfig = (
-  currentData,
-  onControlsChange,
-  themeColors,
-  sitePalette
-) => {
-  const tabs = {};
-
-  // General Tab
-  tabs.general = (props) => (
-    <BookingGeneralControls
-      {...props}
-      currentData={currentData}
-      onControlsChange={onControlsChange}
-    />
-  );
-
-  const activeVariant = currentData.variant || 'nail';
-
-  if (activeVariant === 'modern') {
-    tabs['Variant Settings'] = (props) => (
-      <ModernVariantControls
-        {...props}
-        currentData={currentData}
-        onControlsChange={onControlsChange}
-      />
-    );
-  } else if (activeVariant === 'creative') {
-    tabs['Variant Settings'] = (props) => (
-      <CreativeVariantControls
-        {...props}
-        currentData={currentData}
-        onControlsChange={onControlsChange}
-        themeColors={themeColors}
-      />
-    );
-  }
-
-  // Fonts Tab
-  tabs.fonts = (props) => (
-    <BookingFontsControls
-      {...props}
-      currentData={currentData}
-      onControlsChange={onControlsChange}
-      themeColors={themeColors}
-    />
-  );
-
-  // Images Tab
-  tabs.images = (props) => (
-    <BookingImagesControls
-      {...props}
-      currentData={currentData}
-      onControlsChange={onControlsChange}
-      themeColors={themeColors}
-    />
-  );
-
-  // Colors Tab
-  tabs.colors = (props) => (
-    <BookingColorControls
-      {...props}
-      currentData={currentData}
-      onControlsChange={onControlsChange}
-      themeColors={themeColors}
-    />
-  );
-
-  // Styling Tab
-  tabs.styling = (props) => (
-    <BookingStylingControls
-      {...props}
-      currentData={currentData}
-      onControlsChange={onControlsChange}
-    />
-  );
-
-  return tabs;
-};
+// Tab configuration for BottomStickyEditPanel
+BookingBlock.tabsConfig = (blockData, onUpdate, themeColors) => ({
+  general: (props) => (
+    <BookingGeneralControls {...props} onUpdate={onUpdate} />
+  ),
+  fonts: (props) => (
+    <BookingFontsControls {...props} themeColors={themeColors} />
+  ),
+  images: (props) => (
+    <BookingImagesControls {...props} themeColors={themeColors} />
+  ),
+  colors: (props) => (
+    <BookingColorControls {...props} themeColors={themeColors} />
+  ),
+  styling: (props) => (
+    <BookingStylingControls {...props} />
+  ),
+  'Variant Settings': (props) => {
+    const activeVariant = blockData.variant || 'nail';
+    if (activeVariant === 'modern') {
+      return <ModernVariantControls {...props} />;
+    } else if (activeVariant === 'creative') {
+      return <CreativeVariantControls {...props} themeColors={themeColors} />;
+    }
+    return null;
+  },
+});

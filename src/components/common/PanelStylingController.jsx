@@ -549,357 +549,122 @@ const ShadowVariantPreview = ({ variant, isSelected, onClick }) => {
 const PanelStylingController = ({
   currentData,
   onControlsChange,
-  blockType = "BookingBlock",
+  blockType,
   controlType,
-  animationDurationOptions = null,
-  buttonSizeOptions = null,
+  animationDurationOptions,
+  buttonSizeOptions,
 }) => {
-  const initialStyling = currentData.styling || {};
-  const [activeMode, setActiveMode] = useState("laptop"); // 'laptop' or 'mobile'
+  const handleStylingChange = (field, value) => {
+    const numericValue =
+      typeof value === 'string' &&
+      (field.includes('Height') ||
+        field.includes('Duration') ||
+        field.toLowerCase().includes('padding'))
+        ? parseFloat(value)
+        : value;
 
-  const getAnimationDurationRanges = () => {
-    return animationDurationOptions || { min: 10, max: 200, default: 40 };
-  };
-
-  const getButtonSizeOptions = () => {
-    return (
-      buttonSizeOptions || [
-        { value: "small", label: "Small", description: "Compact button size" },
-        {
-          value: "medium",
-          label: "Medium",
-          description: "Standard button size",
-        },
-        {
-          value: "large",
-          label: "Large",
-          description: "Prominent button size",
-        },
-        {
-          value: "extra-large",
-          label: "Extra Large",
-          description: "Maximum impact button",
-        },
-      ]
-    );
-  };
-
-  const animationRanges = getAnimationDurationRanges();
-  const buttonSizes = getButtonSizeOptions();
-
-  const [animationDuration, setAnimationDuration] = useState(
-    Math.max(
-      animationRanges.min,
-      Math.min(
-        animationRanges.max,
-        parseFloat(
-          currentData.slideDuration || currentData.styling?.slideDuration
-        ) || animationRanges.default
-      )
-    )
-  );
-  const [buttonSize, setButtonSize] = useState(
-    currentData.buttonSize || currentData.styling?.buttonSize || "medium"
-  );
-
-  // Check if this component supports variants from the styling object
-  const hasVariants = currentData.styling?.hasVariants === true;
-
-  // DEBUG: Log variant support detection
-  console.log("[PanelStylingController] DEBUG: Variant support check:", {
-    blockType,
-    currentDataStyling: currentData.styling,
-    hasVariants: hasVariants,
-    currentVariant: currentData.variant,
-  });
-
-  const getDefaultVariant = (blockType) => {
-    switch (blockType) {
-      case "BookingBlock":
-        return "nail";
-      case "RichTextBlock":
-        return "classic";
-      default:
-        return "default";
-    }
-  };
-  const currentVariant = currentData.variant || getDefaultVariant(blockType);
-
-  useEffect(() => {
-    const newStyling = currentData.styling || {};
-    const animRanges = getAnimationDurationRanges();
-
-    setAnimationDuration(
-      Math.max(
-        animRanges.min,
-        Math.min(
-          animRanges.max,
-          parseFloat(
-            currentData.slideDuration || currentData.styling?.slideDuration
-          ) || animRanges.default
-        )
-      )
-    );
-    setButtonSize(
-      currentData.buttonSize || currentData.styling?.buttonSize || "medium"
-    );
-  }, [
-    currentData.styling,
-    currentData.slideDuration,
-    currentData.buttonSize,
-    blockType,
-    animationDurationOptions,
-  ]);
-
-  const handleButtonSizeChange = (newSize) => {
-    setButtonSize(newSize);
     onControlsChange({
-      ...initialStyling,
-      buttonSize: newSize,
-    });
-  };
-
-  const handleVariantChange = (newVariant) => {
-    onControlsChange({
-      ...currentData,
-      variant: newVariant,
-    });
-  };
-
-  const handleShadowVariantChange = (newVariant) => {
-    onControlsChange({
-        styling: {
-            ...currentData.styling,
-            shadowVariant: newVariant,
-        },
-    });
-  };
-
-  const getVariantOptions = () => {
-    if (blockType === "BookingBlock") {
-      return [
-        {
-          value: "nail",
-          label: "Nail Style",
-          description:
-            "Original design with nail animations and wood plank styling",
-        },
-        {
-          value: "modern",
-          label: "Modern",
-          description:
-            "Clean, minimalist design with gradients and split-screen layout",
-        },
-        {
-          value: "creative",
-          label: "Creative",
-          description:
-            "Image-rich design with playful elements and three-column layout",
-        },
-      ];
-    }
-
-    if (blockType === "RichTextBlock") {
-      return [
-        {
-          value: "classic",
-          label: "Classic",
-          description:
-            "Original layout with hero text, slideshow background, and cards above",
-        },
-        {
-          value: "modern",
-          label: "Modern",
-          description:
-            "Clean split-screen layout with text on one side and gallery on the other",
-        },
-        {
-          value: "grid",
-          label: "Grid",
-          description:
-            "Clean grid layout with structured cards and clear content sections",
-        },
-      ];
-    }
-
-    if (blockType === "ServiceSliderBlock") {
-      return [
-        {
-          value: "classic-cards",
-          label: "Classic Cards",
-          description: "Services displayed in a clean, responsive grid of cards.",
-        },
-        {
-          value: "split-image",
-          label: "Split Image",
-          description: "A large feature image with a list of services on the side.",
-        },
-      ];
-    }
-
-    // Add more block types here as they get variant support
-    return [
-      {
-        value: "default",
-        label: "Default",
-        description: "Standard design variant",
+      styling: {
+        ...currentData.styling,
+        [field]: numericValue,
       },
-    ];
+    });
   };
 
-  const variantOptions = getVariantOptions();
-  const currentShadowVariant = currentData.styling?.shadowVariant || "soft";
+  const renderHeightControls = () => {
+    const desktopHeight = currentData.styling?.desktopHeightVH ?? 20;
+    const mobileHeight = currentData.styling?.mobileHeightVW ?? 35;
 
-  // This controller now only handles height and variants.
-  // Other controls (like animations) can be added as separate components in the tabsConfig.
-
-  const renderVariantControls = () => (
-    hasVariants && (
-      <div className="mb-6 pb-6 border-b border-gray-600">
-        <h3 className="text-lg font-semibold mb-4 text-center">
-          Design Variant
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {variantOptions.map((option) => (
-            <div key={option.value} className="relative">
-              <label className="flex flex-col items-center cursor-pointer group">
-                <input
-                  type="radio"
-                  name="variant"
-                  value={option.value}
-                  checked={currentVariant === option.value}
-                  onChange={() => handleVariantChange(option.value)}
-                  className="sr-only"
-                />
-                <div
-                  className={`relative mb-2 p-1 rounded-lg transition-all duration-200 ${
-                    currentVariant === option.value
-                      ? "ring-2 ring-blue-500 ring-offset-2 ring-offset-gray-800"
-                      : "ring-1 ring-gray-600 group-hover:ring-gray-500"
-                  }`}
-                >
-                  <VariantPreview
-                    variant={option.value}
-                    blockType={blockType}
-                  />
-                  {currentVariant === option.value && (
-                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                      <div className="w-2 h-2 bg-white rounded-full"></div>
-                    </div>
-                  )}
-                </div>
-                <div
-                  className={`text-center transition-colors duration-200 ${
-                    currentVariant === option.value
-                      ? "text-blue-400"
-                      : "text-gray-300 group-hover:text-white"
-                  }`}
-                >
-                  <div className="font-medium text-sm">{option.label}</div>
-                  <div className="text-xs text-gray-400 mt-1 max-w-24 leading-tight">
-                    {option.description}
-                  </div>
-                </div>
-              </label>
-            </div>
-          ))}
+    return (
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Desktop Height:{' '}
+            <span className="font-mono text-blue-600">{desktopHeight}vh</span>
+          </label>
+          <input
+            type="range"
+            min="10"
+            max="100"
+            value={desktopHeight}
+            onChange={(e) => handleStylingChange('desktopHeightVH', e.target.value)}
+            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Mobile Height:{' '}
+            <span className="font-mono text-blue-600">{mobileHeight}vw</span>
+          </label>
+          <input
+            type="range"
+            min="10"
+            max="150"
+            value={mobileHeight}
+            onChange={(e) => handleStylingChange('mobileHeightVW', e.target.value)}
+            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+          />
         </div>
       </div>
-    )
-  );
+    );
+  };
 
-  const renderShadowControls = () => {
-    const supportedBlocks = ['TestimonialBlock', 'ServiceSliderBlock'];
-    if (!supportedBlocks.includes(blockType)) return null;
+  const renderPaddingControls = () => {
+    const paddingTop = currentData.styling?.paddingTop ?? 4;
+    const paddingBottom = currentData.styling?.paddingBottom ?? 4;
 
     return (
-      <div className="mb-6 pb-6 border-b border-gray-600">
-          <h3 className="text-lg font-semibold mb-4 text-center">
-              Shadow Style
-          </h3>
-          <div className="grid grid-cols-3 gap-4">
-              {['soft', 'medium', 'strong'].map((variant) => (
-                  <ShadowVariantPreview
-                      key={variant}
-                      variant={variant}
-                      isSelected={currentShadowVariant === variant}
-                      onClick={() => handleShadowVariantChange(variant)}
-                  />
-              ))}
-          </div>
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Padding Top:{' '}
+            <span className="font-mono text-blue-600">{paddingTop}rem</span>
+          </label>
+          <input
+            type="range"
+            min="0"
+            max="20"
+            step="0.5"
+            value={paddingTop}
+            onChange={(e) => handleStylingChange('paddingTop', e.target.value)}
+            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Padding Bottom:{' '}
+            <span className="font-mono text-blue-600">{paddingBottom}rem</span>
+          </label>
+          <input
+            type="range"
+            min="0"
+            max="20"
+            step="0.5"
+            value={paddingBottom}
+            onChange={(e) => handleStylingChange('paddingBottom', e.target.value)}
+            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+          />
+        </div>
       </div>
     );
   };
-
+  
   const renderContent = () => {
-    if (controlType) {
-      switch (controlType) {
-        case 'variants':
-          return renderVariantControls();
-        case 'shadow':
-          return renderShadowControls();
-        default:
-          return (
-            <>
-              {renderVariantControls()}
-              {renderShadowControls()}
-            </>
-          );
-      }
+    switch (controlType) {
+      case 'height':
+        return renderHeightControls();
+      case 'padding':
+        return renderPaddingControls();
+      default:
+        return (
+          <p className="text-sm text-gray-500">
+            No styling controls for: {controlType}
+          </p>
+        );
     }
-
-    // Default behavior if controlType is not specified
-    return (
-      <>
-        {renderVariantControls()}
-        {renderShadowControls()}
-      </>
-    );
   };
 
-  return (
-    <div className="p-4 bg-gray-800 text-white rounded-lg">
-      {renderContent()}
-      {/* Custom Styles for Slider */}
-      <style>
-        {`
-          .slider-thumb::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            background: #3b82f6;
-            border-radius: 50%;
-            cursor: pointer;
-            border: 2px solid white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-          }
-
-          .slider-thumb::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            background: #3b82f6;
-            border-radius: 50%;
-            cursor: pointer;
-            border: 2px solid white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-          }
-
-          .slider-thumb::-webkit-slider-track {
-            background: #4b5563;
-            height: 8px;
-            border-radius: 4px;
-          }
-
-          .slider-thumb::-moz-range-track {
-            background: #4b5563;
-            height: 8px;
-            border-radius: 4px;
-          }
-        `}
-      </style>
-    </div>
-  );
+  return <div className="p-4 bg-gray-50 rounded-lg">{renderContent()}</div>;
 };
 
 PanelStylingController.propTypes = {

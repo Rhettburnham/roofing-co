@@ -46,59 +46,56 @@ const FONT_OPTIONS = [
 ];
 
 // Slider Control for numeric font properties
-const FontSliderControl = ({ label, value, min, max, step, onChange, unit = '' }) => (
-  <div>
-    <label className="block text-sm font-medium text-gray-300 mb-1">{label}</label>
-    <div className="flex items-center space-x-3">
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"
-      />
-      <div className="flex items-center bg-gray-700 border border-gray-600 rounded-md px-2">
+const FontSliderControl = ({ label, value, min, max, step, onChange, unit = '' }) => {
+  const progress = value !== undefined && min !== undefined && max !== undefined ? ((value - min) / (max - min)) * 100 : 0;
+  const sliderStyle = {
+    background: `linear-gradient(to right, #3b82f6 ${progress}%, #4b5563 ${progress}%)`,
+  };
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-white ">{label}</label>
+      <div className="flex items-center space-x-3">
         <input
-          type="number"
+          type="range"
           min={min}
           max={max}
           step={step}
           value={value}
-          onChange={(e) => onChange(parseFloat(e.target.value) || min)}
-          className="w-16 bg-transparent text-white text-center focus:outline-none"
+          onChange={(e) => onChange(parseFloat(e.target.value))}
+          className="w-full h-2 rounded-lg appearance-none cursor-pointer"
+          style={sliderStyle}
         />
-        <span className="text-gray-400 text-xs">{unit}</span>
+        <div className="flex items-center px-1">
+          <input
+            type="number"
+            min={min}
+            max={max}
+            step={step}
+            value={value}
+            onChange={(e) => onChange(parseFloat(e.target.value) || min)}
+            className="w-20 bg-transparent text-white text-center focus:outline-none"
+          />
+          <span className="  text-gray-400 text-xs">{unit}</span>
+        </div>
       </div>
     </div>
-  </div>
-);
-
-// Font preview component
-const FontPreview = ({ fontFamily, className = "" }) => (
-  <div
-    className={`text-center py-2 px-3 border-2 border-gray-300 rounded-md bg-white hover:border-gray-400 transition-all ${className}`}
-    style={{ fontFamily }}
-  >
-    <div className="text-lg font-semibold leading-tight">ABC</div>
-    <div className="text-sm leading-tight">abc</div>
-  </div>
-);
+  );
+};
 
 const PanelFontController = ({
   label = "Font Settings",
-  // New props for handling nested data structures
   currentData,
   onControlsChange,
-  fieldPrefix, // e.g., "textSettings"
+  fieldPrefix, // e.g., "desktop" or "mobile"
   themeColors = [],
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const dropdownRef = useRef(null);
 
-  const textSettings = (currentData && fieldPrefix && currentData[fieldPrefix]) || {};
+  // The component now directly uses the data passed for the specific fieldPrefix.
+  const textSettings = (currentData && currentData[fieldPrefix]) || {};
   
   const {
     fontFamily = 'Arial, sans-serif',
@@ -160,159 +157,154 @@ const PanelFontController = ({
   const currentFont = getCurrentFont();
 
   return (
-    <div className="bg-gray-800 text-white p-4 rounded-lg space-y-6">
-      <h3 className="text-xl font-bold text-center text-blue-300">{label}</h3>
-
-      {/* Font Family Selection */}
-      <div className="space-y-2">
-        <label className="text-base font-semibold text-gray-200 block">Font Family</label>
-        <div className="relative" ref={dropdownRef}>
-          <div className="flex items-center space-x-3">
-            <div className="w-20 flex-shrink-0">
-              <FontPreview fontFamily={fontFamily} />
-            </div>
-            <div className="flex-1">
-              <button
-                type="button"
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="w-full flex items-center justify-between px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:border-blue-500 hover:bg-gray-600 transition-colors"
-                style={{ fontFamily }}
-              >
-                <span className="truncate">{currentFont.name}</span>
-                <svg 
-                  className={`w-4 h-4 ml-2 transform transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  viewBox="0 0 20 20" 
-                  fill="currentColor"
-                >
-                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-              </button>
-            </div>
-          </div>
-          {isDropdownOpen && (
-             <div className="absolute z-50 mt-1 w-full bg-gray-800 border border-gray-600 rounded-md shadow-lg max-h-96 overflow-hidden">
-              <div className="p-3 border-b border-gray-600">
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:outline-none focus:border-blue-500"
-                >
-                  {getCategories().map(category => (
-                    <option key={category} value={category}>{category}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="max-h-64 overflow-y-auto">
-                {getFilteredFonts().map((font) => (
-                  <button
-                    key={font.value}
-                    onClick={() => handleFontSelect(font)}
-                    className={`w-full flex items-center justify-between p-3 hover:bg-gray-700 focus:outline-none focus:bg-gray-700 transition-colors ${
-                      fontFamily === font.value ? 'bg-gray-700 border-l-4 border-blue-400' : ''
-                    }`}
-                    style={{ fontFamily: font.value }}
-                  >
-                     <div className="flex items-center space-x-3">
-                      <div className="text-left">
-                        <div className="text-white font-medium">{font.name}</div>
-                        <div className="text-gray-400 text-xs">{font.category}</div>
-                      </div>
-                    </div>
-                    <div className="text-white text-sm">
-                      <div className="font-semibold">ABC</div>
-                      <div className="text-xs">abc</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-      
-      {/* Font Color */}
-      <div>
-        <ThemeColorPicker
-          label="Font Color"
-          currentColorValue={color}
-          themeColors={themeColors}
-          onColorChange={(_, value) => handleSettingChange('color', value)}
-          fieldName="fontColor"
-          className="mt-0"
-        />
-      </div>
-
-      {/* Font Size */}
-      <FontSliderControl
-        label="Font Size"
-        value={fontSize}
-        min={8}
-        max={72}
-        step={1}
-        onChange={(value) => handleSettingChange('fontSize', value)}
-        unit="px"
-      />
-      
-      {/* Font Weight */}
-      <FontSliderControl
-        label="Font Weight"
-        value={fontWeight}
-        min={100}
-        max={900}
-        step={100}
-        onChange={(value) => handleSettingChange('fontWeight', value)}
-      />
-
-      {/* Line Height */}
-      <FontSliderControl
-        label="Line Height"
-        value={lineHeight}
-        min={0.8}
-        max={3}
-        step={0.1}
-        onChange={(value) => handleSettingChange('lineHeight', value)}
-      />
-      
-      {/* Letter Spacing */}
-      <FontSliderControl
-        label="Letter Spacing"
-        value={letterSpacing}
-        min={-2}
-        max={10}
-        step={0.1}
-        onChange={(value) => handleSettingChange('letterSpacing', value)}
-        unit="px"
-      />
-
-      {/* Text Align */}
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2">Text Align</label>
-        <div className="grid grid-cols-4 gap-2">
-          {['left', 'center', 'right', 'justify'].map((align) => (
-            <button
-              key={align}
-              onClick={() => handleSettingChange('textAlign', align)}
-              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                textAlign === align
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-              }`}
-            >
-              {align.charAt(0).toUpperCase() + align.slice(1)}
-            </button>
-          ))}
-        </div>
-      </div>
-
+    <div className="bg-black text-white p-2 rounded-lg ">
       {/* Font Preview Section */}
       <div className="border-t border-gray-600 pt-4">
-        <h4 className="text-lg font-semibold text-gray-200 mb-2 text-center">Preview</h4>
         <div 
           className="p-4 bg-gray-900 rounded-md border border-gray-700"
           style={{ ...textSettings, fontFamily: currentFont.value }}
         >
-          <p>The quick brown fox jumps over the lazy dog.</p>
+          <p>{label}</p>
+        </div>
+      </div>
+
+      <div className="flex flex-row items-start mt-4">
+        {/* Left Column */}
+        <div className="w-[35%] pr-4 flex flex-col space-y-4">
+          {/* Font Family Selection */}
+          <div className="relative" ref={dropdownRef}>
+            <div className="flex flex-row items-center justify-center ">
+              <div className="flex-0">
+                <button
+                  type="button"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="w-full flex items-center justify-between rounded-md text-xl text-white animate-pulse"
+                  style={{ fontFamily }}
+                >
+                  <span className="truncate">{currentFont.name}</span>
+                  <svg 
+                    className={`w-6 h-6 ml-2 transform transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    viewBox="0 0 20 20" 
+                    fill="currentColor"
+                  >
+                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            {isDropdownOpen && (
+              <div className="absolute z-50 mt-1  bg-gray-50  rounded-b-md  overflow-hidden">
+                <div className=" ">
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="w-full  py-1 text-center font-bold bg-banner text-white text-sm "
+                  >
+                    {getCategories().map(category => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="max-h-64 overflow-y-auto">
+                  {getFilteredFonts().map((font) => (
+                    <button
+                      key={font.value}
+                      onClick={() => handleFontSelect(font)}
+                      className={`w-full flex items-center p-3 hover:bg-gray-700 focus:outline-none focus:bg-gray-700 transition-colors ${
+                        fontFamily === font.value ? 'bg-gray-500 font-bold text-white border-l-4 border-blue-400' : ''
+                      }`}
+                      style={{ fontFamily: font.value }}
+                    >
+                      <div className="flex w-full">
+                        <div className="flex flex-row w-full justify-between items-center px-2">
+                          <div className={`text-black font-semibold ${
+                          fontFamily === font.value ? 'text-white' : ''
+                      }`} >{font.name}</div>
+                          <div className="text-gray-400 font-semibold">{font.category}</div>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        
+          {/* Font Color */}
+          <ThemeColorPicker
+            label="Font Color"
+            currentColorValue={color}
+            themeColors={themeColors}
+            onColorChange={(_, value) => handleSettingChange('color', value)}
+            fieldName="fontColor"
+            className="mt-0"
+            variant="text"
+          />
+          {/* Text Align */}
+          <div>
+            <label className="block text-lg font-medium text-white mb-1">Alignment</label>
+            <div className="grid grid-cols-3 gap-1">
+              {['left', 'center', 'right'].map((align) => (
+                <button
+                  key={align}
+                  onClick={() => handleSettingChange('textAlign', align)}
+                  className={`px-3 py-2 rounded-md text-sm text-white font-medium transition-colors ${
+                    textAlign === align
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                >
+                  {align.charAt(0).toUpperCase() + align.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column */}
+        <div className="w-[65%] grid grid-cols-2 gap-x-4 gap-y-2">
+          {/* Font Size */}
+          <FontSliderControl
+            label="Font Size"
+            value={fontSize}
+            min={8}
+            max={72}
+            step={1}
+            onChange={(value) => handleSettingChange('fontSize', value)}
+            unit="px"
+          />
+          
+          {/* Font Weight */}
+          <FontSliderControl
+            label="Font Weight"
+            value={fontWeight}
+            min={100}
+            max={900}
+            step={100}
+            onChange={(value) => handleSettingChange('fontWeight', value)}
+          />
+
+          {/* Line Height */}
+          <FontSliderControl
+            label="Line Height"
+            value={lineHeight}
+            min={0.8}
+            max={3}
+            step={0.1}
+            onChange={(value) => handleSettingChange('lineHeight', value)}
+          />
+          
+          {/* Letter Spacing */}
+          <FontSliderControl
+            label="Letter Spacing"
+            value={letterSpacing}
+            min={-2}
+            max={10}
+            step={0.1}
+            onChange={(value) => handleSettingChange('letterSpacing', value)}
+            unit="px"
+          />
         </div>
       </div>
     </div>

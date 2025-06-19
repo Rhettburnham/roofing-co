@@ -388,162 +388,160 @@ VideoCTA.EditorPanel = ({ currentConfig, onPanelConfigChange, onPanelFileChange,
   );
 };
 
-// Static method for TopStickyEditPanel integration
-VideoCTA.tabsConfig = (config, onControlsChange, themeColors, sitePalette) => {
-  return {
-    images: () => (
-      <div className="p-4 space-y-4">
-        <h3 className="text-lg font-semibold mb-4 text-gray-700">Video Management</h3>
+// Static method for BottomStickyEditPanel integration
+VideoCTA.tabsConfig = (blockData, onUpdate, themeColors) => ({
+  general: (props) => (
+    <div className="p-4 space-y-4">
+      <h3 className="text-lg font-semibold mb-4 text-gray-700">Video Management</h3>
+      
+      <div className="space-y-3">
+        <label className="block text-sm font-medium text-gray-700 mb-2">Video Source</label>
         
-        <div className="space-y-3">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Video Source</label>
-          
-          {/* Video Preview */}
-          {config?.videoSrc?.url && (
-            <div className="mb-3">
-              <video 
-                src={config.videoSrc.url} 
-                className="w-full h-32 object-cover rounded border" 
-                controls={false} 
-                muted 
-                loop 
-                playsInline
-              >
-                Your browser does not support the video tag.
-              </video>
-              <p className="text-xs text-gray-500 mt-1">
-                {config.videoSrc.name || 'Video Preview'}
-              </p>
-            </div>
-          )}
-          
-          {/* Video URL Input */}
-          <div className="space-y-2">
-            <input
-              type="text"
-              placeholder="Paste video URL (YouTube, Vimeo, or direct link)"
-              value={config?.videoSrc?.originalUrl || ''}
-              onChange={(e) => onControlsChange({ 
-                ...config, 
-                videoSrc: { 
-                  url: e.target.value, 
-                  originalUrl: e.target.value,
-                  name: e.target.value.split('/').pop() || 'Video',
-                  file: null 
-                }
-              })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            
-            {/* File Upload */}
-            <div className="flex items-center space-x-2">
-              <label className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer text-center">
-                <FaVideo className="inline mr-2" />
-                Upload Video File
-                <input
-                  type="file"
-                  accept="video/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      const fileURL = URL.createObjectURL(file);
-                      onControlsChange({
-                        ...config,
-                        videoSrc: {
-                          file: file,
-                          url: fileURL,
-                          name: file.name,
-                          originalUrl: `uploads/${file.name}`
-                        }
-                      });
-                    }
-                  }}
-                />
-              </label>
-              
-              {config?.videoSrc?.url && (
-                <button
-                  onClick={() => onControlsChange({ ...config, videoSrc: null })}
-                  className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-                  title="Remove Video"
-                >
-                  <FaTimes />
-                </button>
-              )}
-            </div>
+        {/* Video Preview */}
+        {blockData?.videoSrc?.url && (
+          <div className="mb-3">
+            <video 
+              src={blockData.videoSrc.url} 
+              className="w-full h-32 object-cover rounded border" 
+              controls={false} 
+              muted 
+              loop 
+              playsInline
+            >
+              Your browser does not support the video tag.
+            </video>
+            <p className="text-xs text-gray-500 mt-1">
+              {blockData.videoSrc.name || 'Video Preview'}
+            </p>
           </div>
-        </div>
-      </div>
-    ),
-    
-    colors: () => (
-      <div className="p-4 space-y-4">
-        <h3 className="text-lg font-semibold mb-4 text-gray-700">Color & Text Settings</h3>
+        )}
         
-        <ThemeColorPicker
-          label="Text Color"
-          fieldName="textColor"
-          currentColorValue={config?.textColor || '#FFFFFF'}
-          onColorChange={(fieldName, value) => onControlsChange({ ...config, [fieldName]: value })}
-          themeColors={themeColors}
-        />
-        
+        {/* Video URL Input */}
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">Text Alignment</label>
-          <select
-            value={config?.textAlignment || 'center'}
-            onChange={(e) => onControlsChange({ ...config, textAlignment: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="left">Left</option>
-            <option value="center">Center</option>
-            <option value="right">Right</option>
-          </select>
-        </div>
-        
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">
-            Overlay Opacity: {config?.overlayOpacity || 0.5}
-          </label>
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.01"
-            value={config?.overlayOpacity || 0.5}
-            onChange={(e) => onControlsChange({ ...config, overlayOpacity: parseFloat(e.target.value) })}
-            className="w-full"
-          />
-          <div className="flex justify-between text-xs text-gray-500">
-            <span>Transparent</span>
-            <span>Opaque</span>
-          </div>
-        </div>
-        
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">Button Link</label>
           <input
             type="text"
-            placeholder="e.g., /#contact or /services"
-            value={config?.buttonLink || '/#contact'}
-            onChange={(e) => onControlsChange({ ...config, buttonLink: e.target.value })}
+            placeholder="Paste video URL (YouTube, Vimeo, or direct link)"
+            value={blockData?.videoSrc?.originalUrl || ''}
+            onChange={(e) => onUpdate({ 
+              ...blockData, 
+              videoSrc: { 
+                url: e.target.value, 
+                originalUrl: e.target.value,
+                name: e.target.value.split('/').pop() || 'Video',
+                file: null 
+              }
+            })}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+          
+          {/* File Upload */}
+          <div className="flex items-center space-x-2">
+            <label className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer text-center">
+              <FaVideo className="inline mr-2" />
+              Upload Video File
+              <input
+                type="file"
+                accept="video/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const fileURL = URL.createObjectURL(file);
+                    onUpdate({
+                      ...blockData,
+                      videoSrc: {
+                        file: file,
+                        url: fileURL,
+                        name: file.name,
+                        originalUrl: `uploads/${file.name}`
+                      }
+                    });
+                  }
+                }}
+              />
+            </label>
+            
+            {blockData?.videoSrc?.url && (
+              <button
+                onClick={() => onUpdate({ ...blockData, videoSrc: null })}
+                className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                title="Remove Video"
+              >
+                <FaTimes />
+              </button>
+            )}
+          </div>
         </div>
       </div>
-    ),
-    
-    styling: () => (
-      <PanelStylingController
-        currentData={config}
-        onControlsChange={onControlsChange}
-        blockType="VideoCTA"
-        controlType="height"
+    </div>
+  ),
+  
+  colors: () => (
+    <div className="p-4 space-y-4">
+      <h3 className="text-lg font-semibold mb-4 text-gray-700">Color & Text Settings</h3>
+      
+      <ThemeColorPicker
+        label="Text Color"
+        fieldName="textColor"
+        currentColorValue={blockData?.textColor || '#FFFFFF'}
+        onColorChange={(fieldName, value) => onUpdate({ ...blockData, [fieldName]: value })}
+        themeColors={themeColors}
       />
-    )
-  };
-};
+      
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-gray-700">Text Alignment</label>
+        <select
+          value={blockData?.textAlignment || 'center'}
+          onChange={(e) => onUpdate({ ...blockData, textAlignment: e.target.value })}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="left">Left</option>
+          <option value="center">Center</option>
+          <option value="right">Right</option>
+        </select>
+      </div>
+      
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-gray-700">
+          Overlay Opacity: {blockData?.overlayOpacity || 0.5}
+        </label>
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.01"
+          value={blockData?.overlayOpacity || 0.5}
+          onChange={(e) => onUpdate({ ...blockData, overlayOpacity: parseFloat(e.target.value) })}
+          className="w-full"
+        />
+        <div className="flex justify-between text-xs text-gray-500">
+          <span>Transparent</span>
+          <span>Opaque</span>
+        </div>
+      </div>
+      
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-gray-700">Button Link</label>
+        <input
+          type="text"
+          placeholder="e.g., /#contact or /services"
+          value={blockData?.buttonLink || '/#contact'}
+          onChange={(e) => onUpdate({ ...blockData, buttonLink: e.target.value })}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+    </div>
+  ),
+  
+  styling: () => (
+    <PanelStylingController
+      currentData={blockData}
+      onControlsChange={onUpdate}
+      blockType="VideoCTA"
+      controlType="height"
+    />
+  )
+});
 
 export default VideoCTA;
 

@@ -5,30 +5,37 @@ import gsap from "gsap";
 import PropTypes from "prop-types";
 import { Home, Building2, HelpCircle } from "lucide-react";
 import { FaWarehouse } from 'react-icons/fa';
+import PanelFontController from "./common/PanelFontController";
+import ThemeColorPicker from "./common/ThemeColorPicker";
+import IconSelectorModal from "./common/IconSelectorModal";
 
 /**
  * Navbar Component with Configurable Animations
- * 
- * Animation Configuration Props:
- * - naturalOffsetVh: Controls how low the logo and text sit naturally (default: 7vh)
- * - slideUpDistanceVh: Controls how much the logo and text slide up during scroll animation (default: 7vh)
- * - logoSizeUnscrolled: Logo size when page is unscrolled (default: { width: '10vh', height: '10vh' })
- * - logoSizeScrolled: Logo size when page is scrolled (default: { width: '6vh', height: '6vh' })
- * 
- * Example usage:
- * <Navbar 
- *   naturalOffsetVh={10}        // Components sit 10vh lower
- *   slideUpDistanceVh={5}       // Components slide up 5vh on scroll
- *   logoSizeUnscrolled={{ width: '12vh', height: '12vh' }}  // Larger unscrolled logo
- *   logoSizeScrolled={{ width: '4vh', height: '4vh' }}      // Smaller scrolled logo
- * />
+ * All sizing, styling, and content should be driven by the `config` prop.
  */
 
-const getDisplayUrl = (imageValue, defaultPath = null) => {
-  if (!imageValue) return defaultPath;
-  if (typeof imageValue === 'string') return imageValue;
-  if (imageValue.url) return imageValue.url;
-  return defaultPath;
+const getDisplayUrl = (imageValue) => {
+  // Handles new image object structure `{ url, file, name, originalUrl }`
+  // and legacy string paths.
+  if (!imageValue) return null;
+
+  if (typeof imageValue === 'object') {
+    // This could be an object from the images array or a direct file upload object.
+    if (imageValue.url) {
+      return imageValue.url; // Blob URL or regular URL
+    }
+    if (imageValue instanceof File) {
+      return URL.createObjectURL(imageValue); // Convert File to blob URL
+    }
+    return null;
+  }
+  
+  // Handle string structure (direct URL path)
+  if (typeof imageValue === 'string') {
+    return imageValue;
+  }
+  
+  return null;
 };
 
 const Navbar = ({ 
@@ -38,31 +45,60 @@ const Navbar = ({
   onTitleChange, // New prop for live editing
   onSubtitleChange, // New prop for live editing
   isEditingPreview, // Make sure this is destructured
-  // Animation and sizing configuration props
-  naturalOffsetVh = 11, // How low components sit naturally (in vh)
-  slideUpDistanceVh = 0, // How much components slide up during animation (in vh)
-  logoSizeUnscrolled = { width: '18vh', height: '18vh' }, // Logo size when unscrolled
-  logoSizeScrolled = { width: '14vh', height: '14vh' }, // Logo size when scrolled
-  // New configurable variables
-  textSizes = {
-    unscrolled: { base: 'text-[7vw]', md: 'text-[8vh]', lg: 'text-[5vh]' },
-    scrolled: { base: 'text-[3vw]', md: 'text-[5vh]' }
-  },
-  logoTextDistance = {
-    unscrolled: { base: 'mr-0', md: 'mr-0' },
-    scrolled: { base: 'mr-0', md: 'mr-0' }
-  },
-  navbarHeight = {
-    unscrolled: { base: 'h-[16vh]', md: 'h-[20vh]' },
-    scrolled: { base: 'h-[10vh]', md: 'h-[10vh]' }
-  },
-  invertLogoColor = false, // Whether to invert logo colors
+  onIconSelect,
+  // The following props are now driven by the `config.animation` and `config.styling` objects
+  // naturalOffsetVh = 11,
+  // slideUpDistanceVh = 0,
+  // logoSizeUnscrolled = { width: '18vh', height: '18vh' },
+  // logoSizeScrolled = { width: '14vh', height: '14vh' },
+  // textSizes = { ... },
+  // logoTextDistance = { ... },
+  // navbarHeight = { ... },
+  // invertLogoColor = false,
+  // mainTitleTextSettings,
+  // subTitleTextSettings,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [internalHasScrolled, setInternalHasScrolled] = useState(false);
   const [isDesktopMenuOpen, setIsDesktopMenuOpen] = useState(false);
 
-  const hasScrolled = forceScrolledState !== null ? forceScrolledState : internalHasScrolled;
+  // Consolidate all settings from the config prop
+  const {
+    title,
+    subtitle,
+    navLinks = [],
+    images, // main logo array
+    whiteImages, // white logo array
+    whiteLogoIcon,
+    hamburgerColor,
+    useWhiteHamburger,
+    scrolledBackgroundColor,
+    unscrolledBackgroundColor,
+    dropdownBackgroundColor,
+    dropdownTextColor,
+    mainTitleTextSettings,
+    subTitleTextSettings,
+    animation: animationSettings = {},
+    styling: stylingSettings = {},
+    textSizes = {}, // Add textSizes back
+    logoTextDistance = {}, // Add logoTextDistance back
+    navbarHeight = {}, // Add navbarHeight back
+  } = config || {};
+  
+  // Destructure animation and styling properties with defaults
+  const {
+    naturalOffsetVh = 11,
+    slideUpDistanceVh = 0,
+  } = animationSettings;
+
+  const {
+    logoDesktopSize = { unscrolled: 18, scrolled: 14 }, // in vh
+    logoMobileSize = { unscrolled: 18, scrolled: 14 }, // in vw
+    invertLogoColor = false,
+  } = stylingSettings;
+
+
+  const hasScrolled = typeof forceScrolledState === 'boolean' ? forceScrolledState : internalHasScrolled;
 
   const topBarRef = useRef(null);
   const middleBarRef = useRef(null);
@@ -88,6 +124,61 @@ const Navbar = ({
   const iconPacks = {
     lucide: { Home, Building2, HelpCircle },
     fa: FaIcons,
+  };
+
+  const generateResponsiveTextStyles = () => {
+    let styles = '';
+    const createStyleRule = (selector, desktopSettings, mobileSettings) => {
+      let desktopCss = '';
+      if (desktopSettings) {
+        desktopCss = `
+          ${selector} {
+            font-family: ${desktopSettings.fontFamily || 'inherit'};
+            font-size: ${desktopSettings.fontSize ? `${desktopSettings.fontSize}px` : 'inherit'};
+            font-weight: ${desktopSettings.fontWeight || 'inherit'};
+            line-height: ${desktopSettings.lineHeight || 'inherit'};
+            letter-spacing: ${desktopSettings.letterSpacing ? `${desktopSettings.letterSpacing}px` : 'inherit'};
+            color: ${desktopSettings.color || 'inherit'};
+          }
+        `;
+      }
+      
+      let mobileCss = '';
+      if (mobileSettings) {
+        mobileCss = `
+          @media (max-width: 767px) {
+            ${selector} {
+              font-family: ${mobileSettings.fontFamily || 'inherit'};
+              font-size: ${mobileSettings.fontSize ? `${mobileSettings.fontSize}px` : 'inherit'};
+              font-weight: ${mobileSettings.fontWeight || 'inherit'};
+              line-height: ${mobileSettings.lineHeight || 'inherit'};
+              letter-spacing: ${mobileSettings.letterSpacing ? `${mobileSettings.letterSpacing}px` : 'inherit'};
+              color: ${mobileSettings.color || 'inherit'};
+            }
+          }
+        `;
+      }
+      
+      return desktopCss + mobileCss;
+    };
+
+    if (mainTitleTextSettings) {
+      styles += createStyleRule(
+        '.navbar-main-title',
+        mainTitleTextSettings.desktop,
+        mainTitleTextSettings.mobile
+      );
+    }
+    
+    if (subTitleTextSettings) {
+      styles += createStyleRule(
+        '.navbar-sub-title',
+        subTitleTextSettings.desktop,
+        subTitleTextSettings.mobile
+      );
+    }
+    
+    return styles;
   };
 
   const renderDynamicIcon = (packName, iconName, defaultIconComponent, props = { className: "w-full h-full" }) => {
@@ -206,22 +297,20 @@ const Navbar = ({
     }
   }, [hasScrolled, slideUpDistanceVh]);
 
-  const navLinksFromConfig = config?.navLinks || [
-    { name: "About", href: "/about" },
-    { name: "Booking", href: "/#book" },
-    { name: "Packages", href: "/#packages" },
-  ];
+  const navLinksFromConfig = navLinks || [];
   
-  const logoUrl = getDisplayUrl(config?.logo, "/assets/images/hero/clipped.png");
-  const mainTitle = config?.title || "COWBOYS-VAQUEROS";
-  const mainSubtitle = config?.subtitle || "CONSTRUCTION";
+  // Get logo URLs from the arrays
+  const logoUrl = getDisplayUrl(images?.[0]);
+  const whiteLogoUrl = getDisplayUrl(whiteImages?.[0]);
+
+  const mainTitle = title || "";
+  const mainSubtitle = subtitle || "";
   
   // Color and Style handling
-  const scrolledBgSetting = config?.scrolledBackgroundColor || "bg-banner";
-  const unscrolledBgSetting = config?.unscrolledBackgroundColor || "bg-transparent"; // Default to transparent for unscrolled live nav
-  const dropdownBgSetting = config?.dropdownBackgroundColor || (hasScrolled ? scrolledBgSetting : "bg-white");
-  const dropdownTextSetting = config?.dropdownTextColor || (hasScrolled && (scrolledBgSetting.includes("banner") || scrolledBgSetting.includes("dark")) ? "text-white" : "text-black");
-
+  const scrolledBgSetting = scrolledBackgroundColor || "bg-banner";
+  const unscrolledBgSetting = unscrolledBackgroundColor || "bg-transparent"; // Default to transparent for unscrolled live nav
+  const dropdownBgSetting = dropdownBackgroundColor || (hasScrolled ? scrolledBgSetting : "bg-white");
+  
   const applyStyling = (colorString) => {
     if (typeof colorString === 'string' && colorString.startsWith('#')) {
       return { style: { backgroundColor: colorString }, className: '' };
@@ -230,19 +319,19 @@ const Navbar = ({
   };
 
   const navBaseClasses = "w-full flex items-center justify-center transition-all duration-300";
-  let navDynamicClasses = "";
+  let navDynamicClasses = hasScrolled ? 'scrolled' : 'unscrolled';
   let navStyle = {};
 
   // Build responsive navbar height classes
   const heightClasses = hasScrolled 
-    ? `${navbarHeight.scrolled.base} ${navbarHeight.scrolled.md}`
-    : `${navbarHeight.unscrolled.base} ${navbarHeight.unscrolled.md}`;
+    ? `${navbarHeight?.scrolled?.base || 'h-[10vh]'} ${navbarHeight?.scrolled?.md || 'md:h-[10vh]'}`
+    : `${navbarHeight?.unscrolled?.base || 'h-[16vh]'} ${navbarHeight?.unscrolled?.md || 'md:h-[20vh]'}`;
 
   if (isPreview) {
-    navDynamicClasses = `relative ${heightClasses}`;
+    navDynamicClasses += ` relative ${heightClasses}`;
     const bgProps = applyStyling(hasScrolled ? scrolledBgSetting : unscrolledBgSetting);
     navDynamicClasses += ` ${bgProps.className}`;
-    navStyle = bgProps.style;
+    navStyle = {...navStyle, ...bgProps.style};
   } else {
     // Live Navbar: restore original behavior carefully
     navDynamicClasses = `fixed top-0 z-[9999] ${heightClasses}`;
@@ -250,44 +339,65 @@ const Navbar = ({
     const liveBgSetting = hasScrolled ? scrolledBgSetting : unscrolledBgSetting;
     const bgProps = applyStyling(liveBgSetting);
     navDynamicClasses += ` ${bgProps.className}`; // e.g., bg-banner or bg-transparent
-    navStyle = bgProps.style;
+    navStyle = {...navStyle, ...bgProps.style};
   }
   
   const dropdownStyling = applyStyling(dropdownBgSetting);
+  const dropdownTextStyle = { color: dropdownTextColor || (isColorDark(dropdownStyling.style.backgroundColor) ? '#FFFFFF' : '#000000') };
 
   // Determine if conditions are met to show a white version of the logo (icon or image)
   const showWhiteVersion = (!hasScrolled && 
-      (config?.unscrolledBackgroundColor === 'bg-transparent' || 
-       (typeof config?.unscrolledBackgroundColor === 'string' && config.unscrolledBackgroundColor.startsWith('#') && parseInt(config.unscrolledBackgroundColor.substring(1, 3), 16) < 128) ||
-       config?.unscrolledBackgroundColor === 'bg-black' ||
-       config?.unscrolledBackgroundColor === 'bg-gray-800' ||
-       config?.unscrolledBackgroundColor === 'bg-gray-900'
+      (unscrolledBackgroundColor === 'bg-transparent' || 
+       (typeof unscrolledBackgroundColor === 'string' && unscrolledBackgroundColor.startsWith('#') && isColorDark(unscrolledBackgroundColor)) ||
+       unscrolledBackgroundColor === 'bg-black' ||
+       unscrolledBackgroundColor === 'bg-gray-800' ||
+       unscrolledBackgroundColor === 'bg-gray-900'
       )) || invertLogoColor;
 
   // Build responsive logo margin classes
   const logoMarginClasses = hasScrolled
-    ? `${logoTextDistance.scrolled.base} md:${logoTextDistance.scrolled.md}`
-    : `${logoTextDistance.unscrolled.base} md:${logoTextDistance.unscrolled.md}`;
+    ? `${logoTextDistance?.scrolled?.base || 'mr-0'} md:${logoTextDistance?.scrolled?.md || 'md:mr-0'}`
+    : `${logoTextDistance?.unscrolled?.base || 'mr-0'} md:${logoTextDistance?.unscrolled?.md || 'md:mr-0'}`;
 
   // Build responsive text size classes
   const titleSizeClasses = hasScrolled
-    ? `${textSizes.scrolled.base} md:${textSizes.scrolled.md}`
-    : `${textSizes.unscrolled.base} md:${textSizes.unscrolled.md} ${textSizes.unscrolled.lg ? `lg:${textSizes.unscrolled.lg}` : ''}`;
+    ? `${textSizes?.scrolled?.base || ''} md:${textSizes?.scrolled?.md || ''}`
+    : `${textSizes?.unscrolled?.base || ''} md:${textSizes?.unscrolled?.md || ''} ${textSizes?.unscrolled?.lg ? `lg:${textSizes.unscrolled.lg}` : ''}`;
+
 
   let logoToDisplay;
   // Prioritize whiteLogoIcon if it's set and conditions are met
-  if (config?.whiteLogoIcon?.pack && config?.whiteLogoIcon?.name && showWhiteVersion) {
+  if (whiteLogoIcon?.pack && whiteLogoIcon?.name && showWhiteVersion) {
       logoToDisplay = 'icon';
   // Fallback to whiteLogo image if it's set (has a URL) and conditions are met
-  } else if (config?.whiteLogo?.url && showWhiteVersion) {
+  } else if (whiteLogoUrl && showWhiteVersion) {
       logoToDisplay = 'whiteImage';
   // Otherwise, use the default logo
   } else {
       logoToDisplay = 'defaultImage';
   }
 
+  const [currentSelection, setCurrentSelection] = useState(null);
+
+  const handleOpen = (selection) => {
+    setCurrentSelection(selection);
+    setIsOpen(true);
+  };
+
+  const handleSelect = (pack, iconName) => {
+    if (onIconSelect) {
+      onIconSelect(currentSelection, pack, iconName);
+    }
+  };
+
+  const onClose = () => {
+    setIsOpen(false);
+    setCurrentSelection(null);
+  };
+
   return (
     <>
+      <style>{generateResponsiveTextStyles()}</style>
       <nav
         ref={navbarRef}
         className={`${navBaseClasses} ${navDynamicClasses}`}
@@ -301,35 +411,29 @@ const Navbar = ({
                onClick={handleLogoClick}
                style={{ 
                  marginTop: (hasScrolled || isPreview) ? "0" : `${naturalOffsetVh}vh`,
-                 width: hasScrolled ? logoSizeScrolled.width : logoSizeUnscrolled.width,
-                 height: hasScrolled ? logoSizeScrolled.height : logoSizeUnscrolled.height,
                }}
              >
-              {renderDynamicIcon(config.whiteLogoIcon.pack, config.whiteLogoIcon.name, null, { className: "w-full h-full text-white" })}
+              {renderDynamicIcon(whiteLogoIcon.pack, whiteLogoIcon.name, null, { className: "w-full h-full text-white" })}
             </div>
           ) : logoToDisplay === 'whiteImage' ? (
             <img
-              src={getDisplayUrl(config.whiteLogo)} // Use the white logo URL
+              src={whiteLogoUrl} // Use the white logo URL
               alt="Logo White"
               className={`cursor-pointer logo-fixed-size transform-gpu ${logoMarginClasses}`}
               onClick={handleLogoClick}
               style={{ 
                 marginTop: (hasScrolled || isPreview) ? "0" : `${naturalOffsetVh}vh`,
-                width: hasScrolled ? logoSizeScrolled.width : logoSizeUnscrolled.width,
-                height: hasScrolled ? logoSizeScrolled.height : logoSizeUnscrolled.height,
               }}
             />
           ) : ( // 'defaultImage'
             <img
               ref={logoRef} // Default logo ref - only attach ref to the element that might be animated by GSAP
-              src={getDisplayUrl(config?.logo, "/assets/images/hero/clipped.png")} 
+              src={logoUrl} 
               alt="Logo"
               className={`cursor-pointer logo-fixed-size transform-gpu ${logoMarginClasses}`}
               onClick={handleLogoClick}
               style={{ 
                 marginTop: (hasScrolled || isPreview) ? "0" : `${naturalOffsetVh}vh`,
-                width: hasScrolled ? logoSizeScrolled.width : logoSizeUnscrolled.width,
-                height: hasScrolled ? logoSizeScrolled.height : logoSizeUnscrolled.height,
               }}
             />
           )}
@@ -348,13 +452,13 @@ const Navbar = ({
                 ref={titleRef}
                 value={mainTitle}
                 onChange={(e) => onTitleChange(e.target.value)}
-                className={`whitespace-nowrap text-white text-center drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:6px_black ] font-rye font-ultra-condensed origin-left bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-300 p-1 rounded-sm z-10 relative ${titleSizeClasses}`}
+                className={`navbar-main-title whitespace-nowrap text-white text-center drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:6px_black ] font-rye font-ultra-condensed origin-left bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-300 p-1 rounded-sm z-10 relative ${titleSizeClasses}`}
                 onClick={(e) => e.stopPropagation()} 
               />
             ) : (
               <h1
                 ref={titleRef}
-                className={`whitespace-nowrap text-white text-center drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:6px_black ] font-rye font-ultra-condensed origin-left ${titleSizeClasses}`}
+                className={`navbar-main-title whitespace-nowrap text-white text-center drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:6px_black ] font-rye font-ultra-condensed origin-left ${titleSizeClasses}`}
               >
                 {mainTitle}
               </h1>
@@ -365,14 +469,14 @@ const Navbar = ({
                 ref={subTitleRef}
                 value={mainSubtitle}
                 onChange={(e) => onSubtitleChange(e.target.value)}
-                className={`text-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:1px_black ] text-gray-500 font-serif bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-300 p-1 rounded-sm z-10 relative text-[2vw] md:text-[6vh]`}
+                className={`navbar-sub-title text-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:1px_black ] text-gray-500 font-serif bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-300 p-1 rounded-sm z-10 relative text-[2vw] md:text-[6vh]`}
                 onClick={(e) => e.stopPropagation()} 
                 style={{ opacity: hasScrolled ? 0 : 1, marginTop: "-2vh" }}
               />
             ) : (
               <span
                 ref={subTitleRef}
-                className={`-mt-[1vh] text-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:1px_black ] text-gray-500 font-serif text-[3.8vw] md:text-3xl`}
+                className={`navbar-sub-title -mt-[1vh] text-center drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] [ -webkit-text-stroke:1px_black ] text-gray-500 font-serif text-[3.8vw] md:text-3xl`}
                 style={{ opacity: hasScrolled ? 0 : 1 }}
               >
                 {mainSubtitle}
@@ -390,9 +494,9 @@ const Navbar = ({
             disabled={isPreview}
           >
             <div className="relative w-8 h-8">
-              <span ref={desktopTopBarRef} className={`absolute top-0 left-0 w-full h-1 ${hasScrolled || config?.useWhiteHamburger ? "bg-white" : "bg-black"} transition-colors duration-300`} />
-              <span ref={desktopMiddleBarRef} className={`absolute top-3 left-0 w-full h-1 ${hasScrolled || config?.useWhiteHamburger ? "bg-white" : "bg-black"} transition-colors duration-300`} />
-              <span ref={desktopBottomBarRef} className={`absolute top-6 left-0 w-full h-1 ${hasScrolled || config?.useWhiteHamburger ? "bg-white" : "bg-black"} transition-colors duration-300`} />
+              <span ref={desktopTopBarRef} className={`absolute top-0 left-0 w-full h-1 transition-colors duration-300`} style={{ backgroundColor: hasScrolled ? hamburgerColor?.scrolled : hamburgerColor?.unscrolled }} />
+              <span ref={desktopMiddleBarRef} className={`absolute top-3 left-0 w-full h-1 transition-colors duration-300`} style={{ backgroundColor: hasScrolled ? hamburgerColor?.scrolled : hamburgerColor?.unscrolled }} />
+              <span ref={desktopBottomBarRef} className={`absolute top-6 left-0 w-full h-1 transition-colors duration-300`} style={{ backgroundColor: hasScrolled ? hamburgerColor?.scrolled : hamburgerColor?.unscrolled }} />
             </div>
           </button>
         </div>
@@ -406,9 +510,9 @@ const Navbar = ({
             disabled={isPreview}
           >
             <div className="relative w-8 h-8">
-              <span ref={topBarRef} className={`absolute top-0 left-0 w-2/3 h-0.5 ${hasScrolled || config?.useWhiteHamburger ? "bg-white" : "bg-black"} transition-colors duration-300`} />
-              <span ref={middleBarRef} className={`absolute top-2 left-0 w-2/3 h-0.5 ${hasScrolled || config?.useWhiteHamburger ? "bg-white" : "bg-black"} transition-colors duration-300`} />
-              <span ref={bottomBarRef} className={`absolute top-4 left-0 w-2/3 h-0.5 ${hasScrolled || config?.useWhiteHamburger ? "bg-white" : "bg-black"} transition-colors duration-300`} />
+              <span ref={topBarRef} className={`absolute top-0 left-0 w-2/3 h-0.5 transition-colors duration-300`} style={{ backgroundColor: hasScrolled ? hamburgerColor?.scrolled : hamburgerColor?.unscrolled }} />
+              <span ref={middleBarRef} className={`absolute top-2 left-0 w-2/3 h-0.5 transition-colors duration-300`} style={{ backgroundColor: hasScrolled ? hamburgerColor?.scrolled : hamburgerColor?.unscrolled }} />
+              <span ref={bottomBarRef} className={`absolute top-4 left-0 w-2/3 h-0.5 transition-colors duration-300`} style={{ backgroundColor: hasScrolled ? hamburgerColor?.scrolled : hamburgerColor?.unscrolled }} />
             </div>
           </button>
         </div>
@@ -420,11 +524,11 @@ const Navbar = ({
 
       {isOpen && !isPreview && (
         <div
-          className={`md:hidden flex flex-col items-center justify-center w-full fixed top-[10vh] left-0 z-[9998] shadow-lg transition-colors duration-300 ${dropdownStyling.className} ${dropdownTextSetting}`}
+          className={`md:hidden flex flex-col items-center justify-center w-full fixed top-[${navbarHeight?.scrolled?.base || '10vh'}] left-0 z-[9998] shadow-lg transition-colors duration-300 ${dropdownStyling.className}`}
           style={dropdownStyling.style}
         >
           {navLinksFromConfig.map((nav) => (
-            <HashLink key={nav.name} smooth to={nav.href} onClick={() => setIsOpen(false)} className={`px-5 py-2 text-xs hover:text-gray-300 transition-all ${dropdownTextSetting}`}>
+            <HashLink key={nav.name} smooth to={nav.href} onClick={() => setIsOpen(false)} style={dropdownTextStyle} className={`px-5 py-2 text-xs hover:text-gray-300 transition-all`}>
               {nav.name}
             </HashLink>
           ))}
@@ -437,94 +541,319 @@ const Navbar = ({
           style={dropdownStyling.style}
         >
           {navLinksFromConfig.map((nav) => (
-            <HashLink key={nav.name} smooth to={nav.href} onClick={() => setIsDesktopMenuOpen(false)} className={`px-5 py-3 text-sm hover:text-gray-300 w-full text-right ${dropdownTextSetting}`}>
+            <HashLink key={nav.name} smooth to={nav.href} onClick={() => setIsDesktopMenuOpen(false)} style={dropdownTextStyle} className={`px-5 py-3 text-sm hover:text-gray-300 w-full text-right`}>
               {nav.name}
             </HashLink>
           ))}
         </div>
       )}
+
+      <IconSelectorModal
+        isOpen={isOpen}
+        onClose={onClose}
+        onIconSelect={handleSelect}
+        currentIconPack={currentSelection?.pack}
+        currentIconName={currentSelection?.name}
+      />
     </>
   );
 };
 
+// Helper function to determine if a color is dark (for text contrast)
+const isColorDark = (hexColor) => {
+  if (!hexColor || typeof hexColor !== 'string' || hexColor.length < 4) return true; // Default to dark for safety
+  let color = hexColor.charAt(0) === '#' ? hexColor.substring(1, 7) : hexColor;
+  if (color.length === 3) {
+    color = color.split('').map(char => char + char).join('');
+  }
+  if (color.length !== 6) return true;
+
+  const r = parseInt(color.substring(0, 2), 16);
+  const g = parseInt(color.substring(2, 4), 16);
+  const b = parseInt(color.substring(4, 6), 16);
+  if (isNaN(r) || isNaN(g) || isNaN(b)) return true;
+
+  const hsp = Math.sqrt(
+    0.299 * (r * r) +
+    0.587 * (g * g) +
+    0.114 * (b * b)
+  );
+  return hsp < 127.5;
+};
+
 Navbar.propTypes = {
   config: PropTypes.shape({
-    title: PropTypes.string, // New prop type
-    subtitle: PropTypes.string, // New prop type
+    title: PropTypes.string,
+    subtitle: PropTypes.string,
     navLinks: PropTypes.arrayOf(PropTypes.shape({ name: PropTypes.string, href: PropTypes.string })),
-    logo: PropTypes.oneOfType([ // Updated prop type for logo
-      PropTypes.string,
-      PropTypes.shape({
-        url: PropTypes.string,
-        file: PropTypes.object, // File object
-        name: PropTypes.string
-      })
-    ]),
-    whiteLogo: PropTypes.oneOfType([ // Updated prop type for whiteLogo
-      PropTypes.string,
-      PropTypes.shape({
-        url: PropTypes.string,
-        file: PropTypes.object,
-        name: PropTypes.string
-      })
-    ]),
-    whiteLogoIcon: PropTypes.shape({ // New prop type for white logo icon
+    images: PropTypes.arrayOf(PropTypes.object),
+    whiteImages: PropTypes.arrayOf(PropTypes.object),
+    whiteLogoIcon: PropTypes.shape({
       pack: PropTypes.string,
       name: PropTypes.string,
+    }),
+    hamburgerColor: PropTypes.shape({
+      unscrolled: PropTypes.string,
+      scrolled: PropTypes.string,
     }),
     useWhiteHamburger: PropTypes.bool,
     scrolledBackgroundColor: PropTypes.string,
     unscrolledBackgroundColor: PropTypes.string,
     dropdownBackgroundColor: PropTypes.string,
     dropdownTextColor: PropTypes.string,
+    mainTitleTextSettings: PropTypes.object,
+    subTitleTextSettings: PropTypes.object,
+    animation: PropTypes.object,
+    styling: PropTypes.object,
+    textSizes: PropTypes.object,
+    logoTextDistance: PropTypes.object,
+    navbarHeight: PropTypes.object,
   }),
   forceScrolledState: PropTypes.bool,
   isPreview: PropTypes.bool,
-  onTitleChange: PropTypes.func, // New prop type
-  onSubtitleChange: PropTypes.func, // New prop type
-  isEditingPreview: PropTypes.bool, // New prop type
-  naturalOffsetVh: PropTypes.number,
-  slideUpDistanceVh: PropTypes.number,
-  logoSizeUnscrolled: PropTypes.shape({
-    width: PropTypes.string,
-    height: PropTypes.string,
-  }),
-  logoSizeScrolled: PropTypes.shape({
-    width: PropTypes.string,
-    height: PropTypes.string,
-  }),
-  textSizes: PropTypes.shape({
-    unscrolled: PropTypes.shape({
-      base: PropTypes.string,
-      md: PropTypes.string,
-      lg: PropTypes.string,
-    }),
-    scrolled: PropTypes.shape({
-      base: PropTypes.string,
-      md: PropTypes.string,
-    }),
-  }),
-  logoTextDistance: PropTypes.shape({
-    unscrolled: PropTypes.shape({
-      base: PropTypes.string,
-      md: PropTypes.string,
-    }),
-    scrolled: PropTypes.shape({
-      base: PropTypes.string,
-      md: PropTypes.string,
-    }),
-  }),
-  navbarHeight: PropTypes.shape({
-    unscrolled: PropTypes.shape({
-      base: PropTypes.string,
-      md: PropTypes.string,
-    }),
-    scrolled: PropTypes.shape({
-      base: PropTypes.string,
-      md: PropTypes.string,
-    }),
-  }),
-  invertLogoColor: PropTypes.bool,
+  onTitleChange: PropTypes.func,
+  onSubtitleChange: PropTypes.func,
+  isEditingPreview: PropTypes.bool,
+  onIconSelect: PropTypes.func,
 };
+
+// General Controls for Navbar: Sizing and Animation
+const NavbarGeneralControls = ({ currentData, onControlsChange }) => {
+    const styling = currentData.styling || {};
+    const animation = currentData.animation || {};
+    const navbarHeight = currentData.navbarHeight || {};
+
+    const handleAnimationChange = (key, value) => {
+        onControlsChange({
+            animation: { ...animation, [key]: value }
+        });
+    };
+    
+    const handleHeightChange = (state, size, value) => {
+        const newHeight = {
+            ...navbarHeight,
+            [state]: {
+                ...navbarHeight[state],
+                [size]: `${value}vh`
+            }
+        };
+        onControlsChange({ navbarHeight: newHeight });
+    };
+
+    const parseValue = (val, fallback) => {
+        if (typeof val === 'string') {
+            const parsed = parseInt(val, 10);
+            return isNaN(parsed) ? fallback : parsed;
+        }
+        return fallback;
+    };
+
+
+    return (
+        <div className="p-4 space-y-6 bg-gray-800 text-white rounded-lg">
+            {/* Sizing Section */}
+            <div>
+                <h3 className="text-lg font-semibold mb-4 text-gray-100 border-b border-gray-600 pb-2">Sizing</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Desktop Sizing */}
+                    <div className="space-y-4">
+                        <h4 className="text-md font-medium text-gray-300">Desktop</h4>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-400 mb-1">Navbar Height (Unscrolled): {navbarHeight?.unscrolled?.md || '20vh'}</label>
+                            <input type="range" min="10" max="30" value={parseValue(navbarHeight?.unscrolled?.md, 20)} onChange={e => handleHeightChange('unscrolled', 'md', e.target.value)} className="w-full"/>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-400 mb-1">Navbar Height (Scrolled): {navbarHeight?.scrolled?.md || '10vh'}</label>
+                            <input type="range" min="8" max="25" value={parseValue(navbarHeight?.scrolled?.md, 10)} onChange={e => handleHeightChange('scrolled', 'md', e.target.value)} className="w-full"/>
+                        </div>
+                    </div>
+                    {/* Mobile Sizing */}
+                    <div className="space-y-4">
+                        <h4 className="text-md font-medium text-gray-300">Mobile</h4>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-400 mb-1">Navbar Height (Unscrolled): {navbarHeight?.unscrolled?.base || '16vh'}</label>
+                            <input type="range" min="10" max="30" value={parseValue(navbarHeight?.unscrolled?.base, 16)} onChange={e => handleHeightChange('unscrolled', 'base', e.target.value)} className="w-full"/>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-400 mb-1">Navbar Height (Scrolled): {navbarHeight?.scrolled?.base || '10vh'}</label>
+                            <input type="range" min="8" max="25" value={parseValue(navbarHeight?.scrolled?.base, 10)} onChange={e => handleHeightChange('scrolled', 'base', e.target.value)} className="w-full"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Animation Section */}
+            <div>
+                <h3 className="text-lg font-semibold mb-4 text-gray-100 border-b border-gray-600 pb-2">Animation</h3>
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Natural Vertical Offset: {animation.naturalOffsetVh || 11}vh</label>
+                        <input type="range" min="0" max="20" value={animation.naturalOffsetVh || 11} onChange={e => handleAnimationChange('naturalOffsetVh', parseInt(e.target.value))} className="w-full"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Color Controls for Navbar
+const NavbarColorControls = ({ currentData, onControlsChange, themeColors }) => {
+    const handleColorChange = (fieldName, value) => {
+        onControlsChange({ [fieldName]: value });
+    };
+
+    return (
+        <div className="p-3 space-y-6 bg-gray-800 text-white rounded-lg">
+            <h3 className="text-lg font-semibold mb-3 text-center border-b border-gray-600 pb-2 text-gray-100">Navbar Colors</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <ThemeColorPicker
+                    label="Scrolled Background:"
+                    currentColorValue={currentData.scrolledBackgroundColor || "#1e293b"}
+                    themeColors={themeColors}
+                    onColorChange={handleColorChange}
+                    fieldName="scrolledBackgroundColor"
+                />
+                <ThemeColorPicker
+                    label="Unscrolled Background:"
+                    currentColorValue={currentData.unscrolledBackgroundColor || "#FFFFFF"}
+                    themeColors={themeColors}
+                    onColorChange={handleColorChange}
+                    fieldName="unscrolledBackgroundColor"
+                />
+                <ThemeColorPicker
+                    label="Dropdown Background:"
+                    currentColorValue={currentData.dropdownBackgroundColor || "#FFFFFF"}
+                    themeColors={themeColors}
+                    onColorChange={handleColorChange}
+                    fieldName="dropdownBackgroundColor"
+                />
+                <ThemeColorPicker
+                    label="Dropdown Text:"
+                    currentColorValue={currentData.dropdownTextColor || "#000000"}
+                    themeColors={themeColors}
+                    onColorChange={handleColorChange}
+                    fieldName="dropdownTextColor"
+                />
+                <ThemeColorPicker
+                    label="Hamburger (Unscrolled):"
+                    currentColorValue={currentData.hamburgerColor?.unscrolled || "#000000"}
+                    themeColors={themeColors}
+                    onColorChange={(fieldName, value) => onControlsChange({ hamburgerColor: { ...currentData.hamburgerColor, unscrolled: value } })}
+                    fieldName="hamburgerColor.unscrolled"
+                />
+                <ThemeColorPicker
+                    label="Hamburger (Scrolled):"
+                    currentColorValue={currentData.hamburgerColor?.scrolled || "#FFFFFF"}
+                    themeColors={themeColors}
+                    onColorChange={(fieldName, value) => onControlsChange({ hamburgerColor: { ...currentData.hamburgerColor, scrolled: value } })}
+                    fieldName="hamburgerColor.scrolled"
+                />
+            </div>
+        </div>
+    );
+};
+
+// Font Controls for Navbar
+const NavbarFontsControls = ({ currentData, onControlsChange, themeColors }) => {
+    const [viewport, setViewport] = useState('desktop');
+    const [scrollState, setScrollState] = useState('unscrolled');
+    
+    const handleSettingsChange = (settingsType, newSettings) => {
+        onControlsChange({ 
+            [settingsType]: {
+                ...currentData[settingsType],
+                [scrollState]: {
+                    ...currentData[settingsType]?.[scrollState],
+                    ...newSettings
+                }
+            }
+        });
+    };
+
+    return (
+        <div className="space-y-6 p-4 bg-gray-800 rounded-lg">
+            <div className="text-center mb-4">
+                <h3 className="text-lg font-medium leading-6 text-white">Font Settings</h3>
+                <p className="mt-1 text-sm text-gray-400">
+                  Select a view to edit its font styles.
+                </p>
+                {/* Viewport Toggle */}
+                <div className="mt-4 flex justify-center bg-gray-900 rounded-lg p-1">
+                  <button
+                    onClick={() => setViewport('desktop')}
+                    className={`px-4 py-2 text-sm font-medium rounded-md ${viewport === 'desktop' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700'} transition-all duration-200`}
+                  >
+                    Desktop
+                  </button>
+                  <button
+                    onClick={() => setViewport('mobile')}
+                    className={`px-4 py-2 text-sm font-medium rounded-md ${viewport === 'mobile' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700'} transition-all duration-200`}
+                  >
+                    Mobile
+                  </button>
+                </div>
+                {/* Scroll State Toggle */}
+                <div className="mt-2 flex justify-center bg-gray-900 rounded-lg p-1">
+                  <button
+                    onClick={() => setScrollState('unscrolled')}
+                    className={`px-4 py-2 text-sm font-medium rounded-md ${scrollState === 'unscrolled' ? 'bg-green-600 text-white' : 'text-gray-300 hover:bg-gray-700'} transition-all duration-200`}
+                  >
+                    Unscrolled
+                  </button>
+                  <button
+                    onClick={() => setScrollState('scrolled')}
+                    className={`px-4 py-2 text-sm font-medium rounded-md ${scrollState === 'scrolled' ? 'bg-green-600 text-white' : 'text-gray-300 hover:bg-gray-700'} transition-all duration-200`}
+                  >
+                    Scrolled
+                  </button>
+                </div>
+            </div>
+
+            <PanelFontController
+                label="Main Title Font"
+                currentData={currentData.mainTitleTextSettings?.[scrollState]}
+                onControlsChange={(newSettings) => handleSettingsChange('mainTitleTextSettings', newSettings)}
+                themeColors={themeColors}
+                fieldPrefix={viewport}
+            />
+            <PanelFontController
+                label="Subtitle Font"
+                currentData={currentData.subTitleTextSettings?.[scrollState]}
+                onControlsChange={(newSettings) => handleSettingsChange('subTitleTextSettings', newSettings)}
+                themeColors={themeColors}
+                fieldPrefix={viewport}
+            />
+        </div>
+    );
+};
+
+
+// Expose tabsConfig for BottomStickyEditPanel
+Navbar.tabsConfig = (blockCurrentData, onControlsChange, themeColors) => ({
+  general: (props) => (
+    <NavbarGeneralControls
+      {...props}
+      currentData={blockCurrentData}
+      onControlsChange={(changedData) => onControlsChange({ ...blockCurrentData, ...changedData })}
+    />
+  ),
+  colors: (props) => (
+    <NavbarColorControls
+      {...props}
+      currentData={blockCurrentData}
+      onControlsChange={(changedData) => onControlsChange({ ...blockCurrentData, ...changedData })}
+      themeColors={themeColors}
+    />
+  ),
+  fonts: (props) => (
+    <NavbarFontsControls
+      {...props}
+      currentData={blockCurrentData}
+      onControlsChange={(changedData) => onControlsChange({ ...blockCurrentData, ...changedData })}
+      themeColors={themeColors}
+    />
+  ),
+});
+
 
 export default Navbar;

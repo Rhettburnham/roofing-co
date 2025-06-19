@@ -40,68 +40,63 @@ const getDisplayPath = (pathOrFile) => {
  1) HERO PREVIEW (Displays actual hero content)
 ----------------------------------------------------
 - Does NOT display mainTitle, subTitle, or logo.
-- Shows heroImage background and interactive service sections.
+- Shows heroImage background and interactive service sec
 - Takes `heroconfig` prop. This will be `localData` from HeroBlock 
   when HeroBlock is in edit mode, or original `heroconfig` 
   from MainPageForm when HeroBlock is read-only.
 ====================================================
 */
-function HeroPreview({ heroconfig }) { 
+function HeroPreview({ heroconfig, forcedActiveSection: forcedActiveSectionProp }) { 
   if (!heroconfig) {
     return <p>No data found for HeroPreview.</p>;
   }
 
-  console.log("[HeroPreview] Received heroconfig:", {
-    hasImages: heroconfig.images?.length > 0,
-    imagesArray: heroconfig.images,
-    heroImage: heroconfig.heroImage,
-    readOnly: heroconfig.readOnly
-  });
-
   const bannerStyles = {
-    "--banner-color": heroconfig.bannerColor || "#1e293b",
-    "--top-banner-color": heroconfig.topBannerColor || "#FFFFFF",
+    "--banner-color": heroconfig.bannerColor || "",
+    "--top-banner-color": heroconfig.topBannerColor || "",
   };
 
   // Destructure styling from heroconfig, providing defaults
   const { 
-    styling: { desktopHeightVH = 30, mobileHeightVW = 75 } = {},
+    styling: {
+      desktopHeightVH = 30,
+      mobileHeightVW = 75,
+      iconDesktopSize = 60, // in px
+      iconMobileSize = 6.5, // in vw
+    } = {},
     readOnly: isPreviewReadOnly,
     brightness = 50, // Default brightness
     mainTitleTextSettings,
     subTitleTextSettings,
   } = heroconfig;
 
+  const [internalActiveSection, setInternalActiveSection] = useState("neutral");
+  const activeSection = forcedActiveSectionProp !== undefined ? forcedActiveSectionProp : internalActiveSection;
+
   const [residentialServices, setResidentialServices] = useState([]);
   const [commercialServices, setCommercialServices] = useState([]);
 
   // Get heroImage from the new images array structure if present, otherwise use direct heroImage
   const heroImageToDisplay = (() => {
-    // First priority: images array (new structure for PanelImagesController)
     if (heroconfig.images && heroconfig.images.length > 0) {
       const imageObj = heroconfig.images[0];
       // Use blob URL if file was uploaded, otherwise use the original URL
       const url = imageObj.url || null;
-      console.log('[HeroPreview] Image source from images array:', url);
       return url;
     }
     
     // Second priority: direct heroImage property (legacy or direct assignment)
     if (heroconfig.heroImage) {
       if (typeof heroconfig.heroImage === 'object' && heroconfig.heroImage.url) {
-        console.log('[HeroPreview] Image source from heroImage object:', heroconfig.heroImage.url);
         return heroconfig.heroImage.url;
       }
       if (typeof heroconfig.heroImage === 'string') {
-        console.log('[HeroPreview] Image source from heroImage string:', heroconfig.heroImage);
         return heroconfig.heroImage;
       }
     }
     
-    // Fallback to default
-    const defaultUrl = "/assets/images/hero/hero_split_background.jpg";
-    console.log('[HeroPreview] No image source found, using default:', defaultUrl);
-    return defaultUrl;
+    // Fallback to null if no image is configured
+    return null;
   })();
 
   const generateResponsiveTextStyles = () => {
@@ -187,7 +182,7 @@ function HeroPreview({ heroconfig }) {
           route: `/services/${type}/${slug}`,
           id: service.id, // Ensure id is carried over
           originalTitle: originalIdentifier, // Ensure originalTitle is present
-          slug: slug, // Preserve the slug for routing
+          slug: slug, // Preserve the slug for routingx
         };
       });
     };
@@ -195,8 +190,6 @@ function HeroPreview({ heroconfig }) {
     setResidentialServices(processSubServices(residential.subServices, 'residential'));
     setCommercialServices(processSubServices(commercial.subServices, 'commercial'));
   }, [residential.subServices, commercial.subServices]);
-
-  const [activeSection, setActiveSection] = useState("neutral");
 
   // Props for inline editing, only relevant if HeroBlock's readOnly is false
   const { onServiceNameChange, onRemoveService, onEditServiceIcon, onAddService } = heroconfig;
@@ -209,8 +202,8 @@ function HeroPreview({ heroconfig }) {
   const iconAnimationVariants = {
     neutral: { x: 0, y: 0, scale: 1, opacity: 1, transition: { duration: 0.3, ease: "easeInOut" } },
     active: { // Icon shifts up slightly when active, and sub-services appear below it
-      y: 0, 
-      x: -20, // Icon slides left slightly to make space for sub-services to its right
+      y: -10,
+      x: 0,
       scale: 1.1,
       opacity: 1,
       transition: { duration: 0.3, ease: "easeInOut" }
@@ -219,24 +212,24 @@ function HeroPreview({ heroconfig }) {
   };
 
   const textLabelAnimationVariants = {
-    exit: { opacity: 0, x: 10, transition: { duration: 0.2, ease: "easeOut" } }, // Label slides out to the right
-    enter: { opacity: 1, x: 0, transition: { duration: 0.3, ease: "easeIn" } },
+    exit: { opacity: 0, y: 10, transition: { duration: 0.2, ease: "easeOut" } },
+    enter: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeIn" } },
   };
 
   // Variants for the sub-service column container (now a row/horizontal container)
   const subServiceContainerVariants = {
-    hidden: { opacity: 0, width: 0, x: -10, transition: { duration: 0.3, ease: "easeInOut", when: "afterChildren" } },
-    visible: { 
-      opacity: 1, 
-      width: 'auto', // Animate to auto width
-      x: 0, 
-      transition: { duration: 0.4, delay: 0.1, ease: "easeInOut", when: "beforeChildren", staggerChildren: 0.07 } 
+    hidden: { opacity: 0, height: 0, y: -10, transition: { duration: 0.3, ease: "easeInOut", when: "afterChildren" } },
+    visible: {
+      opacity: 1,
+      height: 'auto', // Animate to auto height
+      y: 0,
+      transition: { duration: 0.4, delay: 0.1, ease: "easeInOut", when: "beforeChildren", staggerChildren: 0.07 }
     }
   };
 
   const subServiceItemVariants = {
-    hidden: { opacity: 0, x: -10 }, // Items slide in from left slightly
-    visible: { opacity: 1, x: 0, transition: { duration: 0.2, ease: "easeOut" } }
+    hidden: { opacity: 0, y: -10 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.2, ease: "easeOut" } }
   };
 
   const renderServiceSection = (type, services, iconDetails) => {
@@ -252,12 +245,28 @@ function HeroPreview({ heroconfig }) {
       if (!isPreviewReadOnly && onEditServiceIcon) {
         onEditServiceIcon(type);
       } else {
-        setActiveSection(prev => prev === type ? "neutral" : type);
+        if (forcedActiveSectionProp === undefined) { // Only allow internal state change if not controlled externally
+          setInternalActiveSection(prev => prev === type ? "neutral" : type);
+        }
       }
     };
 
     const handleSectionAreaClick = () => {
-      setActiveSection(prev => prev === type ? "neutral" : type);
+      if (forcedActiveSectionProp === undefined) { // Only allow internal state change if not controlled externally
+        setInternalActiveSection(prev => prev === type ? "neutral" : type);
+      }
+    };
+
+    const iconStyle = {
+        width: `${iconMobileSize}vw`,
+        height: `${iconMobileSize}vw`,
+        minWidth: '40px',
+        minHeight: '40px'
+    };
+    
+    const iconStyleDesktop = {
+        width: `${iconDesktopSize}px`,
+        height: `${iconDesktopSize}px`,
     };
 
     return (
@@ -267,9 +276,10 @@ function HeroPreview({ heroconfig }) {
       >
         <style>{generateResponsiveTextStyles()}</style>
         {/* Icon and Main Label (Horizontal when neutral, Icon slides left and sub-services appear right when active) */}
-        <div className="flex items-center justify-center mb-2 md:mb-3 min-h-[40px] md:min-h-[50px] relative">
+        <div className="flex items-center justify-center mb-2 md:mb-3 min-h-[50px] md:min-h-[60px] relative">
           <motion.div
-            className={`${iconWrapperBaseClass} ${!isPreviewReadOnly ? 'hover:bg-white/10 rounded-md' : ''}`}
+            className={`text-gray-50 flex items-center justify-center drop-shadow-[0_2.2px_2.2px_rgba(0,0,0,0.7)] ${!isPreviewReadOnly ? 'hover:bg-white/10 rounded-md' : ''}`}
+            style={window.innerWidth < 768 ? iconStyle : iconStyleDesktop}
             variants={iconAnimationVariants}
             animate={iconState}
             layout
@@ -282,6 +292,7 @@ function HeroPreview({ heroconfig }) {
               pack={iconDetails.iconPack} 
               name={iconDetails.icon} 
               fallback={type === 'residential' ? DefaultHomeIcon : DefaultWarehouseIcon}
+              className="w-full h-full"
             />
           </motion.div>
           
@@ -304,11 +315,12 @@ function HeroPreview({ heroconfig }) {
           <AnimatePresence>
             {isActive && (
               <motion.div
-                className="absolute left-full ml-4 flex items-center space-x-4" // Positioned to the right of the icon
+                className="absolute top-full mt-4 flex flex-col items-center space-y-2 z-20" // Positioned to the right of the icon
                 variants={subServiceContainerVariants}
                 initial="hidden"
                 animate="visible"
                 exit="hidden"
+                layout
               >
                 {services.map((service) => (
                   <motion.div key={service.id} variants={subServiceItemVariants} className="relative group">
@@ -358,11 +370,10 @@ function HeroPreview({ heroconfig }) {
   return (
     <section className="relative overflow-y-hidden" style={bannerStyles}>
       <div 
-        className={`absolute top-[0vh] left-0 right-0 from-0% to-transparent z-60 pointer-events-none ${activeSection === "neutral" ? "h-[18vh] md:h-[13.5vh]" : "h-[10vh] md:h-[10vh]"}`} 
+        className={`absolute top-[0vh] left-0 right-0 from-0% to-transparent z-10 pointer-events-none ${activeSection === "neutral" ? "h-[18vh] md:h-[13.5vh]" : "h-[10vh] md:h-[10vh]"}`} 
         style={{ 
           backgroundImage: `linear-gradient(to bottom, ${topBannerColor || '#FFFFFF'} 20%, rgba(255, 255, 255, 0) 100%)`,
           transition: "height 0.3s ease-out 0.4s", 
-          zIndex: 1 
         }}
       />
       <div 
@@ -408,7 +419,7 @@ function HeroPreview({ heroconfig }) {
           style={{ 
             backgroundImage: `linear-gradient(to top, ${bannerColor || '#1e293b'} 10%, rgba(0,0,0,0) 100%)`, 
             transition: "height 0.3s ease-out 0.4s", 
-            zIndex: 1 
+            zIndex: 3
           }}
         />
       </div>
@@ -418,7 +429,7 @@ function HeroPreview({ heroconfig }) {
 
 HeroPreview.propTypes = {
   heroconfig: PropTypes.object.isRequired,
-  onHeightChange: PropTypes.func,
+  forcedActiveSection: PropTypes.string,
 };
 
 const HeroColorControls = ({ currentData, onControlsChange, themeColors }) => {
@@ -437,17 +448,7 @@ const HeroColorControls = ({ currentData, onControlsChange, themeColors }) => {
     onControlsChange({ colors: updatedColors });
   };
 
-  const handleAddCustomColor = () => {
-    const colors = currentData.colors || [];
-    const newColor = {
-      id: `hero-custom-${Date.now()}`,
-      name: `custom-${colors.length + 1}`,
-      label: `Custom Color ${colors.length + 1}`,
-      value: "#3b82f6",
-      description: "Custom hero color"
-    };
-    onControlsChange({ colors: [...colors, newColor] });
-  };
+
 
   const handleRemoveCustomColor = (colorId) => {
     const colors = currentData.colors || [];
@@ -479,49 +480,7 @@ const HeroColorControls = ({ currentData, onControlsChange, themeColors }) => {
         />
       </div>
 
-      {/* Custom Hero Colors */}
-      <div className="mt-6 border-t border-gray-700 pt-4">
-        <div className="flex items-center justify-between mb-4">
-          <h4 className="text-md font-medium text-gray-200">Custom Hero Colors</h4>
-          <button
-            onClick={handleAddCustomColor}
-            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-md transition-colors"
-          >
-            + Add Color
-          </button>
-        </div>
-        
-        {(currentData.colors || []).map((color, index) => (
-          <div key={color.id} className="bg-gray-700 p-3 rounded-lg mb-3">
-            <div className="flex items-center justify-between mb-2 gap-2">
-              <input
-                type="text"
-                value={color.label}
-                onChange={(e) => handleCustomColorChange(color.id, 'label', e.target.value)}
-                className="bg-gray-600 text-white px-2 py-1 rounded text-sm flex-1"
-                placeholder="Color Name"
-              />
-              <button
-                onClick={() => handleRemoveCustomColor(color.id)}
-                className="text-red-400 hover:text-red-300 text-sm px-2 py-1 rounded-md bg-gray-800 hover:bg-gray-900"
-              >
-                Remove
-              </button>
-            </div>
-            <ThemeColorPicker
-              label=""
-              currentColorValue={color.value}
-              themeColors={themeColors}
-              onColorChange={(_, value) => handleCustomColorChange(color.id, 'value', value)}
-              fieldName={`customColor-${color.id}`}
-            />
-          </div>
-        ))}
-        
-        {(!currentData.colors || currentData.colors.length === 0) && (
-          <p className="text-gray-400 text-sm italic">No custom colors defined. Click "Add Color" to create one.</p>
-        )}
-      </div>
+
     </div>
   );
 };
@@ -704,7 +663,7 @@ function HeroControlsPanel({ currentData, onControlsChange, themeColors }) {
  - mainTitle, subTitle, logo are NO LONGER part of this block's data/editing.
 ====================================================
 */
-export default function HeroBlock({
+function HeroBlock({
   heroconfig: heroconfigProp = { 
     residential: { subServices: [], icon: 'Home', iconPack: 'lucide' },
     commercial: { subServices: [], icon: 'Building2', iconPack: 'lucide' },
@@ -749,60 +708,25 @@ export default function HeroBlock({
       }
     },
     colors: [],
-    styling: { desktopHeightVH: 30, mobileHeightVW: 75 },
+    styling: { desktopHeightVH: 30, mobileHeightVW: 75, iconDesktopSize: 60, iconMobileSize: 6.5 },
   },
   readOnly = false,
   onConfigChange = () => {},
   themeColors = [],
+  forcedActiveSection,
 }) {
   const getInitializedData = (heroconfigProp) => {
-    // Start with a deep copy of the default values from HeroBlock.defaultProps
-    const defaults = HeroBlock.defaultProps.heroconfig;
+    // No fallback data, all configuration must come from the prop.
+    const data = { ...heroconfigProp };
 
-    const mergedData = {
-      ...defaults,
-      ...heroconfigProp,
-      residential: {
-        ...defaults.residential,
-        ...(heroconfigProp.residential || {}),
-      },
-      commercial: {
-        ...defaults.commercial,
-        ...(heroconfigProp.commercial || {}),
-      },
-      mainTitleTextSettings: {
-        desktop: {
-          ...defaults.mainTitleTextSettings.desktop,
-          ...((heroconfigProp.mainTitleTextSettings || {}).desktop || {}),
-        },
-        mobile: {
-          ...defaults.mainTitleTextSettings.mobile,
-          ...((heroconfigProp.mainTitleTextSettings || {}).mobile || {}),
-        },
-      },
-      subTitleTextSettings: {
-        desktop: {
-          ...defaults.subTitleTextSettings.desktop,
-          ...((heroconfigProp.subTitleTextSettings || {}).desktop || {}),
-        },
-        mobile: {
-          ...defaults.subTitleTextSettings.mobile,
-          ...((heroconfigProp.subTitleTextSettings || {}).mobile || {}),
-        },
-      },
-      styling: {
-        ...defaults.styling,
-        ...(heroconfigProp.styling || {}),
-      },
-    };
-    
-    // Legacy migration: if old `textSettings` exists, migrate it
-    if (heroconfigProp.textSettings && !heroconfigProp.mainTitleTextSettings) {
-      mergedData.mainTitleTextSettings.desktop = { ...heroconfigProp.textSettings };
-      delete mergedData.mainTitleTextSettings.desktop.textAlign;
-      mergedData.mainTitleTextSettings.mobile = { ...mergedData.mainTitleTextSettings.desktop };
-      mergedData.mainTitleTextSettings.mobile.fontSize = Math.max(8, (mergedData.mainTitleTextSettings.desktop.fontSize || 18) - 2);
-    }
+    // Ensure basic structure to prevent runtime errors, but without default content.
+    data.residential = data.residential || { subServices: [], icon: '', iconPack: '' };
+    data.commercial = data.commercial || { subServices: [], icon: '', iconPack: '' };
+    data.images = data.images || [];
+    data.mainTitleTextSettings = data.mainTitleTextSettings || { desktop: {}, mobile: {} };
+    data.subTitleTextSettings = data.subTitleTextSettings || { desktop: {}, mobile: {} };
+    data.styling = data.styling || {};
+    data.colors = data.colors || [];
     
     const ensureOriginalTitle = (subServices) => {
       return (subServices || []).map(s => ({
@@ -812,49 +736,46 @@ export default function HeroBlock({
       }));
     };
 
-    mergedData.residential.subServices = ensureOriginalTitle(mergedData.residential.subServices);
-    mergedData.commercial.subServices = ensureOriginalTitle(mergedData.commercial.subServices);
+    data.residential.subServices = ensureOriginalTitle(data.residential.subServices);
+    data.commercial.subServices = ensureOriginalTitle(data.commercial.subServices);
 
-
-    // Image initialization logic
+    // Image initialization logic - no default image path
     let initialImages = [];
-    const defaultHeroImagePath = "/assets/images/hero/hero_split_background.jpg";
-    if (mergedData.images && Array.isArray(mergedData.images) && mergedData.images.length > 0) {
-      initialImages = mergedData.images.map((img, index) => ({
+    if (data.images && Array.isArray(data.images) && data.images.length > 0) {
+      initialImages = data.images.map((img, index) => ({
         id: img.id || `heroimg_existing_${index}_${Date.now()}`,
-        url: img.url || defaultHeroImagePath,
+        url: img.url || null,
         file: img.file instanceof File ? img.file : null,
-        name: img.name || img.url?.split('/').pop() || 'hero_split_background.jpg',
-        originalUrl: img.originalUrl || (typeof img.url === 'string' && !img.url.startsWith('blob:') ? img.url : defaultHeroImagePath)
+        name: img.name || img.url?.split('/').pop() || '',
+        originalUrl: img.originalUrl || (typeof img.url === 'string' && !img.url.startsWith('blob:') ? img.url : null)
       }));
-    } else if (mergedData.heroImage) {
-        let urlToUse = null, fileToUse = null, originalUrlToUse = null, nameToUse = 'hero_split_background.jpg', idToUse = `heroimg_init_${Date.now()}`;
-        const propImage = mergedData.heroImage;
+    } else if (data.heroImage) { // Legacy support
+        let urlToUse = null, fileToUse = null, originalUrlToUse = null, nameToUse = '', idToUse = `heroimg_init_${Date.now()}`;
+        const propImage = data.heroImage;
         if (typeof propImage === 'object' && propImage.url !== undefined) {
-          urlToUse = propImage.url || defaultHeroImagePath;
+          urlToUse = propImage.url || null;
           fileToUse = (propImage.file instanceof File) ? propImage.file : null;
-          originalUrlToUse = propImage.originalUrl || (typeof propImage.url === 'string' && !propImage.url.startsWith('blob:') ? propImage.url : defaultHeroImagePath);
-          nameToUse = propImage.name || (fileToUse?.name) || (typeof urlToUse === 'string' ? urlToUse.split('/').pop() : 'hero_split_background.jpg') || 'hero_split_background.jpg';
+          originalUrlToUse = propImage.originalUrl || (typeof propImage.url === 'string' && !propImage.url.startsWith('blob:') ? propImage.url : null);
+          nameToUse = propImage.name || (fileToUse?.name) || (typeof urlToUse === 'string' ? urlToUse.split('/').pop() : '') || '';
           idToUse = propImage.id || idToUse;
         } else if (typeof propImage === 'string' && propImage.trim() !== '') {
           urlToUse = propImage;
           originalUrlToUse = propImage;
-          nameToUse = propImage.split('/').pop() || 'hero_split_background.jpg';
+          nameToUse = propImage.split('/').pop() || '';
         }
         if (urlToUse || fileToUse) {
             initialImages = [{ id: idToUse, url: urlToUse, file: fileToUse, name: nameToUse, originalUrl: originalUrlToUse }];
         }
     }
     
-    if (initialImages.length === 0) {
-        initialImages = [{ id: `heroimg_default_${Date.now()}`, url: defaultHeroImagePath, file: null, name: 'hero_split_background.jpg', originalUrl: defaultHeroImagePath }];
-    }
+    data.images = initialImages;
 
-    mergedData.images = initialImages;
-    mergedData.styling.desktopHeightVH = Number(mergedData.styling.desktopHeightVH);
-    mergedData.styling.mobileHeightVW = Number(mergedData.styling.mobileHeightVW);
+    if (data.styling) {
+      data.styling.desktopHeightVH = Number(data.styling.desktopHeightVH) || undefined;
+      data.styling.mobileHeightVW = Number(data.styling.mobileHeightVW) || undefined;
+    }
     
-    return mergedData;
+    return data;
   };
 
   const [localData, setLocalData] = useState(() => getInitializedData(heroconfigProp));
@@ -1123,12 +1044,13 @@ export default function HeroBlock({
         ...(localData.styling || {}),
         desktopHeightVH: Number(localData.styling?.desktopHeightVH) || 30,
         mobileHeightVW: Number(localData.styling?.mobileHeightVW) || 75,
-    }
+    },
+    forcedActiveSection: forcedActiveSection,
   };
   
   return (
     <>
-      <HeroPreview heroconfig={previewConfig} />
+      <HeroPreview heroconfig={previewConfig} forcedActiveSection={forcedActiveSection} />
       {!readOnly && isIconModalOpen && (
         <IconSelectorModal
           isOpen={isIconModalOpen} 
@@ -1146,85 +1068,107 @@ HeroBlock.propTypes = {
   readOnly: PropTypes.bool,
   onConfigChange: PropTypes.func,
   themeColors: PropTypes.oneOfType([PropTypes.array, PropTypes.object]),
+  forcedActiveSection: PropTypes.string,
 };
 
-HeroBlock.defaultProps = {
-  heroconfig: {
-    residential: { subServices: [], icon: 'Home', iconPack: 'lucide' },
-    commercial: { subServices: [], icon: 'Building2', iconPack: 'lucide' },
-    images: [],
-    bannerColor: "#1e293b",
-    topBannerColor: "#FFFFFF",
-    brightness: 75,
-    mainTitleTextSettings: {
-      desktop: { fontFamily: "Inter", fontSize: 20, fontWeight: 600, lineHeight: 1.4, letterSpacing: 0.5, color: "#FFFFFF" },
-      mobile: { fontFamily: "Inter", fontSize: 18, fontWeight: 600, lineHeight: 1.3, letterSpacing: 0.4, color: "#FFFFFF" },
-    },
-    subTitleTextSettings: {
-      desktop: { fontFamily: "Inter", fontSize: 16, fontWeight: 400, lineHeight: 1.5, letterSpacing: 0.3, color: "#FFFFFF" },
-      mobile: { fontFamily: "Inter", fontSize: 14, fontWeight: 400, lineHeight: 1.4, letterSpacing: 0.2, color: "#FFFFFF" },
-    },
-    colors: [],
-    styling: { desktopHeightVH: 30, mobileHeightVW: 75 },
-  },
-  readOnly: false,
-  onConfigChange: () => {},
-  themeColors: [],
-};
+const HeroGeneralControls = ({ currentData, onControlsChange }) => {
+    const styling = currentData.styling || {};
+    const iconDesktopSize = styling.iconDesktopSize || 60;
+    const iconMobileSize = styling.iconMobileSize || 6.5;
 
+    const handleStyleChange = (key, value) => {
+        onControlsChange({
+            styling: {
+                ...currentData.styling,
+                [key]: value
+            }
+        });
+    };
 
-// Expose tabsConfig for TopStickyEditPanel, using PanelImagesController for images
-HeroBlock.tabsConfig = (blockCurrentData, onControlsChange, themeColors) => {
-  const currentStyling = blockCurrentData.styling || { desktopHeightVH: 30, mobileHeightVW: 75 };
-  
-  let processedData = { ...blockCurrentData };
-
-  return {
-    images: (props) => (
-      <PanelImagesController 
-        {...props} 
-        currentData={processedData}
-        onControlsChange={onControlsChange}
-        imageArrayFieldName="images" 
-        maxImages={1} 
-      />
-    ),
-    colors: (props) => <HeroColorControls 
-      {...props} 
-      currentData={processedData}
-      onControlsChange={onControlsChange}
-      themeColors={themeColors} 
-    />,
-    styling: (props) => (
-      <div className="space-y-6">
-        <PanelStylingController
-          {...props}
-          currentData={processedData}
-          onControlsChange={onControlsChange}
-          blockType="HeroBlock"
-        />
-        
-        <div className="border-t border-gray-300 pt-6">
-          <BrightnessController
-            currentData={processedData}
-            onControlsChange={onControlsChange}
-            fieldName="brightness"
-            label="Hero Image Brightness"
-            min={10}
-            max={100}
-            step={5}
-          />
+    return (
+        <div className="p-4 space-y-4 bg-gray-800 text-white rounded-lg">
+            <h3 className="text-lg font-semibold mb-4 text-gray-100 border-b border-gray-600 pb-2">Icon Size</h3>
+            <div className="space-y-4">
+                <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Desktop Icon Size: {iconDesktopSize}px
+                    </label>
+                    <input
+                        type="range"
+                        min="30"
+                        max="120"
+                        value={iconDesktopSize}
+                        onChange={e => handleStyleChange('iconDesktopSize', parseInt(e.target.value))}
+                        className="w-full"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Mobile Icon Size: {iconMobileSize}vw
+                    </label>
+                    <input
+                        type="range"
+                        min="5"
+                        max="20"
+                        step="0.5"
+                        value={iconMobileSize}
+                        onChange={e => handleStyleChange('iconMobileSize', parseFloat(e.target.value))}
+                        className="w-full"
+                    />
+                </div>
+            </div>
         </div>
-        
-      </div>
-    ),
-    fonts: (props) => <HeroFontsControls 
-      {...props} 
-      currentData={processedData}
+    );
+};
+
+// Expose tabsConfig for BottomStickyEditPanel, using PanelImagesController for images
+HeroBlock.tabsConfig = (blockCurrentData, onControlsChange, themeColors) => ({
+  general: (props) => (
+    <HeroGeneralControls
+      {...props}
+      currentData={blockCurrentData}
+      onControlsChange={onControlsChange}
+    />
+  ),
+  images: (props) => (
+    <PanelImagesController
+      {...props}
+      currentData={blockCurrentData}
+      onControlsChange={onControlsChange}
+      imageArrayFieldName="images"
+      themeColors={themeColors}
+      settings={{ max: 1 }}
+    />
+  ),
+  brightness: (props) => (
+    <BrightnessController
+      {...props}
+      brightness={blockCurrentData.brightness}
+      onBrightnessChange={(newBrightness) => onControlsChange({ brightness: newBrightness })}
+    />
+  ),
+  colors: (props) => (
+    <HeroColorControls
+      {...props}
+      currentData={blockCurrentData}
       onControlsChange={onControlsChange}
       themeColors={themeColors}
-    />,
-  };
-};
+    />
+  ),
+  fonts: (props) => (
+    <HeroFontsControls
+      {...props}
+      currentData={blockCurrentData}
+      onControlsChange={onControlsChange}
+      themeColors={themeColors}
+    />
+  ),
+});
+
+// Add display name for better debugging
+HeroBlock.displayName = "HeroBlock";
+
+export default HeroBlock;
+
 
 

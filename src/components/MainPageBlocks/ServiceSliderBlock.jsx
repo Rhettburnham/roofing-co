@@ -1636,47 +1636,46 @@ export default function ServiceSliderBlock({
   );
 }
 
-// Expose tabsConfig for TopStickyEditPanel
-ServiceSliderBlock.tabsConfig = (
-  blockCurrentData,
-  onControlsChange,
-  themeColors
-) => {
-  return {
-    images: (props) => (
-      <ServiceSliderImagesControls
-        {...props}
-        currentData={blockCurrentData}
-        onControlsChange={onControlsChange}
-        themeColors={themeColors}
-      />
-    ),
-    colors: (props) => (
-      <ServiceSliderColorControls
-        {...props}
-        currentData={blockCurrentData}
-        onControlsChange={onControlsChange}
-        themeColors={themeColors}
-      />
-    ),
-    styling: (props) => (
-      <ServiceSliderStylingControls
-        {...props}
-        currentData={blockCurrentData}
-        onControlsChange={onControlsChange}
-        themeColors={themeColors}
-      />
-    ),
-    fonts: (props) => (
-      <ServiceSliderFontsControls
-        {...props}
-        currentData={blockCurrentData}
-        onControlsChange={onControlsChange}
-        themeColors={themeColors}
-      />
-    ),
-  };
-};
+// Expose tabsConfig for BottomStickyEditPanel
+ServiceSliderBlock.tabsConfig = (blockData, onUpdate, themeColors) => ({
+  general: (props) => (
+    <div className="p-4 space-y-4">
+      {/* Add any additional general settings you want to include */}
+    </div>
+  ),
+  images: (props) => (
+    <ServiceSliderImagesControls
+      {...props}
+      currentData={blockData}
+      onControlsChange={onUpdate}
+      themeColors={themeColors}
+    />
+  ),
+  colors: (props) => (
+    <ServiceSliderColorControls
+      {...props}
+      currentData={blockData}
+      onControlsChange={onUpdate}
+      themeColors={themeColors}
+    />
+  ),
+  styling: (props) => (
+    <ServiceSliderStylingControls
+      {...props}
+      currentData={blockData}
+      onControlsChange={onUpdate}
+      themeColors={themeColors}
+    />
+  ),
+  fonts: (props) => (
+    <ServiceSliderFontsControls
+      {...props}
+      currentData={blockData}
+      onControlsChange={onUpdate}
+      themeColors={themeColors}
+    />
+  ),
+});
 
 /* ==============================================
    SERVICE SLIDER IMAGES CONTROLS

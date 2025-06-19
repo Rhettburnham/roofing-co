@@ -147,9 +147,8 @@ const PanelImagesController = ({ currentData, onControlsChange, imageArrayFieldN
   };
 
   return (
-    <div className="p-2 space-y-2">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-base font-semibold text-gray-700">Manage Images</h3>
+    <div className="bg-black relative ">
+      <div className="flex items-center justify-between ">
         {(maxImages !== 1) && (
           <button
             type="button"
@@ -164,7 +163,7 @@ const PanelImagesController = ({ currentData, onControlsChange, imageArrayFieldN
         <p className="text-sm text-gray-500 italic my-1">No image slots configured. Click "Add Image Slot" to add one.</p>
       )}
       {images.length === 0 && maxImages === 1 && (
-        <div className="bg-gray-50 p-2 rounded-lg shadow space-y-1 relative">
+        <div className=" p-2 rounded-lg shadow space-y-1 relative">
           <div className="relative z-10">
             <input
               type="file"
@@ -195,7 +194,7 @@ const PanelImagesController = ({ currentData, onControlsChange, imageArrayFieldN
               Choose Image
             </button>
           </div>
-          <div className="h-36 w-full flex items-center justify-center bg-gray-100 border-dashed border-gray-300 rounded text-gray-400 text-xs pt-7">
+          <div className="h-36 w-full flex items-center justify-center  border-dashed border-gray-300 rounded text-gray-400 text-xs pt-7">
             Image Preview
           </div>
           <input
@@ -217,13 +216,14 @@ const PanelImagesController = ({ currentData, onControlsChange, imageArrayFieldN
           />
         </div>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
         {images.map((imgState, idx) => {
           const itemName = getItemName ? getItemName(imgState, idx) : (imgState?.name || `Image ${idx + 1}`);
           const previewUrl = getDisplayUrl(imgState);
 
           return (
-            <div key={imgState?.id || idx} className="bg-gray-50 p-2 rounded-lg shadow space-y-1 relative">
+            <div key={imgState?.id || idx} className="p-2 rounded-lg shadow space-y-2 relative">
+              <div className="text-right font-semibold text-white pr-8">{itemName}</div>
               {(maxImages !== 1) && (
                 <button
                   type="button"
@@ -252,7 +252,7 @@ const PanelImagesController = ({ currentData, onControlsChange, imageArrayFieldN
                   onClick={() => document.getElementById(`panel-image-file-input-${imgState?.id || idx}`)?.click()}
                   className="absolute top-0 left-0 bg-blue-600 text-white text-xs font-semibold py-1 px-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 shadow"
                 >
-                  {previewUrl ? 'Change' : 'Choose'} Image
+                  Change Image
                 </button>
               </div>
 
@@ -260,14 +260,14 @@ const PanelImagesController = ({ currentData, onControlsChange, imageArrayFieldN
                 <img
                   src={previewUrl}
                   alt={`${itemName} Preview`}
-                  className="h-36 w-full object-cover rounded bg-gray-100 p-1 pt-7"
+                  className="h-auto w-full object-cover rounded "
                   onError={(e) => { 
                     console.warn(`Failed to load image: ${previewUrl}`);
                     e.target.style.display = 'none'; 
                   }}
                 />
               ) : (
-                <div className="h-36 w-full flex items-center justify-center bg-gray-100 border-dashed border-gray-300 rounded text-gray-400 text-xs pt-7">
+                <div className="h-auto w-full flex items-center justify-center  border-dashed border-gray-300 rounded text-gray-400 text-xs pt-7">
                   Image Preview
                 </div>
               )}
@@ -275,9 +275,9 @@ const PanelImagesController = ({ currentData, onControlsChange, imageArrayFieldN
               <input
                 type="text"
                 placeholder="Or Paste Image URL"
-                value={(imgState?.url && !imgState.url.startsWith('blob:') && !imgState.url.startsWith('/assets/')) ? imgState.url : ''}
+                defaultValue=""
                 onChange={(e) => handleImageUrlChange(idx, e.target.value)}
-                className="mt-0.5 block w-full px-2 py-1 bg-white rounded-md shadow-sm sm:text-xs focus:ring-indigo-500 focus:border-indigo-500 ring-1 ring-gray-300 focus:ring-2"
+                className=" block w-full px-2 py-1 bg-white rounded-md shadow-sm sm:text-md "
               />
             </div>
           );

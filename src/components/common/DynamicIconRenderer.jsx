@@ -75,10 +75,10 @@ const iconLoaders = {
   },
 };
 
-const DynamicIconRenderer = ({ pack, name, fallback: FallbackComponent, ...props }) => {
-  const packId = pack?.toLowerCase();
+const DynamicIconRenderer = ({ iconPack, iconName, fallback: FallbackComponent, ...props }) => {
+  const packId = iconPack?.toLowerCase();
   
-  if (!packId || !name || !iconLoaders[packId]) {
+  if (!packId || !iconName || !iconLoaders[packId]) {
     const Fallback = FallbackComponent || HelpCircle;
     return <Fallback {...props} />;
   }
@@ -90,14 +90,14 @@ const DynamicIconRenderer = ({ pack, name, fallback: FallbackComponent, ...props
 
   return (
     <Suspense fallback={<div style={{ width: componentProps.size, height: componentProps.size }} className="bg-gray-700 rounded animate-pulse" />}>
-      {loader(name, componentProps)}
+      {loader(iconName, componentProps)}
     </Suspense>
   );
 };
 
 DynamicIconRenderer.propTypes = {
-  pack: PropTypes.string, // 'lucide' or 'fa'
-  name: PropTypes.string, // PascalCase name of the icon
+  iconPack: PropTypes.string, // 'lucide' or 'fa'
+  iconName: PropTypes.string, // PascalCase name of the icon
   fallback: PropTypes.elementType,
 };
 

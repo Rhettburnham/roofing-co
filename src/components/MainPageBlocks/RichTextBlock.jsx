@@ -11,6 +11,7 @@ import PanelFontController from "../common/PanelFontController";
 import DynamicIconRenderer from "../common/DynamicIconRenderer";
 import { slugify } from "../../utils/slugify";
 import { debounce } from 'lodash';
+import gsap from 'gsap';
 
 // Helper to generate styles from text settings object
 const getTextStyles = (settings) => {
@@ -40,7 +41,7 @@ const TEXT_STYLES = {
       "whitespace-pre-line",
   },
   busDescription: {
-    base: "text-xs sm:text-sm md:text-base lg:text-[2.5vh] text-white font-normal indent-4 text-left leading-relaxed",
+    base: "text-xs sm:text-sm md:text-base lg:text-lg text-white font-normal indent-4 text-left leading-relaxed",
     editable:
       "bg-transparent focus:bg-white/20 focus:ring-1 focus:ring-blue-500 rounded p-2 w-full resize-none",
     readOnly:
@@ -69,13 +70,6 @@ const TEXT_STYLES = {
   },
 };
 
-// Default images for RichTextBlock
-const DEFAULT_IMAGES = [
-  "/assets/images/Richtext/roof_workers.jpg",
-  "/assets/images/Richtext/roof_workers2.jpg",
-  "/assets/images/Richtext/roof_workers3.webp",
-];
-
 // =============================================
 // Helper function to derive local state from props
 // =============================================
@@ -91,54 +85,8 @@ const deriveInitialLocalData = (richTextDataInput, currentBannerColor) => {
     variantSpecificData = initial.variants[currentVariant];
   }
 
-  // Initialize images with defaults if none provided
+  // Initialize images - no default images. Must come from config.
   let initialImages = initial.images || [];
-  if (initialImages.length === 0) {
-    // Convert DEFAULT_IMAGES strings to proper image objects
-    initialImages = DEFAULT_IMAGES.map((imgPath, index) => ({
-      file: null,
-      url: imgPath,
-      name: imgPath.split("/").pop() || `Default Image ${index + 1}`,
-      originalUrl: imgPath,
-      id: `default_img_${Date.now()}_${index}`,
-    }));
-  }
-
-  // Provide meaningful defaults for text content if not provided
-  const defaultHeroText =
-    initial.heroText || "Welcome to Our Professional Roofing Company";
-  const defaultBusDescription =
-    initial.bus_description ||
-    initial.bus_description_second ||
-    "We are committed to providing high-quality roofing services with over 20 years of experience. Our expert team delivers reliable solutions for both residential and commercial properties.";
-
-  // Default cards with meaningful content if none provided
-  const defaultCards =
-    initial.cards && initial.cards.length > 0
-      ? initial.cards
-      : [
-          {
-            id: `card_${Date.now()}_1`,
-            icon: "Shield",
-            iconPack: "lucide",
-            title: "Quality Guarantee",
-            desc: "We guarantee the quality of our work with comprehensive warranties and reliable materials.",
-          },
-          {
-            id: `card_${Date.now()}_2`,
-            icon: "Users",
-            iconPack: "lucide",
-            title: "Expert Team",
-            desc: "Our certified professionals have years of experience in residential and commercial roofing.",
-          },
-          {
-            id: `card_${Date.now()}_3`,
-            icon: "Clock",
-            iconPack: "lucide",
-            title: "Fast Service",
-            desc: "Quick response times and efficient project completion to minimize disruption.",
-          },
-        ];
 
   return {
     // Core data that applies to all variants
@@ -179,14 +127,7 @@ const deriveInitialLocalData = (richTextDataInput, currentBannerColor) => {
         id: `img_${Date.now()}_${index}`,
       };
     }),
-    overlayImages: [
-      ...(initial.overlayImages || [
-        "/assets/images/shake_img/1.png",
-        "/assets/images/shake_img/2.png",
-        "/assets/images/shake_img/3.png",
-        "/assets/images/shake_img/4.png",
-      ]),
-    ],
+    overlayImages: initial.overlayImages || [],
     steps: (initial.steps || []).map((step) => ({
       ...step,
       id: step.id || `step_${Math.random().toString(36).substr(2, 9)}`,
@@ -207,81 +148,39 @@ const deriveInitialLocalData = (richTextDataInput, currentBannerColor) => {
           ? step.videoSrc
           : null),
     })),
-    backgroundColor: initial.backgroundColor || currentBannerColor || "#1e293b",
+    backgroundColor: initial.backgroundColor || currentBannerColor,
     variant: currentVariant,
 
-    // Shared content across all variants (not variant-specific) - with meaningful defaults
-    heroText: defaultHeroText,
-    accredited: initial.accredited || false,
-    years_in_business: initial.years_in_business || "20+",
-    bus_description: defaultBusDescription,
-    cards: defaultCards.map((c) => ({
+    // Shared content across all variants
+    heroText: initial.heroText,
+    accredited: initial.accredited,
+    years_in_business: initial.years_in_business,
+    bus_description: initial.bus_description,
+    cards: (initial.cards || []).map((c) => ({
       ...c,
       id: c.id || `card_${Math.random().toString(36).substr(2, 9)}`,
-      icon: c.icon || "Star",
-      iconPack: c.iconPack || "lucide",
-      title: c.title || "Card Title",
-      desc: c.desc || "Card description.",
     })),
 
     // Variant-specific layout and styling configurations only
-    layout: variantSpecificData.layout || "default",
-    showCards:
-      variantSpecificData.showCards !== undefined
-        ? variantSpecificData.showCards
-        : true,
-    showSlideshow:
-      variantSpecificData.showSlideshow !== undefined
-        ? variantSpecificData.showSlideshow
-        : true,
-    cardPosition: variantSpecificData.cardPosition || "top", // 'top', 'side', 'bottom'
-    textAlignment: variantSpecificData.textAlignment || "center", // 'left', 'center', 'right'
+    layout: variantSpecificData.layout,
+    showCards: variantSpecificData.showCards,
+    showSlideshow: variantSpecificData.showSlideshow,
+    cardPosition: variantSpecificData.cardPosition,
+    textAlignment: variantSpecificData.textAlignment,
 
-    // Text settings with defaults
-    heroTextSettings: initial.heroTextSettings || {
-      fontFamily: '"Playfair Display", serif',
-      fontSize: 42,
-      fontWeight: 700,
-      lineHeight: 1.3,
-      letterSpacing: 0.5,
-      textAlign: 'center',
-      color: '#FFFFFF'
-    },
-    descriptionTextSettings: initial.descriptionTextSettings || {
-      fontFamily: '"Lato", sans-serif',
-      fontSize: 18,
-      fontWeight: 400,
-      lineHeight: 1.6,
-      letterSpacing: 0.2,
-      textAlign: 'left',
-      color: '#FFFFFF'
-    },
-    cardTitleTextSettings: initial.cardTitleTextSettings || {
-      fontFamily: '"Montserrat", sans-serif',
-      fontSize: 16,
-      fontWeight: 600,
-      lineHeight: 1.4,
-      letterSpacing: 0.1,
-      textAlign: 'left',
-      color: '#1F2937'
-    },
-    cardDescTextSettings: initial.cardDescTextSettings || {
-      fontFamily: '"Lora", serif',
-      fontSize: 14,
-      fontWeight: 400,
-      lineHeight: 1.5,
-      letterSpacing: 0,
-      textAlign: 'left',
-      color: '#4B5563'
-    },
+    // Text settings
+    heroTextSettings: initial.heroTextSettings,
+    descriptionTextSettings: initial.descriptionTextSettings,
+    cardTitleTextSettings: initial.cardTitleTextSettings,
+    cardDescTextSettings: initial.cardDescTextSettings,
     
     // Variant-specific colors
-    variantColors: variantSpecificData.colors || {},
+    variantColors: variantSpecificData.colors,
 
     styling: {
       ...initial.styling,
-      desktopHeightVH: initial.styling?.desktopHeightVH || 45,
-      mobileHeightVW: initial.styling?.mobileHeightVW || 75,
+      paddingTop: initial.styling?.paddingTop ?? 4,
+      paddingBottom: initial.styling?.paddingBottom ?? 4,
       hasVariants: true, // Enable variant support
     },
   };
@@ -387,10 +286,7 @@ function RichTextPreview({
       })
       .filter((img) => img);
 
-    const displaySlideshowImages =
-      slideshowImageSources.length > 0
-        ? slideshowImageSources
-        : ["/assets/images/Richtext/roof_workers.jpg"];
+    const displaySlideshowImages = slideshowImageSources;
 
     // Separate useEffect for slideshow to prevent affecting card animations
     useEffect(() => {
@@ -409,12 +305,7 @@ function RichTextPreview({
       };
     }, [displaySlideshowImages.length]);
 
-    const overlayImages = richTextData.overlayImages || [
-      "/assets/images/shake_img/1.png",
-      "/assets/images/shake_img/2.png",
-      "/assets/images/shake_img/3.png",
-      "/assets/images/shake_img/4.png",
-    ];
+    const overlayImages = richTextData.overlayImages || [];
 
     // FeatureCard component with enhanced animations
     // Cards slide in from left with rotation and overlay animations for visual appeal
@@ -431,57 +322,71 @@ function RichTextPreview({
       onCardFieldChange,
       onRemoveCard,
     }) {
-      const IconToRender = Icons[IconName] || Icons.Star;
+      const cardRef = useRef(null);
+      const isVisible = useInView(cardRef, { once: true, amount: 0.5 });
+      const [animationCompleted, setAnimationCompleted] = useState(false);
+      
+      // Use DynamicIconRenderer for consistent icon handling
+      const IconComponent = (props) => (
+        <DynamicIconRenderer iconPack={iconPack} iconName={IconName} {...props} />
+      );
 
-      const baseClasses =
-        "relative bg-white p-1 sm:p-2 rounded-lg shadow-lg flex flex-col items-center justify-center";
-
-      const sizeClasses = "w-full min-h-[120px] sm:min-h-[140px]";
-
-      // Card entrance animation: slides from left with rotation effect
-      const cardAnimationVariants = {
-        hidden: { x: "-100%", rotate: -30, opacity: 0 },
+      const overlayAnimationVariants = {
+        hidden: { opacity: 1 },
         visible: {
-          x: 0,
-          rotate: 0,
-          opacity: 1,
+          opacity: 0,
           transition: {
-            type: "spring",
-            stiffness: 100,
-            damping: 15,
-            delay: index * 0.2, // Staggered animation based on card index
+            duration: 0.6,
+            ease: "easeInOut",
+            delay: 0.2 + index * 0.15,
           },
         },
       };
 
-      // Overlay image animation: fades out to reveal card content
-      const overlayAnimationVariants = {
-        hidden: { opacity: 1, pointerEvents: "auto" },
-        visible: {
-          opacity: 0,
-          pointerEvents: "none",
-          transition: {
-            duration: 0.5,
-            ease: "easeOut",
-            delay: index * 0.2 + 0.8, // Delayed to show after card animation
-          },
-        },
+      useEffect(() => {
+        if (playIntroAnimation && isVisible && !animationCompleted) {
+          gsap.fromTo(
+            cardRef.current,
+            { opacity: 0, y: 50 },
+            {
+              opacity: 1,
+              y: 0,
+              duration: 0.8,
+              delay: index * 0.15,
+              ease: "power3.out",
+              onComplete: () => {
+                setAnimationCompleted(true);
+              },
+            }
+          );
+        } else if (!playIntroAnimation) {
+          gsap.set(cardRef.current, { opacity: 1, y: 0 });
+          setAnimationCompleted(true);
+        }
+      }, [isVisible, index, playIntroAnimation, animationCompleted]);
+
+      const getOverlayImageUrl = () => {
+        if (!overlayImages || overlayImages.length === 0) return null;
+        const img = overlayImages[index % overlayImages.length];
+        return img;
       };
 
       return (
         <motion.div
-          className={`${baseClasses} ${sizeClasses} lg:-mx-2 group`}
-          variants={cardAnimationVariants}
-          initial={playIntroAnimation ? "hidden" : "visible"}
-          animate={"visible"}
-          onAnimationComplete={() =>
-            console.log(`Card ${index} animation completed`)
+          ref={cardRef}
+          initial={
+            playIntroAnimation ? { opacity: 0, y: 20 } : { opacity: 1, y: 0 }
           }
+          animate={{ opacity: 1, y: 0 }}
+          transition={
+            playIntroAnimation ? { delay: index * 0.1 } : { duration: 0 }
+          }
+          className="relative bg-white p-1 sm:p-2 rounded-lg shadow-lg flex flex-col items-center justify-center"
         >
           <div
             className="absolute top-0 right-0 w-8 h-8 sm:w-12 sm:h-12 md:w-16 md:h-16 z-20 rounded-tr-lg"
             style={{
-              backgroundImage: `url(${overlayImages[index % overlayImages.length]})`,
+              backgroundImage: `url(${getOverlayImageUrl()})`,
               backgroundPosition: "top right",
               backgroundRepeat: "no-repeat",
               backgroundSize: "auto",
@@ -499,8 +404,8 @@ function RichTextPreview({
             }}
             title={!readOnlyCard ? "Edit Icon" : ""}
           >
-            {IconToRender && (
-              <IconToRender className="text-white drop-shadow-lg w-4 h-4 sm:w-6 sm:h-6 md:w-8 md:h-8" />
+            {IconComponent && (
+              <IconComponent className="text-white drop-shadow-lg w-4 h-4 sm:w-6 sm:h-6 md:w-8 md:h-8" />
             )}
           </div>
 
@@ -508,7 +413,7 @@ function RichTextPreview({
           <motion.div
             className="absolute inset-0 bg-center bg-cover z-40 rounded-lg"
             style={{
-              backgroundImage: `url(${overlayImages[index % overlayImages.length]})`,
+              backgroundImage: `url(${getOverlayImageUrl()})`,
             }}
             variants={overlayAnimationVariants}
             initial={playIntroAnimation ? "hidden" : "visible"}
@@ -517,7 +422,7 @@ function RichTextPreview({
 
           <div className="relative flex flex-col z-30 w-full h-full items-start justify-start p-0.5 sm:p-1 md:p-2">
             <div
-              className="relative w-full mb-0.5 sm:mb-1 md:mb-2"
+              className={`relative w-full mb-0.5 sm:mb-1 md:mb-2`}
               style={{ zIndex: 51 }}
             >
               {!readOnlyCard ? (
@@ -531,11 +436,11 @@ function RichTextPreview({
                   style={getTextStyles(richTextData.cardTitleTextSettings)}
                 />
               ) : (
-                <h3 className={TEXT_STYLES.cardTitle.readOnly} style={getTextStyles(richTextData.cardTitleTextSettings)}>{title}</h3>
+                <h3 className={`${TEXT_STYLES.cardTitle.base} ${TEXT_STYLES.cardTitle.readOnly}`} style={getTextStyles(richTextData.cardTitleTextSettings)}>{title}</h3>
               )}
             </div>
 
-            <div className="relative w-full flex-grow" style={{ zIndex: 51 }}>
+            <div className="relative w-full flex-grow-0" style={{ zIndex: 51 }}>
               {!readOnlyCard ? (
                 <textarea
                   value={desc}
@@ -547,7 +452,7 @@ function RichTextPreview({
                   rows={2}
                 />
               ) : (
-                <p className={TEXT_STYLES.cardDesc.readOnly} style={getTextStyles(richTextData.cardDescTextSettings)}>{desc}</p>
+                <p className={`${TEXT_STYLES.cardDesc.base} ${TEXT_STYLES.cardDesc.readOnly}`} style={getTextStyles(richTextData.cardDescTextSettings)}>{desc}</p>
               )}
             </div>
           </div>
@@ -654,8 +559,11 @@ function RichTextPreview({
       }
     };
 
+    const paddingTop = styling.paddingTop || 4;
+    const paddingBottom = styling.paddingBottom || 4;
+
     return (
-      <div className="rich-text-preview-container mx-auto px-0 sm:px-6 flex flex-col z-40 relative">
+      <div className="rich-text-preview-container mx-auto px-0 sm:px-6 flex flex-col relative" style={{ paddingTop: `${paddingTop}rem`, paddingBottom: `${paddingBottom}rem` }}>
         {/* Section 1: Feature Cards - Enhanced with staggered animations */}
         {(hasCards || !readOnly) && (
           <div className="w-full px-2 sm:px-0 mb-4">
@@ -715,7 +623,7 @@ function RichTextPreview({
             <div className="absolute inset-0 flex flex-col items-center text-center p-2 sm:p-4 md:p-6 lg:p-8 xl:p-10 bg-black/40 group-hover:bg-black/50 transition-colors duration-300">
               {/* Hero Text Section with responsive spacing */}
               {(heroText || !readOnly) && (
-                <div className="mb-10 sm:mb-10 md:mb-12 lg:mb-8 w-full flex-shrink-0">
+                <div className="mb-4 w-full flex-shrink-0">
                   {!readOnly ? (
                     <textarea
                       value={heroText}
@@ -738,56 +646,52 @@ function RichTextPreview({
               {/* Enhanced Description Section with improved mobile layout and spacing */}
               {hasDescriptionContent && (
                 <div
-                  className="flex-1 flex flex-col justify-center w-full overflow-hidden" // Added overflow control
+                  className="flex-1 flex flex-col w-full max-w-4xl" // Removed justify-center
                 >
                   <div
-                    className="flex-1 flex flex-col justify-center p-2 sm:p-2 md:p-6 lg:p-8 rounded-lg shadow-xl backdrop-blur-sm overflow-hidden" // Reduced mobile padding
-                    style={{ backgroundColor: backgroundColor + "BF" }} // Adding 75% opacity
+                    className="p-2 sm:p-2 md:p-6 lg:p-8 rounded-lg shadow-xl backdrop-blur-sm" // Removed flex-1, justify-center
+                    style={{ backgroundColor: backgroundColor + "BF" }}
                   >
-                    <div className="flex-1 flex flex-col justify-center overflow-hidden">
-                      {" "}
-                      {/* Single description container */}
-                      {(bus_description || !readOnly) && (
-                        <div className="flex-grow flex items-center overflow-hidden">
-                          {!readOnly ? (
-                            <div className="w-full space-y-2">
-                              <textarea
-                                value={bus_description}
-                                onChange={(e) =>
-                                  handleFieldChange(
-                                    "bus_description",
-                                    e.target.value
-                                  )
+                    {(bus_description || !readOnly) && (
+                      <div>
+                        {!readOnly ? (
+                          <div className="w-full space-y-2">
+                            <textarea
+                              value={bus_description}
+                              onChange={(e) =>
+                                handleFieldChange(
+                                  "bus_description",
+                                  e.target.value
+                                )
+                              }
+                              className={`${TEXT_STYLES.busDescription.editable} w-full min-h-[4rem] sm:min-h-[6rem] md:min-h-[8rem] leading-loose`}
+                              style={getTextStyles(richTextData.descriptionTextSettings)}
+                              placeholder="Enter your business description... (Leave empty to hide this section)"
+                              rows={4}
+                            />
+                            {bus_description && (
+                              <button
+                                onClick={() =>
+                                  handleFieldChange("bus_description", "")
                                 }
-                                className={`${TEXT_STYLES.busDescription.editable} w-full min-h-[4rem] sm:min-h-[6rem] md:min-h-[8rem] leading-loose`} // Increased line height with leading-loose
-                                style={getTextStyles(richTextData.descriptionTextSettings)}
-                                placeholder="Enter your business description... (Leave empty to hide this section)"
-                                rows={4} // Increased rows for better spacing
-                              />
-                              {bus_description && (
-                                <button
-                                  onClick={() =>
-                                    handleFieldChange("bus_description", "")
-                                  }
-                                  className="text-xs text-white/70 hover:text-white/90 underline"
-                                >
-                                  Clear description
-                                </button>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="w-full">
-                              <p
-                                className={`${TEXT_STYLES.busDescription.readOnly} flex-1 overflow-hidden`}
-                                style={getTextStyles(richTextData.descriptionTextSettings)}
+                                className="text-xs text-white/70 hover:text-white/90 underline"
                               >
-                                {bus_description}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
+                                Clear description
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="w-full">
+                            <p
+                              className={`${TEXT_STYLES.busDescription.base} ${TEXT_STYLES.busDescription.readOnly}`}
+                              style={getTextStyles(richTextData.descriptionTextSettings)}
+                            >
+                              {bus_description}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -934,7 +838,7 @@ const RichTextFontsControls = ({ currentData, onControlsChange, themeColors }) =
 - Manages localData derived from richTextData prop.
 - Calls onConfigChange when localData is modified.
 - Renders RichTextPreview for display and inline editing.
-- Exposes tabsConfig for TopStickyEditPanel.
+- Exposes tabsConfig for BottomStickyEditPanel.
 =============================================
 */
 export default function RichTextBlock({
@@ -1314,6 +1218,16 @@ RichTextBlock.tabsConfig = (localData, onControlsChange, themeColors) => {
     );
   };
 
+  tabs.padding = (props) => (
+    <PanelStylingController
+      {...props}
+      currentData={localData}
+      onControlsChange={onControlsChange}
+      blockType="RichTextBlock"
+      controlType="padding"
+    />
+  );
+
   return tabs;
 };
 
@@ -1404,10 +1318,51 @@ const ModernRichTextVariant = memo(
       openIconModalForCard,
       playIntroAnimation,
     }) => {
-      const IconToRender = Icons[card.icon] || Icons.Star;
+      const cardRef = useRef(null);
+      const isVisible = useInView(cardRef, { once: true, amount: 0.5 });
+      const [animationCompleted, setAnimationCompleted] = useState(false);
+      const IconComponent =
+        card.iconPack && card.icon
+          ? Icons[card.icon] || Icons.HelpCircle // Fallback icon
+          : Icons.HelpCircle;
+
+      const overlayAnimationVariants = {
+        hidden: { opacity: 1 },
+        visible: {
+          opacity: 0,
+          transition: {
+            duration: 0.6,
+            ease: "easeInOut",
+            delay: 0.2 + index * 0.15,
+          },
+        },
+      };
+
+      useEffect(() => {
+        if (playIntroAnimation && isVisible && !animationCompleted) {
+          gsap.fromTo(
+            cardRef.current,
+            { opacity: 0, y: 50 },
+            {
+              opacity: 1,
+              y: 0,
+              duration: 0.8,
+              delay: index * 0.15,
+              ease: "power3.out",
+              onComplete: () => {
+                setAnimationCompleted(true);
+              },
+            }
+          );
+        } else if (!playIntroAnimation) {
+          gsap.set(cardRef.current, { opacity: 1, y: 0 });
+          setAnimationCompleted(true);
+        }
+      }, [isVisible, index, playIntroAnimation, animationCompleted]);
 
       return (
         <motion.div
+          ref={cardRef}
           initial={
             playIntroAnimation ? { opacity: 0, y: 20 } : { opacity: 1, y: 0 }
           }
@@ -1432,7 +1387,7 @@ const ModernRichTextVariant = memo(
               }}
               title={!readOnly ? "Edit Icon" : ""}
             >
-              <IconToRender className="w-6 h-6 text-white" />
+              <IconComponent className="w-6 h-6 text-white" />
             </div>
 
             <div className="flex-1 min-w-0">
@@ -1578,12 +1533,14 @@ const ModernRichTextVariant = memo(
                         )}
                       </div>
                     ) : (
-                      <p
-                        className="text-base text-white/90 leading-relaxed"
-                        style={getTextStyles(richTextData.descriptionTextSettings)}
-                      >
-                        {bus_description}
-                      </p>
+                      <div className="w-full">
+                        <p
+                          className="text-base text-white/90 leading-relaxed"
+                          style={getTextStyles(richTextData.descriptionTextSettings)}
+                        >
+                          {bus_description}
+                        </p>
+                      </div>
                     ))}
                 </div>
               )}
