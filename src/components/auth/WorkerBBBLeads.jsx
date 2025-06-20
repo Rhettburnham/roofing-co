@@ -32,6 +32,13 @@ export default function WorkerBBBLeads({ currentUserEmail, onSelectEntry, showEd
     return () => clearInterval(interval);
   }, [timerActive]);
 
+  // Update parent with live timer value
+  useEffect(() => {
+    if (selected && onSelectEntry) {
+      onSelectEntry(selected, timer);
+    }
+  }, [timer, selected, onSelectEntry]);
+
   // Filter and sort leads
   const filteredAndSortedLeads = React.useMemo(() => {
     let filtered = leads;
@@ -57,14 +64,14 @@ export default function WorkerBBBLeads({ currentUserEmail, onSelectEntry, showEd
     setSelected(entry);
     setTimer(0);
     setTimerActive(true);
-    if (onSelectEntry) onSelectEntry(entry);
+    if (onSelectEntry) onSelectEntry(entry, 0);
   };
 
   const handleRelease = () => {
     setSelected(null);
     setTimer(0);
     setTimerActive(false);
-    if (onSelectEntry) onSelectEntry(null);
+    if (onSelectEntry) onSelectEntry(null, 0);
   };
 
   const handleSortToggle = () => {

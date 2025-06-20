@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
 export default function BBBDataEditor({ currentFolder, currentUserEmail, autofillData, idReadOnly }) {
@@ -16,6 +16,30 @@ export default function BBBDataEditor({ currentFolder, currentUserEmail, autofil
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Update formData when autofillData changes (for live timer updates)
+  useEffect(() => {
+    if (autofillData) {
+      setFormData(prev => ({
+        ...prev,
+        id: autofillData.id || prev.id,
+        website: autofillData.website || prev.website,
+        address: autofillData.address || prev.address,
+        contact_status: autofillData.contact_status || prev.contact_status,
+        email: autofillData.email || prev.email,
+        notes: autofillData.notes || prev.notes,
+        timer: autofillData.timer !== undefined ? autofillData.timer : prev.timer
+      }));
+    }
+  }, [autofillData]);
+
+  // Format timer for display (convert seconds to mm:ss)
+  const formatTimer = (seconds) => {
+    if (seconds === undefined || seconds === null) return '00:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -236,16 +260,22 @@ export default function BBBDataEditor({ currentFolder, currentUserEmail, autofil
 
         <div>
           <label htmlFor="timer" className="block text-sm font-medium text-gray-700 mb-1">
-            Timer (minutes)
+            Timer {autofillData?.timer !== undefined ? '(Live from selected lead)' : '(Default)'}
           </label>
           <input
-            type="number"
+            type="text"
             id="timer"
             name="timer"
-            value={formData.timer}
+            value={autofillData?.timer !== undefined ? formatTimer(autofillData.timer) : `${formData.timer} min`}
             readOnly
-            className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 cursor-not-allowed"
-            title="Timer is auto-set to 60 minutes and cannot be edited"
+            className={`w-full px-3 py-2 border border-gray-300 rounded-md cursor-not-allowed ${
+              autofillData?.timer !== undefined 
+                ? 'bg-green-50 text-green-700 border-green-200' 
+                : 'bg-gray-100 text-gray-600'
+            }`}
+            title={autofillData?.timer !== undefined 
+              ? "Live timer from selected lead (updates in real-time)" 
+              : "Default timer value"}
           />
         </div>
 

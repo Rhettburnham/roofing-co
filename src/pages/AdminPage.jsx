@@ -403,7 +403,7 @@ export default function AdminPage() {
           <p>Unauthorized access</p>
         </div>
       ) : (
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-7xl mx-auto pt-20">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
             <p className="mt-2 text-gray-600">Manage configurations and files</p>
@@ -649,15 +649,16 @@ export default function AdminPage() {
             </div>
           )}
 
-       
+          {/* Add padding between folders and BBB leads sections */}
+          <div className="mt-12"></div>
 
           {/* Show WorkerBBBLeads for both admin and worker */}
           {isAuthorized && currentUserEmail && (configId === 'admin' || configId === 'worker') && (
             <WorkerBBBLeads 
               currentUserEmail={currentUserEmail} 
-              onSelectEntry={entry => {
+              onSelectEntry={(entry, timer) => {
                 setSelectedLead(entry);
-                setSelectedLeadTimer(0);
+                setSelectedLeadTimer(timer || 0);
               }}
             />
           )}
