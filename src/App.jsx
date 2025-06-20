@@ -21,6 +21,8 @@ import ServicePage from "./components/ServicePage";
 import LoginPage from "./components/auth/LoginPage";
 import ForgotPassword from "./components/auth/ForgotPassword";
 import ResetPassword from "./components/auth/ResetPassword";
+import PrivacyPolicy from "./components/legal/PrivacyPolicy";
+import TermsOfService from "./components/legal/TermsOfService";
 import AdminPage from "./pages/AdminPage";
 import WorkerPage from "./components/WorkerPage";
 import InitialPayment from "./pages/InitialPayment";
@@ -270,7 +272,23 @@ const AppRoutes = ({
         }
       />
 
-      {/* Legal Agreement Page */}
+      {/* Legal Pages */}
+      <Route
+        path="/privacy-policy"
+        element={
+          <Suspense fallback={<LoadingScreen />}>
+            <PrivacyPolicy />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/terms-of-service"
+        element={
+          <Suspense fallback={<LoadingScreen />}>
+            <TermsOfService />
+          </Suspense>
+        }
+      />
       <Route
         path="/legal/:agreementType"
         element={

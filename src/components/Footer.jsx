@@ -4,13 +4,14 @@ import { HashLink } from "react-router-hash-link"; // Import HashLink for in-pag
 import { Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
 
 const Footer = () => {
-  // Quick Links array (updated with Legal link)
+  // Quick Links array (updated with Legal links)
   const quickLinks = [
     { href: "/", label: "Home" },
     { href: "/about", label: "About Us" },
     { href: "/packages", label: "Services" },
     { href: "/#book", label: "Contact Us" },
-    { href: "/legal", label: "Legal" },
+    { href: "/privacy-policy", label: "Privacy Policy" },
+    { href: "/terms-of-service", label: "Terms of Service" },
   ];
 
   // State to store the BBB data
@@ -150,7 +151,7 @@ const Footer = () => {
         {/* Copyright */}
         <div className="mt-4 pt-4 border-t border-gray-700 text-center">
           <p className="text-gray-400 text-xs">
-            &copy; {new Date().getFullYear()} Castle Roofing. All Rights
+            &copy; {new Date().getFullYear()} LinkWare LLC. All Rights
             Reserved.
           </p>
         </div>

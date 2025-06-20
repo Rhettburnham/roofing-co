@@ -144,7 +144,7 @@ If you did not request this password reset, please ignore this email.
     // Always return success
     return new Response(JSON.stringify({ 
       success: true,
-      message: 'If an account with that email exists, a password reset link has been sent.'
+      message: 'If an account with that email exists, a password reset link has been sent. This may take up to 10 minutes to arrive in your inbox.'
     }), {
       headers: {
         ...corsHeaders,

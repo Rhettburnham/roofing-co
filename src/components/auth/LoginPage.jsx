@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import LegalAgreementModal from '../legal/LegalAgreementModal';
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -10,12 +11,14 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [debug, setDebug] = useState('');
+  const [showLegalModal, setShowLegalModal] = useState(false);
+  const [pendingSignupData, setPendingSignupData] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    setDebug('Starting login process...');
+    setDebug('Starting authentication process...');
 
     try {
       if (!isLogin) {
@@ -30,40 +33,16 @@ export default function LoginPage() {
           setLoading(false);
           return;
         }
+
+        // For signup, show legal agreement modal first
+        setPendingSignupData({ email, password, code });
+        setShowLegalModal(true);
+        setLoading(false);
+        return;
       }
 
-      const endpoint = isLogin ? '/api/auth/login' : '/api/auth/signup';
-      setDebug(`Sending request to: ${endpoint}`);
-      
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ email, password, code }),
-      });
-
-      setDebug(`Response status: ${response.status}`);
-      const responseText = await response.text();
-      setDebug(`Response text: ${responseText}`);
-
-      let data;
-      try {
-        data = JSON.parse(responseText);
-        setDebug(`Parsed data: ${JSON.stringify(data)}`);
-      } catch (parseError) {
-        setDebug(`Parse error: ${parseError.message}`);
-        throw new Error('Invalid server response');
-      }
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Authentication failed');
-      }
-
-      setDebug('Login successful, redirecting...');
-      // Redirect to OneForm page on success
-      window.location.href = '/oneform';
+      // Handle login
+      await performAuthentication('/api/auth/login', { email, password });
     } catch (err) {
       console.error('Authentication error:', err);
       setError(err.message || 'An error occurred during authentication');
@@ -71,6 +50,65 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const performAuthentication = async (endpoint, data) => {
+    setDebug(`Sending request to: ${endpoint}`);
+    
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(data),
+    });
+
+    setDebug(`Response status: ${response.status}`);
+    const responseText = await response.text();
+    setDebug(`Response text: ${responseText}`);
+
+    let responseData;
+    try {
+      responseData = JSON.parse(responseText);
+      setDebug(`Parsed data: ${JSON.stringify(responseData)}`);
+    } catch (parseError) {
+      setDebug(`Parse error: ${parseError.message}`);
+      throw new Error('Invalid server response');
+    }
+
+    if (!response.ok) {
+      throw new Error(responseData.message || 'Authentication failed');
+    }
+
+    setDebug('Authentication successful, redirecting...');
+    // Redirect to OneForm page on success
+    window.location.href = '/oneform';
+  };
+
+  const handleLegalAccept = async () => {
+    if (!pendingSignupData) return;
+
+    setLoading(true);
+    setError('');
+    setDebug('Processing signup after legal agreement...');
+
+    try {
+      await performAuthentication('/api/auth/signup', pendingSignupData);
+    } catch (err) {
+      console.error('Signup error:', err);
+      setError(err.message || 'An error occurred during signup');
+      setDebug(`Error: ${err.message}`);
+    } finally {
+      setLoading(false);
+      setPendingSignupData(null);
+    }
+  };
+
+  const handleLegalModalClose = () => {
+    setShowLegalModal(false);
+    setPendingSignupData(null);
+    setLoading(false);
   };
 
   return (
@@ -179,6 +217,12 @@ export default function LoginPage() {
           </button>
         </div>
       </motion.div>
+
+      <LegalAgreementModal
+        isOpen={showLegalModal}
+        onClose={handleLegalModalClose}
+        onAccept={handleLegalAccept}
+      />
     </div>
   );
 } 
