@@ -19,6 +19,8 @@ import LoadingScreen from "./components/loadingScreen";
 
 import ServicePage from "./components/ServicePage";
 import LoginPage from "./components/auth/LoginPage";
+import ForgotPassword from "./components/auth/ForgotPassword";
+import ResetPassword from "./components/auth/ResetPassword";
 import AdminPage from "./pages/AdminPage";
 import WorkerPage from "./components/WorkerPage";
 import InitialPayment from "./pages/InitialPayment";
@@ -214,6 +216,24 @@ const AppRoutes = ({
         element={
           <Suspense fallback={<LoadingScreen />}>
             <LoginPage />
+          </Suspense>
+        }
+      />
+
+      {/* Password reset routes */}
+      <Route
+        path="/forgot-password"
+        element={
+          <Suspense fallback={<LoadingScreen />}>
+            <ForgotPassword />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/reset-password"
+        element={
+          <Suspense fallback={<LoadingScreen />}>
+            <ResetPassword />
           </Suspense>
         }
       />

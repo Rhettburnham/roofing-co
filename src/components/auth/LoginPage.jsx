@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -130,6 +131,16 @@ export default function LoginPage() {
               <p className="text-sm text-gray-500 mt-1">
                 Password must be at least 8 characters long
               </p>
+            )}
+            {isLogin && (
+              <div className="text-right mt-2">
+                <Link
+                  to="/forgot-password"
+                  className="text-sm text-blue-600 hover:text-blue-800"
+                >
+                  Forgot your password?
+                </Link>
+              </div>
             )}
           </div>
 
