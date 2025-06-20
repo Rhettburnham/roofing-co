@@ -26,7 +26,8 @@ export default function AdminPage() {
   const [allFiles, setAllFiles] = useState([]);
   const [configId, setConfigId] = useState('');
   const [selectedLead, setSelectedLead] = useState(null);
-  const [selectedLeadTimer, setSelectedLeadTimer] = useState(0);
+  const [centralTimer, setCentralTimer] = useState(0);
+  const [timerActive, setTimerActive] = useState(false);
 
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
@@ -45,6 +46,19 @@ export default function AdminPage() {
       loadConfigs();
     }
   }, [isAuthorized, currentFolder]);
+
+  // Central timer effect
+  useEffect(() => {
+    let interval;
+    if (timerActive && selectedLead) {
+      interval = setInterval(() => {
+        setCentralTimer(t => t + 1);
+      }, 1000);
+    } else {
+      setCentralTimer(0);
+    }
+    return () => clearInterval(interval);
+  }, [timerActive, selectedLead]);
 
   const saveLogsToFile = (logs) => {
     const blob = new Blob([logs], { type: 'text/plain' });
@@ -565,8 +579,10 @@ export default function AdminPage() {
                   <BBBDataEditor 
                     currentFolder={currentFolder} 
                     currentUserEmail={currentUserEmail} 
-                    autofillData={selectedLead && selectedLead.config_id === currentFolder ? { ...selectedLead, timer: selectedLeadTimer } : undefined}
+                    autofillData={selectedLead && selectedLead.config_id === currentFolder ? { ...selectedLead, timer: centralTimer } : undefined}
                     idReadOnly={selectedLead && selectedLead.config_id === currentFolder}
+                    centralTimer={centralTimer}
+                    selectedLead={selectedLead}
                   />
 
                   <WorkerCommands currentFolder={currentFolder} />
@@ -656,10 +672,12 @@ export default function AdminPage() {
           {isAuthorized && currentUserEmail && (configId === 'admin' || configId === 'worker') && (
             <WorkerBBBLeads 
               currentUserEmail={currentUserEmail} 
-              onSelectEntry={(entry, timer) => {
+              onSelectEntry={(entry) => {
                 setSelectedLead(entry);
-                setSelectedLeadTimer(timer || 0);
+                setCentralTimer(0);
+                setTimerActive(!!entry);
               }}
+              centralTimer={centralTimer}
             />
           )}
 

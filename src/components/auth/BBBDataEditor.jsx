@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
-export default function BBBDataEditor({ currentFolder, currentUserEmail, autofillData, idReadOnly }) {
+export default function BBBDataEditor({ currentFolder, currentUserEmail, autofillData, idReadOnly, centralTimer, selectedLead }) {
   const [formData, setFormData] = useState({
     id: autofillData?.id || '',
     website: autofillData?.website || '',
@@ -17,7 +17,7 @@ export default function BBBDataEditor({ currentFolder, currentUserEmail, autofil
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Update formData when autofillData changes (for live timer updates)
+  // Update formData when autofillData changes (except timer which comes from centralTimer)
   useEffect(() => {
     if (autofillData) {
       setFormData(prev => ({
@@ -28,7 +28,7 @@ export default function BBBDataEditor({ currentFolder, currentUserEmail, autofil
         contact_status: autofillData.contact_status || prev.contact_status,
         email: autofillData.email || prev.email,
         notes: autofillData.notes || prev.notes,
-        timer: autofillData.timer !== undefined ? autofillData.timer : prev.timer
+        // Don't update timer from autofillData, use centralTimer instead
       }));
     }
   }, [autofillData]);
@@ -260,20 +260,20 @@ export default function BBBDataEditor({ currentFolder, currentUserEmail, autofil
 
         <div>
           <label htmlFor="timer" className="block text-sm font-medium text-gray-700 mb-1">
-            Timer {autofillData?.timer !== undefined ? '(Live from selected lead)' : '(Default)'}
+            Timer {selectedLead && selectedLead.config_id === currentFolder ? '(Live from selected lead)' : '(Default)'}
           </label>
           <input
             type="text"
             id="timer"
             name="timer"
-            value={autofillData?.timer !== undefined ? formatTimer(autofillData.timer) : `${formData.timer} min`}
+            value={selectedLead && selectedLead.config_id === currentFolder ? formatTimer(centralTimer) : `${formData.timer} min`}
             readOnly
             className={`w-full px-3 py-2 border border-gray-300 rounded-md cursor-not-allowed ${
-              autofillData?.timer !== undefined 
+              selectedLead && selectedLead.config_id === currentFolder
                 ? 'bg-green-50 text-green-700 border-green-200' 
                 : 'bg-gray-100 text-gray-600'
             }`}
-            title={autofillData?.timer !== undefined 
+            title={selectedLead && selectedLead.config_id === currentFolder
               ? "Live timer from selected lead (updates in real-time)" 
               : "Default timer value"}
           />

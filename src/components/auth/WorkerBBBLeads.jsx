@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 
-export default function WorkerBBBLeads({ currentUserEmail, onSelectEntry, showEditor = true }) {
+export default function WorkerBBBLeads({ currentUserEmail, onSelectEntry, showEditor = true, centralTimer }) {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selected, setSelected] = useState(null);
-  const [timer, setTimer] = useState(0);
-  const [timerActive, setTimerActive] = useState(false);
   const [contactStatusFilter, setContactStatusFilter] = useState('');
   const [sortBy, setSortBy] = useState('default'); // 'default', 'name_asc', 'name_desc'
 
@@ -23,21 +21,6 @@ export default function WorkerBBBLeads({ currentUserEmail, onSelectEntry, showEd
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
   }, [currentUserEmail]);
-
-  useEffect(() => {
-    let interval;
-    if (timerActive) {
-      interval = setInterval(() => setTimer(t => t + 1), 1000);
-    }
-    return () => clearInterval(interval);
-  }, [timerActive]);
-
-  // Update parent with live timer value
-  useEffect(() => {
-    if (selected && onSelectEntry) {
-      onSelectEntry(selected, timer);
-    }
-  }, [timer, selected, onSelectEntry]);
 
   // Filter and sort leads
   const filteredAndSortedLeads = React.useMemo(() => {
@@ -62,16 +45,12 @@ export default function WorkerBBBLeads({ currentUserEmail, onSelectEntry, showEd
 
   const handleSelect = (entry) => {
     setSelected(entry);
-    setTimer(0);
-    setTimerActive(true);
-    if (onSelectEntry) onSelectEntry(entry, 0);
+    if (onSelectEntry) onSelectEntry(entry);
   };
 
   const handleRelease = () => {
     setSelected(null);
-    setTimer(0);
-    setTimerActive(false);
-    if (onSelectEntry) onSelectEntry(null, 0);
+    if (onSelectEntry) onSelectEntry(null);
   };
 
   const handleSortToggle = () => {
@@ -188,7 +167,7 @@ export default function WorkerBBBLeads({ currentUserEmail, onSelectEntry, showEd
         <span className="font-semibold">Business:</span> <span>{selected.business_name}</span>
         <span className="font-semibold">Contact Status:</span> <span>{selected.contact_status}</span>
         <span className="font-semibold">Config ID:</span> <span>{selected.config_id}</span>
-        <span className="font-semibold">Timer:</span> <span className="text-lg text-blue-600">{timer}s</span>
+        <span className="font-semibold">Timer:</span> <span className="text-lg text-blue-600">{centralTimer || 0}s</span>
         <button className="ml-4 px-3 py-1 bg-gray-300 rounded hover:bg-gray-400" onClick={handleRelease}>Release</button>
       </div>
       {/* The selected entry's data is available here for passing to the folder detail page via onSelectEntry */}
