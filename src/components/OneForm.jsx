@@ -25,6 +25,7 @@ import ServiceEditPage, {
 import MainPageForm from "./MainPageForm";
 import AboutBlock from "./MainPageBlocks/AboutBlock";
 import { useConfig } from "../context/ConfigContext";
+import BottomStickyEditPanel from "./BottomStickyEditPanel";
 
 import Navbar from "./Navbar"; // Import Navbar for preview
 import ColorEditor from "./ColorEditor"; // Import the new ColorEditor component
@@ -513,6 +514,9 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
   const navigate = useNavigate();
 
+  // Add editing state for services
+  const [editingTarget, setEditingTarget] = useState(null);
+
   const isDevelopment = import.meta.env.DEV;
 
   const [serviceBlockMap, setServiceBlockMap] = useState({});
@@ -537,6 +541,24 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
       [blockType]: newState
     }));
   }, []);
+
+  // Add handler for starting editing
+  const handleStartEditing = useCallback((target) => {
+    setEditingTarget(target);
+  }, []);
+
+  // Add handler for closing editing
+  const handleCloseEditing = useCallback(() => {
+    setEditingTarget(null);
+  }, []);
+
+  // Get active block data for the panel
+  const getActiveBlockData = useCallback(() => {
+    if (!editingTarget) return null;
+    
+    // Return the editingTarget data directly since ServiceEditPage already formats it
+    return editingTarget;
+  }, [editingTarget]);
 
   // Memoize default theme colors to prevent recreation
   const defaultThemeColors = useMemo(
@@ -2139,6 +2161,8 @@ This package contains website content updates separated into two distinct folder
                 servicesData={managedServicesData}
                 onServicesChange={handleManagedServicesChange}
                 initialServicesData={initialServicesData}
+                editingTarget={editingTarget}
+                onStartEditing={handleStartEditing}
               />
             )}
             {activeTab === "about" && aboutPageJsonData && (
@@ -2181,6 +2205,17 @@ This package contains website content updates separated into two distinct folder
           </div>
         </div>
       </div>
+      
+      {/* Global BottomStickyEditPanel for all tabs */}
+      {editingTarget && (
+        <BottomStickyEditPanel
+          isOpen={!!editingTarget}
+          onClose={handleCloseEditing}
+          activeBlockData={getActiveBlockData()}
+          forcedPreviewStates={forcedPreviewStates}
+          onPreviewStateChange={handlePreviewStateChange}
+        />
+      )}
     </div>
   );
 };
