@@ -499,14 +499,7 @@ const AppContent = () => {
         }
         setNavbarConfig(navConfig);
 
-        // Fetch about_page.json for the dedicated /about page
-        const aboutResponse = await fetch(
-          "/personal/old/jsons/about_page.json"
-        );
-        if (!aboutResponse.ok)
-          throw new Error("Failed to fetch about page data (about_page.json)");
-        const aboutData = await aboutResponse.json();
-        setAboutPageData(aboutData);
+        // About page data is handled through ConfigContext, no separate fetch needed
       } catch (err) {
         console.error("Error fetching initial data:", err);
         setError(err.message);
