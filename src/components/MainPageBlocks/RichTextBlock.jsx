@@ -6,6 +6,7 @@ import PropTypes from "prop-types";
 import IconSelectorModal from "../common/IconSelectorModal";
 import ThemeColorPicker from "../common/ThemeColorPicker";
 import PanelImagesController from "../common/PanelImagesController";
+import PanelImageSectionController from "../common/PanelImageSectionController";
 import PanelStylingController from "../common/PanelStylingController";
 import PanelFontController from "../common/PanelFontController";
 import DynamicIconRenderer from "../common/DynamicIconRenderer";
@@ -88,8 +89,11 @@ const deriveInitialLocalData = (richTextDataInput, currentBannerColor) => {
   // Initialize images - no default images. Must come from config.
   let initialImages = initial.images || [];
 
-  return {
-    // Core data that applies to all variants
+  // Start with ALL properties from the initial data to preserve everything
+  const derivedData = {
+    ...initial, // Preserve all original properties first
+    
+    // Then override/process specific properties that need special handling
     images: initialImages.map((img, index) => {
       if (typeof img === "string") {
         return {
@@ -127,7 +131,7 @@ const deriveInitialLocalData = (richTextDataInput, currentBannerColor) => {
         id: `img_${Date.now()}_${index}`,
       };
     }),
-    overlayImages: initial.overlayImages || [],
+    
     steps: (initial.steps || []).map((step) => ({
       ...step,
       id: step.id || `step_${Math.random().toString(36).substr(2, 9)}`,
@@ -148,42 +152,43 @@ const deriveInitialLocalData = (richTextDataInput, currentBannerColor) => {
           ? step.videoSrc
           : null),
     })),
+    
     backgroundColor: initial.backgroundColor || currentBannerColor,
     variant: currentVariant,
+    variants: initial.variants || {},
 
-    // Shared content across all variants
-    heroText: initial.heroText,
-    accredited: initial.accredited,
-    years_in_business: initial.years_in_business,
-    bus_description: initial.bus_description,
-    cards: (initial.cards || []).map((c) => ({
+    // Merge variant-specific content with root-level defaults (only if not already set)
+    heroText: initial.heroText !== undefined ? initial.heroText : (variantSpecificData.heroText || ""),
+    bus_description: initial.bus_description !== undefined ? initial.bus_description : (variantSpecificData.bus_description || ""),
+    
+    cards: (variantSpecificData.cards || initial.cards || []).map((c) => ({
       ...c,
       id: c.id || `card_${Math.random().toString(36).substr(2, 9)}`,
+      // Ensure all cards have valid icon properties with fallbacks
+      icon: c.icon || "Star",
+      iconPack: c.iconPack || "lucide",
     })),
 
-    // Variant-specific layout and styling configurations only
-    layout: variantSpecificData.layout,
-    showCards: variantSpecificData.showCards,
-    showSlideshow: variantSpecificData.showSlideshow,
-    cardPosition: variantSpecificData.cardPosition,
-    textAlignment: variantSpecificData.textAlignment,
+    // Variant-specific layout and styling configurations (preserve existing values first)
+    layout: initial.layout !== undefined ? initial.layout : (variantSpecificData.layout || "default"),
+    showCards: initial.showCards !== undefined ? initial.showCards : (variantSpecificData.showCards !== undefined ? variantSpecificData.showCards : true),
+    showSlideshow: initial.showSlideshow !== undefined ? initial.showSlideshow : (variantSpecificData.showSlideshow !== undefined ? variantSpecificData.showSlideshow : true),
+    cardPosition: initial.cardPosition !== undefined ? initial.cardPosition : (variantSpecificData.cardPosition || "top"),
+    textAlignment: initial.textAlignment !== undefined ? initial.textAlignment : (variantSpecificData.textAlignment || "center"),
 
-    // Text settings
-    heroTextSettings: initial.heroTextSettings,
-    descriptionTextSettings: initial.descriptionTextSettings,
-    cardTitleTextSettings: initial.cardTitleTextSettings,
-    cardDescTextSettings: initial.cardDescTextSettings,
-    
-    // Variant-specific colors
-    variantColors: variantSpecificData.colors,
+    // Variant-specific colors (preserve existing if present)
+    variantColors: initial.variantColors || variantSpecificData.colors || {},
 
+    // Ensure styling object preserves all existing properties
     styling: {
-      ...initial.styling,
+      hasVariants: true, // Enable variant support
+      ...initial.styling, // Preserve all existing styling properties
       paddingTop: initial.styling?.paddingTop ?? 4,
       paddingBottom: initial.styling?.paddingBottom ?? 4,
-      hasVariants: true, // Enable variant support
     },
   };
+
+  return derivedData;
 };
 
 /* 
@@ -305,17 +310,14 @@ function RichTextPreview({
       };
     }, [displaySlideshowImages.length]);
 
-    const overlayImages = richTextData.overlayImages || [];
-
     // FeatureCard component with enhanced animations
-    // Cards slide in from left with rotation and overlay animations for visual appeal
+    // Cards slide in smoothly with GSAP animations for visual appeal
     function FeatureCard({
       iconPack,
       icon: IconName,
       title,
       desc,
       index,
-      overlayImages,
       playIntroAnimation,
       readOnlyCard,
       openIconModalForCard,
@@ -326,21 +328,25 @@ function RichTextPreview({
       const isVisible = useInView(cardRef, { once: true, amount: 0.5 });
       const [animationCompleted, setAnimationCompleted] = useState(false);
       
-      // Use DynamicIconRenderer for consistent icon handling
-      const IconComponent = (props) => (
-        <DynamicIconRenderer iconPack={iconPack} iconName={IconName} {...props} />
-      );
-
-      const overlayAnimationVariants = {
-        hidden: { opacity: 1 },
-        visible: {
-          opacity: 0,
-          transition: {
-            duration: 0.6,
-            ease: "easeInOut",
-            delay: 0.2 + index * 0.15,
-          },
-        },
+      // Use DynamicIconRenderer for consistent icon handling with fallbacks
+      const IconComponent = (props) => {
+        // Provide fallback values if missing
+        const safeIconPack = iconPack || "lucide";
+        const safeIconName = IconName || "Star";
+        
+        // Debug logging for icon issues
+        if (!iconPack || !IconName) {
+          console.warn(`FeatureCard ${index}: Missing icon data. iconPack="${iconPack}", icon="${IconName}". Using fallbacks.`);
+        }
+        
+        return (
+          <DynamicIconRenderer 
+            iconPack={safeIconPack} 
+            iconName={safeIconName} 
+            fallback={Icons.Star}
+            {...props} 
+          />
+        );
       };
 
       useEffect(() => {
@@ -365,12 +371,6 @@ function RichTextPreview({
         }
       }, [isVisible, index, playIntroAnimation, animationCompleted]);
 
-      const getOverlayImageUrl = () => {
-        if (!overlayImages || overlayImages.length === 0) return null;
-        const img = overlayImages[index % overlayImages.length];
-        return img;
-      };
-
       return (
         <motion.div
           ref={cardRef}
@@ -381,18 +381,8 @@ function RichTextPreview({
           transition={
             playIntroAnimation ? { delay: index * 0.1 } : { duration: 0 }
           }
-          className="relative bg-white p-1 sm:p-2 rounded-lg shadow-lg flex flex-col items-center justify-center"
+          className="relative bg-white p-1 sm:p-2 rounded-lg shadow-lg flex flex-col items-center justify-center group"
         >
-          <div
-            className="absolute top-0 right-0 w-8 h-8 sm:w-12 sm:h-12 md:w-16 md:h-16 z-20 rounded-tr-lg"
-            style={{
-              backgroundImage: `url(${getOverlayImageUrl()})`,
-              backgroundPosition: "top right",
-              backgroundRepeat: "no-repeat",
-              backgroundSize: "auto",
-              clipPath: "polygon(0 0, 100% 0, 100% 100%)",
-            }}
-          />
           <div
             className={`absolute top-0 right-0 w-auto h-6 sm:h-8 md:h-10 z-30 flex items-center justify-center space-x-1 p-0.5 sm:p-1 rounded-sm 
                         ${!readOnlyCard && openIconModalForCard ? "cursor-pointer transition-colors hover:bg-black/20" : ""}`}
@@ -405,20 +395,9 @@ function RichTextPreview({
             title={!readOnlyCard ? "Edit Icon" : ""}
           >
             {IconComponent && (
-              <IconComponent className="text-white drop-shadow-lg w-4 h-4 sm:w-6 sm:h-6 md:w-8 md:h-8" />
+              <IconComponent className="text-blue-600 drop-shadow-lg w-4 h-4 sm:w-6 sm:h-6 md:w-8 md:h-8" />
             )}
           </div>
-
-          {/* Animated overlay that reveals card content */}
-          <motion.div
-            className="absolute inset-0 bg-center bg-cover z-40 rounded-lg"
-            style={{
-              backgroundImage: `url(${getOverlayImageUrl()})`,
-            }}
-            variants={overlayAnimationVariants}
-            initial={playIntroAnimation ? "hidden" : "visible"}
-            animate={"visible"}
-          />
 
           <div className="relative flex flex-col z-30 w-full h-full items-start justify-start p-0.5 sm:p-1 md:p-2">
             <div
@@ -478,7 +457,6 @@ function RichTextPreview({
       title: PropTypes.string,
       desc: PropTypes.string,
       index: PropTypes.number,
-      overlayImages: PropTypes.array.isRequired,
       playIntroAnimation: PropTypes.bool.isRequired,
       readOnlyCard: PropTypes.bool.isRequired,
       openIconModalForCard: PropTypes.func,
@@ -580,7 +558,6 @@ function RichTextPreview({
                   title={card.title}
                   desc={card.desc}
                   index={idx}
-                  overlayImages={overlayImages}
                   playIntroAnimation={playIntroAnimationForCards}
                   readOnlyCard={readOnly}
                   openIconModalForCard={openIconModalForCard}
@@ -620,7 +597,7 @@ function RichTextPreview({
             {hasSlideshowImages && <ImageSlideshow />}
 
             {/* Enhanced text overlay with better mobile spacing */}
-            <div className="absolute inset-0 flex flex-col items-center text-center p-2 sm:p-4 md:p-6 lg:p-8 xl:p-10 bg-black/40 group-hover:bg-black/50 transition-colors duration-300">
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-2 sm:p-4 md:p-6 lg:p-8 xl:p-10 bg-black/40 group-hover:bg-black/50 transition-colors duration-300">
               {/* Hero Text Section with responsive spacing */}
               {(heroText || !readOnly) && (
                 <div className="mb-4 w-full flex-shrink-0">
@@ -645,11 +622,9 @@ function RichTextPreview({
 
               {/* Enhanced Description Section with improved mobile layout and spacing */}
               {hasDescriptionContent && (
-                <div
-                  className="flex-1 flex flex-col w-full max-w-4xl" // Removed justify-center
-                >
+                <div className="flex-shrink-0 w-full max-w-4xl mx-auto">
                   <div
-                    className="p-2 sm:p-2 md:p-6 lg:p-8 rounded-lg shadow-xl backdrop-blur-sm" // Removed flex-1, justify-center
+                    className="p-2 sm:p-2 md:p-6 lg:p-8 rounded-lg shadow-xl backdrop-blur-sm mx-auto max-w-full"
                     style={{ backgroundColor: backgroundColor + "BF" }}
                   >
                     {(bus_description || !readOnly) && (
@@ -983,23 +958,102 @@ export default function RichTextBlock({
   const handleLocalDataChange = useCallback(
     (updatedFieldsOrFunction) => {
       setLocalData((prevLocalData) => {
-        const newState =
-          typeof updatedFieldsOrFunction === "function"
-            ? updatedFieldsOrFunction(prevLocalData)
-            : { ...prevLocalData, ...updatedFieldsOrFunction };
+        let newState;
+        
+        if (typeof updatedFieldsOrFunction === "function") {
+          newState = updatedFieldsOrFunction(prevLocalData);
+        } else {
+          // Deep merge for better preservation of nested data
+          newState = JSON.parse(JSON.stringify(prevLocalData)); // Deep clone to avoid mutations
+          
+          // Apply changes with proper merging
+          for (const [key, value] of Object.entries(updatedFieldsOrFunction)) {
+            if (key === 'styling' && typeof value === 'object' && value !== null) {
+              // For styling updates, preserve all existing styling properties
+              newState.styling = {
+                ...prevLocalData.styling,
+                ...value,
+              };
+            } else if (key === 'variants' && typeof value === 'object' && value !== null) {
+              // For variants updates, preserve all existing variants
+              newState.variants = {
+                ...prevLocalData.variants,
+                ...value,
+              };
+            } else if (typeof value === 'object' && value !== null && !Array.isArray(value) && prevLocalData[key] && typeof prevLocalData[key] === 'object') {
+              // For other nested objects, merge them properly
+              newState[key] = {
+                ...prevLocalData[key],
+                ...value,
+              };
+            } else {
+              // For primitive values and arrays, direct assignment
+              newState[key] = value;
+            }
+          }
+        }
+
+        // If variant is changing, we need to merge in the new variant's data
+        if (newState.variant && newState.variant !== prevLocalData.variant) {
+          const variantSpecificData = newState.variants?.[newState.variant] || {};
+          
+          // Merge variant-specific data only if not already present
+          newState.heroText = newState.heroText || variantSpecificData.heroText || prevLocalData.heroText;
+          newState.bus_description = newState.bus_description || variantSpecificData.bus_description || prevLocalData.bus_description;
+          newState.cards = newState.cards || variantSpecificData.cards || prevLocalData.cards;
+          newState.layout = newState.layout || variantSpecificData.layout || prevLocalData.layout;
+          newState.showCards = newState.showCards !== undefined ? newState.showCards : (variantSpecificData.showCards !== undefined ? variantSpecificData.showCards : prevLocalData.showCards);
+          newState.showSlideshow = newState.showSlideshow !== undefined ? newState.showSlideshow : (variantSpecificData.showSlideshow !== undefined ? variantSpecificData.showSlideshow : prevLocalData.showSlideshow);
+          newState.cardPosition = newState.cardPosition || variantSpecificData.cardPosition || prevLocalData.cardPosition;
+          newState.textAlignment = newState.textAlignment || variantSpecificData.textAlignment || prevLocalData.textAlignment;
+        }
+
+        // Ensure core properties are never lost
+        const coreProperties = [
+          'heroText', 'bus_description', 'cards', 'images', 'steps', 'backgroundColor', 
+          'variant', 'variants', 'accredited', 'years_in_business', 'layout', 'showCards', 
+          'showSlideshow', 'cardPosition', 'textAlignment', 'heroTextSettings', 
+          'descriptionTextSettings', 'cardTitleTextSettings', 'cardDescTextSettings', 
+          'variantColors', 'styling'
+        ];
+        
+        coreProperties.forEach(prop => {
+          if (newState[prop] === undefined && prevLocalData[prop] !== undefined) {
+            newState[prop] = prevLocalData[prop];
+          }
+        });
 
         if (!readOnly && onConfigChange) {
-          const liveDataToPropagate = {
+          const dataToSave = {
             ...newState,
-            images: newState.images.map((img) => ({
-              file: img.file,
-              url: img.url,
-              name: img.name,
-              originalUrl: img.originalUrl,
-              id: img.id,
-            })),
+            images: newState.images.map((img) => {
+              if (img.file) {
+                return {
+                  file: img.file,
+                  url: img.url,
+                  name: img.name,
+                  originalUrl: img.originalUrl,
+                  id: img.id,
+                };
+              } else {
+                return {
+                  url: img.originalUrl || img.url,
+                  name: img.name,
+                  originalUrl: img.originalUrl || img.url,
+                  id: img.id,
+                };
+              }
+            }),
           };
-          onConfigChange(liveDataToPropagate);
+          dataToSave.images = dataToSave.images.map((img) => {
+            if (!img.file) {
+              const { file, ...rest } = img;
+              return rest;
+            }
+            return img;
+          });
+
+          onConfigChange(dataToSave);
         }
         return newState;
       });
@@ -1069,19 +1123,21 @@ export default function RichTextBlock({
 
   // Render different variants based on the variant prop
   const renderVariant = () => {
-    // Use richTextData.variant if available, otherwise fall back to the variant prop
-    const activeVariant = richTextData?.variant || variant;
+    // Use localData.variant if available, otherwise fall back to the variant prop
+    const activeVariant = localData.variant || variant;
 
     switch (activeVariant) {
       case "modern":
         return (
           <ModernRichTextVariant
-            richTextData={richTextData}
+            richTextData={localData}
             readOnly={readOnly}
-            onRichTextDataChange={onRichTextDataChange}
-            openIconModalForCard={openIconModalForCard}
-            onAddCard={onAddCard}
-            onRemoveCard={onRemoveCard}
+            onRichTextDataChange={handleLocalDataChange}
+            openIconModalForCard={
+              !readOnly ? openIconModalForCardCallback : undefined
+            }
+            onAddCard={!readOnly ? handleAddCard : undefined}
+            onRemoveCard={!readOnly ? handleRemoveCard : undefined}
             playIntroAnimationForCards={playIntroAnimationForCards}
           />
         );
@@ -1147,6 +1203,15 @@ RichTextBlock.tabsConfig = (localData, onControlsChange, themeColors) => {
         variant: localData.variant,
         styling: localData.styling,
         hasVariants: localData.styling?.hasVariants,
+        // Log all keys to see what's available
+        allKeys: Object.keys(localData),
+        // Check specific properties that might be getting lost
+        heroText: localData.heroText,
+        bus_description: localData.bus_description,
+        cards: localData.cards?.length,
+        images: localData.images?.length,
+        backgroundColor: localData.backgroundColor,
+        variants: localData.variants ? Object.keys(localData.variants) : [],
       },
       null,
       2
@@ -1155,7 +1220,23 @@ RichTextBlock.tabsConfig = (localData, onControlsChange, themeColors) => {
 
   const tabs = {};
 
-  // Images Tab (using PanelImagesController)
+  // Enhanced onControlsChange wrapper to preserve data
+  const enhancedOnControlsChange = (changedData) => {
+    console.log("[RichTextBlock.tabsConfig] enhancedOnControlsChange called with:", changedData);
+    console.log("[RichTextBlock.tabsConfig] Current localData before change:", {
+      variant: localData.variant,
+      styling: localData.styling,
+      heroText: localData.heroText,
+      bus_description: localData.bus_description,
+      cards: localData.cards?.length,
+      allKeys: Object.keys(localData),
+    });
+    
+    // Call the original onControlsChange
+    onControlsChange(changedData);
+  };
+
+  // Main Images Tab (using PanelImagesController for all images)
   tabs.images = (props) => {
     console.log(
       "[RichTextBlock tabsConfig] localData.images for PanelImagesController:",
@@ -1165,7 +1246,7 @@ RichTextBlock.tabsConfig = (localData, onControlsChange, themeColors) => {
       <PanelImagesController
         {...props}
         currentData={localData}
-        onControlsChange={onControlsChange}
+        onControlsChange={enhancedOnControlsChange}
         imageArrayFieldName="images"
         getItemName={(item, idx) => item.name || `Slideshow Image ${idx + 1}`}
       />
@@ -1177,7 +1258,7 @@ RichTextBlock.tabsConfig = (localData, onControlsChange, themeColors) => {
     <RichTextColorControls
       {...props}
       currentData={localData}
-      onControlsChange={onControlsChange}
+      onControlsChange={enhancedOnControlsChange}
       themeColors={themeColors}
     />
   );
@@ -1187,12 +1268,12 @@ RichTextBlock.tabsConfig = (localData, onControlsChange, themeColors) => {
     <RichTextFontsControls
       {...props}
       currentData={localData}
-      onControlsChange={onControlsChange}
+      onControlsChange={enhancedOnControlsChange}
       themeColors={themeColors}
     />
   );
 
-  // Styling Tab - includes both variant selector and height controls
+  // Styling Tab - includes variant selector, height controls, and padding controls
   tabs.styling = (props) => {
     // DEBUG: Log what we're passing to PanelStylingController
     console.log(
@@ -1201,6 +1282,7 @@ RichTextBlock.tabsConfig = (localData, onControlsChange, themeColors) => {
         currentData: {
           variant: localData.variant,
           styling: localData.styling,
+          allKeys: Object.keys(localData),
         },
         blockType: "RichTextBlock",
         controlType: "height",
@@ -1211,22 +1293,12 @@ RichTextBlock.tabsConfig = (localData, onControlsChange, themeColors) => {
       <PanelStylingController
         {...props}
         currentData={localData}
-        onControlsChange={onControlsChange}
+        onControlsChange={enhancedOnControlsChange}
         blockType="RichTextBlock"
         controlType="height"
       />
     );
   };
-
-  tabs.padding = (props) => (
-    <PanelStylingController
-      {...props}
-      currentData={localData}
-      onControlsChange={onControlsChange}
-      blockType="RichTextBlock"
-      controlType="padding"
-    />
-  );
 
   return tabs;
 };
@@ -1321,21 +1393,26 @@ const ModernRichTextVariant = memo(
       const cardRef = useRef(null);
       const isVisible = useInView(cardRef, { once: true, amount: 0.5 });
       const [animationCompleted, setAnimationCompleted] = useState(false);
-      const IconComponent =
-        card.iconPack && card.icon
-          ? Icons[card.icon] || Icons.HelpCircle // Fallback icon
-          : Icons.HelpCircle;
-
-      const overlayAnimationVariants = {
-        hidden: { opacity: 1 },
-        visible: {
-          opacity: 0,
-          transition: {
-            duration: 0.6,
-            ease: "easeInOut",
-            delay: 0.2 + index * 0.15,
-          },
-        },
+      
+      // Use DynamicIconRenderer for consistent icon handling
+      const IconComponent = (props) => {
+        // Provide fallback values if missing
+        const safeIconPack = card.iconPack || "lucide";
+        const safeIconName = card.icon || "Star";
+        
+        // Debug logging for icon issues
+        if (!card.iconPack || !card.icon) {
+          console.warn(`ModernFeatureCard ${index}: Missing icon data. iconPack="${card.iconPack}", icon="${card.icon}". Using fallbacks.`);
+        }
+        
+        return (
+          <DynamicIconRenderer 
+            iconPack={safeIconPack} 
+            iconName={safeIconName} 
+            fallback={Icons.Star}
+            {...props} 
+          />
+        );
       };
 
       useEffect(() => {
@@ -1516,10 +1593,10 @@ const ModernRichTextVariant = memo(
                               e.target.value
                             )
                           }
-                          className="text-base text-white/90 bg-transparent focus:bg-white/10 focus:ring-2 focus:ring-blue-300 rounded-lg p-3 w-full placeholder-gray-400 outline-none leading-relaxed resize-none"
+                          className={`${TEXT_STYLES.busDescription.editable} w-full min-h-[4rem] sm:min-h-[6rem] md:min-h-[8rem] leading-loose`}
+                          style={getTextStyles(richTextData.descriptionTextSettings)}
                           placeholder="Enter your business description... (Leave empty to hide this section)"
                           rows={4}
-                          style={getTextStyles(richTextData.descriptionTextSettings)}
                         />
                         {bus_description && (
                           <button

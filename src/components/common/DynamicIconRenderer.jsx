@@ -18,13 +18,29 @@ const FaQuestionCircle = lazy(() => import('react-icons/fa').then(module => ({ d
 const iconLoaders = {
   lucide: (name, props) => {
     let iconKey = toKebabCase(name);
+    
+    // Handle specific icon name mappings for icons that don't exist in Lucide
+    const iconMappings = {
+      'tools': 'wrench',
+      'certificate': 'award'
+    };
+    
+    // Apply specific mappings first
+    if (iconMappings[iconKey]) {
+      iconKey = iconMappings[iconKey];
+    }
+    
     // If the icon is not found, try removing a potential "Icon" suffix
     if (!dynamicIconImports[iconKey] && name.endsWith('Icon')) {
       iconKey = toKebabCase(name.slice(0, -4));
+      // Apply mappings again for the suffix-removed version
+      if (iconMappings[iconKey]) {
+        iconKey = iconMappings[iconKey];
+      }
     }
 
     if (!dynamicIconImports[iconKey]) {
-      console.warn(`Lucide icon "${name}" (-> "${iconKey}") not found.`);
+      console.warn(`Lucide icon "${name}" (-> "${iconKey}") not found. Available mappings: tools->wrench, certificate->award`);
       return <HelpCircle {...props} />;
     }
     const LucideIcon = lazy(dynamicIconImports[iconKey]);

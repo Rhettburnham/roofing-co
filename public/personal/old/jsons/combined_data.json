@@ -581,82 +581,105 @@
         "residentialButtonIcon": { "pack": "lucide", "name": "Home" },
         "commercialButtonIcon": { "pack": "lucide", "name": "Building2" },
         "activeButtonConfig": {
-          "bgColor": "#D9534F",
+          "bgColor": "bg-accent",
           "textColor": "#FFFFFF",
           "iconColor": "#FFFFFF"
         },
         "inactiveButtonConfig": {
-          "bgColor": "#5A6268",
+          "bgColor": "bg-banner",
           "textColor": "#FFFFFF",
           "iconColor": "#FFFFFF"
         },
         "serviceItemConfig": {
-          "bgColor": "#343A40",
+          "bgColor": "bg-banner",
           "textColor": "#FFFFFF",
           "iconColor": "#FFFFFF"
         },
         "isCommercial": false,
         "residentialServices": [
           {
-            "icon": "FaHardHat",
-            "iconPack": "fa",
+            "icon": "Home",
+            "iconPack": "lucide",
             "title": "Shingling",
-            "image": "/personal/old/img/main_page_images/ServiceSliderBlock/service_1.jpeg"
+            "image": "/personal/old/img/main_page_images/ServiceSliderBlock/service_1.jpeg",
+            "subtitle": "Professional Installation"
           },
           {
-            "icon": "FaHomeIcon",
-            "iconPack": "fa",
+            "icon": "Wrench",
+            "iconPack": "lucide",
             "title": "Chimney",
-            "image": "/personal/old/img/main_page_images/ServiceSliderBlock/service_2.jpeg"
+            "image": "/personal/old/img/main_page_images/ServiceSliderBlock/service_2.jpeg",
+            "subtitle": "Expert Repairs"
           },
           {
-            "icon": "FaTools",
-            "iconPack": "fa",
+            "icon": "Settings",
+            "iconPack": "lucide",
             "title": "Siding",
-            "image": "/personal/old/img/main_page_images/ServiceSliderBlock/service_3.jpeg"
+            "image": "/personal/old/img/main_page_images/ServiceSliderBlock/service_3.jpeg",
+            "subtitle": "Regular Maintenance"
           },
           {
-            "icon": "FaBroom",
-            "iconPack": "fa",
+            "icon": "Search",
+            "iconPack": "lucide",
             "title": "Repairs",
-            "image": "/personal/old/img/main_page_images/ServiceSliderBlock/service_4.jpg"
+            "image": "/personal/old/img/main_page_images/ServiceSliderBlock/service_4.jpg",
+            "subtitle": "Thorough Inspection"
           }
         ],
         "commercialServices": [
           {
-            "icon": "FaPaintRoller",
-            "iconPack": "fa",
-            "title": "Metal Roof"
+            "icon": "Clipboard",
+            "iconPack": "lucide",
+            "title": "Metal Roof",
+            "image": "/personal/old/img/main_page_images/ServiceSliderBlock/service_1 copy.jpeg",
+            "subtitle": "Large Scale Installation"
           },
           {
-            "icon": "FaBuilding",
-            "iconPack": "fa",
-            "title": "Flat Roof"
+            "icon": "Building2",
+            "iconPack": "lucide",
+            "title": "Flat Roof",
+            "image": "/personal/old/img/main_page_images/ServiceSliderBlock/service_2 copy.jpeg",
+            "subtitle": "Industrial Repairs"
           },
           {
-            "icon": "FaWarehouse",
-            "iconPack": "fa",
-            "title": "Restoration"
+            "icon": "Warehouse",
+            "iconPack": "lucide",
+            "title": "Restoration",
+            "image": "/personal/old/img/main_page_images/ServiceSliderBlock/service_3 copy.jpeg",
+            "subtitle": "Commercial Upkeep"
           },
           {
-            "icon": "FaSmog",
-            "iconPack": "fa",
-            "title": "Maintenance"
+            "icon": "Cog",
+            "iconPack": "lucide",
+            "title": "Maintenance",
+            "image": "/personal/old/img/main_page_images/ServiceSliderBlock/service_4 copy.jpg",
+            "subtitle": "Professional Assessment"
           }
         ],
         "largeResidentialImg": "/personal/old/img/main_page_images/ServiceSliderBlock/residential.jpg",
         "largeCommercialImg": "/personal/old/img/main_page_images/ServiceSliderBlock/commercial.jpg",
         "styling": {
           "hasVariants": true,
-          "desktopHeightVH": 28,
-          "mobileHeightVW": 45,
           "hasGradient": true,
           "shadowVariant": "medium",
-          "shadowColor": "#000000",
+          "shadowColor": "bg-banner",
+          "leftPanelBgColor": "bg-banner",
+          "hoveredDescriptionBgColor": "rgba(0, 0, 0, 0.5)",
+          "hoveredTitleColor": "#FFFFFF",
           "gradientConfig": {
-            "startColor": "#D9534F",
-            "endColor": "#FF6B6B",
+            "startColor": "bg-accent",
+            "endColor": "bg-second-accent",
             "direction": "to right"
+          },
+          "variants": {
+            "classic-cards": {
+              "desktopHeightVH": 30,
+              "mobileHeightVW": 50
+            },
+            "split-image": {
+              "desktopHeightVH": 35,
+              "mobileHeightVW": 60
+            }
           }
         },
         "titleTextSettings": {

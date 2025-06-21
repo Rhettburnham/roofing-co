@@ -4,6 +4,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import ThemeColorPicker from "../common/ThemeColorPicker";
 import PanelImagesController from "../common/PanelImagesController";
+import PanelImageSectionController from "../common/PanelImageSectionController";
 import PanelFontController from "../common/PanelFontController";
 import PanelStylingController from "../common/PanelStylingController";
 import { DndProvider } from 'react-dnd';
@@ -613,16 +614,8 @@ export default function BeforeAfterBlock({
     handleLocalDataChange({ items: newItems });
   }, [handleLocalDataChange]);
 
-  if (readOnly) {
-    return (
-      <BeforeAfterPreview
-        beforeAfterData={beforeAfterData}
-        readOnly={true}
-      />
-    );
-  }
-
   // Memoize controls to prevent re-renders unless necessary
+  // This hook must always be called, regardless of readOnly state
   const MemoizedControls = useMemo(
     () => {
       return {
@@ -632,6 +625,24 @@ export default function BeforeAfterBlock({
             currentData={localData}
             onControlsChange={handleImagesChange}
             themeColors={themeColors}
+          />
+        ),
+        gallery: (props) => (
+          <PanelImageSectionController
+            {...props}
+            currentData={localData}
+            onControlsChange={handleImagesChange}
+            controlType="gallery"
+            blockType="BeforeAfterBlock"
+            imageConfig={{
+              label: 'Before/After Gallery',
+              itemLabel: 'Pair',
+              arrayFieldName: 'items',
+              generateName: (index, blockType) => `beforeafter_pair_${index + 1}`,
+              acceptedTypes: 'image/*',
+              maxFileSize: 8 * 1024 * 1024, // 8MB
+              defaultPath: '/assets/images/beforeafter/'
+            }}
           />
         ),
         colors: (props) => (
@@ -652,6 +663,8 @@ export default function BeforeAfterBlock({
         fonts: (props) => (
           <BeforeAfterFontsControls
             {...props}
+            currentData={localData}
+            onControlsChange={handleLocalDataChange}
             themeColors={themeColors}
           />
         ),
@@ -659,6 +672,15 @@ export default function BeforeAfterBlock({
     },
     [localData, handleImagesChange, handleLocalDataChange, themeColors]
   );
+
+  if (readOnly) {
+    return (
+      <BeforeAfterPreview
+        beforeAfterData={beforeAfterData}
+        readOnly={true}
+      />
+    );
+  }
 
   return (
     <BeforeAfterPreview 
@@ -941,4 +963,65 @@ const BeforeAfterFontsControls = ({ currentData, onControlsChange, themeColors }
       </div>
     </div>
   );
+};
+
+// Tab configuration for BottomStickyEditPanel
+BeforeAfterBlock.tabsConfig = (blockData, onUpdate, themeColors) => ({
+  images: (props) => (
+    <BeforeAfterImagesControls 
+      {...props} 
+      currentData={blockData}
+      onControlsChange={onUpdate}
+      themeColors={themeColors}
+    />
+  ),
+  gallery: (props) => (
+    <PanelImageSectionController
+      {...props}
+      currentData={blockData}
+      onControlsChange={onUpdate}
+      controlType="gallery"
+      blockType="BeforeAfterBlock"
+      imageConfig={{
+        label: 'Before/After Gallery',
+        itemLabel: 'Pair',
+        arrayFieldName: 'items',
+        generateName: (index, blockType) => `beforeafter_pair_${index + 1}`,
+        acceptedTypes: 'image/*',
+        maxFileSize: 8 * 1024 * 1024, // 8MB
+        defaultPath: '/assets/images/beforeafter/'
+      }}
+    />
+  ),
+  colors: (props) => (
+    <BeforeAfterColorControls 
+      {...props} 
+      currentData={blockData}
+      onControlsChange={onUpdate}
+      themeColors={themeColors} 
+    />
+  ),
+  styling: (props) => (
+    <BeforeAfterStylingControls
+      {...props}
+      currentData={blockData}
+      onControlsChange={onUpdate}
+    />
+  ),
+  fonts: (props) => (
+    <BeforeAfterFontsControls
+      {...props}
+      currentData={blockData}
+      onControlsChange={onUpdate}
+      themeColors={themeColors}
+    />
+  ),
+});
+
+// Export the control components for use in MainPageForm.jsx
+export {
+  BeforeAfterImagesControls,
+  BeforeAfterColorControls,
+  BeforeAfterStylingControls,
+  BeforeAfterFontsControls
 };

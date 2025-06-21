@@ -7,7 +7,7 @@
           "blockName": "HeroBlock",
           "config": {
             "backgroundImage": "",
-            "title": "Built-Up",
+            "title": "Built-",
             "shrinkAfterMs": 1000,
             "initialHeight": "40vh",
             "finalHeight": "20vh"
@@ -132,7 +132,7 @@
             "title": "Ready to Upgrade Your Flat Roof?",
             "description": "Get in touch for a free consultation. Let us help you choose the best flat roofing solution for your property.",
             "buttonText": "Schedule a Consultation",
-            "buttonLink": "/#contact",
+          "buttonLink": "/#contact",
             "textColor": "1",
             "textAlignment": "center",
             "overlayOpacity": 0.7

@@ -2649,27 +2649,38 @@ BookingBlock.propTypes = {
 // Tab configuration for BottomStickyEditPanel
 BookingBlock.tabsConfig = (blockData, onUpdate, themeColors) => ({
   general: (props) => (
-    <BookingGeneralControls {...props} onUpdate={onUpdate} />
+    <BookingGeneralControls currentData={props.currentData} onControlsChange={props.onControlsChange} />
   ),
   fonts: (props) => (
-    <BookingFontsControls {...props} themeColors={themeColors} />
+    <BookingFontsControls currentData={props.currentData} onControlsChange={props.onControlsChange} themeColors={props.themeColors} />
   ),
   images: (props) => (
-    <BookingImagesControls {...props} themeColors={themeColors} />
+    <BookingImagesControls currentData={props.currentData} onControlsChange={props.onControlsChange} themeColors={props.themeColors} />
   ),
   colors: (props) => (
-    <BookingColorControls {...props} themeColors={themeColors} />
+    <BookingColorControls currentData={props.currentData} onControlsChange={props.onControlsChange} themeColors={props.themeColors} />
   ),
   styling: (props) => (
-    <BookingStylingControls {...props} />
+    <BookingStylingControls currentData={props.currentData} onControlsChange={props.onControlsChange} />
   ),
   'Variant Settings': (props) => {
-    const activeVariant = blockData.variant || 'nail';
+    const activeVariant = props.currentData.variant || 'nail';
     if (activeVariant === 'modern') {
-      return <ModernVariantControls {...props} />;
+      return <ModernVariantControls currentData={props.currentData} onControlsChange={props.onControlsChange} />;
     } else if (activeVariant === 'creative') {
-      return <CreativeVariantControls {...props} themeColors={themeColors} />;
+      return <CreativeVariantControls currentData={props.currentData} onControlsChange={props.onControlsChange} themeColors={props.themeColors} />;
     }
     return null;
   },
 });
+
+// Export control components for external use if needed
+export {
+  BookingGeneralControls,
+  BookingImagesControls,
+  BookingColorControls,
+  BookingStylingControls,
+  BookingFontsControls,
+  ModernVariantControls,
+  CreativeVariantControls
+};

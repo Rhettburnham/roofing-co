@@ -8,6 +8,7 @@ import { FaWarehouse } from 'react-icons/fa';
 import PanelFontController from "./common/PanelFontController";
 import ThemeColorPicker from "./common/ThemeColorPicker";
 import IconSelectorModal from "./common/IconSelectorModal";
+import PanelImagesController from "./common/PanelImagesController";
 
 /**
  * Navbar Component with Configurable Animations
@@ -97,6 +98,9 @@ const Navbar = ({
     invertLogoColor = false,
   } = stylingSettings;
 
+  // Create proper logo size objects like the working version
+  const logoSizeUnscrolled = { width: '18vh', height: '18vh' };
+  const logoSizeScrolled = { width: '14vh', height: '14vh' };
 
   const hasScrolled = typeof forceScrolledState === 'boolean' ? forceScrolledState : internalHasScrolled;
 
@@ -407,33 +411,41 @@ const Navbar = ({
           {/* Conditional rendering for whiteLogoIcon or whiteLogo image */}
           {logoToDisplay === 'icon' ? (
              <div 
+               ref={logoRef}
                className={`cursor-pointer transform-gpu ${logoMarginClasses}`}
                onClick={handleLogoClick}
                style={{ 
                  marginTop: (hasScrolled || isPreview) ? "0" : `${naturalOffsetVh}vh`,
+                 width: hasScrolled ? `${logoDesktopSize.scrolled}vh` : `${logoDesktopSize.unscrolled}vh`,
+                 height: hasScrolled ? `${logoDesktopSize.scrolled}vh` : `${logoDesktopSize.unscrolled}vh`,
                }}
              >
               {renderDynamicIcon(whiteLogoIcon.pack, whiteLogoIcon.name, null, { className: "w-full h-full text-white" })}
             </div>
           ) : logoToDisplay === 'whiteImage' ? (
             <img
-              src={whiteLogoUrl} // Use the white logo URL
+              ref={logoRef}
+              src={whiteLogoUrl}
               alt="Logo White"
               className={`cursor-pointer logo-fixed-size transform-gpu ${logoMarginClasses}`}
               onClick={handleLogoClick}
               style={{ 
                 marginTop: (hasScrolled || isPreview) ? "0" : `${naturalOffsetVh}vh`,
+                width: hasScrolled ? `${logoDesktopSize.scrolled}vh` : `${logoDesktopSize.unscrolled}vh`,
+                height: hasScrolled ? `${logoDesktopSize.scrolled}vh` : `${logoDesktopSize.unscrolled}vh`,
               }}
             />
           ) : ( // 'defaultImage'
             <img
-              ref={logoRef} // Default logo ref - only attach ref to the element that might be animated by GSAP
+              ref={logoRef}
               src={logoUrl} 
               alt="Logo"
               className={`cursor-pointer logo-fixed-size transform-gpu ${logoMarginClasses}`}
               onClick={handleLogoClick}
               style={{ 
                 marginTop: (hasScrolled || isPreview) ? "0" : `${naturalOffsetVh}vh`,
+                width: hasScrolled ? `${logoDesktopSize.scrolled}vh` : `${logoDesktopSize.unscrolled}vh`,
+                height: hasScrolled ? `${logoDesktopSize.scrolled}vh` : `${logoDesktopSize.unscrolled}vh`,
               }}
             />
           )}
@@ -617,231 +629,27 @@ Navbar.propTypes = {
   onIconSelect: PropTypes.func,
 };
 
-// General Controls for Navbar: Sizing and Animation
-const NavbarGeneralControls = ({ currentData, onControlsChange }) => {
-    const styling = currentData.styling || {};
-    const animation = currentData.animation || {};
-    const navbarHeight = currentData.navbarHeight || {};
-
-    const handleAnimationChange = (key, value) => {
-        onControlsChange({
-            animation: { ...animation, [key]: value }
-        });
-    };
-    
-    const handleHeightChange = (state, size, value) => {
-        const newHeight = {
-            ...navbarHeight,
-            [state]: {
-                ...navbarHeight[state],
-                [size]: `${value}vh`
-            }
-        };
-        onControlsChange({ navbarHeight: newHeight });
-    };
-
-    const parseValue = (val, fallback) => {
-        if (typeof val === 'string') {
-            const parsed = parseInt(val, 10);
-            return isNaN(parsed) ? fallback : parsed;
-        }
-        return fallback;
-    };
-
-
-    return (
-        <div className="p-4 space-y-6 bg-gray-800 text-white rounded-lg">
-            {/* Sizing Section */}
-            <div>
-                <h3 className="text-lg font-semibold mb-4 text-gray-100 border-b border-gray-600 pb-2">Sizing</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Desktop Sizing */}
-                    <div className="space-y-4">
-                        <h4 className="text-md font-medium text-gray-300">Desktop</h4>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-1">Navbar Height (Unscrolled): {navbarHeight?.unscrolled?.md || '20vh'}</label>
-                            <input type="range" min="10" max="30" value={parseValue(navbarHeight?.unscrolled?.md, 20)} onChange={e => handleHeightChange('unscrolled', 'md', e.target.value)} className="w-full"/>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-1">Navbar Height (Scrolled): {navbarHeight?.scrolled?.md || '10vh'}</label>
-                            <input type="range" min="8" max="25" value={parseValue(navbarHeight?.scrolled?.md, 10)} onChange={e => handleHeightChange('scrolled', 'md', e.target.value)} className="w-full"/>
-                        </div>
-                    </div>
-                    {/* Mobile Sizing */}
-                    <div className="space-y-4">
-                        <h4 className="text-md font-medium text-gray-300">Mobile</h4>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-1">Navbar Height (Unscrolled): {navbarHeight?.unscrolled?.base || '16vh'}</label>
-                            <input type="range" min="10" max="30" value={parseValue(navbarHeight?.unscrolled?.base, 16)} onChange={e => handleHeightChange('unscrolled', 'base', e.target.value)} className="w-full"/>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-1">Navbar Height (Scrolled): {navbarHeight?.scrolled?.base || '10vh'}</label>
-                            <input type="range" min="8" max="25" value={parseValue(navbarHeight?.scrolled?.base, 10)} onChange={e => handleHeightChange('scrolled', 'base', e.target.value)} className="w-full"/>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Animation Section */}
-            <div>
-                <h3 className="text-lg font-semibold mb-4 text-gray-100 border-b border-gray-600 pb-2">Animation</h3>
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-1">Natural Vertical Offset: {animation.naturalOffsetVh || 11}vh</label>
-                        <input type="range" min="0" max="20" value={animation.naturalOffsetVh || 11} onChange={e => handleAnimationChange('naturalOffsetVh', parseInt(e.target.value))} className="w-full"/>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-// Color Controls for Navbar
-const NavbarColorControls = ({ currentData, onControlsChange, themeColors }) => {
-    const handleColorChange = (fieldName, value) => {
-        onControlsChange({ [fieldName]: value });
-    };
-
-    return (
-        <div className="p-3 space-y-6 bg-gray-800 text-white rounded-lg">
-            <h3 className="text-lg font-semibold mb-3 text-center border-b border-gray-600 pb-2 text-gray-100">Navbar Colors</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <ThemeColorPicker
-                    label="Scrolled Background:"
-                    currentColorValue={currentData.scrolledBackgroundColor || "#1e293b"}
-                    themeColors={themeColors}
-                    onColorChange={handleColorChange}
-                    fieldName="scrolledBackgroundColor"
-                />
-                <ThemeColorPicker
-                    label="Unscrolled Background:"
-                    currentColorValue={currentData.unscrolledBackgroundColor || "#FFFFFF"}
-                    themeColors={themeColors}
-                    onColorChange={handleColorChange}
-                    fieldName="unscrolledBackgroundColor"
-                />
-                <ThemeColorPicker
-                    label="Dropdown Background:"
-                    currentColorValue={currentData.dropdownBackgroundColor || "#FFFFFF"}
-                    themeColors={themeColors}
-                    onColorChange={handleColorChange}
-                    fieldName="dropdownBackgroundColor"
-                />
-                <ThemeColorPicker
-                    label="Dropdown Text:"
-                    currentColorValue={currentData.dropdownTextColor || "#000000"}
-                    themeColors={themeColors}
-                    onColorChange={handleColorChange}
-                    fieldName="dropdownTextColor"
-                />
-                <ThemeColorPicker
-                    label="Hamburger (Unscrolled):"
-                    currentColorValue={currentData.hamburgerColor?.unscrolled || "#000000"}
-                    themeColors={themeColors}
-                    onColorChange={(fieldName, value) => onControlsChange({ hamburgerColor: { ...currentData.hamburgerColor, unscrolled: value } })}
-                    fieldName="hamburgerColor.unscrolled"
-                />
-                <ThemeColorPicker
-                    label="Hamburger (Scrolled):"
-                    currentColorValue={currentData.hamburgerColor?.scrolled || "#FFFFFF"}
-                    themeColors={themeColors}
-                    onColorChange={(fieldName, value) => onControlsChange({ hamburgerColor: { ...currentData.hamburgerColor, scrolled: value } })}
-                    fieldName="hamburgerColor.scrolled"
-                />
-            </div>
-        </div>
-    );
-};
-
-// Font Controls for Navbar
-const NavbarFontsControls = ({ currentData, onControlsChange, themeColors }) => {
-    const [viewport, setViewport] = useState('desktop');
-    const [scrollState, setScrollState] = useState('unscrolled');
-    
-    const handleSettingsChange = (settingsType, newSettings) => {
-        onControlsChange({ 
-            [settingsType]: {
-                ...currentData[settingsType],
-                [scrollState]: {
-                    ...currentData[settingsType]?.[scrollState],
-                    ...newSettings
-                }
-            }
-        });
-    };
-
-    return (
-        <div className="space-y-6 p-4 bg-gray-800 rounded-lg">
-            <div className="text-center mb-4">
-                <h3 className="text-lg font-medium leading-6 text-white">Font Settings</h3>
-                <p className="mt-1 text-sm text-gray-400">
-                  Select a view to edit its font styles.
-                </p>
-                {/* Viewport Toggle */}
-                <div className="mt-4 flex justify-center bg-gray-900 rounded-lg p-1">
-                  <button
-                    onClick={() => setViewport('desktop')}
-                    className={`px-4 py-2 text-sm font-medium rounded-md ${viewport === 'desktop' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700'} transition-all duration-200`}
-                  >
-                    Desktop
-                  </button>
-                  <button
-                    onClick={() => setViewport('mobile')}
-                    className={`px-4 py-2 text-sm font-medium rounded-md ${viewport === 'mobile' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700'} transition-all duration-200`}
-                  >
-                    Mobile
-                  </button>
-                </div>
-                {/* Scroll State Toggle */}
-                <div className="mt-2 flex justify-center bg-gray-900 rounded-lg p-1">
-                  <button
-                    onClick={() => setScrollState('unscrolled')}
-                    className={`px-4 py-2 text-sm font-medium rounded-md ${scrollState === 'unscrolled' ? 'bg-green-600 text-white' : 'text-gray-300 hover:bg-gray-700'} transition-all duration-200`}
-                  >
-                    Unscrolled
-                  </button>
-                  <button
-                    onClick={() => setScrollState('scrolled')}
-                    className={`px-4 py-2 text-sm font-medium rounded-md ${scrollState === 'scrolled' ? 'bg-green-600 text-white' : 'text-gray-300 hover:bg-gray-700'} transition-all duration-200`}
-                  >
-                    Scrolled
-                  </button>
-                </div>
-            </div>
-
-            <PanelFontController
-                label="Main Title Font"
-                currentData={currentData.mainTitleTextSettings?.[scrollState]}
-                onControlsChange={(newSettings) => handleSettingsChange('mainTitleTextSettings', newSettings)}
-                themeColors={themeColors}
-                fieldPrefix={viewport}
-            />
-            <PanelFontController
-                label="Subtitle Font"
-                currentData={currentData.subTitleTextSettings?.[scrollState]}
-                onControlsChange={(newSettings) => handleSettingsChange('subTitleTextSettings', newSettings)}
-                themeColors={themeColors}
-                fieldPrefix={viewport}
-            />
-        </div>
-    );
-};
-
-
 // Expose tabsConfig for BottomStickyEditPanel
 Navbar.tabsConfig = (blockCurrentData, onControlsChange, themeColors) => ({
   general: (props) => (
     <NavbarGeneralControls
       {...props}
       currentData={blockCurrentData}
-      onControlsChange={(changedData) => onControlsChange({ ...blockCurrentData, ...changedData })}
+      onControlsChange={onControlsChange}
+    />
+  ),
+  images: (props) => (
+    <NavbarImagesControls
+      {...props}
+      currentData={blockCurrentData}
+      onControlsChange={onControlsChange}
     />
   ),
   colors: (props) => (
     <NavbarColorControls
       {...props}
       currentData={blockCurrentData}
-      onControlsChange={(changedData) => onControlsChange({ ...blockCurrentData, ...changedData })}
+      onControlsChange={onControlsChange}
       themeColors={themeColors}
     />
   ),
@@ -849,11 +657,309 @@ Navbar.tabsConfig = (blockCurrentData, onControlsChange, themeColors) => ({
     <NavbarFontsControls
       {...props}
       currentData={blockCurrentData}
-      onControlsChange={(changedData) => onControlsChange({ ...blockCurrentData, ...changedData })}
+      onControlsChange={onControlsChange}
       themeColors={themeColors}
     />
   ),
 });
 
+/* ==============================================
+   NAVBAR CONTROL COMPONENTS
+   ----------------------------------------------
+   Following the standard pattern from HeroBlock
+=============================================== */
+
+// Navbar General Controls - Navigation Links and Basic Text
+const NavbarGeneralControls = ({ currentData, onControlsChange }) => {
+  const handleNavLinkChange = (index, field, value) => {
+    const updatedNavLinks = [...(currentData.navLinks || [])];
+    updatedNavLinks[index] = { ...updatedNavLinks[index], [field]: value };
+    onControlsChange({ navLinks: updatedNavLinks });
+  };
+
+  const addNavLink = () => {
+    const navLinks = currentData.navLinks || [];
+    onControlsChange({
+      navLinks: [...navLinks, { name: "New Link", href: "/" }],
+    });
+  };
+
+  const removeNavLink = (index) => {
+    const updatedNavLinks = (currentData.navLinks || []).filter(
+      (_, i) => i !== index
+    );
+    onControlsChange({ navLinks: updatedNavLinks });
+  };
+
+  const handleTextChange = (field, value) => {
+    onControlsChange({ [field]: value });
+  };
+
+  return (
+    <div className="p-4 space-y-6">
+      <h3 className="text-lg font-semibold mb-4 text-gray-700">General Settings</h3>
+      
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Title:
+          </label>
+          <input
+            type="text"
+            value={currentData.title || ""}
+            onChange={(e) => handleTextChange("title", e.target.value)}
+            className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            placeholder="Enter title"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Subtitle:
+          </label>
+          <input
+            type="text"
+            value={currentData.subtitle || ""}
+            onChange={(e) => handleTextChange("subtitle", e.target.value)}
+            className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            placeholder="Enter subtitle"
+          />
+        </div>
+
+        <div>
+          <div className="flex justify-between items-center mb-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Navigation Links:
+            </label>
+            <button
+              onClick={addNavLink}
+              className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Add Link
+            </button>
+          </div>
+          <div className="space-y-2">
+            {(currentData.navLinks || []).map((link, index) => (
+              <div key={index} className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  value={link.name || ""}
+                  onChange={(e) =>
+                    handleNavLinkChange(index, "name", e.target.value)
+                  }
+                  className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  placeholder="Link name"
+                />
+                <input
+                  type="text"
+                  value={link.href || ""}
+                  onChange={(e) =>
+                    handleNavLinkChange(index, "href", e.target.value)
+                  }
+                  className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  placeholder="Link URL"
+                />
+                <button
+                  onClick={() => removeNavLink(index)}
+                  className="p-2 text-red-600 hover:text-red-800"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Navbar Images Controls - Logo and White Logo
+const NavbarImagesControls = ({ currentData, onControlsChange }) => {
+  return (
+    <div className="p-3 grid grid-cols-1 gap-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-200 mb-2">
+          Main Logo:
+        </label>
+        <PanelImagesController
+          currentData={currentData}
+          onControlsChange={onControlsChange}
+          imageArrayFieldName="images"
+          maxImages={1}
+          imageLabels={["Main Logo"]}
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-200 mb-2">
+          White Logo (for dark backgrounds):
+        </label>
+        <PanelImagesController
+          currentData={currentData}
+          onControlsChange={onControlsChange}
+          imageArrayFieldName="whiteImages"
+          maxImages={1}
+          imageLabels={["White Logo"]}
+        />
+      </div>
+    </div>
+  );
+};
+
+// Navbar Color Controls
+const NavbarColorControls = ({ currentData, onControlsChange, themeColors }) => {
+  const handleColorChange = (fieldName, value) => {
+    onControlsChange({ [fieldName]: value });
+  };
+
+  const handleHamburgerColorChange = (state, value) => {
+    const hamburgerColor = currentData.hamburgerColor || {};
+    onControlsChange({ 
+      hamburgerColor: { 
+        ...hamburgerColor, 
+        [state]: value 
+      } 
+    });
+  };
+
+  return (
+    <div className="p-3 space-y-6 bg-gray-800 text-white rounded-lg">
+      <h3 className="text-lg font-semibold mb-3 text-center border-b border-gray-600 pb-2 text-gray-100">Navbar Colors</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <ThemeColorPicker
+          label="Scrolled Background:"
+          currentColorValue={currentData.scrolledBackgroundColor || "#1e293b"}
+          themeColors={themeColors}
+          onColorChange={(fieldName, value) => handleColorChange("scrolledBackgroundColor", value)}
+          fieldName="scrolledBackgroundColor"
+        />
+        <ThemeColorPicker
+          label="Unscrolled Background:"
+          currentColorValue={currentData.unscrolledBackgroundColor || "bg-transparent"}
+          themeColors={themeColors}
+          onColorChange={(fieldName, value) => handleColorChange("unscrolledBackgroundColor", value)}
+          fieldName="unscrolledBackgroundColor"
+        />
+        <ThemeColorPicker
+          label="Dropdown Background:"
+          currentColorValue={currentData.dropdownBackgroundColor || "#FFFFFF"}
+          themeColors={themeColors}
+          onColorChange={(fieldName, value) => handleColorChange("dropdownBackgroundColor", value)}
+          fieldName="dropdownBackgroundColor"
+        />
+        <ThemeColorPicker
+          label="Dropdown Text:"
+          currentColorValue={currentData.dropdownTextColor || "#000000"}
+          themeColors={themeColors}
+          onColorChange={(fieldName, value) => handleColorChange("dropdownTextColor", value)}
+          fieldName="dropdownTextColor"
+        />
+        <ThemeColorPicker
+          label="Hamburger (Unscrolled):"
+          currentColorValue={currentData.hamburgerColor?.unscrolled || "#000000"}
+          themeColors={themeColors}
+          onColorChange={(fieldName, value) => handleHamburgerColorChange("unscrolled", value)}
+          fieldName="hamburgerColor.unscrolled"
+        />
+        <ThemeColorPicker
+          label="Hamburger (Scrolled):"
+          currentColorValue={currentData.hamburgerColor?.scrolled || "#FFFFFF"}
+          themeColors={themeColors}
+          onColorChange={(fieldName, value) => handleHamburgerColorChange("scrolled", value)}
+          fieldName="hamburgerColor.scrolled"
+        />
+      </div>
+    </div>
+  );
+};
+
+// Navbar Font Controls
+const NavbarFontsControls = ({ currentData, onControlsChange, themeColors }) => {
+  const [viewport, setViewport] = useState('desktop');
+  const [scrollState, setScrollState] = useState('unscrolled');
+  
+  const handleSettingsChange = (settingsType, newSettings) => {
+    onControlsChange({ 
+      [settingsType]: {
+        ...currentData[settingsType],
+        [scrollState]: {
+          ...currentData[settingsType]?.[scrollState],
+          [viewport]: {
+            ...currentData[settingsType]?.[scrollState]?.[viewport],
+            ...newSettings[viewport]
+          }
+        }
+      }
+    });
+  };
+
+  return (
+    <div className="space-y-6 p-4 bg-gray-800 rounded-lg">
+      <div className="text-center mb-4">
+        <h3 className="text-lg font-medium leading-6 text-white">Font Settings</h3>
+        <p className="mt-1 text-sm text-gray-400">
+          Select viewport and scroll state to edit font styles.
+        </p>
+        {/* Viewport Toggle */}
+        <div className="mt-4 flex justify-center bg-gray-900 rounded-lg p-1">
+          <button
+            onClick={() => setViewport('desktop')}
+            className={`px-4 py-2 text-sm font-medium rounded-md ${viewport === 'desktop' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700'} transition-all duration-200`}
+          >
+            Desktop
+          </button>
+          <button
+            onClick={() => setViewport('mobile')}
+            className={`px-4 py-2 text-sm font-medium rounded-md ${viewport === 'mobile' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700'} transition-all duration-200`}
+          >
+            Mobile
+          </button>
+        </div>
+        {/* Scroll State Toggle */}
+        <div className="mt-2 flex justify-center bg-gray-900 rounded-lg p-1">
+          <button
+            onClick={() => setScrollState('unscrolled')}
+            className={`px-4 py-2 text-sm font-medium rounded-md ${scrollState === 'unscrolled' ? 'bg-green-600 text-white' : 'text-gray-300 hover:bg-gray-700'} transition-all duration-200`}
+          >
+            Unscrolled
+          </button>
+          <button
+            onClick={() => setScrollState('scrolled')}
+            className={`px-4 py-2 text-sm font-medium rounded-md ${scrollState === 'scrolled' ? 'bg-green-600 text-white' : 'text-gray-300 hover:bg-gray-700'} transition-all duration-200`}
+          >
+            Scrolled
+          </button>
+        </div>
+      </div>
+
+      <PanelFontController
+          label="Main Title Font"
+          currentData={currentData.mainTitleTextSettings?.[scrollState]}
+          onControlsChange={(newSettings) => handleSettingsChange('mainTitleTextSettings', newSettings)}
+          themeColors={themeColors}
+          fieldPrefix={viewport}
+      />
+      <PanelFontController
+          label="Subtitle Font"
+          currentData={currentData.subTitleTextSettings?.[scrollState]}
+          onControlsChange={(newSettings) => handleSettingsChange('subTitleTextSettings', newSettings)}
+          themeColors={themeColors}
+          fieldPrefix={viewport}
+      />
+    </div>
+  );
+};
 
 export default Navbar;

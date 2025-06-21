@@ -325,6 +325,7 @@ function BasicMapPreview({
   const titleRef = useRef(null);
   const sectionRef = useRef(null);
   const statsPanelRef = useRef(null);
+  const buttonRef = useRef(null); // Add ref for the button
 
   const {
     center,
@@ -590,11 +591,12 @@ function BasicMapPreview({
             </div>
           </div>
           {/* Right: Stats + Service Hours - Stats conditionally editable */} 
-          <div className="flex flex-col w-full md:w-[43%]">
+          <div className="relative flex flex-col w-full md:w-[43%]">
             <button
+              ref={buttonRef}
               type="button"
               onClick={() => setIsServiceHoursVisible(!isServiceHoursVisible)}
-              className="absolute dark_button bg-gray-700 rounded-t-xl py-1 md:py-2 px-4 flex justify-end items-center w-full text-white transition-all duration-300 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] font-serif z-30 relative"
+              className="relative dark_button bg-gray-700 rounded-t-xl py-1 md:py-2 px-4 flex justify-end items-center w-full text-white transition-all duration-300 drop-shadow-[0_3.2px_3.2px_rgba(0,0,0,0.8)] font-serif z-30"
               style={{ willChange: "transform" }}
             >
               <span className="font-serif text-[2vh]" style={getTextStyles(buttonTextSettings)}>
@@ -602,7 +604,7 @@ function BasicMapPreview({
               </span>
             </button>
             <div 
-              className="relative rounded-b-xl overflow-hidden flex-grow" // Add flex-grow to allow this div to expand
+              className="relative rounded-b-xl overflow-hidden flex-grow"
               style={isSmallScreen ? { minHeight: statsPanelHeight ? `${statsPanelHeight}px` : 'auto' } : {}}
             >
               <WindowStrings
@@ -611,7 +613,7 @@ function BasicMapPreview({
                 color2={windowStringColor2}
               />
               {/* Stats background and content - conditionally editable stats */}
-              <div className="absolute inset-0 z-10">
+              <div className="relative inset-0 z-10 w-full h-full">
                 <div className="absolute inset-0">
                   <img
                     src={getDisplayUrl(statsBackgroundImage, "/assets/images/stats_background.jpg")}
@@ -632,19 +634,27 @@ function BasicMapPreview({
                   />
                 </div>
               </div>
+            </div>
 
-              {/* Service hours overlay - remains read-only in this preview, edited in BasicMapEditorPanel */}
-              <div
-                className={`
-                  absolute inset-0 z-20
-                  bg-white rounded-b-xl
-                  transition-transform duration-500 ease-in-out
-                  ${isServiceHoursVisible ? "translate-y-0" : "translate-y-[-101%]"}
-                `}
-                style={{ willChange: "transform" }}
-              >
-                {renderServiceHoursTable()}
-              </div>
+            {/* Service hours overlay - positioned absolutely relative to button */}
+            <div
+              className={`
+                absolute left-0 right-0 z-40
+                bg-white rounded-b-xl border border-gray-200 shadow-lg
+                transition-all duration-500 ease-in-out
+                ${isServiceHoursVisible 
+                  ? "opacity-100 translate-y-0 pointer-events-auto" 
+                  : "opacity-0 -translate-y-4 pointer-events-none"
+                }
+              `}
+              style={{ 
+                willChange: "transform, opacity",
+                top: buttonRef.current ? `${buttonRef.current.offsetHeight}px` : '40px',
+                maxHeight: isSmallScreen ? '50vh' : '40vh',
+                overflowY: 'auto'
+              }}
+            >
+              {renderServiceHoursTable()}
             </div>
           </div>
         </div>
@@ -1123,122 +1133,54 @@ BasicMapBlock.propTypes = {
   themeColors: PropTypes.object,
 };
 
-// BasicMapImagesController for handling map images
-const BasicMapImagesController = ({ currentData, onControlsChange }) => {
-  const handleImageFileChange = (field, file) => {
-    if (!file) return;
-    const currentImageState = currentData[field];
-
-    // Revoke old blob URL if one exists
-    if (currentImageState && currentImageState.url && currentImageState.url.startsWith('blob:')) {
-      URL.revokeObjectURL(currentImageState.url);
-    }
-
-    const fileURL = URL.createObjectURL(file);
-    onControlsChange({
-      ...currentData,
-      [field]: {
-        file: file,
-        url: fileURL,
-        name: file.name,
-        originalUrl: currentImageState?.originalUrl || file.name
-      }
-    });
-  };
-
-  const handleImageUrlChange = (field, urlValue) => {
-    const currentImageState = currentData[field];
-    if (currentImageState && currentImageState.url && currentImageState.url.startsWith('blob:')) {
-      URL.revokeObjectURL(currentImageState.url);
-    }
-    onControlsChange({
-      ...currentData,
-      [field]: {
-        file: null,
-        url: urlValue,
-        name: urlValue.split('/').pop(),
-        originalUrl: urlValue
-      }
-    });
-  };
-
-  return (
-    <div className="p-3 space-y-4">
-      <div>
-        <h3 className="text-base font-medium text-gray-700 mb-3">Marker Icon</h3>
-        <label className="block text-sm mb-2">
-          <span className="font-medium text-gray-600 block mb-1">Icon Image:</span>
-          <input 
-            type="file" 
-            accept="image/*" 
-            className="w-full bg-gray-100 text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700" 
-            onChange={(e) => handleImageFileChange('markerIcon', e.target.files?.[0])} 
-          />
-        </label>
-        <input 
-          type="text" 
-          placeholder="Or paste image URL" 
-          value={getDisplayUrl(currentData.markerIcon) || ''} 
-          onChange={(e) => handleImageUrlChange('markerIcon', e.target.value)} 
-          className="bg-gray-100 px-3 py-2 rounded w-full text-sm mt-2"
-        />
-        {getDisplayUrl(currentData.markerIcon) && (
-          <img 
-            src={getDisplayUrl(currentData.markerIcon)} 
-            alt="Marker Icon Preview" 
-            className="mt-2 h-16 w-16 object-contain rounded bg-gray-200 p-1"
-          />
-        )}
-      </div>
-
-      <div>
-        <h3 className="text-base font-medium text-gray-700 mb-3">Stats Panel Background</h3>
-        <label className="block text-sm mb-2">
-          <span className="font-medium text-gray-600 block mb-1">Background Image:</span>
-          <input 
-            type="file" 
-            accept="image/*" 
-            className="w-full bg-gray-100 text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700" 
-            onChange={(e) => handleImageFileChange('statsBackgroundImage', e.target.files?.[0])} 
-          />
-        </label>
-        <input 
-          type="text" 
-          placeholder="Or paste image URL" 
-          value={getDisplayUrl(currentData.statsBackgroundImage) || ''} 
-          onChange={(e) => handleImageUrlChange('statsBackgroundImage', e.target.value)} 
-          className="bg-gray-100 px-3 py-2 rounded w-full text-sm mt-2"
-        />
-        {getDisplayUrl(currentData.statsBackgroundImage) && (
-          <img 
-            src={getDisplayUrl(currentData.statsBackgroundImage)} 
-            alt="Stats Background Preview" 
-            className="mt-2 h-24 w-full object-cover rounded bg-gray-200 p-1"
-          />
-        )}
-      </div>
-    </div>
-  );
-};
-
 // Add tabsConfig to BasicMapBlock
-BasicMapBlock.tabsConfig = (localData, onControlsChange, themeColors) => {
+BasicMapBlock.tabsConfig = (currentData, onControlsChange, themeColors) => {
   const tabs = {};
 
-  // Images Tab
+  // Images Tab - Using standardized PanelImagesController
   tabs.images = (props) => (
-    <BasicMapImagesController 
-      {...props} 
-      currentData={localData} 
-      onControlsChange={onControlsChange} 
-    />
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-base font-medium text-gray-700 mb-3">Marker Icon</h3>
+        <PanelImagesController
+          currentData={{ 
+            images: currentData.markerIcon ? [currentData.markerIcon] : []
+          }}
+          onControlsChange={(updatedData) => {
+            const images = updatedData.images || [];
+            const markerIcon = images.length > 0 ? images[0] : null;
+            onControlsChange({ ...currentData, markerIcon });
+          }}
+          imageArrayFieldName="images"
+          getItemName={() => 'Map Marker Icon'}
+          maxImages={1}
+        />
+      </div>
+      
+      <div>
+        <h3 className="text-base font-medium text-gray-700 mb-3">Stats Panel Background</h3>
+        <PanelImagesController
+          currentData={{ 
+            images: currentData.statsBackgroundImage ? [currentData.statsBackgroundImage] : []
+          }}
+          onControlsChange={(updatedData) => {
+            const images = updatedData.images || [];
+            const statsBackgroundImage = images.length > 0 ? images[0] : null;
+            onControlsChange({ ...currentData, statsBackgroundImage });
+          }}
+          imageArrayFieldName="images"
+          getItemName={() => 'Stats Background Image'}
+          maxImages={1}
+        />
+      </div>
+    </div>
   );
 
   // Colors Tab
   tabs.colors = (props) => (
     <BasicMapColorControls 
       {...props} 
-      currentData={localData} 
+      currentData={currentData} 
       onControlsChange={onControlsChange} 
       themeColors={themeColors} 
     />
@@ -1248,7 +1190,7 @@ BasicMapBlock.tabsConfig = (localData, onControlsChange, themeColors) => {
   tabs.styling = (props) => (
     <BasicMapStylingControls 
       {...props} 
-      currentData={localData} 
+      currentData={currentData} 
       onControlsChange={onControlsChange}
     />
   );
@@ -1257,7 +1199,7 @@ BasicMapBlock.tabsConfig = (localData, onControlsChange, themeColors) => {
   tabs.fonts = (props) => (
     <BasicMapFontsControls 
       {...props} 
-      currentData={localData} 
+      currentData={currentData} 
       onControlsChange={onControlsChange}
       themeColors={themeColors}
     />

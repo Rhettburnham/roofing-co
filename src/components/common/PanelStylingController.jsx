@@ -54,6 +54,51 @@ const animationDefinitions = {
   },
 };
 
+// Variant definitions for different block types
+const blockVariants = {
+  RichTextBlock: {
+    classic: {
+      label: "Classic",
+      description: "Traditional layout with cards above and hero section below",
+      icon: "🏛️",
+    },
+    modern: {
+      label: "Modern",
+      description: "Split-screen layout with content on left, visuals on right",
+      icon: "🎨",
+    },
+  },
+  BookingBlock: {
+    nail: {
+      label: "Nail",
+      description: "Rustic woodworking theme with nail animations",
+      icon: "🔨",
+    },
+    modern: {
+      label: "Modern",
+      description: "Clean split-screen design with features",
+      icon: "✨",
+    },
+    creative: {
+      label: "Creative",
+      description: "Colorful layout with badges and gallery",
+      icon: "🎨",
+    },
+  },
+  ServiceSliderBlock: {
+    "classic-cards": {
+      label: "Classic Cards",
+      description: "Traditional card-based service display",
+      icon: "📋",
+    },
+    "split-image": {
+      label: "Split Image",
+      description: "Services with large background image",
+      icon: "🖼️",
+    },
+  },
+};
+
 // Animation Preview Component
 const AnimationPreview = ({ animationType, isEnabled, onClick }) => {
   const animation = animationDefinitions[animationType];
@@ -546,6 +591,73 @@ const ShadowVariantPreview = ({ variant, isSelected, onClick }) => {
   );
 };
 
+// Variant selection component
+const VariantSelector = ({ currentData, onControlsChange, blockType }) => {
+  const variants = blockVariants[blockType];
+  if (!variants) return null;
+
+  const currentVariant = currentData.variant || Object.keys(variants)[0];
+
+  const handleVariantChange = (newVariant) => {
+    onControlsChange({
+      ...currentData,
+      variant: newVariant,
+    });
+  };
+
+  return (
+    <div className="mb-6 p-4 bg-white rounded-lg border">
+      <h4 className="text-lg font-semibold mb-4 text-gray-800">Layout Variants</h4>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {Object.entries(variants).map(([key, variant]) => (
+          <div
+            key={key}
+            className={`
+              relative cursor-pointer rounded-lg border-2 transition-all duration-200 p-3
+              ${
+                currentVariant === key
+                  ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
+                  : "border-gray-300 bg-gray-50 hover:border-gray-400"
+              }
+            `}
+            onClick={() => handleVariantChange(key)}
+          >
+            {/* Variant Preview */}
+            <div className="flex items-center justify-center mb-2">
+              <VariantPreview variant={key} blockType={blockType} />
+            </div>
+
+            {/* Variant Info */}
+            <div className="text-center">
+              <div className="flex items-center justify-center mb-1">
+                <span className="text-lg mr-2">{variant.icon}</span>
+                <span
+                  className={`
+                  font-medium text-sm
+                  ${currentVariant === key ? "text-blue-700" : "text-gray-600"}
+                `}
+                >
+                  {variant.label}
+                </span>
+              </div>
+              <div className="text-xs text-gray-500 leading-tight">
+                {variant.description}
+              </div>
+            </div>
+
+            {/* Selected indicator */}
+            {currentVariant === key && (
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                <div className="w-2 h-2 bg-white rounded-full"></div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const PanelStylingController = ({
   currentData,
   onControlsChange,
@@ -564,6 +676,7 @@ const PanelStylingController = ({
         : value;
 
     onControlsChange({
+      ...currentData,
       styling: {
         ...currentData.styling,
         [field]: numericValue,
@@ -648,13 +761,43 @@ const PanelStylingController = ({
       </div>
     );
   };
+
+  const renderVariantControls = () => {
+    return (
+      <div className="space-y-4">
+        <VariantSelector
+          currentData={currentData}
+          onControlsChange={onControlsChange}
+          blockType={blockType}
+        />
+        {renderHeightControls()}
+        {blockType === 'RichTextBlock' && renderPaddingControls()}
+      </div>
+    );
+  };
   
   const renderContent = () => {
     switch (controlType) {
       case 'height':
-        return renderHeightControls();
+        return renderVariantControls();
       case 'padding':
         return renderPaddingControls();
+      case 'variants':
+        return (
+          <VariantSelector
+            currentData={currentData}
+            onControlsChange={onControlsChange}
+            blockType={blockType}
+          />
+        );
+      case 'animations':
+        return (
+          <AnimationControls
+            currentData={currentData}
+            onControlsChange={onControlsChange}
+            blockType={blockType}
+          />
+        );
       default:
         return (
           <p className="text-sm text-gray-500">

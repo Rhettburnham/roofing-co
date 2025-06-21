@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -28,7 +28,7 @@ const DefaultWarehouseIcon = () => <Warehouse className="w-full h-full" />;
  - All interactive elements (service selection, etc.) are handled via props.
 ====================================================
 */
-function HeroPreview({ heroconfig = {}, onHeightChange, isPreviewReadOnly = true }) {
+function HeroPreview({ heroconfig = {}, onHeightChange, isPreviewReadOnly = true, forcedActiveSection = null }) {
   const {
     residential = { subServices: [], icon: 'Home', iconPack: 'lucide' },
     commercial = { subServices: [], icon: 'Building2', iconPack: 'lucide' },
@@ -47,19 +47,18 @@ function HeroPreview({ heroconfig = {}, onHeightChange, isPreviewReadOnly = true
   } = heroconfig;
 
   const [activeSection, setActiveSection] = useState("neutral");
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   
   const { desktopHeightVH = 30, mobileHeightVW = 75 } = styling;
 
-  // Handle window resize for responsive font changes
+  // Handle forced preview state from edit panel
   useEffect(() => {
-    const handleResize = () => {
-      setWindowWidth(window.innerWidth);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+    if (forcedActiveSection !== null) {
+      setActiveSection(forcedActiveSection);
+      if (onHeightChange) {
+        onHeightChange(forcedActiveSection !== 'neutral' ? 50 : 30);
+      }
+    }
+  }, [forcedActiveSection, onHeightChange]);
 
   const heroImageToDisplay = (images && images.length > 0) 
   ? getDisplayPath(images[0])
@@ -133,16 +132,16 @@ function HeroPreview({ heroconfig = {}, onHeightChange, isPreviewReadOnly = true
     // Create responsive font styles that work across both desktop and mobile
     const getResponsiveTextStyles = (desktopSettings, mobileSettings) => ({
       fontFamily: desktopSettings.fontFamily || 'Inter',
-      fontSize: windowWidth < 768 ? `${mobileSettings.fontSize || 14}px` : `${desktopSettings.fontSize || 16}px`,
-      fontWeight: windowWidth < 768 ? (mobileSettings.fontWeight || 400) : (desktopSettings.fontWeight || 400),
-      letterSpacing: windowWidth < 768 ? `${mobileSettings.letterSpacing || 0.2}px` : `${desktopSettings.letterSpacing || 0.3}px`,
-      lineHeight: windowWidth < 768 ? (mobileSettings.lineHeight || 1.4) : (desktopSettings.lineHeight || 1.5),
-      color: windowWidth < 768 ? (mobileSettings.color || '#FFFFFF') : (desktopSettings.color || '#FFFFFF'),
+      fontSize: window.innerWidth < 768 ? `${mobileSettings.fontSize || 14}px` : `${desktopSettings.fontSize || 16}px`,
+      fontWeight: window.innerWidth < 768 ? (mobileSettings.fontWeight || 400) : (desktopSettings.fontWeight || 400),
+      letterSpacing: window.innerWidth < 768 ? `${mobileSettings.letterSpacing || 0.2}px` : `${desktopSettings.letterSpacing || 0.3}px`,
+      lineHeight: window.innerWidth < 768 ? (mobileSettings.lineHeight || 1.4) : (desktopSettings.lineHeight || 1.5),
+      color: window.innerWidth < 768 ? (mobileSettings.color || '#FFFFFF') : (desktopSettings.color || '#FFFFFF'),
     });
     
     const handleIconClick = () => {
-      // Prevent interactions in readOnly mode
-      if (isPreviewReadOnly) return;
+      // Prevent manual interactions when in EDIT mode (readOnly=false) OR when forcedActiveSection is controlling the state
+      if (!isPreviewReadOnly || forcedActiveSection !== null) return;
       
       const newActiveSection = isActive ? 'neutral' : type;
       setActiveSection(newActiveSection);
@@ -156,17 +155,17 @@ function HeroPreview({ heroconfig = {}, onHeightChange, isPreviewReadOnly = true
       <div
         className={`flex-1 flex items-center transition-all duration-500 ease-in-out ${
           isActive ? 'justify-start pl-[5%]' : 'justify-center'
-        } ${isOtherActive ? 'opacity-0' : 'opacity-100'}`}
+        }`}
         style={{
           flexBasis: isActive ? '70%' : (isNeutral ? '50%' : '30%'),
         }}
       >
         <div className="relative flex items-center">
           <motion.div
-            className={`${serviceSectionIconBaseClass}`}
+            className={`${serviceSectionIconBaseClass} ${(isPreviewReadOnly || forcedActiveSection !== null) ? 'cursor-default' : 'cursor-pointer'}`}
             style={{
-              width: isActive ? (windowWidth < 768 ? '10vw' : '4vw') : (windowWidth < 768 ? '25vw' : '10vw'),
-              height: isActive ? (windowWidth < 768 ? '10vw' : '4vw') : (windowWidth < 768 ? '25vw' : '10vw'),
+              width: isActive ? (window.innerWidth < 768 ? '10vw' : '4vw') : (window.innerWidth < 768 ? '25vw' : '10vw'),
+              height: isActive ? (window.innerWidth < 768 ? '10vw' : '4vw') : (window.innerWidth < 768 ? '25vw' : '10vw'),
               color: mainTitleDesktop.color,
             }}
             onClick={(e) => {
@@ -211,14 +210,14 @@ function HeroPreview({ heroconfig = {}, onHeightChange, isPreviewReadOnly = true
                   <motion.div key={service.id} variants={subServiceItemVariants} className="relative group">
                     <Link
                       to={service.route}
-                      className={`${subServiceTextBaseClass} px-3 py-1.5 rounded-md transition-colors duration-200 hover:bg-black/20`}
+                      className={`${subServiceTextBaseClass} hero-sub-title px-3 py-1.5 rounded-md transition-colors duration-200 hover:bg-black/20`}
                       style={getResponsiveTextStyles(subTitleDesktop, subTitleMobile)}
                       onClick={(e) => {
                         // If in edit mode, stop propagation to prevent navigation
                         if (!isPreviewReadOnly) e.preventDefault();
                       }}
                     >
-                      {service.label}
+                      {service.label || service.title}
                     </Link>
                     {!isPreviewReadOnly && (
                       <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
@@ -266,7 +265,7 @@ function HeroPreview({ heroconfig = {}, onHeightChange, isPreviewReadOnly = true
       <div 
         className="relative w-full overflow-hidden" 
         style={{ 
-          height: windowWidth < 768 ? `${mobileHeightVW}vw` : `${desktopHeightVH}vh`
+          height: window.innerWidth < 768 ? `${mobileHeightVW}vw` : `${desktopHeightVH}vh`
         }}
       >
         {heroImageToDisplay && (
@@ -317,6 +316,8 @@ function HeroPreview({ heroconfig = {}, onHeightChange, isPreviewReadOnly = true
 HeroPreview.propTypes = {
   heroconfig: PropTypes.object.isRequired,
   onHeightChange: PropTypes.func,
+  isPreviewReadOnly: PropTypes.bool,
+  forcedActiveSection: PropTypes.string,
 };
 
 const HeroColorControls = ({ currentData, onControlsChange, themeColors }) => {
@@ -652,6 +653,7 @@ export default function HeroBlock({
   readOnly = false,
   onConfigChange = () => {},
   themeColors = [],
+  forcedActiveSection = null,
 }) {
   // Default configuration object (replaces defaultProps)
   const defaultHeroConfig = {
@@ -1046,7 +1048,7 @@ export default function HeroBlock({
   
   return (
     <>
-      <HeroPreview heroconfig={previewConfig} />
+      <HeroPreview heroconfig={previewConfig} forcedActiveSection={forcedActiveSection} />
       {!readOnly && isIconModalOpen && (
         <IconSelectorModal
           isOpen={isIconModalOpen} 
@@ -1064,6 +1066,7 @@ HeroBlock.propTypes = {
   readOnly: PropTypes.bool,
   onConfigChange: PropTypes.func,
   themeColors: PropTypes.oneOfType([PropTypes.array, PropTypes.object]),
+  forcedActiveSection: PropTypes.string,
 };
 
 // Expose tabsConfig for TopStickyEditPanel, using PanelImagesController for images
@@ -1089,13 +1092,30 @@ HeroBlock.tabsConfig = (blockCurrentData, onControlsChange, themeColors) => {
       themeColors={themeColors} 
     />,
     styling: (props) => (
-      <div className="space-y-6">
-        <PanelStylingController
-          {...props}
-          currentData={processedData}
-          onControlsChange={onControlsChange}
-          blockType="HeroBlock"
-        />
+      <div className="space-y-6 p-4">
+        <h3 className="text-lg font-semibold mb-4 text-gray-700">Size & Animation Settings</h3>
+        
+        {/* Height Controls */}
+        <div>
+          <h4 className="text-sm font-medium text-gray-700 mb-3">Block Height</h4>
+          <PanelStylingController 
+            currentData={processedData}
+            onControlsChange={onControlsChange}
+            blockType="HeroBlock"
+            controlType="height"
+          />
+        </div>
+
+        {/* Animation Settings */}
+        <div>
+          <h4 className="text-sm font-medium text-gray-700 mb-3">Animation Settings</h4>
+          <PanelStylingController 
+            currentData={processedData}
+            onControlsChange={onControlsChange}
+            blockType="HeroBlock"
+            controlType="animations"
+          />
+        </div>
         
         <div className="border-t border-gray-300 pt-6">
           <BrightnessController
@@ -1108,7 +1128,6 @@ HeroBlock.tabsConfig = (blockCurrentData, onControlsChange, themeColors) => {
             step={5}
           />
         </div>
-        
       </div>
     ),
     fonts: (props) => <HeroFontsControls 

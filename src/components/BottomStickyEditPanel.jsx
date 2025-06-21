@@ -48,11 +48,20 @@ const BottomStickyEditPanel = forwardRef(({
   forcedPreviewStates = {},
   onPreviewStateChange,
 }, ref) => {
-  const [activeTab, setActiveTab] = useState('general');
+  // Start with the first available tab instead of defaulting to 'general'
+  const getInitialTab = () => {
+    if (activeBlockData?.tabsConfig) {
+      const availableTabs = Object.keys(activeBlockData.tabsConfig);
+      return availableTabs.length > 0 ? availableTabs[0] : 'general';
+    }
+    return 'general';
+  };
+  
+  const [activeTab, setActiveTab] = useState(getInitialTab());
   const panelRef = useRef(null);
   
   useEffect(() => {
-    setActiveTab('general');
+    setActiveTab(getInitialTab());
   }, [activeBlockData?.key]);
 
   const blockName = activeBlockData?.blockName || 'Block';
@@ -76,12 +85,33 @@ const BottomStickyEditPanel = forwardRef(({
         return {
           label: 'Preview State',
           options: [
+            { label: 'Normal', value: 'normal' },
+            { label: 'Shrunk', value: 'shrunk' },
+          ],
+          value: forcedPreviewStates.HeroBlock || 'normal',
+          onChange: (value) => onPreviewStateChange && onPreviewStateChange('HeroBlock', value),
+        };
+      case 'MainPageHeroBlock':
+        return {
+          label: 'Preview State',
+          options: [
             { label: 'Neutral', value: 'neutral' },
             { label: 'Residential', value: 'residential' },
             { label: 'Commercial', value: 'commercial' },
           ],
-          value: forcedPreviewStates.HeroBlock || 'neutral',
-          onChange: (value) => onPreviewStateChange && onPreviewStateChange('HeroBlock', value),
+          value: forcedPreviewStates.MainPageHeroBlock || 'neutral',
+          onChange: (value) => onPreviewStateChange && onPreviewStateChange('MainPageHeroBlock', value),
+        };
+      case 'SimpleHeroBlock':
+        return {
+          label: 'Preview State',
+          options: [
+            { label: 'Normal', value: 'normal' },
+            { label: 'Shrunk', value: 'shrunk' },
+            { label: 'With Animations', value: 'animated' },
+          ],
+          value: forcedPreviewStates.SimpleHeroBlock || 'normal',
+          onChange: (value) => onPreviewStateChange && onPreviewStateChange('SimpleHeroBlock', value),
         };
       default:
         return null;

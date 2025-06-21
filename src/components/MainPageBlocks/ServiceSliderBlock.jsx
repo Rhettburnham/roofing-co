@@ -8,7 +8,37 @@ import PanelFontController from "../common/PanelFontController";
 import { slugify } from "../../utils/slugify"; // Import slugify
 import PanelStylingController from "../common/PanelStylingController";
 import DynamicIconRenderer from "../common/DynamicIconRenderer";
-import { Home, Building2, HelpCircle } from "lucide-react";
+import { Home, Building2, HelpCircle, Wrench, Settings, Search, Clipboard, Warehouse, Cog } from "lucide-react";
+
+// Helper to convert theme color classes to hex values
+const getThemeColorValue = (colorValue, themeColors = {}) => {
+  if (!colorValue) return '#000000';
+  
+  // If it's already a hex color, return as is
+  if (colorValue.startsWith('#')) {
+    return colorValue;
+  }
+  
+  // If it's a Tailwind bg- class, extract the color name and get hex value
+  if (colorValue.startsWith('bg-')) {
+    const colorName = colorValue.replace('bg-', '');
+    return themeColors[colorName] || getComputedStyle(document.documentElement).getPropertyValue(`--color-${colorName}`).trim() || '#000000';
+  }
+  
+  // If it's a direct theme color name, get hex value
+  if (themeColors[colorValue]) {
+    return themeColors[colorValue];
+  }
+  
+  // Try to get from CSS custom property
+  const cssValue = getComputedStyle(document.documentElement).getPropertyValue(`--color-${colorValue}`).trim();
+  if (cssValue) {
+    return cssValue;
+  }
+  
+  // Default fallback
+  return '#000000';
+};
 
 // Helper to convert hex to rgba
 const hexToRgba = (hex, alpha) => {
@@ -85,10 +115,17 @@ const ServiceCard = ({
   shadowVariant,
   shadowColor,
   textSettings,
+  themeColors = {},
 }) => {
   const { icon, iconPack, title, image, subtitle } = service;
   const { bgColor, textColor, iconColor } = serviceItemConfig;
   const { titleTextSettings, subtitleTextSettings } = textSettings || {};
+
+  // Convert theme colors to hex values
+  const resolvedBgColor = getThemeColorValue(bgColor, themeColors);
+  const resolvedTextColor = getThemeColorValue(textColor, themeColors);
+  const resolvedIconColor = getThemeColorValue(iconColor, themeColors);
+  const resolvedShadowColor = getThemeColorValue(shadowColor, themeColors);
 
   const hoverVariants = {
     rest: { scale: 1, borderRadius: "50%" },
@@ -123,8 +160,8 @@ const ServiceCard = ({
           : `w-28 h-28`
       }`}
       style={{ 
-        backgroundColor: bgColor,
-        ...(isMobile ? {} : getShadowStyles(shadowVariant || "default", shadowColor)) 
+        backgroundColor: resolvedBgColor,
+        ...(isMobile ? {} : getShadowStyles(shadowVariant || "default", resolvedShadowColor)) 
       }}
       variants={hoverVariants}
       initial="rest"
@@ -147,7 +184,7 @@ const ServiceCard = ({
           name={icon}
           fallback={HelpCircle}
           size={isMobile ? 32 : 40}
-          style={{ color: iconColor }}
+          style={{ color: resolvedIconColor }}
         />
       </motion.div>
       <motion.img
@@ -165,7 +202,7 @@ const ServiceCard = ({
       {readOnly ? (
         <h3
           className="mt-1 text-white text-lg drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"
-          style={{ color: textColor, ...getTextStyles(titleTextSettings) }}
+          style={{ color: resolvedTextColor, ...getTextStyles(titleTextSettings) }}
         >
           {title}
         </h3>
@@ -181,14 +218,14 @@ const ServiceCard = ({
           }`}
           placeholder="Title"
           onClick={(e) => e.stopPropagation()}
-          style={{ color: textColor, ...getTextStyles(titleTextSettings) }}
+          style={{ color: resolvedTextColor, ...getTextStyles(titleTextSettings) }}
         />
       )}
       {isMobile && (
         <motion.span
           variants={imgFade}
           className="absolute bottom-2 text-xs text-white drop-shadow"
-          style={getTextStyles(subtitleTextSettings)}
+          style={{ ...getTextStyles(subtitleTextSettings), color: resolvedTextColor }}
         >
           {subtitle || "More Info"}
         </motion.span>
@@ -214,6 +251,7 @@ export default function ServiceSliderBlock({
   readOnly = false,
   config = {},
   onConfigChange,
+  themeColors = {},
 }) {
   const [localData, setLocalData] = useState(() => {
     const initialConfig = config || {};
@@ -225,14 +263,14 @@ export default function ServiceSliderBlock({
         iconPack: s.iconPack || "fa",
       }));
 
-    // Default residential services with proper image paths
+    // Default residential services with proper image paths and VALID Lucide icons
     const defaultResidentialServices = [
       {
         id: "roof-installation",
         title: "Roof Installation",
         originalTitle: "Roof Installation",
-        icon: "FaTools",
-        iconPack: "fa",
+        icon: "Home", // Valid Lucide icon
+        iconPack: "lucide",
         image: "/personal/old/img/main_page_images/ServiceSliderBlock/service_1.jpeg",
         subtitle: "Professional Installation"
       },
@@ -240,8 +278,8 @@ export default function ServiceSliderBlock({
         id: "roof-repair",
         title: "Roof Repair",
         originalTitle: "Roof Repair",
-        icon: "FaHardHat",
-        iconPack: "fa",
+        icon: "Wrench", // Valid Lucide icon
+        iconPack: "lucide",
         image: "/personal/old/img/main_page_images/ServiceSliderBlock/service_2.jpeg",
         subtitle: "Expert Repairs"
       },
@@ -249,8 +287,8 @@ export default function ServiceSliderBlock({
         id: "maintenance",
         title: "Maintenance",
         originalTitle: "Maintenance",
-        icon: "FaBroom",
-        iconPack: "fa",
+        icon: "Settings", // Valid Lucide icon
+        iconPack: "lucide",
         image: "/personal/old/img/main_page_images/ServiceSliderBlock/service_3.jpeg",
         subtitle: "Regular Maintenance"
       },
@@ -258,21 +296,21 @@ export default function ServiceSliderBlock({
         id: "inspection",
         title: "Inspection",
         originalTitle: "Inspection",
-        icon: "FaFan",
-        iconPack: "fa",
+        icon: "Search", // Valid Lucide icon
+        iconPack: "lucide",
         image: "/personal/old/img/main_page_images/ServiceSliderBlock/service_4.jpg",
         subtitle: "Thorough Inspection"
       }
     ];
 
-    // Default commercial services with copy images
+    // Default commercial services with copy images and VALID Lucide icons
     const defaultCommercialServices = [
       {
         id: "commercial-installation",
         title: "Commercial Installation",
         originalTitle: "Commercial Installation",
-        icon: "FaBuilding",
-        iconPack: "fa",
+        icon: "Building2", // Valid Lucide icon
+        iconPack: "lucide",
         image: "/personal/old/img/main_page_images/ServiceSliderBlock/service_1 copy.jpeg",
         subtitle: "Large Scale Installation"
       },
@@ -280,8 +318,8 @@ export default function ServiceSliderBlock({
         id: "commercial-repair",
         title: "Commercial Repair",
         originalTitle: "Commercial Repair",
-        icon: "FaWarehouse",
-        iconPack: "fa",
+        icon: "Warehouse", // Valid Lucide icon
+        iconPack: "lucide",
         image: "/personal/old/img/main_page_images/ServiceSliderBlock/service_2 copy.jpeg",
         subtitle: "Industrial Repairs"
       },
@@ -289,8 +327,8 @@ export default function ServiceSliderBlock({
         id: "commercial-maintenance",
         title: "Commercial Maintenance",
         originalTitle: "Commercial Maintenance",
-        icon: "FaSmog",
-        iconPack: "fa",
+        icon: "Cog", // Valid Lucide icon
+        iconPack: "lucide",
         image: "/personal/old/img/main_page_images/ServiceSliderBlock/service_3 copy.jpeg",
         subtitle: "Commercial Upkeep"
       },
@@ -298,8 +336,8 @@ export default function ServiceSliderBlock({
         id: "commercial-inspection",
         title: "Commercial Inspection",
         originalTitle: "Commercial Inspection",
-        icon: "FaPaintRoller",
-        iconPack: "fa",
+        icon: "Clipboard", // Valid Lucide icon
+        iconPack: "lucide",
         image: "/personal/old/img/main_page_images/ServiceSliderBlock/service_4 copy.jpg",
         subtitle: "Professional Assessment"
       }
@@ -324,17 +362,17 @@ export default function ServiceSliderBlock({
       variant: initialConfig.variant || "split-image",
       
       activeButtonConfig: initialConfig.activeButtonConfig || {
-        bgColor: initialConfig.activeButtonBgColor || "#FF5733",
+        bgColor: "bg-accent",
         textColor: "#FFFFFF",
         iconColor: "#FFFFFF",
       },
       inactiveButtonConfig: initialConfig.inactiveButtonConfig || {
-        bgColor: initialConfig.inactiveButtonBgColor || "#6c757d",
+        bgColor: "bg-banner",
         textColor: "#FFFFFF",
         iconColor: "#FFFFFF",
       },
       serviceItemConfig: initialConfig.serviceItemConfig || {
-        bgColor: "#1F2937",
+        bgColor: "bg-banner",
         textColor: "#FFFFFF",
         iconColor: "#FFFFFF",
       },
@@ -359,22 +397,30 @@ export default function ServiceSliderBlock({
       ),
       isCommercial: initialConfig.isCommercial || false,
 
-      // New styling options
+      // New styling options with proper variant heights like HeroBlock
       styling: {
         ...initialConfig.styling,
         hasGradient: initialConfig.styling?.hasGradient || false,
         shadowVariant: initialConfig.styling?.shadowVariant || "default",
-        shadowColor: initialConfig.styling?.shadowColor || '#000000',
-        desktopHeightVH: initialConfig.styling?.desktopHeightVH || 30,
-        mobileHeightVW: initialConfig.styling?.mobileHeightVW || 50,
+        shadowColor: initialConfig.styling?.shadowColor || 'bg-banner',
         gradientConfig: initialConfig.styling?.gradientConfig || {
-          startColor: "#FF5733",
-          endColor: "#FF8C42",
+          startColor: "bg-accent",
+          endColor: "bg-second-accent",
           direction: "to right",
         },
-        leftPanelBgColor: initialConfig.styling?.leftPanelBgColor || '#1f2937', // for split-image variant
+        leftPanelBgColor: initialConfig.styling?.leftPanelBgColor || 'bg-banner', // for split-image variant
         hoveredDescriptionBgColor: initialConfig.styling?.hoveredDescriptionBgColor || 'rgba(0, 0, 0, 0.5)',
         hoveredTitleColor: initialConfig.styling?.hoveredTitleColor || '#FFFFFF',
+        variants: initialConfig.styling?.variants || {
+          'classic-cards': {
+            desktopHeightVH: 30,
+            mobileHeightVW: 50
+          },
+          'split-image': {
+            desktopHeightVH: 35,
+            mobileHeightVW: 60
+          }
+        }
       },
       titleTextSettings: initialConfig.titleTextSettings || {
         fontFamily: "'Oswald', sans-serif",
@@ -673,6 +719,7 @@ export default function ServiceSliderBlock({
                         localData.styling?.shadowVariant || "default"
                       }
                       shadowColor={localData.styling?.shadowColor}
+                      themeColors={themeColors}
                     />
                   );
 
@@ -909,6 +956,7 @@ export default function ServiceSliderBlock({
                             localData.styling?.shadowVariant || "default"
                           }
                           shadowColor={localData.styling?.shadowColor}
+                          themeColors={themeColors}
                         />
                       );
                       return (
@@ -1082,7 +1130,7 @@ export default function ServiceSliderBlock({
               icon:
                 serviceConfig.icon !== undefined
                   ? serviceConfig.icon
-                  : localService?.icon || "FaTools",
+                  : localService?.icon || "Wrench",
               iconPack:
                 serviceConfig.iconPack !== undefined
                   ? serviceConfig.iconPack
@@ -1139,19 +1187,19 @@ export default function ServiceSliderBlock({
 
           activeButtonConfig: config.activeButtonConfig ||
             prevLocalData.activeButtonConfig || {
-              bgColor: "#FF5733",
+              bgColor: "bg-accent",
               textColor: "#FFFFFF",
               iconColor: "#FFFFFF",
             },
           inactiveButtonConfig: config.inactiveButtonConfig ||
             prevLocalData.inactiveButtonConfig || {
-              bgColor: "#6c757d",
+              bgColor: "bg-banner",
               textColor: "#FFFFFF",
               iconColor: "#FFFFFF",
             },
           serviceItemConfig: config.serviceItemConfig ||
             prevLocalData.serviceItemConfig || {
-              bgColor: "#1F2937",
+              bgColor: "bg-banner",
               textColor: "#FFFFFF",
               iconColor: "#FFFFFF",
             },
@@ -1378,23 +1426,40 @@ export default function ServiceSliderBlock({
     if (localData.styling?.hasGradient && isActive) {
       const { startColor, endColor, direction } =
         localData.styling.gradientConfig || {};
+      const resolvedStartColor = getThemeColorValue(startColor, themeColors);
+      const resolvedEndColor = getThemeColorValue(endColor, themeColors);
+      const resolvedBgColor = getThemeColorValue(config.bgColor, themeColors);
+      
       return {
-        background: `linear-gradient(${direction || 'to right'}, ${startColor || config.bgColor}, ${endColor || config.bgColor})`,
-        color: config.textColor,
+        background: `linear-gradient(${direction || 'to right'}, ${resolvedStartColor || resolvedBgColor}, ${resolvedEndColor || resolvedBgColor})`,
+        color: getThemeColorValue(config.textColor, themeColors),
       };
     }
 
     return {
-      backgroundColor: config.bgColor,
-      color: config.textColor,
+      backgroundColor: getThemeColorValue(config.bgColor, themeColors),
+      color: getThemeColorValue(config.textColor, themeColors),
     };
   };
 
-  // Calculate dynamic height based on styling
-  const dynamicHeight =
-    window.innerWidth < 768
+  // Calculate dynamic height based on styling and variant
+  const getVariantHeight = () => {
+    const currentVariant = localData.variant || 'classic-cards';
+    const variantConfig = localData.styling?.variants?.[currentVariant];
+    
+    if (variantConfig) {
+      return window.innerWidth < 768 
+        ? `${variantConfig.mobileHeightVW}vw` 
+        : `${variantConfig.desktopHeightVH}vh`;
+    }
+    
+    // Fallback to legacy styling
+    return window.innerWidth < 768
       ? `${localData.styling?.mobileHeightVW || 50}vw`
       : `${localData.styling?.desktopHeightVH || 30}vh`;
+  };
+
+  const dynamicHeight = getVariantHeight();
 
   /* ---------------------------------------------------------------------
      TOGGLE BUTTONS (Residential  | Commercial)
@@ -1420,19 +1485,19 @@ export default function ServiceSliderBlock({
     const splitInactiveButtonClass = "opacity-80";
 
     return (
-    <div className="flex flex-col md:flex-row h-full" style={{ backgroundColor: localData.backgroundColor || "#000000" }}>
+    <div className="flex flex-col md:flex-row h-full" style={{ backgroundColor: getThemeColorValue(localData.backgroundColor, themeColors) || "#000000" }}>
       {/* Left side: Buttons and service list */}
       <div 
         className={`w-full md:w-2/5 text-white p-4 md:p-6 flex flex-col justify-between`}
         style={{ 
-            backgroundColor: localData.styling?.leftPanelBgColor,
-            ...getShadowStyles(localData.styling?.shadowVariant, localData.styling?.shadowColor) 
+            backgroundColor: getThemeColorValue(localData.styling?.leftPanelBgColor, themeColors),
+            ...getShadowStyles(localData.styling?.shadowVariant, getThemeColorValue(localData.styling?.shadowColor, themeColors)) 
         }}
       >
         <div>
           <h2 
             className="text-2xl md:text-3xl font-bold mb-4 md:mb-6"
-            style={{ color: localData.titleColor || "#FFFFFF" }}
+            style={{ color: getThemeColorValue(localData.titleColor, themeColors) || "#FFFFFF" }}
           >
             {localData.title}
           </h2>
@@ -1449,7 +1514,7 @@ export default function ServiceSliderBlock({
                 fallback={Home}
                 className="mr-1 md:mr-2"
                 size={16}
-                style={{ color: (!localData.isCommercial ? localData.activeButtonConfig : localData.inactiveButtonConfig).iconColor }}
+                style={{ color: getThemeColorValue((!localData.isCommercial ? localData.activeButtonConfig : localData.inactiveButtonConfig).iconColor, themeColors) }}
               />
               {readOnly ? (
                 <span style={getTextStyles(localData.buttonTextSettings)}>{localData.residentialButtonText}</span>
@@ -1479,7 +1544,7 @@ export default function ServiceSliderBlock({
                 fallback={Building2}
                 className="mr-1 md:mr-2"
                 size={16}
-                style={{ color: (localData.isCommercial ? localData.activeButtonConfig : localData.inactiveButtonConfig).iconColor }}
+                style={{ color: getThemeColorValue((localData.isCommercial ? localData.activeButtonConfig : localData.inactiveButtonConfig).iconColor, themeColors) }}
               />
               {readOnly ? (
                 <span style={getTextStyles(localData.buttonTextSettings)}>{localData.commercialButtonText}</span>
@@ -1518,8 +1583,8 @@ export default function ServiceSliderBlock({
                     to={service.link || "#"}
                     className="flex items-center p-3 rounded-lg transition-colors"
                     style={{ 
-                      backgroundColor: localData.serviceItemConfig?.bgColor, 
-                      color: localData.serviceItemConfig?.textColor 
+                      backgroundColor: getThemeColorValue(localData.serviceItemConfig?.bgColor, themeColors), 
+                      color: getThemeColorValue(localData.serviceItemConfig?.textColor, themeColors) 
                     }}
                   >
                     <DynamicIconRenderer 
@@ -1528,7 +1593,7 @@ export default function ServiceSliderBlock({
                       fallback={HelpCircle}
                       size={20}
                       className="mr-3"
-                      style={{ color: localData.serviceItemConfig?.iconColor }}
+                      style={{ color: getThemeColorValue(localData.serviceItemConfig?.iconColor, themeColors) }}
                     />
                     <span className="font-medium text-sm md:text-base">{service.title}</span>
                   </Link>
@@ -1636,13 +1701,8 @@ export default function ServiceSliderBlock({
   );
 }
 
-// Expose tabsConfig for BottomStickyEditPanel
+// Expose tabsConfig for BottomStickyEditPanel - REMOVED general tab
 ServiceSliderBlock.tabsConfig = (blockData, onUpdate, themeColors) => ({
-  general: (props) => (
-    <div className="p-4 space-y-4">
-      {/* Add any additional general settings you want to include */}
-    </div>
-  ),
   images: (props) => (
     <ServiceSliderImagesControls
       {...props}
@@ -2172,16 +2232,71 @@ const ServiceSliderStylingControls = ({ currentData, onControlsChange, themeColo
     onControlsChange({ styling: newStyling });
   };
 
+  const handleVariantHeightChange = (variant, heightType, value) => {
+    const currentVariants = currentData.styling?.variants || {
+      'classic-cards': { desktopHeightVH: 30, mobileHeightVW: 50 },
+      'split-image': { desktopHeightVH: 35, mobileHeightVW: 60 }
+    };
+    
+    const updatedVariants = {
+      ...currentVariants,
+      [variant]: {
+        ...currentVariants[variant],
+        [heightType]: value
+      }
+    };
+    
+    handleStylingChange('variants', updatedVariants);
+  };
+
+  const currentVariant = currentData.variant || 'classic-cards';
+  const variantConfig = currentData.styling?.variants?.[currentVariant] || {};
+
   return (
     <div className="space-y-6">
-      {/* Height Controls - Using Standard PanelStylingController */}
+      {/* Variant Selector */}
       <div>
         <PanelStylingController
           currentData={currentData}
           onControlsChange={onControlsChange}
           blockType="ServiceSliderBlock"
-          controlType="height"
+          controlType="variants"
         />
+      </div>
+
+      {/* Variant-Specific Height Controls */}
+      <div className="p-4 bg-gray-800 text-white rounded-lg">
+        <h3 className="text-lg font-semibold mb-4 text-center">
+          {currentVariant === 'classic-cards' ? 'Classic Cards' : 'Split Image'} Height Settings
+        </h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Desktop Height: <span className="font-mono text-blue-400">{variantConfig.desktopHeightVH || (currentVariant === 'classic-cards' ? 30 : 35)}vh</span>
+            </label>
+            <input
+              type="range"
+              min="10"
+              max="100"
+              value={variantConfig.desktopHeightVH || (currentVariant === 'classic-cards' ? 30 : 35)}
+              onChange={(e) => handleVariantHeightChange(currentVariant, 'desktopHeightVH', parseInt(e.target.value))}
+              className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Mobile Height: <span className="font-mono text-blue-400">{variantConfig.mobileHeightVW || (currentVariant === 'classic-cards' ? 50 : 60)}vw</span>
+            </label>
+            <input
+              type="range"
+              min="20"
+              max="100"
+              value={variantConfig.mobileHeightVW || (currentVariant === 'classic-cards' ? 50 : 60)}
+              onChange={(e) => handleVariantHeightChange(currentVariant, 'mobileHeightVW', parseInt(e.target.value))}
+              className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Shadow Variants - Using Standard PanelStylingController */}
@@ -2202,16 +2317,6 @@ const ServiceSliderStylingControls = ({ currentData, onControlsChange, themeColo
               onColorChange={(field, value) => handleStylingChange('shadowColor', value)}
               fieldName="shadowColor"
           />
-      </div>
-
-      {/* Variant Selector */}
-      <div>
-        <PanelStylingController
-          currentData={currentData}
-          onControlsChange={onControlsChange}
-          blockType="ServiceSliderBlock"
-          controlType="variants"
-        />
       </div>
 
       {/* Gradient Controls */}
@@ -2353,4 +2458,12 @@ const ServiceSliderFontsControls = ({ currentData, onControlsChange, themeColors
       </div>
     </div>
   );
+};
+
+// Export the control components for use in MainPageForm
+export {
+  ServiceSliderImagesControls,
+  ServiceSliderColorControls,
+  ServiceSliderStylingControls,
+  ServiceSliderFontsControls
 };

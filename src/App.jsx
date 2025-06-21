@@ -448,7 +448,7 @@ const AppContent = () => {
           navConfig = config.navbar;
         } else {
           // Fallback to fetching nav.json directly if not in global config
-          console.log("Navbar config not found in global context, fetching from nav.json");
+          console.debug("Navbar config not found in global context, fetching from nav.json");
           try {
             const navResponse = await fetch("/personal/old/jsons/nav.json");
             if (navResponse.ok) {

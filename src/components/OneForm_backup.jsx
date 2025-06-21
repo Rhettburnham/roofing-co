@@ -19,7 +19,9 @@ import { saveAs } from "file-saver";
 import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import OneFormAuthButton from "./auth/OneFormAuthButton";
-import ServiceEditPage from "./ServiceEditPage";
+import ServiceEditPage, {
+  blockMap as importedServiceBlockMap,
+} from "./ServiceEditPage";
 import MainPageForm from "./MainPageForm";
 import AboutBlock from "./MainPageBlocks/AboutBlock";
 import { useConfig } from "../context/ConfigContext";
@@ -428,6 +430,14 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   const [sentimentReviewsData, setSentimentReviewsData] = useState(null);
   const [initialSentimentReviewsData, setInitialSentimentReviewsData] =
     useState(null);
+  const [allServiceBlocksData, setAllServiceBlocksData] = useState({
+    blocks: [],
+  });
+  const [initialAllServiceBlocksData, setInitialAllServiceBlocksData] =
+    useState({ blocks: [] });
+  const [loadingAllServiceBlocks, setLoadingAllServiceBlocks] = useState(true);
+  const [activeEditShowcaseBlockIndex, setActiveEditShowcaseBlockIndex] =
+    useState(null);
   const [isCustomDomain, setIsCustomDomain] = useState(false);
   const [initialServicesData, setInitialServicesData] = useState(null);
   const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
@@ -438,6 +448,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
 
   const isDevelopment = import.meta.env.DEV;
 
+  const [serviceBlockMap, setServiceBlockMap] = useState({});
   const [activeTab, setActiveTab] = useState("mainPage");
 
   // Ref to prevent duplicate fetches
@@ -450,6 +461,10 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
   // Add device viewport state and forced preview states
   const [deviceViewport, setDeviceViewport] = useState('desktop'); // 'desktop' or 'mobile'
   const [forcedPreviewStates, setForcedPreviewStates] = useState({});
+
+  useEffect(() => {
+    setServiceBlockMap(importedServiceBlockMap);
+  }, []);
 
   // Handle preview state changes
   const handlePreviewStateChange = useCallback((blockType, newState) => {
@@ -516,6 +531,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
       let currentAboutData = null;
       let currentNavbarData = null;
       let currentThemeColorsValue = null;
+      let currentAllBlocksShowcaseData = null;
       let currentSentimentReviewsData = null;
       let currentSitePaletteValue = []; // Initialize for sitePalette
 
@@ -528,8 +544,9 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
           currentAboutData = initialData.aboutPageData || null;
           currentNavbarData = initialData.navbarData || null;
           currentThemeColorsValue = initialData.themeColors || null;
-          currentSentimentReviewsData = initialData.sentimentReviewsData || null;
+          currentAllBlocksShowcaseData = initialData.all_blocks_showcase || null;
           currentSitePaletteValue = initialData.sitePalette || []; // Get sitePalette from initialData if available
+          currentSentimentReviewsData = initialData.sentimentReviewsData || null;
         }
 
         // Use config theme colors if not provided in initialData
@@ -744,6 +761,37 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
           setManagedServicesData({ commercial: [], residential: [] });
         }
 
+        if (currentAllBlocksShowcaseData) {
+          setAllServiceBlocksData(currentAllBlocksShowcaseData);
+          setInitialAllServiceBlocksData(
+            deepCloneWithFiles(currentAllBlocksShowcaseData)
+          );
+          setLoadingAllServiceBlocks(false);
+        } else if (!blockName) {
+          try {
+            const allBlocksResponse = await fetch(
+              "/personal/old/jsons/all_blocks_showcase.json"
+            );
+            if (allBlocksResponse.ok) {
+              const data = await allBlocksResponse.json();
+              setAllServiceBlocksData(data);
+              setInitialAllServiceBlocksData(deepCloneWithFiles(data));
+            } else {
+              setAllServiceBlocksData({ blocks: [] });
+              setInitialAllServiceBlocksData({ blocks: [] });
+            }
+          } catch (error) {
+            console.error(
+              "[OneForm] Error fetching all_blocks_showcase.json",
+              error
+            );
+            setAllServiceBlocksData({ blocks: [] });
+            setInitialAllServiceBlocksData({ blocks: [] });
+          } finally {
+            setLoadingAllServiceBlocks(false);
+          }
+        }
+
         if (currentSentimentReviewsData) {
             setSentimentReviewsData(currentSentimentReviewsData);
             setInitialSentimentReviewsData(deepCloneWithFiles(currentSentimentReviewsData));
@@ -878,6 +926,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         setError(error.message || "Failed to load data.");
         setMainPageFormData({ mainPageBlocks: [], navbar: {} });
         setAboutPageJsonData({});
+        setAllServiceBlocksData({ blocks: [] });
         setThemeColors(configThemeColors || defaultThemeColors);
         setSitePalette([...defaultColorDefinitions]); // Fallback for sitePalette
         setManagedServicesData({ commercial: [], residential: [] });
@@ -1153,6 +1202,9 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
               subPath = `img/services/${serviceFolder}/assets/${assetType}/${finalFileName}`;
             }
             break;
+          case "showcase":
+            subPath = `img/all_dev/assets/images/${finalFileName}`;
+            break;
           default:
             subPath = `img/global_assets/${finalFileName}`;
             break;
@@ -1362,6 +1414,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         nav: deepCloneWithFiles(initialNavbarData),
         services: deepCloneWithFiles(servicesDataForOldExport),
         about_page: deepCloneWithFiles(initialAboutPageJsonData),
+        all_blocks_showcase: deepCloneWithFiles(initialAllServiceBlocksData),
         sentiment_reviews: deepCloneWithFiles(initialSentimentReviewsData),
       };
 
@@ -1370,6 +1423,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         nav: deepCloneWithFiles(navbarData),
         services: deepCloneWithFiles(managedServicesData),
         about_page: deepCloneWithFiles(aboutPageJsonData),
+        all_blocks_showcase: deepCloneWithFiles(allServiceBlocksData),
         sentiment_reviews: deepCloneWithFiles(sentimentReviewsData),
       };
       
@@ -1378,6 +1432,7 @@ const OneForm = ({ initialData = null, blockName = null, title = null }) => {
         nav: 'navbar',
         services: 'services',
         about_page: 'about',
+        all_blocks_showcase: 'showcase',
         sentiment_reviews: 'reviews',
       };
 
@@ -1520,13 +1575,14 @@ This package contains website content updates separated into two distinct folder
     navbarData,
     managedServicesData,
     aboutPageJsonData,
-    sentimentReviewsData,
+    allServiceBlocksData,
     themeColors,
     blockName,
     initialFormDataForOldExport,
     initialNavbarData,
     servicesDataForOldExport,
     initialAboutPageJsonData,
+    initialAllServiceBlocksData,
     initialSentimentReviewsData,
     defaultColorDefinitions
   ]);
@@ -1615,6 +1671,212 @@ This package contains website content updates separated into two distinct folder
     });
   };
 
+  const fetchShowcaseData = async () => {
+    if (
+      allServiceBlocksData &&
+      allServiceBlocksData.blocks &&
+      allServiceBlocksData.blocks.length > 0
+    ) {
+      console.log(
+        "fetchShowcaseData: Data already exists for showcase, skipping fetch."
+      );
+      return;
+    }
+    if (loadingAllServiceBlocks) return;
+
+    setLoadingAllServiceBlocks(true);
+    try {
+      const response = await fetch(
+        "/personal/new/jsons/all_blocks_showcase.json"
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch all_blocks_showcase.json");
+      }
+      const data = await response.json();
+      setAllServiceBlocksData(data);
+    } catch (error) {
+      console.error("Error loading all_blocks_showcase.json:", error);
+    } finally {
+      setLoadingAllServiceBlocks(false);
+    }
+  };
+
+  const handleShowcaseBlockConfigUpdate = (blockIndex, newConfig) => {
+    setAllServiceBlocksData((prevData) => {
+      if (!prevData || !prevData.blocks) return prevData;
+      const updatedBlocks = prevData.blocks.map((block, index) => {
+        if (index === blockIndex) {
+          return { ...block, config: preserveImageUrls(newConfig) };
+        }
+        return block;
+      });
+      const updatedData = { ...prevData, blocks: updatedBlocks };
+
+      return updatedData;
+    });
+  };
+
+  const handleShowcaseFileChangeForBlock = (
+    blockIndex,
+    configKeyOrPathData,
+    fileOrFileObject
+  ) => {
+    if (!fileOrFileObject) return;
+
+    let newMediaConfig;
+    const currentBlock = allServiceBlocksData.blocks[blockIndex];
+    let existingMediaConfig;
+
+    let isNestedPath =
+      typeof configKeyOrPathData === "object" && configKeyOrPathData !== null;
+    let fieldToUpdate = isNestedPath
+      ? configKeyOrPathData.field
+      : configKeyOrPathData;
+
+    if (isNestedPath) {
+      if (
+        configKeyOrPathData.field === "pictures" &&
+        currentBlock.config.items &&
+        currentBlock.config.items[configKeyOrPathData.blockItemIndex]
+      ) {
+        existingMediaConfig =
+          currentBlock.config.items[configKeyOrPathData.blockItemIndex]
+            .pictures?.[configKeyOrPathData.pictureIndex];
+      } else if (
+        currentBlock.config.items &&
+        currentBlock.config.items[configKeyOrPathData.blockItemIndex]
+      ) {
+        existingMediaConfig =
+          currentBlock.config.items[configKeyOrPathData.blockItemIndex][
+            fieldToUpdate
+          ];
+      } else {
+        existingMediaConfig = currentBlock.config[fieldToUpdate];
+      }
+    } else {
+      existingMediaConfig = currentBlock?.config?.[fieldToUpdate];
+    }
+
+    if (fileOrFileObject instanceof File) {
+      if (
+        existingMediaConfig &&
+        typeof existingMediaConfig === "object" &&
+        existingMediaConfig.url &&
+        existingMediaConfig.url.startsWith("blob:")
+      ) {
+        URL.revokeObjectURL(existingMediaConfig.url);
+      }
+      const fileURL = URL.createObjectURL(fileOrFileObject);
+      newMediaConfig = {
+        file: fileOrFileObject,
+        url: fileURL,
+        name: fileOrFileObject.name,
+        originalUrl:
+          (typeof existingMediaConfig === "object"
+            ? existingMediaConfig.originalUrl
+            : typeof existingMediaConfig === "string"
+              ? existingMediaConfig
+              : null) ||
+          `assets/showcase_uploads/generated/${fileOrFileObject.name}`,
+      };
+    } else if (
+      typeof fileOrFileObject === "object" &&
+      fileOrFileObject.url !== undefined
+    ) {
+      if (
+        existingMediaConfig &&
+        typeof existingMediaConfig === "object" &&
+        existingMediaConfig.file &&
+        existingMediaConfig.url &&
+        existingMediaConfig.url.startsWith("blob:")
+      ) {
+        if (existingMediaConfig.url !== fileOrFileObject.url) {
+          URL.revokeObjectURL(existingMediaConfig.url);
+        }
+      }
+      newMediaConfig = fileOrFileObject;
+    } else if (typeof fileOrFileObject === "string") {
+      if (
+        existingMediaConfig &&
+        typeof existingMediaConfig === "object" &&
+        existingMediaConfig.file &&
+        existingMediaConfig.url &&
+        existingMediaConfig.url.startsWith("blob:")
+      ) {
+        URL.revokeObjectURL(existingMediaConfig.url);
+      }
+      newMediaConfig = {
+        file: null,
+        url: fileOrFileObject,
+        name: fileOrFileObject.split("/").pop(),
+        originalUrl: fileOrFileObject,
+      };
+    } else {
+      console.warn(
+        "Unsupported file/URL type in handleShowcaseFileChangeForBlock",
+        fileOrFileObject
+      );
+      return;
+    }
+
+    setAllServiceBlocksData((prevData) => {
+      const updatedBlocks = prevData.blocks.map((block, index) => {
+        if (index === blockIndex) {
+          let newBlockConfig = { ...block.config };
+          if (isNestedPath) {
+            if (!newBlockConfig.items) newBlockConfig.items = [];
+            while (
+              newBlockConfig.items.length <= configKeyOrPathData.blockItemIndex
+            ) {
+              newBlockConfig.items.push({ pictures: [] });
+            }
+            if (configKeyOrPathData.field === "pictures") {
+              if (
+                !newBlockConfig.items[configKeyOrPathData.blockItemIndex]
+                  .pictures
+              ) {
+                newBlockConfig.items[
+                  configKeyOrPathData.blockItemIndex
+                ].pictures = [];
+              }
+              while (
+                newBlockConfig.items[configKeyOrPathData.blockItemIndex]
+                  .pictures.length <= configKeyOrPathData.pictureIndex
+              ) {
+                newBlockConfig.items[
+                  configKeyOrPathData.blockItemIndex
+                ].pictures.push(null);
+              }
+              newBlockConfig.items[configKeyOrPathData.blockItemIndex].pictures[
+                configKeyOrPathData.pictureIndex
+              ] = newMediaConfig;
+            } else {
+              newBlockConfig.items[configKeyOrPathData.blockItemIndex] = {
+                ...newBlockConfig.items[configKeyOrPathData.blockItemIndex],
+                [fieldToUpdate]: newMediaConfig,
+              };
+            }
+          } else {
+            newBlockConfig[fieldToUpdate] = newMediaConfig;
+          }
+          return { ...block, config: newBlockConfig };
+        }
+        return block;
+      });
+
+      const updatedData = { ...prevData, blocks: updatedBlocks };
+
+      return updatedData;
+    });
+  };
+
+  const getShowcaseDisplayUrl = (value) => {
+    if (!value) return null;
+    if (typeof value === "string") return value;
+    if (typeof value === "object" && value.url) return value.url;
+    return null;
+  };
+
   const handleTabChange = (tabId) => {
     console.log(`[TabSwitch] Switching from ${activeTab} to ${tabId}`);
 
@@ -1642,6 +1904,16 @@ This package contains website content updates separated into two distinct folder
         setInitialAboutPageJsonData(preserved);
       }
 
+      setAllServiceBlocksData((prev) => {
+        console.log("[TabSwitch] Preserving showcase data:", prev);
+        const preserved = deepCloneWithFiles(prev);
+        console.log(
+          "[TabSwitch] Preserved showcase data with files:",
+          preserved
+        );
+        return preserved;
+      });
+
       // Also preserve services data
       setManagedServicesData((prev) => {
         console.log("[TabSwitch] Preserving services data:", prev);
@@ -1657,6 +1929,13 @@ This package contains website content updates separated into two distinct folder
     }
 
     setActiveTab(tabId);
+    if (
+      tabId === "allServiceBlocks" &&
+      !allServiceBlocksData &&
+      !loadingAllServiceBlocks
+    ) {
+      fetchShowcaseData();
+    }
   };
 
   if (isLoading) {
@@ -1784,11 +2063,11 @@ This package contains website content updates separated into two distinct folder
                   themeColors={themeColors}
                   servicesData={servicesDataForOldExport}
                   aboutPageData={aboutPageJsonData}
-                  sentimentReviewsData={sentimentReviewsData}
+                  showcaseData={allServiceBlocksData}
                   initialFormDataForOldExport={initialFormDataForOldExport}
                   initialServicesData={initialServicesData}
                   initialAboutPageJsonData={initialAboutPageJsonData}
-                  initialSentimentReviewsData={initialSentimentReviewsData}
+                  initialAllServiceBlocksData={initialAllServiceBlocksData}
                   initialThemeColors={themeColors}
                 />
               )}
@@ -1945,6 +2224,26 @@ This package contains website content updates separated into two distinct folder
               <ColorEditor
                 initialColors={themeColors}
                 onColorChange={handleThemeColorChange}
+              />
+            )}
+            {activeTab === "allServiceBlocks" && (
+              <AllServiceBlocksTab
+                allServiceBlocksData={allServiceBlocksData}
+                loadingAllServiceBlocks={loadingAllServiceBlocks}
+                activeEditShowcaseBlockIndex={activeEditShowcaseBlockIndex}
+                setActiveEditShowcaseBlockIndex={
+                  setActiveEditShowcaseBlockIndex
+                }
+                serviceBlockMap={serviceBlockMap}
+                handleShowcaseBlockConfigUpdate={
+                  handleShowcaseBlockConfigUpdate
+                }
+                getShowcaseDisplayUrl={getShowcaseDisplayUrl}
+                handleShowcaseFileChangeForBlock={
+                  handleShowcaseFileChangeForBlock
+                }
+                themeColors={themeColors}
+                sitePalette={sitePalette}
               />
             )}
           </div>

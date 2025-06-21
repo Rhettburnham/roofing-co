@@ -33,7 +33,7 @@ const getTextStyles = (settings) => {
 const deriveInitialLocalData = (buttonDataInput) => {
   const initial = buttonDataInput || {};
 
-  // Initialize images with proper structure, following HeroBlock pattern
+  // Initialize images with proper structure
   let initialImages = [];
   const defaultImages = [
     "/assets/images/roof_slideshow/i4.jpeg",
@@ -85,7 +85,7 @@ const deriveInitialLocalData = (buttonDataInput) => {
       };
     });
   } else {
-    // Initialize from default images - create proper image objects for all defaults
+    // Initialize from default images
     initialImages = defaultImages.map((imgPath, index) => ({
       file: null,
       url: imgPath,
@@ -98,6 +98,7 @@ const deriveInitialLocalData = (buttonDataInput) => {
   return {
     text: initial.text || "About Us",
     buttonLink: initial.buttonLink || "/about",
+    variant: initial.variant || "slide",
     slideDuration: initial.slideDuration || 40,
     images: initialImages,
     styling: {
@@ -108,8 +109,6 @@ const deriveInitialLocalData = (buttonDataInput) => {
       buttonSize: initial.buttonSize || initial.styling?.buttonSize || "large",
       animationSpeed:
         initial.animationSpeed || initial.styling?.animationSpeed || "normal",
-      animationType:
-        initial.animationType || initial.styling?.animationType || "slide",
     },
     textSettings: initial.textSettings || {
       fontFamily: "Inter, sans-serif",
@@ -127,15 +126,14 @@ const deriveInitialLocalData = (buttonDataInput) => {
    BUTTON PREVIEW (Read-Only or Editable)
    ------------------------------------------------------
    This component shows the button as a preview with
-   inline editing capabilities for text and link.
+   inline editing capabilities for text only.
 ========================================================= */
 function ButtonPreview({ buttonData, readOnly, onButtonDataChange }) {
   const navigate = useNavigate();
   const sliderRef = useRef(null);
   const [images, setImages] = useState([]);
   const slideDuration = buttonData?.slideDuration || 40;
-  const animationType =
-    buttonData?.animationType || buttonData?.styling?.animationType || "slide";
+  const variant = buttonData?.variant || "slide";
   const animRef = useRef(null);
 
   const handleFieldChange = (field, value) => {
@@ -158,7 +156,7 @@ function ButtonPreview({ buttonData, readOnly, onButtonDataChange }) {
     setImages(formattedImages);
   }, [buttonData]);
 
-  // Animation function to handle different animation types
+  // Animation function to handle different variants
   const createAnimation = useCallback(() => {
     if (!images.length || !sliderRef.current) return;
 
@@ -170,82 +168,39 @@ function ButtonPreview({ buttonData, readOnly, onButtonDataChange }) {
       // Reset initial state
       gsap.set(sliderRef.current, { x: 0, opacity: 1, scale: 1, y: 0 });
 
-      switch (animationType) {
+      switch (variant) {
         case "fade":
-          // Fade animation - cycles through images with opacity
-          animRef.current = gsap
-            .timeline({ repeat: -1 })
-            .to(sliderRef.current, { opacity: 0, duration: actualDuration / 4 })
-            .set(sliderRef.current, { x: "-=300px" })
-            .to(sliderRef.current, { opacity: 1, duration: actualDuration / 4 })
-            .to({}, { duration: actualDuration / 2 }); // pause
-          break;
-
-        case "zoom":
-          // Zoom animation - scales while sliding
-          const zoomMovementDistance = 300;
-          animRef.current = gsap
-            .timeline({ repeat: -1 })
-            .to(sliderRef.current, {
-              x: `-=${zoomMovementDistance}`,
-              scale: 1.1,
-              ease: "none",
-              duration: actualDuration / 2,
-              modifiers: {
-                x: (x_value) => {
-                  const x = parseFloat(x_value);
-                  if (!sliderRef.current) return "0px";
-                  const totalWidth = sliderRef.current.scrollWidth / 2;
-                  let modX = x % totalWidth;
-                  if (modX > 0) modX -= totalWidth;
-                  return modX + "px";
-                },
+          // Slide animation - moves 500px every 2 seconds
+          animRef.current = gsap.to(sliderRef.current, {
+            x: "-=500",
+            ease: "none",
+            duration: 2,
+            repeat: -1,
+            force3D: true,
+            overwrite: true,
+            modifiers: {
+              x: (x_value) => {
+                const x = parseFloat(x_value);
+                if (!sliderRef.current) {
+                  return "0px";
+                }
+                const totalWidth = sliderRef.current.scrollWidth / 2;
+                let modX = x % totalWidth;
+                if (modX > 0) {
+                  modX -= totalWidth;
+                }
+                return modX + "px";
               },
-            })
-            .to(sliderRef.current, {
-              scale: 1,
-              duration: actualDuration / 2,
-              ease: "power2.out",
-            });
-          break;
-
-        case "slideUp":
-          // Slide up animation
-          animRef.current = gsap
-            .timeline({ repeat: -1 })
-            .to(sliderRef.current, {
-              y: "-=100px",
-              duration: actualDuration / 3,
-              ease: "power2.inOut",
-            })
-            .to(sliderRef.current, {
-              y: "+=100px",
-              duration: actualDuration / 3,
-              ease: "power2.inOut",
-            })
-            .to({}, { duration: actualDuration / 3 }); // pause
-          break;
-
-        case "slideDown":
-          // Slide down animation
-          animRef.current = gsap
-            .timeline({ repeat: -1 })
-            .to(sliderRef.current, {
-              y: "+=100px",
-              duration: actualDuration / 3,
-              ease: "power2.inOut",
-            })
-            .to(sliderRef.current, {
-              y: "-=100px",
-              duration: actualDuration / 3,
-              ease: "power2.inOut",
-            })
-            .to({}, { duration: actualDuration / 3 }); // pause
+            },
+            onUpdate: () => {
+              gsap.ticker.tick();
+            },
+          });
           break;
 
         case "slide":
         default:
-          // Default slide animation (existing behavior)
+          // Default slide animation (horizontal sliding)
           const slideMovementDistance = 300;
           animRef.current = gsap.to(sliderRef.current, {
             x: `-=${slideMovementDistance}`,
@@ -287,7 +242,7 @@ function ButtonPreview({ buttonData, readOnly, onButtonDataChange }) {
       if (animRef.current) animRef.current.kill();
       ctx.revert();
     };
-  }, [images, slideDuration, animationType]);
+  }, [images, slideDuration, variant]);
 
   useEffect(() => {
     return createAnimation();
@@ -347,11 +302,9 @@ function ButtonPreview({ buttonData, readOnly, onButtonDataChange }) {
   const buttonSizeClasses = getButtonSizeClasses(buttonSize);
   const textStyles = getTextStyles(textSettings);
 
-  // Calculate dynamic height based on styling
-  const dynamicHeight =
-    window.innerWidth < 768
-      ? `${buttonData?.styling?.mobileHeightVW ?? 10}vw`
-      : `${buttonData?.styling?.desktopHeightVH ?? 20}vh`;
+  // Calculate dynamic height based on styling - following HeroBlock pattern
+  const { desktopHeightVH = 20, mobileHeightVW = 35 } = styling;
+  const dynamicHeight = window.innerWidth < 768 ? `${mobileHeightVW}vw` : `${desktopHeightVH}vh`;
 
   return (
     <div className="flex flex-col relative w-full mt-0 pt-0">
@@ -359,7 +312,7 @@ function ButtonPreview({ buttonData, readOnly, onButtonDataChange }) {
         <div className="relative overflow-hidden z-30">
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-auto z-10">
             {!readOnly ? (
-              <div className="space-y-2 text-center">
+              <div className="text-center">
                 <input
                   type="text"
                   value={text}
@@ -368,19 +321,6 @@ function ButtonPreview({ buttonData, readOnly, onButtonDataChange }) {
                   placeholder="Button Text"
                   style={textStyles}
                 />
-                <input
-                  type="text"
-                  value={buttonLink}
-                  onChange={(e) =>
-                    handleFieldChange("buttonLink", e.target.value)
-                  }
-                  className="text-xs text-white bg-black/50 px-2 py-1 rounded focus:outline-none focus:bg-black/70 text-center"
-                  placeholder="Button Link"
-                />
-                <div className="text-xs text-white/60 mt-1">
-                  Size:{" "}
-                  {buttonSize.charAt(0).toUpperCase() + buttonSize.slice(1)}
-                </div>
               </div>
             ) : (
               <button
@@ -401,7 +341,7 @@ function ButtonPreview({ buttonData, readOnly, onButtonDataChange }) {
             )}
           </div>
           <div
-            className="relative overflow-hidden"
+            className="relative overflow-hidden w-full"
             style={{ height: dynamicHeight }}
           >
             <div className="absolute top-0 left-0 w-full h-[1vh] z-20">
@@ -410,16 +350,21 @@ function ButtonPreview({ buttonData, readOnly, onButtonDataChange }) {
             <div className="flex" ref={sliderRef}>
               {images.concat(images).map((src, index) => (
                 <div key={`slide-${index}`} className="flex-shrink-0">
-                  <div className="relative sm:w-[70vw] w-[88vw] md:h-[24vh] sm:h-[20vh] h-[15vh]">
-                    <div className="flex items-center justify-center overflow-hidden w-full h-full relative">
-                      <img
-                        src={src}
-                        alt={`Slide ${index}`}
-                        className="w-full h-full object-cover pointer-events-none"
-                        loading={index < 3 ? "eager" : "lazy"}
-                      />
-                      <div className="absolute top-0 left-0 w-full h-full bg-gray-800 opacity-60"></div>
-                    </div>
+                  <div 
+                    className="relative overflow-hidden"
+                    style={{ 
+                      width: window.innerWidth < 768 ? '88vw' : '70vw',
+                      height: dynamicHeight
+                    }}
+                  >
+                    <img
+                      src={src}
+                      alt={`Slide ${index}`}
+                      className="w-full h-full object-cover pointer-events-none"
+                      loading={index < 3 ? "eager" : "lazy"}
+                      style={{ height: dynamicHeight }}
+                    />
+                    <div className="absolute top-0 left-0 w-full h-full bg-gray-800 opacity-60"></div>
                   </div>
                 </div>
               ))}
@@ -519,14 +464,17 @@ const ButtonStylingControls = ({
     });
   };
 
-  const handleAnimationTypeChange = (value) => {
+  const handleVariantChange = (value) => {
     onControlsChange({
       ...currentData,
-      animationType: value,
-      styling: {
-        ...currentData.styling,
-        animationType: value,
-      },
+      variant: value,
+    });
+  };
+
+  const handleButtonLinkChange = (value) => {
+    onControlsChange({
+      ...currentData,
+      buttonLink: value,
     });
   };
 
@@ -562,6 +510,41 @@ const ButtonStylingControls = ({
 
   return (
     <div className="p-4 space-y-6">
+      {/* Button Link */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Button Link
+        </label>
+        <input
+          type="text"
+          value={currentData.buttonLink || ""}
+          onChange={(e) => handleButtonLinkChange(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Enter destination URL (e.g., /about, /services)"
+        />
+        <p className="text-xs text-gray-500 mt-1">
+          Use relative paths (e.g., /about) or external URLs (e.g., https://example.com)
+        </p>
+      </div>
+
+      {/* Animation Variant */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Animation Variant
+        </label>
+        <select
+          value={currentData.variant || "slide"}
+          onChange={(e) => handleVariantChange(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="slide">Slide - Horizontal sliding carousel</option>
+          <option value="fade">Fast Slide - 500px every 2 seconds</option>
+        </select>
+        <p className="text-xs text-gray-500 mt-1">
+          Choose between different animation styles for the background images
+        </p>
+      </div>
+
       {/* Height Controls using PanelStylingController */}
       <div>
         <h4 className="text-sm font-medium text-gray-700 mb-3">Block Height</h4>
@@ -599,59 +582,7 @@ const ButtonStylingControls = ({
         />
       </div>
 
-      {/* Divider */}
-      <div className="border-t border-gray-200 pt-4">
-        <h4 className="text-sm font-medium text-gray-700 mb-3">
-          Animation Settings
-        </h4>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Animation Speed
-        </label>
-        <select
-          value={
-            currentData.animationSpeed ||
-            currentData.styling?.animationSpeed ||
-            "normal"
-          }
-          onChange={(e) => handleAnimationSpeedChange(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="slow">Slow</option>
-          <option value="normal">Normal</option>
-          <option value="fast">Fast</option>
-        </select>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Animation Type
-        </label>
-        <select
-          value={
-            currentData.animationType ||
-            currentData.styling?.animationType ||
-            "slide"
-          }
-          onChange={(e) => handleAnimationTypeChange(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="fade">Fade</option>
-          <option value="zoom">Zoom</option>
-          <option value="slideUp">Slide Up</option>
-          <option value="slideDown">Slide Down</option>
-          <option value="slide">Slide</option>
-        </select>
-      </div>
-
       <div className="mt-4 p-3 bg-gray-50 rounded-md border">
-        <h4 className="text-sm font-medium text-gray-600 mb-1">Color Note:</h4>
-        <p className="text-xs text-gray-500 mb-2">
-          Button colors are controlled by the global theme. The button uses the
-          "accent" color from your site's color palette.
-        </p>
         <h4 className="text-sm font-medium text-gray-600 mb-1">Tips:</h4>
         <ul className="text-xs text-gray-500 space-y-1">
           <li>
@@ -660,11 +591,7 @@ const ButtonStylingControls = ({
           <li>
             • Slower slide duration creates a more relaxed viewing experience
           </li>
-          <li>
-            • Try different animation types: Slide (classic), Fade (smooth),
-            Zoom (dynamic), Slide Up/Down (vertical movement)
-          </li>
-          <li>• Faster animation speed creates more dynamic movement</li>
+          <li>• Try different variants: Slide for classic movement, Fade for smooth transitions</li>
           <li>• Large button size works well for call-to-action sections</li>
         </ul>
       </div>
@@ -713,6 +640,7 @@ export default function ButtonBlock({
   buttonconfig = {
     text: "About Us",
     buttonLink: "/about",
+    variant: "slide",
     slideDuration: 40,
     images: [],
   },
@@ -805,6 +733,7 @@ ButtonBlock.propTypes = {
   buttonconfig: PropTypes.shape({
     text: PropTypes.string,
     buttonLink: PropTypes.string,
+    variant: PropTypes.string,
     slideDuration: PropTypes.number,
     images: PropTypes.array, // Can be strings or objects
     styling: PropTypes.object,
@@ -816,9 +745,6 @@ ButtonBlock.propTypes = {
 
 // Tab configuration for BottomStickyEditPanel
 ButtonBlock.tabsConfig = (blockData, onUpdate, themeColors, animationDurationOptions, buttonSizeOptions) => ({
-  general: (props) => (
-    <ButtonGeneralControls {...props} onUpdate={onUpdate} />
-  ),
   images: (props) => (
     <ButtonImagesControls
       {...props}

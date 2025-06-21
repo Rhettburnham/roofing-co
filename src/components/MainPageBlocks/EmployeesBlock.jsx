@@ -4,6 +4,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import ThemeColorPicker from "../common/ThemeColorPicker";
 import PanelImagesController from "../common/PanelImagesController";
+import PanelImageSectionController from "../common/PanelImageSectionController";
 import PanelFontController from "../common/PanelFontController";
 import PanelStylingController from "../common/PanelStylingController";
 
@@ -565,6 +566,24 @@ EmployeesBlock.tabsConfig = (blockData, onUpdate, themeColors) => ({
       currentData={blockData}
       onControlsChange={onUpdate}
       themeColors={themeColors}
+    />
+  ),
+  team: (props) => (
+    <PanelImageSectionController
+      {...props}
+      currentData={blockData}
+      onControlsChange={onUpdate}
+      controlType="gallery"
+      blockType="EmployeesBlock"
+      imageConfig={{
+        label: 'Team Photos',
+        itemLabel: 'Employee',
+        arrayFieldName: 'employee',
+        generateName: (index, blockType) => `employee_${index + 1}`,
+        acceptedTypes: 'image/*',
+        maxFileSize: 5 * 1024 * 1024, // 5MB
+        defaultPath: '/assets/images/team/'
+      }}
     />
   ),
   colors: (props) => (

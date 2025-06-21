@@ -95,7 +95,8 @@ const ServiceEditPage = ({
   sitePalette,
   initialServicesData = null,
   editingTarget,
-  onStartEditing
+  onStartEditing,
+  forcedDeviceViewport = 'desktop'
 }) => {
   // Removed local states: servicesData, loading, error, initialServicesDataForOldExport
   // const { services: configServices } = useConfig(); // Removed
@@ -595,6 +596,7 @@ const ServiceEditPage = ({
       onUndoBlock: () => handleUndoBlock(blockIndex),
       onSaveBlock: (newConfig) => handleSaveBlock(blockIndex, newConfig),
       onConfigChange: (newConfig) => handleBlockConfigUpdate(blockIndex, newConfig),
+      forcedDeviceViewport: forcedDeviceViewport,
     };
 
     const handleStartEditingBlock = () => {
@@ -620,9 +622,12 @@ const ServiceEditPage = ({
       setTimeout(() => {
         const blockElement = blockRefs.current[blockIndex]?.current;
         if (blockElement) {
-          const blockTop = blockElement.getBoundingClientRect().top + window.scrollY;
+          const elementTop = blockElement.getBoundingClientRect().top + window.scrollY;
+          const viewportHeight = window.innerHeight;
+          const targetPosition = elementTop - (viewportHeight * 0.2); // 20% gap from top
+          
           window.scrollTo({
-            top: blockTop - 100, // Adjust for sticky header/panel
+            top: Math.max(0, targetPosition), // Ensure we don't scroll above the top
             behavior: 'smooth',
           });
         }
@@ -870,6 +875,7 @@ ServiceEditPage.propTypes = {
   initialServicesData: PropTypes.object,
   editingTarget: PropTypes.object,
   onStartEditing: PropTypes.func,
+  forcedDeviceViewport: PropTypes.string,
 };
 
 export default ServiceEditPage;
