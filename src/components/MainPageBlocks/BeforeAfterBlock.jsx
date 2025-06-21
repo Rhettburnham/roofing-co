@@ -10,70 +10,48 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import ThemeColorPicker from "../common/ThemeColorPicker";
 import PanelImagesController from "../common/PanelImagesController";
+import PanelImageSectionController from "../common/PanelImageSectionController";
+import PanelFontController from "../common/PanelFontController";
 import PanelStylingController from "../common/PanelStylingController";
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+import { GripVertical } from 'lucide-react';
+import { initializeImageState } from '../../utils/imageUtils';
+import { useConfig } from "../../context/ConfigContext";
 
 // Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger);
 
-// Helper to get display URL from string path or {url, file} object
-const getDisplayUrl = (imageValue, defaultPath = null) => {
-  if (imageValue && typeof imageValue === "object" && imageValue.url) {
-    return imageValue.url;
+// Helper to generate styles from text settings object
+const getTextStyles = (settings) => {
+  if (!settings || typeof settings !== 'object') {
+    return {};
   }
-  if (typeof imageValue === "string") {
-    if (
-      imageValue.startsWith("/") ||
-      imageValue.startsWith("blob:") ||
-      imageValue.startsWith("data:")
-    ) {
-      return imageValue;
-    }
-    return `/${imageValue.replace(/^\.\//, "")}`;
-  }
-  return defaultPath;
+  const styles = {};
+  if (settings.fontFamily) styles.fontFamily = settings.fontFamily;
+  if (settings.fontSize) styles.fontSize = `${settings.fontSize}px`;
+  if (settings.fontWeight) styles.fontWeight = settings.fontWeight;
+  if (settings.lineHeight) styles.lineHeight = settings.lineHeight;
+  if (settings.letterSpacing) styles.letterSpacing = `${settings.letterSpacing}px`;
+  if (settings.textAlign) styles.textAlign = settings.textAlign;
+  if (settings.color) styles.color = settings.color;
+  return styles;
 };
 
-// Helper to initialize image state: handles string path or {file, url, name} object
-const initializeImageState = (imageConfig, defaultPath) => {
-  console.log("[initializeImageState] Called with:", {
-    imageConfig:
-      typeof imageConfig === "object" && imageConfig?.file instanceof File
-        ? { ...imageConfig, file: "[File Object]" }
-        : imageConfig,
-    defaultPath,
-  });
-
-  let originalUrlToStore = defaultPath;
-  let nameToStore = defaultPath?.split("/").pop() || "default.jpg";
-  let urlToDisplay = defaultPath;
-  let fileObject = null;
-
-  if (imageConfig && typeof imageConfig === "object") {
-    // If imageConfig is an object, it might be from a previous state or a new upload
-    urlToDisplay = imageConfig.url || defaultPath;
-    nameToStore =
-      imageConfig.name || urlToDisplay?.split("/").pop() || "default.jpg";
-    fileObject = imageConfig.file || null; // Preserve file object if it exists
-    // Crucially, preserve originalUrl if it already exists in imageConfig, otherwise use the determined urlToDisplay or defaultPath
-    originalUrlToStore =
-      imageConfig.originalUrl ||
-      (typeof imageConfig.url === "string" &&
-      !imageConfig.url.startsWith("blob:")
-        ? imageConfig.url
-        : defaultPath);
-  } else if (typeof imageConfig === "string") {
-    // If imageConfig is a string, it's an initial path
-    urlToDisplay = imageConfig;
-    nameToStore = imageConfig.split("/").pop() || "default.jpg";
-    originalUrlToStore = imageConfig; // This path is the original
-  }
-
-  return {
-    file: fileObject,
-    url: urlToDisplay, // This could be a path or a blob URL for preview
-    name: nameToStore,
-    originalUrl: originalUrlToStore, // The persistent original path
-  };
+// Helper to get display URL from string path or {url, file} object
+const getDisplayUrl = (imageValue, defaultPath = null) => {
+    if (imageValue && typeof imageValue === 'object' && imageValue.url) {
+        return imageValue.url;
+    }
+    if (typeof imageValue === 'string') {
+        if (imageValue.startsWith('/') || imageValue.startsWith('blob:') || imageValue.startsWith('data:')) {
+            return imageValue;
+        }
+        // Ensure it doesn't add a double slash if the path is like 'assets/...'
+        const path = imageValue.replace(/^\//, '');
+        return `/${path.replace(/^\.\//, "")}`;
+    }
+    return defaultPath;
 };
 
 /* ==============================================
@@ -87,12 +65,8 @@ const initializeImageState = (imageConfig, defaultPath) => {
      ]
    }
 =============================================== */
-function BeforeAfterPreview({
-  beforeAfterData,
-  readOnly = true,
-  onSectionTitleChange,
-  onItemTextChange,
-}) {
+function BeforeAfterPreview({ beforeAfterData, readOnly = true, onSectionTitleChange, onItemTextChange }) {
+  const { virtualFS } = useConfig() || {};
   const boxesRef = useRef([]);
   const headerRef = useRef(null);
   const nailRef = useRef(null);
@@ -101,8 +75,16 @@ function BeforeAfterPreview({
   // Local states for modal and card flipping
   const [selectedImages, setSelectedImages] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   // Initialize viewStates as an object to hold state for each card
   const [viewStates, setViewStates] = useState({});
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // Safely destructure data and ensure paths are properly formatted
   const {
@@ -113,14 +95,12 @@ function BeforeAfterPreview({
     toggleButtonTextColor = "#FFFFFF",
     toggleButtonHoverBgColor = "#FFFFFF",
     toggleButtonHoverTextColor = "#000000",
+    sectionTitleTextSettings,
+    overlayShingleTextSettings,
+    overlaySqftTextSettings,
+    styling = {},
   } = beforeAfterData || {};
-  const showNailAnimation =
-    beforeAfterData?.showNailAnimation !== undefined
-      ? beforeAfterData.showNailAnimation
-      : true; // Default to true
-  console.log(
-    `[BeforeAfterPreview] Instance created/re-rendered. Initial showNailAnimation prop from beforeAfterData: ${showNailAnimation}`
-  );
+  const showNailAnimation = beforeAfterData?.showNailAnimation !== undefined ? beforeAfterData.showNailAnimation : true; // Default to true
 
   // Memoize formatted items to prevent unnecessary recalculations
   const formattedItems = useMemo(() => {
@@ -183,10 +163,6 @@ function BeforeAfterPreview({
 
     if (!nailElement || !textElement || !headerElement) return;
 
-    console.log(
-      `[BeforeAfterPreview GSAP Effect] Running. showNailAnimation: ${showNailAnimation}`
-    );
-
     // Kill any existing ScrollTriggers associated with these elements
     ScrollTrigger.getAll().forEach((st) => {
       if (
@@ -219,37 +195,16 @@ function BeforeAfterPreview({
       masterTimeline
         .to(nailElement, { x: 0, duration: 1, ease: "power2.out" })
         .to(textElement, { opacity: 1, duration: 0.5 }, "+=0.2")
-        .to(
-          [nailElement, textElement],
-          {
-            x: (index) => (index === 0 ? "-10vw" : "-50%"),
-            duration: 0.8,
-            ease: "power2.inOut",
-          },
-          "+=0.3"
-        );
-      console.log(
-        "[BeforeAfterPreview GSAP Effect] Applied nail animation timeline."
-      );
+        .to([nailElement, textElement], { x: (index) => (index === 0 ? "-10vw" : "-50%"), duration: 0.8, ease: "power2.inOut" }, "+=0.3");
     } else {
       gsap.set(nailElement, { opacity: 0 });
       gsap.set(textElement, { x: "-50%", opacity: 1 });
-      console.log(
-        "[BeforeAfterPreview GSAP Effect] Set nail opacity to 0 and text position because showNailAnimation is false."
-      );
     }
 
     // Cleanup on unmount or when showNailAnimation changes
     return () => {
-      console.log(
-        `[BeforeAfterPreview GSAP Effect] Cleanup. showNailAnimation was: ${showNailAnimation}`
-      );
-      ScrollTrigger.getAll().forEach((st) => {
-        if (
-          st.trigger === headerElement &&
-          (st.animation?.targets?.includes(nailElement) ||
-            st.animation?.targets?.includes(textElement))
-        ) {
+      ScrollTrigger.getAll().forEach(st => {
+        if (st.trigger === headerElement && (st.animation?.targets?.includes(nailElement) || st.animation?.targets?.includes(textElement))) {
           st.kill();
         }
       });
@@ -261,76 +216,59 @@ function BeforeAfterPreview({
   useEffect(() => {
     if (!formattedItems.length) return;
 
-    console.log(
-      `[BeforeAfterPreview Box Animations Effect] Running. items count: ${formattedItems.length}`
-    );
-
-    // Box animations
     const boxEls = boxesRef.current.filter((box) => box !== null);
     if (!boxEls.length) return;
 
-    // Decide how many columns you want - now 3 for md+
-    const numCols = 3;
+    // Kill any existing scroll triggers and tweens on these boxes before creating new ones
+    ScrollTrigger.getAll().forEach(st => { 
+        if(boxEls.includes(st.trigger)) st.kill(); 
+    });
+    gsap.killTweensOf(boxEls);
+    gsap.killTweensOf(boxEls.map(b => b?.querySelector?.(".overlay-text")).filter(Boolean));
 
-    const calculateOrder = (index, cols) => {
-      const row = Math.floor(index / cols);
-      const col = index % cols;
-      // Example approach to create a "reverse" wave for the box animations
-      return cols - col + row;
-    };
+    if (readOnly) {
+      // Box animations for live site
+      const numCols = 3; // Decide how many columns you want
 
-    const sortedBoxes = boxEls
-      .map((box, index) => ({
-        element: box,
-        order: calculateOrder(index, numCols),
-        index,
-      }))
-      .sort((a, b) => b.order - a.order);
+      const calculateOrder = (index, cols) => {
+        const row = Math.floor(index / cols);
+        const col = index % cols;
+        return cols - col + row;
+      };
 
-    // Initialize box states
-    sortedBoxes.forEach(({ element }) => {
-      gsap.set(element, {
-        x: window.innerWidth,
-        opacity: 0,
+      const sortedBoxes = boxEls
+        .map((box, index) => ({ element: box, order: calculateOrder(index, numCols), index }))
+        .sort((a, b) => b.order - a.order);
+
+      // Initialize box states for animation
+      sortedBoxes.forEach(({ element }) => {
+        gsap.set(element, { x: window.innerWidth, opacity: 0 });
+        gsap.set(element.querySelector(".overlay-text"), { opacity: 0 });
       });
-      gsap.set(element.querySelector(".overlay-text"), {
-        opacity: 0,
+
+      const boxesTimeline = gsap.timeline({
+        scrollTrigger: {
+          trigger: boxEls[0],
+          start: "top 80%",
+          toggleActions: "play none none none",
+        },
       });
-    });
 
-    const boxesTimeline = gsap.timeline({
-      scrollTrigger: {
-        trigger: boxEls[0],
-        start: "top 80%",
-        toggleActions: "play none none none",
-      },
-    });
+      sortedBoxes.forEach(({ element }) => {
+        const overlayText = element.querySelector(".overlay-text");
+        boxesTimeline
+          .to(element, { x: 0, opacity: 1, duration: 0.4, ease: "power2.out" }, ">-0.5")
+          .to(overlayText, { opacity: 1, duration: 0.2, ease: "power2.out" }, "<+=0.3");
+      });
+    } else {
+      // In editor mode (not readOnly), just make the boxes visible without animation
+      boxEls.forEach(box => {
+          gsap.set(box, { x: 0, opacity: 1 });
+          gsap.set(box.querySelector(".overlay-text"), { opacity: 1 });
+      });
+    }
 
-    sortedBoxes.forEach(({ element }) => {
-      const overlayText = element.querySelector(".overlay-text");
-      boxesTimeline
-        .to(
-          element,
-          {
-            x: 0,
-            opacity: 1,
-            duration: 0.4,
-            ease: "power2.out",
-          },
-          `>-0.5`
-        )
-        .to(
-          overlayText,
-          {
-            opacity: 1,
-            duration: 0.2,
-            ease: "power2.out",
-          },
-          "<+=0.3"
-        );
-    });
-
-    // Initial setup for cards (without scroll trigger)
+    // Initial setup for cards (applies to both modes)
     boxEls.forEach((box) => {
       if (!box) return;
       const cardElement = box.querySelector(".card");
@@ -345,38 +283,25 @@ function BeforeAfterPreview({
         perspective: 1000,
         transformStyle: "preserve-3d",
       });
-
       gsap.set([beforeImage, afterImage], {
         backfaceVisibility: "hidden",
         position: "absolute",
         width: "100%",
         height: "100%",
       });
-
-      // Initial positions
-      gsap.set(beforeImage, {
-        rotationY: 0,
-        zIndex: 2,
-      });
-      gsap.set(afterImage, {
-        rotationY: 180,
-        zIndex: 1,
-      });
+      gsap.set(beforeImage, { rotationY: 0, zIndex: 2 });
+      gsap.set(afterImage, { rotationY: 180, zIndex: 1 });
     });
 
-    // Cleanup for box animations
+    // Cleanup logic is handled by killing tweens/triggers at the start of the effect
     return () => {
-      console.log(`[BeforeAfterPreview Box Animations Effect] Cleanup.`);
-      // Kill box-related scroll triggers
-      ScrollTrigger.getAll().forEach((st) => {
-        if (boxEls.includes(st.trigger)) st.kill();
+      ScrollTrigger.getAll().forEach(st => { 
+        if(boxEls.includes(st.trigger)) st.kill(); 
       });
-      gsap.killTweensOf(
-        boxEls.map((b) => b?.querySelector?.(".overlay-text")).filter(Boolean)
-      );
       gsap.killTweensOf(boxEls);
+      gsap.killTweensOf(boxEls.map(b => b?.querySelector?.(".overlay-text")).filter(Boolean));
     };
-  }, [formattedItems.length]); // Only depend on items count
+  }, [formattedItems, readOnly]); // Rerun if items change or readOnly state changes
 
   // Handle view state changes for card flipping - memoized
   useEffect(() => {
@@ -420,7 +345,12 @@ function BeforeAfterPreview({
 
   return (
     <>
-      <section className="relative w-full overflow-hidden h-full">
+      <section className="relative w-full overflow-hidden h-full"
+      style={{
+          minHeight: isMobile
+            ? `${styling.mobileHeightVW || 150}vw`
+            : `${styling.desktopHeightVH || 100}vh`,
+        }}> 
         {/* Header / Title */}
         <div
           ref={headerRef}
@@ -428,7 +358,7 @@ function BeforeAfterPreview({
         >
           <div
             ref={nailRef}
-            className="absolute left-[25%] md:left-[17%] w-[30%] h-[15vh] md:h-[5vh] flex items-center z-50"
+            className="absolute left-[25%] md:left-[17%] w-[30%] h-[5vh] flex items-center z-50"
           >
             <div
               className="w-full h-full dynamic-shadow"
@@ -448,7 +378,7 @@ function BeforeAfterPreview({
             className="absolute left-1/2 z-10 flex flex-row items-center"
           >
             {readOnly ? (
-              <h2 className="text-[6vw] md:text-[4vh] text-black font-normal font-condensed font-serif items-center py-3 z-30 text-center">
+              <h2 className="text-[6vw] md:text-[4vh] text-black font-normal font-condensed font-serif items-center py-3 z-30 text-center" style={getTextStyles(sectionTitleTextSettings)}>
                 {sectionTitle}
               </h2>
             ) : (
@@ -460,25 +390,26 @@ function BeforeAfterPreview({
                 }
                 className="text-[6vw] md:text-[4vh] text-black font-normal font-condensed font-serif items-center py-3 z-30 text-center bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-2 min-w-[300px] md:min-w-[400px]"
                 placeholder="Section Title"
+                style={getTextStyles(sectionTitleTextSettings)}
               />
             )}
           </div>
         </div>
 
-        {/* Gallery Grid - Now 3 columns on md+ */}
-        <div className="w-full flex items-center justify-center">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:space-x-4 px-2 md:px-5 md:pb-5">
+        {/* Gallery Grid - Now always 3 columns */}
+        <div className="w-full flex justify-center">
+          <div className="grid grid-cols-3 gap-4 md:gap-6 px-6 md:px-10 md:pb-10">
             {formattedItems.map((item, index) => (
               <div
                 key={item.id}
                 ref={(el) => (boxesRef.current[index] = el)}
-                className="relative flex flex-col md:flex-row items-center justify-between w-full"
+                className="relative flex flex-col md:flex-row items-center"
               >
-                <div
-                  className="relative cursor-pointer"
-                  onClick={() => handleBoxClick(item)}
-                >
-                  <div className="card w-[40vw] h-[25vw] md:w-[27vw] md:h-[15vw]">
+                <div className="relative cursor-pointer">
+                  <div
+                    className="card w-[25vw] aspect-[4/3]"
+                    onClick={() => handleBoxClick(item)}
+                  >
                     <img
                       src={item.beforeDisplayUrl}
                       alt={`Before ${index + 1}`}
@@ -490,34 +421,25 @@ function BeforeAfterPreview({
                       className="after absolute top-0 left-0 w-full h-full object-cover rounded-lg"
                     />
                   </div>
-                  {/* Individual Toggle Button for each card - Blue, larger, and positioned to spill over */}
+                  {/* Individual Toggle Button for each card */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       toggleCardViewState(index);
                     }}
-                    className="absolute -top-1 -right-1 z-10 px-3 py-2 rounded-md text-sm md:text-xl font-semibold transition-all transform hover:scale-105 focus:outline-none shadow-lg bg-blue-500 text-white hover:bg-blue-600"
-                    style={{
-                      boxShadow: "3px 3px 8px rgba(0,0,0,0.6)",
-                    }}
+                    className="absolute top-2 right-2 z-10 px-2 py-1 bg-blue-500 text-white rounded-md text-xs md:text-sm transition-all transform hover:scale-105 hover:shadow-lg border border-white"
                   >
                     {viewStates[index] === "before" ? "Before" : "After"}
                   </button>
-                  {/* Move info to the bottom left of image with padding */}
-                  <div className="overlay-text absolute bottom-0 left-0 pt-1 pl-2 md:pt-2 md:pl-3  ">
-                    <div className="flex flex-col bg-black bg-opacity-50 text-[3vw] md:text-[3vh] rounded -space-y-1 items-start text-white text-left leading-tight">
+                  {/* Move info to the right of image with padding */}
+                  <div className="overlay-text absolute bottom-0 right-0 pl-3 px-3 py-1 md:px-4 md:py-2">
+                    <div className="flex flex-col items-start text-white text-left leading-tight">
                       {readOnly ? (
                         <>
-                          <span
-                            className="font-bold text-[5vw] md:text-xl whitespace-nowrap drop-shadow-[0_2px_2px_rgba(0,0,0,0.9)] mb-0"
-                            style={{ color: overlayTextColor }}
-                          >
+                          <span className="font-bold text-[2.5vw] md:text-xl whitespace-nowrap drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
                             {item.shingle}
                           </span>
-                          <span
-                            className="font-semibold text-[5vw] md:text-lg drop-shadow-[0_2px_2px_rgba(0,0,0,0.9)]"
-                            style={{ color: overlayTextColor }}
-                          >
+                          <span className="font-semibold text-[2.5vw] md:text-lg text-gray-200 drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
                             {item.sqft}
                           </span>
                         </>
@@ -526,26 +448,18 @@ function BeforeAfterPreview({
                           <input
                             type="text"
                             value={item.shingle || ""}
-                            onChange={(e) =>
-                              onItemTextChange &&
-                              onItemTextChange(index, "shingle", e.target.value)
-                            }
-                            className="font-bold text-[5vw] md:text-xl whitespace-nowrap bg-transparent focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 mb-0 w-full placeholder-gray-300 drop-shadow-[0_2px_2px_rgba(0,0,0,0.9)]"
+                            onChange={(e) => onItemTextChange && onItemTextChange(index, "shingle", e.target.value)}
+                            className="font-bold text-[2.5vw] md:text-xl whitespace-nowrap bg-transparent focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 mb-0 w-full placeholder-gray-300 drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"
                             placeholder="Shingle Type"
                             onClick={(e) => e.stopPropagation()}
-                            style={{ color: overlayTextColor }}
                           />
                           <input
                             type="text"
                             value={item.sqft || ""}
-                            onChange={(e) =>
-                              onItemTextChange &&
-                              onItemTextChange(index, "sqft", e.target.value)
-                            }
-                            className="font-semibold text-[5vw] md:text-lg bg-transparent focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 w-full placeholder-gray-300 drop-shadow-[0_2px_2px_rgba(0,0,0,0.9)]"
+                            onChange={(e) => onItemTextChange && onItemTextChange(index, "sqft", e.target.value)}
+                            className="font-semibold text-[2.5vw] md:text-lg bg-transparent focus:outline-none focus:ring-1 focus:ring-yellow-300 rounded px-1 w-full placeholder-gray-300 drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"
                             placeholder="Sqft"
                             onClick={(e) => e.stopPropagation()}
-                            style={{ color: overlayTextColor }}
                           />
                         </>
                       )}
@@ -585,7 +499,7 @@ function BeforeAfterPreview({
                   <img
                     src={selectedImages.before}
                     alt="Before"
-                    className="max-w-full max-h-[35vh] md:max-h-[60vh] object-contain rounded-lg"
+                    className="max-w-full max-h-full object-contain rounded-lg"
                   />
                 </div>
               </div>
@@ -597,7 +511,7 @@ function BeforeAfterPreview({
                   <img
                     src={selectedImages.after}
                     alt="After"
-                    className="max-w-full max-h-[35vh] md:max-h-[60vh] object-contain rounded-lg"
+                    className="max-w-full max-h-full object-contain rounded-lg"
                   />
                 </div>
               </div>
@@ -629,399 +543,173 @@ export default function BeforeAfterBlock({
   onConfigChange,
   themeColors,
 }) {
-  // Log the received beforeAfterData prop
-  console.log(
-    "[BeforeAfterBlock Render/Prop Receive] beforeAfterData prop:",
-    JSON.parse(
-      JSON.stringify(beforeAfterData, (k, v) =>
-        v instanceof File
-          ? { name: v.name, type: v.type, size: v.size, inProp: true }
-          : v
-      )
-    )
-  );
-
-  const [localData, setLocalData] = useState(() => {
-    const initialConfig = beforeAfterData || {};
-    const initialShowNailAnimation =
-      initialConfig.showNailAnimation !== undefined
-        ? initialConfig.showNailAnimation
-        : true;
-    console.log(
-      `[BeforeAfterBlock useState init] initialConfig.showNailAnimation: ${initialConfig.showNailAnimation}, Resolved to: ${initialShowNailAnimation}`
-    );
-    return {
-      sectionTitle: initialConfig.sectionTitle || "GALLERY",
-      showNailAnimation: initialShowNailAnimation,
-      overlayTextColor: initialConfig.overlayTextColor || "#FFFFFF",
-      toggleButtonBgColor: initialConfig.toggleButtonBgColor || "#1e293b",
-      toggleButtonTextColor: initialConfig.toggleButtonTextColor || "#FFFFFF",
-      toggleButtonHoverBgColor:
-        initialConfig.toggleButtonHoverBgColor || "#FFFFFF",
-      toggleButtonHoverTextColor:
-        initialConfig.toggleButtonHoverTextColor || "#000000",
-      items: (initialConfig.items || []).map((item, index) => ({
-        ...item,
-        id: item.id || `item_init_${index}_${Date.now()}`,
-        before: initializeImageState(
-          item.before,
-          "/assets/images/beforeafter/default_before.jpg"
-        ),
-        after: initializeImageState(
-          item.after,
-          "/assets/images/beforeafter/default_after.jpg"
-        ),
-      })),
-    };
+  const [localData, setLocalData] = useState({
+    sectionTitle: "",
+    items: [],
+    showNailAnimation: true,
+    styling: {},
   });
 
-  const prevReadOnlyRef = useRef(readOnly);
+  const prevBeforeAfterDataRef = useRef();
 
+  // Effect to sync localData with prop changes, crucial for editor updates
   useEffect(() => {
-    if (beforeAfterData) {
-      setLocalData((prevLocalData) => {
-        const defaultTitle = "GALLERY";
-        const defaultShingle = "";
-        const defaultSqft = "";
+    const newConfigString = JSON.stringify(beforeAfterData);
+    const oldConfigString = JSON.stringify(prevBeforeAfterDataRef.current);
 
-        const resolvedSectionTitle =
-          prevLocalData.sectionTitle !== undefined &&
-          prevLocalData.sectionTitle !==
-            (beforeAfterData.sectionTitle || defaultTitle) &&
-          prevLocalData.sectionTitle !== defaultTitle
-            ? prevLocalData.sectionTitle
-            : beforeAfterData.sectionTitle || defaultTitle;
+    if (newConfigString !== oldConfigString) {
+      prevBeforeAfterDataRef.current = beforeAfterData; // Update ref
 
-        const resolvedOverlayTextColor =
-          beforeAfterData.overlayTextColor ||
-          prevLocalData.overlayTextColor ||
-          "#FFFFFF";
-        const resolvedToggleButtonBgColor =
-          beforeAfterData.toggleButtonBgColor ||
-          prevLocalData.toggleButtonBgColor ||
-          "#1e293b";
-        const resolvedToggleButtonTextColor =
-          beforeAfterData.toggleButtonTextColor ||
-          prevLocalData.toggleButtonTextColor ||
-          "#FFFFFF";
-        const resolvedToggleButtonHoverBgColor =
-          beforeAfterData.toggleButtonHoverBgColor ||
-          prevLocalData.toggleButtonHoverBgColor ||
-          "#FFFFFF";
-        const resolvedToggleButtonHoverTextColor =
-          beforeAfterData.toggleButtonHoverTextColor ||
-          prevLocalData.toggleButtonHoverTextColor ||
-          "#000000";
+      const initialShowNail = beforeAfterData?.showNailAnimation !== undefined
+        ? beforeAfterData.showNailAnimation
+        : true;
 
-        const newItems = (beforeAfterData.items || []).map(
-          (newItemFromProp, index) => {
-            const oldItemFromLocal = prevLocalData.items?.find(
-              (pi) => pi.id === newItemFromProp.id
-            ) ||
-              prevLocalData.items?.[index] || {
-                shingle: "",
-                sqft: "",
-                before: initializeImageState(null),
-                after: initializeImageState(null),
-                id: `item_fallback_${index}_${Date.now()}`,
+      setLocalData({
+        ...beforeAfterData,
+        showNailAnimation: initialShowNail,
+        items: (beforeAfterData.items || []).map((item, index) => ({
+          ...item,
+          id: item.id || `item-local-${index}`,
+          before: initializeImageState(item.before),
+          after: initializeImageState(item.after),
+        })),
+      });
+    }
+  }, [beforeAfterData]);
+
+  // Handler to update local state and propagate changes up
+  const handleLocalDataChange = useCallback(
+    (updater) => {
+      setLocalData(prevState => {
+        const newState = typeof updater === 'function' ? updater(prevState) : { ...prevState, ...updater };
+        console.log('[BeforeAfterBlock handleLocalDataChange] prevState.showNailAnimation:', prevState.showNailAnimation, 'newState.showNailAnimation:', newState.showNailAnimation);
+        
+        // Live update for non-readOnly mode
+        if (!readOnly && typeof onConfigChange === 'function') {
+          const dataToSave = {
+            ...newState,
+            items: newState.items.map(item => {
+              const beforeImageState = item.before?.file 
+                ? { ...item.before }
+                : { url: item.before?.originalUrl || item.before?.url };
+              
+              const afterImageState = item.after?.file
+                ? { ...item.after }
+                : { url: item.after?.originalUrl || item.after?.url };
+
+              return {
+                ...item,
+                before: beforeImageState,
+                after: afterImageState,
               };
-
-            // --- Refined image state merging ---
-            let newBeforeImg;
-            if (
-              oldItemFromLocal.before?.file &&
-              oldItemFromLocal.before.url?.startsWith("blob:")
-            ) {
-              // If local state has a File/blob, and prop doesn't specify a *different* file or a non-blob URL, keep local.
-              if (
-                newItemFromProp.before?.file ||
-                (typeof newItemFromProp.before?.url === "string" &&
-                  !newItemFromProp.before.url.startsWith("blob:"))
-              ) {
-                // Prop has a new file or a persistent URL, so use that. Revoke old local blob if different.
-                if (
-                  oldItemFromLocal.before.url !== newItemFromProp.before.url
-                ) {
-                  URL.revokeObjectURL(oldItemFromLocal.before.url);
-                }
-                newBeforeImg = initializeImageState(
-                  newItemFromProp.before,
-                  oldItemFromLocal.before?.originalUrl ||
-                    oldItemFromLocal.before?.url
-                );
-              } else {
-                newBeforeImg = oldItemFromLocal.before; // Keep existing local File/blob
-              }
-            } else {
-              // Local state is not a File/blob, or no local state, so initialize from prop.
-              if (oldItemFromLocal.before?.url?.startsWith("blob:")) {
-                // Ensure any previous blob is cleaned if prop overrides
-                URL.revokeObjectURL(oldItemFromLocal.before.url);
-              }
-              newBeforeImg = initializeImageState(
-                newItemFromProp.before,
-                oldItemFromLocal.before?.originalUrl ||
-                  oldItemFromLocal.before?.url
-              );
-            }
-
-            let newAfterImg;
-            if (
-              oldItemFromLocal.after?.file &&
-              oldItemFromLocal.after.url?.startsWith("blob:")
-            ) {
-              if (
-                newItemFromProp.after?.file ||
-                (typeof newItemFromProp.after?.url === "string" &&
-                  !newItemFromProp.after.url.startsWith("blob:"))
-              ) {
-                if (oldItemFromLocal.after.url !== newItemFromProp.after.url) {
-                  URL.revokeObjectURL(oldItemFromLocal.after.url);
-                }
-                newAfterImg = initializeImageState(
-                  newItemFromProp.after,
-                  oldItemFromLocal.after?.originalUrl ||
-                    oldItemFromLocal.after?.url
-                );
-              } else {
-                newAfterImg = oldItemFromLocal.after; // Keep existing local File/blob
-              }
-            } else {
-              if (oldItemFromLocal.after?.url?.startsWith("blob:")) {
-                // Ensure any previous blob is cleaned if prop overrides
-                URL.revokeObjectURL(oldItemFromLocal.after.url);
-              }
-              newAfterImg = initializeImageState(
-                newItemFromProp.after,
-                oldItemFromLocal.after?.originalUrl ||
-                  oldItemFromLocal.after?.url
-              );
-            }
-            // --- End refined image state merging ---
-
-            const resolvedShingle =
-              oldItemFromLocal.shingle !== undefined &&
-              oldItemFromLocal.shingle !==
-                (newItemFromProp.shingle || defaultShingle) &&
-              oldItemFromLocal.shingle !== defaultShingle
-                ? oldItemFromLocal.shingle
-                : newItemFromProp.shingle || defaultShingle;
-
-            const resolvedSqft =
-              oldItemFromLocal.sqft !== undefined &&
-              oldItemFromLocal.sqft !== (newItemFromProp.sqft || defaultSqft) &&
-              oldItemFromLocal.sqft !== defaultSqft
-                ? oldItemFromLocal.sqft
-                : newItemFromProp.sqft || defaultSqft;
-
-            return {
-              ...newItemFromProp,
-              id: newItemFromProp.id || oldItemFromLocal.id,
-              before: newBeforeImg,
-              after: newAfterImg,
-              shingle: resolvedShingle,
-              sqft: resolvedSqft,
-            };
-          }
-        );
-
-        // Log newItems before setting localData
-        console.log(
-          "[BeforeAfterBlock useEffect beforeAfterData] Computed newItems before setLocalData:",
-          JSON.parse(
-            JSON.stringify(newItems, (k, v) =>
-              v instanceof File
-                ? { name: v.name, type: v.type, size: v.size, inNewItems: true }
-                : v
-            )
-          )
-        );
-
-        const resolvedShowNailAnimation =
-          beforeAfterData.showNailAnimation !== undefined
-            ? beforeAfterData.showNailAnimation
-            : prevLocalData.showNailAnimation !== undefined
-              ? prevLocalData.showNailAnimation
-              : true;
-        return {
-          sectionTitle: resolvedSectionTitle,
-          items: newItems,
-          showNailAnimation: resolvedShowNailAnimation,
-          overlayTextColor: resolvedOverlayTextColor,
-          toggleButtonBgColor: resolvedToggleButtonBgColor,
-          toggleButtonTextColor: resolvedToggleButtonTextColor,
-          toggleButtonHoverBgColor: resolvedToggleButtonHoverBgColor,
-          toggleButtonHoverTextColor: resolvedToggleButtonHoverTextColor,
-        };
+            }),
+          };
+          onConfigChange(dataToSave);
+        }
+        
+        return newState;
       });
-    }
-  }, [beforeAfterData]); // MODIFIED: Only depends on beforeAfterData prop
+    },
+    [readOnly, onConfigChange]
+  );
 
-  useEffect(() => {
-    return () => {
-      localData.items.forEach((item) => {
-        if (item.before?.file && item.before.url?.startsWith("blob:"))
-          URL.revokeObjectURL(item.before.url);
-        if (item.after?.file && item.after.url?.startsWith("blob:"))
-          URL.revokeObjectURL(item.after.url);
-      });
-    };
-  }, [localData.items]);
+  const handleSectionTitleChange = useCallback(
+    (e) => {
+      handleLocalDataChange({ sectionTitle: e.target.value });
+    },
+    [handleLocalDataChange]
+  );
 
-  useEffect(() => {
-    if (prevReadOnlyRef.current === false && readOnly === true) {
-      if (onConfigChange) {
-        console.log(
-          "[BeforeAfterBlock onConfigChange Effect] Editing finished. Calling onConfigChange."
-        );
-        const dataToSave = {
-          ...localData,
-          items: localData.items.map((item) => {
-            // For each image (before, after), pass the full state if a file exists (includes File & originalUrl)
-            // Otherwise, pass an object with just the url (which should be the originalUrl or a pasted one)
-            const beforeImageState = item.before?.file
-              ? { ...item.before } // Pass the whole object {file, name, url (blob), originalUrl}
-              : { url: item.before?.originalUrl || item.before?.url }; // Fallback to url if originalUrl somehow missing
+  const handleItemTextChange = useCallback(
+    (index, field, value) => {
+      const updatedItems = [...localData.items];
+      updatedItems[index] = { ...updatedItems[index], [field]: value };
+      handleLocalDataChange({ items: updatedItems });
+    },
+    [localData.items, handleLocalDataChange]
+  );
+  
+  const handleImagesChange = useCallback((newItems) => {
+    handleLocalDataChange({ items: newItems });
+  }, [handleLocalDataChange]);
 
-            const afterImageState = item.after?.file
-              ? { ...item.after } // Pass the whole object {file, name, url (blob), originalUrl}
-              : { url: item.after?.originalUrl || item.after?.url };
+  // Memoize controls to prevent re-renders unless necessary
+  // This hook must always be called, regardless of readOnly state
+  const MemoizedControls = useMemo(
+    () => {
+      return {
+        images: (props) => (
+          <BeforeAfterImagesControls 
+            {...props} 
+            currentData={localData}
+            onControlsChange={handleImagesChange}
+            themeColors={themeColors}
+          />
+        ),
+        gallery: (props) => (
+          <PanelImageSectionController
+            {...props}
+            currentData={localData}
+            onControlsChange={handleImagesChange}
+            controlType="gallery"
+            blockType="BeforeAfterBlock"
+            imageConfig={{
+              label: 'Before/After Gallery',
+              itemLabel: 'Pair',
+              arrayFieldName: 'items',
+              generateName: (index, blockType) => `beforeafter_pair_${index + 1}`,
+              acceptedTypes: 'image/*',
+              maxFileSize: 8 * 1024 * 1024, // 8MB
+              defaultPath: '/assets/images/beforeafter/'
+            }}
+          />
+        ),
+        colors: (props) => (
+          <BeforeAfterColorControls 
+            {...props} 
+            currentData={localData}
+            onControlsChange={handleLocalDataChange}
+            themeColors={themeColors} 
+          />
+        ),
+        styling: (props) => (
+          <BeforeAfterStylingControls
+            {...props}
+            currentData={localData}
+            onControlsChange={handleLocalDataChange}
+          />
+        ),
+        fonts: (props) => (
+          <BeforeAfterFontsControls
+            {...props}
+            currentData={localData}
+            onControlsChange={handleLocalDataChange}
+            themeColors={themeColors}
+          />
+        ),
+      };
+    },
+    [localData, handleImagesChange, handleLocalDataChange, themeColors]
+  );
 
-            return {
-              ...item,
-              before: beforeImageState,
-              after: afterImageState,
-            };
-          }),
-          showNailAnimation: localData.showNailAnimation,
-          overlayTextColor: localData.overlayTextColor,
-          toggleButtonBgColor: localData.toggleButtonBgColor,
-          toggleButtonTextColor: localData.toggleButtonTextColor,
-          toggleButtonHoverBgColor: localData.toggleButtonHoverBgColor,
-          toggleButtonHoverTextColor: localData.toggleButtonHoverTextColor,
-        };
-        console.log(
-          "[BeforeAfterBlock onConfigChange Effect] dataToSave:",
-          JSON.parse(
-            JSON.stringify(dataToSave, (k, v) =>
-              v instanceof File
-                ? { name: v.name, type: v.type, size: v.size }
-                : v
-            )
-          )
-        );
-        onConfigChange(dataToSave);
-      }
-    }
-    prevReadOnlyRef.current = readOnly;
-  }, [readOnly, localData, onConfigChange]);
-
-  const handleLocalDataChange = (updater) => {
-    setLocalData((prevState) => {
-      const newState =
-        typeof updater === "function"
-          ? updater(prevState)
-          : { ...prevState, ...updater };
-      console.log(
-        "[BeforeAfterBlock handleLocalDataChange] prevState.showNailAnimation:",
-        prevState.showNailAnimation,
-        "newState.showNailAnimation:",
-        newState.showNailAnimation
-      );
-
-      // Live update for non-readOnly mode
-      if (!readOnly && typeof onConfigChange === "function") {
-        const dataToSave = {
-          ...newState,
-          items: newState.items.map((item) => {
-            const beforeImageState = item.before?.file
-              ? { ...item.before }
-              : { url: item.before?.originalUrl || item.before?.url };
-
-            const afterImageState = item.after?.file
-              ? { ...item.after }
-              : { url: item.after?.originalUrl || item.after?.url };
-
-            return {
-              ...item,
-              before: beforeImageState,
-              after: afterImageState,
-            };
-          }),
-        };
-        onConfigChange(dataToSave);
-      }
-
-      return newState;
-    });
-  };
+  if (readOnly) {
+    return (
+      <BeforeAfterPreview
+        beforeAfterData={beforeAfterData}
+        readOnly={true}
+      />
+    );
+  }
 
   return (
     <BeforeAfterPreview
       beforeAfterData={localData}
       readOnly={readOnly}
-      onSectionTitleChange={
-        !readOnly
-          ? (newTitle) => {
-              handleLocalDataChange((prev) => ({
-                ...prev,
-                sectionTitle: newTitle,
-              }));
-            }
-          : undefined
-      }
-      onItemTextChange={
-        !readOnly
-          ? (index, field, value) => {
-              handleLocalDataChange((prev) => {
-                const updatedItems = [...prev.items];
-                if (updatedItems[index]) {
-                  updatedItems[index] = {
-                    ...updatedItems[index],
-                    [field]: value,
-                  };
-                }
-                return { ...prev, items: updatedItems };
-              });
-            }
-          : undefined
-      }
+      onSectionTitleChange={handleSectionTitleChange}
+      onItemTextChange={handleItemTextChange}
     />
   );
 }
-
-// Expose tabsConfig for TopStickyEditPanel
-BeforeAfterBlock.tabsConfig = (
-  blockCurrentData,
-  onControlsChange,
-  themeColors
-) => {
-  return {
-    images: (props) => (
-      <BeforeAfterImagesControls
-        {...props}
-        currentData={blockCurrentData}
-        onControlsChange={onControlsChange}
-        themeColors={themeColors}
-      />
-    ),
-    colors: (props) => (
-      <BeforeAfterColorControls
-        {...props}
-        currentData={blockCurrentData}
-        onControlsChange={onControlsChange}
-        themeColors={themeColors}
-      />
-    ),
-    styling: (props) => (
-      <BeforeAfterStylingControls
-        {...props}
-        currentData={blockCurrentData}
-        onControlsChange={onControlsChange}
-      />
-    ),
-  };
-};
 
 /* ==============================================
    BEFORE-AFTER IMAGES CONTROLS
@@ -1273,11 +961,134 @@ const BeforeAfterColorControls = ({
 =============================================== */
 const BeforeAfterStylingControls = ({ currentData, onControlsChange }) => {
   return (
-    <PanelStylingController
-      currentData={currentData}
-      onControlsChange={onControlsChange}
-      blockType="BeforeAfterBlock"
-      controlType="animations"
-    />
+    <div className="space-y-6 p-4">
+      <PanelStylingController
+        currentData={currentData}
+        onControlsChange={onControlsChange}
+        blockType="BeforeAfterBlock"
+        controlType="animations"
+      />
+      <PanelStylingController
+        currentData={currentData}
+        onControlsChange={onControlsChange}
+        blockType="BeforeAfterBlock"
+        controlType="sizing"
+      />
+    </div>
   );
+};
+
+/* ==============================================
+   BEFORE-AFTER FONTS CONTROLS
+   ----------------------------------------------
+   Handles font selection for Before/After text elements
+=============================================== */
+const BeforeAfterFontsControls = ({ currentData, onControlsChange, themeColors }) => {
+  return (
+    <div className="bg-white text-gray-800 p-4 rounded">
+      <h3 className="text-lg font-semibold mb-4">Font Settings</h3>
+      
+      <div className="space-y-6">
+        <div>
+          <h4 className="text-sm font-medium text-gray-700 mb-3">
+            Section Title Font
+          </h4>
+          <PanelFontController
+            label="Title Font"
+            currentData={currentData}
+            onControlsChange={onControlsChange}
+            fieldPrefix="sectionTitleTextSettings"
+            themeColors={themeColors}
+          />
+        </div>
+        
+        <div className="border-t pt-4">
+          <h4 className="text-sm font-medium text-gray-700 mb-3">
+            Overlay Shingle Text Font
+          </h4>
+          <PanelFontController
+            label="Shingle Font"
+            currentData={currentData}
+            onControlsChange={onControlsChange}
+            fieldPrefix="overlayShingleTextSettings"
+            themeColors={themeColors}
+          />
+        </div>
+
+        <div className="border-t pt-4">
+          <h4 className="text-sm font-medium text-gray-700 mb-3">
+            Overlay Sqft Text Font
+          </h4>
+          <PanelFontController
+            label="Sqft Font"
+            currentData={currentData}
+            onControlsChange={onControlsChange}
+            fieldPrefix="overlaySqftTextSettings"
+            themeColors={themeColors}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Tab configuration for BottomStickyEditPanel
+BeforeAfterBlock.tabsConfig = (blockData, onUpdate, themeColors) => ({
+  images: (props) => (
+    <BeforeAfterImagesControls 
+      {...props} 
+      currentData={blockData}
+      onControlsChange={onUpdate}
+      themeColors={themeColors}
+    />
+  ),
+  gallery: (props) => (
+    <PanelImageSectionController
+      {...props}
+      currentData={blockData}
+      onControlsChange={onUpdate}
+      controlType="gallery"
+      blockType="BeforeAfterBlock"
+      imageConfig={{
+        label: 'Before/After Gallery',
+        itemLabel: 'Pair',
+        arrayFieldName: 'items',
+        generateName: (index, blockType) => `beforeafter_pair_${index + 1}`,
+        acceptedTypes: 'image/*',
+        maxFileSize: 8 * 1024 * 1024, // 8MB
+        defaultPath: '/assets/images/beforeafter/'
+      }}
+    />
+  ),
+  colors: (props) => (
+    <BeforeAfterColorControls 
+      {...props} 
+      currentData={blockData}
+      onControlsChange={onUpdate}
+      themeColors={themeColors} 
+    />
+  ),
+  styling: (props) => (
+    <BeforeAfterStylingControls
+      {...props}
+      currentData={blockData}
+      onControlsChange={onUpdate}
+    />
+  ),
+  fonts: (props) => (
+    <BeforeAfterFontsControls
+      {...props}
+      currentData={blockData}
+      onControlsChange={onUpdate}
+      themeColors={themeColors}
+    />
+  ),
+});
+
+// Export the control components for use in MainPageForm.jsx
+export {
+  BeforeAfterImagesControls,
+  BeforeAfterColorControls,
+  BeforeAfterStylingControls,
+  BeforeAfterFontsControls
 };

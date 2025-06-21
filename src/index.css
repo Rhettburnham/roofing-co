@@ -247,7 +247,7 @@ canvas {
   margin-right: 10px;
 }
 
-.shingles-container {
+.shingles-contop-banner-colorner {
   display: grid;
   gap: 20px;
   margin-bottom: 0px;
@@ -255,7 +255,7 @@ canvas {
 }
 
 /* Default to small screens: 2 columns, 5 rows */
-.shingles-container {
+.shingles-contop-banner-colorner {
   grid-template-columns: repeat(2, 1fr);
 }
 

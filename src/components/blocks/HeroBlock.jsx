@@ -14,7 +14,7 @@ const getDisplayUrlHelper = (value) => {
 };
 
 /**
- * HeroBlock
+ * HeroBlock (Simple Hero Block)
  *
  * Props:
  *  - config: {
@@ -32,8 +32,9 @@ const getDisplayUrlHelper = (value) => {
  *  - readOnly: boolean => if true, render "live" version with effects
  *  - onConfigChange: function => called in edit mode to update config
  *  - themeColors: object => for ThemeColorPicker
+ *  - forcedPreviewState: string => 'normal', 'shrunk', or 'animated' for preview control
  */
-const HeroBlock = ({ config = {}, readOnly = false, onConfigChange, themeColors }) => {
+const HeroBlock = ({ config = {}, readOnly = false, onConfigChange, themeColors, forcedPreviewState = null }) => {
   const {
     images = [],
     backgroundImage: legacyBackgroundImage,
@@ -69,7 +70,14 @@ const HeroBlock = ({ config = {}, readOnly = false, onConfigChange, themeColors 
 
   // Handle shrink animation if enabled
   useEffect(() => {
-    if (readOnly && animations.shrink) {
+    if (forcedPreviewState === 'shrunk') {
+      // Force shrunk state for preview
+      setIsShrunk(true);
+    } else if (forcedPreviewState === 'normal') {
+      // Force normal state for preview
+      setIsShrunk(false);
+    } else if (readOnly && animations.shrink) {
+      // Normal behavior when readOnly
       const timer = setTimeout(() => {
         setIsShrunk(true);
       }, shrinkAfterMs);
@@ -77,7 +85,7 @@ const HeroBlock = ({ config = {}, readOnly = false, onConfigChange, themeColors 
     } else {
       setIsShrunk(false);
     }
-  }, [readOnly, animations.shrink, shrinkAfterMs]);
+  }, [readOnly, animations.shrink, shrinkAfterMs, forcedPreviewState]);
 
   const handleTitleChange = (e) => {
     setEditableTitle(e.target.value);
@@ -107,7 +115,9 @@ const HeroBlock = ({ config = {}, readOnly = false, onConfigChange, themeColors 
     return finalHeight;
   };
 
-  const currentHeight = readOnly && isShrunk && animations.shrink ? getFinalHeight() : getInitialHeight();
+  // Determine current height based on state
+  const shouldShowShrunk = (readOnly && isShrunk && animations.shrink) || forcedPreviewState === 'shrunk';
+  const currentHeight = shouldShowShrunk ? getFinalHeight() : getInitialHeight();
 
   const sectionStyle = {
     zIndex: 20,
@@ -118,19 +128,22 @@ const HeroBlock = ({ config = {}, readOnly = false, onConfigChange, themeColors 
 
   const bgDivStyle = {
     backgroundImage: displayBackgroundImage ? `url('${displayBackgroundImage}')` : 'none',
-    backgroundSize: displayBackgroundImage ? (readOnly && isShrunk ? "110%" : "120%") : 'cover',
-    backgroundPosition: displayBackgroundImage ? (readOnly && isShrunk ? "center center" : "center left") : 'center center',
+    backgroundSize: displayBackgroundImage ? (shouldShowShrunk ? "110%" : "120%") : 'cover',
+    backgroundPosition: displayBackgroundImage ? (shouldShowShrunk ? "center center" : "center left") : 'center center',
   };
 
-  // Animation variants
+  // Animation variants - enhanced for preview control
   const titleVariants = {
-    hidden: { y: readOnly && animations.slideIn ? -50 : 0, opacity: readOnly && animations.fadeIn ? 0 : 1 },
+    hidden: { 
+      y: (readOnly || forcedPreviewState === 'animated') && animations.slideIn ? -50 : 0, 
+      opacity: (readOnly || forcedPreviewState === 'animated') && animations.fadeIn ? 0 : 1 
+    },
     visible: { 
       y: 0, 
       opacity: 1,
-      scale: animations.scaleIn ? [0.9, 1] : 1,
+      scale: (animations.scaleIn && (readOnly || forcedPreviewState === 'animated')) ? [0.9, 1] : 1,
       transition: { 
-        duration: readOnly ? 1 : 0.3,
+        duration: (readOnly || forcedPreviewState === 'animated') ? 1 : 0.3,
         ease: "easeOut"
       }
     }
@@ -142,7 +155,8 @@ const HeroBlock = ({ config = {}, readOnly = false, onConfigChange, themeColors 
       style={sectionStyle}
       initial={{ height: getInitialHeight() }}
       animate={{ height: currentHeight }}
-      transition={{ duration: readOnly ? 1 : 0.3 }}
+      transition={{ duration: (readOnly || forcedPreviewState) ? 1 : 0.3 }}
+      data-block-name="SimpleHeroBlock"
     >
       <div
         className="absolute inset-0 bg-cover bg-center w-full h-full transition-all duration-1000"
@@ -162,8 +176,14 @@ const HeroBlock = ({ config = {}, readOnly = false, onConfigChange, themeColors 
                 setIsEditingTitle(false);
               }
             }}
-            className="text-center text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-wider bg-transparent outline-none border-b-2 border-gray-400 focus:border-white"
-            style={{ color: titleTextColor, width: 'auto', minWidth: '50%' }}
+            className="text-center text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-wider bg-transparent outline-none border-b-2 border-white/50 focus:border-white transition-colors duration-200 placeholder-white/60"
+            style={{ 
+              color: titleTextColor, 
+              width: 'auto', 
+              minWidth: '60%',
+              textShadow: '1px 1px 2px rgba(0,0,0,0.5)'
+            }}
+            placeholder="Enter hero title..."
             autoFocus
           />
         ) : (
@@ -171,11 +191,18 @@ const HeroBlock = ({ config = {}, readOnly = false, onConfigChange, themeColors 
             variants={titleVariants}
             initial="hidden"
             animate="visible"
-            className="text-center text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-wider"
-            style={{ color: titleTextColor, cursor: !readOnly ? "pointer" : "default" }}
+            className={`text-center text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-wider transition-all duration-200 ${
+              !readOnly ? 'hover:opacity-80 hover:scale-105' : ''
+            }`}
+            style={{ 
+              color: titleTextColor, 
+              cursor: !readOnly ? "pointer" : "default",
+              textShadow: '1px 1px 2px rgba(0,0,0,0.5)'
+            }}
             onClick={() => {
               if (!readOnly) setIsEditingTitle(true);
             }}
+            title={!readOnly ? "Click to edit title" : ""}
           >
             {editableTitle}
           </motion.h1>
@@ -185,100 +212,96 @@ const HeroBlock = ({ config = {}, readOnly = false, onConfigChange, themeColors 
   );
 };
 
-// Static method for TopStickyEditPanel integration
-HeroBlock.tabsConfig = (config, onControlsChange, themeColors, sitePalette) => {
-  return {
-    images: () => (
-      <PanelImagesController
-        currentData={{ 
-          images: config?.images || (config?.backgroundImage ? [config.backgroundImage] : [])
-        }}
-        onControlsChange={(updatedData) => {
-          const images = updatedData.images || [];
-          onControlsChange({ ...config, images });
-        }}
-        imageArrayFieldName="images"
-        getItemName={() => 'Hero Background Image'}
-        maxImages={1}
+// Static method for BottomStickyEditPanel integration
+HeroBlock.tabsConfig = (config, onUpdate, themeColors) => ({
+  images: () => (
+    <PanelImagesController
+      currentData={{ 
+        images: config?.images || (config?.backgroundImage ? [config.backgroundImage] : [])
+      }}
+      onControlsChange={(updatedData) => {
+        const images = updatedData.images || [];
+        onUpdate({ ...config, images });
+      }}
+      imageArrayFieldName="images"
+      getItemName={() => 'Hero Background Image'}
+      maxImages={1}
+    />
+  ),
+  colors: () => (
+    <div className="p-4 space-y-4">
+      <h3 className="text-lg font-semibold mb-4 text-gray-700">Color Settings</h3>
+      
+      <ThemeColorPicker
+        label="Title Text Color"
+        fieldName="titleTextColor"
+        currentColorValue={config?.titleTextColor || '#FFFFFF'}
+        onColorChange={(fieldName, value) => onUpdate({ ...config, [fieldName]: value })}
+        themeColors={themeColors}
       />
-    ),
-    
-    colors: () => (
-      <div className="p-4 space-y-4">
-        <h3 className="text-lg font-semibold mb-4 text-gray-700">Color Settings</h3>
-        
-        <ThemeColorPicker
-          label="Title Text Color"
-          fieldName="titleTextColor"
-          currentColorValue={config?.titleTextColor || '#FFFFFF'}
-          onColorChange={(fieldName, value) => onControlsChange({ ...config, [fieldName]: value })}
-          themeColors={themeColors}
-        />
-        
-        <ThemeColorPicker
-          label="Fallback Background Color"
-          fieldName="fallbackBackgroundColor"
-          currentColorValue={config?.fallbackBackgroundColor || '#333333'}
-          onColorChange={(fieldName, value) => onControlsChange({ ...config, [fieldName]: value })}
-          themeColors={themeColors}
+      
+      <ThemeColorPicker
+        label="Fallback Background Color"
+        fieldName="fallbackBackgroundColor"
+        currentColorValue={config?.fallbackBackgroundColor || '#333333'}
+        onColorChange={(fieldName, value) => onUpdate({ ...config, [fieldName]: value })}
+        themeColors={themeColors}
+      />
+    </div>
+  ),
+  styling: () => (
+    <div className="p-4 space-y-6">
+      <h3 className="text-lg font-semibold mb-4 text-gray-700">Size & Animation Settings</h3>
+      
+      {/* Height Controls */}
+      <div>
+        <h4 className="text-sm font-medium text-gray-700 mb-3">Block Height</h4>
+        <PanelStylingController 
+          currentData={config} 
+          onControlsChange={onUpdate} 
+          blockType="HeroBlock"
+          controlType="height"
         />
       </div>
-    ),
-    
-    styling: () => (
-      <div className="p-4 space-y-6">
-        <h3 className="text-lg font-semibold mb-4 text-gray-700">Size & Animation Settings</h3>
-        
-        {/* Height Controls */}
-        <div>
-          <h4 className="text-sm font-medium text-gray-700 mb-3">Block Height</h4>
-          <PanelStylingController 
-            currentData={config} 
-            onControlsChange={onControlsChange} 
-            blockType="HeroBlock"
-            controlType="height"
-          />
-        </div>
 
-        {/* Animation Settings */}
-        <div>
-          <h4 className="text-sm font-medium text-gray-700 mb-3">Animation Settings</h4>
-          <PanelStylingController 
-            currentData={config} 
-            onControlsChange={onControlsChange} 
-            blockType="HeroBlock"
-            controlType="animations"
-          />
-        </div>
+      {/* Animation Settings */}
+      <div>
+        <h4 className="text-sm font-medium text-gray-700 mb-3">Animation Settings</h4>
+        <PanelStylingController 
+          currentData={config} 
+          onControlsChange={onUpdate} 
+          blockType="HeroBlock"
+          controlType="animations"
+        />
+      </div>
 
-        {/* Shrink Animation Specific Settings */}
-        {config?.animations?.shrink && (
-          <div className="border-t border-gray-200 pt-4">
-            <h4 className="text-sm font-medium text-gray-700 mb-3">Shrink Animation Settings</h4>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Shrink Delay: {config?.shrinkAfterMs || 1000}ms
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="5000"
-                step="100"
-                value={config?.shrinkAfterMs || 1000}
-                onChange={(e) => onControlsChange({ ...config, shrinkAfterMs: parseInt(e.target.value) })}
-                className="w-full"
-              />
-              <div className="flex justify-between text-xs text-gray-500">
-                <span>Instant</span>
-                <span>5 seconds</span>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">Time before hero section shrinks</p>
+      {/* Shrink Animation Specific Settings */}
+      {config?.animations?.shrink && (
+        <div className="border-t border-gray-200 pt-4">
+          <h4 className="text-sm font-medium text-gray-700 mb-3">Shrink Animation Settings</h4>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Shrink Delay: {config?.shrinkAfterMs || 1000}ms
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="5000"
+              step="100"
+              value={config?.shrinkAfterMs || 1000}
+              onChange={(e) => onUpdate({ ...config, shrinkAfterMs: parseInt(e.target.value) })}
+              className="w-full"
+            />
+            <div className="flex justify-between text-xs text-gray-500">
+              <span>Instant</span>
+              <span>5 seconds</span>
             </div>
+            <p className="text-xs text-gray-500 mt-1">Time before hero section shrinks</p>
           </div>
-        )}
-      </div>
-    )
-  };
-};
+        </div>
+      )}
+    </div>
+  )
+});
 
 export default HeroBlock;

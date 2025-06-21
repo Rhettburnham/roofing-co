@@ -2,6 +2,10 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import StarRating from "../StarRating";
+import ThemeColorPicker from "../common/ThemeColorPicker";
+import PanelImagesController from "../common/PanelImagesController";
+import PanelStylingController from "../common/PanelStylingController";
+import IconSelectorModal from "../common/IconSelectorModal";
 
 // Icons for Services - Make sure all icons are available
 import {
@@ -21,7 +25,6 @@ import googleIcon from "/assets/images/hero/googleimage.png";
 
 // Additional icons from lucide-react
 import { Home, Building2 } from "lucide-react";
-import IconSelectorModal from "../common/IconSelectorModal";
 
 /**
  * Helper function to resolve icon name strings to React components
@@ -320,6 +323,112 @@ function CombinedPageEditorPanel({ localData, onPanelChange }) {
 }
 
 /* ─────────────────────────────────────────────────────────────
+   COMBINED PAGE IMAGES CONTROLS
+   Using standard PanelImagesController
+───────────────────────────────────────────────────────────── */
+const CombinedPageImagesControls = ({ currentData, onControlsChange, themeColors }) => {
+  // Handle main hero image
+  const heroImagesArray = currentData.heroImage ? [{
+    id: 'hero_image',
+    url: getDisplayUrl(currentData.heroImage, "/assets/images/hero/default-background.jpg"),
+    file: currentData.heroImage?.file || null,
+    name: 'Hero Background Image',
+    originalUrl: currentData.heroImage?.originalUrl || "/assets/images/hero/default-background.jpg",
+    type: 'hero'
+  }] : [];
+
+  const handleHeroImageChange = (newImagesArray) => {
+    const heroImage = newImagesArray.length > 0 ? {
+      file: newImagesArray[0].file,
+      url: newImagesArray[0].url,
+      name: newImagesArray[0].name,
+      originalUrl: newImagesArray[0].originalUrl
+    } : null;
+    onControlsChange({ heroImage });
+  };
+
+  return (
+    <div className="bg-white text-gray-800 p-3 rounded">
+      <h3 className="text-sm font-semibold mb-3">Combined Page Images</h3>
+      
+      <div className="space-y-6">
+        {/* Hero Background Image */}
+        <div>
+          <h4 className="text-sm font-medium text-gray-700 mb-3">Hero Background Image</h4>
+          <PanelImagesController
+            currentData={{ images: heroImagesArray }}
+            onControlsChange={(data) => handleHeroImageChange(data.images || [])}
+            imageArrayFieldName="images"
+            maxImages={1}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ─────────────────────────────────────────────────────────────
+   COMBINED PAGE COLOR CONTROLS
+   Using standard ThemeColorPicker
+───────────────────────────────────────────────────────────── */
+const CombinedPageColorControls = ({ currentData, onControlsChange, themeColors }) => {
+  const handleColorChange = (fieldName, value) => {
+    onControlsChange({ [fieldName]: value });
+  };
+
+  return (
+    <div className="bg-white text-gray-800 p-3 rounded">
+      <h3 className="text-sm font-semibold mb-3">Combined Page Colors</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <ThemeColorPicker
+          label="Hero Background Color:"
+          currentColorValue={currentData.heroBackgroundColor || '#1F2937'}
+          themeColors={themeColors}
+          onColorChange={handleColorChange}
+          fieldName="heroBackgroundColor"
+        />
+        <ThemeColorPicker
+          label="Text Color:"
+          currentColorValue={currentData.textColor || '#FFFFFF'}
+          themeColors={themeColors}
+          onColorChange={handleColorChange}
+          fieldName="textColor"
+        />
+        <ThemeColorPicker
+          label="Service Button Color:"
+          currentColorValue={currentData.serviceButtonColor || '#3B82F6'}
+          themeColors={themeColors}
+          onColorChange={handleColorChange}
+          fieldName="serviceButtonColor"
+        />
+        <ThemeColorPicker
+          label="Testimonial Background:"
+          currentColorValue={currentData.testimonialBackgroundColor || '#F3F4F6'}
+          themeColors={themeColors}
+          onColorChange={handleColorChange}
+          fieldName="testimonialBackgroundColor"
+        />
+      </div>
+    </div>
+  );
+};
+
+/* ─────────────────────────────────────────────────────────────
+   COMBINED PAGE STYLING CONTROLS
+   Using standard PanelStylingController
+───────────────────────────────────────────────────────────── */
+const CombinedPageStylingControls = ({ currentData, onControlsChange }) => {
+  return (
+    <PanelStylingController
+      currentData={currentData}
+      onControlsChange={onControlsChange}
+      blockType="CombinedPageBlock"
+      controlType="height"
+    />
+  );
+};
+
+/* ─────────────────────────────────────────────────────────────
    COMBINEDPAGE COMPONENT
    (All styling, no Yelp toggles — only Google data)
 ───────────────────────────────────────────────────────────── */
@@ -351,18 +460,20 @@ export default function CombinedPageBlock({ readOnly = false, config = {}, onCon
     return { file: null, url: defaultPath };
   };
 
-  const [localData, setLocalData] = useState(() => {
-    const initialConfig = config || {};
-    return {
-      ...initialConfig,
-      isCommercial: initialConfig.isCommercial || false,
-      title: initialConfig.title || "Services & Testimonials",
-      googleReviews: initialConfig.googleReviews || [],
-      residentialServices: initialConfig.residentialServices || [],
-      commercialServices: initialConfig.commercialServices || [],
-      largeResidentialImg: initializeImageState(initialConfig.largeResidentialImg, "/assets/images/main_image_expanded.jpg"),
-      largeCommercialImg: initializeImageState(initialConfig.largeCommercialImg, "/assets/images/commercialservices.jpg"),
-    };
+  const [localData, setLocalData] = useState({
+    title: config.title || "Choose Your Service Type",
+    testimonialTitle: config.testimonialTitle || "Our Reviews", 
+    reviewButtonText: config.reviewButtonText || "Leave us a Review!",
+    residentialServices: config.residentialServices || [],
+    commercialServices: config.commercialServices || [],
+    testimonials: config.testimonials || [],
+    heroImage: initializeImageState(config.heroImage, "/assets/images/hero/default-background.jpg"),
+    // Add standard color properties
+    heroBackgroundColor: config.heroBackgroundColor || '#1F2937',
+    textColor: config.textColor || '#FFFFFF',
+    serviceButtonColor: config.serviceButtonColor || '#3B82F6',
+    testimonialBackgroundColor: config.testimonialBackgroundColor || '#F3F4F6',
+    styling: config.styling || { desktopHeightVH: 40, mobileHeightVW: 70 }
   });
 
   const [currentServiceDisplayType, setCurrentServiceDisplayType] = useState(localData.isCommercial ? 'commercial' : 'residential');
@@ -659,3 +770,60 @@ export default function CombinedPageBlock({ readOnly = false, config = {}, onCon
     </>
   );
 }
+
+// Expose tabsConfig for BottomStickyEditPanel
+CombinedPageBlock.tabsConfig = (blockData, onUpdate, themeColors) => ({
+  images: (props) => (
+    <CombinedPageImagesControls 
+      {...props} 
+      currentData={blockData}
+      onControlsChange={onUpdate}
+      themeColors={themeColors}
+    />
+  ),
+  colors: (props) => (
+    <CombinedPageColorControls 
+      {...props} 
+      currentData={blockData}
+      onControlsChange={onUpdate}
+      themeColors={themeColors} 
+    />
+  ),
+  styling: (props) => (
+    <CombinedPageStylingControls
+      {...props}
+      currentData={blockData}
+      onControlsChange={onUpdate}
+    />
+  ),
+  general: (props) => (
+    <div className="p-4 space-y-4">
+      <div><label className="block text-sm font-medium">Main Title (for Service Slider part):</label><input type="text" value={props.currentData.title || ""} onChange={(e) => props.onControlsChange({ title: e.target.value })} className="w-full bg-gray-700 p-1.5 rounded text-sm"/></div>
+      <div><label className="block text-sm font-medium">Residential Button Text:</label><input type="text" value={props.currentData.residentialButtonText || ""} onChange={(e) => props.onControlsChange({ residentialButtonText: e.target.value })} className="w-full bg-gray-700 p-1.5 rounded text-sm"/></div>
+      <div><label className="block text-sm font-medium">Commercial Button Text:</label><input type="text" value={props.currentData.commercialButtonText || ""} onChange={(e) => props.onControlsChange({ commercialButtonText: e.target.value })} className="w-full bg-gray-700 p-1.5 rounded text-sm"/></div>
+      <div><label className="block text-sm font-medium">Default Service View:</label><select value={props.currentData.isCommercial ? 'commercial' : 'residential'} onChange={(e) => props.onControlsChange({ isCommercial: e.target.value === 'commercial' })} className="w-full bg-gray-700 p-1.5 rounded text-sm"><option value="residential">Residential</option><option value="commercial">Commercial</option></select></div>
+      
+      {[ 'residential', 'commercial'].map(serviceType => (
+          <div key={serviceType} className="pt-2 mt-2 border-t border-gray-600">
+              <div className="flex justify-between items-center mb-1.5">
+                  <h4 className="text-md font-medium">{serviceType.charAt(0).toUpperCase() + serviceType.slice(1)} Services</h4>
+                  <button onClick={() => props.onControlsChange({ [serviceType]: [...(props.currentData[serviceType] || []), { id: Math.random().toString(36).substr(2,9), icon: 'FaTools', iconPack: 'fa', title: `New ${serviceType} Service`, link: "#" }] })} className="bg-blue-500 hover:bg-blue-600 px-2 py-0.5 rounded text-white text-xs">+ Add</button>
+              </div>
+              {(props.currentData[serviceType] || []).map((service, index) => (
+                  <div key={service.id || index} className="bg-gray-700 p-1.5 rounded mb-1.5 text-xs">
+                      <div className="flex justify-between items-center mb-1">
+                          <span className="font-medium truncate w-1/2">{service.title || `Service ${index+1}`}</span>
+                          <button onClick={() => props.onControlsChange({ [serviceType]: props.currentData[serviceType].filter((_, i) => i !== index) })} className="bg-red-500 text-white px-1.5 py-0.5 rounded text-[10px]">X</button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-1.5">
+                          <div><label>Title:</label><input type="text" value={service.title || ""} onChange={(e) => props.onControlsChange({ [serviceType]: props.currentData[serviceType].map((s, i) => i === index ? { ...s, title: e.target.value } : s) })} className="w-full bg-gray-600 p-1 rounded"/></div>
+                          <div><label>Link URL:</label><input type="text" value={service.link || ""} onChange={(e) => props.onControlsChange({ [serviceType]: props.currentData[serviceType].map((s, i) => i === index ? { ...s, link: e.target.value } : s) })} className="w-full bg-gray-600 p-1 rounded"/></div>
+                      </div>
+                      <button onClick={() => props.onControlsChange({ [serviceType]: props.currentData[serviceType].map((s, i) => i === index ? { ...s, icon: 'FaTools', iconPack: 'fa' } : s) })} className="mt-1 text-xs bg-gray-600 hover:bg-gray-500 p-1 rounded w-full text-left">Icon: {service.iconPack}/{service.icon || 'N/A'}</button>
+                  </div>
+              ))}
+          </div>
+      ))}
+    </div>
+  ),
+});

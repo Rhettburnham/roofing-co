@@ -1,8 +1,7 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import PropTypes from "prop-types";
-import TopStickyEditPanel from "./TopStickyEditPanel";
-// import JSZip from "jszip"; // No longer needed for zipping here
-// import { useConfig } from "../context/ConfigContext"; // No longer needed for services
+import { cloneConfigStripFiles } from "../utils/blockUtils"; // Import the shared utility
+import BlockEditControl from "./common/BlockEditControl";
 
 // Import preview components for blocks
 import HeroBlock from "./blocks/HeroBlock";
@@ -86,10 +85,19 @@ ServiceEditPage Component
 ---------------------------------------------
 This component provides a comprehensive editor for service pages.
 It loads data from services.json and allows editing of all
-service page content with TopStickyEditPanel integration.
+service page content with BottomStickyEditPanel integration.
 =============================================
 */
-const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange, themeColors }) => {
+const ServiceEditPage = ({
+  servicesData: servicesDataFromProps,
+  onServicesChange,
+  themeColors,
+  sitePalette,
+  initialServicesData = null,
+  editingTarget,
+  onStartEditing,
+  forcedDeviceViewport = 'desktop'
+}) => {
   // Removed local states: servicesData, loading, error, initialServicesDataForOldExport
   // const { services: configServices } = useConfig(); // Removed
 
@@ -97,8 +105,9 @@ const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange
   const [selectedPageId, setSelectedPageId] = useState(1);
   const [currentPage, setCurrentPage] = useState(null);
   const [selectedBlockType, setSelectedBlockType] = useState(Object.keys(blockMap)[0]);
-  const [activeEditBlockIndex, setActiveEditBlockIndex] = useState(null);
-  const [isEditPanelOpen, setIsEditPanelOpen] = useState(false);
+  const panelRef = useRef(null);
+  const prevActiveEditBlockIndexRef = useRef(null);
+  const blockRefs = useRef({});
 
   // Derive currentPage from props
   useEffect(() => {
@@ -120,8 +129,9 @@ const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange
 
   // Close panel when changing blocks or pages
   useEffect(() => {
-    setActiveEditBlockIndex(null);
-    setIsEditPanelOpen(false);
+    if (editingTarget && onStartEditing) {
+      onStartEditing(null); // Close panel when page changes
+    }
   }, [selectedCategory, selectedPageId]);
 
   // Helper to get display URL (can be enhanced for file objects later)
@@ -443,120 +453,120 @@ const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange
   const renderPageButtons = () => {
     if (!servicesDataFromProps) return <p>No service data provided.</p>;
     return (
-      <div className="mb-0 bg-gray-50 border-b border-gray-300 overflow-hidden">
+      <div className="flex flex-col md:flex-row md:items-center justify-start w-full bg-gray-900 border-b border-gray-700 p-3 gap-6">
         {/* Category Tabs Section */}
-        <div className="bg-black border-b border-gray-300">
-          <div className="px-4 py-2">
-            <h3 className="text-white text-sm font-medium mb-2">Service Categories</h3>
-            <nav className="-mb-px flex -space-x-3" aria-label="Category Tabs">
-              {Object.keys(servicesDataFromProps).map((category) => (
+        <div className="flex items-center gap-3">
+          <h3 className="text-gray-400 text-sm font-medium whitespace-nowrap">Categories</h3>
+          <nav className="flex flex-wrap gap-2" aria-label="Category Tabs">
+            {Object.keys(servicesDataFromProps).map((category) => (
+              <button
+                key={category}
+                onClick={() => {
+                  setSelectedCategory(category);
+                  if (servicesDataFromProps[category] && servicesDataFromProps[category].length > 0) {
+                    setSelectedPageId(servicesDataFromProps[category][0].id);
+                  } else {
+                    setSelectedPageId(null);
+                  }
+                }}
+                className={`
+                  whitespace-nowrap py-2 px-4 font-medium text-sm capitalize rounded-md transition-colors duration-200
+                  ${
+                    selectedCategory === category
+                      ? "bg-blue-600 text-white shadow-md"
+                      : "bg-transparent text-gray-300 hover:bg-gray-700 hover:text-white"
+                  }
+                `}
+              >
+                {category.charAt(0).toUpperCase() + category.slice(1)}
+              </button>
+            ))}
+          </nav>
+        </div>
+
+        <div className="h-px md:h-8 w-full md:w-px bg-gray-700"></div>
+
+        {/* Service Pages Tabs Section */}
+        <div className="flex items-center gap-3">
+          <h3 className="text-gray-400 text-sm font-medium whitespace-nowrap">Pages</h3>
+          <nav className="flex flex-wrap gap-2" aria-label="Service Page Tabs">
+            {servicesDataFromProps[selectedCategory] && servicesDataFromProps[selectedCategory].map((page) => {
+              const heroBlock =
+                page.blocks.find((b) => b.blockName === "HeroBlock") ||
+                page.blocks[0];
+              const serviceName =
+                heroBlock?.config?.title ||
+                page.name ||
+                page.title ||
+                `Service ${page.id}`;
+
+              return (
                 <button
-                  key={category}
-                  onClick={() => {
-                    setSelectedCategory(category);
-                    if (servicesDataFromProps[category] && servicesDataFromProps[category].length > 0) {
-                      setSelectedPageId(servicesDataFromProps[category][0].id);
-                    } else {
-                      setSelectedPageId(null);
-                    }
-                  }}
+                  key={page.id}
+                  onClick={() => setSelectedPageId(page.id)}
                   className={`
-                    whitespace-nowrap py-2 px-6 border-b-2 font-medium text-sm capitalize
-                    ${selectedCategory === category
-                      ? 'border-blue-500 ml-2 text-left text-white font-bold bg-banner rounded-t-lg shadow-xl'
-                      : 'border-transparent text-black font-semibold hover:text-gray-700 bg-blue-50 rounded-t-lg shadow-xl hover:border-gray-300'
+                    whitespace-nowrap py-2 px-4 font-medium text-xs rounded-md transition-colors duration-200
+                    ${
+                      selectedPageId === page.id
+                        ? "bg-blue-600 text-white shadow-md"
+                        : "bg-transparent text-gray-300 hover:bg-gray-700 hover:text-white"
                     }
                   `}
                 >
-                  {category.charAt(0).toUpperCase() + category.slice(1)}
+                  {serviceName}
                 </button>
-              ))}
-            </nav>
-          </div>
-        </div>
-
-        {/* Service Pages Tabs Section */}
-        <div className="bg-black border-b border-gray-300">
-          <div className="px-4 py-2">
-            <h3 className="text-white text-sm font-medium mb-2">Service Pages</h3>
-            <nav className="-mb-px flex flex-wrap gap-1" aria-label="Service Page Tabs">
-              {servicesDataFromProps[selectedCategory] && servicesDataFromProps[selectedCategory].map((page) => {
-                const heroBlock =
-                  page.blocks.find((b) => b.blockName === "HeroBlock") ||
-                  page.blocks[0];
-                const serviceName =
-                  heroBlock?.config?.title ||
-                  page.name ||
-                  page.title ||
-                  `Service ${page.id}`;
-
-                return (
-                  <button
-                    key={page.id}
-                    onClick={() => setSelectedPageId(page.id)}
-                    className={`
-                      whitespace-nowrap py-2 px-4 border-b-2 font-medium text-xs
-                      ${selectedPageId === page.id
-                        ? 'border-blue-500 text-white font-bold bg-banner rounded-t-lg shadow-xl'
-                        : 'border-transparent text-black font-semibold hover:text-gray-700 bg-blue-50 rounded-t-lg shadow-xl hover:border-gray-300'
-                      }
-                    `}
-                  >
-                    {serviceName}
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
+              );
+            })}
+          </nav>
         </div>
       </div>
     );
   };
 
-  // Icons
-  const PencilIcon = (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      strokeWidth="1.5"
-      stroke="currentColor"
-      className="w-5 h-5"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M16.862 4.487a2.032 2.032 0 112.872 2.872L7.5 21.613H4v-3.5L16.862 4.487z"
-      />
-    </svg>
-  );
+  // Track last saved config for each block (always from /personal/old/)
+  const getLastSavedConfig = (blockIndex) => {
+    if (!currentPage || !currentPage.blocks) return null;
+    // Use initialServicesData for the original config
+    const origPage = (initialServicesData?.[selectedCategory] || []).find(p => p.id === Number(selectedPageId));
+    if (!origPage || !origPage.blocks) return null;
+    const block = origPage.blocks[blockIndex];
+    return block ? block.config : null;
+  };
 
-  // Get active block data for TopStickyEditPanel
-  const getActiveBlockData = () => {
-    if (activeEditBlockIndex === null || !currentPage) return null;
-    
-    const block = currentPage.blocks[activeEditBlockIndex];
-    if (!block) return null;
-    
-    const Component = blockMap[block.blockName];
-    if (!Component) return null;
+  // Undo handler: always revert to /personal/old/ config
+  const handleUndoBlock = (blockIndex) => {
+    console.log(`[ServiceEditPage] Undoing changes for block index: ${blockIndex}`);
+    const originalBlockConfig = getLastSavedConfig(blockIndex);
 
-    return {
-      blockName: block.blockName,
-      config: block.config,
-      themeColors,
-      onPanelChange: (newConfig) => handleBlockConfigUpdate(activeEditBlockIndex, newConfig),
-      onFileChange: (fieldKey, fileOrFileObject) => handleFileChangeForBlock(activeEditBlockIndex, fieldKey, fileOrFileObject),
-      getDisplayUrl: getDisplayUrlHelper,
-      tabsConfig: Component.tabsConfig ? Component.tabsConfig(
-        block.config,
-        (newConfig) => handleBlockConfigUpdate(activeEditBlockIndex, newConfig),
-        themeColors,
-        { /* sitePalette - could be populated if needed */ }
-      ) : null,
-      // Legacy support for blocks without tabsConfig
-      EditorPanelComponent: Component.EditorPanel,
-    };
+    if (originalBlockConfig) {
+      // Use the shared utility to deep clone and strip file references
+      const cleanedConfig = cloneConfigStripFiles(originalBlockConfig);
+      
+      handleBlockConfigUpdate(blockIndex, cleanedConfig);
+      // Immediately close the edit panel on undo
+      if (editingTarget && onStartEditing) {
+        onStartEditing(null);
+      }
+    } else {
+      console.warn(`[ServiceEditPage] No saved config found for block index: ${blockIndex}`);
+    }
+  };
+
+  // Save handler (called on panel close)
+  const handleSaveBlock = (blockIndex, newConfig) => {
+    setCurrentPage((prev) => {
+      const newBlocks = prev.blocks.map((block, idx) =>
+        idx === blockIndex ? { ...block, config: newConfig } : block
+      );
+      return { ...prev, blocks: newBlocks };
+    });
+    // Propagate to parent
+    if (onServicesChange) {
+      const updatedBlocks = currentPage.blocks.map((block, idx) =>
+        idx === blockIndex ? { ...block, config: newConfig } : block
+      );
+      onServicesChange({ ...currentPage, blocks: updatedBlocks }, selectedCategory, selectedPageId);
+    }
   };
 
   /* 
@@ -569,8 +579,7 @@ const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange
   const renderBlockEditor = (block, blockIndex) => {
     if (!currentPage) return null;
     const Component = blockMap[block.blockName];
-    const isActiveBlock = activeEditBlockIndex === blockIndex;
-    
+    const isEditingThisBlock = editingTarget?.type === 'service' && editingTarget?.key === blockIndex;
     if (!Component) {
       return (
         <div key={`unknown-${blockIndex}`} className="bg-red-100 p-4 mb-0">
@@ -578,44 +587,69 @@ const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange
         </div>
       );
     }
-
     const blockConfig = block.config || {};
-    
-    return (
-      <div 
-        key={block.uniqueKey || blockIndex} 
-        className={`relative border-t border-b border-gray-300 mb-0 bg-white overflow-hidden group ${isActiveBlock ? 'ring-2 ring-blue-500 ring-inset' : ''}`}
-      >
-        {/* Block Selection/Edit Button */}
-        <div className="absolute top-2 right-2 z-30">
-          <button 
-            type="button" 
-            onClick={() => {
-              if (isActiveBlock) {
-                setActiveEditBlockIndex(null);
-                setIsEditPanelOpen(false);
-              } else {
-                setActiveEditBlockIndex(blockIndex);
-                setIsEditPanelOpen(true);
-              }
-            }}
-            className={`${isActiveBlock ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'} text-white rounded-full p-2 shadow-lg transition-colors opacity-70 group-hover:opacity-100`}
-            title={isActiveBlock ? "Close Editor" : "Edit Block"}
-          >
-            {PencilIcon}
-          </button>
-        </div>
+    let componentProps = {
+      readOnly: !isEditingThisBlock,
+      config: blockConfig,
+      themeColors: themeColors,
+      lastSavedConfig: getLastSavedConfig(blockIndex),
+      onUndoBlock: () => handleUndoBlock(blockIndex),
+      onSaveBlock: (newConfig) => handleSaveBlock(blockIndex, newConfig),
+      onConfigChange: (newConfig) => handleBlockConfigUpdate(blockIndex, newConfig),
+      forcedDeviceViewport: forcedDeviceViewport,
+    };
 
-        {/* Render Block with Inline Editing Support */}
-        <Component 
-          config={blockConfig} 
-          readOnly={!isActiveBlock} // Enable inline editing when block is active
-          onConfigChange={isActiveBlock ? (newConfig) => handleBlockConfigUpdate(blockIndex, newConfig) : undefined}
-          onFileChange={isActiveBlock ? (fieldKey, fileOrFileObject) => handleFileChangeForBlock(blockIndex, fieldKey, fileOrFileObject) : undefined}
-          getDisplayUrl={getDisplayUrlHelper}
-          themeColors={themeColors}
-          onToggleEditor={isActiveBlock ? () => setIsEditPanelOpen(!isEditPanelOpen) : undefined}
-        />
+    const handleStartEditingBlock = () => {
+      const blockConfig = block.config || {};
+      let panelTabsConfig = null;
+      if (typeof Component.tabsConfig === 'function') {
+        panelTabsConfig = Component.tabsConfig(blockConfig, (newConf) => handleBlockConfigUpdate(blockIndex, newConf), themeColors, sitePalette);
+      }
+
+      onStartEditing({
+        type: 'service',
+        key: blockIndex,
+        blockName: block.blockName,
+        config: blockConfig,
+        onPanelChange: (newConf) => handleBlockConfigUpdate(blockIndex, newConf),
+        onUndo: () => handleUndoBlock(blockIndex),
+        onSave: () => handleSaveBlock(blockIndex, blockConfig),
+        tabsConfig: panelTabsConfig,
+        themeColors,
+        sitePalette
+      });
+
+      setTimeout(() => {
+        const blockElement = blockRefs.current[blockIndex]?.current;
+        if (blockElement) {
+          const elementTop = blockElement.getBoundingClientRect().top + window.scrollY;
+          const viewportHeight = window.innerHeight;
+          const targetPosition = elementTop - (viewportHeight * 0.2); // 20% gap from top
+          
+          window.scrollTo({
+            top: Math.max(0, targetPosition), // Ensure we don't scroll above the top
+            behavior: 'smooth',
+          });
+        }
+      }, 100);
+    };
+
+    return (
+      <div
+        key={block.uniqueKey || blockIndex}
+        ref={(el) => (blockRefs.current[blockIndex] = { current: el })}
+        className={`relative border-t border-b border-gray-300 mb-0 bg-white overflow-hidden group ${isEditingThisBlock ? 'ring-2 ring-blue-500 shadow-lg' : ''}`}
+      >
+        {!isEditingThisBlock && (
+          <BlockEditControl
+            onToggleEdit={handleStartEditingBlock}
+            isEditing={false}
+            zIndex="z-40"
+          />
+        )}
+        <div id={`service-block-content-${blockIndex}`} className="transition-all duration-300">
+          <Component {...componentProps} />
+        </div>
       </div>
     );
   };
@@ -666,8 +700,19 @@ const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange
       const updatedBlocks = [...currentPage.blocks];
       updatedBlocks.splice(insertIndex, 0, newBlock);
       updatePageAndPropagate({ ...currentPage, blocks: updatedBlocks });
-      setActiveEditBlockIndex(insertIndex);
-      setIsEditPanelOpen(true);
+      if (editingTarget && onStartEditing) {
+        onStartEditing({
+          type: 'service',
+          key: insertIndex,
+          blockName: selectedBlockType,
+          config: blockDefaults,
+          onPanelChange: (newConf) => handleBlockConfigUpdate(insertIndex, newConf),
+          onUndo: () => handleUndoBlock(insertIndex),
+          onSave: () => handleSaveBlock(insertIndex, blockDefaults),
+          themeColors,
+          sitePalette
+        });
+      }
     };
 
     return (
@@ -743,6 +788,56 @@ const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange
     return defaults[blockType] || {};
   };
 
+  const getActiveBlockData = () => {
+    if (editingTarget && editingTarget.key !== null && currentPage && currentPage.blocks[editingTarget.key]) {
+      const block = currentPage.blocks[editingTarget.key];
+      const { blockName, config } = block;
+      const Component = blockMap[blockName];
+
+      if (!Component) {
+        console.error(`[ServiceEditPage] Component for block ${blockName} not found in blockMap.`);
+        return null;
+      }
+
+      const onPanelChange = (newConfig) => {
+        handleBlockConfigUpdate(editingTarget.key, newConfig);
+      };
+
+      const blockData = {
+        blockName,
+        config,
+        onPanelChange,
+        themeColors,
+        sitePalette,
+        getDisplayUrl,
+        onFileChange: (key, file) => handleFileChangeForBlock(editingTarget.key, key, file),
+      };
+
+      // New `tabsConfig` integration
+      if (typeof Component.tabsConfig === 'function') {
+        blockData.tabsConfig = Component.tabsConfig(config, onPanelChange, themeColors, sitePalette);
+      } else if (Component.EditorPanel) { // Legacy `EditorPanel`
+        blockData.EditorPanelComponent = Component.EditorPanel;
+      }
+
+      // Pass any other specific props needed by certain panels
+      // Example for a hypothetical ButtonBlock's panel
+      if (Component.animationDurationOptions) {
+        blockData.animationDurationOptions = Component.animationDurationOptions;
+      }
+      if (Component.buttonSizeOptions) {
+        blockData.buttonSizeOptions = Component.buttonSizeOptions;
+      }
+       // Example for RichTextBlock that has a different update mechanism
+      if (blockName === 'RichTextBlock') {
+        blockData.onDataChange = (data) => handleBlockConfigUpdate(editingTarget.key, { ...config, content: data });
+      }
+
+      return blockData;
+    }
+    return null;
+  };
+
   if (!currentPage && !servicesDataFromProps) {
     return <div className="min-h-screen flex items-center justify-center"><p>Loading service editor...</p></div>;
   }
@@ -760,16 +855,6 @@ const ServiceEditPage = ({ servicesData: servicesDataFromProps, onServicesChange
 
   return (
     <div className="relative">
-      {/* Top Sticky Edit Panel */}
-      <TopStickyEditPanel
-        isOpen={isEditPanelOpen}
-        onClose={() => {
-          setIsEditPanelOpen(false);
-          setActiveEditBlockIndex(null);
-        }}
-        activeBlockData={getActiveBlockData()}
-      />
-
       {/* Main Content */}
       <div className="">
         {renderPageButtons()}
@@ -786,8 +871,14 @@ ServiceEditPage.propTypes = {
   servicesData: PropTypes.object,
   onServicesChange: PropTypes.func.isRequired,
   themeColors: PropTypes.object,
+  sitePalette: PropTypes.array,
+  initialServicesData: PropTypes.object,
+  editingTarget: PropTypes.object,
+  onStartEditing: PropTypes.func,
+  forcedDeviceViewport: PropTypes.string,
 };
 
 export default ServiceEditPage;
 // Removed getServicesData export
 export { blockMap }; // Keep exporting blockMap
+

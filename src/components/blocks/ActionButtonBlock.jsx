@@ -141,10 +141,10 @@ const ActionButtonBlock = ({
   );
 };
 
-// Static method for TopStickyEditPanel integration
-ActionButtonBlock.tabsConfig = (config, onControlsChange, themeColors, sitePalette) => {
+// Static method for BottomStickyEditPanel integration
+ActionButtonBlock.tabsConfig = (config, onUpdate, themeColors) => {
   return {
-    general: () => (
+    general: (props) => (
       <div className="p-4 space-y-4">
         <h3 className="text-lg font-semibold mb-2 text-gray-700">Button Link</h3>
         <div className="space-y-1">
@@ -153,7 +153,7 @@ ActionButtonBlock.tabsConfig = (config, onControlsChange, themeColors, sitePalet
             id="buttonLinkInput"
             type="text"
             value={config?.buttonLink || '/#book'}
-            onChange={(e) => onControlsChange({ ...config, buttonLink: e.target.value })}
+            onChange={(e) => onUpdate({ ...config, buttonLink: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm"
           />
         </div>
@@ -167,7 +167,7 @@ ActionButtonBlock.tabsConfig = (config, onControlsChange, themeColors, sitePalet
           label="Button Background Color"
           fieldName="buttonColor"
           currentColorValue={config?.buttonColor || '#1F2937'}
-          onColorChange={(fieldName, value) => onControlsChange({ ...config, [fieldName]: value })}
+          onColorChange={(fieldName, value) => onUpdate({ ...config, [fieldName]: value })}
           themeColors={themeColors}
         />
         
@@ -175,7 +175,7 @@ ActionButtonBlock.tabsConfig = (config, onControlsChange, themeColors, sitePalet
           label="Section Background Color"
           fieldName="backgroundColor"
           currentColorValue={config?.backgroundColor || 'transparent'}
-          onColorChange={(fieldName, value) => onControlsChange({ ...config, [fieldName]: value })}
+          onColorChange={(fieldName, value) => onUpdate({ ...config, [fieldName]: value })}
           themeColors={themeColors}
         />
         
@@ -190,7 +190,7 @@ ActionButtonBlock.tabsConfig = (config, onControlsChange, themeColors, sitePalet
           <label className="block text-sm font-medium text-gray-700">Button Size</label>
           <select
             value={config?.buttonSize || 'md'}
-            onChange={(e) => onControlsChange({ ...config, buttonSize: e.target.value })}
+            onChange={(e) => onUpdate({ ...config, buttonSize: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="sm">Small</option>
@@ -202,7 +202,7 @@ ActionButtonBlock.tabsConfig = (config, onControlsChange, themeColors, sitePalet
         
         <PanelStylingController
           currentData={config}
-          onControlsChange={onControlsChange}
+          onControlsChange={onUpdate}
           blockType="ActionButtonBlock"
           controlType="animations"
         />

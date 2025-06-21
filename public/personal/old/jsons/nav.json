@@ -67,15 +67,22 @@
       }
     }
   },
+  "styling": {
+    "logoDesktopSize": { "unscrolled": 18, "scrolled": 10 },
+    "logoMobileSize": { "unscrolled": 22, "scrolled": 15 },
+    "navbarDesktopHeight": { "unscrolled": 20, "scrolled": 12 },
+    "navbarMobileHeight": { "unscrolled": 16, "scrolled": 10 },
+    "invertLogoColor": false
+  },
   "textSizes": {
     "unscrolled": {
-      "base": "text-[4.5vw]",
-      "md": "text-[6vh]",
+      "base": "text-[7vw]",
+      "md": "text-[8vh]",
       "lg": "text-[5vh]"
     },
     "scrolled": {
-      "base": "text-[3.5vw]",
-      "md": "text-[4vh]"
+      "base": "text-[3vw]",
+      "md": "text-[5vh]"
     }
   },
   "logoTextDistance": {
@@ -83,13 +90,93 @@
     "scrolled": { "base": "mr-2", "md": "mr-2" }
   },
   "navbarHeight": {
-    "unscrolled": { "base": "h-[1ovhvh]", "md": "h-[16vh]" },
+    "unscrolled": { "base": "h-[16vh]", "md": "h-[20vh]" },
     "scrolled": { "base": "h-[10vh]", "md": "h-[10vh]" }
   },
   "scrolledBackgroundColor": "bg-banner",
   "unscrolledBackgroundColor": "bg-transparent",
-  "dropdownBackgroundColor": "bg-white",
-  "dropdownTextColor": "text-black",
+  "dropdownBackgroundColor": "#FFFFFF",
+  "dropdownTextColor": "#000000",
+  "hamburgerColor": {
+    "unscrolled": "#000000",
+    "scrolled": "#FFFFFF"
+  },
   "useWhiteHamburger": false,
-  "invertLogoColor": false
+  "invertLogoColor": false,
+  "mainTitleTextSettings": {
+    "unscrolled": {
+      "desktop": {
+        "fontFamily": "Inter",
+        "fontSize": 48,
+        "fontWeight": 700,
+        "lineHeight": 1.2,
+        "letterSpacing": 0.5,
+        "color": "#FFFFFF"
+      },
+      "mobile": {
+        "fontFamily": "Inter",
+        "fontSize": 24,
+        "fontWeight": 700,
+        "lineHeight": 1.3,
+        "letterSpacing": 0.4,
+        "color": "#FFFFFF"
+      }
+    },
+    "scrolled": {
+      "desktop": {
+        "fontFamily": "Inter",
+        "fontSize": 32,
+        "fontWeight": 700,
+        "lineHeight": 1.2,
+        "letterSpacing": 0.5,
+        "color": "#FFFFFF"
+      },
+      "mobile": {
+        "fontFamily": "Inter",
+        "fontSize": 20,
+        "fontWeight": 700,
+        "lineHeight": 1.3,
+        "letterSpacing": 0.4,
+        "color": "#FFFFFF"
+      }
+    }
+  },
+  "subTitleTextSettings": {
+    "unscrolled": {
+      "desktop": {
+        "fontFamily": "Inter",
+        "fontSize": 24,
+        "fontWeight": 400,
+        "lineHeight": 1.5,
+        "letterSpacing": 0.3,
+        "color": "#E5E7EB"
+      },
+      "mobile": {
+        "fontFamily": "Inter",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "lineHeight": 1.4,
+        "letterSpacing": 0.2,
+        "color": "#E5E7EB"
+      }
+    },
+    "scrolled": {
+      "desktop": {
+        "fontFamily": "Inter",
+        "fontSize": 18,
+        "fontWeight": 400,
+        "lineHeight": 1.5,
+        "letterSpacing": 0.3,
+        "color": "#E5E7EB"
+      },
+      "mobile": {
+        "fontFamily": "Inter",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "lineHeight": 1.4,
+        "letterSpacing": 0.2,
+        "color": "#E5E7EB"
+      }
+    }
+  }
 }

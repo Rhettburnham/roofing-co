@@ -33,12 +33,13 @@ try {
   console.log("[WARN] Could not read colors_output.json. Using defaults.", err);
 }
 
-module.exports = {
+export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
       fontFamily: {
-        rye: ["Rye", "serif"],
+        rye: ["Rye", "cursive"],
+        'ultra-condensed': ['Arial Narrow', 'Arial', 'sans-serif'],
       },
       colors: {
         // Use CSS variables for dynamic theming, with fallbacks to the JSON-loaded values
@@ -58,47 +59,25 @@ module.exports = {
           200: "#afafaf",
           300: "#42424570",
         },
+        "custom-blue": "#007BFF",
+        "custom-gray": "#F8F9FA",
+        "brand-charcoal": "#333333",
+        "brand-red": "#FF0000",
+      },
+      animation: {
+        'pulse-glow': 'pulseGlow 2s ease-in-out infinite',
+      },
+      keyframes: {
+        pulseGlow: {
+          '0%, 100%': { 
+            boxShadow: '0 0 20px rgba(59, 130, 246, 0.5), 0 0 40px rgba(59, 130, 246, 0.3), 0 0 60px rgba(59, 130, 246, 0.1)' 
+          },
+          '50%': { 
+            boxShadow: '0 0 30px rgba(59, 130, 246, 0.8), 0 0 60px rgba(59, 130, 246, 0.5), 0 0 90px rgba(59, 130, 246, 0.3)' 
+          },
+        },
       },
     },
   },
-  plugins: [
-    function ({ addUtilities, theme }) {
-      // Existing Utilities
-      addUtilities({
-        ".clip-bottom-triangle": {
-          "clip-path":
-            "polygon(0 0, 100% 0, 100% calc(100% - var(--triangle-height)), 50% 100%, 0 calc(100% - var(--triangle-height)))",
-        },
-        ".triangle-height-sm": {
-          "--triangle-height": "30px",
-        },
-        ".md\\:triangle-height-md": {
-          "@screen md": {
-            "--triangle-height": "50px",
-          },
-        },
-        ".lg\\:triangle-height-lg": {
-          "@screen lg": {
-            "--triangle-height": "70px",
-          },
-        },
-      });
-
-      // Custom Font Stretch Utilities
-      addUtilities(
-        {
-          ".font-ultra-condensed": { "font-stretch": "ultra-condensed" },
-          ".font-extra-condensed": { "font-stretch": "extra-condensed" },
-          ".font-condensed": { "font-stretch": "condensed" },
-          ".font-semi-condensed": { "font-stretch": "semi-condensed" },
-          ".font-normal-stretch": { "font-stretch": "normal" },
-          ".font-semi-expanded": { "font-stretch": "semi-expanded" },
-          ".font-expanded": { "font-stretch": "expanded" },
-          ".font-extra-expanded": { "font-stretch": "extra-expanded" },
-          ".font-ultra-expanded": { "font-stretch": "ultra-expanded" },
-        },
-        { variants: ["responsive"] }
-      );
-    },
-  ],
+  plugins: [],
 };

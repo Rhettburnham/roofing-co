@@ -451,13 +451,13 @@ OverviewAndAdvantagesBlock.EditorPanel = ({ currentConfig, onPanelConfigChange }
   );
 };
 
-// Static method for TopStickyEditPanel integration
-OverviewAndAdvantagesBlock.tabsConfig = (config, onControlsChange, themeColors) => {
+// Static method for BottomStickyEditPanel integration
+OverviewAndAdvantagesBlock.tabsConfig = (config, onUpdate, themeColors) => {
   return {
-    general: () => (
+    general: (props) => (
       <PanelTextSectionController
         currentData={config}
-        onControlsChange={onControlsChange}
+        onControlsChange={onUpdate}
         controlType="bullets"
         blockType="OverviewAndAdvantagesBlock"
       />
@@ -478,7 +478,7 @@ OverviewAndAdvantagesBlock.tabsConfig = (config, onControlsChange, themeColors) 
           label="Heading Color"
           fieldName="headingColor"
           currentColorValue={config?.headingColor || themeColors?.text || '#374151'}
-          onColorChange={(fieldName, value) => onControlsChange({ ...config, [fieldName]: value })}
+          onColorChange={(fieldName, value) => onUpdate({ ...config, [fieldName]: value })}
           themeColors={themeColors}
         />
         
@@ -486,7 +486,7 @@ OverviewAndAdvantagesBlock.tabsConfig = (config, onControlsChange, themeColors) 
           label="Text Color"
           fieldName="textColor"
           currentColorValue={config?.textColor || themeColors?.text || '#6B7280'}
-          onColorChange={(fieldName, value) => onControlsChange({ ...config, [fieldName]: value })}
+          onColorChange={(fieldName, value) => onUpdate({ ...config, [fieldName]: value })}
           themeColors={themeColors}
         />
         
@@ -494,7 +494,7 @@ OverviewAndAdvantagesBlock.tabsConfig = (config, onControlsChange, themeColors) 
           label="Accent Color (Icons & Borders)"
           fieldName="accentColor"
           currentColorValue={config?.accentColor || themeColors?.accent || '#3B82F6'}
-          onColorChange={(fieldName, value) => onControlsChange({ ...config, [fieldName]: value })}
+          onColorChange={(fieldName, value) => onUpdate({ ...config, [fieldName]: value })}
           themeColors={themeColors}
         />
         
@@ -502,7 +502,7 @@ OverviewAndAdvantagesBlock.tabsConfig = (config, onControlsChange, themeColors) 
           label="Background Color"
           fieldName="backgroundColor"
           currentColorValue={config?.backgroundColor || themeColors?.background || '#FFFFFF'}
-          onColorChange={(fieldName, value) => onControlsChange({ ...config, [fieldName]: value })}
+          onColorChange={(fieldName, value) => onUpdate({ ...config, [fieldName]: value })}
           themeColors={themeColors}
         />
       </div>
@@ -518,7 +518,7 @@ OverviewAndAdvantagesBlock.tabsConfig = (config, onControlsChange, themeColors) 
           </label>
           <select
             value={config?.gridLayout || 'two-column'}
-            onChange={(e) => onControlsChange({ ...config, gridLayout: e.target.value })}
+            onChange={(e) => onUpdate({ ...config, gridLayout: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="one-column">Single Column</option>
@@ -536,7 +536,7 @@ OverviewAndAdvantagesBlock.tabsConfig = (config, onControlsChange, themeColors) 
           </label>
           <select
             value={config?.cardSpacing || 'normal'}
-            onChange={(e) => onControlsChange({ ...config, cardSpacing: e.target.value })}
+            onChange={(e) => onUpdate({ ...config, cardSpacing: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="tight">Tight</option>

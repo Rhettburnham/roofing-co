@@ -41,6 +41,18 @@ const transformEditableColorsForPicker = (themeColorsInput) => {
   return [];
 };
 
+// House Icon Component
+const HouseIcon = ({ color, className = "" }) => (
+  <svg 
+    className={className}
+    xmlns="http://www.w3.org/2000/svg" 
+    viewBox="0 0 24 24" 
+    fill={color}
+  >
+    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+  </svg>
+);
+
 // Color Picker Modal Component
 const ColorPickerModal = ({ isOpen, onClose, currentColor, onColorSelect }) => {
   const [selectedColor, setSelectedColor] = useState(currentColor);
@@ -97,6 +109,7 @@ const ColorPickerModal = ({ isOpen, onClose, currentColor, onColorSelect }) => {
         </div>
       </div>
     </div>
+    
   );
 };
 
@@ -107,6 +120,7 @@ const ThemeColorPicker = ({
   onColorChange,
   fieldName,
   className = '',
+  variant = 'splotch', // 'splotch', 'icon', 'text'
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -157,13 +171,62 @@ const ThemeColorPicker = ({
     }
   };
 
-  const handleSplotchClick = () => {
+  const handleDisplayClick = () => {
     setIsModalOpen(true);
   };
 
   const handleModalColorSelect = (newColor) => {
     setHexInputValue(newColor);
     onColorChange(fieldName, newColor);
+  };
+
+  // Render the appropriate display variant
+  const renderDisplayVariant = () => {
+    const baseClasses = "w-8 h-8 flex-shrink-0 border-2 border-gray-300 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer transition-all";
+    
+    switch (variant) {
+      case 'icon':
+        return (
+          <button
+            type="button"
+            onClick={handleDisplayClick}
+            className={`${baseClasses} rounded-md flex items-center justify-center bg-gray-100`}
+            title="Click to open color picker"
+          >
+            <HouseIcon color={currentColorValue} className="w-5 h-5" />
+          </button>
+        );
+      
+      case 'text':
+        return (
+          <button
+            type="button"
+            onClick={handleDisplayClick}
+            className={`${baseClasses} rounded-md flex items-center justify-center text-xs font-medium leading-none`}
+            style={{ 
+              color: currentColorValue,
+              backgroundColor: 'transparent'
+            }}
+            title="Click to open color picker"
+          >
+            <span className="text-center text-lg font-bold">
+              ABC
+            </span>
+          </button>
+        );
+      
+      case 'splotch':
+      default:
+        return (
+          <button
+            type="button"
+            onClick={handleDisplayClick}
+            className={`${baseClasses} rounded-full`}
+            style={{ backgroundColor: currentColorValue }}
+            title="Click to open color picker"
+          />
+        );
+    }
   };
 
   return (
@@ -175,32 +238,27 @@ const ThemeColorPicker = ({
       )}
       <div className={`relative`} ref={dropdownRef}>
         <div className="flex items-center space-x-2">
-          {/* Larger clickable circular color splotch on the left */}
-          <button
-            type="button"
-            onClick={handleSplotchClick}
-            className="w-8 h-8 rounded-full flex-shrink-0 border-2 border-gray-300 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer transition-all"
-            style={{ backgroundColor: currentColorValue }}
-            title="Click to open color picker"
-          />
+          {/* Render the appropriate display variant */}
+          {renderDisplayVariant()}
           
-          {/* Hex input in the middle */}
-          <input
+          {/* Hex input in the middle - REMOVED */}
+          {/* <input
             type="text"
             value={hexInputValue}
             onChange={handleHexInputChange}
             onBlur={handleHexInputBlur}
             className="flex-1 px-3 py-2 text-sm bg-gray-700 border border-gray-600 rounded-l-md text-white focus:outline-none focus:border-blue-500"
             placeholder="#000000"
-          />
+          /> */}
           
           {/* More obvious dropdown button on the right */}
           <button
             type="button"
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="px-3 py-2 bg-blue-600 hover:bg-blue-700 border border-blue-600 border-l-0 rounded-r-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+            className="w-full px-3 py-2 bg-gray-700 hover:bg-gray-600 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors flex items-center justify-between"
             title="Choose from palette"
           >
+            <span className="text-sm font-mono">{currentColorValue}</span>
             <svg 
               className={`w-4 h-4 transform transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} 
               xmlns="http://www.w3.org/2000/svg" 
@@ -232,7 +290,7 @@ const ThemeColorPicker = ({
                     style={{ backgroundColor: color.value }}
                   />
                   <span className="text-xs text-gray-300 mt-1 text-center truncate w-full">
-                    {color.value}
+                    {color.label}
                   </span>
                 </button>
               ))}
@@ -259,6 +317,7 @@ ThemeColorPicker.propTypes = {
   onColorChange: PropTypes.func.isRequired,
   fieldName: PropTypes.string.isRequired,
   className: PropTypes.string,
+  variant: PropTypes.oneOf(['splotch', 'icon', 'text']),
 };
 
 export default ThemeColorPicker; 

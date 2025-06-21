@@ -21,7 +21,9 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import ThemeColorPicker from "../common/ThemeColorPicker";
 import PanelImagesController from "../common/PanelImagesController";
+import PanelFontController from "../common/PanelFontController";
 import PanelStylingController from "../common/PanelStylingController";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Register GSAP's ScrollTrigger plugin
 gsap.registerPlugin(ScrollTrigger);
@@ -545,7 +547,7 @@ const BookingPreview = memo(
                     />
                   ) : (
                     <h2
-                      className="text-xl font-bold text-left"
+                      className="text-2xl md:text-3xl font-bold booking-header-text"
                       style={{ color: currentHeaderTextColor }}
                     >
                       {headerText}
@@ -564,7 +566,7 @@ const BookingPreview = memo(
                     />
                   ) : (
                     <p
-                      className="font-bold text-base mt-1 text-left"
+                      className="font-bold md:text-lg mt-1 booking-subheader-text"
                       style={{ color: currentHeaderTextColor }}
                     >
                       {phone}
@@ -660,8 +662,7 @@ const BookingPreview = memo(
                     />
                   ) : bookingData.formTitle ? (
                     <h3
-                      className="text-lg md:text-xl font-semibold text-center"
-                      style={{ color: currentInputTextColor }}
+                      className="text-lg md:text-xl font-semibold text-center booking-form-title-text"
                     >
                       {bookingData.formTitle}
                     </h3>
@@ -751,7 +752,7 @@ const BookingPreview = memo(
                   <div className="flex justify-center w-full mt-4 relative">
                     <button
                       type="submit"
-                      className="relative px-8 py-2 text-lg font-semibold rounded-md md:w-auto shadow-md"
+                      className="relative px-8 py-2 text-lg font-semibold rounded-md md:w-auto shadow-md booking-button-text"
                       style={{
                         color: currentButtonTextColor,
                         backgroundColor: currentButtonBgColor,
@@ -1072,45 +1073,16 @@ const ModernBookingVariant = memo(
                   )}
 
                   <div className="text-center lg:text-left">
-                    {!readOnly ? (
-                      <input
-                        type="text"
-                        value={headerText}
-                        onChange={(e) =>
-                          handleVariantFieldChange("headerText", e.target.value)
-                        }
-                        className="text-4xl lg:text-5xl font-light mb-4 bg-transparent focus:bg-white/10 focus:ring-2 focus:ring-blue-300 rounded-lg p-3 w-full placeholder-gray-300 outline-none leading-tight"
-                        placeholder="Header Text"
-                        style={{ color: primaryTextColor }}
-                      />
-                    ) : (
-                      <h1
-                        className="text-4xl lg:text-5xl font-light mb-4 leading-tight"
-                        style={{ color: primaryTextColor }}
-                      >
-                        {headerText}
-                      </h1>
-                    )}
-
-                    {!readOnly ? (
-                      <input
-                        type="text"
-                        value={phone}
-                        onChange={(e) =>
-                          handleFieldChange("phone", e.target.value)
-                        }
-                        className="text-xl lg:text-2xl font-medium bg-transparent focus:bg-white/10 focus:ring-2 focus:ring-blue-300 rounded-lg p-3 w-full placeholder-gray-400 outline-none"
-                        placeholder="Phone Number"
-                        style={{ color: primaryTextColor }}
-                      />
-                    ) : (
-                      <p
-                        className="text-xl lg:text-2xl font-medium"
-                        style={{ color: primaryTextColor }}
-                      >
-                        {phone}
-                      </p>
-                    )}
+                    <h1
+                      className="text-4xl lg:text-5xl font-light mb-4 leading-tight booking-header-text"
+                    >
+                      {headerText}
+                    </h1>
+                    <p
+                      className="text-xl lg:text-2xl font-medium booking-subheader-text"
+                    >
+                      {phone}
+                    </p>
                   </div>
                 </div>
 
@@ -1121,101 +1093,24 @@ const ModernBookingVariant = memo(
                       key={feature.id || index}
                       className="flex items-center space-x-4 relative"
                     >
-                      {!readOnly && (
-                        <button
-                          onClick={() => removeFeature(index)}
-                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600 z-10"
-                        >
-                          ×
-                        </button>
-                      )}
                       <div className="w-14 h-14 bg-white/20 backdrop-blur-sm border border-white/30 rounded-2xl flex items-center justify-center shadow-lg">
-                        {!readOnly ? (
-                          <input
-                            type="text"
-                            value={feature.emoji}
-                            onChange={(e) =>
-                              handleFeatureChange(
-                                index,
-                                "emoji",
-                                e.target.value
-                              )
-                            }
-                            className="text-2xl bg-transparent text-center outline-none w-10"
-                            placeholder="🔥"
-                          />
-                        ) : (
-                          <span className="text-2xl">{feature.emoji}</span>
-                        )}
+                        <span className="text-2xl">{feature.emoji}</span>
                       </div>
                       <div className="flex-1">
-                        {!readOnly ? (
-                          <>
-                            <input
-                              type="text"
-                              value={feature.title}
-                              onChange={(e) =>
-                                handleFeatureChange(
-                                  index,
-                                  "title",
-                                  e.target.value
-                                )
-                              }
-                              className="font-semibold text-lg bg-transparent focus:bg-white/10 focus:ring-1 focus:ring-blue-300 rounded px-2 py-1 outline-none w-full"
-                              placeholder="Feature Title"
-                              style={{ color: primaryTextColor }}
-                            />
-                            <input
-                              type="text"
-                              value={feature.subtitle}
-                              onChange={(e) =>
-                                handleFeatureChange(
-                                  index,
-                                  "subtitle",
-                                  e.target.value
-                                )
-                              }
-                              className="bg-transparent focus:bg-white/10 focus:ring-1 focus:ring-orange-400 rounded px-2 py-1 outline-none w-full"
-                              placeholder="Feature Subtitle"
-                              style={{ color: primaryTextColor, opacity: 0.8 }}
-                            />
-                          </>
-                        ) : (
-                          <>
-                            <h3
-                              className="font-semibold text-lg"
-                              style={{ color: primaryTextColor }}
-                            >
-                              {feature.title}
-                            </h3>
-                            <p
-                              style={{ color: primaryTextColor, opacity: 0.8 }}
-                            >
-                              {feature.subtitle}
-                            </p>
-                          </>
-                        )}
+                        <h3
+                          className="font-semibold text-lg"
+                          style={{ color: primaryTextColor }}
+                        >
+                          {feature.title}
+                        </h3>
+                        <p
+                          style={{ color: primaryTextColor, opacity: 0.8 }}
+                        >
+                          {feature.subtitle}
+                        </p>
                       </div>
                     </div>
                   ))}
-
-                  {!readOnly && (
-                    <button
-                      onClick={addFeature}
-                      className="flex items-center space-x-4 text-sm bg-white/10 hover:bg-white/20 px-4 py-3 rounded-2xl text-white w-full transition-all duration-300 border border-white/20"
-                      style={{ color: primaryTextColor }}
-                    >
-                      <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center border-2 border-dashed border-white/40">
-                        <span className="text-2xl">+</span>
-                      </div>
-                      <div className="text-left">
-                        <p className="font-semibold">Add Feature</p>
-                        <p className="opacity-80 text-xs">
-                          Click to add a new feature
-                        </p>
-                      </div>
-                    </button>
-                  )}
                 </div>
               </div>
             </div>
@@ -1226,25 +1121,11 @@ const ModernBookingVariant = memo(
               style={{ backgroundColor: cardBgColor }}
             >
               {/* Form Title - variant specific */}
-              {!readOnly ? (
-                <input
-                  type="text"
-                  value={formTitle}
-                  onChange={(e) =>
-                    handleVariantFieldChange("formTitle", e.target.value)
-                  }
-                  className="text-3xl lg:text-4xl font-light mb-8 bg-transparent focus:bg-gray-50 focus:ring-2 focus:ring-blue-500 rounded-lg p-3 w-full placeholder-gray-400 outline-none"
-                  placeholder="Form Title"
-                  style={{ color: secondaryTextColor }}
-                />
-              ) : (
-                <h2
-                  className="text-3xl lg:text-4xl font-light mb-8"
-                  style={{ color: secondaryTextColor }}
-                >
-                  {formTitle}
-                </h2>
-              )}
+              <h2
+                className="text-3xl lg:text-4xl font-light mb-8 booking-form-title-text"
+              >
+                {formTitle}
+              </h2>
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1272,20 +1153,6 @@ const ModernBookingVariant = memo(
                         color: inputTextColor,
                       }}
                     />
-                    {!readOnly && (
-                      <input
-                        type="text"
-                        value={formFields.firstNamePlaceholder || ""}
-                        onChange={(e) =>
-                          handleFormFieldChange(
-                            "firstNamePlaceholder",
-                            e.target.value
-                          )
-                        }
-                        className="w-full text-xs bg-gray-100 px-2 py-1 rounded border outline-none"
-                        placeholder="Edit placeholder text"
-                      />
-                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -1311,20 +1178,6 @@ const ModernBookingVariant = memo(
                         color: inputTextColor,
                       }}
                     />
-                    {!readOnly && (
-                      <input
-                        type="text"
-                        value={formFields.lastNamePlaceholder || ""}
-                        onChange={(e) =>
-                          handleFormFieldChange(
-                            "lastNamePlaceholder",
-                            e.target.value
-                          )
-                        }
-                        className="w-full text-xs bg-gray-100 px-2 py-1 rounded border outline-none"
-                        placeholder="Edit placeholder text"
-                      />
-                    )}
                   </div>
                 </div>
 
@@ -1351,20 +1204,6 @@ const ModernBookingVariant = memo(
                       color: inputTextColor,
                     }}
                   />
-                  {!readOnly && (
-                    <input
-                      type="text"
-                      value={formFields.emailPlaceholder || ""}
-                      onChange={(e) =>
-                        handleFormFieldChange(
-                          "emailPlaceholder",
-                          e.target.value
-                        )
-                      }
-                      className="w-full text-xs bg-gray-100 px-2 py-1 rounded border outline-none"
-                      placeholder="Edit placeholder text"
-                    />
-                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -1390,20 +1229,6 @@ const ModernBookingVariant = memo(
                       color: inputTextColor,
                     }}
                   />
-                  {!readOnly && (
-                    <input
-                      type="text"
-                      value={formFields.phonePlaceholder || ""}
-                      onChange={(e) =>
-                        handleFormFieldChange(
-                          "phonePlaceholder",
-                          e.target.value
-                        )
-                      }
-                      className="w-full text-xs bg-gray-100 px-2 py-1 rounded border outline-none"
-                      placeholder="Edit placeholder text"
-                    />
-                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -1434,54 +1259,6 @@ const ModernBookingVariant = memo(
                       </option>
                     ))}
                   </select>
-                  {!readOnly && (
-                    <div className="space-y-2">
-                      <input
-                        type="text"
-                        value={formFields.servicePlaceholder || ""}
-                        onChange={(e) =>
-                          handleFormFieldChange(
-                            "servicePlaceholder",
-                            e.target.value
-                          )
-                        }
-                        className="w-full text-xs bg-gray-100 px-2 py-1 rounded border outline-none"
-                        placeholder="Edit select placeholder"
-                      />
-                      <div
-                        className="text-xs"
-                        style={{ color: secondaryTextColor }}
-                      >
-                        Service Options:
-                      </div>
-                      {serviceOptions.map((option, index) => (
-                        <div key={index} className="flex gap-2 items-center">
-                          <input
-                            type="text"
-                            value={option}
-                            onChange={(e) =>
-                              updateServiceOption(index, e.target.value)
-                            }
-                            className="flex-1 text-xs bg-gray-100 px-2 py-1 rounded border outline-none"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeServiceOption(index)}
-                            className="text-red-500 text-xs px-2 py-1 hover:bg-red-50 rounded"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      ))}
-                      <button
-                        type="button"
-                        onClick={addServiceOption}
-                        className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded hover:bg-blue-200"
-                      >
-                        + Add Service Option
-                      </button>
-                    </div>
-                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -1508,27 +1285,13 @@ const ModernBookingVariant = memo(
                       color: inputTextColor,
                     }}
                   />
-                  {!readOnly && (
-                    <input
-                      type="text"
-                      value={formFields.messagePlaceholder || ""}
-                      onChange={(e) =>
-                        handleFormFieldChange(
-                          "messagePlaceholder",
-                          e.target.value
-                        )
-                      }
-                      className="w-full text-xs bg-gray-100 px-2 py-1 rounded border outline-none"
-                      placeholder="Edit placeholder text"
-                    />
-                  )}
                 </div>
 
                 <div className="space-y-2">
                   <button
                     type="submit"
                     disabled={readOnly || isSubmitting}
-                    className="w-full font-semibold py-4 px-8 rounded-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg text-lg"
+                    className="w-full font-semibold py-4 px-8 rounded-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg text-lg booking-button-text"
                     style={{
                       backgroundColor: buttonBgColor,
                       color: buttonTextColor,
@@ -1538,34 +1301,6 @@ const ModernBookingVariant = memo(
                       ? formFields.submittingText || "Sending..."
                       : formFields.submitButtonText || "Get Free Quote"}
                   </button>
-                  {!readOnly && (
-                    <div className="grid grid-cols-2 gap-2">
-                      <input
-                        type="text"
-                        value={formFields.submitButtonText || ""}
-                        onChange={(e) =>
-                          handleFormFieldChange(
-                            "submitButtonText",
-                            e.target.value
-                          )
-                        }
-                        className="text-xs bg-gray-100 px-2 py-1 rounded border outline-none"
-                        placeholder="Submit button text"
-                      />
-                      <input
-                        type="text"
-                        value={formFields.submittingText || ""}
-                        onChange={(e) =>
-                          handleFormFieldChange(
-                            "submittingText",
-                            e.target.value
-                          )
-                        }
-                        className="text-xs bg-gray-100 px-2 py-1 rounded border outline-none"
-                        placeholder="Submitting text"
-                      />
-                    </div>
-                  )}
                 </div>
               </form>
             </div>
@@ -1840,41 +1575,16 @@ const CreativeBookingVariant = memo(
                 )}
 
                 <div className="text-center max-w-2xl">
-                  {!readOnly ? (
-                    <input
-                      type="text"
-                      value={headerText}
-                      onChange={(e) =>
-                        handleVariantFieldChange("headerText", e.target.value)
-                      }
-                      className="text-5xl md:text-6xl font-bold mb-4 bg-transparent focus:bg-white/10 focus:ring-2 focus:ring-yellow-400 rounded-lg p-3 w-full placeholder-gray-300 outline-none text-center bg-gradient-to-r from-yellow-300 via-orange-400 to-red-500 bg-clip-text text-transparent"
-                      placeholder="Header Text"
-                    />
-                  ) : (
-                    <h1 className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-yellow-300 via-orange-400 to-red-500 bg-clip-text text-transparent">
-                      {headerText}
-                    </h1>
-                  )}
+                  <h1 className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-yellow-300 via-orange-400 to-red-500 bg-clip-text text-transparent booking-header-text">
+                    {headerText}
+                  </h1>
 
-                  {!readOnly ? (
-                    <input
-                      type="text"
-                      value={phone}
-                      onChange={(e) =>
-                        handleFieldChange("phone", e.target.value)
-                      }
-                      className="text-2xl md:text-3xl font-bold mb-4 bg-transparent focus:bg-white/10 focus:ring-2 focus:ring-white rounded-lg p-3 w-full placeholder-gray-400 outline-none text-center"
-                      placeholder="Phone Number"
-                      style={{ color: primaryTextColor }}
-                    />
-                  ) : (
-                    <p
-                      className="text-2xl md:text-3xl font-bold mb-4"
-                      style={{ color: primaryTextColor }}
-                    >
-                      {phone}
-                    </p>
-                  )}
+                  <p
+                    className="text-2xl md:text-3xl font-bold mb-4 booking-subheader-text"
+                    style={{ color: primaryTextColor }}
+                  >
+                    {phone}
+                  </p>
                 </div>
               </div>
             </div>
@@ -1893,14 +1603,6 @@ const CreativeBookingVariant = memo(
                       key={badge.id || index}
                       className="bg-gradient-to-r from-white/20 to-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 relative hover:transform hover:scale-105 transition-all duration-300"
                     >
-                      {!readOnly && (
-                        <button
-                          onClick={() => removeBadge(index)}
-                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600 z-10"
-                        >
-                          ×
-                        </button>
-                      )}
                       <div className="flex items-center space-x-4">
                         <div
                           className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg"
@@ -1908,19 +1610,7 @@ const CreativeBookingVariant = memo(
                             background: `linear-gradient(to bottom right, ${badgeGradientStart}, ${badgeGradientEnd})`,
                           }}
                         >
-                          {!readOnly ? (
-                            <input
-                              type="text"
-                              value={badge.icon}
-                              onChange={(e) =>
-                                handleBadgeChange(index, "icon", e.target.value)
-                              }
-                              className="text-3xl bg-transparent text-center outline-none w-12"
-                              placeholder="🏆"
-                            />
-                          ) : (
-                            <span className="text-3xl">{badge.icon}</span>
-                          )}
+                          <span className="text-3xl">{badge.icon}</span>
                         </div>
                         <div className="flex-1">
                           {!readOnly ? (
@@ -1966,21 +1656,6 @@ const CreativeBookingVariant = memo(
                       </div>
                     </div>
                   ))}
-
-                  {!readOnly && (
-                    <button
-                      onClick={addBadge}
-                      className="bg-gradient-to-r from-gray-200/20 to-gray-100/10 border-2 border-dashed border-white/30 hover:border-white/50 rounded-2xl p-6 text-white hover:text-yellow-300 transition-all duration-300 flex items-center justify-center space-x-4"
-                    >
-                      <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center">
-                        <span className="text-3xl">+</span>
-                      </div>
-                      <div>
-                        <p className="font-bold text-lg">Add Badge</p>
-                        <p className="text-sm opacity-80">Click to add new</p>
-                      </div>
-                    </button>
-                  )}
                 </div>
 
                 {/* Our Work Gallery Section */}
@@ -1992,63 +1667,13 @@ const CreativeBookingVariant = memo(
                     <div className="space-y-4">
                       {galleryImages.map((image, index) => (
                         <div key={image.id || index} className="relative group">
-                          {!readOnly && (
-                            <button
-                              onClick={() => removeGalleryImage(index)}
-                              className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              ×
-                            </button>
-                          )}
                           <img
                             src={image.url}
                             alt={image.alt || "Gallery"}
                             className="w-full h-32 object-cover rounded-xl shadow-lg"
                           />
-                          {!readOnly && (
-                            <div className="mt-2 space-y-1">
-                              <input
-                                type="text"
-                                value={image.url}
-                                onChange={(e) =>
-                                  handleGalleryImageChange(
-                                    index,
-                                    "url",
-                                    e.target.value
-                                  )
-                                }
-                                className="w-full text-xs bg-white/10 text-white px-2 py-1 rounded border outline-none"
-                                placeholder="Image URL"
-                              />
-                              <input
-                                type="text"
-                                value={image.alt || ""}
-                                onChange={(e) =>
-                                  handleGalleryImageChange(
-                                    index,
-                                    "alt",
-                                    e.target.value
-                                  )
-                                }
-                                className="w-full text-xs bg-white/10 text-white px-2 py-1 rounded border outline-none"
-                                placeholder="Alt text"
-                              />
-                            </div>
-                          )}
                         </div>
                       ))}
-
-                      {!readOnly && (
-                        <button
-                          onClick={addGalleryImage}
-                          className="w-full h-32 border-2 border-dashed border-white/30 hover:border-white/50 rounded-xl flex items-center justify-center text-white hover:text-yellow-300 transition-colors"
-                        >
-                          <div className="text-center">
-                            <span className="text-4xl block">+</span>
-                            <span className="text-sm">Add Image</span>
-                          </div>
-                        </button>
-                      )}
                     </div>
                   </div>
                 )}
@@ -2057,21 +1682,9 @@ const CreativeBookingVariant = memo(
               {/* Right Column - Form */}
               <div className="lg:col-span-1">
                 <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-8 border border-white/20">
-                  {!readOnly ? (
-                    <input
-                      type="text"
-                      value={formTitle}
-                      onChange={(e) =>
-                        handleVariantFieldChange("formTitle", e.target.value)
-                      }
-                      className="text-3xl font-bold text-gray-800 mb-6 bg-transparent focus:bg-gray-100 focus:ring-2 focus:ring-purple-500 rounded-lg p-3 w-full placeholder-gray-400 outline-none text-center"
-                      placeholder="Form Title"
-                    />
-                  ) : (
-                    <h3 className="text-3xl font-bold text-gray-800 mb-6 text-center">
-                      {formTitle}
-                    </h3>
-                  )}
+                  <h3 className="text-3xl lg:text-4xl font-light mb-8 booking-form-title-text">
+                    {formTitle}
+                  </h3>
 
                   <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2088,20 +1701,6 @@ const CreativeBookingVariant = memo(
                           disabled={readOnly}
                           className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-400 focus:outline-none transition-colors bg-white/90 placeholder-gray-500"
                         />
-                        {!readOnly && (
-                          <input
-                            type="text"
-                            value={formFields.firstNamePlaceholder || ""}
-                            onChange={(e) =>
-                              handleFormFieldChange(
-                                "firstNamePlaceholder",
-                                e.target.value
-                              )
-                            }
-                            className="w-full text-xs bg-gray-100 px-2 py-1 rounded border outline-none"
-                            placeholder="Edit placeholder"
-                          />
-                        )}
                       </div>
 
                       <div className="space-y-2">
@@ -2117,20 +1716,6 @@ const CreativeBookingVariant = memo(
                           disabled={readOnly}
                           className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-400 focus:outline-none transition-colors bg-white/90 placeholder-gray-500"
                         />
-                        {!readOnly && (
-                          <input
-                            type="text"
-                            value={formFields.lastNamePlaceholder || ""}
-                            onChange={(e) =>
-                              handleFormFieldChange(
-                                "lastNamePlaceholder",
-                                e.target.value
-                              )
-                            }
-                            className="w-full text-xs bg-gray-100 px-2 py-1 rounded border outline-none"
-                            placeholder="Edit placeholder"
-                          />
-                        )}
                       </div>
                     </div>
 
@@ -2141,27 +1726,12 @@ const CreativeBookingVariant = memo(
                         value={formData.email}
                         onChange={handleChange}
                         placeholder={
-                          formFields.emailPlaceholder ||
-                          "Enter your email address"
+                          formFields.emailPlaceholder || "Enter your email address"
                         }
                         required
                         disabled={readOnly}
                         className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-400 focus:outline-none transition-colors bg-white/90 placeholder-gray-500"
                       />
-                      {!readOnly && (
-                        <input
-                          type="text"
-                          value={formFields.emailPlaceholder || ""}
-                          onChange={(e) =>
-                            handleFormFieldChange(
-                              "emailPlaceholder",
-                              e.target.value
-                            )
-                          }
-                          className="w-full text-xs bg-gray-100 px-2 py-1 rounded border outline-none"
-                          placeholder="Edit placeholder"
-                        />
-                      )}
                     </div>
 
                     <div className="space-y-2">
@@ -2171,27 +1741,12 @@ const CreativeBookingVariant = memo(
                         value={formData.phone}
                         onChange={handleChange}
                         placeholder={
-                          formFields.phonePlaceholder ||
-                          "Enter your phone number"
+                          formFields.phonePlaceholder || "Enter your phone number"
                         }
                         required
                         disabled={readOnly}
                         className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-400 focus:outline-none transition-colors bg-white/90 placeholder-gray-500"
                       />
-                      {!readOnly && (
-                        <input
-                          type="text"
-                          value={formFields.phonePlaceholder || ""}
-                          onChange={(e) =>
-                            handleFormFieldChange(
-                              "phonePlaceholder",
-                              e.target.value
-                            )
-                          }
-                          className="w-full text-xs bg-gray-100 px-2 py-1 rounded border outline-none"
-                          placeholder="Edit placeholder text"
-                        />
-                      )}
                     </div>
 
                     <div className="space-y-2">
@@ -2212,54 +1767,6 @@ const CreativeBookingVariant = memo(
                           </option>
                         ))}
                       </select>
-                      {!readOnly && (
-                        <div className="space-y-2">
-                          <input
-                            type="text"
-                            value={formFields.servicePlaceholder || ""}
-                            onChange={(e) =>
-                              handleFormFieldChange(
-                                "servicePlaceholder",
-                                e.target.value
-                              )
-                            }
-                            className="w-full text-xs bg-gray-100 px-2 py-1 rounded border outline-none"
-                            placeholder="Select placeholder"
-                          />
-                          <div className="text-xs text-gray-600">
-                            Service Options:
-                          </div>
-                          {serviceOptions.map((option, index) => (
-                            <div
-                              key={index}
-                              className="flex gap-2 items-center"
-                            >
-                              <input
-                                type="text"
-                                value={option}
-                                onChange={(e) =>
-                                  updateServiceOption(index, e.target.value)
-                                }
-                                className="flex-1 text-xs bg-gray-100 px-2 py-1 rounded border outline-none"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => removeServiceOption(index)}
-                                className="text-red-500 text-xs px-2 py-1 hover:bg-red-50 rounded"
-                              >
-                                Remove
-                              </button>
-                            </div>
-                          ))}
-                          <button
-                            type="button"
-                            onClick={addServiceOption}
-                            className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded hover:bg-blue-200"
-                          >
-                            + Add Service Option
-                          </button>
-                        </div>
-                      )}
                     </div>
 
                     <div className="space-y-2">
@@ -2276,27 +1783,13 @@ const CreativeBookingVariant = memo(
                         rows="4"
                         className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-400 focus:outline-none transition-colors bg-white/90 resize-none placeholder-gray-500"
                       />
-                      {!readOnly && (
-                        <input
-                          type="text"
-                          value={formFields.messagePlaceholder || ""}
-                          onChange={(e) =>
-                            handleFormFieldChange(
-                              "messagePlaceholder",
-                              e.target.value
-                            )
-                          }
-                          className="w-full text-xs bg-gray-100 px-2 py-1 rounded border outline-none"
-                          placeholder="Edit placeholder text"
-                        />
-                      )}
                     </div>
 
                     <div className="space-y-2">
                       <button
                         type="submit"
                         disabled={readOnly || isSubmitting}
-                        className="w-full font-semibold py-4 px-8 rounded-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg text-lg"
+                        className="w-full font-semibold py-4 px-8 rounded-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg text-lg booking-button-text"
                         style={{
                           backgroundColor: buttonBgColor,
                           color: buttonTextColor,
@@ -2306,34 +1799,6 @@ const CreativeBookingVariant = memo(
                           ? formFields.submittingText || "🚀 Sending..."
                           : formFields.submitButtonText || "🎯 Get Free Quote"}
                       </button>
-                      {!readOnly && (
-                        <div className="grid grid-cols-2 gap-2">
-                          <input
-                            type="text"
-                            value={formFields.submitButtonText || ""}
-                            onChange={(e) =>
-                              handleFormFieldChange(
-                                "submitButtonText",
-                                e.target.value
-                              )
-                            }
-                            className="text-xs bg-gray-100 px-2 py-1 rounded border outline-none"
-                            placeholder="Submit button text"
-                          />
-                          <input
-                            type="text"
-                            value={formFields.submittingText || ""}
-                            onChange={(e) =>
-                              handleFormFieldChange(
-                                "submittingText",
-                                e.target.value
-                              )
-                            }
-                            className="text-xs bg-gray-100 px-2 py-1 rounded border outline-none"
-                            placeholder="Submitting text"
-                          />
-                        </div>
-                      )}
                     </div>
                   </form>
                 </div>
@@ -2358,105 +1823,61 @@ CreativeBookingVariant.propTypes = {
 // Tab Control Components
 // =============================================
 
-const BookingImagesControls = ({
-  currentData,
-  onControlsChange,
-  themeColors,
-}) => {
-  const handleLogoFileChange = (file) => {
-    if (!file) return;
-    const currentLogoState = currentData.logo;
-    if (currentLogoState?.url?.startsWith("blob:")) {
-      URL.revokeObjectURL(currentLogoState.url);
-    }
-    const fileURL = URL.createObjectURL(file);
-    onControlsChange({
-      ...currentData,
-      logo: {
-        file,
-        url: fileURL,
-        name: file.name,
-        originalUrl: currentLogoState?.originalUrl || "/assets/images/logo.svg",
-      },
-    });
-  };
-
-  const handleLogoUrlChange = (urlValue) => {
-    const currentLogoState = currentData.logo;
-    if (currentLogoState?.url?.startsWith("blob:")) {
-      URL.revokeObjectURL(currentLogoState.url);
-    }
-    onControlsChange({
-      ...currentData,
-      logo: {
-        file: null,
-        url: urlValue,
-        name: urlValue.split("/").pop(),
-        originalUrl: urlValue,
-      },
-    });
+const BookingGeneralControls = ({ currentData, onControlsChange }) => {
+  const handleFieldChange = (field, value) => {
+    onControlsChange({ [field]: value });
   };
 
   const handleSocialLinkChange = (index, field, value) => {
     const updatedSocialLinks = [...(currentData.socialLinks || [])];
-    updatedSocialLinks[index] = {
-      ...updatedSocialLinks[index],
-      [field]: value,
-    };
-    onControlsChange({ ...currentData, socialLinks: updatedSocialLinks });
+    updatedSocialLinks[index] = { ...updatedSocialLinks[index], [field]: value };
+    onControlsChange({ socialLinks: updatedSocialLinks });
   };
 
   const addSocialLink = () => {
     onControlsChange({
-      ...currentData,
-      socialLinks: [
-        ...(currentData.socialLinks || []),
-        { platform: "twitter", url: "" },
-      ],
+      socialLinks: [...(currentData.socialLinks || []), { platform: 'twitter', url: '' }],
     });
   };
 
   const removeSocialLink = (index) => {
     onControlsChange({
-      ...currentData,
-      socialLinks: (currentData.socialLinks || []).filter(
-        (_, i) => i !== index
-      ),
+      socialLinks: (currentData.socialLinks || []).filter((_, i) => i !== index),
     });
   };
 
   return (
     <div className="p-4 space-y-6">
       <div>
-        <label className="block text-sm font-medium mb-2">Logo Image:</label>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => handleLogoFileChange(e.target.files?.[0])}
-          className="w-full bg-gray-100 px-3 py-2 rounded text-sm file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700"
-        />
-        {getLogoDisplayUrl(currentData.logo) && (
-          <img
-            src={getLogoDisplayUrl(currentData.logo)}
-            alt="Logo Preview"
-            className="mt-3 h-24 rounded shadow bg-gray-100 p-2"
-          />
-        )}
+        <label className="block text-sm font-medium mb-2">Variant:</label>
+        <select
+          value={currentData.variant || 'nail'}
+          onChange={(e) => handleFieldChange('variant', e.target.value)}
+          className="w-full bg-gray-100 px-3 py-2 rounded text-sm border border-gray-300"
+        >
+          <option value="nail">Nail (Classic)</option>
+          <option value="modern">Modern</option>
+          <option value="creative">Creative</option>
+        </select>
       </div>
-
+      <div>
+        <label className="block text-sm font-medium mb-2">Phone Number:</label>
+        <input
+          type="text"
+          value={currentData.phone || ''}
+          onChange={(e) => handleFieldChange('phone', e.target.value)}
+          className="w-full bg-gray-100 px-3 py-2 rounded text-sm border border-gray-300"
+          placeholder="(404) 227-5000"
+        />
+      </div>
       <div className="space-y-4 pt-4 border-t border-gray-200">
         <h3 className="text-lg font-semibold">Social Media Links:</h3>
         {(currentData.socialLinks || []).map((link, index) => (
-          <div
-            key={index}
-            className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg"
-          >
+          <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
             <select
               value={link.platform}
-              onChange={(e) =>
-                handleSocialLinkChange(index, "platform", e.target.value)
-              }
-              className="bg-white px-3 py-2 rounded text-sm border border-gray-300 focus:ring-2 focus:ring-blue-500"
+              onChange={(e) => handleSocialLinkChange(index, 'platform', e.target.value)}
+              className="bg-white px-3 py-2 rounded text-sm border border-gray-300"
             >
               <option value="twitter">Twitter/X</option>
               <option value="linkedin">LinkedIn</option>
@@ -2467,10 +1888,8 @@ const BookingImagesControls = ({
               type="url"
               placeholder="Social Media URL"
               value={link.url}
-              onChange={(e) =>
-                handleSocialLinkChange(index, "url", e.target.value)
-              }
-              className="flex-1 bg-white px-3 py-2 rounded text-sm border border-gray-300 focus:ring-2 focus:ring-blue-500"
+              onChange={(e) => handleSocialLinkChange(index, 'url', e.target.value)}
+              className="flex-1 bg-white px-3 py-2 rounded text-sm border border-gray-300"
             />
             <button
               type="button"
@@ -2492,11 +1911,85 @@ const BookingImagesControls = ({
     </div>
   );
 };
+BookingGeneralControls.propTypes = {
+  currentData: PropTypes.object.isRequired,
+  onControlsChange: PropTypes.func.isRequired,
+};
+
+const BookingImagesControls = ({
+  currentData,
+  onControlsChange,
+  themeColors,
+}) => {
+  const logoArray = currentData.logo ? [currentData.logo] : [];
+
+  const handleLogoChange = (newImagesArray) => {
+    const newLogoObject = newImagesArray[0] || null;
+    const { onControlsChange: _, ...restOfCurrentData } = currentData;
+    onControlsChange({ ...restOfCurrentData, logo: newLogoObject });
+  };
+
+  return (
+    <div className="p-4 space-y-6">
+      <PanelImagesController
+        currentData={{ logo: logoArray }}
+        onControlsChange={(data) => handleLogoChange(data.logo)}
+        imageArrayFieldName="logo"
+        maxImages={1}
+      />
+    </div>
+  );
+};
 
 BookingImagesControls.propTypes = {
   currentData: PropTypes.object.isRequired,
   onControlsChange: PropTypes.func.isRequired,
   themeColors: PropTypes.object,
+};
+
+const colorConfig = {
+  nail: ['primaryBackground', 'secondaryBackground', 'primaryText', 'inputText', 'buttonBackground', 'buttonText', 'accentText'],
+  modern: [
+    'primaryBackground', 'secondaryBackground', 'primaryText', 'secondaryText', 'buttonBackground', 'buttonText',
+    'inputBackground', 'inputText', 'cardBackground', 'gradientStart', 'gradientEnd', 'modernGradientStart',
+    'modernGradientEnd', 'modernAccentStart', 'modernAccentEnd'
+  ],
+  creative: [
+    'primaryBackground', 'secondaryBackground', 'primaryText', 'secondaryText', 'buttonBackground', 'buttonText',
+    'inputBackground', 'inputText', 'cardBackground', 'gradientStart', 'gradientEnd', 'creativeGradientStart',
+    'creativeGradientEnd', 'creativeHeaderGradient', 'creativeSubHeaderColor', 'creativeBadgeGradientStart',
+    'creativeBadgeGradientEnd'
+  ],
+  status: ['successColor', 'errorColor', 'warningColor', 'infoColor']
+};
+
+const allColorPickers = {
+  primaryBackground: { label: "Primary Background:", default: '#1f2937' },
+  secondaryBackground: { label: "Secondary Background:", default: '#FFFFFF' },
+  primaryText: { label: "Primary Text Color:", default: '#FFFFFF' },
+  secondaryText: { label: "Secondary Text Color:", default: '#374151' },
+  accentText: { label: "Accent Text Color:", default: '#F97316' },
+  buttonBackground: { label: "Button Background:", default: '#F97316' },
+  buttonText: { label: "Button Text Color:", default: '#FFFFFF' },
+  inputBackground: { label: "Input Background:", default: '#FFFFFF' },
+  inputText: { label: "Input Text Color:", default: '#374151' },
+  cardBackground: { label: "Card Background:", default: '#FFFFFF' },
+  gradientStart: { label: "Gradient Start:", default: '#1f2937' },
+  gradientEnd: { label: "Gradient End:", default: '#374151' },
+  modernGradientStart: { label: "Modern Gradient Start:", default: '#1e293b' },
+  modernGradientEnd: { label: "Modern Gradient End:", default: '#334155' },
+  modernAccentStart: { label: "Modern Accent Start:", default: '#3b82f6' },
+  modernAccentEnd: { label: "Modern Accent End:", default: '#8b5cf6' },
+  creativeGradientStart: { label: "Creative Gradient Start:", default: '#4c1d95' },
+  creativeGradientEnd: { label: "Creative Gradient End:", default: '#be185d' },
+  creativeHeaderGradient: { label: "Creative Header Gradient:", default: '#fbbf24' },
+  creativeSubHeaderColor: { label: "Creative Sub Header Color:", default: '#fed7aa' },
+  creativeBadgeGradientStart: { label: "Creative Badge Gradient Start:", default: '#fbbf24' },
+  creativeBadgeGradientEnd: { label: "Creative Badge Gradient End:", default: '#f59e0b' },
+  successColor: { label: "Success Color:", default: '#10B981' },
+  errorColor: { label: "Error Color:", default: '#EF4444' },
+  warningColor: { label: "Warning Color:", default: '#F59E0B' },
+  infoColor: { label: "Info Color:", default: '#3B82F6' },
 };
 
 const BookingColorControls = ({
@@ -2511,286 +2004,39 @@ const BookingColorControls = ({
 
   const currentColors = currentData.colors || {};
   const currentVariant = currentData.variant || "nail";
+  const variantColors = colorConfig[currentVariant] || [];
+  const statusColors = colorConfig.status;
+
+  const renderColorPicker = (key) => {
+    const pickerConfig = allColorPickers[key];
+    if (!pickerConfig) return null;
+    return (
+      <ThemeColorPicker
+        key={key}
+        label={pickerConfig.label}
+        currentColorValue={currentColors[key] || pickerConfig.default}
+        themeColors={themeColors}
+        onColorChange={(fieldName, value) => handleColorUpdate(key, value)}
+        fieldName={key}
+      />
+    );
+  };
 
   return (
     <div className="p-4 space-y-4">
+      <h3 className="text-sm font-semibold text-gray-700 mb-3">
+        {currentVariant.charAt(0).toUpperCase() + currentVariant.slice(1)} Variant Colors
+      </h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Core Colors - Always Visible */}
-        <ThemeColorPicker
-          label="Primary Background:"
-          currentColorValue={currentColors.primaryBackground || "#1f2937"}
-          themeColors={themeColors}
-          onColorChange={(fieldName, value) =>
-            handleColorUpdate("primaryBackground", value)
-          }
-          fieldName="primaryBackground"
-        />
-        <ThemeColorPicker
-          label="Secondary Background:"
-          currentColorValue={currentColors.secondaryBackground || "#FFFFFF"}
-          themeColors={themeColors}
-          onColorChange={(fieldName, value) =>
-            handleColorUpdate("secondaryBackground", value)
-          }
-          fieldName="secondaryBackground"
-        />
-        <ThemeColorPicker
-          label="Primary Text Color:"
-          currentColorValue={currentColors.primaryText || "#FFFFFF"}
-          themeColors={themeColors}
-          onColorChange={(fieldName, value) =>
-            handleColorUpdate("primaryText", value)
-          }
-          fieldName="primaryText"
-        />
-        <ThemeColorPicker
-          label="Secondary Text Color:"
-          currentColorValue={currentColors.secondaryText || "#374151"}
-          themeColors={themeColors}
-          onColorChange={(fieldName, value) =>
-            handleColorUpdate("secondaryText", value)
-          }
-          fieldName="secondaryText"
-        />
-        <ThemeColorPicker
-          label="Accent Text Color:"
-          currentColorValue={currentColors.accentText || "#F97316"}
-          themeColors={themeColors}
-          onColorChange={(fieldName, value) =>
-            handleColorUpdate("accentText", value)
-          }
-          fieldName="accentText"
-        />
-        <ThemeColorPicker
-          label="Button Background:"
-          currentColorValue={currentColors.buttonBackground || "#F97316"}
-          themeColors={themeColors}
-          onColorChange={(fieldName, value) =>
-            handleColorUpdate("buttonBackground", value)
-          }
-          fieldName="buttonBackground"
-        />
-        <ThemeColorPicker
-          label="Button Text Color:"
-          currentColorValue={currentColors.buttonText || "#FFFFFF"}
-          themeColors={themeColors}
-          onColorChange={(fieldName, value) =>
-            handleColorUpdate("buttonText", value)
-          }
-          fieldName="buttonText"
-        />
-        <ThemeColorPicker
-          label="Input Background:"
-          currentColorValue={currentColors.inputBackground || "#FFFFFF"}
-          themeColors={themeColors}
-          onColorChange={(fieldName, value) =>
-            handleColorUpdate("inputBackground", value)
-          }
-          fieldName="inputBackground"
-        />
-        <ThemeColorPicker
-          label="Input Text Color:"
-          currentColorValue={currentColors.inputText || "#374151"}
-          themeColors={themeColors}
-          onColorChange={(fieldName, value) =>
-            handleColorUpdate("inputText", value)
-          }
-          fieldName="inputText"
-        />
-        <ThemeColorPicker
-          label="Card Background:"
-          currentColorValue={currentColors.cardBackground || "#FFFFFF"}
-          themeColors={themeColors}
-          onColorChange={(fieldName, value) =>
-            handleColorUpdate("cardBackground", value)
-          }
-          fieldName="cardBackground"
-        />
-
-        {/* Base Gradient Colors - Used by all variants */}
-        <ThemeColorPicker
-          label="Gradient Start:"
-          currentColorValue={currentColors.gradientStart || "#1f2937"}
-          themeColors={themeColors}
-          onColorChange={(fieldName, value) =>
-            handleColorUpdate("gradientStart", value)
-          }
-          fieldName="gradientStart"
-        />
-        <ThemeColorPicker
-          label="Gradient End:"
-          currentColorValue={currentColors.gradientEnd || "#374151"}
-          themeColors={themeColors}
-          onColorChange={(fieldName, value) =>
-            handleColorUpdate("gradientEnd", value)
-          }
-          fieldName="gradientEnd"
-        />
+        {variantColors.map(renderColorPicker)}
       </div>
 
-      {/* Variant-Specific Colors */}
-      {currentVariant === "modern" && (
-        <div className="mt-6 pt-4 border-t border-gray-200">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">
-            Modern Variant Colors
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <ThemeColorPicker
-              label="Modern Gradient Start:"
-              currentColorValue={currentColors.modernGradientStart || "#1e293b"}
-              themeColors={themeColors}
-              onColorChange={(fieldName, value) =>
-                handleColorUpdate("modernGradientStart", value)
-              }
-              fieldName="modernGradientStart"
-            />
-            <ThemeColorPicker
-              label="Modern Gradient End:"
-              currentColorValue={currentColors.modernGradientEnd || "#334155"}
-              themeColors={themeColors}
-              onColorChange={(fieldName, value) =>
-                handleColorUpdate("modernGradientEnd", value)
-              }
-              fieldName="modernGradientEnd"
-            />
-            <ThemeColorPicker
-              label="Modern Accent Start:"
-              currentColorValue={currentColors.modernAccentStart || "#3b82f6"}
-              themeColors={themeColors}
-              onColorChange={(fieldName, value) =>
-                handleColorUpdate("modernAccentStart", value)
-              }
-              fieldName="modernAccentStart"
-            />
-            <ThemeColorPicker
-              label="Modern Accent End:"
-              currentColorValue={currentColors.modernAccentEnd || "#8b5cf6"}
-              themeColors={themeColors}
-              onColorChange={(fieldName, value) =>
-                handleColorUpdate("modernAccentEnd", value)
-              }
-              fieldName="modernAccentEnd"
-            />
-          </div>
-        </div>
-      )}
-
-      {currentVariant === "creative" && (
-        <div className="mt-6 pt-4 border-t border-gray-200">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">
-            Creative Variant Colors
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <ThemeColorPicker
-              label="Creative Gradient Start:"
-              currentColorValue={
-                currentColors.creativeGradientStart || "#4c1d95"
-              }
-              themeColors={themeColors}
-              onColorChange={(fieldName, value) =>
-                handleColorUpdate("creativeGradientStart", value)
-              }
-              fieldName="creativeGradientStart"
-            />
-            <ThemeColorPicker
-              label="Creative Gradient End:"
-              currentColorValue={currentColors.creativeGradientEnd || "#be185d"}
-              themeColors={themeColors}
-              onColorChange={(fieldName, value) =>
-                handleColorUpdate("creativeGradientEnd", value)
-              }
-              fieldName="creativeGradientEnd"
-            />
-            <ThemeColorPicker
-              label="Creative Header Gradient:"
-              currentColorValue={
-                currentColors.creativeHeaderGradient || "#fbbf24"
-              }
-              themeColors={themeColors}
-              onColorChange={(fieldName, value) =>
-                handleColorUpdate("creativeHeaderGradient", value)
-              }
-              fieldName="creativeHeaderGradient"
-            />
-            <ThemeColorPicker
-              label="Creative Sub Header Color:"
-              currentColorValue={
-                currentColors.creativeSubHeaderColor || "#fed7aa"
-              }
-              themeColors={themeColors}
-              onColorChange={(fieldName, value) =>
-                handleColorUpdate("creativeSubHeaderColor", value)
-              }
-              fieldName="creativeSubHeaderColor"
-            />
-            <ThemeColorPicker
-              label="Creative Badge Gradient Start:"
-              currentColorValue={
-                currentColors.creativeBadgeGradientStart || "#fbbf24"
-              }
-              themeColors={themeColors}
-              onColorChange={(fieldName, value) =>
-                handleColorUpdate("creativeBadgeGradientStart", value)
-              }
-              fieldName="creativeBadgeGradientStart"
-            />
-            <ThemeColorPicker
-              label="Creative Badge Gradient End:"
-              currentColorValue={
-                currentColors.creativeBadgeGradientEnd || "#f59e0b"
-              }
-              themeColors={themeColors}
-              onColorChange={(fieldName, value) =>
-                handleColorUpdate("creativeBadgeGradientEnd", value)
-              }
-              fieldName="creativeBadgeGradientEnd"
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Status Colors - Less frequently used, so at the bottom */}
       <div className="mt-6 pt-4 border-t border-gray-200">
         <h3 className="text-sm font-semibold text-gray-700 mb-3">
           Status Colors
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <ThemeColorPicker
-            label="Success Color:"
-            currentColorValue={currentColors.successColor || "#10B981"}
-            themeColors={themeColors}
-            onColorChange={(fieldName, value) =>
-              handleColorUpdate("successColor", value)
-            }
-            fieldName="successColor"
-          />
-          <ThemeColorPicker
-            label="Error Color:"
-            currentColorValue={currentColors.errorColor || "#EF4444"}
-            themeColors={themeColors}
-            onColorChange={(fieldName, value) =>
-              handleColorUpdate("errorColor", value)
-            }
-            fieldName="errorColor"
-          />
-          <ThemeColorPicker
-            label="Warning Color:"
-            currentColorValue={currentColors.warningColor || "#F59E0B"}
-            themeColors={themeColors}
-            onColorChange={(fieldName, value) =>
-              handleColorUpdate("warningColor", value)
-            }
-            fieldName="warningColor"
-          />
-          <ThemeColorPicker
-            label="Info Color:"
-            currentColorValue={currentColors.infoColor || "#3B82F6"}
-            themeColors={themeColors}
-            onColorChange={(fieldName, value) =>
-              handleColorUpdate("infoColor", value)
-            }
-            fieldName="infoColor"
-          />
+          {statusColors.map(renderColorPicker)}
         </div>
       </div>
     </div>
@@ -2804,151 +2050,20 @@ BookingColorControls.propTypes = {
 };
 
 const BookingStylingControls = ({ currentData, onControlsChange }) => {
-  const handleVariantChange = (newVariant) => {
-    onControlsChange({
-      ...currentData,
-      variant: newVariant,
-    });
-  };
-
-  const currentVariant = currentData.variant || "nail";
-
-  const variantOptions = [
-    {
-      value: "nail",
-      label: "Nail Style",
-      description:
-        "Original design with nail animations and wood plank styling",
-    },
-    {
-      value: "modern",
-      label: "Modern",
-      description:
-        "Clean, minimalist design with gradients and split-screen layout",
-    },
-    {
-      value: "creative",
-      label: "Creative",
-      description:
-        "Image-rich design with playful elements and three-column layout",
-    },
-  ];
-
   return (
     <div className="space-y-6">
-      {/* Variant Selector */}
-      <div className="p-4 bg-gray-800 text-white rounded-lg">
-        <div className="pb-6 border-b border-gray-600">
-          <h3 className="text-lg font-semibold mb-4 text-center">
-            Design Variant
-          </h3>
+      {/* Variant Controls using PanelStylingController */}
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {variantOptions.map((option) => (
-              <div key={option.value} className="relative">
-                <label className="flex flex-col items-center cursor-pointer group">
-                  <input
-                    type="radio"
-                    name="variant"
-                    value={option.value}
-                    checked={currentVariant === option.value}
-                    onChange={() => handleVariantChange(option.value)}
-                    className="sr-only"
-                  />
-
-                  {/* Visual Preview with Selection Ring */}
-                  <div
-                    className={`relative mb-2 p-1 rounded-lg transition-all duration-200 ${
-                      currentVariant === option.value
-                        ? "ring-2 ring-blue-500 ring-offset-2 ring-offset-gray-800"
-                        : "ring-1 ring-gray-600 group-hover:ring-gray-500"
-                    }`}
-                  >
-                    <div className="w-16 h-12 bg-white border border-gray-200 rounded-md overflow-hidden shadow-sm">
-                      {option.value === "nail" && (
-                        <div className="w-full h-full bg-gradient-to-br from-amber-50 to-amber-100 relative overflow-hidden">
-                          <div className="absolute inset-0 opacity-20">
-                            <div className="h-1 bg-amber-800 mb-2"></div>
-                            <div className="h-1 bg-amber-700 mb-2"></div>
-                            <div className="h-1 bg-amber-800"></div>
-                          </div>
-                          <div className="absolute top-2 left-2 w-1 h-1 bg-gray-600 rounded-full"></div>
-                          <div className="absolute top-2 right-2 w-1 h-1 bg-gray-600 rounded-full"></div>
-                          <div className="absolute bottom-2 left-2 w-1 h-1 bg-gray-600 rounded-full"></div>
-                          <div className="absolute bottom-2 right-2 w-1 h-1 bg-gray-600 rounded-full"></div>
-                          <div className="flex flex-col items-center justify-center h-full p-2">
-                            <div className="w-6 h-6 bg-blue-400 rounded mb-1"></div>
-                            <div className="w-8 h-1 bg-gray-400 rounded"></div>
-                          </div>
-                        </div>
-                      )}
-                      {option.value === "modern" && (
-                        <div className="w-full h-full bg-gradient-to-r from-slate-50 to-gray-100 relative">
-                          <div className="flex h-full">
-                            <div className="flex-1 bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
-                              <div className="w-4 h-4 bg-blue-500 rounded"></div>
-                            </div>
-                            <div className="flex-1 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-                              <div className="w-6 h-1 bg-gray-400 rounded"></div>
-                            </div>
-                          </div>
-                          <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-blue-300 to-gray-300"></div>
-                        </div>
-                      )}
-                      {option.value === "creative" && (
-                        <div className="w-full h-full bg-gradient-to-br from-purple-50 to-pink-50 relative overflow-hidden">
-                          <div className="flex h-full">
-                            <div className="flex-1 flex items-center justify-center">
-                              <div className="w-3 h-3 bg-purple-400 rounded-full"></div>
-                            </div>
-                            <div className="flex-1 flex items-center justify-center">
-                              <div className="w-2 h-6 bg-pink-400 rounded"></div>
-                            </div>
-                            <div className="flex-1 flex items-center justify-center">
-                              <div className="w-3 h-2 bg-orange-400 rounded"></div>
-                            </div>
-                          </div>
-                          <div className="absolute top-1 right-1 w-1 h-1 bg-yellow-400 rounded-full"></div>
-                          <div className="absolute bottom-1 left-1 w-1 h-1 bg-green-400 rounded-full"></div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Selected indicator */}
-                    {currentVariant === option.value && (
-                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                        <div className="w-2 h-2 bg-white rounded-full"></div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Variant Name */}
-                  <div
-                    className={`text-center transition-colors duration-200 ${
-                      currentVariant === option.value
-                        ? "text-blue-400"
-                        : "text-gray-300 group-hover:text-white"
-                    }`}
-                  >
-                    <div className="font-medium text-sm">{option.label}</div>
-                    <div className="text-xs text-gray-400 mt-1 max-w-24 leading-tight">
-                      {option.description}
-                    </div>
-                  </div>
-                </label>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
 
       {/* Animation Controls using PanelStylingController */}
-      <PanelStylingController
-        currentData={currentData}
-        onControlsChange={onControlsChange}
-        blockType="BookingBlock"
-        controlType="animations"
-      />
+      <div>
+        <PanelStylingController
+          currentData={currentData}
+          onControlsChange={onControlsChange}
+          blockType="BookingBlock"
+          controlType="animations"
+        />
+      </div>
     </div>
   );
 };
@@ -2959,40 +2074,394 @@ BookingStylingControls.propTypes = {
 };
 
 // Add GeneralPanel component after the BookingImagesControls and before BookingColorControls
-const BookingGeneralControls = ({ currentData, onControlsChange }) => {
-  const socialIconLocation = currentData?.socialIconLocation || "above";
+
+
+
+
+/* ==============================================
+   BOOKING FONTS CONTROLS
+   ----------------------------------------------
+   Handles font selection for Booking text elements
+=============================================== */
+const BookingFontsControls = ({ currentData, onControlsChange, themeColors }) => {
+  const [viewportMode, setViewportMode] = useState('desktop');
+
+  const handleSettingsChange = (textType, newSettings) => {
+    onControlsChange({
+      textSettings: {
+        ...currentData.textSettings,
+        [textType]: {
+          ...(currentData.textSettings?.[textType] || {}),
+          ...newSettings,
+        },
+      },
+    });
+  };
+
+  const textTypes = [
+    { key: 'header', label: 'Header Text' },
+    { key: 'subHeader', label: 'Sub-Header Text (Phone)' },
+    { key: 'formTitle', label: 'Form Title' },
+    { key: 'button', label: 'Button Text' },
+  ];
 
   return (
-    <div className="p-4 space-y-6">
-      <div>
-        <label className="block text-sm font-medium mb-2">
-          Social Media Icon Location:
-        </label>
-        <select
-          value={socialIconLocation}
-          onChange={(e) =>
-            onControlsChange({
-              ...currentData,
-              socialIconLocation: e.target.value,
-            })
-          }
-          className="w-full bg-gray-100 px-3 py-2 rounded text-sm border border-gray-300 focus:ring-2 focus:ring-blue-500"
+    <div className="p-4 space-y-6 bg-gray-800 text-white">
+      <div className="text-center">
+        <h3 className="text-lg font-medium">Font Settings</h3>
+        <div className="mt-2 flex justify-center bg-gray-700 rounded-lg p-1">
+          <button
+            onClick={() => setViewportMode('desktop')}
+            className={`px-3 py-1 text-sm font-medium rounded-md ${viewportMode === 'desktop' ? 'bg-blue-600' : 'hover:bg-gray-600'}`}
+          >
+            Desktop
+          </button>
+          <button
+            onClick={() => setViewportMode('mobile')}
+            className={`px-3 py-1 text-sm font-medium rounded-md ${viewportMode === 'mobile' ? 'bg-blue-600' : 'hover:bg-gray-600'}`}
+          >
+            Mobile
+          </button>
+        </div>
+      </div>
+
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={viewportMode}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.2 }}
+          className="space-y-6"
         >
-          <option value="above">Above Form</option>
-          <option value="below">Below Form</option>
-          <option value="hidden">Hidden</option>
-        </select>
-        <p className="text-xs text-gray-500 mt-2">
-          Controls where the social media icons appear in the BookingBlock.
-        </p>
+          {textTypes.map(({ key, label }) => (
+            <div key={key} className="p-3 bg-gray-700/50 rounded-lg">
+              <PanelFontController
+                label={label}
+                currentData={currentData.textSettings?.[key]}
+                onControlsChange={(newSettings) => handleSettingsChange(key, newSettings)}
+                fieldPrefix={viewportMode}
+                themeColors={themeColors}
+              />
+            </div>
+          ))}
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+};
+
+BookingFontsControls.propTypes = {
+  currentData: PropTypes.object.isRequired,
+  onControlsChange: PropTypes.func.isRequired,
+  themeColors: PropTypes.array,
+};
+
+// =============================================
+
+const ModernVariantControls = ({ currentData, onControlsChange }) => {
+  const currentVariant = currentData.variant || 'modern';
+  const variantData = currentData.variants?.[currentVariant] || {};
+
+  const handleVariantFieldChange = (field, value) => {
+    const newVariants = {
+      ...(currentData.variants || {}),
+      [currentVariant]: {
+        ...(currentData.variants?.[currentVariant] || {}),
+        [field]: value,
+      },
+    };
+    onControlsChange({
+      variants: newVariants,
+      [field]: value, // Also update at root level for current display
+    });
+  };
+  
+  const handleFeatureChange = (index, field, value) => {
+    const features = [...(variantData.features || [])];
+    features[index] = { ...features[index], [field]: value };
+    handleVariantFieldChange('features', features);
+  };
+
+  const addFeature = () => {
+    const features = [...(variantData.features || []), { id: `feature_${Date.now()}`, emoji: '🔥', title: 'New Feature', subtitle: 'Description' }];
+    handleVariantFieldChange('features', features);
+  };
+
+  const removeFeature = (index) => {
+    const features = (variantData.features || []).filter((_, i) => i !== index);
+    handleVariantFieldChange('features', features);
+  };
+
+  const handleFormFieldChange = (field, value) => {
+    const formFields = { ...(variantData.formFields || {}), [field]: value };
+    handleVariantFieldChange('formFields', formFields);
+  };
+
+  const handleServiceOptionChange = (index, value) => {
+    const serviceOptions = [...(variantData.serviceOptions || [])];
+    serviceOptions[index] = value;
+    handleVariantFieldChange('serviceOptions', serviceOptions);
+  };
+
+  const addServiceOption = () => {
+    const serviceOptions = [...(variantData.serviceOptions || []), 'New Service'];
+    handleVariantFieldChange('serviceOptions', serviceOptions);
+  };
+
+  const removeServiceOption = (index) => {
+    const serviceOptions = (variantData.serviceOptions || []).filter((_, i) => i !== index);
+    handleVariantFieldChange('serviceOptions', serviceOptions);
+  };
+
+  return (
+    <div className="p-4 space-y-4">
+      <h3 className="text-lg font-semibold">Modern Variant Settings</h3>
+      <div>
+        <label className="block text-sm font-medium mb-1">Header Text</label>
+        <input
+          type="text"
+          value={variantData.headerText || ''}
+          onChange={(e) => handleVariantFieldChange('headerText', e.target.value)}
+          className="w-full bg-gray-100 px-3 py-2 rounded text-sm border border-gray-300"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium mb-1">Form Title</label>
+        <input
+          type="text"
+          value={variantData.formTitle || ''}
+          onChange={(e) => handleVariantFieldChange('formTitle', e.target.value)}
+          className="w-full bg-gray-100 px-3 py-2 rounded text-sm border border-gray-300"
+        />
+      </div>
+      <div className="space-y-2">
+        <h4 className="text-md font-semibold">Features</h4>
+        {(variantData.features || []).map((feature, index) => (
+          <div key={feature.id || index} className="p-2 border rounded space-y-2 bg-gray-50">
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={feature.emoji}
+                onChange={(e) => handleFeatureChange(index, 'emoji', e.target.value)}
+                className="w-12 text-center bg-white p-1"
+                placeholder="🔥"
+              />
+              <div className="flex-grow">
+                <input
+                  type="text"
+                  value={feature.title}
+                  onChange={(e) => handleFeatureChange(index, 'title', e.target.value)}
+                  className="w-full font-semibold p-1"
+                  placeholder="Feature Title"
+                />
+                <input
+                  type="text"
+                  value={feature.subtitle}
+                  onChange={(e) => handleFeatureChange(index, 'subtitle', e.target.value)}
+                  className="w-full text-sm p-1"
+                  placeholder="Feature Subtitle"
+                />
+              </div>
+              <button onClick={() => removeFeature(index)} className="bg-red-500 text-white px-2 py-1 rounded text-xs">Remove</button>
+            </div>
+          </div>
+        ))}
+        <button onClick={addFeature} className="bg-blue-500 text-white px-2 py-1 rounded text-xs">+ Add Feature</button>
+      </div>
+
+      <div className="space-y-2">
+        <h4 className="text-md font-semibold">Form Placeholders</h4>
+        <div className="grid grid-cols-2 gap-2">
+          <input type="text" value={variantData.formFields?.firstNamePlaceholder || ''} onChange={(e) => handleFormFieldChange('firstNamePlaceholder', e.target.value)} placeholder="First Name Placeholder" className="text-xs p-1"/>
+          <input type="text" value={variantData.formFields?.lastNamePlaceholder || ''} onChange={(e) => handleFormFieldChange('lastNamePlaceholder', e.target.value)} placeholder="Last Name Placeholder" className="text-xs p-1"/>
+          <input type="text" value={variantData.formFields?.emailPlaceholder || ''} onChange={(e) => handleFormFieldChange('emailPlaceholder', e.target.value)} placeholder="Email Placeholder" className="text-xs p-1"/>
+          <input type="text" value={variantData.formFields?.phonePlaceholder || ''} onChange={(e) => handleFormFieldChange('phonePlaceholder', e.target.value)} placeholder="Phone Placeholder" className="text-xs p-1"/>
+          <input type="text" value={variantData.formFields?.servicePlaceholder || ''} onChange={(e) => handleFormFieldChange('servicePlaceholder', e.target.value)} placeholder="Service Select Placeholder" className="text-xs p-1"/>
+          <input type="text" value={variantData.formFields?.messagePlaceholder || ''} onChange={(e) => handleFormFieldChange('messagePlaceholder', e.target.value)} placeholder="Message Placeholder" className="text-xs p-1"/>
+          <input type="text" value={variantData.formFields?.submitButtonText || ''} onChange={(e) => handleFormFieldChange('submitButtonText', e.target.value)} placeholder="Submit Button Text" className="text-xs p-1"/>
+          <input type="text" value={variantData.formFields?.submittingText || ''} onChange={(e) => handleFormFieldChange('submittingText', e.target.value)} placeholder="Submitting Text" className="text-xs p-1"/>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <h4 className="text-md font-semibold">Service Options</h4>
+        {(variantData.serviceOptions || []).map((option, index) => (
+          <div key={index} className="flex items-center gap-2">
+            <input
+              type="text"
+              value={option}
+              onChange={(e) => handleServiceOptionChange(index, e.target.value)}
+              className="w-full p-1"
+            />
+            <button onClick={() => removeServiceOption(index)} className="bg-red-500 text-white px-2 py-1 rounded text-xs">Remove</button>
+          </div>
+        ))}
+        <button onClick={addServiceOption} className="bg-blue-500 text-white px-2 py-1 rounded text-xs">+ Add Service</button>
       </div>
     </div>
   );
 };
 
-BookingGeneralControls.propTypes = {
-  currentData: PropTypes.object.isRequired,
-  onControlsChange: PropTypes.func.isRequired,
+const CreativeVariantControls = ({ currentData, onControlsChange, themeColors }) => {
+  const currentVariant = currentData.variant || 'creative';
+  const variantData = currentData.variants?.[currentVariant] || {};
+
+  const handleVariantFieldChange = (field, value) => {
+    const newVariants = {
+      ...(currentData.variants || {}),
+      [currentVariant]: {
+        ...(currentData.variants?.[currentVariant] || {}),
+        [field]: value,
+      },
+    };
+    onControlsChange({
+      variants: newVariants,
+      [field]: value,
+    });
+  };
+
+  const handleBadgeChange = (index, field, value) => {
+    const badges = [...(variantData.badges || [])];
+    badges[index] = { ...badges[index], [field]: value };
+    handleVariantFieldChange('badges', badges);
+  };
+
+  const addBadge = () => {
+    const badges = [...(variantData.badges || []), { id: `badge_${Date.now()}`, icon: '🏆', text: 'New Badge', subtitle: 'Description' }];
+    handleVariantFieldChange('badges', badges);
+  };
+
+  const removeBadge = (index) => {
+    const badges = (variantData.badges || []).filter((_, i) => i !== index);
+    handleVariantFieldChange('badges', badges);
+  };
+  
+  const handleImagesChange = (images) => {
+    handleVariantFieldChange('galleryImages', images);
+  };
+
+  const handleFormFieldChange = (field, value) => {
+    const formFields = { ...(variantData.formFields || {}), [field]: value };
+    handleVariantFieldChange('formFields', formFields);
+  };
+
+  const handleServiceOptionChange = (index, value) => {
+    const serviceOptions = [...(variantData.serviceOptions || [])];
+    serviceOptions[index] = value;
+    handleVariantFieldChange('serviceOptions', serviceOptions);
+  };
+
+  const addServiceOption = () => {
+    const serviceOptions = [...(variantData.serviceOptions || []), 'New Service'];
+    handleVariantFieldChange('serviceOptions', serviceOptions);
+  };
+
+  const removeServiceOption = (index) => {
+    const serviceOptions = (variantData.serviceOptions || []).filter((_, i) => i !== index);
+    handleVariantFieldChange('serviceOptions', serviceOptions);
+  };
+
+  return (
+    <div className="p-4 space-y-4">
+      <h3 className="text-lg font-semibold">Creative Variant Settings</h3>
+      <div>
+        <label className="block text-sm font-medium mb-1">Header Text</label>
+        <input
+          type="text"
+          value={variantData.headerText || ''}
+          onChange={(e) => handleVariantFieldChange('headerText', e.target.value)}
+          className="w-full bg-gray-100 px-3 py-2 rounded text-sm border border-gray-300"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium mb-1">Form Title</label>
+        <input
+          type="text"
+          value={variantData.formTitle || ''}
+          onChange={(e) => handleVariantFieldChange('formTitle', e.target.value)}
+          className="w-full bg-gray-100 px-3 py-2 rounded text-sm border border-gray-300"
+        />
+      </div>
+
+       <div className="space-y-2">
+        <h4 className="text-md font-semibold">Badges</h4>
+        {(variantData.badges || []).map((badge, index) => (
+          <div key={badge.id || index} className="p-2 border rounded space-y-2 bg-gray-50">
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={badge.icon}
+                onChange={(e) => handleBadgeChange(index, 'icon', e.target.value)}
+                className="w-12 text-center bg-white p-1"
+                placeholder="🏆"
+              />
+              <div className="flex-grow">
+                <input
+                  type="text"
+                  value={badge.text}
+                  onChange={(e) => handleBadgeChange(index, 'text', e.target.value)}
+                  className="w-full font-semibold p-1"
+                  placeholder="Badge Text"
+                />
+                <input
+                  type="text"
+                  value={badge.subtitle}
+                  onChange={(e) => handleBadgeChange(index, 'subtitle', e.target.value)}
+                  className="w-full text-sm p-1"
+                  placeholder="Badge Subtitle"
+                />
+              </div>
+              <button onClick={() => removeBadge(index)} className="bg-red-500 text-white px-2 py-1 rounded text-xs">Remove</button>
+            </div>
+          </div>
+        ))}
+        <button onClick={addBadge} className="bg-blue-500 text-white px-2 py-1 rounded text-xs">+ Add Badge</button>
+      </div>
+
+      <div>
+        <h4 className="text-md font-semibold">Gallery Images</h4>
+        <PanelImagesController
+          currentData={{ images: variantData.galleryImages || [] }}
+          onControlsChange={(data) => handleImagesChange(data.images)}
+          imageArrayFieldName="images"
+          themeColors={themeColors}
+          allowMultiple={true}
+          maxImages={10}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <h4 className="text-md font-semibold">Form Placeholders</h4>
+        <div className="grid grid-cols-2 gap-2">
+          <input type="text" value={variantData.formFields?.firstNamePlaceholder || ''} onChange={(e) => handleFormFieldChange('firstNamePlaceholder', e.target.value)} placeholder="First Name Placeholder" className="text-xs p-1"/>
+          <input type="text" value={variantData.formFields?.lastNamePlaceholder || ''} onChange={(e) => handleFormFieldChange('lastNamePlaceholder', e.target.value)} placeholder="Last Name Placeholder" className="text-xs p-1"/>
+          <input type="text" value={variantData.formFields?.emailPlaceholder || ''} onChange={(e) => handleFormFieldChange('emailPlaceholder', e.target.value)} placeholder="Email Placeholder" className="text-xs p-1"/>
+          <input type="text" value={variantData.formFields?.phonePlaceholder || ''} onChange={(e) => handleFormFieldChange('phonePlaceholder', e.target.value)} placeholder="Phone Placeholder" className="text-xs p-1"/>
+          <input type="text" value={variantData.formFields?.servicePlaceholder || ''} onChange={(e) => handleFormFieldChange('servicePlaceholder', e.target.value)} placeholder="Service Select Placeholder" className="text-xs p-1"/>
+          <input type="text" value={variantData.formFields?.messagePlaceholder || ''} onChange={(e) => handleFormFieldChange('messagePlaceholder', e.target.value)} placeholder="Message Placeholder" className="text-xs p-1"/>
+          <input type="text" value={variantData.formFields?.submitButtonText || ''} onChange={(e) => handleFormFieldChange('submitButtonText', e.target.value)} placeholder="Submit Button Text" className="text-xs p-1"/>
+          <input type="text" value={variantData.formFields?.submittingText || ''} onChange={(e) => handleFormFieldChange('submittingText', e.target.value)} placeholder="Submitting Text" className="text-xs p-1"/>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <h4 className="text-md font-semibold">Service Options</h4>
+        {(variantData.serviceOptions || []).map((option, index) => (
+          <div key={index} className="flex items-center gap-2">
+            <input
+              type="text"
+              value={option}
+              onChange={(e) => handleServiceOptionChange(index, e.target.value)}
+              className="w-full p-1"
+            />
+            <button onClick={() => removeServiceOption(index)} className="bg-red-500 text-white px-2 py-1 rounded text-xs">Remove</button>
+          </div>
+        ))}
+        <button onClick={addServiceOption} className="bg-blue-500 text-white px-2 py-1 rounded text-xs">+ Add Service</button>
+      </div>
+    </div>
+  );
 };
 
 /* ===============================================
@@ -3027,10 +2496,16 @@ export default function BookingBlock({
           URL.revokeObjectURL(prevLocal.logo.url);
         }
 
+        const newTextSettings = {
+          ...(prevLocal.textSettings || {}),
+          ...(bookingData.textSettings || {}),
+        };
+
         return {
           ...prevLocal,
           ...bookingData,
           logo: newLogo,
+          textSettings: newTextSettings,
           variant: bookingData.variant || prevLocal.variant || "nail",
           colors: bookingData.colors || prevLocal.colors || {},
           socialLinks: bookingData.socialLinks || prevLocal.socialLinks || [],
@@ -3110,7 +2585,7 @@ export default function BookingBlock({
   // Render different variants based on the variant prop
   const renderVariant = () => {
     // Use bookingData.variant if available, otherwise fall back to the variant prop
-    const activeVariant = bookingData?.variant || variant;
+    const activeVariant = localData.variant || variant;
 
     switch (activeVariant) {
       case "modern":
@@ -3155,52 +2630,41 @@ BookingBlock.propTypes = {
   variant: PropTypes.oneOf(["nail", "modern", "creative"]),
 };
 
-// Tab configuration for TopStickyEditPanel
-BookingBlock.tabsConfig = (
-  currentData,
-  onControlsChange,
-  themeColors,
-  sitePalette
-) => {
-  const tabs = {};
+// Tab configuration for BottomStickyEditPanel
+BookingBlock.tabsConfig = (blockData, onUpdate, themeColors) => ({
+  general: (props) => (
+    <BookingGeneralControls currentData={props.currentData} onControlsChange={props.onControlsChange} />
+  ),
+  fonts: (props) => (
+    <BookingFontsControls currentData={props.currentData} onControlsChange={props.onControlsChange} themeColors={props.themeColors} />
+  ),
+  images: (props) => (
+    <BookingImagesControls currentData={props.currentData} onControlsChange={props.onControlsChange} themeColors={props.themeColors} />
+  ),
+  colors: (props) => (
+    <BookingColorControls currentData={props.currentData} onControlsChange={props.onControlsChange} themeColors={props.themeColors} />
+  ),
+  styling: (props) => (
+    <BookingStylingControls currentData={props.currentData} onControlsChange={props.onControlsChange} />
+  ),
+  'Variant Settings': (props) => {
+    const activeVariant = props.currentData.variant || 'nail';
+    if (activeVariant === 'modern') {
+      return <ModernVariantControls currentData={props.currentData} onControlsChange={props.onControlsChange} />;
+    } else if (activeVariant === 'creative') {
+      return <CreativeVariantControls currentData={props.currentData} onControlsChange={props.onControlsChange} themeColors={props.themeColors} />;
+    }
+    return null;
+  },
+});
 
-  // General Tab
-  tabs.general = (props) => (
-    <BookingGeneralControls
-      {...props}
-      currentData={currentData}
-      onControlsChange={onControlsChange}
-    />
-  );
-
-  // Images Tab
-  tabs.images = (props) => (
-    <BookingImagesControls
-      {...props}
-      currentData={currentData}
-      onControlsChange={onControlsChange}
-      themeColors={themeColors}
-    />
-  );
-
-  // Colors Tab
-  tabs.colors = (props) => (
-    <BookingColorControls
-      {...props}
-      currentData={currentData}
-      onControlsChange={onControlsChange}
-      themeColors={themeColors}
-    />
-  );
-
-  // Styling Tab
-  tabs.styling = (props) => (
-    <BookingStylingControls
-      {...props}
-      currentData={currentData}
-      onControlsChange={onControlsChange}
-    />
-  );
-
-  return tabs;
+// Export control components for external use if needed
+export {
+  BookingGeneralControls,
+  BookingImagesControls,
+  BookingColorControls,
+  BookingStylingControls,
+  BookingFontsControls,
+  ModernVariantControls,
+  CreativeVariantControls
 };

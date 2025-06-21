@@ -161,7 +161,7 @@ const NavbarWrapper = ({ navbarConfig }) => {
     location.pathname.includes("/edit/") || location.pathname === "/oneform";
 
   // Don't render navbar on edit routes
-  if (isEditRoute) return null;
+  if (isEditRoute || !navbarConfig) return null;
 
   // Extract the new configuration options from navbarConfig
   const navbarProps = {
@@ -461,38 +461,52 @@ AppRoutes.propTypes = {
 };
 
 /**
- * App Component - Main application entry point
+ * AppContent Component - Renders the main application layout and routes
  *
- * This component:
- * 1. Fetches the combined_data.json file containing configuration for all main page blocks and navbar
- * 2. Extracts configuration for navbar and about page (if needed separately)
- * 3. Sets up the router with all application routes
- *
- * The application uses three main JSON files:
- * - combined_data.json: Configuration for the main page blocks and navbar
- * - services.json: Configuration for all service pages
- * - about_page.json: Configuration for the about page (loaded separately or part of combined_data)
- *
- * The application allows for local editing of these JSON files through
- * dedicated editor interfaces. The edited content can be downloaded and
- * sent to the developer for permanent integration into the site.
+ * This component handles fetching the primary configuration data and manages
+ * the main layout, including the navbar and footer. It applies dynamic padding
+ * to the content area to account for the fixed navbar height on public-facing
+ * pages, ensuring content is not obscured.
  */
-const App = () => {
+const AppContent = () => {
+  const location = useLocation();
+  const { config } = useConfig();
   const [navbarConfig, setNavbarConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { config } = useConfig();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Use config from ConfigContext for navbar
+        setLoading(true);
+        let navConfig = null;
+        // Prioritize navbar data from the global config context
         if (config && config.navbar) {
-          setNavbarConfig(config.navbar);
+          navConfig = config.navbar;
         } else {
-          console.warn("Navbar configuration not found in config, proceeding with no navbar config.");
-          setNavbarConfig(null);
+          // Fallback to fetching nav.json directly if not in global config
+          console.debug("Navbar config not found in global context, fetching from nav.json");
+          try {
+            const navResponse = await fetch("/personal/old/jsons/nav.json");
+            if (navResponse.ok) {
+              navConfig = await navResponse.json();
+            } else {
+              console.error("Failed to fetch nav.json, status:", navResponse.status);
+            }
+          } catch (e) {
+            console.error("Error fetching nav.json fallback:", e);
+          }
         }
+        setNavbarConfig(navConfig);
+
+        // Fetch about_page.json for the dedicated /about page
+        const aboutResponse = await fetch(
+          "/personal/old/jsons/about_page.json"
+        );
+        if (!aboutResponse.ok)
+          throw new Error("Failed to fetch about page data (about_page.json)");
+        const aboutData = await aboutResponse.json();
+        setAboutPageData(aboutData);
       } catch (err) {
         console.error("Error fetching initial data:", err);
         setError(err.message);
@@ -501,17 +515,32 @@ const App = () => {
       }
     };
 
-    if (config) {
-      fetchData();
-    }
+    fetchData();
   }, [config]);
 
-  // Moved useMemo to be called unconditionally before conditional returns
+  const isEditRoute = useMemo(() => 
+    location.pathname.includes("/edit/") || location.pathname === "/oneform",
+    [location.pathname]
+  );
+  
+  const contentStyle = useMemo(() => {
+    if (isEditRoute || !navbarConfig?.navbarHeight?.unscrolled?.base) {
+      return { paddingTop: '0' };
+    }
+    // On public pages, the hero block should have a negative margin to sit
+    // behind the navbar. This padding pushes all content down, and the
+    // hero's negative margin pulls it back up into the correct place.
+    return { paddingTop: navbarConfig.navbarHeight.unscrolled.base };
+  }, [isEditRoute, navbarConfig]);
+
   const memoizedRoutes = useMemo(() => {
     // Ensure config exists before trying to pass it down
     if (!config) return null;
     return <AppRoutes dedicatedAboutPageData={config.about_page} />;
   }, [config]);
+  //   if (!config || !aboutPageData) return null; //from feature/development possible bug
+  //   return <AppRoutes dedicatedAboutPageData={aboutPageData} />;
+  // }, [config, aboutPageData]);
 
   if (loading) {
     return <LoadingScreen />;
@@ -543,21 +572,34 @@ const App = () => {
   }
 
   return (
-    <ConfigProvider>
-      <Router
-        future={{
-          v7_startTransition: true,
-          v7_relativeSplatPath: true,
-        }}
-      >
-        <ScrollRestoration />
-        <NavbarWrapper navbarConfig={navbarConfig} />
-        <div className="pt-0">
-          <Suspense fallback={<LoadingScreen />}>{memoizedRoutes}</Suspense>
-        </div>
-        <Footer />
-      </Router>
-    </ConfigProvider>
+    <>
+      <NavbarWrapper navbarConfig={navbarConfig} />
+      <div style={contentStyle}>
+        <Suspense fallback={<LoadingScreen />}>{memoizedRoutes}</Suspense>
+      </div>
+      <Footer />
+    </>
+  );
+};
+
+/**
+ * App Component - Main application entry point
+ *
+ * This component sets up the application's core providers and routing.
+ * It uses a ConfigProvider to supply configuration data throughout the app
+ * and a Router to handle navigation.
+ */
+const App = () => {
+  return (
+    <Router
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
+      <ScrollRestoration />
+      <AppContent />
+    </Router>
   );
 };
 

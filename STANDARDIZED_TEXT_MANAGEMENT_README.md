@@ -4,6 +4,8 @@
 
 This document explains the new standardized text section management system that follows the same pattern as `PanelStylingController` for managing text content sections across blocks.
 
+The system is designed to work with the BottomStickyEditPanel's `tabsConfig` pattern, providing a standardized "general" tab for content management.
+
 ## Core Components
 
 ### PanelTextSectionController
@@ -14,7 +16,7 @@ A reusable component for managing text sections (adding/deleting/reordering text
 
 ### Usage Patterns
 
-The system is designed to work with the TopStickyEditPanel's tabsConfig pattern, providing a standardized "general" tab for content management.
+The system is designed to work with the BottomStickyEditPanel's `tabsConfig` pattern, providing a standardized "general" tab for content management.
 
 ## Implementation Guide
 
@@ -200,14 +202,12 @@ GeneralList.tabsConfig = (config, onControlsChange, themeColors) => {
 - ✅ Structured and simple item templates
 - ✅ Block-specific customization
 
-## Integration with TopStickyEditPanel
+## Integration with `BottomStickyEditPanel`
 
-The system integrates seamlessly with the existing TopStickyEditPanel tab system:
+The system integrates seamlessly with the existing BottomStickyEditPanel tab system:
 
-1. **Standard Tab Order**: `['general', 'images', 'colors', 'styling']`
-2. **Automatic Tab Detection**: Only shows tabs that are properly configured
-3. **Consistent Styling**: Follows the same design patterns as other controllers
-4. **Error Handling**: Graceful fallback for missing configurations
+1.  **Tab Configuration**: In your block's `tabsConfig`, define a `general` tab.
+2.  **Render `TextManagementPanel`**: Inside the `general` tab's render function, render the `TextManagementPanel` component.
 
 ## Benefits of Standardization
 
@@ -272,9 +272,18 @@ The system integrates seamlessly with the existing TopStickyEditPanel tab system
    onControlsChange({ ...config, [arrayFieldName]: newArray });
    ```
 
+-   **Changes not saving**:
+    -   Verify that the `onControlsChange` function passed to `TextManagementPanel` correctly updates your block's state.
+    -   Ensure that the `currentData` prop reflects the most recent state.
+-   **Panel not rendering**:
+    -   Check that the `general` tab is correctly configured in your block's `tabsConfig`.
+    -   Confirm that `TextManagementPanel` is imported correctly.
+-   **BottomStickyEditPanel integration guide**
+    -   Refer to the main documentation for the `BottomStickyEditPanel` for more details on the tab system.
+
 ## Support
 
 For questions or issues related to the standardized text section management system, please refer to:
 - Component documentation in source files
-- TopStickyEditPanel integration guide
+- BottomStickyEditPanel integration guide
 - PanelStylingController patterns (similar architecture) 
