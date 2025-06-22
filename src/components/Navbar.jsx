@@ -59,6 +59,14 @@ const Navbar = ({
   // mainTitleTextSettings,
   // subTitleTextSettings,
 }) => {
+  // Early return if config is not available
+  if (!config) {
+    return (
+      <nav className="w-full h-[16vh] flex items-center justify-center bg-gray-200">
+        <div className="text-gray-500">Loading navbar...</div>
+      </nav>
+    );
+  }
   const [isOpen, setIsOpen] = useState(false);
   const [internalHasScrolled, setInternalHasScrolled] = useState(false);
   const [isDesktopMenuOpen, setIsDesktopMenuOpen] = useState(false);
@@ -90,6 +98,7 @@ const Navbar = ({
   const {
     naturalOffsetVh = 11,
     slideUpDistanceVh = 0,
+    slideLeftDistance = 0,
   } = animationSettings;
 
   const {
@@ -426,7 +435,7 @@ const Navbar = ({
               ref={logoRef}
               src={whiteLogoUrl}
               alt="Logo White"
-              className={`cursor-pointer logo-fixed-size transform-gpu ${marginClasses}`}
+              className={`cursor-pointer logo-fixed-size transform-gpu ${logoMarginClasses}`}
               onClick={handleLogoClick}
               style={{ 
                 marginTop: (hasScrolled || isPreview) ? "0" : `${naturalOffsetVh}vh`,
@@ -439,7 +448,7 @@ const Navbar = ({
               ref={logoRef}
               src={logoUrl} 
               alt="Logo"
-              className={`cursor-pointer logo-fixed-size transform-gpu ${marginClasses}`}
+              className={`cursor-pointer logo-fixed-size transform-gpu ${logoMarginClasses}`}
               onClick={handleLogoClick}
               style={{ 
                 marginTop: (hasScrolled || isPreview) ? "0" : `${naturalOffsetVh}vh`,

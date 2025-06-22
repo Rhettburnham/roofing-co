@@ -198,7 +198,7 @@ const TestimonialItem = ({ testimonial, readOnly, onTestimonialChange, index, va
                   className={`font-sans bg-transparent focus:bg-white/20 focus:ring-1 focus:ring-blue-500 rounded p-1 w-full outline-none ${variant === 'feature' ? 'text-lg md:text-xl' : variant === 'compact' ? 'text-sm md:text-base' : 'text-[2.5vw] md:text-[1.6vh]'} min-w-0 text-left leading-tight`}
                   style={{...nameStyle, color: nameStyle.color || textColor || '#000000'}}
                   onClick={(e) => e.stopPropagation()}
-                  style={{ color: textColor }}
+                  // style={{ color: textColor }}
                 />
               ) : (
                 <p 
@@ -239,7 +239,7 @@ const TestimonialItem = ({ testimonial, readOnly, onTestimonialChange, index, va
             style={{...bodyStyle, color: bodyStyle.color || textColor || '#000000' }}
             onClick={(e) => e.stopPropagation()}
             rows={variant === "feature" ? 6 : variant === "compact" ? 3 : 4}
-            style={{ color: textColor }}
+            // style={{ color: textColor }}
           />
         ) : (
           <div className="w-full text-center">
